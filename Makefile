@@ -4,6 +4,9 @@ all: libnative.so
 
 run: all
 	env LD_LIBRARY_PATH=$(PWD) clojure -cp . test.clj
+
+repl: all
+	env LD_LIBRARY_PATH=$(PWD) clojure -cp .
 	
 libnative.so: HelloWorldJNI.o
 	gcc -shared -fPIC -o $@ $^
