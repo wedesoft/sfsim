@@ -1,2 +1,2 @@
 (import 'HelloWorldJNI)
-(.sayHello (HelloWorldJNI.))
+(-> (HelloWorldJNI.) .sayHello)
