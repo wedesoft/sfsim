@@ -2,8 +2,8 @@
 
 all: libnative.so
 
-run:
-	java -cp . -Djava.library.path=$(PWD) HelloWorldJNI
+run: all
+	env LD_LIBRARY_PATH=$(PWD) clojure -cp . test.clj
 	
 libnative.so: HelloWorldJNI.o
 	gcc -shared -fPIC -o $@ $^
