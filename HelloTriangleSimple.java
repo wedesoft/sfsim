@@ -71,13 +71,13 @@ public class HelloTriangleSimple implements GLEventListener, KeyListener {
 
     private void setup() {
 
-        GLProfile glProfile = GLProfile.get(GLProfile.GL4);
+        GLProfile glProfile = GLProfile.get(GLProfile.GL3);
         GLCapabilities glCapabilities = new GLCapabilities(glProfile);
 
         window = GLWindow.create(glCapabilities);
 
         window.setTitle("Hello Triangle (simple)");
-        window.setSize(1024, 768);
+        window.setSize(640, 480);
 
         window.setVisible(true);
 

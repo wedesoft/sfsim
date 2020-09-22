@@ -31,4 +31,4 @@ HelloWorldJNI.h: HelloWorldJNI.java
 HelloWorldJNI.o: HelloWorldJNI.h
 
 clean:
-	rm -f *.h *.o *.so *.class
+	rm -f *.h *.o *.so *.class framework/*.class
