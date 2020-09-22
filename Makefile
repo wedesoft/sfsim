@@ -1,6 +1,7 @@
 .SUFFIXES: .c .h .java .class .so .o
 
-CLASSPATH=/usr/share/java/jogl2.jar:/usr/share/java/gluegen2-rt.jar:.
+# CLASSPATH=/usr/share/java/jogl2.jar:/usr/share/java/gluegen2-rt.jar:.
+CLASSPATH=jogamp-fat.jar:/usr/share/java/gluegen2-rt.jar:.
 
 all: HelloWorldJNI.class libnative.so HelloTriangleSimple.class
 
