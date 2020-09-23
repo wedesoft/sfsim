@@ -5,5 +5,6 @@
             :url "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.10.0"]]
   :main ^:skip-aot sfsim25.core
+  :resource-paths ["resources/jogamp-fat.jar"]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
