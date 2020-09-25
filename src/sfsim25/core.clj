@@ -1,7 +1,7 @@
 (ns sfsim25.core
   (:import [com.jogamp.opengl GLProfile GLCapabilities]
            [com.jogamp.newt.opengl GLWindow]
-           [com.jogamp.newt.event KeyListener KeyEvent])
+           [com.jogamp.newt.event KeyListener KeyEvent WindowAdapter])
   (:gen-class))
 
 (defn -main
@@ -13,11 +13,16 @@
         key-listener    (reify KeyListener
                           (keyPressed [this event]
                             (if (= (.getKeyCode event) KeyEvent/VK_ESCAPE)
-                              (dosync (ref-set finished true)))))]
+                              (dosync (ref-set finished true))))
+                          (keyReleased [this event]))
+        window-listener (proxy [WindowAdapter] []
+                          (windowDestroyed [event]
+                            (System/exit 0)))]
     (doto window
       (.setTitle "sfsim25")
-      (.setSize 640 480)
+      (.setFullscreen true)
       (.setVisible true)
-      (.addKeyListener key-listener))
+      (.addKeyListener key-listener)
+      (.addWindowListener window-listener))
     (while (not @finished))
     (.destroy window)))
