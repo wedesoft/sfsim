@@ -1,4 +1,4 @@
-(defproject sfsim25 "0.1.0-SNAPSHOT"
+(defproject sfsim25 "0.1.0"
   :description "Spaceflight Simulator Game"
   :url "https://github.com/wedesoft/sfsim25"
   :license {:name "GPL-3.0-or-later"
@@ -12,4 +12,5 @@
   :resource-paths ["resources/jogamp-fat.jar"
                    "/usr/share/java/gluegen2-rt.jar"
                    "/usr/share/java/jmagick.jar"]
-  :target-path "target/%s")
+  :target-path "target/%s"
+  :jvm-opts ["-Xmx2g"])
