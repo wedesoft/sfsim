@@ -16,7 +16,7 @@
   [file-name]
   (let [byte-data    (slurp-bytes file-name)
         n            (.count (seq byte-data))
-        short-buffer (.asShortBuffer (.order (ByteBuffer/wrap byte-data) ByteOrder/LITTLE_ENDIAN))
+        short-buffer (-> byte-data ByteBuffer/wrap (.order ByteOrder/LITTLE_ENDIAN) .asShortBuffer)
         result       (short-array (/ n 2))]
     (.get short-buffer result)
     result))
