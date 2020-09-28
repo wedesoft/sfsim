@@ -1,5 +1,5 @@
 (ns sfsim25.util
-  (:require [clojure.java.io :as io :refer [input-stream]])
+  (:require [clojure.java.io :as io])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]))
 
@@ -8,7 +8,7 @@
   [file-name]
   (with-open [in  (io/input-stream file-name)
               out (ByteArrayOutputStream.)]
-    (clojure.java.io/copy in out)
+    (io/copy in out)
     (.toByteArray out)))
 
 (defn slurp-shorts
@@ -20,3 +20,13 @@
         result       (short-array (/ n 2))]
     (.get short-buffer result)
     result))
+
+(defn tile-path
+  "Determine file path of map tile"
+  [prefix level y x suffix]
+  (str prefix \/ level \/ x \/ y suffix))
+
+(defn tile-dir
+  "Determine directory name of map tile"
+  [prefix level x]
+  (str prefix \/ level \/ x))

@@ -9,11 +9,11 @@
   [& args]
   (let [gl-capabilities (-> GLProfile/GL3 GLProfile/get GLCapabilities.)
         window          (GLWindow/create gl-capabilities)
-        finished        (ref false)
+        running         (ref true)
         key-listener    (reify KeyListener
                           (keyPressed [this event]
                             (if (= (.getKeyCode event) KeyEvent/VK_ESCAPE)
-                              (dosync (ref-set finished true))))
+                              (dosync (ref-set running true))))
                           (keyReleased [this event]))
         window-listener (proxy [WindowAdapter] []
                           (windowDestroyed [event]
@@ -24,5 +24,5 @@
       (.setVisible true)
       (.addKeyListener key-listener)
       (.addWindowListener window-listener))
-    (while (not @finished))
+    (while @running)
     (.destroy window)))
