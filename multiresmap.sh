@@ -4,6 +4,7 @@ if [ -z $4 ]; then
   exit 1
 fi
 # Set MAGICK_TMPDIR to file system location with plenty of space!
+# Edit /etc/ImageMagick-6/policy.xml to allow larger images.
 lein run-scale-image $1 map2.png
 lein run-scale-image map2.png map3.png
 lein run-scale-image map3.png map4.png
