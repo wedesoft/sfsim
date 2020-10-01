@@ -1,4 +1,5 @@
 target
+world.*.png
 .lein-*
 .nrepl-port
 *.class
