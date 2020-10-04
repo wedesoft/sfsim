@@ -2,7 +2,7 @@
 
 (deftype Quaternion [^double a ^double b ^double c ^double d]
   Object
-  (equals [this other] (and (= a (.a other)) (= b (.b other)) (= c (.c other)) (= d (.d other))))
+  (equals [this other] (and (instance? Quaternion other) (= a (.a other)) (= b (.b other)) (= c (.c other)) (= d (.d other))))
   (toString [this] (str "(quaternion " a \space b \space c \space d ")")))
 
 (defn make-quaternion [^double a ^double b ^double c ^double d]
