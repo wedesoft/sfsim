@@ -10,3 +10,6 @@
 
 (defn add [^Quaternion p ^Quaternion q]
   (Quaternion. (+ (.a p) (.a q)) (+ (.b p) (.b q)) (+ (.c p) (.c q)) (+ (.d p) (.d q))))
+
+(defn subtract [^Quaternion p ^Quaternion q]
+  (Quaternion. (- (.a p) (.a q)) (- (.b p) (.b q)) (- (.c p) (.c q)) (- (.d p) (.d q))))
