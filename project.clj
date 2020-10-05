@@ -13,6 +13,7 @@
             "run-map-tiles"   ["with-profile" "run-map-tiles" "run"]}
   :resource-paths ["resources/jogamp-fat.jar"
                    "/usr/share/java/gluegen2-rt.jar"
-                   "/usr/share/java/jmagick.jar"]
+                   "/usr/share/java/jmagick.jar"
+                   "/usr/share/java/commons-math3.jar"]
   :target-path "target/%s"
   :jvm-opts ["-Xmx2g"])
