@@ -1,4 +1,5 @@
 (ns sfsim25.quaternion-test
+  (:refer-clojure :exclude [+ - *])
   (:require [clojure.test :refer :all]
             [sfsim25.quaternion :refer :all]))
 
@@ -17,15 +18,15 @@
 
 (deftest add-test
   (testing "Add two quaternions"
-    (is (= (make-quaternion 6 8 10 12) (add (make-quaternion 1 2 3 4) (make-quaternion 5 6 7 8))))))
+    (is (= (make-quaternion 6 8 10 12) (+ (make-quaternion 1 2 3 4) (make-quaternion 5 6 7 8))))))
 
 (deftest subtract-test
   (testing "Subtract two quaternions"
-    (is (= (make-quaternion 1 2 3 4) (subtract (make-quaternion 6 8 10 12) (make-quaternion 5 6 7 8))))))
+    (is (= (make-quaternion 1 2 3 4) (- (make-quaternion 6 8 10 12) (make-quaternion 5 6 7 8))))))
 
 (deftest multiply-test
   (testing "Multiply two quaternions"
-    (are [result a b] (= result (multiply a b))
+    (are [result a b] (= result (* a b))
        o o o
        i o i
        j o j
