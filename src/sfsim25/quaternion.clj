@@ -2,6 +2,8 @@
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]))
 
+(set! *unchecked-math* true)
+
 (deftype Quaternion [^double a ^double b ^double c ^double d]
   Object
   (equals [this other] (and (instance? Quaternion other) (= a (.a other)) (= b (.b other)) (= c (.c other)) (= d (.d other))))
@@ -34,3 +36,5 @@
 (defn norm [^Quaternion q]
   "Compute norm of quaternion"
   (Math/sqrt (norm2 q)))
+
+(set! *unchecked-math* false)
