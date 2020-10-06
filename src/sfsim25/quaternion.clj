@@ -26,3 +26,11 @@
     (c/- (c/+ (c/* (.a p) (.b q)) (c/* (.b p) (.a q)) (c/* (.c p) (.d q))) (c/* (.d p) (.c q)))
     (c/+ (c/- (c/* (.a p) (.c q)) (c/* (.b p) (.d q))) (c/* (.c p) (.a q)) (c/* (.d p) (.b q)))
     (c/+ (c/- (c/+ (c/* (.a p) (.d q)) (c/* (.b p) (.c q))) (c/* (.c p) (.b q))) (c/* (.d p) (.a q)))))
+
+(defn norm2 [^Quaternion q]
+  "Compute square of norm of quaternion"
+  (c/+ (c/* (.a q) (.a q)) (c/* (.b q) (.b q)) (c/* (.c q) (.c q)) (c/* (.d q) (.d q))))
+
+(defn norm [^Quaternion q]
+  "Compute norm of quaternion"
+  (Math/sqrt (norm2 q)))

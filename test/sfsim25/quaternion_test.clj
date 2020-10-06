@@ -43,3 +43,7 @@
        j k i
       -i k j
       -o k k)))
+
+(deftest norm-test
+  (testing "Norm of quaternion"
+    (is (= 1.0 (norm (make-quaternion 0.216 0.288 0.48 0.8))))))
