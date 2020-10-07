@@ -47,3 +47,9 @@
 (deftest norm-test
   (testing "Norm of quaternion"
     (is (= 1.0 (norm (make-quaternion 0.216 0.288 0.48 0.8))))))
+
+(deftest normalize-test
+  (testing "Normalize a quaternion"
+    (is
+      (let [q (make-quaternion 0.216 0.288 0.48 0.8)]
+        (= q (normalize (* (make-quaternion 2 0 0 0) q)))))))
