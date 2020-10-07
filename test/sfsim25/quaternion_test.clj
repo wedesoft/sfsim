@@ -53,3 +53,8 @@
     (is
       (let [q (make-quaternion 0.216 0.288 0.48 0.8)]
         (= q (normalize (* (make-quaternion 2 0 0 0) q)))))))
+
+(deftest conjugate-test
+  (testing "Conjugate of quaternion"
+    (is (= (make-quaternion 0.216 -0.288 -0.48 -0.8) (conjugate (make-quaternion 0.216 0.288 0.48 0.8))))
+    (is (= (make-quaternion 0.108 -0.144 -0.24 -0.4) (conjugate (make-quaternion 0.432 0.576 0.96 1.6))))))

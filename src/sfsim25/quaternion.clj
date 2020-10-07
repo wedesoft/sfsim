@@ -38,7 +38,13 @@
   (Math/sqrt (norm2 q)))
 
 (defn normalize ^Quaternion [^Quaternion q]
+  "Normalize quaternion to create unit quaternion"
   (let [factor (/ 1.0 (norm q))]
     (make-quaternion (c/* (.a q) factor) (c/* (.b q) factor) (c/* (.c q) factor) (c/* (.d q) factor))))
+
+(defn conjugate ^Quaternion [^Quaternion q]
+  "Return conjugate of quaternion"
+  (let [factor (/ 1.0 (norm2 q))]
+    (make-quaternion (c/* (.a q) factor) (c/* (c/- (.b q)) factor) (c/* (c/- (.c q)) factor) (c/* (c/- (.d q)) factor))))
 
 (set! *unchecked-math* false)
