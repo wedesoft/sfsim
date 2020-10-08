@@ -1,6 +1,8 @@
 (ns sfsim25.quaternion
   (:refer-clojure :exclude [+ - *])
-  (:require [clojure.core :as c]))
+  (:require [clojure.core :as c]
+            [sfsim25.vector3 :refer [make-vector3]])
+  (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
 
@@ -52,6 +54,14 @@
   "Return inverse of quaternion"
   (let [factor (/ 1.0 (norm2 q))]
     (make-quaternion (c/* (.a q) factor) (c/* (c/- (.b q)) factor) (c/* (c/- (.c q)) factor) (c/* (c/- (.d q)) factor))))
+
+(defn vector3->quaternion [^Vector3 v]
+  "Convert 3D vector to quaternion"
+  (make-quaternion 0.0 (.x v) (.y v) (.z v)))
+
+(defn quaternion->vector3 [^Quaternion q]
+  "Convert quaternion to 3D vector"
+  (make-vector3 (.b q) (.c q) (.d q)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

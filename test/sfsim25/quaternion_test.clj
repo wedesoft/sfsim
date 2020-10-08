@@ -1,7 +1,8 @@
 (ns sfsim25.quaternion-test
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.test :refer :all]
-            [sfsim25.quaternion :refer :all]))
+            [sfsim25.quaternion :refer :all]
+            [sfsim25.vector3 :refer [make-vector3]]))
 
 (def o (make-quaternion 1 0 0 0))
 (def -o (make-quaternion -1 0 0 0))
@@ -62,3 +63,8 @@
   (testing "Inverse of quaternion"
     (is (= (make-quaternion 0.216 -0.288 -0.48 -0.8) (inverse (make-quaternion 0.216 0.288 0.48 0.8))))
     (is (= (make-quaternion 0.108 -0.144 -0.24 -0.4) (inverse (make-quaternion 0.432 0.576 0.96 1.6))))))
+
+(deftest vector-conversion-test
+  (testing "Convert 3D vector to quaternion and back"
+    (is (= (make-quaternion 0 2 3 5) (vector3->quaternion (make-vector3 2 3 5))))
+    (is (= (make-vector3 2 3 5) (quaternion->vector3 (make-quaternion 0 2 3 5))))))
