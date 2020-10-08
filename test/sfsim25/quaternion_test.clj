@@ -2,28 +2,28 @@
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.test :refer :all]
             [sfsim25.quaternion :refer :all]
-            [sfsim25.vector3 :refer [make-vector3]]))
+            [sfsim25.vector3 :refer [vector3]]))
 
-(def o (make-quaternion 1 0 0 0))
-(def -o (make-quaternion -1 0 0 0))
-(def i (make-quaternion 0 1 0 0))
-(def -i (make-quaternion 0 -1 0 0))
-(def j (make-quaternion 0 0 1 0))
-(def -j (make-quaternion 0 0 -1 0))
-(def k (make-quaternion 0 0 0 1))
-(def -k (make-quaternion 0 0 0 -1))
+(def o (quaternion 1 0 0 0))
+(def -o (quaternion -1 0 0 0))
+(def i (quaternion 0 1 0 0))
+(def -i (quaternion 0 -1 0 0))
+(def j (quaternion 0 0 1 0))
+(def -j (quaternion 0 0 -1 0))
+(def k (quaternion 0 0 0 1))
+(def -k (quaternion 0 0 0 -1))
 
 (deftest display-test
   (testing "Display quaternion"
-    (is (= "(quaternion 2.0 3.0 5.0 7.0)" (str (make-quaternion 2 3 5 7))))))
+    (is (= "(quaternion 2.0 3.0 5.0 7.0)" (str (quaternion 2 3 5 7))))))
 
 (deftest add-test
   (testing "Add two quaternions"
-    (is (= (make-quaternion 6 8 10 12) (+ (make-quaternion 1 2 3 4) (make-quaternion 5 6 7 8))))))
+    (is (= (quaternion 6 8 10 12) (+ (quaternion 1 2 3 4) (quaternion 5 6 7 8))))))
 
 (deftest subtract-test
   (testing "Subtract two quaternions"
-    (is (= (make-quaternion 1 2 3 4) (- (make-quaternion 6 8 10 12) (make-quaternion 5 6 7 8))))))
+    (is (= (quaternion 1 2 3 4) (- (quaternion 6 8 10 12) (quaternion 5 6 7 8))))))
 
 (deftest multiply-test
   (testing "Multiply two quaternions"
@@ -47,24 +47,24 @@
 
 (deftest norm-test
   (testing "Norm of quaternion"
-    (is (= 1.0 (norm (make-quaternion 0.216 0.288 0.48 0.8))))))
+    (is (= 1.0 (norm (quaternion 0.216 0.288 0.48 0.8))))))
 
 (deftest normalize-test
   (testing "Normalize a quaternion"
     (is
-      (let [q (make-quaternion 0.216 0.288 0.48 0.8)]
-        (= q (normalize (* (make-quaternion 2 0 0 0) q)))))))
+      (let [q (quaternion 0.216 0.288 0.48 0.8)]
+        (= q (normalize (* (quaternion 2 0 0 0) q)))))))
 
 (deftest conjugate-test
   (testing "Conjugate of quaternion"
-    (is (= (make-quaternion 2 -3 -5 -7) (conjugate (make-quaternion 2 3 5 7))))))
+    (is (= (quaternion 2 -3 -5 -7) (conjugate (quaternion 2 3 5 7))))))
 
 (deftest inverse-test
   (testing "Inverse of quaternion"
-    (is (= (make-quaternion 0.216 -0.288 -0.48 -0.8) (inverse (make-quaternion 0.216 0.288 0.48 0.8))))
-    (is (= (make-quaternion 0.108 -0.144 -0.24 -0.4) (inverse (make-quaternion 0.432 0.576 0.96 1.6))))))
+    (is (= (quaternion 0.216 -0.288 -0.48 -0.8) (inverse (quaternion 0.216 0.288 0.48 0.8))))
+    (is (= (quaternion 0.108 -0.144 -0.24 -0.4) (inverse (quaternion 0.432 0.576 0.96 1.6))))))
 
 (deftest vector-conversion-test
   (testing "Convert 3D vector to quaternion and back"
-    (is (= (make-quaternion 0 2 3 5) (vector3->quaternion (make-vector3 2 3 5))))
-    (is (= (make-vector3 2 3 5) (quaternion->vector3 (make-quaternion 0 2 3 5))))))
+    (is (= (quaternion 0 2 3 5) (vector3->quaternion (vector3 2 3 5))))
+    (is (= (vector3 2 3 5) (quaternion->vector3 (quaternion 0 2 3 5))))))

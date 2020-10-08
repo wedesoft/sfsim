@@ -1,7 +1,7 @@
 (ns sfsim25.quaternion
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
-            [sfsim25.vector3 :refer [make-vector3]])
+            [sfsim25.vector3 :refer [vector3]])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -13,7 +13,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn make-quaternion ^Quaternion [^double a ^double b ^double c ^double d]
+(defn quaternion ^Quaternion [^double a ^double b ^double c ^double d]
   "Construct a quaternion"
   (Quaternion. a b c d))
 
@@ -27,7 +27,7 @@
 
 (defn * ^Quaternion [^Quaternion p ^Quaternion q]
   "Multiply two quaternions"
-  (make-quaternion
+  (quaternion
     (c/- (c/* (.a p) (.a q)) (c/* (.b p) (.b q)) (c/* (.c p) (.c q)) (c/* (.d p) (.d q)))
     (c/- (c/+ (c/* (.a p) (.b q)) (c/* (.b p) (.a q)) (c/* (.c p) (.d q))) (c/* (.d p) (.c q)))
     (c/+ (c/- (c/* (.a p) (.c q)) (c/* (.b p) (.d q))) (c/* (.c p) (.a q)) (c/* (.d p) (.b q)))
@@ -44,24 +44,24 @@
 (defn normalize ^Quaternion [^Quaternion q]
   "Normalize quaternion to create unit quaternion"
   (let [factor (/ 1.0 (norm q))]
-    (make-quaternion (c/* (.a q) factor) (c/* (.b q) factor) (c/* (.c q) factor) (c/* (.d q) factor))))
+    (quaternion (c/* (.a q) factor) (c/* (.b q) factor) (c/* (.c q) factor) (c/* (.d q) factor))))
 
 (defn conjugate ^Quaternion [^Quaternion q]
   "Return conjugate of quaternion"
-  (make-quaternion (.a q) (c/- (.b q)) (c/- (.c q)) (c/- (.d q))))
+  (quaternion (.a q) (c/- (.b q)) (c/- (.c q)) (c/- (.d q))))
 
 (defn inverse ^Quaternion [^Quaternion q]
   "Return inverse of quaternion"
   (let [factor (/ 1.0 (norm2 q))]
-    (make-quaternion (c/* (.a q) factor) (c/* (c/- (.b q)) factor) (c/* (c/- (.c q)) factor) (c/* (c/- (.d q)) factor))))
+    (quaternion (c/* (.a q) factor) (c/* (c/- (.b q)) factor) (c/* (c/- (.c q)) factor) (c/* (c/- (.d q)) factor))))
 
 (defn vector3->quaternion [^Vector3 v]
   "Convert 3D vector to quaternion"
-  (make-quaternion 0.0 (.x v) (.y v) (.z v)))
+  (quaternion 0.0 (.x v) (.y v) (.z v)))
 
 (defn quaternion->vector3 [^Quaternion q]
   "Convert quaternion to 3D vector"
-  (make-vector3 (.b q) (.c q) (.d q)))
+  (vector3 (.b q) (.c q) (.d q)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -9,7 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn make-vector3 ^Vector3 [^double x ^double y ^double z]
+(defn vector3 ^Vector3 [^double x ^double y ^double z]
   "Construct a 3D vector"
   (Vector3. x y z))
 
