@@ -44,6 +44,10 @@
 
 (defn conjugate ^Quaternion [^Quaternion q]
   "Return conjugate of quaternion"
+  (make-quaternion (.a q) (c/- (.b q)) (c/- (.c q)) (c/- (.d q))))
+
+(defn inverse ^Quaternion [^Quaternion q]
+  "Return inverse of quaternion"
   (let [factor (/ 1.0 (norm2 q))]
     (make-quaternion (c/* (.a q) factor) (c/* (c/- (.b q)) factor) (c/* (c/- (.c q)) factor) (c/* (c/- (.d q)) factor))))
 

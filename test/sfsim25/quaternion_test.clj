@@ -56,5 +56,9 @@
 
 (deftest conjugate-test
   (testing "Conjugate of quaternion"
-    (is (= (make-quaternion 0.216 -0.288 -0.48 -0.8) (conjugate (make-quaternion 0.216 0.288 0.48 0.8))))
-    (is (= (make-quaternion 0.108 -0.144 -0.24 -0.4) (conjugate (make-quaternion 0.432 0.576 0.96 1.6))))))
+    (is (= (make-quaternion 2 -3 -5 -7) (conjugate (make-quaternion 2 3 5 7))))))
+
+(deftest inverse-test
+  (testing "Inverse of quaternion"
+    (is (= (make-quaternion 0.216 -0.288 -0.48 -0.8) (inverse (make-quaternion 0.216 0.288 0.48 0.8))))
+    (is (= (make-quaternion 0.108 -0.144 -0.24 -0.4) (inverse (make-quaternion 0.432 0.576 0.96 1.6))))))
