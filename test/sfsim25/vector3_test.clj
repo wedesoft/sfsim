@@ -11,3 +11,7 @@
     (is (= 2.0 (x (vector3 2 3 5))))
     (is (= 3.0 (y (vector3 2 3 5))))
     (is (= 5.0 (z (vector3 2 3 5))))))
+
+(deftest norm-test
+  (testing "Norm of 3D vector"
+    (is (= 1.0 (norm (vector3 0.36 0.48 0.8))))))

@@ -1,6 +1,7 @@
 (ns sfsim25.quaternion-test
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.test :refer :all]
+            [clojure.core :as c]
             [sfsim25.quaternion :refer :all]
             [sfsim25.vector3 :refer [vector3]]))
 
@@ -75,3 +76,29 @@
   (testing "Convert 3D vector to quaternion and back"
     (is (= (quaternion 0 2 3 5) (vector3->quaternion (vector3 2 3 5))))
     (is (= (vector3 2 3 5) (quaternion->vector3 (quaternion 0 2 3 5))))))
+
+(def pi Math/PI)
+
+(deftest sinc-test
+  (testing "Sinc function"
+    (are [result x] (< (Math/abs (c/- result (sinc x))) 1e-6)
+      0.0      pi
+      (/ 2 pi) (/ pi 2)
+      1.0      0.0)))
+
+(def e (Math/exp 1))
+(def -e (c/- e))
+
+(deftest exp-test
+  (testing "Exponentiation of quaternions"
+    (are [result component q] (< (Math/abs (c/- result (component (exp q)))) 1e-6)
+      -1.0 real (quaternion 0 0 pi 0)
+       0.0 jmag (quaternion 0 0 pi 0)
+       0.0 real (quaternion 0 0 (/ pi 2) 0)
+       1.0 jmag (quaternion 0 0 (/ pi 2) 0)
+      -e   real (quaternion 1 0 pi 0)
+       e   jmag (quaternion 1 0 (/ pi 2) 0)
+       0.0 kmag (quaternion 0 0 0 pi)
+       1.0 kmag (quaternion 0 0 0 (/ pi 2))
+       0.8 imag (quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0)
+       0.6 jmag (quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0))))

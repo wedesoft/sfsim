@@ -1,7 +1,7 @@
 (ns sfsim25.quaternion
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
-            [sfsim25.vector3 :refer [vector3]])
+            [sfsim25.vector3 :refer [vector3] :as v])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -67,6 +67,18 @@
 (defn quaternion->vector3 ^Vector3 [^Quaternion q]
   "Convert quaternion to 3D vector"
   (vector3 (.b q) (.c q) (.d q)))
+
+(defn sinc ^double [^double x]
+  "sin(x) / x function"
+  (if (zero? x) 1.0 (/ (Math/sin x) x)))
+
+(defn exp ^Quaternion [^Quaternion q]
+  "Exponentiation of quaternion"
+  (let [scale      (Math/exp (.a q))
+        rotation   (v/norm (quaternion->vector3 q))
+        cos-scale  (c/* scale (Math/cos rotation))
+        sinc-scale (c/* scale (sinc rotation))]
+    (quaternion cos-scale (c/* sinc-scale (.b q)) (c/* sinc-scale (.c q)) (c/* sinc-scale (.d q)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

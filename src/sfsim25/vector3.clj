@@ -17,5 +17,9 @@
 (defn y ^double [^Vector3 v] (.y v))
 (defn z ^double [^Vector3 v] (.z v))
 
+(defn norm ^double [^Vector3 v]
+  "Norm of vector"
+  (Math/sqrt (+ (* (.x v) (.x v)) (* (.y v) (.y v)) (* (.z v) (.z v)))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
