@@ -17,6 +17,11 @@
   "Construct a quaternion"
   (Quaternion. a b c d))
 
+(defn real ^double [^Quaternion q] (.a q))
+(defn imag ^double [^Quaternion q] (.b q))
+(defn jmag ^double [^Quaternion q] (.c q))
+(defn kmag ^double [^Quaternion q] (.d q))
+
 (defn + ^Quaternion [^Quaternion p ^Quaternion q]
   "Add two quaternions"
   (Quaternion. (c/+ (.a p) (.a q)) (c/+ (.b p) (.b q)) (c/+ (.c p) (.c q)) (c/+ (.d p) (.d q))))

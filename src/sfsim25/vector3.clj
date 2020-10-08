@@ -13,5 +13,9 @@
   "Construct a 3D vector"
   (Vector3. x y z))
 
+(defn x ^double [^Vector3 v] (.x v))
+(defn y ^double [^Vector3 v] (.y v))
+(defn z ^double [^Vector3 v] (.z v))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -17,6 +17,13 @@
   (testing "Display quaternion"
     (is (= "(quaternion 2.0 3.0 5.0 7.0)" (str (quaternion 2 3 5 7))))))
 
+(deftest component-test
+  (testing "Get components of quaternion"
+    (is (= 2.0 (real (quaternion 2 3 5 7))))
+    (is (= 3.0 (imag (quaternion 2 3 5 7))))
+    (is (= 5.0 (jmag (quaternion 2 3 5 7))))
+    (is (= 7.0 (kmag (quaternion 2 3 5 7))))))
+
 (deftest add-test
   (testing "Add two quaternions"
     (is (= (quaternion 6 8 10 12) (+ (quaternion 1 2 3 4) (quaternion 5 6 7 8))))))
