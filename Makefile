@@ -1,5 +1,11 @@
 all: bluemarble
 
+check:
+	lein test
+
+repl:
+	lein repl
+
 # See https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/
 # Also see https://visibleearth.nasa.gov/collection/1484/blue-marble (downloads keep failing)
 world.200404.3x21600x21600.A1.png:

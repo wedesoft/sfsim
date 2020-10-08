@@ -9,6 +9,8 @@
   (equals [this other] (and (instance? Quaternion other) (= a (.a other)) (= b (.b other)) (= c (.c other)) (= d (.d other))))
   (toString [this] (str "(quaternion " a \space b \space c \space d ")")))
 
+(set! *warn-on-reflection* true)
+
 (defn make-quaternion ^Quaternion [^double a ^double b ^double c ^double d]
   "Construct a quaternion"
   (Quaternion. a b c d))
@@ -51,4 +53,5 @@
   (let [factor (/ 1.0 (norm2 q))]
     (make-quaternion (c/* (.a q) factor) (c/* (c/- (.b q)) factor) (c/* (c/- (.c q)) factor) (c/* (c/- (.d q)) factor))))
 
+(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
