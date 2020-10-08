@@ -55,11 +55,11 @@
   (let [factor (/ 1.0 (norm2 q))]
     (quaternion (c/* (.a q) factor) (c/* (c/- (.b q)) factor) (c/* (c/- (.c q)) factor) (c/* (c/- (.d q)) factor))))
 
-(defn vector3->quaternion [^Vector3 v]
+(defn vector3->quaternion ^Quaternion [^Vector3 v]
   "Convert 3D vector to quaternion"
   (quaternion 0.0 (.x v) (.y v) (.z v)))
 
-(defn quaternion->vector3 [^Quaternion q]
+(defn quaternion->vector3 ^Vector3 [^Quaternion q]
   "Convert quaternion to 3D vector"
   (vector3 (.b q) (.c q) (.d q)))
 
