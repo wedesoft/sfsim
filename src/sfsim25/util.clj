@@ -30,3 +30,7 @@
   "Determine directory name of map tile"
   [prefix level x]
   (str prefix \/ level \/ x))
+
+(defn sinc ^double [^double x]
+  "sin(x) / x function"
+  (if (zero? x) 1.0 (/ (Math/sin x) x)))

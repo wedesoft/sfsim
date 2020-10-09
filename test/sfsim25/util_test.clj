@@ -17,3 +17,12 @@
 (deftest tile-dir-test
   (testing "Determine directory name of map tile"
     (is (= "world/1/2" (tile-dir "world" 1 2)))))
+
+(def pi Math/PI)
+
+(deftest sinc-test
+  (testing "Sinc function"
+    (are [result x] (< (Math/abs (- result (sinc x))) 1e-6)
+      0.0      pi
+      (/ 2 pi) (/ pi 2)
+      1.0      0.0)))

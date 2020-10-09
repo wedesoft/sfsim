@@ -78,14 +78,6 @@
     (is (= (vector3 2 3 5) (quaternion->vector3 (quaternion 0 2 3 5))))))
 
 (def pi Math/PI)
-
-(deftest sinc-test
-  (testing "Sinc function"
-    (are [result x] (< (Math/abs (c/- result (sinc x))) 1e-6)
-      0.0      pi
-      (/ 2 pi) (/ pi 2)
-      1.0      0.0)))
-
 (def e (Math/exp 1))
 (def -e (c/- e))
 
