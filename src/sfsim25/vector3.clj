@@ -1,4 +1,6 @@
-(ns sfsim25.vector3)
+(ns sfsim25.vector3
+  (:refer-clojure :exclude [+ -])
+  (:require [clojure.core :as c]))
 
 (set! *unchecked-math* true)
 
@@ -17,9 +19,21 @@
 (defn y ^double [^Vector3 v] (.y v))
 (defn z ^double [^Vector3 v] (.z v))
 
+(defn + ^Vector3 [^Vector3 a ^Vector3 b]
+  "Add two 3D vectors"
+  (Vector3. (c/+ (.x a) (.x b)) (c/+ (.y a) (.y b)) (c/+ (.z a) (.z b))))
+
+(defn - ^Vector3 [^Vector3 a ^Vector3 b]
+  "Add two 3D vectors"
+  (Vector3. (c/- (.x a) (.x b)) (c/- (.y a) (.y b)) (c/- (.z a) (.z b))))
+
+(defn norm2 ^double [^Vector3 v]
+  "Squared norm of vector"
+  (c/+ (* (.x v) (.x v)) (* (.y v) (.y v)) (* (.z v) (.z v))))
+
 (defn norm ^double [^Vector3 v]
   "Norm of vector"
-  (Math/sqrt (+ (* (.x v) (.x v)) (* (.y v) (.y v)) (* (.z v) (.z v)))))
+  (Math/sqrt (norm2 v)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

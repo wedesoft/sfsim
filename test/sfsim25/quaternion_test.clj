@@ -3,7 +3,7 @@
   (:require [clojure.test :refer :all]
             [clojure.core :as c]
             [sfsim25.quaternion :refer :all]
-            [sfsim25.vector3 :refer [vector3]]))
+            [sfsim25.vector3 :refer [vector3] :as v]))
 
 (def o (quaternion 1 0 0 0))
 (def -o (quaternion -1 0 0 0))
@@ -103,3 +103,8 @@
        0.36 imag pi         (vector3 0.36 0.48 0.8)
        0.8  kmag pi         (vector3 0.36 0.48 0.8)
        0.18 imag (/ pi 3)   (vector3 0.36 0.48 0.8))))
+
+(deftest rotate-vector-test
+  (testing "Rotate a vector using a rotation quaternion"
+    (is (= (vector3 2 4 8) (rotate-vector (rotation 0 (vector3 1 0 0)) (vector3 2 4 8))))
+    (is (< (v/norm (v/- (vector3 2 -8 4) (rotate-vector (rotation (/ pi 2) (vector3 1 0 0)) (vector3 2 4 8)))) 1e-6))))

@@ -82,5 +82,9 @@
   (let [scale (/ theta 2)]
     (exp (vector3->quaternion (vector3 (c/* scale (.x v)) (c/* scale (.y v)) (c/* scale (.z v)))))))
 
+(defn rotate-vector ^Vector3 [^Quaternion q ^Vector3 v]
+  "Rotate a vector with a rotation represented by a quaternion"
+  (quaternion->vector3 (* (* q (vector3->quaternion v)) (conjugate q))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
