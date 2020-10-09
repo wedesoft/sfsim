@@ -77,5 +77,10 @@
         sinc-scale (c/* scale (sinc rotation))]
     (quaternion cos-scale (c/* sinc-scale (.b q)) (c/* sinc-scale (.c q)) (c/* sinc-scale (.d q)))))
 
+(defn rotation ^Quaternion [^double theta ^Vector3 v]
+  "Generate quaternion to represent rotation"
+  (let [scale (/ theta 2)]
+    (exp (vector3->quaternion (vector3 (c/* scale (.x v)) (c/* scale (.y v)) (c/* scale (.z v)))))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

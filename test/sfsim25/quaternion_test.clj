@@ -94,3 +94,12 @@
        1.0 kmag (quaternion 0 0 0 (/ pi 2))
        0.8 imag (quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0)
        0.6 jmag (quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0))))
+
+(deftest rotation-test
+  (testing "Represent rotation using quaternion"
+    (are [result component angle axis] (< (Math/abs (c/- result (component (rotation angle axis)))))
+       1.0  real 0          (vector3 0 0 1)
+      -1.0  real (c/* 2 pi) (vector3 0 0 1)
+       0.36 imag pi         (vector3 0.36 0.48 0.8)
+       0.8  kmag pi         (vector3 0.36 0.48 0.8)
+       0.18 imag (/ pi 3)   (vector3 0.36 0.48 0.8))))
