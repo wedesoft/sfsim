@@ -2,7 +2,7 @@
   (:import [magick MagickImage ImageInfo]
            [java.awt Rectangle]
            [java.io File])
-  (:require [sfsim25.util :refer [tile-dir tile-path]])
+  (:require [sfsim25.util :refer (tile-dir tile-path)])
   (:gen-class))
 
 (defn -main

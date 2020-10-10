@@ -3,7 +3,7 @@
   (:require [clojure.test :refer :all]
             [clojure.core :as c]
             [sfsim25.quaternion :refer :all]
-            [sfsim25.vector3 :refer [vector3] :as v]))
+            [sfsim25.vector3 :refer (vector3) :as v]))
 
 (def o (quaternion 1 0 0 0))
 (def -o (quaternion -1 0 0 0))

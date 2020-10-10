@@ -9,3 +9,4 @@ elevation.*.raw
 *.o
 *.so
 *.jar
+*.tgz

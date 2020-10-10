@@ -58,3 +58,35 @@ world/0/3/1.png: world.200404.3x21600x21600.D2.png
 
 bluemarble: world/0/0/0.png world/0/0/1.png world/0/1/0.png world/0/1/1.png \
 	world/0/2/0.png world/0/2/1.png world/0/3/0.png world/0/3/1.png
+
+all10: all10g.tgz
+	tar -xvf $<
+	touch $@
+
+elevation.A1.raw: all10
+	cat all10/a10g all10/e10g > $@
+
+elevation.B1.raw: all10
+	cat all10/b10g all10/f10g > $@
+
+elevation.C1.raw: all10
+	cat all10/c10g all10/g10g > $@
+
+elevation.D1.raw: all10
+	cat all10/d10g all10/h10g > $@
+
+elevation.A2.raw: all10
+	cat all10/i10g all10/m10g > $@
+
+elevation.B2.raw: all10
+	cat all10/j10g all10/n10g > $@
+
+elevation.C2.raw: all10
+	cat all10/k10g all10/o10g > $@
+
+elevation.D2.raw: all10
+	cat all10/l10g all10/p10g > $@
+
+# See https://www.ngdc.noaa.gov/mgg/topo/gltiles.html
+all10g.tgz:
+	$(WGET) https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/all10g.tgz

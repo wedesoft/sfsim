@@ -1,8 +1,8 @@
 (ns sfsim25.quaternion
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
-            [sfsim25.util :refer [sinc]]
-            [sfsim25.vector3 :refer [vector3] :as v])
+            [sfsim25.util :refer (sinc)]
+            [sfsim25.vector3 :refer (vector3) :as v])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
