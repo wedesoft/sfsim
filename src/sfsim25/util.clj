@@ -21,6 +21,12 @@
     (.get short-buffer result)
     result))
 
+(defn spit-bytes
+  "Write bytes to a file"
+  [file-name byte-data]
+  (with-open [out (io/output-stream file-name)]
+    (.write out byte-data)))
+
 (defn tile-path
   "Determine file path of map tile"
   [prefix level y x suffix]
