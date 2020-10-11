@@ -1,5 +1,5 @@
 (ns sfsim25.scale-elevation
-  (:require [sfsim25.util :refer (slurp-shorts)])
+  (:require [sfsim25.util :refer (slurp-shorts spit-shorts)])
   (:gen-class))
 
 (defn -main
@@ -21,4 +21,5 @@
             x2 (aget ^shorts data (+ offset 1))
             x3 (aget ^shorts data (+ offset w))
             x4 (aget ^shorts data (+ offset w 1))]
-        (aset ^shorts result (+ (* j size) i) (short (/ (+ x1 x2 x3 x4) 4)))))))
+        (aset ^shorts result (+ (* j size) i) (short (/ (+ x1 x2 x3 x4) 4)))))
+    (spit-shorts output-data result)))

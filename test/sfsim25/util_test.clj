@@ -17,6 +17,12 @@
       (spit-bytes file-name (byte-array [2 3 5 7]))
       (is (= [2 3 5 7] (seq (slurp-bytes file-name)))))))
 
+(deftest spit-shorts-test
+  (testing "Save a set of short integers"
+    (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
+      (spit-shorts file-name (short-array [2 3 5 7]))
+      (is (= [2 3 5 7] (seq (slurp-shorts file-name)))))))
+
 (deftest tile-path-test
   (testing "Determine file path of map tile"
     (is (= "world/1/2/3.png" (tile-path "world" 1 3 2 ".png")))))

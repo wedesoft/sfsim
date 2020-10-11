@@ -27,6 +27,14 @@
   (with-open [out (io/output-stream file-name)]
     (.write out byte-data)))
 
+(defn spit-shorts
+  "Write short integers to a file"
+  [file-name short-data]
+  (let [n           (count short-data)
+        byte-buffer (.order (ByteBuffer/allocate (* n 2)) ByteOrder/LITTLE_ENDIAN)]
+    (.put (.asShortBuffer byte-buffer) short-data)
+    (spit-bytes file-name (.array byte-buffer))))
+
 (defn tile-path
   "Determine file path of map tile"
   [prefix level y x suffix]
