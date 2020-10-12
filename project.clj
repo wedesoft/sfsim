@@ -3,7 +3,8 @@
   :url "https://github.com/wedesoft/sfsim25"
   :license {:name "GPL-3.0-or-later"
             :url "https://www.gnu.org/licenses/gpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure "1.10.0"]]
+  :dependencies [[org.clojure/clojure "1.10.1"]
+                 [org.clojure/core.logic "1.0.0"]]
   :profiles {:run-sfsim25 {:main sfsim25.core}
              :run-scale-image {:main sfsim25.scale-image}
              :run-map-tiles {:main sfsim25.map-tiles}
