@@ -1,7 +1,9 @@
+all10
 target
 world
+elevation
 world.*.png
-elevation.*.raw
+elevation*.raw
 .lein-*
 .nrepl-port
 *.class
