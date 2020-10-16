@@ -39,3 +39,22 @@
       0.0      pi
       (/ 2 pi) (/ pi 2)
       1.0      0.0)))
+
+(deftest cache-create-test
+  (testing "Creating an empty LRU cache"
+    (is (= {:stack [] :data {} :size 10} (cache-create 10)))))
+
+(deftest cache-update-test
+  (testing "Add elements to an LRU cache"
+    (is (= {:stack [:a] :data {:a 42} :size 10} (cache-update (cache-create 10) :a 42)))
+    (is (= {:stack [:a :b] :data {:a 2 :b 3} :size 10} (cache-update (cache-update (cache-create 10) :a 2) :b 3)))
+    (is (= {:stack [:b] :data {:b 3} :size 1} (cache-update (cache-update (cache-create 1) :a 2) :b 3)))))
+
+(deftest cache-test
+  (testing "Wrap function with LRU cache"
+    (let [f (cache identity)]
+      (is (= [1 2 1] (map f [1 2 1]))))))
+
+(deftest cache-multi-arg-test
+  (testing "Wrap multiple argument function with LRU cache"
+    (is (= 3 ((cache +) 1 2)))))
