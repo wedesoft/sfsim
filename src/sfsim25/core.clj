@@ -24,5 +24,6 @@
       (.setVisible true)
       (.addKeyListener key-listener)
       (.addWindowListener window-listener))
-    (while @running)
+    (while @running
+      (Thread/sleep 40))
     (.destroy window)))
