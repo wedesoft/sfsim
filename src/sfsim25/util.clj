@@ -58,7 +58,7 @@
   (if (= k (last (:stack cache))); optimization for repeated queries of the same key
     cache
     (let [remove-k    (remove #(= k %) (:stack cache))
-          overflow?   (>= (count remove-k) (dec (:size cache)))
+          overflow?   (>= (count remove-k) (:size cache))
           limit-stack (if overflow? (rest remove-k) remove-k)
           limit-data  (if overflow? (dissoc (:data cache) (first remove-k)) (:data cache))]
       {:stack (conj (vec limit-stack) k) :data (assoc limit-data k v) :size (:size cache)})))
