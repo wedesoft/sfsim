@@ -40,4 +40,14 @@
   "Latitude of 3D point"
   (Math/atan2 y (Math/sqrt (+ (* x x) (* z z)))))
 
+(defn map-x ^double [^double longitude ^long tilesize ^long level]
+  "Compute x-coordinate on raster map"
+  (let [n (bit-shift-left 1 level)]
+    (* (- Math/PI longitude) (/ (* 4 n tilesize) (* 2 Math/PI)))))
+
+(defn map-y ^double [^double latitude ^long tilesize ^long level]
+  "Compute y-coordinate on raster map"
+  (let [n (bit-shift-left 1 level)]
+    (* (- (/ Math/PI 2) latitude) (/ (* 2 n tilesize) Math/PI))))
+
 (set! *unchecked-math* false)

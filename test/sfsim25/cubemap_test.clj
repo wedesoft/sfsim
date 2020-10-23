@@ -2,53 +2,43 @@
   (:require [clojure.test :refer :all]
             [sfsim25.cubemap :refer :all]))
 
-(deftest cube-face-0-test
+(deftest cube-faces-test
   (testing "First face of cube"
     (are [result c j i] (= result (c 0 j i))
        1.0 cube-map-y 0 0
       -1.0 cube-map-x 0 0
        1.0 cube-map-x 0 1
       -1.0 cube-map-z 0 0
-       1.0 cube-map-z 1 0)))
-
-(deftest cube-face-1-test
+       1.0 cube-map-z 1 0))
   (testing "Second face of cube"
     (are [result c j i] (= result (c 1 j i))
        1.0 cube-map-z 0 0
       -1.0 cube-map-x 0 0
        1.0 cube-map-x 0 1
        1.0 cube-map-y 0 0
-      -1.0 cube-map-y 1 0)))
-
-(deftest cube-face-2-test
+      -1.0 cube-map-y 1 0))
   (testing "Third face of cube"
     (are [result c j i] (= result (c 2 j i))
        1.0 cube-map-x 0 0
        1.0 cube-map-y 0 0
       -1.0 cube-map-y 1 0
        1.0 cube-map-z 0 0
-      -1.0 cube-map-z 0 1)))
-
-(deftest cube-face-3-test
+      -1.0 cube-map-z 0 1))
   (testing "Fourth face of cube"
     (are [result c j i] (= result (c 3 j i))
       -1.0 cube-map-z 0 0
        1.0 cube-map-x 0 0
       -1.0 cube-map-x 0 1
        1.0 cube-map-y 0 0
-      -1.0 cube-map-y 1 0)))
-
-(deftest cube-face-4-test
-  (testing "Fourth face of cube"
+      -1.0 cube-map-y 1 0))
+  (testing "Fifth face of cube"
     (are [result c j i] (= result (c 4 j i))
       -1.0 cube-map-x 0 0
        1.0 cube-map-y 0 0
       -1.0 cube-map-y 1 0
       -1.0 cube-map-z 0 0
-       1.0 cube-map-z 0 1)))
-
-(deftest cube-face-5-test
-  (testing "Fourth face of cube"
+       1.0 cube-map-z 0 1))
+  (testing "Sixt face of cube"
     (are [result c j i] (= result (c 5 j i))
       -1.0 cube-map-y 0 0
       -1.0 cube-map-x 0 0
@@ -70,3 +60,13 @@
       0        0 0 1
       (/ pi 2) 0 1 0
       (/ pi 4) 1 1 0)))
+
+(deftest map-x-test
+  (testing "x-coordinate on raster map"
+    (is (= 0.0 (map-x pi 675 3)))
+    (is (= (* 675 2.0 8) (map-x 0 675 3)))))
+
+(deftest map-y-test
+  (testing "y-coordinate on raster map"
+    (is (= 0.0 (map-y (/ pi 2) 675 3)))
+    (is (= (* 675 8.0) (map-y 0 675 3)))))
