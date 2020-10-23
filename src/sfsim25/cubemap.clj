@@ -50,4 +50,15 @@
   (let [n (bit-shift-left 1 level)]
     (* (- (/ Math/PI 2) latitude) (/ (* 2 n tilesize) Math/PI))))
 
+(defn map-pixels-x [^double longitude ^long tilesize ^long level]
+  "Determine x-coordinates and fractions for interpolation"
+  (let [n     (bit-shift-left 1 level)
+        size  (* 4 n tilesize)
+        x     (map-x longitude tilesize level)
+        x0    (int (Math/floor x))
+        x1    (inc x0)
+        frac1 (- x x0)
+        frac0 (- 1 frac1)]
+    [(mod x0 size) (mod x1 size) frac0 frac1]))
+
 (set! *unchecked-math* false)

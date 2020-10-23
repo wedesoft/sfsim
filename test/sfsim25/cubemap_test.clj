@@ -70,3 +70,9 @@
   (testing "y-coordinate on raster map"
     (is (= 0.0 (map-y (/ pi 2) 675 3)))
     (is (= (* 675 8.0) (map-y 0 675 3)))))
+
+(deftest map-pixels-x-test
+  (testing "determine x-coordinates and fractions for interpolation")
+    (is (= [(* 675 2 8) (inc (* 675 2 8)) 1.0 0.0] (map-pixels-x 0 675 3)))
+    (is (= [0 1 1.0 0.0] (map-pixels-x (- pi) 675 3)))
+    (is (= [(dec (* 256 4)) 0 0.5 0.5] (map-pixels-x (- (/ pi (* 256 4)) pi) 256 0))))
