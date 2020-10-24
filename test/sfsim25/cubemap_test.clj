@@ -73,6 +73,12 @@
 
 (deftest map-pixels-x-test
   (testing "determine x-coordinates and fractions for interpolation")
-    (is (= [(* 675 2 8) (inc (* 675 2 8)) 1.0 0.0] (map-pixels-x 0 675 3)))
-    (is (= [0 1 1.0 0.0] (map-pixels-x (- pi) 675 3)))
-    (is (= [(dec (* 256 4)) 0 0.5 0.5] (map-pixels-x (- (/ pi (* 256 4)) pi) 256 0))))
+    (is (= [(* 675 2 8)     (inc (* 675 2 8)) 1.0 0.0] (map-pixels-x 0                       675 3)))
+    (is (= [0               1                 1.0 0.0] (map-pixels-x (- pi)                  675 3)))
+    (is (= [(dec (* 256 4)) 0                 0.5 0.5] (map-pixels-x (- (/ pi (* 256 4)) pi) 256 0))))
+
+(deftest map-pixels-y-test
+  (testing "determine y-coordinates and fractions for interpolation"
+    (is (= [(* 675 8)         (inc (* 675 8))   1.0 0.0] (map-pixels-y 0                675 3)))
+    (is (= [(dec (* 675 2 8)) (dec (* 675 2 8)) 1.0 0.0] (map-pixels-y (- (/ pi 2))     675 3)))
+    (is (= [(dec 256)         256               0.5 0.5] (map-pixels-y (/ pi (* 4 256)) 256 0)))))

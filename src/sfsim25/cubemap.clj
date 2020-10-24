@@ -61,4 +61,15 @@
         frac0 (- 1 frac1)]
     [(mod x0 size) (mod x1 size) frac0 frac1]))
 
+(defn map-pixels-y [^double latitude ^long tilesize ^long level]
+  "Determine y-coordinates and fractions for interpolation"
+  (let [n    (bit-shift-left 1 level)
+        size (* 2 n tilesize)
+        y    (map-y latitude tilesize level)
+        y0   (int (Math/floor y))
+        y1   (inc y0)
+        frac1 (- y y0)
+        frac0 (- 1 frac1)]
+    [(min y0 (dec size)) (min y1 (dec size)) frac0 frac1]))
+
 (set! *unchecked-math* false)
