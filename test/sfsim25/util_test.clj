@@ -31,6 +31,14 @@
   (testing "Determine directory name of map tile"
     (is (= "world/1/2" (tile-dir "world" 1 2)))))
 
+(deftest cube-path-test
+  (testing "Determine file path of cube tile"
+    (is (= "globe/5/2/1/3.png" (cube-path "globe" 5 2 3 1 ".png")))))
+
+(deftest cube-dir-test
+  (testing "Determine directory name of cube tile"
+    (is (= "globe/5/2/1" (cube-dir "globe" 5 2 1)))))
+
 (def pi Math/PI)
 
 (deftest sinc-test

@@ -45,6 +45,16 @@
   [prefix level x]
   (str prefix \/ level \/ x))
 
+(defn cube-path
+  "Determine file path of cube tile"
+  [prefix face level y x suffix]
+  (str prefix \/ face \/ level \/ x \/ y suffix))
+
+(defn cube-dir
+  "Determine directory name of cube tile"
+  [prefix face level x]
+  (str prefix \/ face \/ level \/ x))
+
 (defn sinc ^double [^double x]
   "sin(x) / x function"
   (if (zero? x) 1.0 (/ (Math/sin x) x)))
