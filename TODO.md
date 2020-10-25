@@ -16,4 +16,13 @@
       guess
       (recur (improve guess))))
   (sqrt-iter 1.0))
+
+(import '[magick MagickImage ImageInfo])
+(def info (ImageInfo. "world/0/0/0.png"))
+(def image (MagickImage. info))
+(.getDimension image)
+(require '[clojure.reflect :as r])
+(defn members [o] (sort (map :name (:members (r/reflect o)))))
+(members image)
+(.getOnePixel image 100 100)
 ```
