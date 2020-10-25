@@ -3,7 +3,17 @@
 * implement fast version of slurp-shorts and slurp-floats
 
 ```
-(def id (clojure.core.memoize/lu
+(require '[clojure.core.memoize :as m])
+(def id (clojure.core.memoize/lru
         #(do (Thread/sleep 5000) (identity %))
-    :lu/threshold 3))
+    :lru/threshold 3))
+
+(defn sqrt [x & {:keys [error] :or {error 0.001}}]
+  (defn good-enough? [guess] (< (Math/abs (- (* guess guess) x)) error))
+  (defn improve [guess] (/ (+ guess (/ x guess)) 2))
+  (defn sqrt-iter [guess]
+    (if (good-enough? guess)
+      guess
+      (recur (improve guess))))
+  (sqrt-iter 1.0))
 ```
