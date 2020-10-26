@@ -17,7 +17,7 @@
       (recur (improve guess))))
   (sqrt-iter 1.0))
 
-(import '[magick MagickImage ImageInfo])
+(import '[magick MagickImage ImageInfo ColorspaceType])
 (def info (ImageInfo. "world/0/0/0.png"))
 (def image (MagickImage. info))
 (.getDimension image)
@@ -25,4 +25,14 @@
 (defn members [o] (sort (map :name (:members (r/reflect o)))))
 (members image)
 (.getOnePixel image 100 100)
+
+(def image (MagickImage.))
+(def info (ImageInfo.))
+(.setSize info "256x256")
+(.setDepth info 8)
+(.setColorspace info ColorspaceType/RGBColorspace)
+(.allocateImage image info)
+(.setFileName image "test.jpg")
+(.writeImage image info)
+(.constituteImage image 256 256 "RGB" (byte-array (take (* 3 256 256) (cycle [0 0 255]))))
 ```
