@@ -27,7 +27,9 @@
 (.getOnePixel image 100 100)
 
 (def image (MagickImage.))
-(.constituteImage image 256 256 "RGB" (byte-array (take (* 3 256 256) (cycle [0 0 255]))))
+(def b (byte-array (take (* 3 256 256) (cycle [0 0 -1]))))
+(doseq [i (range 256)] (aset-byte b (* i 3 257) -1))
+(.constituteImage image 256 256 "RGB" b)
 ; (.allocateImage image info)
 (def info (ImageInfo.))
 (.setSize info "256x256")
