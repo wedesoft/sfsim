@@ -19,11 +19,11 @@
         n          (count data)
         w          (int (Math/sqrt n))
         h          w]
-    (doseq [^int j (range (/ h tilesize)) ^int i (range (/ w tilesize))]
+    (doseq [j (range (/ h tilesize)) i (range (/ w tilesize))]
       (let [dir  (tile-dir prefix level (+ i dx))
             path (tile-path prefix level (+ j dy) (+ i dx) ".raw")
             tile (short-array (* tilesize tilesize))]
-        (doseq [^int y (range tilesize) ^int x (range tilesize)]
+        (doseq [y (range tilesize) x (range tilesize)]
           (aset ^shorts tile (+ (* y tilesize) x) (aget ^shorts data (+ (* (+ y (* j tilesize)) w) (* i tilesize) x))))
         (.mkdirs (File. dir))
         (spit-shorts path tile)))))

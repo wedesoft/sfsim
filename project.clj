@@ -11,12 +11,14 @@
              :run-map-tiles {:main sfsim25.map-tiles}
              :run-scale-elevation {:main sfsim25.scale-elevation}
              :run-elevation-tiles {:main sfsim25.elevation-tiles}
+             :run-globe {:main sfsim25.globe}
              :uberjar {:aot :all}}
   :aliases {"run-sfsim25"         ["with-profile" "run-sfsim25" "run"]
             "run-scale-image"     ["with-profile" "run-scale-image" "run"]
             "run-map-tiles"       ["with-profile" "run-map-tiles" "run"]
             "run-scale-elevation" ["with-profile" "run-scale-elevation" "run"]
-            "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]}
+            "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
+            "run-globe"           ["with-profile" "run-globe" "run"]}
   :resource-paths ["resources/jogamp-fat.jar"
                    "/usr/share/java/gluegen2-rt.jar"
                    "/usr/share/java/jmagick.jar"
