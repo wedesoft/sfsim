@@ -26,6 +26,13 @@
 (members image)
 (.getOnePixel image 100 100)
 
+(def info (ImageInfo.))
+(.setSize info "675x675")
+(.setDepth info 8)
+(.setColorspace info ColorspaceType/RGBColorspace)
+(.setMagick info "RGB")
+(def b (.imageToBlob image info))
+
 (def image (MagickImage.))
 (def b (byte-array (take (* 3 256 256) (cycle [0 0 -1]))))
 (doseq [i (range 256)] (aset-byte b (* i 3 257) -1))
