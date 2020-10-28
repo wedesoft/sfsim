@@ -73,6 +73,7 @@
     image))
 
 (defn slurp-image [file-name]
+  "Load an RGB image"
   (let [info      (ImageInfo. file-name)
         image     (MagickImage. info)
         dimension (.getDimension image)]
