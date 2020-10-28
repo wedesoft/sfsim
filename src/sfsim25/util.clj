@@ -1,7 +1,8 @@
 (ns sfsim25.util
   (:require [clojure.java.io :as io])
   (:import [java.nio ByteBuffer ByteOrder]
-           [java.io ByteArrayOutputStream]))
+           [java.io ByteArrayOutputStream]
+           [magick MagickImage ImageInfo ColorspaceType]))
 
 (defn slurp-bytes
   "Read bytes from a file"
@@ -58,3 +59,24 @@
 (defn sinc ^double [^double x]
   "sin(x) / x function"
   (if (zero? x) 1.0 (/ (Math/sin x) x)))
+
+(defn spit-image [file-name width height data]
+  "Save an RGB image"
+  (let [info  (ImageInfo.)
+        image (MagickImage.)]
+    (.constituteImage image width height "RGB" data)
+    (.setSize info (str width \x height))
+    (.setDepth info 8)
+    (.setColorspace info ColorspaceType/RGBColorspace)
+    (.setFileName image file-name)
+    (.writeImage image info)
+    image))
+
+(defn slurp-image [file-name]
+  (let [info      (ImageInfo. file-name)
+        image     (MagickImage. info)
+        dimension (.getDimension image)]
+    (.setDepth info 8)
+    (.setColorspace info ColorspaceType/RGBColorspace)
+    (.setMagick info "RGB")
+    [(.width dimension) (.height dimension) (.imageToBlob image info)]))

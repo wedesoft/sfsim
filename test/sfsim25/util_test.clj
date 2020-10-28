@@ -47,3 +47,12 @@
       0.0      pi
       (/ 2 pi) (/ pi 2)
       1.0      0.0)))
+
+(deftest roundtrip-image-test
+  (testing "Saving and loading of RGB image"
+    (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
+      (spit-image file-name 4 2 (byte-array (take 24 (cycle [1 2 3]))))
+      (let [[w h data] (slurp-image file-name)]
+        (is (= 4 w))
+        (is (= 2 h))
+        (is (= '(1 2 3) (take 3 data)))))))
