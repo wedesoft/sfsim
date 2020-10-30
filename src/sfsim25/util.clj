@@ -81,3 +81,11 @@
     (.setColorspace info ColorspaceType/RGBColorspace)
     (.setMagick info "RGB")
     [(.width dimension) (.height dimension) (.imageToBlob image info)]))
+
+(defn byte->ubyte [b]
+  "Convert byte to unsigned byte"
+  (if (>= b 0) b (+ b 256)))
+
+(defn ubyte->byte [u]
+  "Convert unsigned byte to byte"
+  (if (<= u 127) u (- u 256)))
