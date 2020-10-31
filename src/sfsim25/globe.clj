@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map-x cube-map-y cube-map-z longitude latitude map-pixels-x map-pixels-y)]
-            [sfsim25.util :refer (tile-path slurp-image spit-image ubyte->byte byte->ubyte)])
+            [sfsim25.util :refer (tile-path slurp-image spit-image get-pixel set-pixel!)])
   (:gen-class))
 
 (defn cube-coordinate [level tilesize tile pixel]
@@ -15,15 +15,12 @@
     :lru/threshold 16))
 
 (defn world-map-pixel [dy dx in-level width]
-  (let [ty (quot dy width)
-        tx (quot dx width)
-        py (mod dy width)
-        px (mod dx width)
-        [w h data] (world-map-tile in-level ty tx)
-        offset (* 3 (+ (* py w) px))]
-    [(byte->ubyte (nth data offset))
-     (byte->ubyte (nth data (inc offset)))
-     (byte->ubyte (nth data (inc (inc offset))))]))
+  (let [ty  (quot dy width)
+        tx  (quot dx width)
+        py  (mod dy width)
+        px  (mod dx width)
+        img (world-map-tile in-level ty tx)]
+    (get-pixel img py px)))
 
 (defn color-for-point [in-level width x y z]
   (let [lon                     (longitude x y z)
@@ -59,8 +56,6 @@
                     y       (cube-map-y k j i)
                     z       (cube-map-z k j i)
                     offset  (* 3 (+ (* v tilesize) u))
-                    [r g b] (color-for-point in-level width x y z)]
-                (aset-byte data offset (ubyte->byte r))
-                (aset-byte data (inc offset) (ubyte->byte g))
-                (aset-byte data (inc (inc offset)) (ubyte->byte b))))))
+                    color   (color-for-point in-level width x y z)]
+                (set-pixel! [tilesize tilesize data] v u color)))))
         (spit-image (str "globe" k ".png") tilesize tilesize data)))))
