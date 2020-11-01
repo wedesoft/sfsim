@@ -1,7 +1,8 @@
 (ns sfsim25.globe
+  (:import [java.io File])
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map-x cube-map-y cube-map-z longitude latitude map-pixels-x map-pixels-y)]
-            [sfsim25.util :refer (tile-path slurp-image spit-image get-pixel set-pixel!)])
+            [sfsim25.util :refer (tile-path slurp-image spit-image get-pixel set-pixel! cube-dir cube-path)])
   (:gen-class))
 
 (defn cube-coordinate [level tilesize tile pixel]
@@ -38,14 +39,14 @@
 (defn -main
   "Program to generate tiles for cube map"
   [& args]
-  (when-not (= (count args) 1)
-    (.println *err* "Syntax: lein run-globe [output level]")
+  (when-not (= (count args) 2)
+    (.println *err* "Syntax: lein run-globe [input level] [output level]")
     (System/exit 1))
-  (let [out-level (Integer/parseInt (nth args 0))
-        in-level   out-level
-        n          (bit-shift-left 1 out-level)
-        width      675
-        tilesize   256]
+  (let [in-level  (Integer/parseInt (nth args 0))
+        out-level (Integer/parseInt (nth args 1))
+        n         (bit-shift-left 1 out-level)
+        width     675
+        tilesize  256]
     (doseq [k (range 6) b (range n) a (range n)]
       (let [data (byte-array (* 3 tilesize tilesize))]
         (doseq [v (range tilesize)]
@@ -58,4 +59,6 @@
                     offset  (* 3 (+ (* v tilesize) u))
                     color   (color-for-point in-level width x y z)]
                 (set-pixel! [tilesize tilesize data] v u color)))))
-        (spit-image (str "globe" k ".png") tilesize tilesize data)))))
+        (.mkdirs (File. (cube-dir "globe" k out-level a)))
+        (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
+        (println k b a)))))
