@@ -72,4 +72,9 @@
         frac0 (- 1 frac1)]
     [(min y0 (dec size)) (min y1 (dec size)) frac0 frac1]))
 
+(defn scale-point [x y z radius1 radius2]
+  "Scale point coordinates to reach surface of ellipsoid"
+  (let [norm (Math/sqrt (+ (* x x) (* y y) (* z z)))]
+    [(* radius1 (/ x norm)) (* radius2 (/ y norm)) (* radius1 (/ z norm))]))
+
 (set! *unchecked-math* false)

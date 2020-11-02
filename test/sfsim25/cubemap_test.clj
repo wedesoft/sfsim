@@ -82,3 +82,9 @@
     (is (= [(* 675 8)         (inc (* 675 8))   1.0 0.0] (map-pixels-y 0                675 3)))
     (is (= [(dec (* 675 2 8)) (dec (* 675 2 8)) 1.0 0.0] (map-pixels-y (- (/ pi 2))     675 3)))
     (is (= [(dec 256)         256               0.5 0.5] (map-pixels-y (/ pi (* 4 256)) 256 0)))))
+
+(deftest scale-point-test
+  (testing "Scale point up to given size of ellipsoid"
+    (is (= [0.0  80.0 0.0] (scale-point 0 2 0 100 80)))
+    (is (= [100.0 0.0 0.0] (scale-point 2 0 0 100 80)))
+    (is (= [0.0 0.0 100.0] (scale-point 0 0 2 100 80)))))
