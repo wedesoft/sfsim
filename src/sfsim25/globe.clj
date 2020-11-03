@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   (:import [java.io File])
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map-x cube-map-y cube-map-z longitude latitude map-pixels-x map-pixels-y)]
+            [sfsim25.cubemap :refer (cube-map-x cube-map-y cube-map-z longitude latitude map-pixels-x map-pixels-y scale-point)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)])
   (:gen-class))
 
@@ -48,7 +48,7 @@
         py  (mod dy width)
         px  (mod dx width)
         img (elevation-tile in-level ty tx)]
-    (aget img (+ (* py width) px))))
+    (max 0 (aget img (+ (* py width) px)))))
 
 (defn elevation-for-point [in-level width x y z]
   (let [lon                     (longitude x y z)
@@ -71,7 +71,9 @@
         out-level (Integer/parseInt (nth args 1))
         n         (bit-shift-left 1 out-level)
         width     675
-        tilesize  256]
+        tilesize  256
+        radius1   6378000.0
+        radius2   6357000.0]
     (doseq [k (range 6) b (range n) a (range n)]
       (let [data (byte-array (* 3 tilesize tilesize))]
         (doseq [v (range tilesize)]
@@ -82,8 +84,10 @@
                     y       (cube-map-y k j i)
                     z       (cube-map-z k j i)
                     offset  (* 3 (+ (* v tilesize) u))
-                    color   (color-for-point in-level width x y z)]
-                (set-pixel! [tilesize tilesize data] v u color)))))
+                    color   (color-for-point in-level width x y z)
+                    height  (elevation-for-point in-level width x y z)]
+                (set-pixel! [tilesize tilesize data] v u color)
+                (println (scale-point x y z (+ radius1 height) (+ radius2 height)))))))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
         (println k b a)))))
