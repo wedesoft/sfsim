@@ -24,3 +24,7 @@
 (deftest subtract-test
   (testing "Subtract two vectors"
     (is (= (vector3 2 3 5) (- (vector3 5 8 12) (vector3 3 5 7))))))
+
+(deftest cross-product-test
+  (testing "Cross product of two vectors"
+    (is (= (vector3 0 0 1) (cross-product (vector3 1 0 0) (vector3 0 1 0))))))

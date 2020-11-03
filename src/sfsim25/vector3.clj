@@ -35,5 +35,11 @@
   "Norm of vector"
   (Math/sqrt (norm2 v)))
 
+(defn cross-product ^Vector3 [^Vector3 a ^Vector3 b]
+  "Cross-product of two vectors"
+  (Vector3. (c/- (* (.y a) (.z b)) (* (.z a) (.y b)))
+            (c/- (* (.z a) (.x b)) (* (.x a) (.z b)))
+            (c/- (* (.x a) (.y b)) (* (.y a) (.x b)))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
