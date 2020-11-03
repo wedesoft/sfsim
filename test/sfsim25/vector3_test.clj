@@ -27,4 +27,9 @@
 
 (deftest cross-product-test
   (testing "Cross product of two vectors"
-    (is (= (vector3 0 0 1) (cross-product (vector3 1 0 0) (vector3 0 1 0))))))
+    (is (= (vector3  0  0  1) (cross-product (vector3 1 0 0) (vector3 0 1 0))))
+    (is (= (vector3  0 -1  0) (cross-product (vector3 1 0 0) (vector3 0 0 1))))
+    (is (= (vector3  0  0 -1) (cross-product (vector3 0 1 0) (vector3 1 0 0))))
+    (is (= (vector3  1  0  0) (cross-product (vector3 0 1 0) (vector3 0 0 1))))
+    (is (= (vector3  0  1  0) (cross-product (vector3 0 0 1) (vector3 1 0 0))))
+    (is (= (vector3 -1  0  0) (cross-product (vector3 0 0 1) (vector3 0 1 0))))))
