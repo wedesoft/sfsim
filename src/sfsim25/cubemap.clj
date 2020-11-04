@@ -43,13 +43,13 @@
   (let [tiles (bit-shift-left 1 level)]
     (/ (+ tile (double (/ pixel (dec tilesize)))) tiles)))
 
-(defn longitude ^double [^double x ^double y ^double z]
+(defn longitude ^double [^Vector3 p]
   "Longitude of 3D point"
-  (Math/atan2 z x))
+  (Math/atan2 (.z p) (.x p)))
 
-(defn latitude ^double [^double x ^double y ^double z]
+(defn latitude ^double [^Vector3 p]
   "Latitude of 3D point"
-  (Math/atan2 y (Math/sqrt (+ (* x x) (* z z)))))
+  (Math/atan2 (.y p) (Math/sqrt (+ (* (.x p) (.x p)) (* (.z p) (.z p))))))
 
 (defn map-x ^double [^double longitude ^long tilesize ^long level]
   "Compute x-coordinate on raster map"
@@ -83,9 +83,9 @@
         frac0 (- 1 frac1)]
     [(min y0 (dec size)) (min y1 (dec size)) frac0 frac1]))
 
-(defn scale-point [x y z radius1 radius2]
+(defn scale-point ^Vector3 [^Vector3 p ^double radius1 ^double radius2]
   "Scale point coordinates to reach surface of ellipsoid"
-  (let [norm (Math/sqrt (+ (* x x) (* y y) (* z z)))]
-    [(* radius1 (/ x norm)) (* radius2 (/ y norm)) (* radius1 (/ z norm))]))
+  (let [norm (v/norm p)]
+    (v/vector3 (* radius1 (/ (.x p) norm)) (* radius2 (/ (.y p) norm)) (* radius1 (/ (.z p) norm)))))
 
 (set! *unchecked-math* false)

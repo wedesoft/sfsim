@@ -19,9 +19,9 @@
         img (world-map-tile in-level ty tx)]
     (get-pixel img py px)))
 
-(defn color-for-point [in-level width x y z]
-  (let [lon                     (longitude x y z)
-        lat                     (latitude x y z)
+(defn color-for-point [in-level width p]
+  (let [lon                     (longitude p)
+        lat                     (latitude p)
         [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
         [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
         [c0r c0g c0b]           (world-map-pixel dy0 dx0 in-level width)
@@ -46,9 +46,9 @@
         img (elevation-tile in-level ty tx)]
     (max 0 (aget img (+ (* py width) px)))))
 
-(defn elevation-for-point [in-level width x y z]
-  (let [lon                     (longitude x y z)
-        lat                     (latitude x y z)
+(defn elevation-for-point [in-level width p]
+  (let [lon                     (longitude p)
+        lat                     (latitude p)
         [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
         [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
         e0                      (elevation-pixel dy0 dx0 in-level width)
@@ -78,10 +78,10 @@
               (let [i       (cube-coordinate out-level tilesize a u)
                     p       (cube-map k j i)
                     offset  (* 3 (+ (* v tilesize) u))
-                    color   (color-for-point in-level width (.x p) (.y p) (.z p))
-                    height  (elevation-for-point in-level width (.x p) (.y p) (.z p))]
+                    color   (color-for-point in-level width p)
+                    height  (elevation-for-point in-level width p)]
                 (set-pixel! [tilesize tilesize data] v u color)
-                (println (scale-point (.x p) (.y p) (.z p) (+ radius1 height) (+ radius2 height)))))))
+                (println (scale-point p (+ radius1 height) (+ radius2 height)))))))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
         (println k b a)))))

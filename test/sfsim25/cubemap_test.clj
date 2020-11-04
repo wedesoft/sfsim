@@ -61,13 +61,13 @@
 
 (deftest longitude-test
   (testing "Longitude of 3D point"
-    (are [result x y z] (< (Math/abs (- result (longitude x y z))) 1e-6)
+    (are [result x y z] (< (Math/abs (- result (longitude (v/vector3 x y z)))) 1e-6)
       0        1 0 0
       (/ pi 2) 0 0 1)))
 
 (deftest latitude-test
   (testing "Latitude of 3D point"
-    (are [result x y z] (< (Math/abs (- result (latitude x y z))) 1e-6)
+    (are [result x y z] (< (Math/abs (- result (latitude (v/vector3 x y z)))) 1e-6)
       0        0 0 1
       (/ pi 2) 0 1 0
       (/ pi 4) 1 1 0)))
@@ -96,6 +96,6 @@
 
 (deftest scale-point-test
   (testing "Scale point up to given size of ellipsoid"
-    (is (= [0.0  80.0 0.0] (scale-point 0 2 0 100 80)))
-    (is (= [100.0 0.0 0.0] (scale-point 2 0 0 100 80)))
-    (is (= [0.0 0.0 100.0] (scale-point 0 0 2 100 80)))))
+    (is (= (v/vector3 0.0  80.0 0.0) (scale-point (v/vector3 0 2 0) 100 80)))
+    (is (= (v/vector3 100.0 0.0 0.0) (scale-point (v/vector3 2 0 0) 100 80)))
+    (is (= (v/vector3 0.0 0.0 100.0) (scale-point (v/vector3 0 0 2) 100 80)))))
