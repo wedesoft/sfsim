@@ -1,8 +1,7 @@
 (ns sfsim25.globe
   (:import [java.io File])
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map-x cube-map-y cube-map-z longitude latitude map-pixels-x map-pixels-y scale-point
-                                     cube-coordinate)]
+            [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)])
   (:gen-class))
 
@@ -77,14 +76,12 @@
           (let [j (cube-coordinate out-level tilesize b v)]
             (doseq [u (range tilesize)]
               (let [i       (cube-coordinate out-level tilesize a u)
-                    x       (cube-map-x k j i)
-                    y       (cube-map-y k j i)
-                    z       (cube-map-z k j i)
+                    p       (cube-map k j i)
                     offset  (* 3 (+ (* v tilesize) u))
-                    color   (color-for-point in-level width x y z)
-                    height  (elevation-for-point in-level width x y z)]
+                    color   (color-for-point in-level width (.x p) (.y p) (.z p))
+                    height  (elevation-for-point in-level width (.x p) (.y p) (.z p))]
                 (set-pixel! [tilesize tilesize data] v u color)
-                (println (scale-point x y z (+ radius1 height) (+ radius2 height)))))))
+                (println (scale-point (.x p) (.y p) (.z p) (+ radius1 height) (+ radius2 height)))))))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
         (println k b a)))))

@@ -1,6 +1,6 @@
 (ns sfsim25.cubemap
-  (:import [sfsim25.vector3 Vector3])
-  (:require [sfsim25.vector3 :as v]))
+  (:require [sfsim25.vector3 :as v])
+  (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
 
