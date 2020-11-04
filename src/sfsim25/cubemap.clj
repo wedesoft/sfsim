@@ -1,4 +1,6 @@
-(ns sfsim25.cubemap)
+(ns sfsim25.cubemap
+  (:import [sfsim25.vector3 Vector3])
+  (:require [sfsim25.vector3 :as v]))
 
 (set! *unchecked-math* true)
 
@@ -32,10 +34,14 @@
     4 (+ -1 (* 2 i))
     5 (-  1 (* 2 j))))
 
-(defn cube-coordinate [level tilesize tile pixel]
+(defn cube-map ^Vector3 [^long face ^double j ^double i]
+  "Get 3D vector to point on cube face"
+  (v/vector3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
+
+(defn cube-coordinate ^double [^long level ^long tilesize ^long tile ^double pixel]
   "Determine coordinate of a pixel on a tile of a given level"
   (let [tiles (bit-shift-left 1 level)]
-    (/ (+ tile (float (/ pixel (dec tilesize)))) tiles)))
+    (/ (+ tile (double (/ pixel (dec tilesize)))) tiles)))
 
 (defn longitude ^double [^double x ^double y ^double z]
   "Longitude of 3D point"

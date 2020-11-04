@@ -1,5 +1,6 @@
 (ns sfsim25.cubemap-test
   (:require [clojure.test :refer :all]
+            [sfsim25.vector3 :as v]
             [sfsim25.cubemap :refer :all]))
 
 (deftest cube-faces-test
@@ -45,6 +46,10 @@
        1.0 cube-map-x 0 1
        1.0 cube-map-z 0 0
       -1.0 cube-map-z 1 0)))
+
+(deftest cube-map-test
+  (testing "Get vector to cube face"
+    (is (= (v/vector3 0.0 -1.0 1.0) (cube-map 5 0 0.5)))))
 
 (deftest cube-coordinate-test
   (testing "Test cube coordinates"
