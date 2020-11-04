@@ -46,6 +46,12 @@
        1.0 cube-map-z 0 0
       -1.0 cube-map-z 1 0)))
 
+(deftest cube-coordinate-test
+  (testing "Test cube coordinates"
+    (is (= 0.0  (cube-coordinate 0 256 0 0)))
+    (is (= 0.5  (cube-coordinate 0 256 0 127.5)))
+    (is (= 0.75 (cube-coordinate 1 256 1 127.5)))))
+
 (def pi Math/PI)
 
 (deftest longitude-test

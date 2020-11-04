@@ -32,6 +32,11 @@
     4 (+ -1 (* 2 i))
     5 (-  1 (* 2 j))))
 
+(defn cube-coordinate [level tilesize tile pixel]
+  "Determine coordinate of a pixel on a tile of a given level"
+  (let [tiles (bit-shift-left 1 level)]
+    (/ (+ tile (float (/ pixel (dec tilesize)))) tiles)))
+
 (defn longitude ^double [^double x ^double y ^double z]
   "Longitude of 3D point"
   (Math/atan2 z x))

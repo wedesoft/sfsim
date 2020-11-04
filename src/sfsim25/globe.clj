@@ -1,13 +1,10 @@
 (ns sfsim25.globe
   (:import [java.io File])
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map-x cube-map-y cube-map-z longitude latitude map-pixels-x map-pixels-y scale-point)]
+            [sfsim25.cubemap :refer (cube-map-x cube-map-y cube-map-z longitude latitude map-pixels-x map-pixels-y scale-point
+                                     cube-coordinate)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)])
   (:gen-class))
-
-(defn cube-coordinate [level tilesize tile pixel]
-  (let [tiles (bit-shift-left 1 level)]
-    (+ tile (float (/ pixel (dec tilesize) tiles)))))
 
 (def world-map-tile
   (m/lru
