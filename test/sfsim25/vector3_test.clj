@@ -1,5 +1,5 @@
 (ns sfsim25.vector3-test
-  (:refer-clojure :exclude [+ -])
+  (:refer-clojure :exclude [+ - *])
   (:require [clojure.test :refer :all]
             [sfsim25.vector3 :refer :all]))
 
@@ -33,3 +33,7 @@
     (is (= (vector3  1  0  0) (cross-product (vector3 0 1 0) (vector3 0 0 1))))
     (is (= (vector3  0  1  0) (cross-product (vector3 0 0 1) (vector3 1 0 0))))
     (is (= (vector3 -1  0  0) (cross-product (vector3 0 0 1) (vector3 0 1 0))))))
+
+(deftest scale-test
+  (testing "Scaling of vector"
+    (is (= (vector3 4 6 10) (* 2 (vector3 2 3 5))))))

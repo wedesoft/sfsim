@@ -86,7 +86,7 @@
   "Convert byte to unsigned byte"
   (if (>= b 0) b (+ b 256)))
 
-(defn ubyte->byte [u]
+(defn ubyte->byte ^long [^long u]
   "Convert unsigned byte to byte"
   (if (<= u 127) u (- u 256)))
 

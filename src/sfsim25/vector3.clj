@@ -1,5 +1,5 @@
 (ns sfsim25.vector3
-  (:refer-clojure :exclude [+ -])
+  (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]))
 
 (set! *unchecked-math* true)
@@ -27,9 +27,13 @@
   "Add two 3D vectors"
   (Vector3. (c/- (.x a) (.x b)) (c/- (.y a) (.y b)) (c/- (.z a) (.z b))))
 
+(defn * ^Vector3 [^double s ^Vector3 v]
+  "Scale a 3D vector"
+  (Vector3. (c/* s (.x v)) (c/* s (.y v)) (c/* s (.z v))))
+
 (defn norm2 ^double [^Vector3 v]
   "Squared norm of vector"
-  (c/+ (* (.x v) (.x v)) (* (.y v) (.y v)) (* (.z v) (.z v))))
+  (c/+ (c/* (.x v) (.x v)) (c/* (.y v) (.y v)) (c/* (.z v) (.z v))))
 
 (defn norm ^double [^Vector3 v]
   "Norm of vector"
@@ -37,9 +41,9 @@
 
 (defn cross-product ^Vector3 [^Vector3 a ^Vector3 b]
   "Cross-product of two vectors"
-  (Vector3. (c/- (* (.y a) (.z b)) (* (.z a) (.y b)))
-            (c/- (* (.z a) (.x b)) (* (.x a) (.z b)))
-            (c/- (* (.x a) (.y b)) (* (.y a) (.x b)))))
+  (Vector3. (c/- (c/* (.y a) (.z b)) (c/* (.z a) (.y b)))
+            (c/- (c/* (.z a) (.x b)) (c/* (.x a) (.z b)))
+            (c/- (c/* (.x a) (.y b)) (c/* (.y a) (.x b)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
