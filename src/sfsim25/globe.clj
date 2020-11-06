@@ -54,7 +54,7 @@
         e1                      (elevation-pixel dy0 dx1 in-level width)
         e2                      (elevation-pixel dy1 dx0 in-level width)
         e3                      (elevation-pixel dy1 dx1 in-level width)]
-    (int (+ (* e0 yfrac0 xfrac0) (* e1 yfrac0 xfrac1) (* e2 yfrac1 xfrac0) (* e3 yfrac1 xfrac1)))))
+    (+ (* e0 yfrac0 xfrac0) (* e1 yfrac0 xfrac1) (* e2 yfrac1 xfrac0) (* e3 yfrac1 xfrac1))))
 
 (defn -main
   "Program to generate tiles for cube map"
