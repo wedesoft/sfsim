@@ -1,8 +1,10 @@
 (ns sfsim25.util
-  (:require [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [sfsim25.rgb :refer (rgb)])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
-           [magick MagickImage ImageInfo ColorspaceType]))
+           [magick MagickImage ImageInfo ColorspaceType]
+           [sfsim25.rgb RGB]))
 
 (defn slurp-bytes
   "Read bytes from a file"
@@ -90,12 +92,12 @@
   "Convert unsigned byte to byte"
   (if (<= u 127) u (- u 256)))
 
-(defn get-pixel [[width height data] ^long y ^long x]
+(defn get-pixel ^RGB [[width height data] ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    [(byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset))))]))
+    (rgb (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
 
-(defn set-pixel! [[width height data] ^long y ^long x [r g b]]
+(defn set-pixel! [[width height data] ^long y ^long x ^RGB c]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-byte data offset (ubyte->byte r))
-    (aset-byte data (inc offset) (ubyte->byte g))
-    (aset-byte data (inc (inc offset)) (ubyte->byte b))))
+    (aset-byte data offset (ubyte->byte (.r c)))
+    (aset-byte data (inc offset) (ubyte->byte (.g c)))
+    (aset-byte data (inc (inc offset)) (ubyte->byte (.b c)))))

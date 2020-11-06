@@ -14,8 +14,10 @@
     (is (= 5.0 (b (rgb 2 3 5))))))
 
 (deftest add-test
-  (testing "Add two RGB values"
-    (is (= (rgb 5 8 12) (+ (rgb 2 3 5) (rgb 3 5 7))))))
+  (testing "Add RGB values"
+    (is (= (rgb 2 3 5) (+ (rgb 2 3 5))))
+    (is (= (rgb 5 8 12) (+ (rgb 2 3 5) (rgb 3 5 7))))
+    (is (= (rgb 10 15 23) (+ (rgb 2 3 5) (rgb 3 5 7) (rgb 5 7 11))))))
 
 (deftest scale-test
   (testing "Scale an RGB value"

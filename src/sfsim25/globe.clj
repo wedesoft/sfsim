@@ -2,7 +2,8 @@
   (:import [java.io File])
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate)]
-            [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)])
+            [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)]
+            [sfsim25.rgb :as r])
   (:gen-class))
 
 (def world-map-tile
@@ -24,13 +25,11 @@
         lat                     (latitude p)
         [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
         [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
-        [c0r c0g c0b]           (world-map-pixel dy0 dx0 in-level width)
-        [c1r c1g c1b]           (world-map-pixel dy0 dx1 in-level width)
-        [c2r c2g c2b]           (world-map-pixel dy1 dx0 in-level width)
-        [c3r c3g c3b]           (world-map-pixel dy1 dx1 in-level width)]
-    [(int (+ (* c0r yfrac0 xfrac0) (* c1r yfrac0 xfrac1) (* c2r yfrac1 xfrac0) (* c3r yfrac1 xfrac1)))
-     (int (+ (* c0g yfrac0 xfrac0) (* c1g yfrac0 xfrac1) (* c2g yfrac1 xfrac0) (* c3g yfrac1 xfrac1)))
-     (int (+ (* c0b yfrac0 xfrac0) (* c1b yfrac0 xfrac1) (* c2b yfrac1 xfrac0) (* c3b yfrac1 xfrac1)))]))
+        c0                      (world-map-pixel dy0 dx0 in-level width)
+        c1                      (world-map-pixel dy0 dx1 in-level width)
+        c2                      (world-map-pixel dy1 dx0 in-level width)
+        c3                      (world-map-pixel dy1 dx1 in-level width)]
+    (r/+ (r/* (* yfrac0 xfrac0) c0) (r/* (* yfrac0 xfrac1) c1) (r/* (* yfrac1 xfrac0) c2) (r/* (* yfrac1 xfrac1) c3))))
 
 (def elevation-tile
   (m/lru

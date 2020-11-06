@@ -19,9 +19,11 @@
 (defn y ^double [^Vector3 v] (.y v))
 (defn z ^double [^Vector3 v] (.z v))
 
-(defn + ^Vector3 [^Vector3 a ^Vector3 b]
+(defn +
   "Add two 3D vectors"
-  (Vector3. (c/+ (.x a) (.x b)) (c/+ (.y a) (.y b)) (c/+ (.z a) (.z b))))
+  (^Vector3 [^Vector3 a] a)
+  (^Vector3 [^Vector3 a ^Vector3 b] (Vector3. (c/+ (.x a) (.x b)) (c/+ (.y a) (.y b)) (c/+ (.z a) (.z b))))
+  (^Vector3 [^Vector3 a ^Vector3 b & other] (apply + (+ a b) other)))
 
 (defn - ^Vector3 [^Vector3 a ^Vector3 b]
   "Add two 3D vectors"

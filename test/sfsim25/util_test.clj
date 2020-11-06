@@ -1,5 +1,6 @@
 (ns sfsim25.util-test
   (:require [clojure.test :refer :all]
+            [sfsim25.rgb :refer (rgb)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 
@@ -71,9 +72,9 @@
 (deftest pixel-test
   (testing "Reading and writing image pixels"
     (let [img [4 2 (byte-array (range 24))]]
-      (is (= [18 19 20] (get-pixel img 1 2))))
+      (is (= (rgb 18 19 20) (get-pixel img 1 2))))
     (let [img [1 1 (byte-array [253 254 255])]]
-      (is (= [253 254 255] (get-pixel img 0 0))))
+      (is (= (rgb 253 254 255) (get-pixel img 0 0))))
     (let [img [4 2 (byte-array (range 24))]]
-      (set-pixel! img 1 2 [253 254 255])
-      (is (= [253 254 255] (get-pixel img 1 2))))))
+      (set-pixel! img 1 2 (rgb 253 254 255))
+      (is (= (rgb 253 254 255) (get-pixel img 1 2))))))

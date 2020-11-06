@@ -19,9 +19,11 @@
 (defn g ^double [^RGB v] (.g v))
 (defn b ^double [^RGB v] (.b v))
 
-(defn + ^RGB [^RGB a ^RGB b]
+(defn +
   "Add two RGB values"
-  (RGB. (c/+ (.r a) (.r b)) (c/+ (.g a) (.g b)) (c/+ (.b a) (.b b))))
+  (^RGB [^RGB a] a)
+  (^RGB [^RGB a ^RGB b] (RGB. (c/+ (.r a) (.r b)) (c/+ (.g a) (.g b)) (c/+ (.b a) (.b b))))
+  (^RGB [^RGB a ^RGB b & other] (apply + (+ a b) other)))
 
 (defn * ^RGB [^double s ^RGB v]
   "Scale an RGB value"
