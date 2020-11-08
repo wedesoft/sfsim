@@ -25,9 +25,10 @@
   (^Vector3 [^Vector3 a ^Vector3 b] (Vector3. (c/+ (.x a) (.x b)) (c/+ (.y a) (.y b)) (c/+ (.z a) (.z b))))
   (^Vector3 [^Vector3 a ^Vector3 b & other] (apply + (+ a b) other)))
 
-(defn - ^Vector3 [^Vector3 a ^Vector3 b]
+(defn -
   "Add two 3D vectors"
-  (Vector3. (c/- (.x a) (.x b)) (c/- (.y a) (.y b)) (c/- (.z a) (.z b))))
+  (^Vector3 [^Vector3 a] (Vector3. (c/- (.x a)) (c/- (.y a)) (c/- (.z a))))
+  (^Vector3 [^Vector3 a ^Vector3 b] (Vector3. (c/- (.x a) (.x b)) (c/- (.y a) (.y b)) (c/- (.z a) (.z b)))))
 
 (defn * ^Vector3 [^double s ^Vector3 v]
   "Scale a 3D vector"
