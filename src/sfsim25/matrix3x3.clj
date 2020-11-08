@@ -24,10 +24,16 @@
   "Construct a 3x3 matrix"
   (Matrix3x3. m11 m12 m13 m21 m22 m23 m31 m32 m33))
 
-(defn - ^Matrix3x3 [^Matrix3x3 a ^Matrix3x3 b]
-  (Matrix3x3. (c/- (.m11 a) (.m11 b)) (c/- (.m12 a) (.m12 b)) (c/- (.m13 a) (.m13 b))
-              (c/- (.m21 a) (.m21 b)) (c/- (.m22 a) (.m22 b)) (c/- (.m23 a) (.m23 b))
-              (c/- (.m31 a) (.m31 b)) (c/- (.m32 a) (.m32 b)) (c/- (.m33 a) (.m33 b))))
+(defn -
+  "Negate matrix or subtract matrices"
+  (^Matrix3x3 [^Matrix3x3 a]
+    (Matrix3x3. (c/- (.m11 a)) (c/- (.m12 a)) (c/- (.m13 a))
+                (c/- (.m21 a)) (c/- (.m22 a)) (c/- (.m23 a))
+                (c/- (.m31 a)) (c/- (.m32 a)) (c/- (.m33 a))))
+  (^Matrix3x3 [^Matrix3x3 a ^Matrix3x3 b]
+    (Matrix3x3. (c/- (.m11 a) (.m11 b)) (c/- (.m12 a) (.m12 b)) (c/- (.m13 a) (.m13 b))
+                (c/- (.m21 a) (.m21 b)) (c/- (.m22 a) (.m22 b)) (c/- (.m23 a) (.m23 b))
+                (c/- (.m31 a) (.m31 b)) (c/- (.m32 a) (.m32 b)) (c/- (.m33 a) (.m33 b)))))
 
 (defn * ^Vector3 [^Matrix3x3 m ^Vector3 v]
   "Matrix-vector multiplication"

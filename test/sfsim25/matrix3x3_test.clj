@@ -16,9 +16,13 @@
   (testing "Matrix norm"
     (is (= (Math/sqrt 285) (norm (matrix3x3 1 2 3 4 5 6 7 8 9))))))
 
-(deftest matrix-difference
+(deftest matrix-difference-test
   (testing "Difference of matrices"
     (is (= (matrix3x3 1 2 2 4 2 4 2 4 6) (- (matrix3x3 3 5 7 11 13 17 19 23 29) (matrix3x3 2 3 5 7 11 13 17 19 23))))))
+
+(deftest negate-matrix-test
+  (testing "Negate matrix"
+    (is (= (matrix3x3 -1 -2 -3 -4 -5 -6 -7 -8 -9) (- (matrix3x3 1 2 3 4 5 6 7 8 9))))))
 
 (def pi Math/PI)
 (def ca (/ (Math/sqrt 3) 2))

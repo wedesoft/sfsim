@@ -20,13 +20,13 @@
 (defn z ^double [^Vector3 v] (.z v))
 
 (defn +
-  "Add two 3D vectors"
+  "Add 3D vectors"
   (^Vector3 [^Vector3 a] a)
   (^Vector3 [^Vector3 a ^Vector3 b] (Vector3. (c/+ (.x a) (.x b)) (c/+ (.y a) (.y b)) (c/+ (.z a) (.z b))))
   (^Vector3 [^Vector3 a ^Vector3 b & other] (apply + (+ a b) other)))
 
 (defn -
-  "Add two 3D vectors"
+  "Subtract 3D vectors"
   (^Vector3 [^Vector3 a] (Vector3. (c/- (.x a)) (c/- (.y a)) (c/- (.z a))))
   (^Vector3 [^Vector3 a ^Vector3 b] (Vector3. (c/- (.x a) (.x b)) (c/- (.y a) (.y b)) (c/- (.z a) (.z b)))))
 
