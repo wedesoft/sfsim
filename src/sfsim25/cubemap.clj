@@ -1,5 +1,6 @@
 (ns sfsim25.cubemap
-  (:require [sfsim25.vector3 :as v])
+  (:require [sfsim25.vector3 :as v]
+            [sfsim25.matrix3x3 :as m])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -87,5 +88,11 @@
   "Scale point coordinates to reach surface of ellipsoid"
   (let [norm (v/norm p)]
     (v/vector3 (* radius1 (/ (.x p) norm)) (* radius2 (/ (.y p) norm)) (* radius1 (/ (.z p) norm)))))
+
+(defn offset-longitude ^Vector3 [^Vector3 p ^long level ^long tilesize]
+  "Determine longitudinal offset for computing normal vector"
+  (let [lon  (longitude p)
+        norm (v/norm p)]
+    (m/* (m/rotation-y (- lon)) (v/vector3 0 0 (- (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))))))))
 
 (set! *unchecked-math* false)
