@@ -95,4 +95,13 @@
         norm (v/norm p)]
     (m/* (m/rotation-y (- lon)) (v/vector3 0 0 (- (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))))))))
 
+(defn offset-latitude ^Vector3 [p level tilesize radius1 radius2]
+  "Determine latitudinal offset for computing normal vector"
+  (let [lon  (longitude p)
+        lat  (latitude p)
+        norm (v/norm p)
+        v    (v/vector3 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0)
+        vs   (m/* (m/rotation-y (- lon)) (m/* (m/rotation-z lat) v))]
+    (v/vector3 (.x vs) (/ (* (.y vs) radius2) radius1) (.z vs))))
+
 (set! *unchecked-math* false)
