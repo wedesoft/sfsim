@@ -87,7 +87,6 @@
             (doseq [u (range tilesize)]
               (let [i       (cube-coordinate out-level tilesize a u)
                     p       (cube-map k j i)
-                    offset  (* 3 (+ (* v tilesize) u))
                     color   (color-for-point in-level width p)]
                 (set-pixel! [tilesize tilesize data] v u color)
                 (println (elevated-point in-level width p radius1 radius2))))))
