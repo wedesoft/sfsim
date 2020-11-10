@@ -1,9 +1,11 @@
 (ns sfsim25.globe
   (:import [java.io File])
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate)]
+            [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate
+                                     offset-longitude offset-latitude)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)]
-            [sfsim25.rgb :as r])
+            [sfsim25.rgb :as r]
+            [sfsim25.vector3 :as v])
   (:gen-class))
 
 (def world-map-tile
@@ -67,6 +69,22 @@
   (let [height (elevation-for-point in-level width p)]
     (scale-point p (+ radius1 height) (+ radius2 height))))
 
+(defn surrounding-points [p in-level out-level width tilesize radius1 radius2]
+  "Compute local point cloud consisting of nine points"
+  (let [d1 (offset-longitude p out-level tilesize)
+        d2 (offset-latitude p out-level tilesize radius1 radius2)]
+    (for [dj (range -1 2) di (range -1 2)]
+        (let [ps (v/+ p (v/* dj d2) (v/* di d1))]
+          (elevated-point in-level width ps radius1 radius2)))))
+
+(defn normal-for-point [p in-level out-level width tilesize radius1 radius2]
+  (let [pc (surrounding-points p in-level out-level width tilesize radius1 radius2)
+        sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
+        sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
+        n1 (apply v/+ (map v/* sx pc))
+        n2 (apply v/+ (map v/* sy pc))]
+    (v/normalize (v/cross-product n1 n2))))
+
 (defn -main
   "Program to generate tiles for cube map"
   [& args]
@@ -81,15 +99,18 @@
         radius1   6378000.0
         radius2   6357000.0]
     (doseq [k (range 6) b (range n) a (range n)]
-      (let [data (byte-array (* 3 tilesize tilesize))]
+      (let [data (byte-array (* 3 tilesize tilesize))
+            tile [tilesize tilesize data]]
         (doseq [v (range tilesize)]
           (let [j (cube-coordinate out-level tilesize b v)]
             (doseq [u (range tilesize)]
               (let [i       (cube-coordinate out-level tilesize a u)
-                    p       (cube-map k j i)
+                    p       (v/normalize (cube-map k j i))
                     color   (color-for-point in-level width p)]
-                (set-pixel! [tilesize tilesize data] v u color)
-                (println (elevated-point in-level width p radius1 radius2))))))
+                (set-pixel! tile v u color)
+                (println (elevated-point in-level width p radius1 radius2))
+                (println (normal-for-point p in-level out-level width tilesize radius1 radius2))
+                (println)))))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
         (println (cube-path "globe" k out-level b a ".png"))))))

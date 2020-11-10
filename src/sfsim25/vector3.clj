@@ -42,6 +42,10 @@
   "Norm of vector"
   (Math/sqrt (norm2 v)))
 
+(defn normalize ^Vector3 [^Vector3 v]
+  "Normalize the vector"
+  (* (/ 1.0 (norm v)) v))
+
 (defn cross-product ^Vector3 [^Vector3 a ^Vector3 b]
   "Cross-product of two vectors"
   (Vector3. (c/- (c/* (.y a) (.z b)) (c/* (.z a) (.y b)))

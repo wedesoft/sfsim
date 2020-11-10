@@ -17,6 +17,10 @@
   (testing "Norm of 3D vector"
     (is (= 1.0 (norm (vector3 0.36 0.48 0.8))))))
 
+(deftest normalize-test
+  (testing "Normalization of 3D vector"
+    (is (= (vector3 1 0 0) (normalize (vector3 3 0 0))))))
+
 (deftest add-test
   (testing "Add vectors"
     (is (= (vector3 2 3 5) (+ (vector3 2 3 5))))
