@@ -7,12 +7,14 @@
   (:gen-class))
 
 (def world-map-tile
+  "Load and cache map tiles"
   (m/lru
     (fn [in-level ty tx]
       (slurp-image (tile-path "world" in-level ty tx ".png")))
     :lru/threshold 128))
 
 (defn world-map-pixel [dy dx in-level width]
+  "Get world map RGB value for a given pixel coordinate"
   (let [ty  (quot dy width)
         tx  (quot dx width)
         py  (mod dy width)
@@ -21,6 +23,7 @@
     (get-pixel img py px)))
 
 (defn color-for-point [in-level width p]
+  "Compute interpolated RGB value for a point on the world"
   (let [lon                     (longitude p)
         lat                     (latitude p)
         [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
@@ -32,12 +35,14 @@
     (r/+ (r/* (* yfrac0 xfrac0) c0) (r/* (* yfrac0 xfrac1) c1) (r/* (* yfrac1 xfrac0) c2) (r/* (* yfrac1 xfrac1) c3))))
 
 (def elevation-tile
+  "Load and cache elevation tiles"
   (m/lru
     (fn [in-level ty tx]
       (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
     :lru/threshold 16))
 
 (defn elevation-pixel [dy dx in-level width]
+  "Get elevation value for given pixel coordinates"
   (let [ty  (quot dy width)
         tx  (quot dx width)
         py  (mod dy width)
@@ -46,6 +51,7 @@
     (max 0 (aget img (+ (* py width) px)))))
 
 (defn elevation-for-point [in-level width p]
+  "Compute interpolated elevation value for a point on the world"
   (let [lon                     (longitude p)
         lat                     (latitude p)
         [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
@@ -57,6 +63,7 @@
     (+ (* e0 yfrac0 xfrac0) (* e1 yfrac0 xfrac1) (* e2 yfrac1 xfrac0) (* e3 yfrac1 xfrac1))))
 
 (defn elevated-point [in-level width p radius1 radius2]
+  "Get elevated 3D point for a point on the world"
   (let [height (elevation-for-point in-level width p)]
     (scale-point p (+ radius1 height) (+ radius2 height))))
 
