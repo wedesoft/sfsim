@@ -39,7 +39,7 @@
   (m/lru
     (fn [in-level ty tx]
       (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
-    :lru/threshold 16))
+    :lru/threshold 128))
 
 (defn elevation-pixel [dy dx in-level width]
   "Get elevation value for given pixel coordinates"
