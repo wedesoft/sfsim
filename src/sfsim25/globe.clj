@@ -10,7 +10,7 @@
   (m/lru
     (fn [in-level ty tx]
       (slurp-image (tile-path "world" in-level ty tx ".png")))
-    :lru/threshold 16))
+    :lru/threshold 128))
 
 (defn world-map-pixel [dy dx in-level width]
   (let [ty  (quot dy width)
@@ -56,6 +56,10 @@
         e3                      (elevation-pixel dy1 dx1 in-level width)]
     (+ (* e0 yfrac0 xfrac0) (* e1 yfrac0 xfrac1) (* e2 yfrac1 xfrac0) (* e3 yfrac1 xfrac1))))
 
+(defn elevated-point [in-level width p radius1 radius2]
+  (let [height (elevation-for-point in-level width p)]
+    (scale-point p (+ radius1 height) (+ radius2 height))))
+
 (defn -main
   "Program to generate tiles for cube map"
   [& args]
@@ -77,10 +81,9 @@
               (let [i       (cube-coordinate out-level tilesize a u)
                     p       (cube-map k j i)
                     offset  (* 3 (+ (* v tilesize) u))
-                    color   (color-for-point in-level width p)
-                    height  (elevation-for-point in-level width p)]
+                    color   (color-for-point in-level width p)]
                 (set-pixel! [tilesize tilesize data] v u color)
-                (println (scale-point p (+ radius1 height) (+ radius2 height)))))))
+                (println (elevated-point in-level width p radius1 radius2))))))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
-        (println k b a)))))
+        (println (cube-path "globe" k out-level b a ".png"))))))
