@@ -1,21 +1,22 @@
 (ns sfsim25.globe
-  (:import [java.io File])
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate
                                      offset-longitude offset-latitude)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)]
             [sfsim25.rgb :as r]
             [sfsim25.vector3 :as v])
+  (:import [java.io File]
+           [sfsim25.vector3 Vector3])
   (:gen-class))
 
 (def world-map-tile
   "Load and cache map tiles"
   (m/lru
-    (fn [in-level ty tx]
+    (fn [^long in-level ^long ty ^long tx]
       (slurp-image (tile-path "world" in-level ty tx ".png")))
     :lru/threshold 128))
 
-(defn world-map-pixel [dy dx in-level width]
+(defn world-map-pixel [^long dy ^long dx ^long in-level ^long width]
   "Get world map RGB value for a given pixel coordinate"
   (let [ty  (quot dy width)
         tx  (quot dx width)
@@ -24,7 +25,7 @@
         img (world-map-tile in-level ty tx)]
     (get-pixel img py px)))
 
-(defn color-for-point [in-level width p]
+(defn color-for-point [^long in-level ^long width ^Vector3 p]
   "Compute interpolated RGB value for a point on the world"
   (let [lon                     (longitude p)
         lat                     (latitude p)
@@ -39,11 +40,11 @@
 (def elevation-tile
   "Load and cache elevation tiles"
   (m/lru
-    (fn [in-level ty tx]
+    (fn [^long in-level ^long ty ^long tx]
       (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
     :lru/threshold 128))
 
-(defn elevation-pixel [dy dx in-level width]
+(defn elevation-pixel [^long dy ^long dx ^long in-level ^long width]
   "Get elevation value for given pixel coordinates"
   (let [ty  (quot dy width)
         tx  (quot dx width)
@@ -52,7 +53,7 @@
         img (elevation-tile in-level ty tx)]
     (max 0 (aget img (+ (* py width) px)))))
 
-(defn elevation-for-point [in-level width p]
+(defn elevation-for-point [^long in-level ^long width ^Vector3 p]
   "Compute interpolated elevation value for a point on the world"
   (let [lon                     (longitude p)
         lat                     (latitude p)
