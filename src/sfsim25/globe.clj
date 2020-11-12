@@ -16,6 +16,13 @@
       (slurp-image (tile-path "world" in-level ty tx ".png")))
     :lru/threshold 128))
 
+(def elevation-tile
+  "Load and cache elevation tiles"
+  (m/lru
+    (fn [^long in-level ^long ty ^long tx]
+      (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
+    :lru/threshold 128))
+
 (defn world-map-pixel [^long dy ^long dx ^long in-level ^long width]
   "Get world map RGB value for a given pixel coordinate"
   (let [ty  (quot dy width)
@@ -24,6 +31,15 @@
         px  (mod dx width)
         img (world-map-tile in-level ty tx)]
     (get-pixel img py px)))
+
+(defn elevation-pixel [^long dy ^long dx ^long in-level ^long width]
+  "Get elevation value for given pixel coordinates"
+  (let [ty  (quot dy width)
+        tx  (quot dx width)
+        py  (mod dy width)
+        px  (mod dx width)
+        img (elevation-tile in-level ty tx)]
+    (max 0 (aget img (+ (* py width) px)))))
 
 (defn color-for-point [^long in-level ^long width ^Vector3 p]
   "Compute interpolated RGB value for a point on the world"
@@ -36,22 +52,6 @@
         c2                      (world-map-pixel dy1 dx0 in-level width)
         c3                      (world-map-pixel dy1 dx1 in-level width)]
     (r/+ (r/* (* yfrac0 xfrac0) c0) (r/* (* yfrac0 xfrac1) c1) (r/* (* yfrac1 xfrac0) c2) (r/* (* yfrac1 xfrac1) c3))))
-
-(def elevation-tile
-  "Load and cache elevation tiles"
-  (m/lru
-    (fn [^long in-level ^long ty ^long tx]
-      (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
-    :lru/threshold 128))
-
-(defn elevation-pixel [^long dy ^long dx ^long in-level ^long width]
-  "Get elevation value for given pixel coordinates"
-  (let [ty  (quot dy width)
-        tx  (quot dx width)
-        py  (mod dy width)
-        px  (mod dx width)
-        img (elevation-tile in-level ty tx)]
-    (max 0 (aget img (+ (* py width) px)))))
 
 (defn elevation-for-point [^long in-level ^long width ^Vector3 p]
   "Compute interpolated elevation value for a point on the world"
