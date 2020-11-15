@@ -58,12 +58,14 @@
   [prefix face level x]
   (str prefix \/ face \/ level \/ x))
 
-(defn sinc ^double [^double x]
+(defn sinc
   "sin(x) / x function"
+  ^double [^double x]
   (if (zero? x) 1.0 (/ (Math/sin x) x)))
 
-(defn spit-image [file-name width height data]
+(defn spit-image
   "Save an RGB image"
+  [file-name width height data]
   (let [info  (ImageInfo.)
         image (MagickImage.)]
     (.constituteImage image width height "RGB" data)

@@ -20,8 +20,9 @@
 
 (set! *warn-on-reflection* true)
 
-(defn matrix3x3 ^Matrix3x3 [m11 m12 m13 m21 m22 m23 m31 m32 m33]
+(defn matrix3x3
   "Construct a 3x3 matrix"
+  ^Matrix3x3 [m11 m12 m13 m21 m22 m23 m31 m32 m33]
   (Matrix3x3. m11 m12 m13 m21 m22 m23 m31 m32 m33))
 
 (defn -
@@ -35,34 +36,40 @@
                 (c/- (.m21 a) (.m21 b)) (c/- (.m22 a) (.m22 b)) (c/- (.m23 a) (.m23 b))
                 (c/- (.m31 a) (.m31 b)) (c/- (.m32 a) (.m32 b)) (c/- (.m33 a) (.m33 b)))))
 
-(defn * ^Vector3 [^Matrix3x3 m ^Vector3 v]
+(defn *
   "Matrix-vector multiplication"
+  ^Vector3 [^Matrix3x3 m ^Vector3 v]
   (vector3 (+ (c/* (.m11 m) (.x v)) (c/* (.m12 m) (.y v)) (c/* (.m13 m) (.z v)))
            (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)))
            (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)))))
 
-(defn norm2 ^double [^Matrix3x3 m]
+(defn norm2
   "Compute square of norm of matrix"
+  ^double [^Matrix3x3 m]
   (+ (c/* (.m11 m) (.m11 m)) (c/* (.m12 m) (.m12 m)) (c/* (.m13 m) (.m13 m))
      (c/* (.m21 m) (.m21 m)) (c/* (.m22 m) (.m22 m)) (c/* (.m23 m) (.m23 m))
      (c/* (.m31 m) (.m31 m)) (c/* (.m32 m) (.m32 m)) (c/* (.m33 m) (.m33 m))))
 
-(defn norm ^double [^Matrix3x3 m]
+(defn norm
   "Compute Frobenius norm of matrix"
+  ^double [^Matrix3x3 m]
   (Math/sqrt (norm2 m)))
 
-(defn rotation-x ^Matrix3x3 [^double angle]
+(defn rotation-x
   "Rotation matrix around x-axis"
+  ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
     (Matrix3x3. 1 0 0 0 ca (c/- sa) 0 sa ca)))
 
-(defn rotation-y ^Matrix3x3 [^double angle]
+(defn rotation-y
   "Rotation matrix around y-axis"
+  ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
     (Matrix3x3. ca 0 sa 0 1 0 (c/- sa) 0 ca)))
 
-(defn rotation-z ^Matrix3x3 [^double angle]
+(defn rotation-z
   "Rotation matrix around z-axis"
+  ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
     (Matrix3x3. ca (c/- sa) 0 sa ca 0 0 0 1)))
 

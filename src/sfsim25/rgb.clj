@@ -11,8 +11,9 @@
 
 (set! *warn-on-reflection* true)
 
-(defn rgb ^RGB [^double r ^double g ^double b]
+(defn rgb
   "Construct an RGB value"
+  ^RGB [^double r ^double g ^double b]
   (RGB. r g b))
 
 (defn r ^double [^RGB v] (.r v))
@@ -25,8 +26,9 @@
   (^RGB [^RGB a ^RGB b] (RGB. (c/+ (.r a) (.r b)) (c/+ (.g a) (.g b)) (c/+ (.b a) (.b b))))
   (^RGB [^RGB a ^RGB b & other] (apply + (+ a b) other)))
 
-(defn * ^RGB [^double s ^RGB v]
+(defn *
   "Scale an RGB value"
+  ^RGB [^double s ^RGB v]
   (RGB. (c/* s (.r v)) (c/* s (.g v)) (c/* s (.b v))))
 
 (set! *warn-on-reflection* false)
