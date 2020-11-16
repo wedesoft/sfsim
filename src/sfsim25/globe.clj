@@ -43,31 +43,28 @@
         img (elevation-tile in-level ty tx)]
     (max 0 (aget img (+ (* py width) px)))))
 
-(defn color-for-point
-  "Compute interpolated RGB value for a point on the world"
-  [^long in-level ^long width ^Vector3 p]
-  (let [lon                     (longitude p)
-        lat                     (latitude p)
+(defn interpolate
+  "Interpolate elevation or RGB values"
+  [in-level width point get-pixel p+ p*]
+  (let [lon                     (longitude point)
+        lat                     (latitude point)
         [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
         [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
-        c0                      (world-map-pixel dy0 dx0 in-level width)
-        c1                      (world-map-pixel dy0 dx1 in-level width)
-        c2                      (world-map-pixel dy1 dx0 in-level width)
-        c3                      (world-map-pixel dy1 dx1 in-level width)]
-    (r/+ (r/* (* yfrac0 xfrac0) c0) (r/* (* yfrac0 xfrac1) c1) (r/* (* yfrac1 xfrac0) c2) (r/* (* yfrac1 xfrac1) c3))))
+        v0                      (get-pixel dy0 dx0 in-level width)
+        v1                      (get-pixel dy0 dx1 in-level width)
+        v2                      (get-pixel dy1 dx0 in-level width)
+        v3                      (get-pixel dy1 dx1 in-level width)]
+    (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
+
+(defn color-for-point
+  "Compute interpolated RGB value for a point on the world"
+  [^long in-level ^long width ^Vector3 point]
+  (interpolate in-level width point world-map-pixel r/+ r/*))
 
 (defn elevation-for-point
   "Compute interpolated elevation value for a point on the world"
-  [^long in-level ^long width ^Vector3 p]
-  (let [lon                     (longitude p)
-        lat                     (latitude p)
-        [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
-        [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
-        e0                      (elevation-pixel dy0 dx0 in-level width)
-        e1                      (elevation-pixel dy0 dx1 in-level width)
-        e2                      (elevation-pixel dy1 dx0 in-level width)
-        e3                      (elevation-pixel dy1 dx1 in-level width)]
-    (+ (* e0 yfrac0 xfrac0) (* e1 yfrac0 xfrac1) (* e2 yfrac1 xfrac0) (* e3 yfrac1 xfrac1))))
+  [^long in-level ^long width ^Vector3 point]
+  (interpolate in-level width point elevation-pixel + *))
 
 (defn elevated-point
   "Get elevated 3D point for a point on the world"
