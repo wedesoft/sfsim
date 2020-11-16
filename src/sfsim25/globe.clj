@@ -2,7 +2,8 @@
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate
                                      offset-longitude offset-latitude)]
-            [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts get-pixel set-pixel! cube-dir cube-path)]
+            [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes get-pixel set-pixel! cube-dir cube-path
+                                  ubyte->byte)]
             [sfsim25.rgb :as r]
             [sfsim25.vector3 :as v])
   (:import [java.io File]
@@ -41,7 +42,7 @@
         py  (mod dy width)
         px  (mod dx width)
         img (elevation-tile in-level ty tx)]
-    (max 0 (aget img (+ (* py width) px)))))
+    (aget img (+ (* py width) px))))
 
 (defn interpolate
   "Interpolate elevation or RGB values"
@@ -70,7 +71,7 @@
   "Get elevated 3D point for a point on the world"
   [in-level width p radius1 radius2]
   (let [height (elevation-for-point in-level width p)]
-    (scale-point p (+ radius1 height) (+ radius2 height))))
+    (scale-point p (+ radius1 (max 0 height)) (+ radius2 (max 0 height)))))
 
 (defn surrounding-points
   "Compute local point cloud consisting of nine points"
@@ -91,6 +92,12 @@
         n2 (apply v/+ (map v/* sy pc))]
     (v/normalize (v/cross-product n1 n2))))
 
+(defn water-for-point
+  "Decide whether point is on land or on water"
+  [^long in-level ^long width ^Vector3 point]
+  (let [height (elevation-for-point in-level width point)]
+    (if (< height 0) (int (/ (* height 255) -500)) 0)))
+
 (defn -main
   "Program to generate tiles for cube map"
   [& args]
@@ -106,6 +113,7 @@
         radius2   6357000.0]
     (doseq [k (range 6) b (range n) a (range n)]
       (let [data (byte-array (* 3 tilesize tilesize))
+            water (byte-array (* tilesize tilesize))
             tile [tilesize tilesize data]]
         (doseq [v (range tilesize)]
           (let [j (cube-coordinate out-level tilesize b v)]
@@ -114,9 +122,12 @@
                     p       (v/normalize (cube-map k j i))
                     color   (color-for-point in-level width p)]
                 (set-pixel! tile v u color)
-                (println (elevated-point in-level width p radius1 radius2))
-                (println (normal-for-point p in-level out-level width tilesize radius1 radius2))
-                (println)))))
+                (aset-byte water (+ (* tilesize v) u) (ubyte->byte (water-for-point in-level width p)))
+                (comment
+                  (println (elevated-point in-level width p radius1 radius2))
+                  (println (normal-for-point p in-level out-level width tilesize radius1 radius2))
+                  (println))))))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
+        (spit-bytes (cube-path "globe" k out-level b a ".bin") water)
         (println (cube-path "globe" k out-level b a ".png"))))))
