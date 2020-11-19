@@ -19,8 +19,7 @@
             "run-scale-elevation" ["with-profile" "run-scale-elevation" "run"]
             "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
             "run-globe"           ["with-profile" "run-globe" "run"]}
-  :resource-paths ["resources/jogamp-fat.jar"
-                   "/usr/share/java/gluegen2-rt.jar"
+  :resource-paths ["/usr/share/java/lwjgl.jar"
                    "/usr/share/java/jmagick.jar"
                    "/usr/share/java/commons-math3.jar"]
   :target-path "target/%s"

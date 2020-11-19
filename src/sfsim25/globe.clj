@@ -123,8 +123,9 @@
                     color   (color-for-point in-level width p)]
                 (set-pixel! tile v u color)
                 (aset-byte water (+ (* tilesize v) u) (ubyte->byte (water-for-point in-level width p)))
-                (comment
+                (do
                   (println (elevated-point in-level width p radius1 radius2))
+                  (println (double (/ u (dec tilesize))) (double (/ v (dec tilesize))))
                   (println (normal-for-point p in-level out-level width tilesize radius1 radius2))
                   (println))))))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
