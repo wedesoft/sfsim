@@ -17,5 +17,5 @@
       (while (Keyboard/next)
         (when (Keyboard/getEventKeyState)
           (if (= (Keyboard/getEventKey) Keyboard/KEY_ESCAPE)
-            (swap! running not)))))
+            (reset! running false)))))
     (Display/destroy)))
