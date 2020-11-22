@@ -112,15 +112,15 @@
         radius1   6378000.0
         radius2   6357000.0]
     (doseq [k (range 6) b (range n) a (range n)]
-      (let [data (byte-array (* 3 tilesize tilesize))
+      (let [data  (byte-array (* 3 tilesize tilesize))
             water (byte-array (* tilesize tilesize))
-            tile [tilesize tilesize data]]
+            tile  [tilesize tilesize data]]
         (doseq [v (range tilesize)]
           (let [j (cube-coordinate out-level tilesize b v)]
             (doseq [u (range tilesize)]
-              (let [i       (cube-coordinate out-level tilesize a u)
-                    p       (v/normalize (cube-map k j i))
-                    color   (color-for-point in-level width p)]
+              (let [i     (cube-coordinate out-level tilesize a u)
+                    p     (v/normalize (cube-map k j i))
+                    color (color-for-point in-level width p)]
                 (set-pixel! tile v u color)
                 (aset-byte water (+ (* tilesize v) u) (ubyte->byte (water-for-point in-level width p)))
                 (do
