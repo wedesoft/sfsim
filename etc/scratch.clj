@@ -1,4 +1,5 @@
-(require '[sfsim25.util :refer :all]
+(require '[clojure.core.async :refer :all]
+         '[sfsim25.util :refer :all]
          '[sfsim25.cubemap :refer :all])
 
 (def radius1 6378000.0)
@@ -11,15 +12,19 @@
         s (scale-point p radius1 radius2)]
     {:face face :level level :b b :a a :center [(.x s) (.y s) (.z s)]}))
 
-(def tree (mapv #(tile % 0 0 0) (range 6)))
-
 (defn split [{:keys [face level b a]}]
   (vec
     (for [bb [(* 2 b) (inc (* 2 b))] aa [(* 2 a) (inc (* 2 a))]]
       (tile face (inc level) bb aa))))
 
-(def tree2 (update-in tree [2] split))
+(def tree (agent (mapv #(tile % 0 0 0) (range 6))))
 
-(def tree3 (update-in tree2 [2 3] split))
+(send tree #(update-in % [2] split))
 
-(get-in tree3 [2 3 2])
+(send tree #(update-in % [2 3] split))
+
+(send tree #(assoc-in % [2 3] (tile 2 1 1 1)))
+
+(await tree); Wait for at least 1/30 seconds?
+
+(get-in @tree [2 3])

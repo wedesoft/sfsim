@@ -3,22 +3,21 @@
   :url "https://github.com/wedesoft/sfsim25"
   :license {:name "GPL-3.0-or-later"
             :url "https://www.gnu.org/licenses/gpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
+  :dependencies [[org.clojure/clojure      "1.10.1"]
                  [org.clojure/core.memoize "1.0.236"]
-                 [org.clojure/core.async "1.3.610"]]
-  :profiles {:run-sfsim25 {:main sfsim25.core}
-             :run-scale-image {:main sfsim25.scale-image}
-             :run-map-tiles {:main sfsim25.map-tiles}
+                 [org.clojure/core.async   "1.3.610"]]
+  :main ^:skip-aot sfsim25.core
+  :profiles {:run-scale-image     {:main sfsim25.scale-image}
+             :run-map-tiles       {:main sfsim25.map-tiles}
              :run-scale-elevation {:main sfsim25.scale-elevation}
              :run-elevation-tiles {:main sfsim25.elevation-tiles}
-             :run-globe {:main sfsim25.globe}
-             :uberjar {:aot :all}}
-  :aliases {"run-sfsim25"         ["with-profile" "run-sfsim25" "run"]
-            "run-scale-image"     ["with-profile" "run-scale-image" "run"]
-            "run-map-tiles"       ["with-profile" "run-map-tiles" "run"]
+             :run-globe           {:main sfsim25.globe}
+             :uberjar             {:aot :all}}
+  :aliases {"run-scale-image"     ["with-profile" "run-scale-image"     "run"]
+            "run-map-tiles"       ["with-profile" "run-map-tiles"       "run"]
             "run-scale-elevation" ["with-profile" "run-scale-elevation" "run"]
             "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
-            "run-globe"           ["with-profile" "run-globe" "run"]}
+            "run-globe"           ["with-profile" "run-globe"           "run"]}
   :resource-paths ["/usr/share/java/lwjgl.jar"
                    "/usr/share/java/jmagick.jar"
                    "/usr/share/java/commons-math3.jar"]
