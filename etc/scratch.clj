@@ -1,4 +1,4 @@
-(require '[clojure.core.async :refer :all]
+(require '[clojure.core.async :refer (go chan <! >! <!! >!! poll!) :as a]
          '[sfsim25.util :refer :all]
          '[sfsim25.cubemap :refer :all])
 
@@ -16,6 +16,32 @@
   (vec
     (for [bb [(* 2 b) (inc (* 2 b))] aa [(* 2 a) (inc (* 2 a))]]
       (tile face (inc level) bb aa))))
+
+(def running (atom true))
+
+(def tiles (chan 8))
+(def requests (chan))
+
+(defn load-tile [x] (* x x))
+
+(go
+  (loop [request (<! requests)]
+    (when-not (nil? request)
+      (>! tiles (load-tile request))
+      (recur (<! requests)))))
+
+(go
+  (loop [detail-tree {}]
+    (when @running
+      (let [tiles-needed (first-tiles-needed @position detail-tree)]
+        (doseq [request tiles-needed] (>! requests request))
+        (recur (update-tree detail-tree tiles-needed))))))
+
+(while @running
+  (loop [tile (poll! tiles)]
+    (when-not (nil? tile)
+      (swap! tree update-in (path tile) tile)
+      (recur (poll! tiles)))))
 
 (def tree (agent (mapv #(tile % 0 0 0) (range 6))))
 
