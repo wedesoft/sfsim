@@ -24,6 +24,16 @@
     (.get short-buffer result)
     result))
 
+(defn slurp-floats
+  "Read floating point numbers from a file"
+  [file-name]
+  (let [byte-data    (slurp-bytes file-name)
+        n            (.count (seq byte-data))
+        float-buffer (-> byte-data ByteBuffer/wrap (.order ByteOrder/LITTLE_ENDIAN) .asFloatBuffer)
+        result       (float-array (/ n 4))]
+    (.get float-buffer result)
+    result))
+
 (defn spit-bytes
   "Write bytes to a file"
   [file-name byte-data]
@@ -36,6 +46,14 @@
   (let [n           (count short-data)
         byte-buffer (.order (ByteBuffer/allocate (* n 2)) ByteOrder/LITTLE_ENDIAN)]
     (.put (.asShortBuffer byte-buffer) short-data)
+    (spit-bytes file-name (.array byte-buffer))))
+
+(defn spit-floats
+  "Write floating point numbers to a file"
+  [file-name float-data]
+  (let [n           (count float-data)
+        byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
+    (.put (.asFloatBuffer byte-buffer) float-data)
     (spit-bytes file-name (.array byte-buffer))))
 
 (defn tile-path

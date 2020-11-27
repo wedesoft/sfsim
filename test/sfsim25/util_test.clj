@@ -12,6 +12,10 @@
   (testing "Load a set of short integers"
     (is (= [2 3 5 7] (seq (slurp-shorts "test/sfsim25/fixtures/shorts.raw"))))))
 
+(deftest slurp-floats-test
+  (testing "Load a set of floating point numbers"
+    (is (= [2.0 3.0 5.0 7.0] (seq (slurp-floats "test/sfsim25/fixtures/floats.raw"))))))
+
 (deftest spit-bytes-test
   (testing "Save a set of bytes"
     (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
@@ -23,6 +27,12 @@
     (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
       (spit-shorts file-name (short-array [2 3 5 7]))
       (is (= [2 3 5 7] (seq (slurp-shorts file-name)))))))
+
+(deftest spit-floats-test
+  (testing "Save a set of floating point numbers"
+    (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
+      (spit-floats file-name (float-array [2.0 3.0 5.0 7.0]))
+      (is (= [2.0 3.0 5.0 7.0] (seq (slurp-floats file-name)))))))
 
 (deftest tile-path-test
   (testing "Determine file path of map tile"
