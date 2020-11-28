@@ -5,6 +5,32 @@
 (def radius1 6378000.0)
 (def radius2 6357000.0)
 
+(defn dy [index]
+  (case index
+    0 0
+    1 0
+    2 1
+    3 1))
+
+(defn dx [index]
+  (case index
+    0 0
+    1 1
+    2 0
+    3 1))
+
+(defn y-tile [path] (reduce #(+ (* 2 %1) %2) 0 (map dy path)))
+(defn x-tile [path] (reduce #(+ (* 2 %1) %2) 0 (map dx path)))
+
+(defn center [face & path]
+  (let [b     (y-tile path)
+        a     (x-tile path)
+        level (count path)
+        j     (cube-coordinate level 3 b 1)
+        i     (cube-coordinate level 3 a 1)
+        p     (cube-map face j i)]
+    (scale-point p radius1 radius2)))
+
 (defn tile [face level b a]
   (let [j (cube-coordinate level 3 b 1)
         i (cube-coordinate level 3 a 1)
