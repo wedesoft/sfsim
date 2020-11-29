@@ -31,6 +31,14 @@
         p     (cube-map face j i)]
     (scale-point p radius1 radius2)))
 
+(def centers (atom (mapv center (range 6))))
+
+(defn tree-file [[face & path] suffix]
+  (let [b     (y-tile path)
+        a     (x-tile path)
+        level (count path)]
+    (cube-path "globe" face level b a suffix)))
+
 (defn tile [face level b a]
   (let [j (cube-coordinate level 3 b 1)
         i (cube-coordinate level 3 a 1)
