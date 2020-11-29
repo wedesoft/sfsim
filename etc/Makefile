@@ -1,18 +1,14 @@
 .SUFFIXES: .c .h .java .class .so .o
 
-# CLASSPATH=/usr/share/java/jogl2.jar:/usr/share/java/gluegen2-rt.jar:.
-CLASSPATH=../resources/jogamp-fat.jar:/usr/share/java/gluegen2-rt.jar:.
+CLASSPATH=.
 
-all: ../resources/jogamp-fat.jar HelloWorldJNI.class libnative.so HelloTriangleSimple.class
+all: HelloWorldJNI.class libnative.so
 
 clojure-native: all
 	env LD_LIBRARY_PATH=$(PWD) clojure -classpath $(CLASSPATH) test.clj
 
 java-native: all
 	env LD_LIBRARY_PATH=$(PWD) java -classpath $(CLASSPATH) HelloWorldJNI
-
-javagl3: all
-	java -classpath $(CLASSPATH) HelloTriangleSimple
 
 repl: all
 	env LD_LIBRARY_PATH=$(PWD) clojure -classpath $(CLASSPATH)
@@ -31,8 +27,5 @@ HelloWorldJNI.h: HelloWorldJNI.java
 
 HelloWorldJNI.o: HelloWorldJNI.h
 
-../resources/jogamp-fat.jar:
-	wget https://jogamp.org/deployment/v2.4.0-rc-20200115/fat/jogamp-fat.jar -O $@
-
 clean:
-	rm -f *.h *.o *.so *.class framework/*.class
+	rm -f *.h *.o *.so *.class
