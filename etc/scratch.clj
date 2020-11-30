@@ -1,6 +1,9 @@
 (require '[clojure.core.async :refer (go chan <! >! <!! >!! poll!) :as a]
          '[sfsim25.util :refer :all]
+         '[sfsim25.vector3 :refer (vector3 norm) :as v]
          '[sfsim25.cubemap :refer :all])
+
+(import '[sfsim25.vector3 Vector3])
 
 (def radius1 6378000.0)
 (def radius2 6357000.0)
@@ -22,7 +25,7 @@
 (defn y-tile [path] (reduce #(+ (* 2 %1) %2) 0 (map dy path)))
 (defn x-tile [path] (reduce #(+ (* 2 %1) %2) 0 (map dx path)))
 
-(defn center [face & path]
+(defn center [[face & path]]
   (let [b     (y-tile path)
         a     (x-tile path)
         level (count path)
@@ -31,30 +34,34 @@
         p     (cube-map face j i)]
     (scale-point p radius1 radius2)))
 
-(def centers (atom (mapv center (range 6))))
-
 (defn tree-file [[face & path] suffix]
   (let [b     (y-tile path)
         a     (x-tile path)
         level (count path)]
     (cube-path "globe" face level b a suffix)))
 
-(defn tile [face level b a]
-  (let [j (cube-coordinate level 3 b 1)
-        i (cube-coordinate level 3 a 1)
-        p (cube-map face j i)
-        s (scale-point p radius1 radius2)]
-    {:face face :level level :b b :a a :center [(.x s) (.y s) (.z s)]}))
+(def tiles (chan 8))
+(def requests (chan 8))
 
-(defn split [{:keys [face level b a]}]
-  (vec
-    (for [bb [(* 2 b) (inc (* 2 b))] aa [(* 2 a) (inc (* 2 a))]]
-      (tile face (inc level) bb aa))))
+(defn sub-paths [path]
+  (if (empty? path)
+    (map vector (range 6))
+    (map (partial conj path) (range 4))))
+
+(go
+  (loop [request (<! requests)]
+    (when-not (nil? request)
+      (>! tiles {:path request :images (mapv #(slurp-image (tree-file % ".png")) (sub-paths []))})
+      (recur (<! requests)))))
+
+(def center-tree (atom (mapv center (sub-paths []))))
+(>!! requests [])
+
+(swap! center-tree assoc-in [1] (mapv center (sub-paths [1])))
+
+(swap! center-tree assoc-in [1] (center [1]))
 
 (def running (atom true))
-
-(def tiles (chan 8))
-(def requests (chan))
 
 (defn load-tile [x] (* x x))
 
@@ -76,15 +83,3 @@
     (when-not (nil? tile)
       (swap! tree update-in (path tile) tile)
       (recur (poll! tiles)))))
-
-(def tree (agent (mapv #(tile % 0 0 0) (range 6))))
-
-(send tree #(update-in % [2] split))
-
-(send tree #(update-in % [2 3] split))
-
-(send tree #(assoc-in % [2 3] (tile 2 1 1 1)))
-
-(await tree); Wait for at least 1/30 seconds?
-
-(get-in @tree [2 3])
