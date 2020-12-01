@@ -8,7 +8,7 @@
 
 (defn slurp-bytes
   "Read bytes from a file"
-  [file-name]
+  ^bytes [^String file-name]
   (with-open [in  (io/input-stream file-name)
               out (ByteArrayOutputStream.)]
     (io/copy in out)
@@ -16,7 +16,7 @@
 
 (defn slurp-shorts
   "Read short integers from a file"
-  [file-name]
+  ^shorts [^String file-name]
   (let [byte-data    (slurp-bytes file-name)
         n            (.count (seq byte-data))
         short-buffer (-> byte-data ByteBuffer/wrap (.order ByteOrder/LITTLE_ENDIAN) .asShortBuffer)
@@ -26,7 +26,7 @@
 
 (defn slurp-floats
   "Read floating point numbers from a file"
-  [file-name]
+  ^floats [^String file-name]
   (let [byte-data    (slurp-bytes file-name)
         n            (.count (seq byte-data))
         float-buffer (-> byte-data ByteBuffer/wrap (.order ByteOrder/LITTLE_ENDIAN) .asFloatBuffer)
@@ -36,13 +36,13 @@
 
 (defn spit-bytes
   "Write bytes to a file"
-  [file-name byte-data]
+  [^String file-name ^bytes byte-data]
   (with-open [out (io/output-stream file-name)]
     (.write out byte-data)))
 
 (defn spit-shorts
   "Write short integers to a file"
-  [file-name short-data]
+  [^String file-name ^shorts short-data]
   (let [n           (count short-data)
         byte-buffer (.order (ByteBuffer/allocate (* n 2)) ByteOrder/LITTLE_ENDIAN)]
     (.put (.asShortBuffer byte-buffer) short-data)
@@ -50,7 +50,7 @@
 
 (defn spit-floats
   "Write floating point numbers to a file"
-  [file-name float-data]
+  [^String file-name ^floats float-data]
   (let [n           (count float-data)
         byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
     (.put (.asFloatBuffer byte-buffer) float-data)
@@ -83,7 +83,7 @@
 
 (defn spit-image
   "Save an RGB image"
-  [file-name width height data]
+  [^String file-name ^long width ^long height ^bytes data]
   (let [info  (ImageInfo.)
         image (MagickImage.)]
     (.constituteImage image width height "RGB" data)
@@ -94,8 +94,9 @@
     (.writeImage image info)
     image))
 
-(defn slurp-image [file-name]
+(defn slurp-image
   "Load an RGB image"
+  [^String file-name]
   (let [info      (ImageInfo. file-name)
         image     (MagickImage. info)
         dimension (.getDimension image)]
@@ -104,7 +105,7 @@
     (.setMagick info "RGB")
     [(.width dimension) (.height dimension) (.imageToBlob image info)]))
 
-(defn byte->ubyte [b]
+(defn byte->ubyte ^long [^long b]
   "Convert byte to unsigned byte"
   (if (>= b 0) b (+ b 256)))
 

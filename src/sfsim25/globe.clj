@@ -20,7 +20,7 @@
 (def elevation-tile
   "Load and cache elevation tiles"
   (m/lru
-    (fn [^long in-level ^long ty ^long tx]
+    (fn ^shorts [^long in-level ^long ty ^long tx]
       (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
     :lru/threshold 128))
 
@@ -102,14 +102,14 @@
   "Write 3D point, texture coordinates, and 3D normal to vertex data array"
   [vertex tilesize u v point u-scaled v-scaled normal]
   (let [offset (* 8 (+ (* tilesize v) u))]
-    (aset-float vertex (+ offset 0) (.x point))
-    (aset-float vertex (+ offset 1) (.y point))
-    (aset-float vertex (+ offset 2) (.z point))
+    (aset-float vertex (+ offset 0) (.x ^Vector3 point))
+    (aset-float vertex (+ offset 1) (.y ^Vector3 point))
+    (aset-float vertex (+ offset 2) (.z ^Vector3 point))
     (aset-float vertex (+ offset 3) u-scaled)
     (aset-float vertex (+ offset 4) v-scaled)
-    (aset-float vertex (+ offset 5) (.x normal))
-    (aset-float vertex (+ offset 6) (.y normal))
-    (aset-float vertex (+ offset 7) (.z normal))))
+    (aset-float vertex (+ offset 5) (.x ^Vector3 normal))
+    (aset-float vertex (+ offset 6) (.y ^Vector3 normal))
+    (aset-float vertex (+ offset 7) (.z ^Vector3 normal))))
 
 (defn -main
   "Program to generate tiles for cube map"
