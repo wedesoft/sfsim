@@ -58,22 +58,22 @@
 
 (defn tile-path
   "Determine file path of map tile"
-  [prefix level y x suffix]
+  ^String [prefix level y x suffix]
   (str prefix \/ level \/ x \/ y suffix))
 
 (defn tile-dir
   "Determine directory name of map tile"
-  [prefix level x]
+  ^String [^String prefix ^long level ^long x]
   (str prefix \/ level \/ x))
 
 (defn cube-path
   "Determine file path of cube tile"
-  [prefix face level y x suffix]
+  ^String [prefix face level y x suffix]
   (str prefix \/ face \/ level \/ x \/ y suffix))
 
 (defn cube-dir
   "Determine directory name of cube tile"
-  [prefix face level x]
+  ^String [^String prefix ^long face ^long level ^long x]
   (str prefix \/ face \/ level \/ x))
 
 (defn sinc

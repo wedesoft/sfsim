@@ -50,16 +50,39 @@
 
 (go
   (loop [request (<! requests)]
-    (when-not (nil? request)
-      (>! tiles {:path request :images (mapv #(slurp-image (tree-file % ".png")) (sub-paths []))})
+    (when request
+      (if (:increase request)
+        (>! tiles {:path (:path request) :images (mapv #(slurp-image (tree-file % ".png")) (sub-paths (:path request)))})
+        (>! tiles {:path (:path request) :images (slurp-image (tree-file (:path request) ".png"))}))
       (recur (<! requests)))))
 
 (def center-tree (atom (mapv center (sub-paths []))))
-(>!! requests [])
 
-(swap! center-tree assoc-in [1] (mapv center (sub-paths [1])))
+(>!! requests {:increase true :path []})
 
-(swap! center-tree assoc-in [1] (center [1]))
+(def map-tree (atom (:images (<!! tiles))))
+
+(defn increase-resolution [path]
+  (swap! center-tree assoc-in path (mapv center (sub-paths path)))
+  (>!! requests {:path path :increase true}))
+
+(defn decrease-resolution [path]
+  (swap! center-tree assoc-in path (center path))
+  (>!! requests {:path path :increase false}))
+
+(defn update-map []
+  (loop [data (poll! tiles)]
+    (when data
+      (swap! map-tree assoc-in (:path data) (:images data))
+      (recur (poll! tiles)))))
+
+@map-tree
+(increase-resolution [1])
+(update-map)
+(get-in @map-tree [1])
+(decrease-resolution [1])
+(update-map)
+(get-in @map-tree [1])
 
 (def running (atom true))
 

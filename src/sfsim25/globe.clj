@@ -10,6 +10,8 @@
            [sfsim25.vector3 Vector3])
   (:gen-class))
 
+(set! *unchecked-math* true)
+
 (def world-map-tile
   "Load and cache map tiles"
   (m/lru
@@ -145,3 +147,5 @@
         (spit-bytes (cube-path "globe" k out-level b a ".bin") water)
         (spit-floats (cube-path "globe" k out-level b a ".raw") vertex)
         (println (cube-path "globe" k out-level b a ".png"))))))
+
+(set! *unchecked-math* false)
