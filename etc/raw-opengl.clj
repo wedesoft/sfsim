@@ -1,8 +1,7 @@
 ; clojure -cp /usr/share/java/lwjgl.jar raw-opengl.clj
 (ns raw-opengl
   (:import [org.lwjgl BufferUtils]
-           [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30]
-           [org.lwjgl.input Keyboard]))
+           [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30]))
 
 (def vertex-source "#version 130
 in mediump vec3 point;
