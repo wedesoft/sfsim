@@ -5,21 +5,9 @@
 
 (def vertex-source "#version 410 core
 in mediump vec3 point;
-in mediump vec2 texcoord;
-out mediump vec2 UV;
 void main()
 {
   gl_Position = vec4(point, 1);
-  UV = texcoord;
-}")
-
-(def fragment-source "#version 410 core
-in mediump vec2 UV;
-out mediump vec3 fragColor;
-uniform sampler2D tex;
-void main()
-{
-  fragColor = vec3(1, 1, 1); // texture(tex, UV).rgb;
 }")
 
 (def tcs-source "#version 410 core
@@ -37,25 +25,42 @@ void main(void)
 
 (def tes-source "#version 410 core
 layout(triangles, equal_spacing, ccw) in;
+out mediump vec2 textureCoordinate;
 void main()
 {
   gl_Position.xyzw = gl_in[0].gl_Position.xyzw * gl_TessCoord.x +
                      gl_in[1].gl_Position.xyzw * gl_TessCoord.y +
                      gl_in[2].gl_Position.xyzw * gl_TessCoord.z;
+  textureCoordinate = vec2(1, 0) * gl_TessCoord.x +
+                      vec2(0, 1) * (1 - gl_TessCoord.z);
 }")
 
 (def geo-source "#version 410 core
 layout(triangles, invocations = 1) in;
-layout(line_strip, max_vertices = 4) out;
+in mediump vec2 textureCoordinate[3];
+layout(line_strip, max_vertices = 3) out;
+out mediump vec2 UV;
 void main(void)
 {
 	gl_Position = gl_in[0].gl_Position;
+  UV = textureCoordinate[0];
 	EmitVertex();	
 	gl_Position = gl_in[1].gl_Position;
+  UV = textureCoordinate[1];
 	EmitVertex();
 	gl_Position = gl_in[2].gl_Position;
+  UV = textureCoordinate[2];
 	EmitVertex();
 	EndPrimitive();
+}")
+
+(def fragment-source "#version 410 core
+in mediump vec2 UV;
+out mediump vec3 fragColor;
+uniform sampler2D tex;
+void main()
+{
+  fragColor = texture(tex, UV).rgb;
 }")
 
 (def vertices
@@ -133,7 +138,8 @@ void main(void)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 0)
 (def pixel-buffer (make-float-buffer pixels))
 (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 2 2 0 GL12/GL_BGR GL11/GL_FLOAT pixel-buffer)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
 (GL30/glGenerateMipmap GL11/GL_TEXTURE_2D)
