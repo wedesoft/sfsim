@@ -1,9 +1,9 @@
 ; clojure -cp /usr/share/java/lwjgl.jar raw-opengl.clj
 (ns raw-opengl
   (:import [org.lwjgl BufferUtils]
-           [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30]))
+           [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40]))
 
-(def vertex-source "#version 130
+(def vertex-source "#version 410 core
 in mediump vec3 point;
 in mediump vec2 texcoord;
 out mediump vec2 UV;
@@ -13,13 +13,49 @@ void main()
   UV = texcoord;
 }")
 
-(def fragment-source "#version 130
+(def fragment-source "#version 410 core
 in mediump vec2 UV;
 out mediump vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  fragColor = texture(tex, UV).rgb;
+  fragColor = vec3(1, 1, 1); // texture(tex, UV).rgb;
+}")
+
+(def tcs-source "#version 410 core
+layout(vertices = 4) out;
+void main(void)
+{
+  if (gl_InvocationID == 0) {
+    gl_TessLevelOuter[0] = 2.0;
+    gl_TessLevelOuter[1] = 3.0;
+    gl_TessLevelOuter[2] = 4.0;
+    gl_TessLevelInner[0] = 5.0;
+  }
+  gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+}")
+
+(def tes-source "#version 410 core
+layout(triangles, equal_spacing, ccw) in;
+void main()
+{
+  gl_Position.xyzw = gl_in[0].gl_Position.xyzw * gl_TessCoord.x +
+                     gl_in[1].gl_Position.xyzw * gl_TessCoord.y +
+                     gl_in[2].gl_Position.xyzw * gl_TessCoord.z;
+}")
+
+(def geo-source "#version 410 core
+layout(triangles, invocations = 1) in;
+layout(line_strip, max_vertices = 4) out;
+void main(void)
+{
+	gl_Position = gl_in[0].gl_Position;
+	EmitVertex();	
+	gl_Position = gl_in[1].gl_Position;
+	EmitVertex();
+	gl_Position = gl_in[2].gl_Position;
+	EmitVertex();
+	EndPrimitive();
 }")
 
 (def vertices
@@ -44,10 +80,9 @@ void main()
       (throw (Exception. (GL20/glGetShaderInfoLog shader 1024))))
     shader))
 
-(defn make-program [vertex-shader fragment-shader]
+(defn make-program [& shaders]
   (let [program (GL20/glCreateProgram)]
-    (GL20/glAttachShader program vertex-shader)
-    (GL20/glAttachShader program fragment-shader)
+    (doseq [shader shaders] (GL20/glAttachShader program shader))
     (GL20/glLinkProgram program)
     (if (zero? (GL20/glGetShaderi program GL20/GL_LINK_STATUS))
       (throw (Exception. (GL20/glGetShaderInfoLog program 1024))))
@@ -69,7 +104,10 @@ void main()
 
 (def vertex-shader (make-shader vertex-source GL20/GL_VERTEX_SHADER))
 (def fragment-shader (make-shader fragment-source GL20/GL_FRAGMENT_SHADER))
-(def program (make-program vertex-shader fragment-shader))
+(def tcs-shader (make-shader tcs-source GL40/GL_TESS_CONTROL_SHADER))
+(def tes-shader (make-shader tes-source GL40/GL_TESS_EVALUATION_SHADER))
+(def geo-shader (make-shader geo-source GL32/GL_GEOMETRY_SHADER))
+(def program (make-program vertex-shader fragment-shader geo-shader tcs-shader tes-shader))
 
 (def vao (GL30/glGenVertexArrays))
 (GL30/glBindVertexArray vao)
@@ -84,9 +122,8 @@ void main()
 (def indices-buffer (make-int-buffer indices))
 (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW)
 
-(def float-size 4)
-(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   ) 3 GL11/GL_FLOAT false (* 5 float-size) (* 0 float-size))
-(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord") 2 GL11/GL_FLOAT false (* 5 float-size) (* 3 float-size))
+(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   ) 3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
+(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord") 2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
 (GL20/glEnableVertexAttribArray 0)
 (GL20/glEnableVertexAttribArray 1)
 
@@ -101,11 +138,14 @@ void main()
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
 (GL30/glGenerateMipmap GL11/GL_TEXTURE_2D)
 
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (GL20/glUseProgram program)
-  (GL11/glDrawElements GL11/GL_TRIANGLES 3 GL11/GL_UNSIGNED_INT 0)
+  (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 3)
+  (GL11/glDrawElements GL40/GL_PATCHES 3 GL11/GL_UNSIGNED_INT 0)
   (Display/update)
   (Thread/sleep 40))
 
