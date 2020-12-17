@@ -31,8 +31,8 @@ void main()
   gl_Position.xyzw = gl_in[0].gl_Position.xyzw * gl_TessCoord.x +
                      gl_in[1].gl_Position.xyzw * gl_TessCoord.y +
                      gl_in[2].gl_Position.xyzw * gl_TessCoord.z;
-  textureCoordinate = vec2(1, 0) * gl_TessCoord.x +
-                      vec2(0, 1) * (1 - gl_TessCoord.z);
+  textureCoordinate = vec2(1, 1) * gl_TessCoord.x +
+                      vec2(0, 1) * gl_TessCoord.y;
 }")
 
 (def geo-source "#version 410 core
