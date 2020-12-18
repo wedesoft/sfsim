@@ -5,13 +5,18 @@
 
 (def vertex-source "#version 410 core
 in mediump vec3 point;
+in mediump vec2 texcoord;
+out mediump vec2 texcoord_tcs;
 void main()
 {
   gl_Position = vec4(point, 1);
+  texcoord_tcs = texcoord;
 }")
 
 (def tcs-source "#version 410 core
-layout(vertices = 4) out;
+layout(vertices = 3) out;
+in mediump vec2 texcoord_tcs[];
+out mediump vec2 texcoord_tes[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
@@ -21,18 +26,21 @@ void main(void)
     gl_TessLevelInner[0] = 5.0;
   }
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+  texcoord_tes[gl_InvocationID] = texcoord_tcs[gl_InvocationID];
 }")
 
 (def tes-source "#version 410 core
 layout(triangles, equal_spacing, ccw) in;
+in mediump vec2 texcoord_tes[];
 out mediump vec2 textureCoordinate;
 void main()
 {
   gl_Position.xyzw = gl_in[0].gl_Position.xyzw * gl_TessCoord.x +
                      gl_in[1].gl_Position.xyzw * gl_TessCoord.y +
                      gl_in[2].gl_Position.xyzw * gl_TessCoord.z;
-  textureCoordinate = vec2(1, 1) * gl_TessCoord.x +
-                      vec2(0, 1) * gl_TessCoord.y;
+  textureCoordinate = texcoord_tes[0] * gl_TessCoord.x +
+                      texcoord_tes[1] * gl_TessCoord.y +
+                      texcoord_tes[2] * gl_TessCoord.z;
 }")
 
 (def geo-source "#version 410 core
@@ -66,10 +74,11 @@ void main()
 (def vertices
   (float-array [ 0.5  0.5 0.0 1.0 1.0
                 -0.5  0.5 0.0 0.0 1.0
-                -0.5 -0.5 0.0 0.0 0.0]))
+                -0.5 -0.5 0.0 0.0 0.0
+                 0.5 -0.5 0.0 1.0 0.0]))
 
 (def indices
-  (int-array [0 1 2]))
+  (int-array [0 1 2 0 2 3]))
 
 (def pixels
   (float-array [0.0 0.0 1.0
@@ -144,14 +153,12 @@ void main()
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
 (GL30/glGenerateMipmap GL11/GL_TEXTURE_2D)
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (GL20/glUseProgram program)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 3)
-  (GL11/glDrawElements GL40/GL_PATCHES 3 GL11/GL_UNSIGNED_INT 0)
+  (GL11/glDrawElements GL40/GL_PATCHES 6 GL11/GL_UNSIGNED_INT 0)
   (Display/update)
   (Thread/sleep 40))
 
