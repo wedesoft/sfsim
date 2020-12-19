@@ -32,32 +32,32 @@ void main(void)
 (def tes-source "#version 410 core
 layout(triangles, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
-out mediump vec2 textureCoordinate;
+out mediump vec2 texcoord_geo;
 void main()
 {
   gl_Position.xyzw = gl_in[0].gl_Position.xyzw * gl_TessCoord.x +
                      gl_in[1].gl_Position.xyzw * gl_TessCoord.y +
                      gl_in[2].gl_Position.xyzw * gl_TessCoord.z;
-  textureCoordinate = texcoord_tes[0] * gl_TessCoord.x +
-                      texcoord_tes[1] * gl_TessCoord.y +
-                      texcoord_tes[2] * gl_TessCoord.z;
+  texcoord_geo = texcoord_tes[0] * gl_TessCoord.x +
+                 texcoord_tes[1] * gl_TessCoord.y +
+                 texcoord_tes[2] * gl_TessCoord.z;
 }")
 
 (def geo-source "#version 410 core
 layout(triangles, invocations = 1) in;
-in mediump vec2 textureCoordinate[3];
+in mediump vec2 texcoord_geo[3];
 layout(triangle_strip, max_vertices = 3) out;
 out mediump vec2 UV;
 void main(void)
 {
 	gl_Position = gl_in[0].gl_Position;
-  UV = textureCoordinate[0];
+  UV = texcoord_geo[0];
 	EmitVertex();	
 	gl_Position = gl_in[1].gl_Position;
-  UV = textureCoordinate[1];
+  UV = texcoord_geo[1];
 	EmitVertex();
 	gl_Position = gl_in[2].gl_Position;
-  UV = textureCoordinate[2];
+  UV = texcoord_geo[2];
 	EmitVertex();
 	EndPrimitive();
 }")
