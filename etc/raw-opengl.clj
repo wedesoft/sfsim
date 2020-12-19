@@ -46,7 +46,7 @@ void main()
 (def geo-source "#version 410 core
 layout(triangles, invocations = 1) in;
 in mediump vec2 textureCoordinate[3];
-layout(line_strip, max_vertices = 3) out;
+layout(triangle_strip, max_vertices = 3) out;
 out mediump vec2 UV;
 void main(void)
 {
@@ -152,6 +152,8 @@ void main()
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
 (GL30/glGenerateMipmap GL11/GL_TEXTURE_2D)
+
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
