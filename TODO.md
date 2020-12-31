@@ -1,4 +1,5 @@
 # TODO
+* height field size 2^n + 1
 * Get scale-image to work on large images
 * implement fast version of slurp-shorts and slurp-floats
 

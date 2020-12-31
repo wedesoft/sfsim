@@ -21,11 +21,11 @@ void main(void)
 {
   if (gl_InvocationID == 0) {
     gl_TessLevelOuter[0] = 2.0;
-    gl_TessLevelOuter[1] = 3.0;
-    gl_TessLevelOuter[2] = 4.0;
-    gl_TessLevelOuter[3] = 5.0;
-    gl_TessLevelInner[0] = 6.0;
-    gl_TessLevelInner[1] = 7.0;
+    gl_TessLevelOuter[1] = 4.0;
+    gl_TessLevelOuter[2] = 8.0;
+    gl_TessLevelOuter[3] = 16.0;
+    gl_TessLevelInner[0] = 4.0;
+    gl_TessLevelInner[1] = 8.0;
   }
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
   texcoord_tes[gl_InvocationID] = texcoord_tcs[gl_InvocationID];
@@ -35,14 +35,16 @@ void main(void)
 layout(quads, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
 out mediump vec2 texcoord_geo;
+uniform sampler2D hf;
 void main()
 {
-  vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
-  vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
-  gl_Position = mix(a, b, gl_TessCoord.y);
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
   vec2 d = mix(texcoord_tes[3], texcoord_tes[2], gl_TessCoord.x);
   texcoord_geo = mix(c, d, gl_TessCoord.y);
+  vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
+  vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
+  float height = texture(hf, texcoord_geo).g;
+  gl_Position = mix(a, b, gl_TessCoord.y) + vec4(0, height, 0, 0);
 }")
 
 (def geo-source "#version 410 core
@@ -54,7 +56,7 @@ void main(void)
 {
 	gl_Position = gl_in[0].gl_Position;
   UV = texcoord_geo[0];
-	EmitVertex();	
+	EmitVertex();
 	gl_Position = gl_in[1].gl_Position;
   UV = texcoord_geo[1];
 	EmitVertex();
@@ -83,10 +85,14 @@ void main()
   (int-array [0 1 2 3]))
 
 (def pixels
-  (float-array [0.0 0.0 1.0
-                0.0 1.0 0.0
-                1.0 0.0 0.0
-                1.0 1.0 1.0]))
+  (float-array [0.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0 0.0
+                0.0 1.0 0.0 1.0 0.0 0.0 0.0 0.0 1.0
+                1.0 0.0 0.0 0.0 0.0 1.0 0.0 1.0 0.0]))
+
+(def heights
+  (float-array [0.1 0.2 0.3
+                0.1 0.2 0.3
+                0.1 0.2 0.3]))
 
 (defn make-shader [source shader-type]
   (let [shader (GL20/glCreateShader shader-type)]
@@ -115,7 +121,7 @@ void main()
 (def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
 
 (Display/setTitle "mini")
-(Display/setDisplayMode (DisplayMode. 320 240))
+(Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
 
 (def vertex-shader (make-shader vertex-source GL20/GL_VERTEX_SHADER))
@@ -143,24 +149,42 @@ void main()
 (GL20/glEnableVertexAttribArray 0)
 (GL20/glEnableVertexAttribArray 1)
 
-(def tex (GL11/glGenTextures))
+(println (GL20/glGetUniformLocation program "hf"))
+(println (GL20/glGetUniformLocation program "tex"))
+
+(GL20/glUseProgram program)
+
+(def hf (GL11/glGenTextures))
 (GL13/glActiveTexture GL13/GL_TEXTURE0)
-(GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
-(GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 0)
-(def pixel-buffer (make-float-buffer pixels))
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 2 2 0 GL12/GL_BGR GL11/GL_FLOAT pixel-buffer)
+(GL11/glEnable GL11/GL_TEXTURE_2D)
+(GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
+(GL20/glUniform1i (GL20/glGetUniformLocation program "hf") 0)
+(def height-buffer (make-float-buffer heights))
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 3 3 0 GL11/GL_LUMINANCE GL11/GL_FLOAT height-buffer)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
-(GL30/glGenerateMipmap GL11/GL_TEXTURE_2D)
+
+(def tex (GL11/glGenTextures))
+(GL13/glActiveTexture (inc GL13/GL_TEXTURE0))
+(GL11/glEnable GL11/GL_TEXTURE_2D)
+(GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
+(GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 1)
+(def pixel-buffer (make-float-buffer pixels))
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 3 3 0 GL12/GL_BGR GL11/GL_FLOAT pixel-buffer)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
+;(GL30/glGenerateMipmap GL11/GL_TEXTURE_2D)
 
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-  (GL20/glUseProgram program)
+  ;(GL20/glUseProgram program)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
   (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)
   (Display/update)
@@ -171,6 +195,9 @@ void main()
 
 (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
 (GL11/glDeleteTextures tex)
+
+(GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
+(GL11/glDeleteTextures hf)
 
 (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
 (GL15/glDeleteBuffers idx)

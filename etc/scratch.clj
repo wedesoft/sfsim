@@ -3,8 +3,6 @@
          '[sfsim25.vector3 :refer (vector3 norm) :as v]
          '[sfsim25.cubemap :refer :all])
 
-(import '[sfsim25.vector3 Vector3])
-
 (def radius1 6378000.0)
 (def radius2 6357000.0)
 
@@ -33,6 +31,11 @@
         i     (cube-coordinate level 3 a 1)
         p     (cube-map face j i)]
     (scale-point p radius1 radius2)))
+
+(center [5 0])
+(center [5 1])
+(center [5 2])
+(center [5 3])
 
 (defn tree-file [[face & path] suffix]
   (let [b     (y-tile path)
