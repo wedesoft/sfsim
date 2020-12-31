@@ -149,9 +149,6 @@ void main()
 (GL20/glEnableVertexAttribArray 0)
 (GL20/glEnableVertexAttribArray 1)
 
-(println (GL20/glGetUniformLocation program "hf"))
-(println (GL20/glGetUniformLocation program "tex"))
-
 (GL20/glUseProgram program)
 
 (def hf (GL11/glGenTextures))
