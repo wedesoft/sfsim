@@ -20,12 +20,18 @@ out mediump vec2 texcoord_tes[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    gl_TessLevelOuter[0] = 2.0;
-    gl_TessLevelOuter[1] = 2.0;
-    gl_TessLevelOuter[2] = 2.0;
-    gl_TessLevelOuter[3] = 2.0;
-    gl_TessLevelInner[0] = 2.0;
-    gl_TessLevelInner[1] = 2.0;
+    if (texcoord_tcs[1].x == 0)
+      gl_TessLevelOuter[0] = 4.0;
+    else
+      gl_TessLevelOuter[0] = 2.0;
+    gl_TessLevelOuter[1] = 4.0;
+    gl_TessLevelOuter[2] = 4.0;
+    if (texcoord_tcs[0].y == 1)
+      gl_TessLevelOuter[3] = 4.0;
+    else
+      gl_TessLevelOuter[3] = 2.0;
+    gl_TessLevelInner[0] = 4.0;
+    gl_TessLevelInner[1] = 4.0;
   }
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
   texcoord_tes[gl_InvocationID] = texcoord_tcs[gl_InvocationID];
