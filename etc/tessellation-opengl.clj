@@ -20,12 +20,12 @@ out mediump vec2 texcoord_tes[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    gl_TessLevelOuter[0] = 4.0;
+    gl_TessLevelOuter[0] = 2.0;
     gl_TessLevelOuter[1] = 2.0;
-    gl_TessLevelOuter[2] = 8.0;
-    gl_TessLevelOuter[3] = 1.0;
-    gl_TessLevelInner[0] = 4.0;
-    gl_TessLevelInner[1] = 8.0;
+    gl_TessLevelOuter[2] = 2.0;
+    gl_TessLevelOuter[3] = 2.0;
+    gl_TessLevelInner[0] = 2.0;
+    gl_TessLevelInner[1] = 2.0;
   }
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
   texcoord_tes[gl_InvocationID] = texcoord_tcs[gl_InvocationID];
@@ -77,12 +77,20 @@ void main()
 
 (def vertices
   (float-array [ 0.5  0.5 0.0 1.0 1.0
+                 0.0  0.5 0.0 0.5 1.0
                 -0.5  0.5 0.0 0.0 1.0
-                -0.5 -0.5 0.0 0.0 0.0
-                 0.5 -0.5 0.0 1.0 0.0]))
+                 0.5  0.0 0.0 1.0 0.5
+                 0.0  0.0 0.0 0.5 0.5
+                -0.5  0.0 0.0 0.0 0.5
+                 0.5 -0.5 0.0 1.0 0.0
+                 0.0 -0.5 0.0 0.5 0.0
+                -0.5 -0.5 0.0 0.0 0.0]))
 
 (def indices
-  (int-array [0 1 2 3]))
+  (int-array [0 1 4 3
+              1 2 5 4
+              3 4 7 6
+              4 5 8 7]))
 
 (def pixels
   (float-array [0.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0 0.0
@@ -183,7 +191,7 @@ void main()
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   ;(GL20/glUseProgram program)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)
+  (GL11/glDrawElements GL40/GL_PATCHES 16 GL11/GL_UNSIGNED_INT 0)
   (Display/update)
   (Thread/sleep 40))
 
