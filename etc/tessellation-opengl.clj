@@ -20,10 +20,10 @@ out mediump vec2 texcoord_tes[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    gl_TessLevelOuter[0] = 2.0;
-    gl_TessLevelOuter[1] = 4.0;
+    gl_TessLevelOuter[0] = 4.0;
+    gl_TessLevelOuter[1] = 2.0;
     gl_TessLevelOuter[2] = 8.0;
-    gl_TessLevelOuter[3] = 16.0;
+    gl_TessLevelOuter[3] = 1.0;
     gl_TessLevelInner[0] = 4.0;
     gl_TessLevelInner[1] = 8.0;
   }
@@ -153,7 +153,7 @@ void main()
 
 (def hf (GL11/glGenTextures))
 (GL13/glActiveTexture GL13/GL_TEXTURE0)
-(GL11/glEnable GL11/GL_TEXTURE_2D)
+; (GL11/glEnable GL11/GL_TEXTURE_2D)
 (GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "hf") 0)
 (def height-buffer (make-float-buffer heights))
@@ -165,7 +165,7 @@ void main()
 
 (def tex (GL11/glGenTextures))
 (GL13/glActiveTexture (inc GL13/GL_TEXTURE0))
-(GL11/glEnable GL11/GL_TEXTURE_2D)
+; (GL11/glEnable GL11/GL_TEXTURE_2D)
 (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 1)
 (def pixel-buffer (make-float-buffer pixels))
