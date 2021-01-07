@@ -24,12 +24,18 @@ void main(void)
       gl_TessLevelOuter[0] = 4.0;
     else
       gl_TessLevelOuter[0] = 2.0;
-    gl_TessLevelOuter[1] = 4.0;
-    gl_TessLevelOuter[2] = 4.0;
+    if (texcoord_tcs[0].y != 1)
+      gl_TessLevelOuter[1] = 4.0;
+    else
+      gl_TessLevelOuter[1] = 2.0;
+    if (texcoord_tcs[1].x != 0)
+      gl_TessLevelOuter[2] = 4.0;
+    else
+      gl_TessLevelOuter[2] = 2.0;
     if (texcoord_tcs[2].y != 0)
       gl_TessLevelOuter[3] = 4.0;
     else
-      gl_TessLevelOuter[3] = 1.0;
+      gl_TessLevelOuter[3] = 2.0;
     gl_TessLevelInner[0] = 4.0;
     gl_TessLevelInner[1] = 4.0;
   }
