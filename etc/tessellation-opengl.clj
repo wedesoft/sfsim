@@ -20,19 +20,19 @@ out mediump vec2 texcoord_tes[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    if (texcoord_tcs[3].x != 1)
+    if (texcoord_tcs[0].x != 0)
       gl_TessLevelOuter[0] = 4.0;
     else
       gl_TessLevelOuter[0] = 2.0;
-    if (texcoord_tcs[0].y != 1)
+    if (texcoord_tcs[0].y != 0)
       gl_TessLevelOuter[1] = 4.0;
     else
       gl_TessLevelOuter[1] = 2.0;
-    if (texcoord_tcs[1].x != 0)
+    if (texcoord_tcs[1].x != 1)
       gl_TessLevelOuter[2] = 4.0;
     else
       gl_TessLevelOuter[2] = 2.0;
-    if (texcoord_tcs[2].y != 0)
+    if (texcoord_tcs[2].y != 1)
       gl_TessLevelOuter[3] = 4.0;
     else
       gl_TessLevelOuter[3] = 2.0;
@@ -88,15 +88,15 @@ void main()
 }")
 
 (def vertices
-  (float-array [ 0.5  0.5 0.0 1.0 1.0
-                 0.0  0.5 0.0 0.5 1.0
-                -0.5  0.5 0.0 0.0 1.0
-                 0.5  0.0 0.0 1.0 0.5
-                 0.0  0.0 0.0 0.5 0.5
-                -0.5  0.0 0.0 0.0 0.5
-                 0.5 -0.5 0.0 1.0 0.0
+  (float-array [-0.5 -0.5 0.0 0.0 0.0
                  0.0 -0.5 0.0 0.5 0.0
-                -0.5 -0.5 0.0 0.0 0.0]))
+                 0.5 -0.5 0.0 1.0 0.0
+                -0.5  0.0 0.0 0.0 0.5
+                 0.0  0.0 0.0 0.5 0.5
+                 0.5  0.0 0.0 1.0 0.5
+                -0.5  0.5 0.0 0.0 1.0
+                 0.0  0.5 0.0 0.5 1.0
+                 0.5  0.5 0.0 1.0 1.0]))
 
 (def indices
   (int-array [0 1 4 3
