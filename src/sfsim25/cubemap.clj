@@ -41,7 +41,7 @@
 (defn cube-map
   "Get 3D vector to point on cube face"
   ^Vector3 [^long face ^double j ^double i]
-  (v/vector3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
+  (v/->Vector3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
 
 (defn cube-coordinate
   "Determine coordinate of a pixel on a tile of a given level"
@@ -99,14 +99,14 @@
   "Scale point coordinates to reach surface of ellipsoid"
   ^Vector3 [^Vector3 p ^double radius1 ^double radius2]
   (let [norm (v/norm p)]
-    (v/vector3 (* radius1 (/ (.x p) norm)) (* radius2 (/ (.y p) norm)) (* radius1 (/ (.z p) norm)))))
+    (v/->Vector3 (* radius1 (/ (.x p) norm)) (* radius2 (/ (.y p) norm)) (* radius1 (/ (.z p) norm)))))
 
 (defn offset-longitude
   "Determine longitudinal offset for computing normal vector"
   ^Vector3 [^Vector3 p ^long level ^long tilesize]
   (let [lon  (longitude p)
         norm (v/norm p)]
-    (m/* (m/rotation-y (- lon)) (v/vector3 0 0 (- (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))))))))
+    (m/* (m/rotation-y (- lon)) (v/->Vector3 0 0 (- (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))))))))
 
 (defn offset-latitude
   "Determine latitudinal offset for computing normal vector"
@@ -114,8 +114,8 @@
   (let [lon  (longitude p)
         lat  (latitude p)
         norm (v/norm p)
-        v    (v/vector3 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0)
+        v    (v/->Vector3 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0)
         vs   (m/* (m/rotation-y (- lon)) (m/* (m/rotation-z lat) v))]
-    (v/vector3 (.x vs) (/ (* (.y vs) radius2) radius1) (.z vs))))
+    (v/->Vector3 (.x vs) (/ (* (.y vs) radius2) radius1) (.z vs))))
 
 (set! *unchecked-math* false)

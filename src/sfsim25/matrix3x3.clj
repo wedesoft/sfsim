@@ -1,7 +1,7 @@
 (ns sfsim25.matrix3x3
   (:refer-clojure :exclude [* -])
   (:require [clojure.core :as c]
-            [sfsim25.vector3 :refer (vector3)])
+            [sfsim25.vector3 :refer (->Vector3)])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -39,9 +39,9 @@
 (defn *
   "Matrix-vector multiplication"
   ^Vector3 [^Matrix3x3 m ^Vector3 v]
-  (vector3 (+ (c/* (.m11 m) (.x v)) (c/* (.m12 m) (.y v)) (c/* (.m13 m) (.z v)))
-           (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)))
-           (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)))))
+  (->Vector3 (+ (c/* (.m11 m) (.x v)) (c/* (.m12 m) (.y v)) (c/* (.m13 m) (.z v)))
+             (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)))
+             (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)))))
 
 (defn norm2
   "Compute square of norm of matrix"

@@ -1,6 +1,6 @@
 (ns sfsim25.cubemap-test
   (:require [clojure.test :refer :all]
-            [sfsim25.vector3 :refer (vector3 norm) :as v]
+            [sfsim25.vector3 :refer (->Vector3 norm) :as v]
             [sfsim25.cubemap :refer :all]))
 
 (deftest cube-faces-test
@@ -49,7 +49,7 @@
 
 (deftest cube-map-test
   (testing "Get vector to cube face"
-    (is (= (vector3 0.0 -1.0 1.0) (cube-map 5 0 0.5)))))
+    (is (= (->Vector3 0.0 -1.0 1.0) (cube-map 5 0 0.5)))))
 
 (deftest cube-coordinate-test
   (testing "Test cube coordinates"
@@ -61,13 +61,13 @@
 
 (deftest longitude-test
   (testing "Longitude of 3D point"
-    (are [result x y z] (< (Math/abs (- result (longitude (vector3 x y z)))) 1e-6)
+    (are [result x y z] (< (Math/abs (- result (longitude (->Vector3 x y z)))) 1e-6)
       0        1 0 0
       (/ pi 2) 0 0 1)))
 
 (deftest latitude-test
   (testing "Latitude of 3D point"
-    (are [result x y z] (< (Math/abs (- result (latitude (vector3 x y z)))) 1e-6)
+    (are [result x y z] (< (Math/abs (- result (latitude (->Vector3 x y z)))) 1e-6)
       0        0 0 1
       (/ pi 2) 0 1 0
       (/ pi 4) 1 1 0)))
@@ -96,22 +96,22 @@
 
 (deftest scale-point-test
   (testing "Scale point up to given size of ellipsoid"
-    (is (= (vector3 0.0  80.0 0.0) (scale-point (vector3 0 2 0) 100 80)))
-    (is (= (vector3 100.0 0.0 0.0) (scale-point (vector3 2 0 0) 100 80)))
-    (is (= (vector3 0.0 0.0 100.0) (scale-point (vector3 0 0 2) 100 80)))))
+    (is (= (->Vector3 0.0  80.0 0.0) (scale-point (->Vector3 0 2 0) 100 80)))
+    (is (= (->Vector3 100.0 0.0 0.0) (scale-point (->Vector3 2 0 0) 100 80)))
+    (is (= (->Vector3 0.0 0.0 100.0) (scale-point (->Vector3 0 0 2) 100 80)))))
 
 (deftest offset-longitude-test
   (testing "Offset in longitudinal direction"
-    (is (< (norm (v/- (vector3 0 0 (/ (* -2 pi) (* 4 675))) (offset-longitude (vector3 1 0 0) 0 675))) 1e-6))
-    (is (< (norm (v/- (vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (vector3 0 0 1) 0 675))) 1e-6))
-    (is (< (norm (v/- (vector3 (/ (* 4 pi) (* 4 675)) 0 0) (offset-longitude (vector3 0 0 2) 0 675))) 1e-6))
-    (is (< (norm (v/- (vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (vector3 0 0 2) 1 675))) 1e-6))))
+    (is (< (norm (v/- (->Vector3 0 0 (/ (* -2 pi) (* 4 675))) (offset-longitude (->Vector3 1 0 0) 0 675))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 0 1) 0 675))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* 4 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 0 2) 0 675))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 0 2) 1 675))) 1e-6))))
 
 (deftest offset-latitude-test
   (testing "Offset in latitudinal direction"
-    (is (< (norm (v/- (vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (vector3 1 0 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (vector3 (/ (* -2 pi) (* 4 675)) 0 0) (offset-latitude (vector3 0 1 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (vector3 0 (/ (* 4 pi) (* 4 675)) 0) (offset-latitude (vector3 2 0 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (vector3 2 0 0) 1 675 1 1))) 1e-6))
-    (is (< (norm (v/- (vector3 0 0 (/ (* -2 pi) (* 4 675))) (offset-latitude (vector3 0 1 1e-8) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (vector3 0 (/ pi (* 4 675)) 0) (offset-latitude (vector3 1 0 0) 0 675 1 0.5))) 1e-6))))
+    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 1 0 0) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* -2 pi) (* 4 675)) 0 0) (offset-latitude (->Vector3 0 1 0) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 (/ (* 4 pi) (* 4 675)) 0) (offset-latitude (->Vector3 2 0 0) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 2 0 0) 1 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 0 (/ (* -2 pi) (* 4 675))) (offset-latitude (->Vector3 0 1 1e-8) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 (/ pi (* 4 675)) 0) (offset-latitude (->Vector3 1 0 0) 0 675 1 0.5))) 1e-6))))

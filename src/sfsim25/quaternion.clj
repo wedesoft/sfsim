@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
             [sfsim25.util :refer (sinc)]
-            [sfsim25.vector3 :refer (vector3) :as v])
+            [sfsim25.vector3 :refer (->Vector3) :as v])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -73,7 +73,7 @@
 (defn quaternion->vector3
   "Convert quaternion to 3D vector"
   ^Vector3 [^Quaternion q]
-  (vector3 (.b q) (.c q) (.d q)))
+  (->Vector3 (.b q) (.c q) (.d q)))
 
 (defn exp
   "Exponentiation of quaternion"
@@ -88,7 +88,7 @@
   "Generate quaternion to represent rotation"
   ^Quaternion [^double theta ^Vector3 v]
   (let [scale (/ theta 2)]
-    (exp (vector3->quaternion (vector3 (c/* scale (.x v)) (c/* scale (.y v)) (c/* scale (.z v)))))))
+    (exp (vector3->quaternion (->Vector3 (c/* scale (.x v)) (c/* scale (.y v)) (c/* scale (.z v)))))))
 
 (defn rotate-vector
   "Rotate a vector with a rotation represented by a quaternion"

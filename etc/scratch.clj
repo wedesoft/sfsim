@@ -1,6 +1,5 @@
 (require '[clojure.core.async :refer (go chan <! >! <!! >!! poll!) :as a]
          '[sfsim25.util :refer :all]
-         '[sfsim25.vector3 :refer (vector3 norm) :as v]
          '[sfsim25.cubemap :refer :all])
 
 (def radius1 6378000.0)

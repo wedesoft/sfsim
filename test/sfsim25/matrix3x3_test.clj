@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [* -])
   (:require [clojure.test :refer :all]
             [sfsim25.matrix3x3 :refer :all]
-            [sfsim25.vector3 :refer (vector3)]))
+            [sfsim25.vector3 :refer (->Vector3)]))
 
 (deftest display-test
   (testing "Display 3x3 matrix"
@@ -10,7 +10,7 @@
 
 (deftest matrix-vector-dot-test
   (testing "Matrix-vector multiplication"
-    (is (= (vector3 14 32 50) (* (matrix3x3 1 2 3 4 5 6 7 8 9) (vector3 1 2 3))))))
+    (is (= (->Vector3 14 32 50) (* (matrix3x3 1 2 3 4 5 6 7 8 9) (->Vector3 1 2 3))))))
 
 (deftest matrix-norm-test
   (testing "Matrix norm"
