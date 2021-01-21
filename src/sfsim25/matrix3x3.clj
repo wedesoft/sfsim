@@ -20,21 +20,16 @@
 
 (set! *warn-on-reflection* true)
 
-(defn matrix3x3
-  "Construct a 3x3 matrix"
-  ^Matrix3x3 [m11 m12 m13 m21 m22 m23 m31 m32 m33]
-  (Matrix3x3. m11 m12 m13 m21 m22 m23 m31 m32 m33))
-
 (defn -
   "Negate matrix or subtract matrices"
   (^Matrix3x3 [^Matrix3x3 a]
-    (Matrix3x3. (c/- (.m11 a)) (c/- (.m12 a)) (c/- (.m13 a))
-                (c/- (.m21 a)) (c/- (.m22 a)) (c/- (.m23 a))
-                (c/- (.m31 a)) (c/- (.m32 a)) (c/- (.m33 a))))
+    (->Matrix3x3 (c/- (.m11 a)) (c/- (.m12 a)) (c/- (.m13 a))
+                 (c/- (.m21 a)) (c/- (.m22 a)) (c/- (.m23 a))
+                 (c/- (.m31 a)) (c/- (.m32 a)) (c/- (.m33 a))))
   (^Matrix3x3 [^Matrix3x3 a ^Matrix3x3 b]
-    (Matrix3x3. (c/- (.m11 a) (.m11 b)) (c/- (.m12 a) (.m12 b)) (c/- (.m13 a) (.m13 b))
-                (c/- (.m21 a) (.m21 b)) (c/- (.m22 a) (.m22 b)) (c/- (.m23 a) (.m23 b))
-                (c/- (.m31 a) (.m31 b)) (c/- (.m32 a) (.m32 b)) (c/- (.m33 a) (.m33 b)))))
+    (->Matrix3x3 (c/- (.m11 a) (.m11 b)) (c/- (.m12 a) (.m12 b)) (c/- (.m13 a) (.m13 b))
+                 (c/- (.m21 a) (.m21 b)) (c/- (.m22 a) (.m22 b)) (c/- (.m23 a) (.m23 b))
+                 (c/- (.m31 a) (.m31 b)) (c/- (.m32 a) (.m32 b)) (c/- (.m33 a) (.m33 b)))))
 
 (defn *
   "Matrix-vector multiplication"
@@ -59,19 +54,19 @@
   "Rotation matrix around x-axis"
   ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
-    (Matrix3x3. 1 0 0 0 ca (c/- sa) 0 sa ca)))
+    (->Matrix3x3 1 0 0 0 ca (c/- sa) 0 sa ca)))
 
 (defn rotation-y
   "Rotation matrix around y-axis"
   ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
-    (Matrix3x3. ca 0 sa 0 1 0 (c/- sa) 0 ca)))
+    (->Matrix3x3 ca 0 sa 0 1 0 (c/- sa) 0 ca)))
 
 (defn rotation-z
   "Rotation matrix around z-axis"
   ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
-    (Matrix3x3. ca (c/- sa) 0 sa ca 0 0 0 1)))
+    (->Matrix3x3 ca (c/- sa) 0 sa ca 0 0 0 1)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
