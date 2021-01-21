@@ -1,6 +1,6 @@
 (ns sfsim25.util
   (:require [clojure.java.io :as io]
-            [sfsim25.rgb :refer (rgb)])
+            [sfsim25.rgb :refer (->RGB)])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [magick MagickImage ImageInfo ColorspaceType]
@@ -115,7 +115,7 @@
 
 (defn get-pixel ^RGB [[width height data] ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (rgb (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
+    (->RGB (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
 
 (defn set-pixel! [[width height data] ^long y ^long x ^RGB c]
   (let [offset (* 3 (+ (* width y) x))]
