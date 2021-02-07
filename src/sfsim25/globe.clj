@@ -123,7 +123,7 @@
         out-level (Integer/parseInt (nth args 1))
         n         (bit-shift-left 1 out-level)
         width     675
-        tilesize  256
+        tilesize  33
         radius1   6378000.0
         radius2   6357000.0]
     (doseq [k (range 6) b (range n) a (range n)]
