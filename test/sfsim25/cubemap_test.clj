@@ -115,3 +115,8 @@
     (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 2 0 0) 1 675 1 1))) 1e-6))
     (is (< (norm (v/- (->Vector3 0 0 (/ (* -2 pi) (* 4 675))) (offset-latitude (->Vector3 0 1 1e-8) 0 675 1 1))) 1e-6))
     (is (< (norm (v/- (->Vector3 0 (/ pi (* 4 675)) 0) (offset-latitude (->Vector3 1 0 0) 0 675 1 0.5))) 1e-6))))
+
+(deftest super-tile-test
+  (testing "Merging of sub tiles into super tile"
+    (is [1 3 5 11 13 15 21 23 25] (super-tile 3 [ 1  2  3,  6  7  8, 11 12 13] [ 3  4  5,  8  9 10, 13 14 15]
+                                                [11 12 13, 16 17 18, 21 22 23] [13 14 15, 18 19 20, 23 24 25]))))

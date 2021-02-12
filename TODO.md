@@ -1,7 +1,9 @@
 # TODO
-* height field size 2^n + 1
+* downsample cube globe to get coarse levels (color map, displacement map, normal map, water map)
 * Get scale-image to work on large images
-* implement fast version of slurp-shorts and slurp-floats
+* compute 3D coordinates from elevation map and cube coordinates
+* compute cube globe including deviation from sphere
+
 
 * OpenGL draw object: GL30/glBindVertexArray, GL20/glEnableVertexAttribArray, GL11/glDrawElements, disable vertex attrib array, bind to zero
 * delete OpenGL object: GL30/glBindVertexArray, delete vertex buffer, delete index buffer, delete vertex array, bind to zero

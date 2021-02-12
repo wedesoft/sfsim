@@ -1,4 +1,4 @@
-; clojure -cp /usr/share/java/lwjgl.jar raw-opengl.clj
+; clojure -cp /usr/share/java/lwjgl.jar tessellation-opengl.clj
 (ns tessellation-opengl
   (:import [org.lwjgl BufferUtils]
            [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40]))

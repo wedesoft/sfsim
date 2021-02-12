@@ -118,4 +118,11 @@
         vs   (m/* (m/rotation-y (- lon)) (m/* (m/rotation-z lat) v))]
     (v/->Vector3 (.x vs) (/ (* (.y vs) radius2) radius1) (.z vs))))
 
+(defn super-tile
+  "Create lower resolution tile from four sub-tiles"
+  [tilesize a b c d]
+  (let [subsample (fn [a b] (vec (concat (map (vec a) (range 0 tilesize 2)) (map (vec b) (range 2 tilesize 2)))))]
+    (vec (mapcat subsample (subsample (partition tilesize a) (partition tilesize c))
+                           (subsample (partition tilesize b) (partition tilesize d))))))
+
 (set! *unchecked-math* false)

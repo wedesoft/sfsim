@@ -1,2 +1,2 @@
 #!/bin/bash
-lein run-globe 1 5
+lein run-globe 2 5

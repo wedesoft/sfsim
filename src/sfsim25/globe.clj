@@ -146,6 +146,6 @@
         (spit-image (cube-path "globe" k out-level b a ".png") tilesize tilesize data)
         (spit-bytes (cube-path "globe" k out-level b a ".bin") water)
         (spit-floats (cube-path "globe" k out-level b a ".raw") vertex)
-        (println (cube-path "globe" k out-level b a ".png"))))))
+        (println (cube-path "globe" k out-level b a ".*"))))))
 
 (set! *unchecked-math* false)
