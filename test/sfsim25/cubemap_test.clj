@@ -1,6 +1,7 @@
 (ns sfsim25.cubemap-test
   (:require [clojure.test :refer :all]
             [sfsim25.vector3 :refer (->Vector3 norm) :as v]
+            [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all]))
 
 (deftest cube-faces-test
@@ -120,3 +121,13 @@
   (testing "Merging of sub tiles into super tile"
     (is [1 3 5 11 13 15 21 23 25] (super-tile 3 [ 1  2  3,  6  7  8, 11 12 13] [ 3  4  5,  8  9 10, 13 14 15]
                                                 [11 12 13, 16 17 18, 21 22 23] [13 14 15, 18 19 20, 23 24 25]))))
+
+(deftest world-map-tile-test
+  (with-redefs [util/slurp-image list
+                util/tile-path str]
+    (is '("world235.png") (world-map-tile 2 3 5))))
+
+(deftest elevation-tile-test
+  (with-redefs [util/slurp-shorts list
+                util/tile-path str]
+    (is '("elevation235.raw") (elevation-tile 2 3 5))))

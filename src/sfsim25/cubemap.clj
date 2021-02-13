@@ -1,6 +1,8 @@
 (ns sfsim25.cubemap
-  (:require [sfsim25.vector3 :as v]
-            [sfsim25.matrix3x3 :as m])
+  (:require [clojure.core.memoize :as z]
+            [sfsim25.vector3 :as v]
+            [sfsim25.matrix3x3 :as m]
+            [sfsim25.util :refer (tile-path slurp-image slurp-shorts)])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -124,5 +126,19 @@
   (let [subsample (fn [a b] (vec (concat (map (vec a) (range 0 tilesize 2)) (map (vec b) (range 2 tilesize 2)))))]
     (vec (mapcat subsample (subsample (partition tilesize a) (partition tilesize c))
                            (subsample (partition tilesize b) (partition tilesize d))))))
+
+(def world-map-tile
+  "Load and cache map tiles"
+  (z/lru
+    (fn [^long in-level ^long ty ^long tx]
+      (slurp-image (tile-path "world" in-level ty tx ".png")))
+    :lru/threshold 128))
+
+(def elevation-tile
+  "Load and cache elevation tiles"
+  (z/lru
+    (fn ^shorts [^long in-level ^long ty ^long tx]
+      (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
+    :lru/threshold 128))
 
 (set! *unchecked-math* false)

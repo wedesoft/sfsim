@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate
-                                     offset-longitude offset-latitude)]
+                                     offset-longitude offset-latitude world-map-tile elevation-tile)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats get-pixel set-pixel!
                                   cube-dir cube-path ubyte->byte)]
             [sfsim25.rgb :as r]
@@ -11,20 +11,6 @@
   (:gen-class))
 
 (set! *unchecked-math* true)
-
-(def world-map-tile
-  "Load and cache map tiles"
-  (m/lru
-    (fn [^long in-level ^long ty ^long tx]
-      (slurp-image (tile-path "world" in-level ty tx ".png")))
-    :lru/threshold 128))
-
-(def elevation-tile
-  "Load and cache elevation tiles"
-  (m/lru
-    (fn ^shorts [^long in-level ^long ty ^long tx]
-      (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
-    :lru/threshold 128))
 
 (defn world-map-pixel
   "Get world map RGB value for a given pixel coordinate"
