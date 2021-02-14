@@ -11,8 +11,8 @@
   (let [[input-data
          output-data] args
         data          (slurp-shorts input-data)
-        n             (alength ^shorts data)
-        w             (int (Math/sqrt n))
+        n             (alength data)
+        w             (int (Math/round (Math/sqrt n)))
         size          (/ w 2)
         result        (short-array (* size size))]
     (doseq [^int j (range size) ^int i (range size)]

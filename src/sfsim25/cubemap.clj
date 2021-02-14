@@ -2,7 +2,7 @@
   (:require [clojure.core.memoize :as z]
             [sfsim25.vector3 :as v]
             [sfsim25.matrix3x3 :as m]
-            [sfsim25.util :refer (tile-path slurp-image slurp-shorts)])
+            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel)])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -140,5 +140,15 @@
     (fn ^shorts [^long in-level ^long ty ^long tx]
       (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
     :lru/threshold 128))
+
+(defn world-map-pixel
+  "Get world map RGB value for a given pixel coordinate"
+  [^long dy ^long dx ^long in-level ^long width]
+  (let [ty  (quot dy width)
+        tx  (quot dx width)
+        py  (mod dy width)
+        px  (mod dx width)
+        img (world-map-tile in-level ty tx)]
+    (get-pixel img py px)))
 
 (set! *unchecked-math* false)

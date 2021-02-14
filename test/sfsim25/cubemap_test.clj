@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [sfsim25.vector3 :refer (->Vector3 norm) :as v]
             [sfsim25.util :as util]
-            [sfsim25.cubemap :refer :all]))
+            [sfsim25.cubemap :refer :all :as cubemap]))
 
 (deftest cube-faces-test
   (testing "First face of cube"
@@ -123,11 +123,19 @@
                                                 [11 12 13, 16 17 18, 21 22 23] [13 14 15, 18 19 20, 23 24 25]))))
 
 (deftest world-map-tile-test
-  (with-redefs [util/slurp-image list
-                util/tile-path str]
-    (is '("world235.png") (world-map-tile 2 3 5))))
+  (testing "Load (and cache) map tile"
+    (with-redefs [util/slurp-image list
+                  util/tile-path   str]
+      (is '("world235.png") (world-map-tile 2 3 5)))))
 
 (deftest elevation-tile-test
-  (with-redefs [util/slurp-shorts list
-                util/tile-path str]
-    (is '("elevation235.raw") (elevation-tile 2 3 5))))
+  (testing "Load (and cache) elevation tile"
+    (with-redefs [util/slurp-shorts list
+                  util/tile-path    str]
+      (is '("elevation235.raw") (elevation-tile 2 3 5)))))
+
+(deftest world-map-pixel-test
+  (testing "Read pixels from world map tile"
+    (with-redefs [cubemap/world-map-tile list
+                  util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
+      (is '(get-pixel (5 0 0) 320 240) (world-map-pixel 320 240 5 675)))))

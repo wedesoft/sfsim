@@ -113,7 +113,7 @@
   "Convert unsigned byte to byte"
   (if (<= u 127) u (- u 256)))
 
-(defn get-pixel ^RGB [[width height data] ^long y ^long x]
+(defn get-pixel [[width height data] ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
     (->RGB (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
 
