@@ -88,3 +88,8 @@
     (let [img [4 2 (byte-array (range 24))]]
       (set-pixel! img 1 2 (->RGB 253 254 255))
       (is (= (->RGB 253 254 255) (get-pixel img 1 2))))))
+
+(def elevation-test
+  (testing "Reading and writing of elevation pixels"
+    (let [elevation [4 2 (short-array (range 8))]]
+      (is (= 6 (get-elevation elevation 1 2))))))

@@ -1,4 +1,6 @@
 # TODO
+* set-elevation! operating on [size size data]
+* test elevation-pixel, base it on get-elevation and move to cubemap.clj
 * downsample cube globe to get coarse levels (color map, displacement map, normal map, water map)
 * Get scale-image to work on large images
 * compute 3D coordinates from elevation map and cube coordinates

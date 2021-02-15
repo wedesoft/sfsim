@@ -105,20 +105,32 @@
     (.setMagick info "RGB")
     [(.width dimension) (.height dimension) (.imageToBlob image info)]))
 
-(defn byte->ubyte ^long [^long b]
+(defn byte->ubyte
   "Convert byte to unsigned byte"
+  ^long [^long b]
   (if (>= b 0) b (+ b 256)))
 
-(defn ubyte->byte ^long [^long u]
+(defn ubyte->byte
   "Convert unsigned byte to byte"
+  ^long [^long u]
   (if (<= u 127) u (- u 256)))
 
-(defn get-pixel ^RGB [[width height data] ^long y ^long x]
+(defn get-pixel
+  "Read color value from a pixel of an image"
+  ^RGB [[width height data] ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
     (->RGB (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
 
-(defn set-pixel! [[width height data] ^long y ^long x ^RGB c]
+(defn set-pixel!
+  "Set color value of a pixel in an image"
+  [[width height data] ^long y ^long x ^RGB c]
   (let [offset (* 3 (+ (* width y) x))]
     (aset-byte data offset (ubyte->byte (.r c)))
     (aset-byte data (inc offset) (ubyte->byte (.g c)))
     (aset-byte data (inc (inc offset)) (ubyte->byte (.b c)))))
+
+(defn get-elevation
+  "Read elevation value from an elevation tile"
+  ^long [[width height data] ^long y ^long x]
+  (let [offset (+ (* width y) x)]
+    (aget data offset)))

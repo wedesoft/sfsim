@@ -138,7 +138,9 @@
   "Load and cache elevation tiles"
   (z/lru
     (fn ^shorts [^long in-level ^long ty ^long tx]
-      (slurp-shorts (tile-path "elevation" in-level ty tx ".raw")))
+      (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
+            size (int (Math/round (Math/sqrt (alength data))))]
+        [size size data]))
     :lru/threshold 128))
 
 (defn world-map-pixel

@@ -119,20 +119,24 @@
 
 (deftest super-tile-test
   (testing "Merging of sub tiles into super tile"
-    (is [1 3 5 11 13 15 21 23 25] (super-tile 3 [ 1  2  3,  6  7  8, 11 12 13] [ 3  4  5,  8  9 10, 13 14 15]
-                                                [11 12 13, 16 17 18, 21 22 23] [13 14 15, 18 19 20, 23 24 25]))))
+    (is (= [1 3 5 11 13 15 21 23 25]) (super-tile 3 [ 1  2  3,  6  7  8, 11 12 13] [ 3  4  5,  8  9 10, 13 14 15]
+                                                    [11 12 13, 16 17 18, 21 22 23] [13 14 15, 18 19 20, 23 24 25]))))
 
 (deftest world-map-tile-test
   (testing "Load (and cache) map tile"
     (with-redefs [util/slurp-image list
                   util/tile-path   str]
-      (is '("world235.png") (world-map-tile 2 3 5)))))
+      (is (= '("world235.png") (world-map-tile 2 3 5))))))
 
 (deftest elevation-tile-test
   (testing "Load (and cache) elevation tile"
-    (with-redefs [util/slurp-shorts list
-                  util/tile-path    str]
-      (is '("elevation235.raw") (elevation-tile 2 3 5)))))
+    (let [path (atom nil)]
+      (with-redefs [util/slurp-shorts (fn [arg] (reset! path arg) (short-array [2 3 5 7]))
+                    util/tile-path    str]
+        (is (= 2 (first (elevation-tile 2 3 5))))
+        (is (= 2 (second (elevation-tile 2 3 5))))
+        (is (= [2 3 5 7] (seq (nth (elevation-tile 2 3 5) 2))))
+        (is (= @path "elevation235.raw"))))))
 
 (deftest world-map-pixel-test
   (testing "Read pixels from world map tile"

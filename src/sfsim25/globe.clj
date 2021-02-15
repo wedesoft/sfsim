@@ -20,7 +20,7 @@
         py  (mod dy width)
         px  (mod dx width)
         img (elevation-tile in-level ty tx)]
-    (aget img (+ (* py width) px))))
+    (aget (nth img 2) (+ (* py width) px))))
 
 (defn interpolate
   "Interpolate elevation or RGB values"
