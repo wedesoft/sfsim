@@ -92,4 +92,6 @@
 (def elevation-test
   (testing "Reading and writing of elevation pixels"
     (let [elevation [4 2 (short-array (range 8))]]
-      (is (= 6 (get-elevation elevation 1 2))))))
+      (is (= 6 (get-elevation elevation 1 2)))
+      (set-elevation! elevation 1 2 8)
+      (is (= 8 (get-elevation elevation 1 2))))))

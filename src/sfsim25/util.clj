@@ -132,5 +132,9 @@
 (defn get-elevation
   "Read elevation value from an elevation tile"
   ^long [[width height data] ^long y ^long x]
-  (let [offset (+ (* width y) x)]
-    (aget data offset)))
+  (aget data (+ (* width y) x)))
+
+(defn set-elevation!
+  "Write elevation value to an elevation tile"
+  [[width height data] ^long y ^long x ^long value]
+  (aset-short data (+ (* width y) x) value))
