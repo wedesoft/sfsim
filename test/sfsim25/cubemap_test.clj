@@ -142,4 +142,5 @@
   (testing "Read pixels from world map tile"
     (with-redefs [cubemap/world-map-tile list
                   util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
-      (is '(get-pixel (5 0 0) 320 240) (world-map-pixel 320 240 5 675)))))
+      (is (= '(get-pixel (5 0 0) 320 240) (world-map-pixel 320 240 5 675)))
+      (is (= '(get-pixel (5 2 1) 320 240) (world-map-pixel (+ (* 2 675) 320) (+ (* 1 675) 240) 5 675))))))
