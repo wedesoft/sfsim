@@ -2,7 +2,7 @@
   (:require [clojure.core.memoize :as z]
             [sfsim25.vector3 :as v]
             [sfsim25.matrix3x3 :as m]
-            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel)])
+            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation)])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -152,5 +152,15 @@
         px  (mod dx width)
         img (world-map-tile in-level ty tx)]
     (get-pixel img py px)))
+
+(defn elevation-pixel
+  "Get elevation value for given pixel coordinates"
+  [^long dy ^long dx ^long in-level ^long width]
+  (let [ty  (quot dy width)
+        tx  (quot dx width)
+        py  (mod dy width)
+        px  (mod dx width)
+        img (elevation-tile in-level ty tx)]
+    (get-elevation img py px)))
 
 (set! *unchecked-math* false)

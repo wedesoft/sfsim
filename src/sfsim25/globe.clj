@@ -1,8 +1,8 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate
-                                     offset-longitude offset-latitude elevation-tile world-map-pixel)]
-            [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats get-pixel set-pixel!
+                                     offset-longitude offset-latitude elevation-pixel world-map-pixel)]
+            [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats set-pixel!
                                   cube-dir cube-path ubyte->byte)]
             [sfsim25.rgb :as r]
             [sfsim25.vector3 :as v])
@@ -11,16 +11,6 @@
   (:gen-class))
 
 (set! *unchecked-math* true)
-
-(defn elevation-pixel
-  "Get elevation value for given pixel coordinates"
-  [^long dy ^long dx ^long in-level ^long width]
-  (let [ty  (quot dy width)
-        tx  (quot dx width)
-        py  (mod dy width)
-        px  (mod dx width)
-        img (elevation-tile in-level ty tx)]
-    (aget (nth img 2) (+ (* py width) px))))
 
 (defn interpolate
   "Interpolate elevation or RGB values"

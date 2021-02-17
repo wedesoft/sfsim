@@ -142,5 +142,15 @@
   (testing "Read pixels from world map tile"
     (with-redefs [cubemap/world-map-tile list
                   util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
-      (is (= '(get-pixel (5 0 0) 320 240) (world-map-pixel 320 240 5 675)))
-      (is (= '(get-pixel (5 2 1) 320 240) (world-map-pixel (+ (* 2 675) 320) (+ (* 1 675) 240) 5 675))))))
+      (is (= '(get-pixel (5 0 0) 240 320) (world-map-pixel 240 320 5 675)))
+      (is (= '(get-pixel (5 2 1) 240 320) (world-map-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675))))))
+
+(deftest elevation-pixel-test
+  (testing "Read pixels from elevation tile"
+    (let [args (atom nil)]
+      (with-redefs [cubemap/elevation-tile list
+                    util/get-elevation     (fn ^long [img ^long y ^long x] (reset! args (list img y x)) 42)]
+        (is (= 42 (elevation-pixel 240 320 5 675)))
+        (is (= @args '((5 0 0) 240 320)))
+        (is (= 42 (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675)))
+        (is (= @args '((5 2 1) 240 320)))))))
