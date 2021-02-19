@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map longitude latitude map-pixels-x map-pixels-y scale-point cube-coordinate
-                                     offset-longitude offset-latitude elevation-pixel world-map-pixel)]
+            [sfsim25.cubemap :refer (cube-map scale-point cube-coordinate offset-longitude offset-latitude elevation-pixel
+                                     world-map-pixel interpolate-map)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats set-pixel!
                                   cube-dir cube-path ubyte->byte)]
             [sfsim25.rgb :as r]
@@ -12,28 +12,15 @@
 
 (set! *unchecked-math* true)
 
-(defn interpolate
-  "Interpolate elevation or RGB values"
-  [in-level width point get-pixel p+ p*]
-  (let [lon                     (longitude point)
-        lat                     (latitude point)
-        [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
-        [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
-        v0                      (get-pixel dy0 dx0 in-level width)
-        v1                      (get-pixel dy0 dx1 in-level width)
-        v2                      (get-pixel dy1 dx0 in-level width)
-        v3                      (get-pixel dy1 dx1 in-level width)]
-    (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
-
 (defn color-for-point
   "Compute interpolated RGB value for a point on the world"
   [^long in-level ^long width ^Vector3 point]
-  (interpolate in-level width point world-map-pixel r/+ r/*))
+  (interpolate-map in-level width point world-map-pixel r/+ r/*))
 
 (defn elevation-for-point
   "Compute interpolated elevation value for a point on the world"
   [^long in-level ^long width ^Vector3 point]
-  (interpolate in-level width point elevation-pixel + *))
+  (interpolate-map in-level width point elevation-pixel + *))
 
 (defn elevated-point
   "Get elevated 3D point for a point on the world"

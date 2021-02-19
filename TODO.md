@@ -1,10 +1,8 @@
 # TODO
-* test elevation-pixel, base it on get-elevation and move to cubemap.clj
 * downsample cube globe to get coarse levels (color map, displacement map, normal map, water map)
 * Get scale-image to work on large images
 * compute 3D coordinates from elevation map and cube coordinates
 * compute cube globe including deviation from sphere
-
 
 * OpenGL draw object: GL30/glBindVertexArray, GL20/glEnableVertexAttribArray, GL11/glDrawElements, disable vertex attrib array, bind to zero
 * delete OpenGL object: GL30/glBindVertexArray, delete vertex buffer, delete index buffer, delete vertex array, bind to zero
