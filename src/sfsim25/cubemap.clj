@@ -1,6 +1,7 @@
 (ns sfsim25.cubemap
   (:require [clojure.core.memoize :as z]
             [sfsim25.vector3 :as v]
+            [sfsim25.rgb :as r]
             [sfsim25.matrix3x3 :as m]
             [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation)])
   (:import [sfsim25.vector3 Vector3]))
@@ -175,5 +176,10 @@
         v2                      (get-pixel dy1 dx0 in-level width)
         v3                      (get-pixel dy1 dx1 in-level width)]
     (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
+
+(defn color-for-point
+  "Compute interpolated RGB value for a point on the world"
+  [^long in-level ^long width ^Vector3 point]
+  (interpolate-map in-level width point world-map-pixel r/+ r/*))
 
 (set! *unchecked-math* false)

@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map scale-point cube-coordinate offset-longitude offset-latitude elevation-pixel
-                                     world-map-pixel interpolate-map)]
+                                     color-for-point interpolate-map)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats set-pixel!
                                   cube-dir cube-path ubyte->byte)]
             [sfsim25.rgb :as r]
@@ -11,11 +11,6 @@
   (:gen-class))
 
 (set! *unchecked-math* true)
-
-(defn color-for-point
-  "Compute interpolated RGB value for a point on the world"
-  [^long in-level ^long width ^Vector3 point]
-  (interpolate-map in-level width point world-map-pixel r/+ r/*))
 
 (defn elevation-for-point
   "Compute interpolated elevation value for a point on the world"

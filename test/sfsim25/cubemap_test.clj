@@ -1,6 +1,7 @@
 (ns sfsim25.cubemap-test
   (:require [clojure.test :refer :all]
             [sfsim25.vector3 :refer (->Vector3 norm) :as v]
+            [sfsim25.rgb :refer (->RGB) :as r]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [sfsim25.vector3 Vector3]))
@@ -161,11 +162,18 @@
     (let [x-info    [0 1 0.75 0.25]
           y-info    [8 9 0.5  0.5 ]
           get-pixel (fn [dy dx in-level width]
-                        (is (= in-level 5))
-                        (is (= width 675))
-                        ({[8 0] 2, [8 1] 3, [9 0] 5, [9 1] 7} [dy dx]))]
+                      (is (= in-level 5))
+                      (is (= width 675))
+                      ({[8 0] 2, [8 1] 3, [9 0] 5, [9 1] 7} [dy dx]))]
       (with-redefs [cubemap/longitude (fn ^double [^Vector3 p] (is (= p (->Vector3 2 3 5))) 135.0)
                     cubemap/latitude  (fn ^double [^Vector3 p] (is (= p (->Vector3 2 3 5)))  45.0)
                     cubemap/map-pixels-x (fn [^double lon ^long size ^long level] (is (= [lon size level] [135.0 675 5])) x-info)
                     cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (is (= [lat size level] [ 45.0 675 5])) y-info)]
         (is (= (interpolate-map 5 675 (->Vector3 2 3 5) get-pixel + *) 3.875))))))
+
+(deftest color-for-point-test
+  (testing "Getting world map color for a point"
+    (with-redefs [cubemap/interpolate-map (fn [& args]
+                                            (is (= args [5 675 (->Vector3 2 3 5) world-map-pixel r/+ r/*]))
+                                            (->RGB 3 5 7))]
+      (is (= (color-for-point 5 675 (->Vector3 2 3 5)) (->RGB 3 5 7))))))
