@@ -166,15 +166,15 @@
 
 (defn interpolate-map
   "Interpolate map values"
-  [in-level width point get-pixel p+ p*]
+  [in-level width point pixel p+ p*]
   (let [lon                     (longitude point)
         lat                     (latitude point)
         [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
         [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
-        v0                      (get-pixel dy0 dx0 in-level width)
-        v1                      (get-pixel dy0 dx1 in-level width)
-        v2                      (get-pixel dy1 dx0 in-level width)
-        v3                      (get-pixel dy1 dx1 in-level width)]
+        v0                      (pixel dy0 dx0 in-level width)
+        v1                      (pixel dy0 dx1 in-level width)
+        v2                      (pixel dy1 dx0 in-level width)
+        v3                      (pixel dy1 dx1 in-level width)]
     (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
 
 (defn color-for-point

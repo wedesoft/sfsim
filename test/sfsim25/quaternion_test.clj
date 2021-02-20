@@ -97,7 +97,7 @@
 
 (deftest rotation-test
   (testing "Represent rotation using quaternion"
-    (are [result component angle axis] (< (Math/abs (c/- result (component (rotation angle axis)))))
+    (are [result component angle axis] (< (Math/abs (c/- result (component (rotation angle axis)))) 1e-6)
        1.0  real 0          (->Vector3 0 0 1)
       -1.0  real (c/* 2 pi) (->Vector3 0 0 1)
        0.36 imag pi         (->Vector3 0.36 0.48 0.8)

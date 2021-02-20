@@ -17,8 +17,8 @@
         result        (short-array (* size size))]
     (doseq [^int j (range size) ^int i (range size)]
       (let [offset (+ (* j 2 w) (* i 2))
-            x1 (aget ^shorts data (+ offset))
-            x2 (aget ^shorts data (+ offset 1))
+            x1 (aget ^shorts data offset)
+            x2 (aget ^shorts data (inc offset))
             x3 (aget ^shorts data (+ offset w))
             x4 (aget ^shorts data (+ offset w 1))]
         (aset ^shorts result (+ (* j size) i) (short (/ (+ x1 x2 x3 x4) 4)))))
