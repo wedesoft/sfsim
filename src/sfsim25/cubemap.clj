@@ -182,4 +182,9 @@
   [^long in-level ^long width ^Vector3 point]
   (interpolate-map in-level width point world-map-pixel r/+ r/*))
 
+(defn elevation-for-point
+  "Compute interpolated elevation value for a point on the world"
+  [^long in-level ^long width ^Vector3 point]
+  (interpolate-map in-level width point elevation-pixel + *))
+
 (set! *unchecked-math* false)

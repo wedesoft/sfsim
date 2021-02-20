@@ -172,8 +172,15 @@
         (is (= (interpolate-map 5 675 (->Vector3 2 3 5) get-pixel + *) 3.875))))))
 
 (deftest color-for-point-test
-  (testing "Getting world map color for a point"
+  (testing "Getting world map color for a 3D point"
     (with-redefs [cubemap/interpolate-map (fn [& args]
                                             (is (= args [5 675 (->Vector3 2 3 5) world-map-pixel r/+ r/*]))
                                             (->RGB 3 5 7))]
       (is (= (color-for-point 5 675 (->Vector3 2 3 5)) (->RGB 3 5 7))))))
+
+(deftest elevation-for-point-test
+  (testing "Getting elevation value for a 3D point"
+    (with-redefs [cubemap/interpolate-map (fn [& args]
+                                            (is (= args [5 675 (->Vector3 2 3 5) elevation-pixel + *]))
+                                            42.0)]
+      (is (= (elevation-for-point 5 675 (->Vector3 2 3 5)) 42.0)))))
