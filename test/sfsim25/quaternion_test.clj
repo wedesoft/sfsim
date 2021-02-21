@@ -5,14 +5,14 @@
             [sfsim25.quaternion :refer :all]
             [sfsim25.vector3 :refer (->Vector3) :as v]))
 
-(def o (->Quaternion 1 0 0 0))
-(def -o (->Quaternion -1 0 0 0))
-(def i (->Quaternion 0 1 0 0))
-(def -i (->Quaternion 0 -1 0 0))
-(def j (->Quaternion 0 0 1 0))
-(def -j (->Quaternion 0 0 -1 0))
-(def k (->Quaternion 0 0 0 1))
-(def -k (->Quaternion 0 0 0 -1))
+(def  o (->Quaternion  1  0  0  0))
+(def -o (->Quaternion -1  0  0  0))
+(def  i (->Quaternion  0  1  0  0))
+(def -i (->Quaternion  0 -1  0  0))
+(def  j (->Quaternion  0  0  1  0))
+(def -j (->Quaternion  0  0 -1  0))
+(def  k (->Quaternion  0  0  0  1))
+(def -k (->Quaternion  0  0  0 -1))
 
 (deftest display-test
   (testing "Display quaternion"

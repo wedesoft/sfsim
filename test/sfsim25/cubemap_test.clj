@@ -153,9 +153,9 @@
       (with-redefs [cubemap/elevation-tile list
                     util/get-elevation     (fn ^long [img ^long y ^long x] (reset! args (list img y x)) 42)]
         (is (= 42 (elevation-pixel 240 320 5 675)))
-        (is (= @args '((5 0 0) 240 320)))
-        (is (= 42 (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675)))
-        (is (= @args '((5 2 1) 240 320)))))))
+        (is (= '((5 0 0) 240 320) @args))
+        (is (= (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) 42))
+        (is (= '((5 2 1) 240 320) @args))))))
 
 (deftest interpolate-map-test
   (testing "Interpolation of map pixels"
@@ -169,18 +169,34 @@
                     cubemap/latitude  (fn ^double [^Vector3 p] (is (= p (->Vector3 2 3 5)))  45.0)
                     cubemap/map-pixels-x (fn [^double lon ^long size ^long level] (is (= [lon size level] [135.0 675 5])) x-info)
                     cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (is (= [lat size level] [ 45.0 675 5])) y-info)]
-        (is (= (interpolate-map 5 675 (->Vector3 2 3 5) get-pixel + *) 3.875))))))
+        (is (= 3.875 (interpolate-map 5 675 (->Vector3 2 3 5) get-pixel + *)))))))
 
 (deftest color-for-point-test
   (testing "Getting world map color for a 3D point"
     (with-redefs [cubemap/interpolate-map (fn [& args]
                                             (is (= args [5 675 (->Vector3 2 3 5) world-map-pixel r/+ r/*]))
                                             (->RGB 3 5 7))]
-      (is (= (color-for-point 5 675 (->Vector3 2 3 5)) (->RGB 3 5 7))))))
+      (is (= (->RGB 3 5 7) (color-for-point 5 675 (->Vector3 2 3 5)))))))
 
 (deftest elevation-for-point-test
   (testing "Getting elevation value for a 3D point"
     (with-redefs [cubemap/interpolate-map (fn [& args]
                                             (is (= args [5 675 (->Vector3 2 3 5) elevation-pixel + *]))
                                             42.0)]
-      (is (= (elevation-for-point 5 675 (->Vector3 2 3 5)) 42.0)))))
+      (is (= 42.0 (elevation-for-point 5 675 (->Vector3 2 3 5)))))))
+
+(deftest elevated-point-test
+  (testing "Compute point with elevation at equator"
+    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point]
+                                                 (is (= [in-level width point] [5 675 (->Vector3 1 0 0)]))
+                                                 123.0))
+      (is (= (->Vector3 6378123.0 0.0 0.0) (elevated-point 5 675 (->Vector3 1 0 0) 6378000.0 6357000.0)))))
+  (testing "Compute point with elevation at pole"
+    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] 123.0))
+      (is (= (->Vector3 0.0 6357123.0 0.0) (elevated-point 5 675 (->Vector3 0 1 0) 6378000.0 6357000.0)))))
+  (testing "Clip height to at least zero at equator"
+    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] -123.0))
+      (is (= (->Vector3 6378000.0 0.0 0.0) (elevated-point 5 675 (->Vector3 1 0 0) 6378000.0 6357000.0)))))
+  (testing "Clip height to at least zero at pole"
+    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] -123.0))
+      (is (= (->Vector3 0.0 6357000 0.0) (elevated-point 5 675 (->Vector3 0 1 0) 6378000.0 6357000.0))))))

@@ -183,8 +183,14 @@
   (interpolate-map in-level width point world-map-pixel r/+ r/*))
 
 (defn elevation-for-point
-  "Compute interpolated elevation value for a point on the world"
+  "Compute interpolated elevation value for a point on the world (-500 for water)"
   [^long in-level ^long width ^Vector3 point]
   (interpolate-map in-level width point elevation-pixel + *))
+
+(defn elevated-point
+  "Get elevated 3D point for a point on the world"
+  [in-level width p radius1 radius2]
+  (let [height (max 0 (elevation-for-point in-level width p))]
+    (scale-point p (+ radius1 height) (+ radius2 height))))
 
 (set! *unchecked-math* false)
