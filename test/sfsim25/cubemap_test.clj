@@ -187,16 +187,35 @@
 
 (deftest elevated-point-test
   (testing "Compute point with elevation at equator"
-    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point]
+    (with-redefs [cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point]
                                                  (is (= [in-level width point] [5 675 (->Vector3 1 0 0)]))
-                                                 123.0))
+                                                 123.0)]
       (is (= (->Vector3 6378123.0 0.0 0.0) (elevated-point 5 675 (->Vector3 1 0 0) 6378000.0 6357000.0)))))
   (testing "Compute point with elevation at pole"
-    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] 123.0))
+    (with-redefs [cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] 123.0)]
       (is (= (->Vector3 0.0 6357123.0 0.0) (elevated-point 5 675 (->Vector3 0 1 0) 6378000.0 6357000.0)))))
   (testing "Clip height to at least zero at equator"
-    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] -123.0))
+    (with-redefs [cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] -123.0)]
       (is (= (->Vector3 6378000.0 0.0 0.0) (elevated-point 5 675 (->Vector3 1 0 0) 6378000.0 6357000.0)))))
   (testing "Clip height to at least zero at pole"
-    (with-redefs (cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] -123.0))
+    (with-redefs [cubemap/elevation-for-point (fn [^long in-level ^long width ^Vector3 point] -123.0)]
       (is (= (->Vector3 0.0 6357000 0.0) (elevated-point 5 675 (->Vector3 0 1 0) 6378000.0 6357000.0))))))
+
+(deftest surrounding-points-test
+  (testing "Determine surrounding points for a location on the globe"
+    (let [ps (atom [])]
+      (with-redefs [cubemap/offset-longitude (fn [^Vector3 p ^long level ^long tilesize]
+                                               (is (= [p level tilesize] [(->Vector3 1 0 0) 7 32]))
+                                               (->Vector3 0 0.1 0))
+                    cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]
+                                               (is (= [p level tilesize radius1 radius2] [(->Vector3 1 0 0) 7 32 6378000 6357000]))
+                                               (->Vector3 0 0 0.1))
+                    cubemap/elevated-point (fn [in-level width p radius1 radius2]
+                                             (is (= [in-level width radius1 radius2] [5 675 6378000 6357000]))
+                                             (swap! ps conj p)
+                                             (->Vector3 (* 2 (.x p)) (* 2 (.y p)) (* 2 (.z p))))]
+        (let [pts (surrounding-points (->Vector3 1 0 0) 5 7 675 32 6378000 6357000)]
+          (doseq [j [-1 0 1] i [-1 0 1]]
+            (let [k (+ (* 3 (inc j)) (inc i))]
+              (is (= (nth pts k) (->Vector3 2 (* 0.2 i) (* 0.2 j))))
+              (is (= (nth @ps k) (->Vector3 1 (* 0.1 i) (* 0.1 j)))))))))))

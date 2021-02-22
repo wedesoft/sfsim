@@ -193,4 +193,13 @@
   (let [height (max 0 (elevation-for-point in-level width p))]
     (scale-point p (+ radius1 height) (+ radius2 height))))
 
+(defn surrounding-points
+  "Compute local point cloud consisting of nine points"
+  [p in-level out-level width tilesize radius1 radius2]
+  (let [d1 (offset-longitude p out-level tilesize)
+        d2 (offset-latitude p out-level tilesize radius1 radius2)]
+    (for [dj [-1 0 1] di [-1 0 1]]
+      (let [ps (v/+ p (v/* dj d2) (v/* di d1))]
+        (elevated-point in-level width ps radius1 radius2)))))
+
 (set! *unchecked-math* false)

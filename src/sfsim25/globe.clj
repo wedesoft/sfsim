@@ -1,6 +1,6 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map scale-point cube-coordinate offset-longitude offset-latitude elevation-pixel
+            [sfsim25.cubemap :refer (cube-map scale-point cube-coordinate elevation-pixel surrounding-points
                                      color-for-point elevation-for-point elevated-point)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats set-pixel!
                                   cube-dir cube-path ubyte->byte)]
@@ -11,15 +11,6 @@
   (:gen-class))
 
 (set! *unchecked-math* true)
-
-(defn surrounding-points
-  "Compute local point cloud consisting of nine points"
-  [p in-level out-level width tilesize radius1 radius2]
-  (let [d1 (offset-longitude p out-level tilesize)
-        d2 (offset-latitude p out-level tilesize radius1 radius2)]
-    (for [dj (range -1 2) di (range -1 2)]
-        (let [ps (v/+ p (v/* dj d2) (v/* di d1))]
-          (elevated-point in-level width ps radius1 radius2)))))
 
 (defn normal-for-point
   "Estimate normal vector for a point on the world"
