@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map scale-point cube-coordinate elevation-pixel surrounding-points
-                                     color-for-point elevation-for-point elevated-point)]
+            [sfsim25.cubemap :refer (cube-map scale-point cube-coordinate elevation-pixel color-for-point elevation-for-point
+                                     elevated-point normal-for-point)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats set-pixel!
                                   cube-dir cube-path ubyte->byte)]
             [sfsim25.rgb :as r]
@@ -11,16 +11,6 @@
   (:gen-class))
 
 (set! *unchecked-math* true)
-
-(defn normal-for-point
-  "Estimate normal vector for a point on the world"
-  [p in-level out-level width tilesize radius1 radius2]
-  (let [pc (surrounding-points p in-level out-level width tilesize radius1 radius2)
-        sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
-        sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
-        n1 (apply v/+ (map v/* sx pc))
-        n2 (apply v/+ (map v/* sy pc))]
-    (v/normalize (v/cross-product n1 n2))))
 
 (defn water-for-point
   "Decide whether point is on land or on water"
