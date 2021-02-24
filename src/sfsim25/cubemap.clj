@@ -212,4 +212,10 @@
         n2 (apply v/+ (map v/* sy pc))]
     (v/normalize (v/cross-product n1 n2))))
 
+(defn water-for-point
+  "Decide whether point is on land (0) or on water (255)"
+  [^long in-level ^long width ^Vector3 point]
+  (let [height (elevation-for-point in-level width point)]
+    (if (< height 0) (int (/ (* height 255) -500)) 0)))
+
 (set! *unchecked-math* false)

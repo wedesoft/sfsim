@@ -1,7 +1,6 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map scale-point cube-coordinate elevation-pixel color-for-point elevation-for-point
-                                     elevated-point normal-for-point)]
+            [sfsim25.cubemap :refer (cube-map cube-coordinate color-for-point water-for-point elevated-point normal-for-point)]
             [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats set-pixel!
                                   cube-dir cube-path ubyte->byte)]
             [sfsim25.rgb :as r]
@@ -11,12 +10,6 @@
   (:gen-class))
 
 (set! *unchecked-math* true)
-
-(defn water-for-point
-  "Decide whether point is on land or on water"
-  [^long in-level ^long width ^Vector3 point]
-  (let [height (elevation-for-point in-level width point)]
-    (if (< height 0) (int (/ (* height 255) -500)) 0)))
 
 (defn set-vertex-data!
   "Write 3D point, texture coordinates, and 3D normal to vertex data array"

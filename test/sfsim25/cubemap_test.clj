@@ -234,3 +234,16 @@
     (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 j) j (- i))))]
       (is (< (norm (v/- (->Vector3 (Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0)
                         (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6)))))
+
+(deftest water-for-point-test
+  (testing "Test height zero maps to zero water"
+    (with-redefs [elevation-for-point (fn [^long in-level ^long width ^Vector3 point]
+                                        (is (= [in-level width point] [5 675 (->Vector3 1 0 0)]))
+                                        0)]
+      (is (= (water-for-point 5 675 (->Vector3 1 0 0)) 0))))
+  (testing "Test that height -500 maps to 255"
+    (with-redefs [elevation-for-point (fn [^long in-level ^long width ^Vector3 point] -500)]
+      (is (= (water-for-point 5 675 (->Vector3 1 0 0)) 255))))
+  (testing "Test that positive height maps to 0"
+    (with-redefs [elevation-for-point (fn [^long in-level ^long width ^Vector3 point] 100)]
+      (is (= (water-for-point 5 675 (->Vector3 1 0 0)) 0)))))
