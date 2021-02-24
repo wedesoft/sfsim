@@ -5,6 +5,7 @@ elevation
 globe
 world.*.png
 elevation*.raw
+.eastwood
 .lein-*
 .nrepl-port
 *.class
