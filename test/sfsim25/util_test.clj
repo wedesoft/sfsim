@@ -1,6 +1,7 @@
 (ns sfsim25.util-test
   (:require [clojure.test :refer :all]
             [sfsim25.rgb :refer (->RGB)]
+            [sfsim25.vector3 :refer (->Vector3)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 
@@ -62,7 +63,7 @@
 (deftest roundtrip-image-test
   (testing "Saving and loading of RGB image"
     (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
-      (spit-image file-name 4 2 (byte-array (take 24 (cycle [1 2 3]))))
+      (spit-image file-name [4 2 (byte-array (take 24 (cycle [1 2 3])))])
       (let [[w h data] (slurp-image file-name)]
         (is (= 4 w))
         (is (= 2 h))
@@ -95,3 +96,17 @@
       (is (= 6 (get-elevation elevation 1 2)))
       (set-elevation! elevation 1 2 8)
       (is (= 8 (get-elevation elevation 1 2))))))
+
+(def water-test
+  (testing "Reading and writing of water values"
+    (let [water [4 2 (byte-array (range 8))]]
+      (is (= 6 (get-water water 1 2)))
+      (set-water! water 1 2 136)
+      (is (= 136 (get-water water 1 2))))))
+
+(def vectors-test
+  (testing "Reading and writing of vectors"
+    (let [vectors [4 2 (float-array (range 24))]]
+      (is (= (->Vector3 18 19 20) (get-vector vectors 1 2)))
+      (set-vector! vectors 1 2 (->Vector3 24 25 26))
+      (is (= (->Vector3 24 25 26) (get-vector vectors 1 2))))))

@@ -1,10 +1,12 @@
 (ns sfsim25.util
   (:require [clojure.java.io :as io]
-            [sfsim25.rgb :refer (->RGB)])
+            [sfsim25.rgb :refer (->RGB)]
+            [sfsim25.vector3 :refer (->Vector3)])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [magick MagickImage ImageInfo ColorspaceType]
-           [sfsim25.rgb RGB]))
+           [sfsim25.rgb RGB]
+           [sfsim25.vector3 Vector3]))
 
 (defn slurp-bytes
   "Read bytes from a file"
@@ -83,7 +85,7 @@
 
 (defn spit-image
   "Save an RGB image"
-  [^String file-name ^long width ^long height ^bytes data]
+  [^String file-name [width height data]]
   (let [info  (ImageInfo.)
         image (MagickImage.)]
     (.constituteImage image width height "RGB" data)
@@ -138,3 +140,27 @@
   "Write elevation value to an elevation tile"
   [[width height data] ^long y ^long x ^long value]
   (aset-short data (+ (* width y) x) value))
+
+(defn get-water
+  "Read water value from a water tile"
+  ^long [[width height data] ^long y ^long x]
+  (byte->ubyte (aget data (+ (* width y) x))))
+
+(defn set-water!
+  "Write water value to a water tile"
+  [[width height data] ^long y ^long x ^long value]
+  (aset-byte data (+ (* width y) x) (ubyte->byte value)))
+
+(defn get-vector
+  "Read vector from a vectors tile"
+  ^Vector3 [[width height data] ^long y ^long x]
+  (let [offset (* 3 (+ (* width y) x))]
+    (->Vector3 (aget data offset) (aget data (+ offset 1)) (aget data (+ offset 2)))))
+
+(defn set-vector!
+  "Write vector value to vectors tile"
+  [[width height data] ^long y ^long x ^Vector3 value]
+  (let [offset (* 3 (+ (* width y) x))]
+    (aset-float data offset (.x value))
+    (aset-float data (+ offset 1) (.y value))
+    (aset-float data (+ offset 2) (.z value))))
