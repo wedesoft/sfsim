@@ -166,6 +166,13 @@
                     cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (is (= [lat size level] [ 45.0 675 5])) y-info)]
         (is (= 3.875 (interpolate-map 5 675 (->Vector3 2 3 5) get-pixel + *)))))))
 
+(deftest tile-center-test
+  (testing "Determine center of cube map tile"
+    (with-redefs [cubemap/scale-point (fn [^Vector3 p ^double radius1 ^double radius2]
+                                        (is (= [p radius1 radius2] [(->Vector3 1.0 -0.875 0.625) 6378000.0 6357000.0]))
+                                        (->Vector3 1000 -875 625))]
+      (is (= (tile-center 2 3 7 1 6378000.0 6357000.0) (->Vector3 1000 -875 625))))))
+
 (deftest color-for-point-test
   (testing "Getting world map color for a 3D point"
     (with-redefs [cubemap/interpolate-map (fn [& args]

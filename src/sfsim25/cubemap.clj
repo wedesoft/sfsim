@@ -170,6 +170,13 @@
         v3                      (pixel dy1 dx1 in-level width)]
     (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
 
+(defn tile-center
+  "Determine the 3D center of a cube map tile"
+  [face level b a radius1 radius2]
+  (let [j (cube-coordinate level 3 b 1)
+        i (cube-coordinate level 3 a 1)]
+    (scale-point (cube-map face j i) radius1 radius2)))
+
 (defn color-for-point
   "Compute interpolated RGB value for a point on the world"
   [^long in-level ^long width ^Vector3 point]
