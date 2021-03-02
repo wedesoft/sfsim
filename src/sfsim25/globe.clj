@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
             [sfsim25.cubemap :refer (cube-map cube-coordinate color-for-point water-for-point elevated-point normal-for-point)]
-            [sfsim25.util :refer (tile-path slurp-image spit-image slurp-shorts spit-bytes spit-floats set-pixel! set-water!
+            [sfsim25.util :refer (tile-path spit-image spit-bytes spit-floats set-pixel! set-water!
                                   set-vector! cube-dir cube-path ubyte->byte)]
             [sfsim25.rgb :as r]
             [sfsim25.vector3 :as v])
@@ -25,10 +25,10 @@
         radius1   6378000.0
         radius2   6357000.0]
     (doseq [k (range 6) b (range n) a (range n)]
-      (let [tile    [tilesize tilesize (byte-array (* 3 tilesize tilesize))]
-            water   [tilesize tilesize (byte-array (* tilesize tilesize))]
-            points  [tilesize tilesize (float-array (* 3 tilesize tilesize))]
-            normals [tilesize tilesize (float-array (* 3 tilesize tilesize))]]
+      (let [tile    {:width tilesize :height tilesize :data (byte-array (* 3 tilesize tilesize))}
+            water   {:width tilesize :height tilesize :data (byte-array (* tilesize tilesize))}
+            points  {:width tilesize :height tilesize :data (float-array (* 3 tilesize tilesize))}
+            normals {:width tilesize :height tilesize :data (float-array (* 3 tilesize tilesize))}]
         (doseq [v (range tilesize) u (range tilesize)]
           (let [j      (cube-coordinate out-level tilesize b v)
                 i      (cube-coordinate out-level tilesize a u)
@@ -44,8 +44,8 @@
         (println (cube-path "globe" k out-level b a ".*"))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tile)
-        (spit-bytes (cube-path "globe" k out-level b a ".water") (nth water 2))
-        (spit-floats (cube-path "globe" k out-level b a ".points") (nth points 2))
-        (spit-floats (cube-path "globe" k out-level b a ".normals") (nth normals 2))))))
+        (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))
+        (spit-floats (cube-path "globe" k out-level b a ".points") (:data points))
+        (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))))))
 
 (set! *unchecked-math* false)

@@ -85,7 +85,7 @@
 
 (defn spit-image
   "Save an RGB image"
-  [^String file-name [width height data]]
+  [^String file-name {:keys [width height data]}]
   (let [info  (ImageInfo.)
         image (MagickImage.)]
     (.constituteImage image width height "RGB" data)
@@ -102,10 +102,11 @@
   (let [info      (ImageInfo. file-name)
         image     (MagickImage. info)
         dimension (.getDimension image)]
-    (.setDepth info 8)
-    (.setColorspace info ColorspaceType/RGBColorspace)
-    (.setMagick info "RGB")
-    [(.width dimension) (.height dimension) (.imageToBlob image info)]))
+    (doto info
+      (.setDepth 8)
+      (.setColorspace ColorspaceType/RGBColorspace)
+      (.setMagick "RGB"))
+    {:width (.width dimension) :height (.height dimension) :data (.imageToBlob image info)}))
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
@@ -119,13 +120,13 @@
 
 (defn get-pixel
   "Read color value from a pixel of an image"
-  ^RGB [[width height data] ^long y ^long x]
+  ^RGB [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
     (->RGB (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
-  [[width height data] ^long y ^long x ^RGB c]
+  [{:keys [width height data]} ^long y ^long x ^RGB c]
   (let [offset (* 3 (+ (* width y) x))]
     (aset-byte data offset (ubyte->byte (.r c)))
     (aset-byte data (inc offset) (ubyte->byte (.g c)))
@@ -143,23 +144,23 @@
 
 (defn get-water
   "Read water value from a water tile"
-  ^long [[width height data] ^long y ^long x]
+  ^long [{:keys [width height data]} ^long y ^long x]
   (byte->ubyte (aget data (+ (* width y) x))))
 
 (defn set-water!
   "Write water value to a water tile"
-  [[width height data] ^long y ^long x ^long value]
+  [{:keys [width height data]} ^long y ^long x ^long value]
   (aset-byte data (+ (* width y) x) (ubyte->byte value)))
 
 (defn get-vector
   "Read vector from a vectors tile"
-  ^Vector3 [[width height data] ^long y ^long x]
+  ^Vector3 [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
     (->Vector3 (aget data offset) (aget data (+ offset 1)) (aget data (+ offset 2)))))
 
 (defn set-vector!
   "Write vector value to vectors tile"
-  [[width height data] ^long y ^long x ^Vector3 value]
+  [{:keys [width height data]} ^long y ^long x ^Vector3 value]
   (let [offset (* 3 (+ (* width y) x))]
     (aset-float data offset (.x value))
     (aset-float data (+ offset 1) (.y value))

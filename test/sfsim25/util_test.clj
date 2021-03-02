@@ -63,10 +63,10 @@
 (deftest roundtrip-image-test
   (testing "Saving and loading of RGB image"
     (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
-      (spit-image file-name [4 2 (byte-array (take 24 (cycle [1 2 3])))])
-      (let [[w h data] (slurp-image file-name)]
-        (is (= 4 w))
-        (is (= 2 h))
+      (spit-image file-name {:width 4 :height 2 :data (byte-array (take 24 (cycle [1 2 3])))})
+      (let [{:keys [width height data]} (slurp-image file-name)]
+        (is (= 4 width))
+        (is (= 2 height))
         (is (= '(1 2 3) (take 3 data)))))))
 
 (deftest unsigned-byte-conversion-test
@@ -82,11 +82,11 @@
 
 (deftest pixel-test
   (testing "Reading and writing image pixels"
-    (let [img [4 2 (byte-array (range 24))]]
+    (let [img {:width 4 :height 2 :data (byte-array (range 24))}]
       (is (= (->RGB 18 19 20) (get-pixel img 1 2))))
-    (let [img [1 1 (byte-array [253 254 255])]]
+    (let [img {:width 1 :height 1 :data (byte-array [253 254 255])}]
       (is (= (->RGB 253 254 255) (get-pixel img 0 0))))
-    (let [img [4 2 (byte-array (range 24))]]
+    (let [img {:width 4 :height 2 :data (byte-array (range 24))}]
       (set-pixel! img 1 2 (->RGB 253 254 255))
       (is (= (->RGB 253 254 255) (get-pixel img 1 2))))))
 
@@ -99,14 +99,14 @@
 
 (def water-test
   (testing "Reading and writing of water values"
-    (let [water [4 2 (byte-array (range 8))]]
+    (let [water {:width 4 :height 2 :data (byte-array (range 8))}]
       (is (= 6 (get-water water 1 2)))
       (set-water! water 1 2 136)
       (is (= 136 (get-water water 1 2))))))
 
 (def vectors-test
   (testing "Reading and writing of vectors"
-    (let [vectors [4 2 (float-array (range 24))]]
+    (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
       (is (= (->Vector3 18 19 20) (get-vector vectors 1 2)))
       (set-vector! vectors 1 2 (->Vector3 24 25 26))
       (is (= (->Vector3 24 25 26) (get-vector vectors 1 2))))))
