@@ -71,14 +71,14 @@
 
 (deftest unsigned-byte-conversion-test
   (testing "Converting unsigned byte to byte and back"
-    (is (= 0 (byte->ubyte 0)))
-    (is (= 127 (byte->ubyte 127)))
-    (is (= 128 (byte->ubyte -128)))
-    (is (= 255 (byte->ubyte -1)))
-    (is (= 0 (ubyte->byte 0)))
-    (is (= 127 (ubyte->byte 127)))
-    (is (= -128 (ubyte->byte 128)))
-    (is (= -1 (ubyte->byte 255)))))
+    (is (=    0 (byte->ubyte    0)))
+    (is (=  127 (byte->ubyte  127)))
+    (is (=  128 (byte->ubyte -128)))
+    (is (=  255 (byte->ubyte   -1)))
+    (is (=    0 (ubyte->byte    0)))
+    (is (=  127 (ubyte->byte  127)))
+    (is (= -128 (ubyte->byte  128)))
+    (is (=   -1 (ubyte->byte  255)))))
 
 (deftest pixel-test
   (testing "Reading and writing image pixels"

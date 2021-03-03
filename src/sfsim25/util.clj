@@ -156,12 +156,14 @@
   "Read vector from a vectors tile"
   ^Vector3 [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (->Vector3 (aget data offset) (aget data (+ offset 1)) (aget data (+ offset 2)))))
+    (->Vector3 (aget data offset      )
+               (aget data (+ offset 1))
+               (aget data (+ offset 2)))))
 
 (defn set-vector!
   "Write vector value to vectors tile"
   [{:keys [width height data]} ^long y ^long x ^Vector3 value]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-float data offset (.x value))
+    (aset-float data offset       (.x value))
     (aset-float data (+ offset 1) (.y value))
     (aset-float data (+ offset 2) (.z value))))
