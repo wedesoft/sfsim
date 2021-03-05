@@ -1,4 +1,6 @@
 # TODO
+
+* use correct conversion from geodetic to cartesian coordinates
 * Get scale-image to work on large images
 * compute 3D coordinates from elevation map and cube coordinates
 * compute cube globe including deviation from sphere
