@@ -65,14 +65,29 @@
 (defn geodetic->cartesian
   "Convert latitude and longitude to cartesian coordinates"
   [longitude latitude height radius1 radius2]
-  (let [radius1-sqr  (* radius1 radius1)
-        radius2-sqr  (* radius2 radius2)
-        cos-latitude (Math/cos latitude)
-        sin-latitude (Math/sin latitude)
+  (let [radius1-sqr     (* radius1 radius1)
+        radius2-sqr     (* radius2 radius2)
+        cos-latitude    (Math/cos latitude)
+        sin-latitude    (Math/sin latitude)
         vertical-radius (/ radius1-sqr (Math/sqrt (+ (* radius1-sqr cos-latitude) (* radius2-sqr sin-latitude))))]
     (->Vector3 (* (+ vertical-radius height) cos-latitude (Math/cos longitude))
                (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-latitude)
                (* (+ vertical-radius height) cos-latitude (Math/sin longitude)))))
+
+(defn project-onto-ellipsoid
+  "Project a 3D vector onto an ellipsoid"
+  ^Vector3 [^Vector3 point ^double radius1 ^double radius2]
+  (let [radius           (norm point)
+        xz-radius        (Math/sqrt (+ (* (.x point) (.x point)) (* (.z point) (.z point))))
+        cos-latitude     (/ xz-radius radius)
+        sin-latitude     (/ (.y point) radius)
+        cos-longitude    (if (zero? xz-radius) 1.0 (/ (.x point) xz-radius))
+        sin-longitude    (if (zero? xz-radius) 0.0 (/ (.z point) xz-radius))
+        projected-radius (/ (* radius1 radius2) (Math/sqrt (+ (* radius1 radius1 sin-latitude sin-latitude)
+                                                              (* radius2 radius2 cos-latitude cos-latitude))))]
+  (->Vector3 (* cos-latitude cos-longitude projected-radius)
+             (* sin-latitude projected-radius)
+             (* cos-latitude sin-longitude projected-radius))))
 
 (defn map-x
   "Compute x-coordinate on raster map"

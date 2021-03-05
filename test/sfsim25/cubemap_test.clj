@@ -76,13 +76,20 @@
       (/ pi 4) 1 1 0)))
 
 (deftest geodetic->cartesian-test
-  (testing "conversion from geodetic to cartesian coordinates"
+  (testing "Conversion from geodetic to cartesian coordinates"
     (are [x y z lon lat h] (< (norm (v/- (->Vector3 x y z) (geodetic->cartesian lon lat h 6378000.0 6357000.0))) 1e-6)
       6378000.0       0.0       0.0        0        0    0
             0.0       0.0 6378000.0 (/ pi 2)        0    0
             0.0 6357000.0       0.0        0 (/ pi 2)    0
       6379000.0       0.0       0.0        0        0 1000
             0.0       0.0 6379000.0 (/ pi 2)        0 1000)))
+
+(deftest project-onto-ellipsoid-test
+  (testing "Project a vector onto an ellipsoid"
+    (are [xp yp zp x y z] (< (norm (v/- (->Vector3 xp yp zp) (project-onto-ellipsoid (->Vector3 x y z) 6378000.0 6357000.0))) 1e-6)
+      6378000.0       0.0       0.0 1 0 0
+            0.0 6357000.0       0.0 0 1 0
+            0.0       0.0 6378000.0 0 0 1)))
 
 (deftest map-x-test
   (testing "x-coordinate on raster map"
