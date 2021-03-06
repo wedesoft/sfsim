@@ -1,5 +1,7 @@
 # TODO
 
+* cubepoint -> project onto surface -> geodetic -> height -> cartesian
+  -> difference to surface point -> subtract from surface point -> project onto surface -> ...
 * use correct conversion from geodetic to cartesian coordinates
 * Get scale-image to work on large images
 * compute 3D coordinates from elevation map and cube coordinates
