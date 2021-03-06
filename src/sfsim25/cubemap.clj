@@ -67,12 +67,21 @@
   [longitude latitude height radius1 radius2]
   (let [radius1-sqr     (* radius1 radius1)
         radius2-sqr     (* radius2 radius2)
-        cos-latitude    (Math/cos latitude)
-        sin-latitude    (Math/sin latitude)
-        vertical-radius (/ radius1-sqr (Math/sqrt (+ (* radius1-sqr cos-latitude) (* radius2-sqr sin-latitude))))]
-    (->Vector3 (* (+ vertical-radius height) cos-latitude (Math/cos longitude))
-               (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-latitude)
-               (* (+ vertical-radius height) cos-latitude (Math/sin longitude)))))
+        cos-lat         (Math/cos latitude)
+        sin-lat         (Math/sin latitude)
+        vertical-radius (/ radius1-sqr (Math/sqrt (+ (* radius1-sqr cos-lat cos-lat) (* radius2-sqr sin-lat sin-lat))))]
+    (->Vector3 (* (+ vertical-radius height) cos-lat (Math/cos longitude))
+               (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-lat)
+               (* (+ vertical-radius height) cos-lat (Math/sin longitude)))))
+
+(defn cartesian->geodetic
+  "Convert cartesian coordinates to latitude and longitude assuming height is zero"
+  [^Vector3 point ^double radius1 ^double radius2]
+  (let [e   (/ (Math/sqrt (- (* radius1 radius1) (* radius2 radius2))) radius1)
+        lon (Math/atan2 (.z point) (.x point))
+        p   (Math/sqrt (+ (* (.x point) (.x point)) (* (.z point) (.z point))))
+        lat (Math/atan2 (.y point) (* p (- 1.0 (* e e))))]
+    [lon lat]))
 
 (defn project-onto-ellipsoid
   "Project a 3D vector onto an ellipsoid"
