@@ -62,6 +62,7 @@
   ^double [^Vector3 p]
   (Math/atan2 (.y p) (Math/sqrt (+ (* (.x p) (.x p)) (* (.z p) (.z p))))))
 
+; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
   "Convert latitude and longitude to cartesian coordinates"
   [longitude latitude height radius1 radius2]
@@ -74,14 +75,26 @@
                (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-lat)
                (* (+ vertical-radius height) cos-lat (Math/sin longitude)))))
 
+; https://gis.stackexchange.com/questions/265909/converting-from-ecef-to-geodetic-coordinates
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude and longitude assuming height is zero"
   [^Vector3 point ^double radius1 ^double radius2]
-  (let [e   (/ (Math/sqrt (- (* radius1 radius1) (* radius2 radius2))) radius1)
-        lon (Math/atan2 (.z point) (.x point))
-        p   (Math/sqrt (+ (* (.x point) (.x point)) (* (.z point) (.z point))))
-        lat (Math/atan2 (.y point) (* p (- 1.0 (* e e))))]
-    [lon lat]))
+  (let [sqr       (fn [x] (* x x))
+        e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
+        lon       (Math/atan2 (.z point) (.x point))
+        p         (Math/sqrt (+ (* (.x point) (.x point)) (* (.z point) (.z point))))
+        iteration (fn [height-old]
+                    (let [lat    (Math/atan2 (.y point) (* p (- 1.0 (* e e))))
+                          cs     (Math/cos lat)
+                          sn     (Math/sin lat)
+                          N      (/ (sqr radius1) (Math/sqrt (+ (sqr (* radius1 cs)) (sqr (* radius2 sn)))))
+                          height (- (/ p cs) N)]
+                      (if (< (Math/abs (- height height-old)) 1e-6) [lon lat height] (recur height))))]
+    (if (zero? p)
+      (if (not (neg? (.y point)))
+        [0.0     (/ Math/PI 2) (- (.y point) radius2)]
+        [0.0 (/ (- Math/PI) 2) (- (- radius2) (.y point))])
+      (iteration 0.0))))
 
 (defn project-onto-ellipsoid
   "Project a 3D vector onto an ellipsoid"

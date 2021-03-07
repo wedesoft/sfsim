@@ -86,13 +86,18 @@
 
 (deftest cartesian->geodetic-test
   (testing "Conversion from cartesian (surface) coordinates to latitude and longitude"
-    (are [lon lat x y z] (let [result (cartesian->geodetic (->Vector3 x y z) 6378000.0 6357000.0)]
-                           (and (< (Math/abs (- lon (first result))) 1e-6) (< (Math/abs (- lat (second result))))))
-             0        0 6378000.0       0.0       0.0
-      (/ pi 2)        0       0.0       0.0 6378000.0
-             0 (/ pi 2)       0.0 6357000.0       0.0
-             0        0 6379000.0       0.0       0.0
-      (/ pi 2)        0       0.0       0.0 6379000.0)))
+    (are [lon lat height x y z] (let [result (cartesian->geodetic (->Vector3 x y z) 6378000.0 6357000.0)]
+                                  (and (< (Math/abs (- lon (first result))) 1e-6)
+                                       (< (Math/abs (- lat (second result))) 1e-6)
+                                       (< (Math/abs (- height (last result))) 1e-6)))
+             0            0    0 6378000.0        0.0       0.0
+      (/ pi 2)            0    0       0.0        0.0 6378000.0
+             0     (/ pi 2)    0       0.0  6357000.0       0.0
+             0     (/ pi 2) 1000       0.0  6358000.0       0.0
+             0 (/ (- pi) 2) 1000       0.0 -6358000.0       0.0
+             0            0    0 6378000.0        0.0       0.0
+      (/ pi 2)            0    0       0.0        0.0 6378000.0
+             0            0 1000 6379000.0        0.0       0.0)))
 
 (deftest project-onto-ellipsoid-test
   (testing "Project a vector onto an ellipsoid"
