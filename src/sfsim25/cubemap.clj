@@ -237,10 +237,20 @@
   [^long in-level ^long width ^Vector3 point]
   (interpolate-map in-level width point world-map-pixel r/+ r/*))
 
+(defn color-geodetic
+  "Compute interpolated RGB value for a point on the world"
+  [^long in-level ^long width ^double lon ^double lat]
+  (map-interpolation in-level width lon lat world-map-pixel r/+ r/*))
+
 (defn elevation-for-point
   "Compute interpolated elevation value for a point on the world (-500 for water)"
   [^long in-level ^long width ^Vector3 point]
   (interpolate-map in-level width point elevation-pixel + *))
+
+(defn elevation-geodetic
+  "Compute interpolated elevation value for a point on the world (-500 for water)"
+  [^long in-level ^long width ^double lon ^double lat]
+  (map-interpolation in-level width lon lat elevation-pixel + *))
 
 (defn elevated-point
   "Get elevated 3D point for a point on the world"

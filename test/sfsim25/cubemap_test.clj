@@ -223,12 +223,26 @@
                                             (->RGB 3 5 7))]
       (is (= (->RGB 3 5 7) (color-for-point 5 675 (->Vector3 2 3 5)))))))
 
+(deftest color-geodetic-test
+  (testing "Getting world map color for given longitude and latitude"
+    (with-redefs [cubemap/map-interpolation (fn [& args]
+                                              (is (= args [5 675 135.0 45.0 world-map-pixel r/+ r/*]))
+                                              (->RGB 3 5 7))]
+      (is (= (->RGB 3 5 7) (color-geodetic 5 675 135.0 45.0))))))
+
 (deftest elevation-for-point-test
   (testing "Getting elevation value for a 3D point"
     (with-redefs [cubemap/interpolate-map (fn [& args]
                                             (is (= args [5 675 (->Vector3 2 3 5) elevation-pixel + *]))
                                             42.0)]
       (is (= 42.0 (elevation-for-point 5 675 (->Vector3 2 3 5)))))))
+
+(deftest elevation-geodetic-test
+  (testing "Getting elevation value for given longitude and latitude"
+    (with-redefs [cubemap/map-interpolation (fn [& args]
+                                              (is (= args [5 675 135.0 45.0 elevation-pixel + *]))
+                                              42.0)]
+      (is (= 42.0 (elevation-geodetic 5 675 135.0 45.0))))))
 
 (deftest elevated-point-test
   (testing "Compute point with elevation at equator"
