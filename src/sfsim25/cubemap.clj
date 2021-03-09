@@ -93,12 +93,12 @@
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude and longitude assuming height is zero"
   [^Vector3 point ^double radius1 ^double radius2]
-  (let [sqr       (fn [x] (* x x))
+  (let [sqr       (fn [^double x] (* x x))
         e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        iteration (fn [reference-point]
+        lon       (Math/atan2 (.z point) (.x point))
+        iteration (fn [^Vector3 reference-point]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
                           height        (norm (v/- point surface-point))
-                          lon           (Math/atan2 (.z surface-point) (.x surface-point))
                           p             (Math/sqrt (+ (sqr (.x surface-point)) (sqr (.z surface-point))))
                           lat           (Math/atan2 (.y surface-point) (* p (- 1.0 (* e e))))
                           result        (geodetic->cartesian lon lat height radius1 radius2)
@@ -200,6 +200,17 @@
         px  (mod dx width)
         img (elevation-tile in-level ty tx)]
     (get-elevation img py px)))
+
+(defn map-interpolation
+  "Interpolate world map values"
+  [in-level width lon lat pixel p+ p*]
+  (let [[dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
+        [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
+        v0                      (pixel dy0 dx0 in-level width)
+        v1                      (pixel dy0 dx1 in-level width)
+        v2                      (pixel dy1 dx0 in-level width)
+        v3                      (pixel dy1 dx1 in-level width)]
+    (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
 
 (defn interpolate-map
   "Interpolate map values"
