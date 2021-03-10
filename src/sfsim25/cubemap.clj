@@ -91,7 +91,7 @@
              (* cos-latitude sin-longitude projected-radius))))
 
 (defn cartesian->geodetic
-  "Convert cartesian coordinates to latitude and longitude assuming height is zero"
+  "Convert cartesian coordinates to latitude, longitude and height"
   [^Vector3 point ^double radius1 ^double radius2]
   (let [sqr       (fn [^double x] (* x x))
         e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
@@ -141,12 +141,6 @@
         frac1 (- y y0)
         frac0 (- 1 frac1)]
     [(min y0 (dec size)) (min y1 (dec size)) frac0 frac1]))
-
-(defn scale-point
-  "Scale point coordinates to reach surface of ellipsoid"
-  ^Vector3 [^Vector3 p ^double radius1 ^double radius2]
-  (let [norm (norm p)]
-    (->Vector3 (* radius1 (/ (.x p) norm)) (* radius2 (/ (.y p) norm)) (* radius1 (/ (.z p) norm)))))
 
 (defn offset-longitude
   "Determine longitudinal offset for computing normal vector"
@@ -212,75 +206,50 @@
         v3                      (pixel dy1 dx1 in-level width)]
     (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
 
-(defn interpolate-map
-  "Interpolate map values"
-  [in-level width point pixel p+ p*]
-  (let [lon                     (longitude point)
-        lat                     (latitude point)
-        [dx0 dx1 xfrac0 xfrac1] (map-pixels-x lon width in-level)
-        [dy0 dy1 yfrac0 yfrac1] (map-pixels-y lat width in-level)
-        v0                      (pixel dy0 dx0 in-level width)
-        v1                      (pixel dy0 dx1 in-level width)
-        v2                      (pixel dy1 dx0 in-level width)
-        v3                      (pixel dy1 dx1 in-level width)]
-    (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
-
 (defn tile-center
   "Determine the 3D center of a cube map tile"
   [face level b a radius1 radius2]
   (let [j (cube-coordinate level 3 b 1)
         i (cube-coordinate level 3 a 1)]
-    (scale-point (cube-map face j i) radius1 radius2)))
-
-(defn color-for-point
-  "Compute interpolated RGB value for a point on the world"
-  [^long in-level ^long width ^Vector3 point]
-  (interpolate-map in-level width point world-map-pixel r/+ r/*))
+    (project-onto-ellipsoid (cube-map face j i) radius1 radius2)))
 
 (defn color-geodetic
   "Compute interpolated RGB value for a point on the world"
   [^long in-level ^long width ^double lon ^double lat]
   (map-interpolation in-level width lon lat world-map-pixel r/+ r/*))
 
-(defn elevation-for-point
-  "Compute interpolated elevation value for a point on the world (-500 for water)"
-  [^long in-level ^long width ^Vector3 point]
-  (interpolate-map in-level width point elevation-pixel + *))
-
 (defn elevation-geodetic
   "Compute interpolated elevation value for a point on the world (-500 for water)"
   [^long in-level ^long width ^double lon ^double lat]
   (map-interpolation in-level width lon lat elevation-pixel + *))
 
-(defn elevated-point
-  "Get elevated 3D point for a point on the world"
-  [in-level width p radius1 radius2]
-  (let [height (max 0 (elevation-for-point in-level width p))]
-    (scale-point p (+ radius1 height) (+ radius2 height))))
+(defn project-onto-globe
+  "Project point onto the globe with heightmap applied"
+  [point in-level width radius1 radius2]
+  (let [iteration (fn [scaled]
+                    (let [[lon lat] (cartesian->geodetic scaled radius1 radius2)
+                          height    (elevation-geodetic in-level width lon lat)
+                          elevated  (geodetic->cartesian lon lat height radius1 radius2)]
+                      (if (< (norm (v/- scaled elevated)) 1e-6) scaled (recur (v/* (/ (norm elevated) (norm point)) point)))))]
+    (iteration (project-onto-ellipsoid point radius1 radius2))))
 
-(defn surrounding-points
-  "Compute local point cloud consisting of nine points"
-  [p in-level out-level width tilesize radius1 radius2]
-  (let [d1 (offset-longitude p out-level tilesize)
-        d2 (offset-latitude p out-level tilesize radius1 radius2)]
-    (for [dj [-1 0 1] di [-1 0 1]]
-      (let [ps (v/+ p (v/* dj d2) (v/* di d1))]
-        (elevated-point in-level width ps radius1 radius2)))))
-
-(defn normal-for-point
-  "Estimate normal vector for a point on the world"
-  [p in-level out-level width tilesize radius1 radius2]
-  (let [pc (surrounding-points p in-level out-level width tilesize radius1 radius2)
-        sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
-        sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
-        n1 (apply v/+ (map v/* sx pc))
-        n2 (apply v/+ (map v/* sy pc))]
-    (normalize (cross-product n1 n2))))
-
-(defn water-for-point
-  "Decide whether point is on land (0) or on water (255)"
-  [^long in-level ^long width ^Vector3 point]
-  (let [height (elevation-for-point in-level width point)]
-    (if (< height 0) (int (/ (* height 255) -500)) 0)))
+; (defn surrounding-points
+;   "Compute local point cloud consisting of nine points"
+;   [p in-level out-level width tilesize radius1 radius2]
+;   (let [d1 (offset-longitude p out-level tilesize)
+;         d2 (offset-latitude p out-level tilesize radius1 radius2)]
+;     (for [dj [-1 0 1] di [-1 0 1]]
+;       (let [ps (v/+ p (v/* dj d2) (v/* di d1))]
+;         (elevated-point in-level width ps radius1 radius2)))))
+;
+; (defn normal-for-point
+;   "Estimate normal vector for a point on the world"
+;   [p in-level out-level width tilesize radius1 radius2]
+;   (let [pc (surrounding-points p in-level out-level width tilesize radius1 radius2)
+;         sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
+;         sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
+;         n1 (apply v/+ (map v/* sx pc))
+;         n2 (apply v/+ (map v/* sy pc))]
+;     (normalize (cross-product n1 n2))))
 
 (set! *unchecked-math* false)

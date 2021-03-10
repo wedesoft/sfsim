@@ -1,9 +1,10 @@
 # TODO
 
-* elevation, color for geodetic coordinate
+* cartesian->geodetic does not converge for negative height
 * cubepoint -> project onto surface -> geodetic -> height -> cartesian
   -> difference to surface point -> subtract from surface point -> project onto surface -> ...
-* remove scale-point (use project-onto-ellipsoid instead), interpolate-map, color-for-point, elevation-for-point
+* water-geodetic
+* surrounding-points, normal-for-point
 * use correct conversion from geodetic to cartesian coordinates
 * Get scale-image to work on large images
 * compute 3D coordinates from elevation map and cube coordinates
