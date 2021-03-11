@@ -31,10 +31,15 @@
   ^Vector3 [^double s ^Vector3 v]
   (->Vector3 (c/* s (.x v)) (c/* s (.y v)) (c/* s (.z v))))
 
+(defn inner-product
+  "Dot product of two vectors"
+  ^double [^Vector3 a ^Vector3 b]
+  (c/+ (c/* (.x a) (.x b)) (c/* (.y a) (.y b))  (c/* (.z a) (.z b))))
+
 (defn norm2
   "Squared norm of vector"
   ^double [^Vector3 v]
-  (c/+ (c/* (.x v) (.x v)) (c/* (.y v) (.y v)) (c/* (.z v) (.z v))))
+  (inner-product v v))
 
 (defn norm
   "Norm of vector"

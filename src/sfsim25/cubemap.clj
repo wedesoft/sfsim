@@ -1,6 +1,6 @@
 (ns sfsim25.cubemap
   (:require [clojure.core.memoize :as z]
-            [sfsim25.vector3 :as v :refer (->Vector3 norm normalize cross-product)]
+            [sfsim25.vector3 :as v :refer (->Vector3 norm normalize cross-product inner-product)]
             [sfsim25.rgb :as r]
             [sfsim25.matrix3x3 :as m]
             [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation)])
@@ -90,6 +90,14 @@
              (* sin-latitude projected-radius)
              (* cos-latitude sin-longitude projected-radius))))
 
+(defn ellipsoid-normal
+  "Get normal vector for point on ellipsoid's surface"
+  ^Vector3 [^Vector3 point ^double radius1 ^double radius2]
+  (let [x (/ (.x point) (* radius1 radius1))
+        y (/ (.y point) (* radius2 radius2))
+        z (/ (.z point) (* radius1 radius1))]
+    (normalize (->Vector3 x y z))))
+
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height"
   [^Vector3 point ^double radius1 ^double radius2]
@@ -98,13 +106,14 @@
         lon       (Math/atan2 (.z point) (.x point))
         iteration (fn [^Vector3 reference-point]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
-                          height        (norm (v/- point surface-point))
+                          normal        (ellipsoid-normal surface-point radius1 radius2)
+                          height        (inner-product normal (v/- point surface-point))
                           p             (Math/sqrt (+ (sqr (.x surface-point)) (sqr (.z surface-point))))
                           lat           (Math/atan2 (.y surface-point) (* p (- 1.0 (* e e))))
                           result        (geodetic->cartesian lon lat height radius1 radius2)
                           error         (v/- result point)]
                       (if (< (norm error) 1e-6) [lon lat height] (recur (v/- surface-point error)))))]
-    (iteration (project-onto-ellipsoid point radius1 radius2))))
+    (iteration point)))
 
 (defn map-x
   "Compute x-coordinate on raster map"

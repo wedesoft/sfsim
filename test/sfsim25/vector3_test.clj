@@ -1,6 +1,7 @@
 (ns sfsim25.vector3-test
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.test :refer :all]
+            [clojure.core :as c]
             [sfsim25.vector3 :refer :all]))
 
 (deftest display-test
@@ -47,3 +48,7 @@
 (deftest scale-test
   (testing "Scaling of vector"
     (is (= (->Vector3 4 6 10) (* 2 (->Vector3 2 3 5))))))
+
+(deftest inner-product-test
+  (testing "Dot product of two vectors"
+    (is (= (c/+ (c/* 2 7) (c/* 3 11) (c/* 5 13))) (inner-product (->Vector3 2 3 5) (->Vector3 7 11 13)))))

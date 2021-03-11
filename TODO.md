@@ -1,8 +1,6 @@
 # TODO
 
-* cartesian->geodetic does not converge for negative height
-* cubepoint -> project onto surface -> geodetic -> height -> cartesian
-  -> difference to surface point -> subtract from surface point -> project onto surface -> ...
+* handle negative height when computing intersection with height field
 * water-geodetic
 * surrounding-points, normal-for-point
 * use correct conversion from geodetic to cartesian coordinates

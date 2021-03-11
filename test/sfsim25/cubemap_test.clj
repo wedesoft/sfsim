@@ -97,7 +97,8 @@
              0 (/ (- pi) 2) 1000       0.0 -6358000.0       0.0
              0            0    0 6378000.0        0.0       0.0
       (/ pi 2)            0    0       0.0        0.0 6378000.0
-             0            0 1000 6379000.0        0.0       0.0)))
+             0            0 1000 6379000.0        0.0       0.0
+             0            0 -100 6377900.0        0.0       0.0)))
 
 (deftest project-onto-ellipsoid-test
   (testing "Project a vector onto an ellipsoid"
