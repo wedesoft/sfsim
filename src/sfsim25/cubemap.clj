@@ -110,7 +110,7 @@
                           height        (inner-product normal (v/- point surface-point))
                           p             (Math/sqrt (+ (sqr (.x surface-point)) (sqr (.z surface-point))))
                           lat           (Math/atan2 (.y surface-point) (* p (- 1.0 (* e e))))
-                          result        (geodetic->cartesian lon lat height radius1 radius2)
+                          result        (v/+ surface-point (v/* height normal))
                           error         (v/- result point)]
                       (if (< (norm error) 1e-6) [lon lat height] (recur (v/- surface-point error)))))]
     (iteration point)))
