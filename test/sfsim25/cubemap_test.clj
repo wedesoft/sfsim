@@ -237,17 +237,17 @@
               (is (= (->Vector3 2 (* 0.2 j) (* -0.2 i)) (nth pts k)))
               (is (= (->Vector3 1 (* 0.1 j) (* -0.1 i)) (nth @ps k))))))))))
 
-; (deftest normal-for-point-test
-;   (testing "Get normal vector for point on flat part of elevation map"
-;     (with-redefs [cubemap/surrounding-points (fn [& args]
-;                                                (is (= args [(->Vector3 1 0 0) 5 7 675 33 6378000 6357000]))
-;                                                (for [j [-1 0 1] i [-1 0 1]] (->Vector3 6378000 j (- i))))]
-;       (is (< (norm (v/- (->Vector3 1 0 0) (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6))))
-;   (testing "Get normal vector for point on elevation map sloped in longitudinal direction"
-;     (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 i) j (- i))))]
-;       (is (< (norm (v/- (->Vector3 (Math/sqrt 0.5) 0 (Math/sqrt 0.5))
-;                         (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6))))
-;   (testing "Get normal vector for point on elevation map sloped in latitudinal direction"
-;     (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 j) j (- i))))]
-;       (is (< (norm (v/- (->Vector3 (Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0)
-;                         (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6)))))
+(deftest normal-for-point-test
+  (testing "Get normal vector for point on flat part of elevation map"
+    (with-redefs [cubemap/surrounding-points (fn [& args]
+                                               (is (= args [(->Vector3 1 0 0) 5 7 675 33 6378000 6357000]))
+                                               (for [j [-1 0 1] i [-1 0 1]] (->Vector3 6378000 j (- i))))]
+      (is (< (norm (v/- (->Vector3 1 0 0) (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6))))
+  (testing "Get normal vector for point on elevation map sloped in longitudinal direction"
+    (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 i) j (- i))))]
+      (is (< (norm (v/- (->Vector3 (Math/sqrt 0.5) 0 (Math/sqrt 0.5))
+                        (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6))))
+  (testing "Get normal vector for point on elevation map sloped in latitudinal direction"
+    (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 j) j (- i))))]
+      (is (< (norm (v/- (->Vector3 (Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0)
+                        (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6)))))
