@@ -242,15 +242,15 @@
                       (if (< (norm (v/- scaled elevated)) 1e-6) scaled (recur (v/* (/ (norm elevated) (norm point)) point)))))]
     (iteration (project-onto-ellipsoid point radius1 radius2))))
 
-; (defn surrounding-points
-;   "Compute local point cloud consisting of nine points"
-;   [p in-level out-level width tilesize radius1 radius2]
-;   (let [d1 (offset-longitude p out-level tilesize)
-;         d2 (offset-latitude p out-level tilesize radius1 radius2)]
-;     (for [dj [-1 0 1] di [-1 0 1]]
-;       (let [ps (v/+ p (v/* dj d2) (v/* di d1))]
-;         (elevated-point in-level width ps radius1 radius2)))))
-;
+(defn surrounding-points
+  "Compute local point cloud consisting of nine points"
+  [p in-level out-level width tilesize radius1 radius2]
+  (let [d1 (offset-longitude p out-level tilesize)
+        d2 (offset-latitude p out-level tilesize radius1 radius2)]
+    (for [dj [-1 0 1] di [-1 0 1]]
+      (let [ps (v/+ p (v/* dj d2) (v/* di d1))]
+        (project-onto-globe ps in-level width radius1 radius2)))))
+
 ; (defn normal-for-point
 ;   "Estimate normal vector for a point on the world"
 ;   [p in-level out-level width tilesize radius1 radius2]

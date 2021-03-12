@@ -218,25 +218,25 @@
                                                2777.0)]
       (is (< (norm (v/- (project-onto-globe (->Vector3 0 -1 0) 4 675 6378000 6357000) (->Vector3 0 -6359777.0 0))) 1e-6)))))
 
-; (deftest surrounding-points-test
-;   (testing "Determine surrounding points for a location on the globe"
-;     (let [ps (atom [])]
-;       (with-redefs [cubemap/offset-longitude (fn [^Vector3 p ^long level ^long tilesize]
-;                                                (is (= [p level tilesize] [(->Vector3 1 0 0) 7 33]))
-;                                                (->Vector3 0 0 -0.1))
-;                     cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]
-;                                                (is (= [p level tilesize radius1 radius2] [(->Vector3 1 0 0) 7 33 6378000 6357000]))
-;                                                (->Vector3 0 0.1 0))
-;                     cubemap/elevated-point (fn [in-level width p radius1 radius2]
-;                                              (is (= [in-level width radius1 radius2] [5 675 6378000 6357000]))
-;                                              (swap! ps conj p)
-;                                              (->Vector3 (* 2 (.x p)) (* 2 (.y p)) (* 2 (.z p))))]
-;         (let [pts (surrounding-points (->Vector3 1 0 0) 5 7 675 33 6378000 6357000)]
-;           (doseq [j [-1 0 1] i [-1 0 1]]
-;             (let [k (+ (* 3 (inc j)) (inc i))]
-;               (is (= (->Vector3 2 (* 0.2 j) (* -0.2 i)) (nth pts k)))
-;               (is (= (->Vector3 1 (* 0.1 j) (* -0.1 i)) (nth @ps k))))))))))
-;
+(deftest surrounding-points-test
+  (testing "Determine surrounding points for a location on the globe"
+    (let [ps (atom [])]
+      (with-redefs [cubemap/offset-longitude (fn [^Vector3 p ^long level ^long tilesize]
+                                               (is (= [p level tilesize] [(->Vector3 1 0 0) 7 33]))
+                                               (->Vector3 0 0 -0.1))
+                    cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]
+                                               (is (= [p level tilesize radius1 radius2] [(->Vector3 1 0 0) 7 33 6378000 6357000]))
+                                               (->Vector3 0 0.1 0))
+                    cubemap/project-onto-globe (fn [p in-level width radius1 radius2]
+                                                 (is (= [in-level width radius1 radius2] [5 675 6378000 6357000]))
+                                                 (swap! ps conj p)
+                                                 (->Vector3 (* 2 (.x p)) (* 2 (.y p)) (* 2 (.z p))))]
+        (let [pts (surrounding-points (->Vector3 1 0 0) 5 7 675 33 6378000 6357000)]
+          (doseq [j [-1 0 1] i [-1 0 1]]
+            (let [k (+ (* 3 (inc j)) (inc i))]
+              (is (= (->Vector3 2 (* 0.2 j) (* -0.2 i)) (nth pts k)))
+              (is (= (->Vector3 1 (* 0.1 j) (* -0.1 i)) (nth @ps k))))))))))
+
 ; (deftest normal-for-point-test
 ;   (testing "Get normal vector for point on flat part of elevation map"
 ;     (with-redefs [cubemap/surrounding-points (fn [& args]
