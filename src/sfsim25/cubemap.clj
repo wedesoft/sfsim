@@ -237,7 +237,7 @@
   [point in-level width radius1 radius2]
   (let [iteration (fn [scaled]
                     (let [[lon lat] (cartesian->geodetic scaled radius1 radius2)
-                          height    (elevation-geodetic in-level width lon lat)
+                          height    (max (elevation-geodetic in-level width lon lat) 0)
                           elevated  (geodetic->cartesian lon lat height radius1 radius2)]
                       (if (< (norm (v/- scaled elevated)) 1e-6) scaled (recur (v/* (/ (norm elevated) (norm point)) point)))))]
     (iteration (project-onto-ellipsoid point radius1 radius2))))

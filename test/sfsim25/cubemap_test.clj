@@ -216,7 +216,10 @@
     (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
                                                (is (= [in-level width lon lat] [4 675 0.0 (/ (- pi) 2)]))
                                                2777.0)]
-      (is (< (norm (v/- (project-onto-globe (->Vector3 0 -1 0) 4 675 6378000 6357000) (->Vector3 0 -6359777.0 0))) 1e-6)))))
+      (is (< (norm (v/- (project-onto-globe (->Vector3 0 -1 0) 4 675 6378000 6357000) (->Vector3 0 -6359777.0 0))) 1e-6))))
+  (testing "Clip negative height (water) to zero"
+    (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
+      (is (< (norm (v/- (project-onto-globe (->Vector3 1 0 0) 4 675 6378000 6357000) (->Vector3 6378000 0 0))) 1e-6)))))
 
 (deftest surrounding-points-test
   (testing "Determine surrounding points for a location on the globe"
