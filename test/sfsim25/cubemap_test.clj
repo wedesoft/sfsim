@@ -70,10 +70,10 @@
 
 (deftest latitude-test
   (testing "Latitude of 3D point"
-    (are [result x y z] (< (Math/abs (- result (latitude (->Vector3 x y z)))) 1e-6)
-      0        0 0 1
-      (/ pi 2) 0 1 0
-      (/ pi 4) 1 1 0)))
+    (are [result x y z] (< (Math/abs (- result (latitude (->Vector3 x y z) 6378000 6357000))) 1e-6)
+      0              0       0 6378000
+      (/ pi 2)       0 6357000       0
+      0        6378000       0       0)))
 
 (deftest geodetic->cartesian-test
   (testing "Conversion from geodetic to cartesian coordinates"

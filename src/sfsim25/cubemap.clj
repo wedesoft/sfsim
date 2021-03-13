@@ -59,8 +59,10 @@
 
 (defn latitude
   "Latitude of 3D point"
-  ^double [^Vector3 p]
-  (Math/atan2 (.y p) (Math/sqrt (+ (* (.x p) (.x p)) (* (.z p) (.z p))))))
+  ^double [^Vector3 point ^double radius1 ^double radius2]
+  (let [e (/ (Math/sqrt (- (* radius1 radius1) (* radius2 radius2))) radius1)
+        p (Math/sqrt (+ (* (.x point) (.x point)) (* (.z point) (.z point))))]
+    (Math/atan2 (.y point) (* p (- 1.0 (* e e))))))
 
 ; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
@@ -162,7 +164,7 @@
   "Determine latitudinal offset for computing normal vector"
   ^Vector3 [p level tilesize radius1 radius2]
   (let [lon  (longitude p)
-        lat  (latitude p)
+        lat  (latitude p radius1 radius2)
         norm (norm p)
         v    (->Vector3 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0)
         vs   (m/* (m/rotation-y (- lon)) (m/* (m/rotation-z lat) v))]

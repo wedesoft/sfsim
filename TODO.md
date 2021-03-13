@@ -1,6 +1,5 @@
 # TODO
 
-* fix latitude method (used in offset-latitude)
 * water-geodetic
 * surrounding-points, normal-for-point
 * use correct conversion from geodetic to cartesian coordinates
