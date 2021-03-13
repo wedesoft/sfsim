@@ -83,6 +83,11 @@
   ^double [^double x]
   (if (zero? x) 1.0 (/ (Math/sin x) x)))
 
+(defn sqr
+  "Square of x"
+  ^double [^double x]
+  (* x x))
+
 (defn spit-image
   "Save an RGB image"
   [^String file-name {:keys [width height data]}]

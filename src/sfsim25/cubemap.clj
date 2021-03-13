@@ -3,7 +3,7 @@
             [sfsim25.vector3 :as v :refer (->Vector3 norm normalize cross-product inner-product)]
             [sfsim25.rgb :as r]
             [sfsim25.matrix3x3 :as m]
-            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation)])
+            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation sqr)])
   (:import [sfsim25.vector3 Vector3]))
 
 (set! *unchecked-math* true)
@@ -60,16 +60,16 @@
 (defn latitude
   "Latitude of 3D point"
   ^double [^Vector3 point ^double radius1 ^double radius2]
-  (let [e (/ (Math/sqrt (- (* radius1 radius1) (* radius2 radius2))) radius1)
-        p (Math/sqrt (+ (* (.x point) (.x point)) (* (.z point) (.z point))))]
+  (let [e (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
+        p (Math/sqrt (+ (sqr (.x point)) (sqr (.z point))))]
     (Math/atan2 (.y point) (* p (- 1.0 (* e e))))))
 
 ; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
   "Convert latitude and longitude to cartesian coordinates"
   [longitude latitude height radius1 radius2]
-  (let [radius1-sqr     (* radius1 radius1)
-        radius2-sqr     (* radius2 radius2)
+  (let [radius1-sqr     (sqr radius1)
+        radius2-sqr     (sqr radius2)
         cos-lat         (Math/cos latitude)
         sin-lat         (Math/sin latitude)
         vertical-radius (/ radius1-sqr (Math/sqrt (+ (* radius1-sqr cos-lat cos-lat) (* radius2-sqr sin-lat sin-lat))))]
@@ -81,7 +81,7 @@
   "Project a 3D vector onto an ellipsoid"
   ^Vector3 [^Vector3 point ^double radius1 ^double radius2]
   (let [radius           (norm point)
-        xz-radius        (Math/sqrt (+ (* (.x point) (.x point)) (* (.z point) (.z point))))
+        xz-radius        (Math/sqrt (+ (sqr (.x point)) (sqr (.z point))))
         cos-latitude     (/ xz-radius radius)
         sin-latitude     (/ (.y point) radius)
         cos-longitude    (if (zero? xz-radius) 1.0 (/ (.x point) xz-radius))
@@ -95,16 +95,17 @@
 (defn ellipsoid-normal
   "Get normal vector for point on ellipsoid's surface"
   ^Vector3 [^Vector3 point ^double radius1 ^double radius2]
-  (let [x (/ (.x point) (* radius1 radius1))
-        y (/ (.y point) (* radius2 radius2))
-        z (/ (.z point) (* radius1 radius1))]
+  (let [radius1-sqr (sqr radius1)
+        radius2-sqr (sqr radius2)
+        x           (/ (.x point) radius1-sqr)
+        y           (/ (.y point) radius2-sqr)
+        z           (/ (.z point) radius1-sqr)]
     (normalize (->Vector3 x y z))))
 
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height"
   [^Vector3 point ^double radius1 ^double radius2]
-  (let [sqr       (fn [^double x] (* x x))
-        e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
+  (let [e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
         lon       (Math/atan2 (.z point) (.x point))
         iteration (fn [^Vector3 reference-point]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)

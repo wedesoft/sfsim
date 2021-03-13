@@ -60,6 +60,11 @@
       (/ 2 pi) (/ pi 2)
       1.0      0.0)))
 
+(deftest sqr-test
+  (testing "Square values"
+    (is (= 4.0 (sqr 2)))
+    (is (= 9.0 (sqr 3)))))
+
 (deftest roundtrip-image-test
   (testing "Saving and loading of RGB image"
     (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
