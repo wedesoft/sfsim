@@ -1,12 +1,6 @@
 # TODO
 
-* water-geodetic
-* surrounding-points, normal-for-point
-* use correct conversion from geodetic to cartesian coordinates
 * Get scale-image to work on large images
-* compute 3D coordinates from elevation map and cube coordinates
-* compute cube globe including deviation from sphere
-
 * OpenGL draw object: GL30/glBindVertexArray, GL20/glEnableVertexAttribArray, GL11/glDrawElements, disable vertex attrib array, bind to zero
 * delete OpenGL object: GL30/glBindVertexArray, delete vertex buffer, delete index buffer, delete vertex array, bind to zero
 * bind render config, bind shader, update uniforms (world matrix, projection matrix)

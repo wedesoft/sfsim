@@ -97,10 +97,17 @@
 
 (def elevation-test
   (testing "Reading and writing of elevation pixels"
-    (let [elevation [4 2 (short-array (range 8))]]
+    (let [elevation {:width 4 :height 2 :data (short-array (range 8))}]
       (is (= 6 (get-elevation elevation 1 2)))
       (set-elevation! elevation 1 2 8)
       (is (= 8 (get-elevation elevation 1 2))))))
+
+(def scale-test
+  (testing "Reading and writing of scale factors"
+    (let [scale {:width 4 :height 2 :data (float-array (range 8))}]
+      (is (= 6.0 (get-scale scale 1 2)))
+      (set-scale! scale 1 2 8)
+      (is (= 8.0 (get-scale scale 1 2))))))
 
 (def water-test
   (testing "Reading and writing of water values"

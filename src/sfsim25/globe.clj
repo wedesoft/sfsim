@@ -1,10 +1,10 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
-            [sfsim25.cubemap :refer (cube-map cube-coordinate color-for-point water-for-point elevated-point normal-for-point)]
-            [sfsim25.util :refer (tile-path spit-image spit-bytes spit-floats set-pixel! set-water!
-                                  set-vector! cube-dir cube-path ubyte->byte)]
-            [sfsim25.rgb :as r]
-            [sfsim25.vector3 :as v])
+            [sfsim25.cubemap :refer (cube-map cube-coordinate color-geodetic water-geodetic project-onto-globe normal-for-point
+                                     cartesian->geodetic)]
+            [sfsim25.util :refer (tile-path spit-image spit-bytes spit-floats set-pixel! set-water! set-vector! set-scale! cube-dir
+                                  cube-path ubyte->byte)]
+            [sfsim25.vector3 :refer (norm)])
   (:import [java.io File]
            [sfsim25.vector3 Vector3])
   (:gen-class))
@@ -27,25 +27,26 @@
     (doseq [k (range 6) b (range n) a (range n)]
       (let [tile    {:width tilesize :height tilesize :data (byte-array (* 3 tilesize tilesize))}
             water   {:width tilesize :height tilesize :data (byte-array (* tilesize tilesize))}
-            points  {:width tilesize :height tilesize :data (float-array (* 3 tilesize tilesize))}
+            scale   {:width tilesize :height tilesize :data (float-array (* tilesize tilesize))}
             normals {:width tilesize :height tilesize :data (float-array (* 3 tilesize tilesize))}]
         (doseq [v (range tilesize) u (range tilesize)]
-          (let [j      (cube-coordinate out-level tilesize b v)
-                i      (cube-coordinate out-level tilesize a u)
-                p      (v/normalize (cube-map k j i))
-                color  (color-for-point in-level width p)
-                point  (elevated-point in-level width p radius1 radius2)
-                normal (normal-for-point p in-level out-level width tilesize radius1 radius2)
-                wet    (water-for-point in-level width p)]
+          (let [j                (cube-coordinate out-level tilesize b v)
+                i                (cube-coordinate out-level tilesize a u)
+                p                (cube-map k j i)
+                point            (project-onto-globe p in-level width radius1 radius2)
+                [lon lat height] (cartesian->geodetic point radius1 radius2)
+                color            (color-geodetic in-level width lon lat)
+                normal           (normal-for-point point in-level out-level width tilesize radius1 radius2)
+                wet              (water-geodetic in-level width lon lat)]
             (set-pixel! tile v u color)
             (set-water! water v u wet)
-            (set-vector! points v u point)
+            (set-scale! scale v u (/ (norm point) (norm p)))
             (set-vector! normals v u normal)))
         (println (cube-path "globe" k out-level b a ".*"))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tile)
         (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))
-        (spit-floats (cube-path "globe" k out-level b a ".points") (:data points))
+        (spit-floats (cube-path "globe" k out-level b a ".scale") (:data scale))
         (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))))))
 
 (set! *unchecked-math* false)

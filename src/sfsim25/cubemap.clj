@@ -184,7 +184,7 @@
     (fn ^shorts [^long in-level ^long ty ^long tx]
       (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
             size (int (Math/round (Math/sqrt (alength data))))]
-        [size size data]))
+        {:width size :height size :data data}))
     :lru/threshold 128))
 
 (defn world-map-pixel
@@ -234,6 +234,12 @@
   "Compute interpolated elevation value for a point on the world (-500 for water)"
   [^long in-level ^long width ^double lon ^double lat]
   (map-interpolation in-level width lon lat elevation-pixel + *))
+
+(defn water-geodetic
+  "Decide whether point is on land (0) or on water (255)"
+  [^long in-level ^long width ^double lon ^double lat]
+  (let [height (elevation-geodetic in-level width lon lat)]
+    (if (< height 0) (int (/ (* height 255) -500)) 0)))
 
 (defn project-onto-globe
   "Project point onto the globe with heightmap applied"

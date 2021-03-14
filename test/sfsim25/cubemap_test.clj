@@ -156,9 +156,9 @@
     (let [path (atom nil)]
       (with-redefs [util/slurp-shorts (fn [arg] (reset! path arg) (short-array [2 3 5 7]))
                     util/tile-path    str]
-        (is (= 2 (first (elevation-tile 2 3 5))))
-        (is (= 2 (second (elevation-tile 2 3 5))))
-        (is (= [2 3 5 7] (seq (nth (elevation-tile 2 3 5) 2))))
+        (is (= 2 (:width (elevation-tile 2 3 5))))
+        (is (= 2 (:height (elevation-tile 2 3 5))))
+        (is (= [2 3 5 7] (seq (:data (elevation-tile 2 3 5) 2))))
         (is (= @path "elevation235.raw"))))))
 
 (deftest world-map-pixel-test
@@ -210,6 +210,19 @@
                                               (is (= args [5 675 135.0 45.0 elevation-pixel + *]))
                                               42.0)]
       (is (= 42.0 (elevation-geodetic 5 675 135.0 45.0))))))
+
+(deftest water-geodetic-test
+  (testing "Test height zero maps to zero water"
+    (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
+                                       (is (= [in-level width lon lat] [5 675 135.0 45.0]))
+                                       0)]
+      (is (= (water-geodetic 5 675 135.0 45.0) 0))))
+  (testing "Test that height -500 maps to 255"
+    (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
+      (is (= (water-geodetic 5 675 0.0 0.0) 255))))
+  (testing "Test that positive height maps to 0"
+    (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] 100)]
+      (is (= (water-geodetic 5 675 0.0 0.0) 0)))))
 
 (deftest project-onto-globe-test
   (testing "Project point onto globe"

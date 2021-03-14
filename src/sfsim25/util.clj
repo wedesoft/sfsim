@@ -139,13 +139,23 @@
 
 (defn get-elevation
   "Read elevation value from an elevation tile"
-  ^long [[width height data] ^long y ^long x]
+  ^long [{:keys [width height data]} ^long y ^long x]
   (aget data (+ (* width y) x)))
 
 (defn set-elevation!
   "Write elevation value to an elevation tile"
-  [[width height data] ^long y ^long x ^long value]
+  [{:keys [width height data]} ^long y ^long x ^long value]
   (aset-short data (+ (* width y) x) value))
+
+(defn get-scale
+  "Read scale value from a scale tile"
+  ^double [{:keys [width height data]} ^long y ^long x]
+  (aget data (+ (* width y) x)))
+
+(defn set-scale!
+  "Write scale value to a scale tile"
+  [{:keys [width height data]} ^long y ^long x ^long value]
+  (aset-float data (+ (* width y) x) value))
 
 (defn get-water
   "Read water value from a water tile"
