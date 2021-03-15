@@ -107,7 +107,7 @@
   [^Vector3 point ^double radius1 ^double radius2]
   (let [e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
         lon       (Math/atan2 (.z point) (.x point))
-        iteration (fn [^Vector3 reference-point]
+        iteration (fn [^Vector3 reference-point iter]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
                           normal        (ellipsoid-normal surface-point radius1 radius2)
                           height        (inner-product normal (v/- point surface-point))
@@ -115,8 +115,8 @@
                           lat           (Math/atan2 (.y surface-point) (* p (- 1.0 (* e e))))
                           result        (v/+ surface-point (v/* height normal))
                           error         (v/- result point)]
-                      (if (< (norm error) 1e-6) [lon lat height] (recur (v/- surface-point error)))))]
-    (iteration point)))
+                      (if (or (< (norm error) 1e-6) (>= iter 10)) [lon lat height] (recur (v/- surface-point error) (inc iter)))))]
+    (iteration point 0)))
 
 (defn map-x
   "Compute x-coordinate on raster map"
@@ -244,12 +244,14 @@
 (defn project-onto-globe
   "Project point onto the globe with heightmap applied"
   [point in-level width radius1 radius2]
-  (let [iteration (fn [scaled]
+  (let [iteration (fn [scaled iter]
                     (let [[lon lat] (cartesian->geodetic scaled radius1 radius2)
                           height    (max (elevation-geodetic in-level width lon lat) 0)
                           elevated  (geodetic->cartesian lon lat height radius1 radius2)]
-                      (if (< (norm (v/- scaled elevated)) 1e-6) scaled (recur (v/* (/ (norm elevated) (norm point)) point)))))]
-    (iteration (project-onto-ellipsoid point radius1 radius2))))
+                      (if (or (< (norm (v/- scaled elevated)) 1e-6) (>= iter 10))
+                        scaled
+                        (recur (v/* (/ (norm elevated) (norm point)) point) (inc iter)))))]
+    (iteration (project-onto-ellipsoid point radius1 radius2) 0)))
 
 (defn surrounding-points
   "Compute local point cloud consisting of nine points"
