@@ -12,6 +12,8 @@
 
 (set! *unchecked-math* true)
 
+(def mutex (Object.))
+
 (defn -main
   "Program to generate tiles for cube map"
   [& args]
@@ -43,7 +45,7 @@
             (set-water! water v u wet)
             (set-scale! scale v u (/ (norm point) (norm p)))
             (set-vector! normals v u normal)))
-        (println (cube-path "globe" k out-level b a ".*"))
+        (locking mutex (println (cube-path "globe" k out-level b a ".*")))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tile)
         (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))
