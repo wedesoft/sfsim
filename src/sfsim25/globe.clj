@@ -1,5 +1,6 @@
 (ns sfsim25.globe
   (:require [clojure.core.memoize :as m]
+            [com.climate.claypoole :as cp]
             [sfsim25.cubemap :refer (cube-map cube-coordinate color-geodetic water-geodetic project-onto-globe normal-for-point
                                      cartesian->geodetic)]
             [sfsim25.util :refer (tile-path spit-image spit-bytes spit-floats set-pixel! set-water! set-vector! set-scale! cube-dir
@@ -24,7 +25,7 @@
         tilesize  33
         radius1   6378000.0
         radius2   6357000.0]
-    (doseq [k (range 6) b (range n) a (range n)]
+    (cp/pdoseq :builtin [k (range 6) b (range n) a (range n)]
       (let [tile    {:width tilesize :height tilesize :data (byte-array (* 3 tilesize tilesize))}
             water   {:width tilesize :height tilesize :data (byte-array (* tilesize tilesize))}
             scale   {:width tilesize :height tilesize :data (float-array (* tilesize tilesize))}
