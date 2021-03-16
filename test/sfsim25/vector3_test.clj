@@ -51,4 +51,4 @@
 
 (deftest inner-product-test
   (testing "Dot product of two vectors"
-    (is (= (c/+ (c/* 2 7) (c/* 3 11) (c/* 5 13))) (inner-product (->Vector3 2 3 5) (->Vector3 7 11 13)))))
+    (is (= (float (c/+ (c/* 2 7) (c/* 3 11) (c/* 5 13))) (inner-product (->Vector3 2 3 5) (->Vector3 7 11 13))))))
