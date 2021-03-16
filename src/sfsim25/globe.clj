@@ -48,6 +48,7 @@
         (spit-image (cube-path "globe" k out-level b a ".png") tile)
         (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))
         (spit-floats (cube-path "globe" k out-level b a ".scale") (:data scale))
-        (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))))))
+        (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))))
+    (System/exit 0)))
 
 (set! *unchecked-math* false)
