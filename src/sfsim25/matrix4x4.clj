@@ -1,4 +1,8 @@
-(ns sfsim25.matrix4x4)
+(ns sfsim25.matrix4x4
+  (:require [sfsim25.vector3 :refer (->Vector3)]
+            [sfsim25.matrix3x3 :refer (->Matrix3x3)])
+  (:import [sfsim25.vector3 Vector3]
+           [sfsim25.matrix3x3 Matrix3x3]))
 
 (set! *unchecked-math* true)
 
@@ -16,4 +20,13 @@
                                       m21 \space m22 \space m23 \space m24 \space
                                       m31 \space m32 \space m33 \space m34 \space
                                       m41 \space m42 \space m43 \space m44 \))))
+
+(defn matrix3x3->matrix4x4
+  "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
+  ^Matrix4x4 [^Matrix3x3 m ^Vector3 v]
+  (->Matrix4x4 (.m11 m) (.m12 m) (.m13 m) (.x v)
+               (.m21 m) (.m22 m) (.m23 m) (.y v)
+               (.m31 m) (.m32 m) (.m33 m) (.z v)
+                      0        0        0      1))
+
 (set! *unchecked-math* false)
