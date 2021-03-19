@@ -1,5 +1,8 @@
 # TODO
 
+* convert quaternion to rotation matrix
+* 4x4 matrices
+* projection matrix
 * Get scale-image to work on large images
 * OpenGL draw object: GL30/glBindVertexArray, GL20/glEnableVertexAttribArray, GL11/glDrawElements, disable vertex attrib array, bind to zero
 * delete OpenGL object: GL30/glBindVertexArray, delete vertex buffer, delete index buffer, delete vertex array, bind to zero
