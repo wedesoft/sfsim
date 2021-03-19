@@ -18,7 +18,7 @@
                             (= m31 (.m31 other)) (= m32 (.m32 other)) (= m33 (.m33 other))))
   (toString [this] (str "(matrix3x3 " m11 \space m12 \space m13 \space
                                       m21 \space m22 \space m23 \space
-                                      m31 \space m32 \space m33 ")")))
+                                      m31 \space m32 \space m33 \))))
 
 (set! *warn-on-reflection* true)
 
