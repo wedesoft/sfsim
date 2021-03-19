@@ -1,8 +1,10 @@
 (ns sfsim25.matrix3x3
   (:refer-clojure :exclude [* -])
   (:require [clojure.core :as c]
-            [sfsim25.vector3 :refer (->Vector3)])
-  (:import [sfsim25.vector3 Vector3]))
+            [sfsim25.vector3 :refer (->Vector3)]
+            [sfsim25.quaternion :refer (rotate-vector)])
+  (:import [sfsim25.vector3 Vector3]
+           [sfsim25.quaternion Quaternion]))
 
 (set! *unchecked-math* true)
 
@@ -67,6 +69,16 @@
   ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
     (->Matrix3x3 ca (c/- sa) 0 sa ca 0 0 0 1)))
+
+(defn quaternion->matrix
+  "Convert rotation quaternion to rotation matrix"
+  ^Matrix3x3 [^Quaternion q]
+  (let [a (rotate-vector q (->Vector3 1 0 0))
+        b (rotate-vector q (->Vector3 0 1 0))
+        c (rotate-vector q (->Vector3 0 0 1))]
+    (->Matrix3x3 (.x a) (.x b) (.x c)
+                 (.y a) (.y b) (.y c)
+                 (.z a) (.z b) (.z c))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

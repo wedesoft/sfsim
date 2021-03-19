@@ -1,6 +1,5 @@
 # TODO
 
-* convert quaternion to rotation matrix
 * 4x4 matrices
 * projection matrix
 * Get scale-image to work on large images

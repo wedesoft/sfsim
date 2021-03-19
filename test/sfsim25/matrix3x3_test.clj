@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [* -])
   (:require [clojure.test :refer :all]
             [sfsim25.matrix3x3 :refer :all]
-            [sfsim25.vector3 :refer (->Vector3)]))
+            [sfsim25.vector3 :refer (->Vector3)]
+            [sfsim25.quaternion :refer (->Quaternion rotation)]))
 
 (deftest display-test
   (testing "Display 3x3 matrix"
@@ -34,3 +35,10 @@
     (is (< (norm (- (->Matrix3x3 1 0 0 0 ca -sa 0 sa ca) (rotation-x (/ pi 6)))) 1e-6))
     (is (< (norm (- (->Matrix3x3 ca 0 sa 0 1 0 -sa 0 ca) (rotation-y (/ pi 6)))) 1e-6))
     (is (< (norm (- (->Matrix3x3 ca -sa 0 sa ca 0 0 0 1) (rotation-z (/ pi 6)))) 1e-6))))
+
+(deftest quaternion->matrix-test
+  (testing "Convert quaternion to rotation matrix"
+    (is (< (norm (- (->Matrix3x3 1 0 0 0 1 0 0 0 1) (quaternion->matrix (->Quaternion 1 0 0 0)))) 1e-6))
+    (is (< (norm (- (rotation-x (/ pi 6)) (quaternion->matrix (rotation (/ pi 6) (->Vector3 1 0 0))))) 1e-6))
+    (is (< (norm (- (rotation-y (/ pi 6)) (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 1 0))))) 1e-6))
+    (is (< (norm (- (rotation-z (/ pi 6)) (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 0 1))))) 1e-6))))
