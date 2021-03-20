@@ -41,4 +41,16 @@
              (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)) (c/* (.m34 m) (.l v)))
              (+ (c/* (.m41 m) (.x v)) (c/* (.m42 m) (.y v)) (c/* (.m43 m) (.z v)) (c/* (.m44 m) (.l v)))))
 
+(defn projection-matrix
+  "Compute OpenGL projection matrix (frustum)"
+  [width height near far field-of-view]
+  (let [dx (/ 1 (Math/tan (/ field-of-view 2)))
+        dy (-> dx (c/* width) (/ height))
+        c1 (/ (+ near far) (- near far))
+        c2 (/ (c/* 2 near far) (- near far))]
+    (->Matrix4x4 dx  0  0  0
+                  0 dy  0  0
+                  0  0 c1 c2
+                  0  0 -1  0)))
+
 (set! *unchecked-math* false)
