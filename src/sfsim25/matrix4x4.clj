@@ -1,7 +1,11 @@
 (ns sfsim25.matrix4x4
-  (:require [sfsim25.vector3 :refer (->Vector3)]
+  (:refer-clojure :exclude [*])
+  (:require [clojure.core :as c]
+            [sfsim25.vector3 :refer (->Vector3)]
+            [sfsim25.vector4 :refer (->Vector4)]
             [sfsim25.matrix3x3 :refer (->Matrix3x3)])
   (:import [sfsim25.vector3 Vector3]
+           [sfsim25.vector4 Vector4]
            [sfsim25.matrix3x3 Matrix3x3]))
 
 (set! *unchecked-math* true)
@@ -28,5 +32,13 @@
                (.m21 m) (.m22 m) (.m23 m) (.y v)
                (.m31 m) (.m32 m) (.m33 m) (.z v)
                       0        0        0      1))
+
+(defn *
+  "4D matrix-vector multiplication"
+  ^Vector4 [^Matrix4x4 m ^Vector4 v]
+  (->Vector4 (+ (c/* (.m11 m) (.x v)) (c/* (.m12 m) (.y v)) (c/* (.m13 m) (.z v)) (c/* (.m14 m) (.l v)))
+             (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)) (c/* (.m24 m) (.l v)))
+             (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)) (c/* (.m34 m) (.l v)))
+             (+ (c/* (.m41 m) (.x v)) (c/* (.m42 m) (.y v)) (c/* (.m43 m) (.z v)) (c/* (.m44 m) (.l v)))))
 
 (set! *unchecked-math* false)

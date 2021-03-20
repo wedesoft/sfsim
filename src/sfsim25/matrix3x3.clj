@@ -34,7 +34,7 @@
                  (c/- (.m31 a) (.m31 b)) (c/- (.m32 a) (.m32 b)) (c/- (.m33 a) (.m33 b)))))
 
 (defn *
-  "Matrix-vector multiplication"
+  "3D matrix-vector multiplication"
   ^Vector3 [^Matrix3x3 m ^Vector3 v]
   (->Vector3 (+ (c/* (.m11 m) (.x v)) (c/* (.m12 m) (.y v)) (c/* (.m13 m) (.z v)))
              (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)))

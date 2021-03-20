@@ -1,7 +1,5 @@
 # TODO
 
-* 4D vectors
-* 4x4 matrix with 4D vector multiplication
 * projection matrix
 * Get scale-image to work on large images
 * OpenGL draw object: GL30/glBindVertexArray, GL20/glEnableVertexAttribArray, GL11/glDrawElements, disable vertex attrib array, bind to zero

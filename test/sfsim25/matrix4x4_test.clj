@@ -1,8 +1,10 @@
 (ns sfsim25.matrix4x4-test
+  (:refer-clojure :exclude [*])
   (:require [clojure.test :refer :all]
             [sfsim25.matrix4x4 :refer :all]
             [sfsim25.matrix3x3 :refer (->Matrix3x3)]
-            [sfsim25.vector3 :refer (->Vector3)]))
+            [sfsim25.vector3 :refer (->Vector3)]
+            [sfsim25.vector4 :refer (->Vector4)]))
 
 (deftest display-test
   (testing "Display 4x4 matrix"
@@ -17,3 +19,7 @@
   (testing "Creating a 4x4 matrix from a 3x3 matrix and a translation vector"
     (is (= (->Matrix4x4 1 2 3 4 5 6 7 8 9 10 11 12 0 0 0 1)
            (matrix3x3->matrix4x4 (->Matrix3x3 1 2 3 5 6 7 9 10 11) (->Vector3 4 8 12))))))
+
+(deftest matrix-vector-dot-test
+  (testing "4D matrix-vector multiplication")
+    (is (= (->Vector4 30 40 50 60) (* (->Matrix4x4 1 2 3 4, 2 3 4 5, 3 4 5 6, 4 5 6 7) (->Vector4 1 2 3 4)))))
