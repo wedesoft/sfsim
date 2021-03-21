@@ -230,5 +230,8 @@ void main()
 (GL20/glDeleteProgram program)
 (GL20/glDeleteShader vertex-shader)
 (GL20/glDeleteShader fragment-shader)
+(GL20/glDeleteShader tcs-shader)
+(GL20/glDeleteShader tes-shader)
+(GL20/glDeleteShader geo-shader)
 
 (Display/destroy)

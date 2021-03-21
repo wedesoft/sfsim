@@ -20,7 +20,6 @@
             "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
             "run-globe"           ["with-profile" "run-globe"           "run"]}
   :resource-paths ["/usr/share/java/lwjgl.jar"
-                   "/usr/share/java/jmagick.jar"
-                   "/usr/share/java/commons-math3.jar"]
+                   "/usr/share/java/jmagick.jar"]
   :target-path "target/%s"
   :jvm-opts ["-Xmx2g"])
