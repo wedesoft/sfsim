@@ -1,5 +1,6 @@
-; clojure -cp /usr/share/java/lwjgl.jar:/usr/share/java/jmagick.jar triangles.clj
+; clojure -cp /usr/share/java/lwjgl.jar:/usr/share/java/jmagick.jar:src triangles.clj
 (ns raw-opengl
+  (:require [sfsim25.matrix4x4 :refer (projection-matrix)])
   (:import [org.lwjgl BufferUtils]
            [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30]))
 
@@ -7,9 +8,10 @@
 in mediump vec3 point;
 in mediump vec3 color;
 out mediump vec3 vertexColor;
+uniform mat4 projection;
 void main()
 {
-  gl_Position = vec4(point, 1);
+  gl_Position = projection * vec4(point, 1);
   vertexColor = color;
 }")
 
@@ -32,6 +34,12 @@ void main()
 (def indices
   (int-array [0 1 2
               3 4 5]))
+
+(def matrix
+  (float-array [1.5 0.0 0.0 0.0
+                0.0 1.0 0.0 0.0
+                0.0 0.0 1.0 0.0
+                0.0 0.0 0.0 1.0]))
 
 (defn make-shader [source shader-type]
   (let [shader (GL20/glCreateShader shader-type)]
@@ -87,6 +95,9 @@ void main()
 (GL20/glEnableVertexAttribArray 1)
 
 (GL20/glUseProgram program)
+
+(def projection (make-float-buffer matrix))
+(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") false projection)
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
