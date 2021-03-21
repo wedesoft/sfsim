@@ -68,7 +68,7 @@ void main()
 (def-make-buffer make-float-buffer BufferUtils/createFloatBuffer)
 (def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
 
-(Display/setTitle "mini")
+(Display/setTitle "triangles")
 (Display/setDisplayMode (DisplayMode. 320 240))
 (Display/create)
 
