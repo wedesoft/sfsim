@@ -1,6 +1,7 @@
 (ns sfsim25.quadtree
   (:require [sfsim25.vector3 :refer (norm) :as v]
-            [sfsim25.cubemap :refer (tile-center)]))
+            [sfsim25.cubemap :refer (tile-center)]
+            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes)]))
 
 (set! *unchecked-math* true)
 
@@ -20,5 +21,17 @@
         distance (norm (v/- position center))
         size     (quad-size level tilesize radius1 width distance angle)]
     (> size max-size)))
+
+(defn load-tile-data
+  "Load data associated with a cube map tile"
+  [face level y x]
+  {:face    face
+   :level   level
+   :y       y
+   :x       x
+   :colors  (slurp-image  (cube-path "globe" face level y x ".png"))
+   :scales  (slurp-floats (cube-path "globe" face level y x ".scale"))
+   :normals (slurp-floats (cube-path "globe" face level y x ".normals"))
+   :water   (slurp-bytes  (cube-path "globe" face level y x ".water"))})
 
 (set! *unchecked-math* false)

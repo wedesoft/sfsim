@@ -53,7 +53,7 @@
     (/ (+ tile (double (/ pixel (dec tilesize)))) tiles)))
 
 (defn longitude
-  "Longitude of 3D point"
+  "Longitude of 3D point (West is positive)"
   ^double [^Vector3 p]
   (Math/atan2 (.z p) (.x p)))
 
