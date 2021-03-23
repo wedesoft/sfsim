@@ -16,8 +16,8 @@
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
-  [face level tilesize b a radius1 radius2 width angle max-size position]
-  (let [center   (tile-center face level b a radius1 radius2)
+  [face level tilesize y x radius1 radius2 width angle max-size position]
+  (let [center   (tile-center face level y x radius1 radius2)
         distance (norm (v/- position center))
         size     (quad-size level tilesize radius1 width distance angle)]
     (> size max-size)))
@@ -33,5 +33,13 @@
    :scales  (slurp-floats (cube-path "globe" face level y x ".scale"))
    :normals (slurp-floats (cube-path "globe" face level y x ".normals"))
    :water   (slurp-bytes  (cube-path "globe" face level y x ".water"))})
+
+(defn sub-tiles-info
+  "Get metadata for sub tiles of cube map tile"
+  [face level y x]
+  [{:face face :level (inc level) :y (* 2 y)       :x (* 2 x)}
+   {:face face :level (inc level) :y (* 2 y)       :x (inc (* 2 x))}
+   {:face face :level (inc level) :y (inc (* 2 y)) :x (* 2 x)}
+   {:face face :level (inc level) :y (inc (* 2 y)) :x (inc (* 2 x))}])
 
 (set! *unchecked-math* false)

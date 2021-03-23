@@ -28,8 +28,16 @@
           "2.png"     :colors
           "2.normals" :normals
           "2.water"   :water
-          nil         :children
           3           :face
           2           :level
           2           :y
           1           :x)))))
+
+(deftest sub-tiles-info-test
+  (testing "Get information for loading sub tiles"
+    (let [info (sub-tiles-info 3 2 2 1)]
+      (are [result i] (= result (nth info i))
+        {:face 3 :level 3 :y 4 :x 2} 0
+        {:face 3 :level 3 :y 4 :x 3} 1
+        {:face 3 :level 3 :y 5 :x 2} 2
+        {:face 3 :level 3 :y 5 :x 3} 3))))
