@@ -42,4 +42,9 @@
    {:face face :level (inc level) :y (inc (* 2 y)) :x (* 2 x)}
    {:face face :level (inc level) :y (inc (* 2 y)) :x (inc (* 2 x))}])
 
+(defn load-tiles-data
+  "Load a set of tiles"
+  [metadata]
+  (map (fn [{:keys [face level y x]}] (load-tile-data face level y x)) metadata))
+
 (set! *unchecked-math* false)

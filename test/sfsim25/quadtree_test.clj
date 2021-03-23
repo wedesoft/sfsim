@@ -41,3 +41,8 @@
         {:face 3 :level 3 :y 4 :x 3} 1
         {:face 3 :level 3 :y 5 :x 2} 2
         {:face 3 :level 3 :y 5 :x 3} 3))))
+
+(deftest load-tiles-data-test
+  (testing "Load multiple tiles"
+    (with-redefs [load-tile-data (fn [face level y x] (str face \- level \- y \- x))]
+      (is (= ["3-2-3-1" "2-3-1-0"] (load-tiles-data [{:face 3 :level 2 :y 3 :x 1} {:face 2 :level 3 :y 1 :x 0}]))))))
