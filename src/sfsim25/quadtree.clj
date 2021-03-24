@@ -14,7 +14,7 @@
         screen-size (* (/ real-size distance) f)]
     screen-size))
 
-(defn quad-size-for-camera-position
+(defn- quad-size-for-camera-position
   "Determine screen size of a quad given the camera position"
   [tilesize radius1 radius2 width angle position face level y x]
   (let [center   (tile-center face level y x radius1 radius2)
