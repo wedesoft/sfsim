@@ -11,11 +11,18 @@
            (quad-size 2 33 6378000.0 1024 1000000.0 60.0)))))
 
 (deftest increase-level-test
-  (testing "Increase quadtree level or not"
+  (testing "Decide whether to increase quadtree level or not"
     (with-redefs [cubemap/tile-center (fn [& args] (is (= args [5 2 0 1 6378000.0 6357000.0])) (->Vector3 50000 0 0))
                   quadtree/quad-size (fn [& args] (is (= args [2 33 6378000.0 1280 150000.0 60.0])) 10.0)]
       (is (increase-level? 5 2 33 0 1 6378000.0 6357000.0 1280 60.0 5 (->Vector3 200000 0 0)))
       (is (not (increase-level? 5 2 33 0 1 6378000.0 6357000.0 1280 60.0 15 (->Vector3 200000 0 0)))))))
+
+(deftest decrease-level-test
+  (testing "Decide whether to decrease quadtree level")
+    (with-redefs [cubemap/tile-center (fn [& args] (is (= args [5 2 0 1 6378000.0 6357000.0])) (->Vector3 50000 0 0))
+                  quadtree/quad-size (fn [& args] (is (= args [2 33 6378000.0 1280 150000.0 60.0])) 10.0)]
+      (is (not (decrease-level? 5 2 33 0 1 6378000.0 6357000.0 1280 60.0 5 (->Vector3 200000 0 0))))
+      (is (decrease-level? 5 2 33 0 1 6378000.0 6357000.0 1280 60.0 15 (->Vector3 200000 0 0)))))
 
 (deftest load-tile-data-test
   (testing "Load normals, scale factors and colors for a tile"

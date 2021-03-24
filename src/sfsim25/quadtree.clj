@@ -14,13 +14,22 @@
         screen-size (* (/ real-size distance) f)]
     screen-size))
 
+(defn quad-size-for-camera-position
+  "Determine screen size of a quad given the camera position"
+  [face level tilesize y x radius1 radius2 width angle position]
+  (let [center   (tile-center face level y x radius1 radius2)
+        distance (norm (v/- position center))]
+    (quad-size level tilesize radius1 width distance angle)))
+
 (defn increase-level?
   "Decide whether next quad tree level is required"
   [face level tilesize y x radius1 radius2 width angle max-size position]
-  (let [center   (tile-center face level y x radius1 radius2)
-        distance (norm (v/- position center))
-        size     (quad-size level tilesize radius1 width distance angle)]
-    (> size max-size)))
+  (> (quad-size-for-camera-position face level tilesize y x radius1 radius2 width angle position) max-size))
+
+(defn decrease-level?
+  "Decide whether quad tree level should be reduced"
+  [face level tilesize y x radius1 radius2 width angle min-size position]
+  (< (quad-size-for-camera-position face level tilesize y x radius1 radius2 width angle position) min-size))
 
 (defn load-tile-data
   "Load data associated with a cube map tile"
