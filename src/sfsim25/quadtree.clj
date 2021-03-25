@@ -56,4 +56,17 @@
   [metadata]
   (map (fn [{:keys [face level y x]}] (load-tile-data face level y x)) metadata))
 
+(defn- tiles-to-remove-from-face
+  "Determine tiles to remove for a face of the cube"
+  [tree increase-level? path]
+  (cond
+    (nil? tree) []
+    (and (> (:level tree) 0) (not (increase-level? (:face tree) (:level tree) (:y tree) (:x tree)))) [path]
+    :else (mapcat #(tiles-to-remove-from-face (tree %) increase-level? (conj path %)) [:0 :1 :2 :3])))
+
+(defn tiles-to-remove
+  "Determine tiles to remove"
+  [tree increase-level?]
+  (mapcat #(tiles-to-remove-from-face (tree %) increase-level? [%]) [:0 :1 :2 :3 :4 :5]))
+
 (set! *unchecked-math* false)
