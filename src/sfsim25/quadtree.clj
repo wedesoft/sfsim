@@ -26,11 +26,6 @@
   [tilesize radius1 radius2 width angle max-size position face level y x]
   (> (quad-size-for-camera-position tilesize radius1 radius2 width angle position face level y x) max-size))
 
-(defn decrease-level?
-  "Decide whether quad tree level should be reduced"
-  [tilesize radius1 radius2 width angle min-size position face level y x]
-  (< (quad-size-for-camera-position tilesize radius1 radius2 width angle position face level y x) min-size))
-
 (defn load-tile-data
   "Load data associated with a cube map tile"
   [face level y x]
@@ -56,17 +51,27 @@
   [metadata]
   (map (fn [{:keys [face level y x]}] (load-tile-data face level y x)) metadata))
 
+(defn- is-leaf?
+  "Check whether quad tree node is a leaf"
+  [node]
+  (not (or (:0 node) (:1 node) (:2 node) (:3 node))))
+
 (defn- tiles-to-remove-from-face
   "Determine tiles to remove for a face of the cube"
-  [tree increase-level? path]
+  [node increase-level? path]
   (cond
-    (nil? tree) []
-    (and (> (:level tree) 0) (not (increase-level? (:face tree) (:level tree) (:y tree) (:x tree)))) [path]
-    :else (mapcat #(tiles-to-remove-from-face (tree %) increase-level? (conj path %)) [:0 :1 :2 :3])))
+    (nil? node) []
+    (and (> (:level node) 0) (is-leaf? node) (not (increase-level? (:face node) (:level node) (:y node) (:x node)))) [path]
+    :else (mapcat #(tiles-to-remove-from-face (node %) increase-level? (conj path %)) [:0 :1 :2 :3])))
 
 (defn tiles-to-remove
   "Determine tiles to remove"
   [tree increase-level?]
   (mapcat #(tiles-to-remove-from-face (tree %) increase-level? [%]) [:0 :1 :2 :3 :4 :5]))
+
+(defn tiles-to-add
+  "Determine tiles to load"
+  [tree increase-level?]
+  (mapcat #(if (% tree) [] [[%]]) [:0 :1 :2 :3 :4 :5]))
 
 (set! *unchecked-math* false)

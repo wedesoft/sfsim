@@ -17,13 +17,6 @@
       (is (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 (->Vector3 200000 0 0) 5 2 0 1))
       (is (not (increase-level? 33 6378000.0 6357000.0 1280 60.0 15 (->Vector3 200000 0 0) 5 2 0 1))))))
 
-(deftest decrease-level-test
-  (testing "Decide whether to decrease quadtree level")
-    (with-redefs [cubemap/tile-center (fn [& args] (is (= args [5 2 0 1 6378000.0 6357000.0])) (->Vector3 50000 0 0))
-                  quadtree/quad-size (fn [& args] (is (= args [2 33 6378000.0 1280 150000.0 60.0])) 10.0)]
-      (is (not (decrease-level? 33 6378000.0 6357000.0 1280 60.0 5 (->Vector3 200000 0 0) 5 2 0 1)))
-      (is (decrease-level? 33 6378000.0 6357000.0 1280 60.0 15 (->Vector3 200000 0 0) 5 2 0 1))))
-
 (deftest load-tile-data-test
   (testing "Load normals, scale factors and colors for a tile"
     (with-redefs [util/slurp-image (fn [file-name] ({"globe/3/2/1/2.png" "2.png"} file-name))
@@ -62,4 +55,11 @@
       (is (= [] (tiles-to-remove node (fn [face level y x] false))))
       (is (= [[:3 :2]] (tiles-to-remove one-child (fn [face level y x] false))))
       (is (= [] (tiles-to-remove one-child (fn [face level y x] true))))
-      (is (= [[:3 :2 :0]] (tiles-to-remove sub-tree (fn [face level y x] (< level 2))))))))
+      (is (= [[:3 :2 :0]] (tiles-to-remove sub-tree (fn [face level y x] (< level 2)))))
+      (is (= [[:3 :2 :0]] (tiles-to-remove sub-tree (fn [face level y x] (< level 1))))))))
+
+(deftest tiles-to-add-test
+  (testing "Determine list of tiles to load"
+    (let [base (apply hash-map (mapcat (fn [face] [(keyword (str face)) {:face face :level 0 :y 0 :x 0}]) (range 6)))]
+      (is (= [] (tiles-to-add base (fn [face level y x] false))))
+      (is (= [[:2]] (tiles-to-add (dissoc base :2) (fn [face level y x] false)))))))
