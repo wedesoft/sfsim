@@ -49,17 +49,9 @@
 
 (deftest tiles-to-remove-test
   (testing "Determine list of tiles to remove"
-    (let [node      {:3 {:face 3 :level 0 :y 0 :x 0}}
-          one-child {:3 {:face 3 :level 0 :y 0 :x 0 :2 {:face 3 :level 1 :y 1 :x 0}}}
-          sub-tree  {:3 {:face 3 :level 0 :y 0 :x 0 :2 {:face 3 :level 1 :y 1 :x 0 :0 {:face 3 :level 2 :y 0 :x 0}}}}]
-      (is (= [] (tiles-to-remove node (fn [face level y x] false))))
-      (is (= [[:3 :2]] (tiles-to-remove one-child (fn [face level y x] false))))
-      (is (= [] (tiles-to-remove one-child (fn [face level y x] true))))
-      (is (= [[:3 :2 :0]] (tiles-to-remove sub-tree (fn [face level y x] (< level 2)))))
-      (is (= [[:3 :2 :0]] (tiles-to-remove sub-tree (fn [face level y x] (< level 1))))))))
-
-(deftest tiles-to-add-test
-  (testing "Determine list of tiles to load"
-    (let [base (apply hash-map (mapcat (fn [face] [(keyword (str face)) {:face face :level 0 :y 0 :x 0}]) (range 6)))]
-      (is (= [] (tiles-to-add base (fn [face level y x] false))))
-      (is (= [[:2]] (tiles-to-add (dissoc base :2) (fn [face level y x] false)))))))
+    (let [quad     {:5 {:face 2 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}
+          sub-quad {:5 {:0 {} :1 {} :2 {:0 {} :1 {} :2 {} :3 {}} :3 {}}}]
+      (is (= [] (tiles-to-remove {} (fn [face level y x] false))))
+      (is (= [[:5 :0] [:5 :1] [:5 :2] [:5 :3]] (tiles-to-remove quad (fn [face level y x] false))))
+      (is (= [] (tiles-to-remove quad (fn [face level y x] (is (= [face level y x] [2 1 0 0])) true))))
+      (is (= [[:5 :2 :0] [:5 :2 :1] [:5 :2 :2] [:5 :2 :3]] (tiles-to-remove sub-quad (fn [face level y x] false)))))))

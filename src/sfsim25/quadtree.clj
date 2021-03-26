@@ -52,26 +52,35 @@
   (map (fn [{:keys [face level y x]}] (load-tile-data face level y x)) metadata))
 
 (defn- is-leaf?
-  "Check whether quad tree node is a leaf"
+  "Check whether node is a leaf"
   [node]
-  (not (or (:0 node) (:1 node) (:2 node) (:3 node))))
+  (not (or (nil? node) (:0 node) (:1 node) (:2 node) (:3 node))))
 
-(defn- tiles-to-remove-from-face
-  "Determine tiles to remove for a face of the cube"
-  [node increase-level? path]
-  (cond
-    (nil? node) []
-    (and (> (:level node) 0) (is-leaf? node) (not (increase-level? (:face node) (:level node) (:y node) (:x node)))) [path]
-    :else (mapcat #(tiles-to-remove-from-face (node %) increase-level? (conj path %)) [:0 :1 :2 :3])))
+(defn- is-flat?
+  "Check whether node has four leafs"
+  [node]
+  (and (is-leaf? (:0 node)) (is-leaf? (:1 node)) (is-leaf? (:2 node)) (is-leaf? (:3 node))))
+
+(defn- sub-paths
+  "Get path for each leaf"
+  [path]
+  [(conj path :0) (conj path :1) (conj path :2) (conj path :3)])
+
+(defn- tiles-to-remove-recursive
+  "Determine tiles to remove recursively"
+  [tree increase-level? path]
+  (mapcat
+    (fn [k]
+      (let [node (k tree)]
+        (cond
+          (nil? node) []
+          (and (is-flat? node) (not (increase-level? (:face node) (:level node) (:y node) (:x node)))) (sub-paths (conj path k))
+          :else (tiles-to-remove-recursive node increase-level? (conj path k)))))
+    (if (empty? path) [:0 :1 :2 :3 :4 :5] [:0 :1 :2 :3])))
 
 (defn tiles-to-remove
   "Determine tiles to remove"
   [tree increase-level?]
-  (mapcat #(tiles-to-remove-from-face (tree %) increase-level? [%]) [:0 :1 :2 :3 :4 :5]))
-
-(defn tiles-to-add
-  "Determine tiles to load"
-  [tree increase-level?]
-  (mapcat #(if (% tree) [] [[%]]) [:0 :1 :2 :3 :4 :5]))
+  (tiles-to-remove-recursive tree increase-level? []))
 
 (set! *unchecked-math* false)
