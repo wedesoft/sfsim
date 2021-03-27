@@ -47,11 +47,19 @@
     (with-redefs [load-tile-data (fn [face level y x] (str face \- level \- y \- x))]
       (is (= ["3-2-3-1" "2-3-1-0"] (load-tiles-data [{:face 3 :level 2 :y 3 :x 1} {:face 2 :level 3 :y 1 :x 0}]))))))
 
-(deftest tiles-to-remove-test
+(deftest tiles-to-drop-test
   (testing "Determine list of tiles to remove"
     (let [quad     {:5 {:face 2 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}
-          sub-quad {:5 {:0 {} :1 {} :2 {:0 {} :1 {} :2 {} :3 {}} :3 {}}}]
-      (is (= [] (tiles-to-remove {} (fn [face level y x] false))))
-      (is (= [[:5 :0] [:5 :1] [:5 :2] [:5 :3]] (tiles-to-remove quad (fn [face level y x] false))))
-      (is (= [] (tiles-to-remove quad (fn [face level y x] (is (= [face level y x] [2 1 0 0])) true))))
-      (is (= [[:5 :2 :0] [:5 :2 :1] [:5 :2 :2] [:5 :2 :3]] (tiles-to-remove sub-quad (fn [face level y x] false)))))))
+          sub-quad {:5 {:0 {} :1 {} :2 {:0 {} :1 {} :2 {} :3 {}} :3 {}}}
+          basic    {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {}}]
+      (is (= [] (tiles-to-drop {} (fn [face level y x] false))))
+      (is (= [[:5 :0] [:5 :1] [:5 :2] [:5 :3]] (tiles-to-drop quad (fn [face level y x] false))))
+      (is (= [] (tiles-to-drop quad (fn [face level y x] (is (= [face level y x] [2 1 0 0])) true))))
+      (is (= [[:5 :2 :0] [:5 :2 :1] [:5 :2 :2] [:5 :2 :3]] (tiles-to-drop sub-quad (fn [face level y x] false))))
+      (is (= []  (tiles-to-drop basic (fn [face level y x] false)))))))
+
+(deftest tiles-to-load-test
+  (testing "Determine list of tiles to load"
+    (let [basic {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {}}]
+      (is (= [] (tiles-to-load basic (fn [face level y x] false))))
+      (is (= [[:0] [:1] [:2] [:3] [:4] [:5]] (tiles-to-load {}  (fn [face level y x] false)))))))

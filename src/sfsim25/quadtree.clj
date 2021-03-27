@@ -66,21 +66,23 @@
   [path]
   [(conj path :0) (conj path :1) (conj path :2) (conj path :3)])
 
-(defn- tiles-to-remove-recursive
-  "Determine tiles to remove recursively"
-  [tree increase-level? path]
-  (mapcat
-    (fn [k]
-      (let [node (k tree)]
-        (cond
-          (nil? node) []
-          (and (is-flat? node) (not (increase-level? (:face node) (:level node) (:y node) (:x node)))) (sub-paths (conj path k))
-          :else (tiles-to-remove-recursive node increase-level? (conj path k)))))
-    (if (empty? path) [:0 :1 :2 :3 :4 :5] [:0 :1 :2 :3])))
+(defn tiles-to-drop
+  "Determine tiles to remove from the quad tree"
+  ([tree increase-level?]
+    (tiles-to-drop tree increase-level? []))
+  ([tree increase-level? path]
+    (mapcat
+      (fn [k]
+        (let [node (k tree)]
+          (cond
+            (nil? node) []
+            (and (is-flat? node) (not (increase-level? (:face node) (:level node) (:y node) (:x node)))) (sub-paths (conj path k))
+            :else (tiles-to-drop node increase-level? (conj path k)))))
+      (if (empty? path) [:0 :1 :2 :3 :4 :5] [:0 :1 :2 :3]))))
 
-(defn tiles-to-remove
-  "Determine tiles to remove"
+(defn tiles-to-load
+  "Determine which tiles to load into the quad tree"
   [tree increase-level?]
-  (tiles-to-remove-recursive tree increase-level? []))
+  (if (empty? tree) [[:0] [:1] [:2] [:3] [:4] [:5]] []))
 
 (set! *unchecked-math* false)
