@@ -82,7 +82,13 @@
 
 (defn tiles-to-load
   "Determine which tiles to load into the quad tree"
-  [tree increase-level?]
-  (if (empty? tree) [[:0] [:1] [:2] [:3] [:4] [:5]] []))
+  ([tree increase-level?]
+   (if (empty? tree)
+     [[:0] [:1] [:2] [:3] [:4] [:5]]
+     (mapcat (fn [k] (tiles-to-load (k tree) increase-level? [k])) [:0 :1 :2 :3 :4 :5])))
+  ([tree increase-level? path]
+   (if (and (is-leaf? tree) (increase-level? (:face tree) (:level tree) (:y tree) (:x tree)))
+     (sub-paths path)
+     [])))
 
 (set! *unchecked-math* false)
