@@ -61,8 +61,11 @@
 (deftest tiles-to-load-test
   (testing "Determine list of tiles to load"
     (let [basic    {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:face 5 :level 1 :y 0 :x 0}}
-          sub-quad {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:face 5 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}]
+          quad     {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:face 5 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}
+          sub-quad {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:face 5 :level 1 :y 0 :x 0 :0 {} :1 {:face 5 :level 2 :y 0 :x 1} :2 {} :3 {}}}]
       (is (= [] (tiles-to-load basic (fn [face level y x] false))))
       (is (= [[:0] [:1] [:2] [:3] [:4] [:5]] (tiles-to-load {}  (fn [face level y x] false))))
       (is (= [[:5 :0] [:5 :1] [:5 :2] [:5 :3]] (tiles-to-load basic (fn [face level y x] (= [face level y x] [5 1 0 0])))))
-      (is (= [] (tiles-to-load sub-quad (fn [face level y x] (= [face level y x] [5 1 0 0]))))))))
+      (is (= [] (tiles-to-load quad (fn [face level y x] (= [face level y x] [5 1 0 0])))))
+      (is (= [[:5 :1 :0] [:5 :1 :1] [:5 :1 :2] [:5 :1 :3]]
+             (tiles-to-load sub-quad (fn [face level y x] (contains? #{[5 1] [5 2]} [face level]))))))))

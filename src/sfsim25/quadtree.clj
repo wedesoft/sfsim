@@ -54,7 +54,7 @@
 (defn- is-leaf?
   "Check whether node is a leaf"
   [node]
-  (not (or (nil? node) (:0 node) (:1 node) (:2 node) (:3 node))))
+  (not (or (nil? node) (contains? node :0) (contains? node :1) (contains? node :2) (contains? node :3))))
 
 (defn- is-flat?
   "Check whether node has four leafs"
@@ -87,8 +87,9 @@
      [[:0] [:1] [:2] [:3] [:4] [:5]]
      (mapcat (fn [k] (tiles-to-load (k tree) increase-level? [k])) [:0 :1 :2 :3 :4 :5])))
   ([tree increase-level? path]
-   (if (and (is-leaf? tree) (increase-level? (:face tree) (:level tree) (:y tree) (:x tree)))
-     (sub-paths path)
-     [])))
+   (cond
+     (nil? tree) []
+     (and (is-leaf? tree) (increase-level? (:face tree) (:level tree) (:y tree) (:x tree))) (sub-paths path)
+     :else (mapcat #(tiles-to-load (% tree) increase-level? (conj path %)) [:0 :1 :2 :3]))))
 
 (set! *unchecked-math* false)
