@@ -69,16 +69,12 @@
 (defn tiles-to-drop
   "Determine tiles to remove from the quad tree"
   ([tree increase-level?]
-    (tiles-to-drop tree increase-level? []))
+   (mapcat #(tiles-to-drop (% tree) increase-level? [%]) [:0 :1 :2 :3 :4 :5]))
   ([tree increase-level? path]
-    (mapcat
-      (fn [k]
-        (let [node (k tree)]
-          (cond
-            (nil? node) []
-            (and (is-flat? node) (not (increase-level? (:face node) (:level node) (:y node) (:x node)))) (sub-paths (conj path k))
-            :else (tiles-to-drop node increase-level? (conj path k)))))
-      (if (empty? path) [:0 :1 :2 :3 :4 :5] [:0 :1 :2 :3]))))
+   (cond
+     (nil? tree) []
+     (and (is-flat? tree) (not (increase-level? (:face tree) (:level tree) (:y tree) (:x tree)))) (sub-paths path)
+     :else (mapcat #(tiles-to-drop (% tree) increase-level? (conj path %)) [:0 :1 :2 :3]))))
 
 (defn tiles-to-load
   "Determine which tiles to load into the quad tree"
