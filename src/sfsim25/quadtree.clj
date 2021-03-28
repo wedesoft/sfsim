@@ -88,4 +88,16 @@
      (and (is-leaf? tree) (increase-level? (:face tree) (:level tree) (:y tree) (:x tree))) (sub-paths path)
      :else (mapcat #(tiles-to-load (% tree) increase-level? (conj path %)) [:0 :1 :2 :3]))))
 
+(defn tile-meta-data
+  "Convert tile path to face, level, y and x"
+  [path]
+  (let [[top & tree]    path
+        dy              {:0 0 :1 0 :2 1 :3 1}
+        dx              {:0 0 :1 1 :2 0 :3 1}
+        combine-offsets #(bit-or (bit-shift-left %1 1) %2)]
+    [(Integer/parseInt (name top))
+     (count tree)
+     (reduce combine-offsets 0 (map dy tree))
+     (reduce combine-offsets 0 (map dx tree))]))
+
 (set! *unchecked-math* false)
