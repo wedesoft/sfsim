@@ -95,9 +95,14 @@
         dy              {:0 0 :1 0 :2 1 :3 1}
         dx              {:0 0 :1 1 :2 0 :3 1}
         combine-offsets #(bit-or (bit-shift-left %1 1) %2)]
-    [(Integer/parseInt (name top))
-     (count tree)
-     (reduce combine-offsets 0 (map dy tree))
-     (reduce combine-offsets 0 (map dx tree))]))
+    {:face (Integer/parseInt (name top))
+     :level (count tree)
+     :y (reduce combine-offsets 0 (map dy tree))
+     :x (reduce combine-offsets 0 (map dx tree))}))
+
+(defn quadtree-add
+  "Add tiles to quad tree"
+  [tree paths tiles]
+  (reduce (fn [tree [path tile]] (assoc-in tree path tile)) tree (map vector paths tiles)))
 
 (set! *unchecked-math* false)

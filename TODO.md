@@ -1,6 +1,7 @@
 # TODO
 
-* method to load cube tile children
+* method to drop paths from quad tree
+* method to process paths from quad tree (e.g. load/unload OpenGL objects)
 * Get scale-image to work on large images
 * OpenGL draw object: GL30/glBindVertexArray, GL20/glEnableVertexAttribArray, GL11/glDrawElements, disable vertex attrib array, bind to zero
 * delete OpenGL object: GL30/glBindVertexArray, delete vertex buffer, delete index buffer, delete vertex array, bind to zero

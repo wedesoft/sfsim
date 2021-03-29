@@ -72,7 +72,7 @@
 
 (deftest tile-meta-data-test
   (testing "Convert tile path to face, level, y and x"
-    (are [face level y x path] (= [face level y x] (tile-meta-data path))
+    (are [face level y x path] (= {:face face :level level :y y :x x} (tile-meta-data path))
       5 0 0 0 [:5]
       5 1 0 0 [:5 :0]
       5 1 0 1 [:5 :1]
@@ -80,3 +80,8 @@
       5 1 1 1 [:5 :3]
       5 2 0 2 [:5 :1 :0]
       5 2 2 1 [:5 :2 :1])))
+
+(deftest quadtree-add-test
+  (testing "Add tiles to the quad tree"
+    (is (= {}  (quadtree-add {} [] [])))
+    (is (= {:5 {:2 {:face 5 :level 1 :y 1 :x 0}}} (quadtree-add {} [[:5 :2]] [{:face 5 :level 1 :y 1 :x 0}])))))
