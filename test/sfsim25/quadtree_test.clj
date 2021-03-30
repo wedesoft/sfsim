@@ -86,6 +86,11 @@
     (is (= {}  (quadtree-add {} [] [])))
     (is (= {:5 {:2 {:face 5 :level 1 :y 1 :x 0}}} (quadtree-add {} [[:5 :2]] [{:face 5 :level 1 :y 1 :x 0}])))))
 
+(deftest quadtree-extract-test
+  (testing "Extract list of nodes from quad tree"
+    (is (= [] (quadtree-extract {} [])))
+    (is (= [{:level 2}] (quadtree-extract {:5 {:2 {:level 2}}} [[:5 :2]])))))
+
 (deftest quadtree-drop-test
   (testing "Remove tiles from quad tree"
     (is (= {:3 {}} (quadtree-drop {:3 {}} [])))

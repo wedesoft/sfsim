@@ -105,6 +105,11 @@
   [tree paths tiles]
   (reduce (fn [tree [path tile]] (assoc-in tree path tile)) tree (map vector paths tiles)))
 
+(defn quadtree-extract
+  "Extract a list of tiles from quad tree"
+  [tree paths]
+  (map (partial get-in tree) paths))
+
 (defn quadtree-drop
   "Drop tiles from quad tree"
   [tree paths]
