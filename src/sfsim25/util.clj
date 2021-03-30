@@ -182,3 +182,10 @@
     (aset-float data offset       (.x value))
     (aset-float data (+ offset 1) (.y value))
     (aset-float data (+ offset 2) (.z value))))
+
+(defn dissoc-in
+  "Return nested hash with path removed"
+  [m ks]
+  (let [path (butlast ks)
+        node (last ks)]
+    (if (empty? path) (dissoc m node) (update-in m path dissoc node))))

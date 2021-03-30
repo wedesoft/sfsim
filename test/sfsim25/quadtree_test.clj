@@ -85,3 +85,8 @@
   (testing "Add tiles to the quad tree"
     (is (= {}  (quadtree-add {} [] [])))
     (is (= {:5 {:2 {:face 5 :level 1 :y 1 :x 0}}} (quadtree-add {} [[:5 :2]] [{:face 5 :level 1 :y 1 :x 0}])))))
+
+(deftest quadtree-drop-test
+  (testing "Remove tiles from quad tree"
+    (is (= {:3 {}} (quadtree-drop {:3 {}} [])))
+    (is (= {} (quadtree-drop {:3 {}} [[:3]])))))

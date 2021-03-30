@@ -1,7 +1,7 @@
 (ns sfsim25.quadtree
   (:require [sfsim25.vector3 :refer (norm) :as v]
             [sfsim25.cubemap :refer (tile-center)]
-            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes)]))
+            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes dissoc-in)]))
 
 (set! *unchecked-math* true)
 
@@ -104,5 +104,10 @@
   "Add tiles to quad tree"
   [tree paths tiles]
   (reduce (fn [tree [path tile]] (assoc-in tree path tile)) tree (map vector paths tiles)))
+
+(defn quadtree-drop
+  "Drop tiles from quad tree"
+  [tree paths]
+  (reduce dissoc-in tree paths))
 
 (set! *unchecked-math* false)

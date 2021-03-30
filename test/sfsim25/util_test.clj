@@ -122,3 +122,9 @@
       (is (= (->Vector3 18 19 20) (get-vector vectors 1 2)))
       (set-vector! vectors 1 2 (->Vector3 24 25 26))
       (is (= (->Vector3 24 25 26) (get-vector vectors 1 2))))))
+
+(def dissoc-in-test
+  (testing "Removal of entry in nested hash"
+    (is (= {} (dissoc-in {:a 42} [:a])))
+    (is (= {:a 42} (dissoc-in {:a 42 :b 51} [:b])))
+    (is (= {:a {:c 20}} (dissoc-in {:a {:b 42 :c 20}} [:a :b])))))
