@@ -83,10 +83,12 @@
      [[:0] [:1] [:2] [:3] [:4] [:5]]
      (mapcat (fn [k] (tiles-to-load (k tree) increase-level? [k])) [:0 :1 :2 :3 :4 :5])))
   ([tree increase-level? path]
-   (cond
-     (nil? tree) []
-     (and (is-leaf? tree) (increase-level? (:face tree) (:level tree) (:y tree) (:x tree))) (sub-paths path)
-     :else (mapcat #(tiles-to-load (% tree) increase-level? (conj path %)) [:0 :1 :2 :3]))))
+   (if (nil? tree) []
+     (let [increase? (increase-level? (:face tree) (:level tree) (:y tree) (:x tree))]
+       (cond
+         (and (is-leaf? tree) increase?) (sub-paths path)
+         increase? (mapcat #(tiles-to-load (% tree) increase-level? (conj path %)) [:0 :1 :2 :3])
+         :else [])))))
 
 (defn tile-meta-data
   "Convert tile path to face, level, y and x"

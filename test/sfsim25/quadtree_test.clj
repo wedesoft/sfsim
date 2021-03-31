@@ -68,7 +68,8 @@
       (is (= [[:5 :0] [:5 :1] [:5 :2] [:5 :3]] (tiles-to-load basic (fn [face level y x] (= [face level y x] [5 1 0 0])))))
       (is (= [] (tiles-to-load quad (fn [face level y x] (= [face level y x] [5 1 0 0])))))
       (is (= [[:5 :1 :0] [:5 :1 :1] [:5 :1 :2] [:5 :1 :3]]
-             (tiles-to-load sub-quad (fn [face level y x] (contains? #{[5 1] [5 2]} [face level]))))))))
+             (tiles-to-load sub-quad (fn [face level y x] (contains? #{[5 1] [5 2]} [face level])))))
+      (is (= [] (tiles-to-load sub-quad (fn [face level y x] (= [5 2] [face level]))))))))
 
 (deftest tile-meta-data-test
   (testing "Convert tile path to face, level, y and x"
