@@ -102,6 +102,11 @@
      :y (reduce combine-offsets 0 (map dy tree))
      :x (reduce combine-offsets 0 (map dx tree))}))
 
+(defn tiles-meta-data
+  "Convert multiple tile paths to face, level, y and x"
+  [paths]
+  (map tile-meta-data paths))
+
 (defn quadtree-add
   "Add tiles to quad tree"
   [tree paths tiles]

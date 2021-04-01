@@ -82,6 +82,11 @@
       5 2 0 2 [:5 :1 :0]
       5 2 2 1 [:5 :2 :1])))
 
+(deftest tiles-meta-data-test
+  (testing "Get tile metadata for multiple tiles"
+    (is (= [] (tiles-meta-data [])))
+    (is (= [{:face 5 :level 2 :y 2 :x 1}] (tiles-meta-data [[:5 :2 :1]])))))
+
 (deftest quadtree-add-test
   (testing "Add tiles to the quad tree"
     (is (= {}  (quadtree-add {} [] [])))

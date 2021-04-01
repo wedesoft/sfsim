@@ -21,6 +21,10 @@
       (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 10 @position)
             drop-list (tiles-to-drop tree increase?)
             load-list (tiles-to-load tree increase?)
-            tiles     (load-tiles-data (map tile-meta-data load-list))]
+            tiles     (load-tiles-data (tiles-meta-data load-list))]
         (>! changes {:drop drop-list :load load-list :tiles tiles})
         (recur (<! tree-state))))))
+
+(def data (poll! changes))
+
+(def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
