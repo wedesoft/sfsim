@@ -1,6 +1,5 @@
 # TODO
 
-* src/sfsim25/cubemap.clj: method to get OpenGL 3D vertices for tile (use cube-map and cube-coordinate)
 * method to process paths from quad tree (e.g. load/unload OpenGL objects)
 * Get scale-image to work on large images
 * OpenGL draw object: GL30/glBindVertexArray, GL20/glEnableVertexAttribArray, GL11/glDrawElements, disable vertex attrib array, bind to zero

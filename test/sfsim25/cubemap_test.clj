@@ -60,6 +60,18 @@
     (is (= 0.5  (cube-coordinate 0 256 0 127.5)))
     (is (= 0.75 (cube-coordinate 1 256 1 127.5)))))
 
+(deftest cube-map-corners-test
+  (testing "Get corners of cube map tiles"
+    (are [x y z face level b a idx] (= (->Vector3 x y z) (nth (cube-map-corners face level b a) idx))
+      -1    1   -1   0 0 0 0 0
+       1    1   -1   0 0 0 0 1
+      -1    1    1   0 0 0 0 2
+       1    1    1   0 0 0 0 3
+      -0.5 -1.0 -0.5 5 2 3 1 0
+       0.0 -1.0 -0.5 5 2 3 1 1
+      -0.5 -1.0 -1.0 5 2 3 1 2
+       0.0 -1.0 -1.0 5 2 3 1 3)))
+
 (def pi Math/PI)
 
 (deftest longitude-test
