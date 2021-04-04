@@ -7,7 +7,9 @@
 (deftype Vector3 [^double x ^double y ^double z]
   Object
   (equals [this other] (and (instance? Vector3 other) (= x (.x other)) (= y (.y other)) (= z (.z other))))
-  (toString [this] (str "(vector3 " x \space y \space z \))))
+  (toString [this] (str "(vector3 " x \space y \space z \)))
+  clojure.lang.Seqable
+  (seq [this] (list x y z)))
 
 (set! *warn-on-reflection* true)
 

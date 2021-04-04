@@ -9,6 +9,10 @@
   (testing "Display 3x3 matrix"
     (is (= "(matrix3x3 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0)" (str (->Matrix3x3 1 2 3, 4 5 6, 7 8 9))))))
 
+(deftest seqable-test
+  (testing "Convert 3x3 matrix to sequence"
+    (is (= [1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0] (seq (->Matrix3x3 1 2 3, 4 5 6, 7 8 9))))))
+
 (deftest matrix-vector-dot-test
   (testing "3D matrix-vector multiplication"
     (is (= (->Vector3 14 32 50) (* (->Matrix3x3 1 2 3, 4 5 6, 7 8 9) (->Vector3 1 2 3))))))

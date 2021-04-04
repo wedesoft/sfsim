@@ -10,11 +10,16 @@
 (deftest display-test
   (testing "Display 4x4 matrix"
     (is (= "(matrix4x4 1.0 2.0 3.0 4.0 2.0 3.0 4.0 5.0 3.0 4.0 5.0 6.0 4.0 5.0 6.0 7.0)"
-           (str (->Matrix4x4 1 2 3 4 2 3 4 5 3 4 5 6 4 5 6 7))))))
+           (str (->Matrix4x4 1 2 3 4, 2 3 4 5, 3 4 5 6, 4 5 6 7))))))
 
 (deftest equality-test
   (testing "Equality of 4x4 matrices"
-    (is (= (->Matrix4x4 1 2 3 4 2 3 4 5 3 4 5 6 4 5 6 7) (->Matrix4x4 1 2 3 4 2 3 4 5 3 4 5 6 4 5 6 7)))))
+    (is (= (->Matrix4x4 1 2 3 4, 2 3 4 5, 3 4 5 6, 4 5 6 7) (->Matrix4x4 1 2 3 4, 2 3 4 5, 3 4 5 6, 4 5 6 7)))))
+
+(deftest seqable-test
+  (testing "Convert 4x4 matrix to sequence"
+    (is (= [1.0 2.0 3.0 4.0 2.0 3.0 4.0 5.0 3.0 4.0 5.0 6.0 4.0 5.0 6.0 7.0]
+           (seq (->Matrix4x4 1 2 3 4, 2 3 4 5, 3 4 5 6, 4 5 6 7))))))
 
 (deftest matrix3x3->matrix4x4-test
   (testing "Creating a 4x4 matrix from a 3x3 matrix and a translation vector"

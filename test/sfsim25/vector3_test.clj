@@ -14,6 +14,10 @@
     (is (= 3.0 (y (->Vector3 2 3 5))))
     (is (= 5.0 (z (->Vector3 2 3 5))))))
 
+(deftest seqable-test
+  (testing "Convert vector to sequence"
+    (is (= [2.0 3.0 5.0] (seq (->Vector3 2 3 5))))))
+
 (deftest norm-test
   (testing "Norm of 3D vector"
     (is (= 1.0 (norm (->Vector3 0.36 0.48 0.8))))))

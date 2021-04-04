@@ -1,6 +1,7 @@
 (require '[clojure.core.async :refer (go chan <! >! <!! >!! poll! close!) :as a]
          '[sfsim25.util :refer :all]
          '[sfsim25.vector3 :refer (->Vector3)]
+         '[sfsim25.matrix4x4 :refer (projection-matrix)]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all])
 
@@ -173,6 +174,8 @@ void main()
 (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord") 2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
 (GL20/glEnableVertexAttribArray 0)
 (GL20/glEnableVertexAttribArray 1)
+
+(def p (projection-matrix 640 480 6378000 (* 10 6378000) (/ (* 60 Math/PI) 180)))
 
 (GL20/glUseProgram program)
 

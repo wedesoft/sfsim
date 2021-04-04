@@ -23,7 +23,9 @@
   (toString [this] (str "(matrix4x4 " m11 \space m12 \space m13 \space m14 \space
                                       m21 \space m22 \space m23 \space m24 \space
                                       m31 \space m32 \space m33 \space m34 \space
-                                      m41 \space m42 \space m43 \space m44 \))))
+                                      m41 \space m42 \space m43 \space m44 \)))
+  clojure.lang.Seqable
+  (seq [this] (list m11 m12 m13 m14 m21 m22 m23 m24 m31 m32 m33 m34 m41 m42 m43 m44)))
 
 (defn matrix3x3->matrix4x4
   "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
