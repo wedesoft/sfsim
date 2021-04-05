@@ -1,7 +1,8 @@
 (require '[clojure.core.async :refer (go chan <! >! <!! >!! poll! close!) :as a]
          '[sfsim25.util :refer :all]
          '[sfsim25.vector3 :refer (->Vector3)]
-         '[sfsim25.matrix4x4 :refer (projection-matrix)]
+         '[sfsim25.matrix3x3 :refer (identity-matrix)]
+         '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all])
 
@@ -175,9 +176,13 @@ void main()
 (GL20/glEnableVertexAttribArray 0)
 (GL20/glEnableVertexAttribArray 1)
 
-(def p (projection-matrix 640 480 6378000 (* 10 6378000) (/ (* 60 Math/PI) 180)))
-
 (GL20/glUseProgram program)
+
+(def p (float-array (projection-matrix 640 480 6378000 (* 10 6378000) (/ (* 60 Math/PI) 180))))
+(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
+
+(def t (float-array (matrix3x3->matrix4x4 (identity-matrix) (->Vector3 0 0 (* 3 -6378000)))))
+(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
 
 (def pixels (get-in tile [:colors :data]))
 
@@ -186,16 +191,23 @@ void main()
 (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 1)
 (def pixel-buffer (make-byte-buffer pixels))
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 3 3 0 GL12/GL_BGR GL11/GL_UNSIGNED_BYTE pixel-buffer)
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 GL12/GL_BGR GL11/GL_UNSIGNED_BYTE pixel-buffer)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
 
 
+(while (not (Display/isCloseRequested))
+  (GL11/glClearColor 0.0 0.0 0.0 0.0)
+  (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
+  (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
+  (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)
+  (Display/update)
+  (Thread/sleep 40))
 
 
 
-(def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
+; (def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
 
 (Display/destroy)

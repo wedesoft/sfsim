@@ -42,15 +42,21 @@
              (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)))
              (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)))))
 
+(defn identity-matrix
+  "Generate 3x3 identity matrix"
+  []
+  (->Matrix3x3 1 0 0, 0 1 0, 0 0 1)
+  )
+
 (defn norm2
-  "Compute square of norm of matrix"
+  "Compute square of norm of 3x3 matrix"
   ^double [^Matrix3x3 m]
   (+ (c/* (.m11 m) (.m11 m)) (c/* (.m12 m) (.m12 m)) (c/* (.m13 m) (.m13 m))
      (c/* (.m21 m) (.m21 m)) (c/* (.m22 m) (.m22 m)) (c/* (.m23 m) (.m23 m))
      (c/* (.m31 m) (.m31 m)) (c/* (.m32 m) (.m32 m)) (c/* (.m33 m) (.m33 m))))
 
 (defn norm
-  "Compute Frobenius norm of matrix"
+  "Compute Frobenius norm of 3x3 matrix"
   ^double [^Matrix3x3 m]
   (Math/sqrt (norm2 m)))
 
@@ -58,19 +64,19 @@
   "Rotation matrix around x-axis"
   ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
-    (->Matrix3x3 1 0 0 0 ca (c/- sa) 0 sa ca)))
+    (->Matrix3x3 1 0 0, 0 ca (c/- sa), 0 sa ca)))
 
 (defn rotation-y
   "Rotation matrix around y-axis"
   ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
-    (->Matrix3x3 ca 0 sa 0 1 0 (c/- sa) 0 ca)))
+    (->Matrix3x3 ca 0 sa, 0 1 0, (c/- sa) 0 ca)))
 
 (defn rotation-z
   "Rotation matrix around z-axis"
   ^Matrix3x3 [^double angle]
   (let [ca (Math/cos angle) sa (Math/sin angle)]
-    (->Matrix3x3 ca (c/- sa) 0 sa ca 0 0 0 1)))
+    (->Matrix3x3 ca (c/- sa) 0, sa ca 0, 0 0 1)))
 
 (defn quaternion->matrix
   "Convert rotation quaternion to rotation matrix"

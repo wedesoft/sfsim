@@ -29,6 +29,10 @@
   (testing "Negate matrix"
     (is (= (->Matrix3x3 -1 -2 -3, -4 -5 -6, -7 -8 -9) (- (->Matrix3x3 1 2 3, 4 5 6, 7 8 9))))))
 
+(deftest identity-matrix-test
+  (testing "Identity matrix"
+    (is (= (->Matrix3x3 1 0 0, 0 1 0, 0 0 1) (identity-matrix)))))
+
 (def pi Math/PI)
 (def ca (/ (Math/sqrt 3) 2))
 (def sa 0.5)
