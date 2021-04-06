@@ -14,9 +14,10 @@ in mediump vec3 point;
 in mediump vec2 texcoord;
 out mediump vec2 texcoord_tcs;
 uniform mat4 projection;
+uniform mat4 transform;
 void main()
 {
-  gl_Position = projection * vec4(point, 1);
+  gl_Position = projection * transform * vec4(point, 1);
   texcoord_tcs = texcoord;
 }")
 
@@ -158,10 +159,10 @@ void main()
                             (.x (nth corners 2)) (.y (nth corners 2)) (.z (nth corners 2)) 0.0 1.0
                             (.x (nth corners 3)) (.y (nth corners 3)) (.z (nth corners 3)) 1.0 1.0]))
 
-(def vertices (float-array [-0.8 -0.8 -4 0 0
-                             0.8 -0.8 -4 1 0
-                            -0.8  0.8 -4 0 1
-                             0.8  0.8 -4 1 1]))
+(def vertices (float-array [-0.8 -0.8 0 0 0
+                             0.8 -0.8 0 1 0
+                            -0.8  0.8 0 0 1
+                             0.8  0.8 0 1 1]))
 
 (def vbo (GL15/glGenBuffers))
 (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
@@ -185,8 +186,8 @@ void main()
 (def p (float-array (projection-matrix 640 480 0.1 10 (/ (* 60 Math/PI) 180))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
-;(def t (float-array (matrix3x3->matrix4x4 (identity-matrix) (->Vector3 0 0 (* 3 -6378000)))))
-;(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
+(def t (float-array (matrix3x3->matrix4x4 (identity-matrix) (->Vector3 0 0 -4))))
+(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
 
 (def pixels (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data]))))))
 
