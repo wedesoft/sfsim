@@ -13,6 +13,8 @@
 in mediump vec3 point;
 in mediump vec2 texcoord;
 out mediump vec2 texcoord_tcs;
+uniform mat4 transform;
+uniform mat4 projection;
 void main()
 {
   gl_Position = vec4(point, 1);
@@ -26,12 +28,12 @@ out mediump vec2 texcoord_tes[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    gl_TessLevelOuter[0] = 32.0;
-    gl_TessLevelOuter[1] = 32.0;
-    gl_TessLevelOuter[2] = 32.0;
-    gl_TessLevelOuter[3] = 32.0;
-    gl_TessLevelInner[0] = 32.0;
-    gl_TessLevelInner[1] = 32.0;
+    gl_TessLevelOuter[0] = 4.0;
+    gl_TessLevelOuter[1] = 4.0;
+    gl_TessLevelOuter[2] = 4.0;
+    gl_TessLevelOuter[3] = 4.0;
+    gl_TessLevelInner[0] = 4.0;
+    gl_TessLevelInner[1] = 4.0;
   }
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
   texcoord_tes[gl_InvocationID] = texcoord_tcs[gl_InvocationID];
@@ -39,8 +41,6 @@ void main(void)
 
 (def tes-source "#version 410 core
 layout(quads, equal_spacing, ccw) in;
-uniform mat4 transform;
-uniform mat4 projection;
 in mediump vec2 texcoord_tes[];
 out mediump vec2 texcoord_geo;
 void main()
@@ -50,7 +50,7 @@ void main()
   texcoord_geo = mix(c, d, gl_TessCoord.y);
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
-  gl_Position = projection * transform * (mix(a, b, gl_TessCoord.y) * 6370000);
+  gl_Position = mix(a, b, gl_TessCoord.y);
 }")
 
 (def geo-source "#version 410 core
@@ -159,6 +159,11 @@ void main()
                             (.x (nth corners 2)) (.y (nth corners 2)) (.z (nth corners 2)) 0.0 1.0
                             (.x (nth corners 3)) (.y (nth corners 3)) (.z (nth corners 3)) 1.0 1.0]))
 
+(def vertices (float-array [-0.8 -0.8 0 0 0
+                             0.8 -0.8 0 1 0
+                            -0.8  0.8 0 0 1
+                             0.8  0.8 0 1 1]))
+
 (def vbo (GL15/glGenBuffers))
 (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
 (def vertices-buffer (make-float-buffer vertices))
@@ -184,14 +189,14 @@ void main()
 (def t (float-array (matrix3x3->matrix4x4 (identity-matrix) (->Vector3 0 0 (* 3 -6378000)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
 
-(def pixels (get-in tile [:colors :data]))
+(def pixels (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data]))))))
 
 (def tex (GL11/glGenTextures))
 (GL13/glActiveTexture (inc GL13/GL_TEXTURE0))
 (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 1)
 (def pixel-buffer (make-byte-buffer pixels))
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 GL12/GL_BGR GL11/GL_UNSIGNED_BYTE pixel-buffer)
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixel-buffer)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
