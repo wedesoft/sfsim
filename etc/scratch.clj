@@ -13,11 +13,9 @@
 in mediump vec3 point;
 in mediump vec2 texcoord;
 out mediump vec2 texcoord_tcs;
-uniform mat4 projection;
-uniform mat4 transform;
 void main()
 {
-  gl_Position = projection * transform * vec4(point, 1);
+  gl_Position = vec4(point * 6378000, 1);
   texcoord_tcs = texcoord;
 }")
 
@@ -43,6 +41,8 @@ void main(void)
 layout(quads, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
 out mediump vec2 texcoord_geo;
+uniform mat4 projection;
+uniform mat4 transform;
 void main()
 {
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
@@ -50,7 +50,7 @@ void main()
   texcoord_geo = mix(c, d, gl_TessCoord.y);
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
-  gl_Position = mix(a, b, gl_TessCoord.y);
+  gl_Position = projection * transform * mix(a, b, gl_TessCoord.y);
 }")
 
 (def geo-source "#version 410 core
@@ -183,10 +183,10 @@ void main()
 
 (GL20/glUseProgram program)
 
-(def p (float-array (projection-matrix 640 480 0.1 10 (/ (* 60 Math/PI) 180))))
+(def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
-(def t (float-array (matrix3x3->matrix4x4 (identity-matrix) (->Vector3 0 0 -4))))
+(def t (float-array (matrix3x3->matrix4x4 (identity-matrix) (->Vector3 0 0 (* -3 6378000)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
 
 (def pixels (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data]))))))
