@@ -15,7 +15,7 @@ in mediump vec2 texcoord;
 out mediump vec2 texcoord_tcs;
 void main()
 {
-  gl_Position = vec4(point * 6378000, 1);
+  gl_Position = vec4(point, 1);
   texcoord_tcs = texcoord;
 }")
 
@@ -41,6 +41,7 @@ void main(void)
 layout(quads, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
 out mediump vec2 texcoord_geo;
+uniform sampler2D hf;
 uniform mat4 projection;
 uniform mat4 transform;
 void main()
@@ -48,10 +49,11 @@ void main()
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
   vec2 d = mix(texcoord_tes[3], texcoord_tes[2], gl_TessCoord.x);
   texcoord_geo = mix(c, d, gl_TessCoord.y);
+  float s = texture(hf, texcoord_geo).g;
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(a, b, gl_TessCoord.y);
-  gl_Position = projection * transform * p;
+  gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
 }")
 
 (def geo-source "#version 410 core
@@ -146,6 +148,7 @@ void main()
 
 (>!! tree-state tree)
 
+(Thread/sleep 100)
 (def data (poll! changes))
 
 (def path (nth (:load data) 3))
@@ -193,11 +196,22 @@ void main()
 (def pixels (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data]))))))
 
 (def tex (GL11/glGenTextures))
-(GL13/glActiveTexture (inc GL13/GL_TEXTURE0))
+(GL13/glActiveTexture GL13/GL_TEXTURE0)
 (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
-(GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 1)
+(GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 0)
 (def pixel-buffer (make-byte-buffer pixels))
 (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixel-buffer)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
+
+(def hf (GL11/glGenTextures))
+(GL13/glActiveTexture GL13/GL_TEXTURE1)
+(GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
+(GL20/glUniform1i (GL20/glGetUniformLocation program "hf") 1)
+(def height-buffer (make-float-buffer (float-array (map #(/ % 6388000.0) (:scales tile)))))
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 GL11/GL_LUMINANCE GL11/GL_FLOAT height-buffer)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
