@@ -50,7 +50,8 @@ void main()
   texcoord_geo = mix(c, d, gl_TessCoord.y);
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
-  gl_Position = projection * transform * mix(a, b, gl_TessCoord.y);
+  vec4 p = mix(a, b, gl_TessCoord.y);
+  gl_Position = projection * transform * p;
 }")
 
 (def geo-source "#version 410 core
@@ -201,7 +202,6 @@ void main()
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
-
 
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
