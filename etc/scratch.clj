@@ -1,7 +1,7 @@
 (require '[clojure.core.async :refer (go chan <! >! <!! >!! poll! close!) :as a]
          '[sfsim25.util :refer :all]
          '[sfsim25.vector3 :refer (->Vector3)]
-         '[sfsim25.matrix3x3 :refer (identity-matrix)]
+         '[sfsim25.matrix3x3 :refer (identity-matrix rotation-y)]
          '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all])
@@ -187,9 +187,6 @@ void main()
 (def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
-(def t (float-array (matrix3x3->matrix4x4 (identity-matrix) (->Vector3 0 0 (* -3 6378000)))))
-(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
-
 (def pixels (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data]))))))
 
 (def tex (GL11/glGenTextures))
@@ -217,9 +214,15 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
+(def t0 (System/currentTimeMillis))
+
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
+  (def t1 (System/currentTimeMillis))
+  (def angle (* 0.001 (- t1 t0)))
+  (def t (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 (* -3 6378000)))))
+  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
   (doseq [[vao tex hf] vaos]
     (GL30/glBindVertexArray vao)
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
@@ -228,8 +231,7 @@ void main()
     (GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
     (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
     (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0))
-  (Display/update)
-  (Thread/sleep 40))
+  (Display/update))
 
 
 
