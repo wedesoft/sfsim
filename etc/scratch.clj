@@ -163,11 +163,6 @@ void main()
                             (.x (nth corners 2)) (.y (nth corners 2)) (.z (nth corners 2)) 0.0 1.0
                             (.x (nth corners 3)) (.y (nth corners 3)) (.z (nth corners 3)) 1.0 1.0]))
 
-(def vertices (float-array [-0.8 -0.8 0 0 0
-                             0.8 -0.8 0 1 0
-                            -0.8  0.8 0 0 1
-                             0.8  0.8 0 1 1]))
-
 (def vbo (GL15/glGenBuffers))
 (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
 (def vertices-buffer (make-float-buffer vertices))
