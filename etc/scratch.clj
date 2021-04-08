@@ -151,8 +151,10 @@ void main()
 (Thread/sleep 100)
 (def data (poll! changes))
 
-(def path (nth (:load data) 3))
-(def tile (nth (:tiles data) 3))
+(def vaos (for [i (range 6)]
+(do
+(def path (nth (:load data) i))
+(def tile (nth (:tiles data) i))
 
 (def vao (GL30/glGenVertexArrays))
 (GL30/glBindVertexArray vao)
@@ -211,12 +213,19 @@ void main()
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
+ [vao tex hf])))
 
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-  (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)
+  (doseq [[vao tex hf] vaos]
+    (GL30/glBindVertexArray vao)
+    (GL13/glActiveTexture GL13/GL_TEXTURE0)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
+    (GL13/glActiveTexture GL13/GL_TEXTURE1)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
+    (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
+    (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0))
   (Display/update)
   (Thread/sleep 40))
 
