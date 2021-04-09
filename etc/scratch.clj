@@ -174,17 +174,15 @@ void main()
   (for [[path tile] (map list (:load data) (:tiles data))]
 (create-vertex-array vao
 
-(def vbo (GL15/glGenBuffers))
-(GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
-(def vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile))))
-(GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW)
+(let [vbo             (GL15/glGenBuffers)
+      vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))]
+  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
+  (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW))
 
-(def indices (int-array [0 1 3 2]))
-
-(def idx (GL15/glGenBuffers))
-(GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
-(def indices-buffer (make-int-buffer indices))
-(GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW)
+(let [idx (GL15/glGenBuffers)
+      indices-buffer (make-int-buffer (int-array [0 1 3 2]))]
+  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
+  (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW))
 
 (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   ) 3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
 (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord") 2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
