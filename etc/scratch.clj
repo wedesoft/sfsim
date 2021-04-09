@@ -151,23 +151,32 @@ void main()
 (Thread/sleep 100)
 (def data (poll! changes))
 
-(def vaos (for [i (range 6)]
-(do
-(def path (nth (:load data) i))
-(def tile (nth (:tiles data) i))
+(defmacro with-vertex-array [vao & body]
+  `(do
+     (GL30/glBindVertexArray ~vao)
+     (let [result# (do ~@body)]
+       (GL30/glBindVertexArray 0)
+       result#)))
 
-(def vao (GL30/glGenVertexArrays))
-(GL30/glBindVertexArray vao)
+(defmacro create-vertex-array [vao & body]
+  `(let [~vao (GL30/glGenVertexArrays)]
+     (with-vertex-array ~vao ~@body)))
 
-(def corners (cube-map-corners (:face tile) (:level tile) (:y tile) (:x tile)))
-(def vertices (float-array [(.x (nth corners 0)) (.y (nth corners 0)) (.z (nth corners 0)) 0.0 0.0
-                            (.x (nth corners 1)) (.y (nth corners 1)) (.z (nth corners 1)) 1.0 0.0
-                            (.x (nth corners 2)) (.y (nth corners 2)) (.z (nth corners 2)) 0.0 1.0
-                            (.x (nth corners 3)) (.y (nth corners 3)) (.z (nth corners 3)) 1.0 1.0]))
+(defn make-vertices
+  [face level y x]
+  (let [[a b c d] (cube-map-corners face level y x)]
+    (float-array [(.x a) (.y a) (.z a) 0.0 0.0
+                  (.x b) (.y b) (.z b) 1.0 0.0
+                  (.x c) (.y c) (.z c) 0.0 1.0
+                  (.x d) (.y d) (.z d) 1.0 1.0])))
+
+(def vaos
+  (for [[path tile] (map list (:load data) (:tiles data))]
+(create-vertex-array vao
 
 (def vbo (GL15/glGenBuffers))
 (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
-(def vertices-buffer (make-float-buffer vertices))
+(def vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile))))
 (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW)
 
 (def indices (int-array [0 1 3 2]))
@@ -224,13 +233,13 @@ void main()
   (def t (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 (* -3 6378000)))))
   (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
   (doseq [[vao tex hf] vaos]
-    (GL30/glBindVertexArray vao)
-    (GL13/glActiveTexture GL13/GL_TEXTURE0)
-    (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
-    (GL13/glActiveTexture GL13/GL_TEXTURE1)
-    (GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
-    (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-    (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0))
+    (with-vertex-array vao
+      (GL13/glActiveTexture GL13/GL_TEXTURE0)
+      (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
+      (GL13/glActiveTexture GL13/GL_TEXTURE1)
+      (GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
+      (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
+      (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
   (Display/update))
 
 
