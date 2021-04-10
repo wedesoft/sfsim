@@ -208,6 +208,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
+(def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
+
 (GL20/glUseProgram program)
 
 (def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
@@ -231,9 +233,5 @@ void main()
       (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
       (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
   (Display/update))
-
-
-
-; (def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
 
 (Display/destroy)
