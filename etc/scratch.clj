@@ -189,9 +189,6 @@ void main()
 (GL20/glEnableVertexAttribArray 0)
 (GL20/glEnableVertexAttribArray 1)
 
-(def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
-(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
-
 (def pixels (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data]))))))
 
 (def tex (GL11/glGenTextures))
@@ -220,6 +217,9 @@ void main()
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
 (GL20/glUseProgram program)
+
+(def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
+(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (def t0 (System/currentTimeMillis))
 
