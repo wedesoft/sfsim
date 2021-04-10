@@ -170,49 +170,40 @@ void main()
                   (.x c) (.y c) (.z c) 0.0 1.0
                   (.x d) (.y d) (.z d) 1.0 1.0])))
 
+(defn create-texture
+  [varname index tex-format tex-type buffer]
+  (let [texture (GL11/glGenTextures)]
+    (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
+    (GL20/glUniform1i (GL20/glGetUniformLocation program varname) index)
+    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 tex-format tex-type buffer)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
+    texture))
+
 (def vaos
   (for [[path tile] (map list (:load data) (:tiles data))]
-(create-vertex-array vao
+    (create-vertex-array vao
+      (let [vbo             (GL15/glGenBuffers)
+            vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))]
+        (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
+        (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW))
+      (let [idx (GL15/glGenBuffers)
+            indices-buffer (make-int-buffer (int-array [0 1 3 2]))]
+        (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
+        (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW))
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   ) 3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord") 2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
+      (GL20/glEnableVertexAttribArray 0)
+      (GL20/glEnableVertexAttribArray 1)
 
-(let [vbo             (GL15/glGenBuffers)
-      vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))]
-  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
-  (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW))
-
-(let [idx (GL15/glGenBuffers)
-      indices-buffer (make-int-buffer (int-array [0 1 3 2]))]
-  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
-  (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW))
-
-(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   ) 3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
-(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord") 2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
-(GL20/glEnableVertexAttribArray 0)
-(GL20/glEnableVertexAttribArray 1)
-
-(def pixels (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data]))))))
-
-(def tex (GL11/glGenTextures))
-(GL13/glActiveTexture GL13/GL_TEXTURE0)
-(GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
-(GL20/glUniform1i (GL20/glGetUniformLocation program "tex") 0)
-(def pixel-buffer (make-byte-buffer pixels))
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixel-buffer)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
-
-(def hf (GL11/glGenTextures))
-(GL13/glActiveTexture GL13/GL_TEXTURE1)
-(GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
-(GL20/glUniform1i (GL20/glGetUniformLocation program "hf") 1)
-(def height-buffer (make-float-buffer (float-array (map #(/ % 6388000.0) (:scales tile)))))
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 GL11/GL_LUMINANCE GL11/GL_FLOAT height-buffer)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
- [vao tex hf])))
+      (let [pixels  (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data])))))
+            heights (float-array (map #(/ % 6388000.0) (:scales tile)))
+            tex     (create-texture "tex" 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE (make-byte-buffer pixels))
+            hf      (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT (make-float-buffer heights))]
+        [vao tex hf]))))
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
