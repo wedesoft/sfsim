@@ -183,7 +183,7 @@ void main()
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
     texture))
 
-(def vaos
+(def tiles
   (for [[path tile] (map list (:load data) (:tiles data))]
     (create-vertex-array vao
       (let [vbo             (GL15/glGenBuffers)
@@ -200,15 +200,15 @@ void main()
                                   2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
       (GL20/glEnableVertexAttribArray 0)
       (GL20/glEnableVertexAttribArray 1)
-      (let [pixels  (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data])))))
-            heights (float-array (map #(/ % 6388000.0) (:scales tile)))
-            tex     (create-texture "tex" 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE (make-byte-buffer pixels))
-            hf      (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT (make-float-buffer heights))]
-        [vao tex hf]))))
+      (let [pixels      (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data])))))
+            heights     (float-array (map #(/ % 6388000.0) (:scales tile)))
+            texture     (create-texture "tex" 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE (make-byte-buffer pixels))
+            heightfield (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT (make-float-buffer heights))]
+        (assoc tile :vao vao :texture texture :heightfield heightfield)))))
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
+(def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) tiles))
 
 (GL20/glUseProgram program)
 
@@ -224,12 +224,12 @@ void main()
   (def angle (* 0.001 (- t1 t0)))
   (def t (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 (* -3 6378000)))))
   (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
-  (doseq [[vao tex hf] vaos]
+  (doseq [{:keys [vao texture heightfield]} tiles]
     (with-vertex-array vao
       (GL13/glActiveTexture GL13/GL_TEXTURE0)
-      (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
+      (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
       (GL13/glActiveTexture GL13/GL_TEXTURE1)
-      (GL11/glBindTexture GL11/GL_TEXTURE_2D hf)
+      (GL11/glBindTexture GL11/GL_TEXTURE_2D heightfield)
       (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
       (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
   (Display/update))
