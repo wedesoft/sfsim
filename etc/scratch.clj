@@ -189,8 +189,6 @@ void main()
 (GL20/glEnableVertexAttribArray 0)
 (GL20/glEnableVertexAttribArray 1)
 
-(GL20/glUseProgram program)
-
 (def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
@@ -220,6 +218,8 @@ void main()
  [vao tex hf])))
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
+
+(GL20/glUseProgram program)
 
 (def t0 (System/currentTimeMillis))
 
