@@ -208,7 +208,7 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) tiles))
+; (def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
 
 (GL20/glUseProgram program)
 
@@ -224,12 +224,12 @@ void main()
   (def angle (* 0.001 (- t1 t0)))
   (def t (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 (* -3 6378000)))))
   (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
-  (doseq [{:keys [vao texture heightfield]} tiles]
-    (with-vertex-array vao
+  (doseq [tile tiles]
+    (with-vertex-array (:vao tile)
       (GL13/glActiveTexture GL13/GL_TEXTURE0)
-      (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
+      (GL11/glBindTexture GL11/GL_TEXTURE_2D (:texture tile))
       (GL13/glActiveTexture GL13/GL_TEXTURE1)
-      (GL11/glBindTexture GL11/GL_TEXTURE_2D heightfield)
+      (GL11/glBindTexture GL11/GL_TEXTURE_2D (:heightfield tile))
       (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
       (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
   (Display/update))
