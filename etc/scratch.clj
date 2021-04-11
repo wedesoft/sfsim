@@ -134,7 +134,7 @@ void main()
 (def changes (chan 1))
 
 (def position (atom (->Vector3 0 0 (* 3 radius1))))
-(def tree {})
+(def tree (atom {}))
 
 (go
   (loop [tree (<! tree-state)]
@@ -146,7 +146,7 @@ void main()
         (>! changes {:drop drop-list :load load-list :tiles tiles})
         (recur (<! tree-state))))))
 
-(>!! tree-state tree)
+(>!! tree-state @tree)
 
 (Thread/sleep 100)
 (def data (poll! changes))
@@ -208,14 +208,16 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(def tree (quadtree-add (quadtree-drop tree (:drop data)) (:load data) (:tiles data)))
-
 (GL20/glUseProgram program)
 
 (def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (def t0 (System/currentTimeMillis))
+
+(defn is-leaf?
+  [node]
+  (not (or (nil? node) (contains? node :0) (contains? node :1) (contains? node :2) (contains? node :3))))
 
 (defn render-tile
   [tile]
@@ -227,6 +229,15 @@ void main()
       (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
       (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
 
+(defn render-tree
+  [node]
+  (if (is-leaf? node)
+    (render-tile node)
+    (doseq [selector [:0 :1 :2 :3 :4 :5]]
+      (if (contains? node selector) (render-tree (selector node))))))
+
+(swap! tree #(quadtree-add (quadtree-drop %1 %2) %3 %4) (:drop data) (:load data) tiles)
+
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
@@ -234,8 +245,7 @@ void main()
   (def angle (* 0.001 (- t1 t0)))
   (def t (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 (* -3 6378000)))))
   (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
-  (doseq [tile tiles]
-    (render-tile tile))
+  (render-tree @tree)
   (Display/update))
 
 (Display/destroy)
