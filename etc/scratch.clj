@@ -140,16 +140,11 @@ void main()
   (loop [tree (<! tree-state)]
     (when tree
       (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 10 @position)
-            drop-list (tiles-to-drop tree increase?)
-            load-list (tiles-to-load tree increase?)
-            tiles     (load-tiles-data (tiles-meta-data load-list))]
+            drop-list (doall (tiles-to-drop tree increase?))
+            load-list (doall (tiles-to-load tree increase?))
+            tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
         (>! changes {:drop drop-list :load load-list :tiles tiles})
         (recur (<! tree-state))))))
-
-(>!! tree-state @tree)
-
-(Thread/sleep 100)
-(def data (poll! changes))
 
 (defmacro with-vertex-array [vao & body]
   `(do
@@ -183,28 +178,38 @@ void main()
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
     texture))
 
-(def tiles
-  (for [[path tile] (map list (:load data) (:tiles data))]
-    (create-vertex-array vao
-      (let [vbo             (GL15/glGenBuffers)
-            vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))]
-        (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
-        (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW))
-      (let [idx (GL15/glGenBuffers)
-            indices-buffer (make-int-buffer (int-array [0 1 3 2]))]
-        (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
-        (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW))
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   )
-                                  3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord")
-                                  2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
-      (GL20/glEnableVertexAttribArray 0)
-      (GL20/glEnableVertexAttribArray 1)
-      (let [pixels      (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data])))))
-            heights     (float-array (map #(/ % 6388000.0) (:scales tile)))
-            texture     (create-texture "tex" 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE (make-byte-buffer pixels))
-            heightfield (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT (make-float-buffer heights))]
-        (assoc tile :vao vao :texture texture :heightfield heightfield)))))
+(defn load-tile-into-opengl
+  [tile]
+  (create-vertex-array vao
+    (let [vbo             (GL15/glGenBuffers)
+          vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))]
+      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
+      (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW))
+    (let [idx (GL15/glGenBuffers)
+          indices-buffer (make-int-buffer (int-array [0 1 3 2]))]
+      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
+      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW))
+    (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   )
+                                3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
+    (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord")
+                                2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
+    (GL20/glEnableVertexAttribArray 0)
+    (GL20/glEnableVertexAttribArray 1)
+    (let [pixels      (byte-array (flatten (map (fn [[b g r]] (list r g b 255)) (partition 3 (get-in tile [:colors :data])))))
+          heights     (float-array (map #(/ % 6388000.0) (:scales tile)))
+          texture     (create-texture "tex" 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE (make-byte-buffer pixels))
+          heightfield (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT (make-float-buffer heights))]
+      (assoc tile :vao vao :texture texture :heightfield heightfield))))
+
+(defn unload-tile-from-opengl
+  [tile]
+  (with-vertex-array (:vao tile)
+    (GL13/glActiveTexture GL13/GL_TEXTURE0)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
+    (GL11/glDeleteTextures (:texture tile))
+    (GL13/glActiveTexture GL13/GL_TEXTURE1)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
+    (GL11/glDeleteTextures (:heightfield tile))))
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
@@ -212,8 +217,6 @@ void main()
 
 (def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
-
-(def t0 (System/currentTimeMillis))
 
 (defn is-leaf?
   [node]
@@ -234,16 +237,22 @@ void main()
   (if (is-leaf? node)
     (render-tile node)
     (doseq [selector [:0 :1 :2 :3 :4 :5]]
-      (if (contains? node selector) (render-tree (selector node))))))
+      (if-let [sub-node (selector node)] (render-tree sub-node)))))
 
-(swap! tree #(quadtree-add (quadtree-drop %1 %2) %3 %4) (:drop data) (:load data) tiles)
+(>!! tree-state @tree)
+(def t0 (System/currentTimeMillis))
 
 (while (not (Display/isCloseRequested))
+  (when-let [data (poll! changes)]
+    (let [tiles (map load-tile-into-opengl (:tiles data))]
+      (doseq [path (:drop data)] (unload-tile-from-opengl (get-in @tree path)))
+      (>!! tree-state (swap! tree #(quadtree-add (quadtree-drop %1 %2) %3 %4) (:drop data) (:load data) tiles))))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (def t1 (System/currentTimeMillis))
-  (def angle (* 0.001 (- t1 t0)))
-  (def t (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 (* -3 6378000)))))
+  (def angle (* 0.0001 (- t1 t0)))
+  (def t (float-array (matrix3x3->matrix4x4 (rotation-y (* -1.0 angle)) (->Vector3 0 0 (* -3 6378000)))))
+  (reset! position (->Vector3 (* (Math/sin angle) 3 radius1) 0 (* (Math/cos angle) 3 radius1)))
   (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
   (render-tree @tree)
   (Display/update))

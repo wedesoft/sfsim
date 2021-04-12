@@ -1,5 +1,8 @@
 # TODO
 
+* delete vbo vertex and index buffer
+* store RGBA data of tiles
+* limit quad tree depth
 * implement and test dropping of tiles
 * set uniform matrices and render object
 * method to process paths from quad tree (e.g. load/unload OpenGL objects)
