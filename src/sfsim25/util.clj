@@ -93,7 +93,7 @@
   [^String file-name {:keys [width height data]}]
   (let [info  (ImageInfo.)
         image (MagickImage.)]
-    (.constituteImage image width height "RGB" data)
+    (.constituteImage image width height "RGBA" data)
     (.setSize info (str width \x height))
     (.setDepth info 8)
     (.setColorspace info ColorspaceType/RGBColorspace)
@@ -110,7 +110,7 @@
     (doto info
       (.setDepth 8)
       (.setColorspace ColorspaceType/RGBColorspace)
-      (.setMagick "RGB"))
+      (.setMagick "RGBA"))
     {:width (.width dimension) :height (.height dimension) :data (.imageToBlob image info)}))
 
 (defn byte->ubyte
@@ -126,16 +126,17 @@
 (defn get-pixel
   "Read color value from a pixel of an image"
   ^RGB [{:keys [width height data]} ^long y ^long x]
-  (let [offset (* 3 (+ (* width y) x))]
+  (let [offset (* 4 (+ (* width y) x))]
     (->RGB (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
   [{:keys [width height data]} ^long y ^long x ^RGB c]
-  (let [offset (* 3 (+ (* width y) x))]
-    (aset-byte data offset (ubyte->byte (.r c)))
-    (aset-byte data (inc offset) (ubyte->byte (.g c)))
-    (aset-byte data (inc (inc offset)) (ubyte->byte (.b c)))))
+  (let [offset (* 4 (+ (* width y) x))]
+    (aset-byte data offset       (ubyte->byte (.r c)))
+    (aset-byte data (+ offset 1) (ubyte->byte (.g c)))
+    (aset-byte data (+ offset 2) (ubyte->byte (.b c)))
+    (aset-byte data (+ offset 3) (ubyte->byte 255))))
 
 (defn get-elevation
   "Read elevation value from an elevation tile"

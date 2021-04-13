@@ -68,11 +68,11 @@
 (deftest roundtrip-image-test
   (testing "Saving and loading of RGB image"
     (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
-      (spit-image file-name {:width 4 :height 2 :data (byte-array (take 24 (cycle [1 2 3])))})
+      (spit-image file-name {:width 4 :height 2 :data (byte-array (take 32 (cycle [1 2 3 4])))})
       (let [{:keys [width height data]} (slurp-image file-name)]
         (is (= 4 width))
         (is (= 2 height))
-        (is (= '(1 2 3) (take 3 data)))))))
+        (is (= '(1 2 3 4) (take 4 data)))))))
 
 (deftest unsigned-byte-conversion-test
   (testing "Converting unsigned byte to byte and back"
@@ -87,11 +87,11 @@
 
 (deftest pixel-test
   (testing "Reading and writing image pixels"
-    (let [img {:width 4 :height 2 :data (byte-array (range 24))}]
-      (is (= (->RGB 18 19 20) (get-pixel img 1 2))))
-    (let [img {:width 1 :height 1 :data (byte-array [253 254 255])}]
-      (is (= (->RGB 253 254 255) (get-pixel img 0 0))))
-    (let [img {:width 4 :height 2 :data (byte-array (range 24))}]
+    (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
+      (is (= (->RGB 24 25 26) (get-pixel img 1 2))))
+    (let [img {:width 1 :height 1 :data (byte-array [252 253 254 255])}]
+      (is (= (->RGB 252 253 254) (get-pixel img 0 0))))
+    (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
       (set-pixel! img 1 2 (->RGB 253 254 255))
       (is (= (->RGB 253 254 255) (get-pixel img 1 2))))))
 
