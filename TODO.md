@@ -1,6 +1,5 @@
 # TODO
 
-* delete vbo vertex and index buffer
 * limit quad tree depth
 * implement and test dropping of tiles
 * set uniform matrices and render object

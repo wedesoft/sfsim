@@ -166,7 +166,7 @@ void main()
                   (.x d) (.y d) (.z d) 1.0 1.0])))
 
 (defn create-texture
-  [varname index tex-format tex-type buffer]
+  [varname index tex-format tex-type interpolation buffer]
   (let [texture (GL11/glGenTextures)]
     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
@@ -174,42 +174,50 @@ void main()
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 tex-format tex-type buffer)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER interpolation)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER interpolation)
     texture))
 
 (defn load-tile-into-opengl
   [tile]
   (create-vertex-array vao
     (let [vbo             (GL15/glGenBuffers)
-          vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))]
+          vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))
+          idx             (GL15/glGenBuffers)
+          indices-buffer  (make-int-buffer (int-array [0 1 3 2]))]
       (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
-      (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW))
-    (let [idx (GL15/glGenBuffers)
-          indices-buffer (make-int-buffer (int-array [0 1 3 2]))]
+      (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW)
       (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
-      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW))
-    (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   )
-                                3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
-    (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord")
-                                2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
-    (GL20/glEnableVertexAttribArray 0)
-    (GL20/glEnableVertexAttribArray 1)
-    (let [pixels      (get-in tile [:colors :data])
-          heights     (float-array (map #(/ % 6388000.0) (:scales tile)))
-          texture     (create-texture "tex" 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE (make-byte-buffer pixels))
-          heightfield (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT (make-float-buffer heights))]
-      (assoc tile :vao vao :texture texture :heightfield heightfield))))
+      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW)
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   )
+                                  3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord")
+                                  2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
+      (GL20/glEnableVertexAttribArray 0)
+      (GL20/glEnableVertexAttribArray 1)
+      (let [pixels      (get-in tile [:colors :data])
+            heights     (float-array (map #(/ % 6388000.0) (:scales tile)))
+            texture     (create-texture "tex" 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
+            heightfield (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
+        (assoc tile :vao vao :vbo vbo :idx idx :texture texture :heightfield heightfield)))))
 
 (defn unload-tile-from-opengl
   [tile]
   (with-vertex-array (:vao tile)
+    (GL20/glDisableVertexAttribArray 0)
+    (GL20/glDisableVertexAttribArray 1)
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
     (GL11/glDeleteTextures (:texture tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE1)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
-    (GL11/glDeleteTextures (:heightfield tile))))
+    (GL11/glDeleteTextures (:heightfield tile))
+    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
+    (GL15/glDeleteBuffers (:idx tile))
+    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
+    (GL15/glDeleteBuffers (:vbo tile))
+    (GL30/glBindVertexArray 0)
+    (GL30/glDeleteVertexArrays (:vao tile))))
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
@@ -258,3 +266,5 @@ void main()
   (Display/update))
 
 (Display/destroy)
+
+(close! tree-state)
