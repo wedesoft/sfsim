@@ -1,7 +1,7 @@
 # TODO
 
+* implement and test dropping and loading of tiles
 * limit quad tree depth
-* implement and test dropping of tiles
 * set uniform matrices and render object
 * method to process paths from quad tree (e.g. load/unload OpenGL objects)
 * Get scale-image to work on large images
