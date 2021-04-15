@@ -14,8 +14,9 @@
   (testing "Decide whether to increase quadtree level or not"
     (with-redefs [cubemap/tile-center (fn [& args] (is (= args [5 2 0 1 6378000.0 6357000.0])) (->Vector3 50000 0 0))
                   quadtree/quad-size (fn [& args] (is (= args [2 33 6378000.0 1280 150000.0 60.0])) 10.0)]
-      (is (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 (->Vector3 200000 0 0) 5 2 0 1))
-      (is (not (increase-level? 33 6378000.0 6357000.0 1280 60.0 15 (->Vector3 200000 0 0) 5 2 0 1))))))
+      (is (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 3 (->Vector3 200000 0 0) 5 2 0 1))
+      (is (not (increase-level? 33 6378000.0 6357000.0 1280 60.0 15 3 (->Vector3 200000 0 0) 5 2 0 1)))
+      (is (not (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 2 (->Vector3 200000 0 0) 5 2 0 1))))))
 
 (deftest load-tile-data-test
   (testing "Load normals, scale factors and colors for a tile"

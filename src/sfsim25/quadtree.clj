@@ -23,8 +23,9 @@
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
-  [tilesize radius1 radius2 width angle max-size position face level y x]
-  (> (quad-size-for-camera-position tilesize radius1 radius2 width angle position face level y x) max-size))
+  [tilesize radius1 radius2 width angle max-size max-level position face level y x]
+  (and (< level max-level)
+       (> (quad-size-for-camera-position tilesize radius1 radius2 width angle position face level y x) max-size)))
 
 (defn load-tile-data
   "Load data associated with a cube map tile"

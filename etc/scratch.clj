@@ -139,7 +139,7 @@ void main()
 (go
   (loop [tree (<! tree-state)]
     (when tree
-      (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 10 @position)
+      (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 10 4 @position)
             drop-list (doall (tiles-to-drop tree increase?))
             load-list (doall (tiles-to-load tree increase?))
             tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -221,9 +221,12 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+
 (GL20/glUseProgram program)
 
-(def p (float-array (projection-matrix 640 480 6378000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
+(def p (float-array (projection-matrix 640 480 100 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (defn is-leaf?
@@ -233,23 +236,24 @@ void main()
 (defn render-tile
   [tile]
   (with-vertex-array (:vao tile)
-      (GL13/glActiveTexture GL13/GL_TEXTURE0)
-      (GL11/glBindTexture GL11/GL_TEXTURE_2D (:texture tile))
-      (GL13/glActiveTexture GL13/GL_TEXTURE1)
-      (GL11/glBindTexture GL11/GL_TEXTURE_2D (:heightfield tile))
-      (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-      (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
+    (GL13/glActiveTexture GL13/GL_TEXTURE0)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D (:texture tile))
+    (GL13/glActiveTexture GL13/GL_TEXTURE1)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D (:heightfield tile))
+    (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
+    (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
 
 (defn render-tree
   [node]
-  (if (is-leaf? node)
-    (render-tile node)
-    (doseq [selector [:0 :1 :2 :3 :4 :5]]
-      (if-let [sub-node (selector node)] (render-tree sub-node)))))
+  (if node
+    (if (is-leaf? node)
+      (render-tile node)
+      (doseq [selector [:0 :1 :2 :3 :4 :5]]
+        (render-tree (selector node))))))
 
 (>!! tree-state @tree)
-(def t0 (System/currentTimeMillis))
 
+(def t0 (System/currentTimeMillis))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
     (let [tiles (map load-tile-into-opengl (:tiles data))]
@@ -257,13 +261,15 @@ void main()
       (>!! tree-state (swap! tree #(quadtree-add (quadtree-drop %1 %2) %3 %4) (:drop data) (:load data) tiles))))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-  (def t1 (System/currentTimeMillis))
-  (def angle (* 0.001 (- t1 t0)))
-  (def t (float-array (matrix3x3->matrix4x4 (rotation-y (* -0.1 angle)) (->Vector3 0 0 (* -3 6378000)))))
-  (reset! position (->Vector3 (* (Math/sin angle) 3 radius1) 0 (* (Math/cos angle) 3 radius1)))
-  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
-  (render-tree @tree)
-  (Display/update))
+  (let [t1 (System/currentTimeMillis)
+        dt (- t1 t0)
+        z  (- (* dt 200) (* 2 6378000))
+        angle (* (+ (* dt 0.00) -120) (/ Math/PI 180))
+        t  (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z)))]
+    (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
+    (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
+    (render-tree @tree)
+    (Display/update)))
 
 (Display/destroy)
 
