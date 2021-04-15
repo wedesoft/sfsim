@@ -139,7 +139,7 @@ void main()
 (go
   (loop [tree (<! tree-state)]
     (when tree
-      (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 10 4 @position)
+      (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 4 @position)
             drop-list (doall (tiles-to-drop tree increase?))
             load-list (doall (tiles-to-load tree increase?))
             tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -263,7 +263,7 @@ void main()
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
         dt (- t1 t0)
-        z  (- (* dt 200) (* 2 6378000))
+        z  (- (* dt 200) (* 4 6378000))
         angle (* (+ (* dt 0.00) -120) (/ Math/PI 180))
         t  (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z)))]
     (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
@@ -274,3 +274,5 @@ void main()
 (Display/destroy)
 
 (close! tree-state)
+
+(System/exit 0)
