@@ -190,3 +190,13 @@
   (let [path (butlast ks)
         node (last ks)]
     (if (empty? path) (dissoc m node) (update-in m path dissoc node))))
+
+(defmacro def-context-macro
+  "Define context macro closing and opening a context object"
+  [method open close]
+  `(defmacro ~method [object# & body#]
+     `(do
+        (~~open ~object#)
+        (let [~'result# (do ~@body#)]
+          (~~close ~object#)
+          ~'result#))))

@@ -1,7 +1,7 @@
 # TODO
 
-* redesign floating point math of height maps
 * implement and test dropping and loading of tiles
+* redesign floating point math of height maps
 * adapt z-range depending on distance to globe
 * method to process paths from quad tree (e.g. load/unload OpenGL objects)
 * Get scale-image to work on large images

@@ -128,3 +128,10 @@
     (is (= {} (dissoc-in {:a 42} [:a])))
     (is (= {:a 42} (dissoc-in {:a 42 :b 51} [:b])))
     (is (= {:a {:c 20}} (dissoc-in {:a {:b 42 :c 20}} [:a :b])))))
+
+(def context-test (atom nil))
+(def-context-macro with-test-ctx (fn [x] (is (= x 123)) (reset! context-test 42)) (fn [x] (is (= x 123)) (reset! context-test nil)))
+(def def-context-macro-test
+  (testing "Definition of context macro"
+    (is (= 42 (with-test-ctx 123 @context-test)))
+    (is (nil? @context-test))))
