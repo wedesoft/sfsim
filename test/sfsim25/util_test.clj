@@ -135,3 +135,9 @@
   (testing "Definition of context macro"
     (is (= 42 (with-test-ctx 123 @context-test)))
     (is (nil? @context-test))))
+
+(def-context-create-macro create-test-ctx (fn [] 123) 'with-test-ctx)
+(def def-context-macro-test
+  (testing "Definition of context macro"
+    (is (= (+ 123 42) (create-test-ctx ctx (+ ctx @context-test))))
+    (is (nil? @context-test))))

@@ -192,7 +192,7 @@
     (if (empty? path) (dissoc m node) (update-in m path dissoc node))))
 
 (defmacro def-context-macro
-  "Define context macro closing and opening a context object"
+  "Define context macro opening and closing a context object"
   [method open close]
   `(defmacro ~method [object# & body#]
      `(do
@@ -200,3 +200,10 @@
         (let [~'result# (do ~@body#)]
           (~~close ~object#)
           ~'result#))))
+
+(defmacro def-context-create-macro
+  "Define context macro creating opening and closing a context object"
+  [method constructor ctx-macro]
+  `(defmacro ~method [object# & body#]
+     `(let [~object# (~~constructor)]
+        (~~ctx-macro ~object# ~@body#))))

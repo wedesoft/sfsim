@@ -146,16 +146,9 @@ void main()
         (>! changes {:drop drop-list :load load-list :tiles tiles})
         (recur (<! tree-state))))))
 
-(defmacro with-vertex-array [vao & body]
-  `(do
-     (GL30/glBindVertexArray ~vao)
-     (let [result# (do ~@body)]
-       (GL30/glBindVertexArray 0)
-       result#)))
+(def-context-macro with-vertex-array (fn [vao] (GL30/glBindVertexArray vao)) (fn [vao] (GL30/glBindVertexArray 0)))
 
-(defmacro create-vertex-array [vao & body]
-  `(let [~vao (GL30/glGenVertexArrays)]
-     (with-vertex-array ~vao ~@body)))
+(def-context-create-macro create-vertex-array (fn [] (GL30/glGenVertexArrays)) 'with-vertex-array)
 
 (defn make-vertices
   [face level y x]
