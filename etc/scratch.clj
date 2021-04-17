@@ -177,7 +177,7 @@ void main()
     (let [vbo             (GL15/glGenBuffers)
           vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))
           idx             (GL15/glGenBuffers)
-          indices-buffer  (make-int-buffer (int-array [0 1 3 2]))]
+          indices-buffer  (make-int-buffer (int-array [0 2 3 1]))]
       (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
       (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW)
       (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
@@ -214,8 +214,11 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+
+(GL11/glEnable GL11/GL_CULL_FACE)
+(GL11/glCullFace GL11/GL_BACK)
 
 (GL20/glUseProgram program)
 
@@ -257,7 +260,7 @@ void main()
   (let [t1 (System/currentTimeMillis)
         dt (- t1 t0)
         z  (- (* dt 200) (* 4 6378000))
-        angle (* (+ (* dt 0.00) -120) (/ Math/PI 180))
+        angle (* (+ (* dt 0.01) -120) (/ Math/PI 180))
         t  (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z)))]
     (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))

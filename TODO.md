@@ -1,7 +1,8 @@
 # TODO
 
-* implement and test dropping and loading of tiles
 * redesign floating point math of height maps
+* implement and test dropping and loading of tiles
+* adapt outer tesselation resolution to neighbouring tiles
 * adapt z-range depending on distance to globe
 * method to process paths from quad tree (e.g. load/unload OpenGL objects)
 * Get scale-image to work on large images
@@ -9,7 +10,4 @@
 * bind render config, bind shader, update uniforms (world matrix, projection matrix)
 * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
 * Skydome scaled to ZFAR * 0.5
-* render quad-tree recursively, boolean "isleaf"
-* (GL40/glPatchParameteri GL40/GL\_PATCH\_VERTICES size) (uses vertex array)
-* (GL11/glDrawArrays GL40/GL\_PATCHES, 0, size
 * always add child nodes or remove child nodes?
