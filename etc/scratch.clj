@@ -1,4 +1,4 @@
-(require '[clojure.core.async :refer (go chan <! >! <!! >!! poll! close!) :as a]
+(require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
          '[sfsim25.util :refer :all]
          '[sfsim25.vector3 :refer (->Vector3)]
          '[sfsim25.matrix3x3 :refer (identity-matrix rotation-y)]
@@ -136,15 +136,14 @@ void main()
 (def position (atom (->Vector3 0 0 (* 3 radius1))))
 (def tree (atom {}))
 
-(go
-  (loop [tree (<! tree-state)]
-    (when tree
-      (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 4 @position)
-            drop-list (doall (tiles-to-drop tree increase?))
-            load-list (doall (tiles-to-load tree increase?))
-            tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
-        (>! changes {:drop drop-list :load load-list :tiles tiles})
-        (recur (<! tree-state))))))
+(go-loop []
+  (if-let [tree (<! tree-state)]
+    (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 4 @position)
+          drop-list (doall (tiles-to-drop tree increase?))
+          load-list (doall (tiles-to-load tree increase?))
+          tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
+      (>! changes {:drop drop-list :load load-list :tiles tiles})
+      (recur))))
 
 (def-context-macro with-vertex-array (fn [vao] (GL30/glBindVertexArray vao)) (fn [vao] (GL30/glBindVertexArray 0)))
 
