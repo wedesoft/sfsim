@@ -123,4 +123,9 @@
   [tree paths]
   (reduce dissoc-in tree paths))
 
+(defn neighbour-path
+  "Determine path of neighbouring tile at same level"
+  [path dy dx]
+  [(case dy -1 :3, 0 (case dx -1 :4, 1 :2), 1 :1)])
+
 (set! *unchecked-math* false)

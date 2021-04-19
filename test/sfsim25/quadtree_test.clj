@@ -1,9 +1,9 @@
 (ns sfsim25.quadtree-test
   (:require [clojure.test :refer :all]
             [sfsim25.quadtree :refer :all :as quadtree]
-            [sfsim25.cubemap :as cubemap]
+            [sfsim25.cubemap :refer (cube-map) :as cubemap]
             [sfsim25.util :as util]
-            [sfsim25.vector3 :refer (->Vector3)]))
+            [sfsim25.vector3 :refer (->Vector3) :as v]))
 
 (deftest quad-size-test
   (testing "Determine the size of a quad on the screen"
@@ -102,3 +102,16 @@
   (testing "Remove tiles from quad tree"
     (is (= {:3 {}} (quadtree-drop {:3 {}} [])))
     (is (= {} (quadtree-drop {:3 {}} [[:3]])))))
+
+(defn keyword->int [x] (Integer/parseInt (name x)))
+(defn int->keyword [x] (keyword (str x)))
+
+(deftest neighbour-path-test
+  (testing "Getting path to neighbouring tiles of same level"
+    (are [face dy dx] (= (cube-map face (+ 0.5 (* dy 0.5)) (+ 0.5 (* dx 0.5)))
+                         (v/+ (cube-map face 0.5 0.5)
+                              (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5)))
+      0  0 -1
+      0  0  1
+      0 -1  0
+      0  1  0)))
