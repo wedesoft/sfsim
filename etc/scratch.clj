@@ -1,6 +1,6 @@
 (require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
          '[sfsim25.util :refer :all]
-         '[sfsim25.vector3 :refer (->Vector3)]
+         '[sfsim25.vector3 :refer (->Vector3) :as v]
          '[sfsim25.matrix3x3 :refer (identity-matrix rotation-y)]
          '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
          '[sfsim25.cubemap :refer :all]

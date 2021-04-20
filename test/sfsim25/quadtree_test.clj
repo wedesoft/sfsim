@@ -107,11 +107,8 @@
 (defn int->keyword [x] (keyword (str x)))
 
 (deftest neighbour-path-test
-  (testing "Getting path to neighbouring tiles of same level"
-    (are [face dy dx] (= (cube-map face (+ 0.5 (* dy 0.5)) (+ 0.5 (* dx 0.5)))
-                         (v/+ (cube-map face 0.5 0.5)
-                              (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5)))
-      0  0 -1
-      0  0  1
-      0 -1  0
-      0  1  0)))
+  (testing "Check consistency of path to neighbouring tiles of same level with cube-map coordinates"
+    (doseq [face (range 2) [dy dx] [[0 -1] [0 1] [-1 0] [1 0]]]
+      (is (= (cube-map face (+ 0.5 (* dy 0.5)) (+ 0.5 (* dx 0.5)))
+             (v/+ (cube-map face 0.5 0.5)
+                  (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5)))))))
