@@ -130,6 +130,7 @@
     [(case face
        :0 (case dy -1 :3, 0 (case dx -1 :4, 1 :2), 1 :1)
        :1 (case dy -1 :0, 0 (case dx -1 :4, 1 :2), 1 :5)
-       :2 (case dy -1 :0, 0 (case dx -1 :1, 1 :3), 1 :5))]))
+       :2 (case dy -1 :0, 0 (case dx -1 :1, 1 :3), 1 :5)
+       :3 (case dy -1 :0, 0 (case dx -1 :2, 1 :4), 1 :5))]))
 
 (set! *unchecked-math* false)
