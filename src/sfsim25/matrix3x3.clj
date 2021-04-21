@@ -8,39 +8,29 @@
 
 (set! *unchecked-math* true)
 
-(deftype Matrix3x3 [^double m11 ^double m12 ^double m13
-                    ^double m21 ^double m22 ^double m23
-                    ^double m31 ^double m32 ^double m33]
-  Object
-  (equals [this other] (and (instance? Matrix3x3 other)
-                            (= m11 (.m11 other)) (= m12 (.m12 other)) (= m13 (.m13 other))
-                            (= m21 (.m21 other)) (= m22 (.m22 other)) (= m23 (.m23 other))
-                            (= m31 (.m31 other)) (= m32 (.m32 other)) (= m33 (.m33 other))))
-  (toString [this] (str "(matrix3x3 " m11 \space m12 \space m13 \space
-                                      m21 \space m22 \space m23 \space
-                                      m31 \space m32 \space m33 \)))
-  clojure.lang.Seqable
-  (seq [this] (list m11 m12 m13 m21 m22 m23 m31 m32 m33)))
+(defrecord Matrix3x3 [^double m11 ^double m12 ^double m13
+                      ^double m21 ^double m22 ^double m23
+                      ^double m31 ^double m32 ^double m33])
 
 (set! *warn-on-reflection* true)
 
 (defn -
   "Negate matrix or subtract matrices"
   (^Matrix3x3 [^Matrix3x3 a]
-    (->Matrix3x3 (c/- (.m11 a)) (c/- (.m12 a)) (c/- (.m13 a))
-                 (c/- (.m21 a)) (c/- (.m22 a)) (c/- (.m23 a))
-                 (c/- (.m31 a)) (c/- (.m32 a)) (c/- (.m33 a))))
+    (->Matrix3x3 (c/- (:m11 a)) (c/- (:m12 a)) (c/- (:m13 a))
+                 (c/- (:m21 a)) (c/- (:m22 a)) (c/- (:m23 a))
+                 (c/- (:m31 a)) (c/- (:m32 a)) (c/- (:m33 a))))
   (^Matrix3x3 [^Matrix3x3 a ^Matrix3x3 b]
-    (->Matrix3x3 (c/- (.m11 a) (.m11 b)) (c/- (.m12 a) (.m12 b)) (c/- (.m13 a) (.m13 b))
-                 (c/- (.m21 a) (.m21 b)) (c/- (.m22 a) (.m22 b)) (c/- (.m23 a) (.m23 b))
-                 (c/- (.m31 a) (.m31 b)) (c/- (.m32 a) (.m32 b)) (c/- (.m33 a) (.m33 b)))))
+    (->Matrix3x3 (c/- (:m11 a) (:m11 b)) (c/- (:m12 a) (:m12 b)) (c/- (:m13 a) (:m13 b))
+                 (c/- (:m21 a) (:m21 b)) (c/- (:m22 a) (:m22 b)) (c/- (:m23 a) (:m23 b))
+                 (c/- (:m31 a) (:m31 b)) (c/- (:m32 a) (:m32 b)) (c/- (:m33 a) (:m33 b)))))
 
 (defn *
   "3D matrix-vector multiplication"
   ^Vector3 [^Matrix3x3 m ^Vector3 v]
-  (->Vector3 (+ (c/* (.m11 m) (:x v)) (c/* (.m12 m) (:y v)) (c/* (.m13 m) (:z v)))
-             (+ (c/* (.m21 m) (:x v)) (c/* (.m22 m) (:y v)) (c/* (.m23 m) (:z v)))
-             (+ (c/* (.m31 m) (:x v)) (c/* (.m32 m) (:y v)) (c/* (.m33 m) (:z v)))))
+  (->Vector3 (+ (c/* (:m11 m) (:x v)) (c/* (:m12 m) (:y v)) (c/* (:m13 m) (:z v)))
+             (+ (c/* (:m21 m) (:x v)) (c/* (:m22 m) (:y v)) (c/* (:m23 m) (:z v)))
+             (+ (c/* (:m31 m) (:x v)) (c/* (:m32 m) (:y v)) (c/* (:m33 m) (:z v)))))
 
 (defn identity-matrix
   "Generate 3x3 identity matrix"
@@ -51,9 +41,9 @@
 (defn norm2
   "Compute square of norm of 3x3 matrix"
   ^double [^Matrix3x3 m]
-  (+ (c/* (.m11 m) (.m11 m)) (c/* (.m12 m) (.m12 m)) (c/* (.m13 m) (.m13 m))
-     (c/* (.m21 m) (.m21 m)) (c/* (.m22 m) (.m22 m)) (c/* (.m23 m) (.m23 m))
-     (c/* (.m31 m) (.m31 m)) (c/* (.m32 m) (.m32 m)) (c/* (.m33 m) (.m33 m))))
+  (+ (c/* (:m11 m) (:m11 m)) (c/* (:m12 m) (:m12 m)) (c/* (:m13 m) (:m13 m))
+     (c/* (:m21 m) (:m21 m)) (c/* (:m22 m) (:m22 m)) (c/* (:m23 m) (:m23 m))
+     (c/* (:m31 m) (:m31 m)) (c/* (:m32 m) (:m32 m)) (c/* (:m33 m) (:m33 m))))
 
 (defn norm
   "Compute Frobenius norm of 3x3 matrix"

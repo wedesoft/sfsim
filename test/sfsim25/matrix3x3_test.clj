@@ -5,13 +5,9 @@
             [sfsim25.vector3 :refer (->Vector3)]
             [sfsim25.quaternion :refer (->Quaternion rotation)]))
 
-(deftest display-test
-  (testing "Display 3x3 matrix"
-    (is (= "(matrix3x3 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0)" (str (->Matrix3x3 1 2 3, 4 5 6, 7 8 9))))))
-
 (deftest seqable-test
   (testing "Convert 3x3 matrix to sequence"
-    (is (= [1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0] (seq (->Matrix3x3 1 2 3, 4 5 6, 7 8 9))))))
+    (is (= [1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0] (vals (->Matrix3x3 1 2 3, 4 5 6, 7 8 9))))))
 
 (deftest matrix-vector-dot-test
   (testing "3D matrix-vector multiplication"
