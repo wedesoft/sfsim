@@ -4,27 +4,20 @@
 
 (set! *unchecked-math* true)
 
-(deftype RGB [^double r ^double g ^double b]
-  Object
-  (equals [this other] (and (instance? RGB other) (= r (.r other)) (= g (.g other)) (= b (.b other))))
-  (toString [this] (str "(rgb " r \space g \space b ")")))
+(defrecord RGB [^double r ^double g ^double b])
 
 (set! *warn-on-reflection* true)
-
-(defn r ^double [^RGB v] (.r v))
-(defn g ^double [^RGB v] (.g v))
-(defn b ^double [^RGB v] (.b v))
 
 (defn +
   "Add two RGB values"
   (^RGB [^RGB a] a)
-  (^RGB [^RGB a ^RGB b] (->RGB (c/+ (.r a) (.r b)) (c/+ (.g a) (.g b)) (c/+ (.b a) (.b b))))
+  (^RGB [^RGB a ^RGB b] (->RGB (c/+ (:r a) (:r b)) (c/+ (:g a) (:g b)) (c/+ (:b a) (:b b))))
   (^RGB [^RGB a ^RGB b & other] (apply + (+ a b) other)))
 
 (defn *
   "Scale an RGB value"
   ^RGB [^double s ^RGB v]
-  (->RGB (c/* s (.r v)) (c/* s (.g v)) (c/* s (.b v))))
+  (->RGB (c/* s (:r v)) (c/* s (:g v)) (c/* s (:b v))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

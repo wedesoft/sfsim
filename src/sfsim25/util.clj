@@ -133,9 +133,9 @@
   "Set color value of a pixel in an image"
   [{:keys [width height data]} ^long y ^long x ^RGB c]
   (let [offset (* 4 (+ (* width y) x))]
-    (aset-byte data offset       (ubyte->byte (.r c)))
-    (aset-byte data (+ offset 1) (ubyte->byte (.g c)))
-    (aset-byte data (+ offset 2) (ubyte->byte (.b c)))
+    (aset-byte data offset       (ubyte->byte (:r c)))
+    (aset-byte data (+ offset 1) (ubyte->byte (:g c)))
+    (aset-byte data (+ offset 2) (ubyte->byte (:b c)))
     (aset-byte data (+ offset 3) (ubyte->byte 255))))
 
 (defn get-elevation

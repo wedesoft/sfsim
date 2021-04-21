@@ -3,15 +3,11 @@
   (:require [clojure.test :refer :all]
             [sfsim25.rgb :refer :all]))
 
-(deftest display-test
-  (testing "Display RGB value"
-    (is (= "(rgb 2.0 3.0 5.0)" (str (->RGB 2 3 5))))))
-
 (deftest component-test
   (testing "Get components of RGB value"
-    (is (= 2.0 (r (->RGB 2 3 5))))
-    (is (= 3.0 (g (->RGB 2 3 5))))
-    (is (= 5.0 (b (->RGB 2 3 5))))))
+    (is (= 2.0 (:r (->RGB 2 3 5))))
+    (is (= 3.0 (:g (->RGB 2 3 5))))
+    (is (= 5.0 (:b (->RGB 2 3 5))))))
 
 (deftest add-test
   (testing "Add RGB values"
