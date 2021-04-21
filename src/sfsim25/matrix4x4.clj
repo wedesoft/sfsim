@@ -30,18 +30,18 @@
 (defn matrix3x3->matrix4x4
   "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
   ^Matrix4x4 [^Matrix3x3 m ^Vector3 v]
-  (->Matrix4x4 (.m11 m) (.m12 m) (.m13 m) (.x v)
-               (.m21 m) (.m22 m) (.m23 m) (.y v)
-               (.m31 m) (.m32 m) (.m33 m) (.z v)
+  (->Matrix4x4 (.m11 m) (.m12 m) (.m13 m) (:x v)
+               (.m21 m) (.m22 m) (.m23 m) (:y v)
+               (.m31 m) (.m32 m) (.m33 m) (:z v)
                       0        0        0      1))
 
 (defn *
   "4D matrix-vector multiplication"
   ^Vector4 [^Matrix4x4 m ^Vector4 v]
-  (->Vector4 (+ (c/* (.m11 m) (.x v)) (c/* (.m12 m) (.y v)) (c/* (.m13 m) (.z v)) (c/* (.m14 m) (.l v)))
-             (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)) (c/* (.m24 m) (.l v)))
-             (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)) (c/* (.m34 m) (.l v)))
-             (+ (c/* (.m41 m) (.x v)) (c/* (.m42 m) (.y v)) (c/* (.m43 m) (.z v)) (c/* (.m44 m) (.l v)))))
+  (->Vector4 (+ (c/* (.m11 m) (:x v)) (c/* (.m12 m) (:y v)) (c/* (.m13 m) (:z v)) (c/* (.m14 m) (:l v)))
+             (+ (c/* (.m21 m) (:x v)) (c/* (.m22 m) (:y v)) (c/* (.m23 m) (:z v)) (c/* (.m24 m) (:l v)))
+             (+ (c/* (.m31 m) (:x v)) (c/* (.m32 m) (:y v)) (c/* (.m33 m) (:z v)) (c/* (.m34 m) (:l v)))
+             (+ (c/* (.m41 m) (:x v)) (c/* (.m42 m) (:y v)) (c/* (.m43 m) (:z v)) (c/* (.m44 m) (:l v)))))
 
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"

@@ -63,14 +63,14 @@
 (defn longitude
   "Longitude of 3D point (West is positive)"
   ^double [^Vector3 p]
-  (Math/atan2 (.z p) (.x p)))
+  (Math/atan2 (:z p) (:x p)))
 
 (defn latitude
   "Latitude of 3D point"
   ^double [^Vector3 point ^double radius1 ^double radius2]
   (let [e (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        p (Math/sqrt (+ (sqr (.x point)) (sqr (.z point))))]
-    (Math/atan2 (.y point) (* p (- 1.0 (* e e))))))
+        p (Math/sqrt (+ (sqr (:x point)) (sqr (:z point))))]
+    (Math/atan2 (:y point) (* p (- 1.0 (* e e))))))
 
 ; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
@@ -89,11 +89,11 @@
   "Project a 3D vector onto an ellipsoid"
   ^Vector3 [^Vector3 point ^double radius1 ^double radius2]
   (let [radius           (norm point)
-        xz-radius        (Math/sqrt (+ (sqr (.x point)) (sqr (.z point))))
+        xz-radius        (Math/sqrt (+ (sqr (:x point)) (sqr (:z point))))
         cos-latitude     (/ xz-radius radius)
-        sin-latitude     (/ (.y point) radius)
-        cos-longitude    (if (zero? xz-radius) 1.0 (/ (.x point) xz-radius))
-        sin-longitude    (if (zero? xz-radius) 0.0 (/ (.z point) xz-radius))
+        sin-latitude     (/ (:y point) radius)
+        cos-longitude    (if (zero? xz-radius) 1.0 (/ (:x point) xz-radius))
+        sin-longitude    (if (zero? xz-radius) 0.0 (/ (:z point) xz-radius))
         projected-radius (/ (* radius1 radius2) (Math/sqrt (+ (* radius1 radius1 sin-latitude sin-latitude)
                                                               (* radius2 radius2 cos-latitude cos-latitude))))]
   (->Vector3 (* cos-latitude cos-longitude projected-radius)
@@ -105,22 +105,22 @@
   ^Vector3 [^Vector3 point ^double radius1 ^double radius2]
   (let [radius1-sqr (sqr radius1)
         radius2-sqr (sqr radius2)
-        x           (/ (.x point) radius1-sqr)
-        y           (/ (.y point) radius2-sqr)
-        z           (/ (.z point) radius1-sqr)]
+        x           (/ (:x point) radius1-sqr)
+        y           (/ (:y point) radius2-sqr)
+        z           (/ (:z point) radius1-sqr)]
     (normalize (->Vector3 x y z))))
 
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height"
   [^Vector3 point ^double radius1 ^double radius2]
   (let [e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        lon       (Math/atan2 (.z point) (.x point))
+        lon       (Math/atan2 (:z point) (:x point))
         iteration (fn [^Vector3 reference-point iter]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
                           normal        (ellipsoid-normal surface-point radius1 radius2)
                           height        (inner-product normal (v/- point surface-point))
-                          p             (Math/sqrt (+ (sqr (.x surface-point)) (sqr (.z surface-point))))
-                          lat           (Math/atan2 (.y surface-point) (* p (- 1.0 (* e e))))
+                          p             (Math/sqrt (+ (sqr (:x surface-point)) (sqr (:z surface-point))))
+                          lat           (Math/atan2 (:y surface-point) (* p (- 1.0 (* e e))))
                           result        (v/+ surface-point (v/* height normal))
                           error         (v/- result point)]
                       (if (or (< (norm error) 1e-6) (>= iter 10)) [lon lat height] (recur (v/- surface-point error) (inc iter)))))]
@@ -177,7 +177,7 @@
         norm (norm p)
         v    (->Vector3 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0)
         vs   (m/* (m/rotation-y (- lon)) (m/* (m/rotation-z lat) v))]
-    (->Vector3 (.x vs) (/ (* (.y vs) radius2) radius1) (.z vs))))
+    (->Vector3 (:x vs) (/ (* (:y vs) radius2) radius1) (:z vs))))
 
 (def world-map-tile
   "Load and cache map tiles"

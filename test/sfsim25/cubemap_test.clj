@@ -258,7 +258,7 @@
                     cubemap/project-onto-globe (fn [p in-level width radius1 radius2]
                                                  (is (= [in-level width radius1 radius2] [5 675 6378000 6357000]))
                                                  (swap! ps conj p)
-                                                 (->Vector3 (* 2 (.x p)) (* 2 (.y p)) (* 2 (.z p))))]
+                                                 (->Vector3 (* 2 (:x p)) (* 2 (:y p)) (* 2 (:z p))))]
         (let [pts (surrounding-points (->Vector3 1 0 0) 5 7 675 33 6378000 6357000)]
           (doseq [j [-1 0 1] i [-1 0 1]]
             (let [k (+ (* 3 (inc j)) (inc i))]

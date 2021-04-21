@@ -38,9 +38,9 @@
 (defn *
   "3D matrix-vector multiplication"
   ^Vector3 [^Matrix3x3 m ^Vector3 v]
-  (->Vector3 (+ (c/* (.m11 m) (.x v)) (c/* (.m12 m) (.y v)) (c/* (.m13 m) (.z v)))
-             (+ (c/* (.m21 m) (.x v)) (c/* (.m22 m) (.y v)) (c/* (.m23 m) (.z v)))
-             (+ (c/* (.m31 m) (.x v)) (c/* (.m32 m) (.y v)) (c/* (.m33 m) (.z v)))))
+  (->Vector3 (+ (c/* (.m11 m) (:x v)) (c/* (.m12 m) (:y v)) (c/* (.m13 m) (:z v)))
+             (+ (c/* (.m21 m) (:x v)) (c/* (.m22 m) (:y v)) (c/* (.m23 m) (:z v)))
+             (+ (c/* (.m31 m) (:x v)) (c/* (.m32 m) (:y v)) (c/* (.m33 m) (:z v)))))
 
 (defn identity-matrix
   "Generate 3x3 identity matrix"
@@ -84,9 +84,9 @@
   (let [a (rotate-vector q (->Vector3 1 0 0))
         b (rotate-vector q (->Vector3 0 1 0))
         c (rotate-vector q (->Vector3 0 0 1))]
-    (->Matrix3x3 (.x a) (.x b) (.x c)
-                 (.y a) (.y b) (.y c)
-                 (.z a) (.z b) (.z c))))
+    (->Matrix3x3 (:x a) (:x b) (:x c)
+                 (:y a) (:y b) (:y c)
+                 (:z a) (:z b) (:z c))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

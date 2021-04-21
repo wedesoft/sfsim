@@ -180,9 +180,9 @@
   "Write vector value to vectors tile"
   [{:keys [width height data]} ^long y ^long x ^Vector3 value]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-float data offset       (.x value))
-    (aset-float data (+ offset 1) (.y value))
-    (aset-float data (+ offset 2) (.z value))))
+    (aset-float data offset       (:x value))
+    (aset-float data (+ offset 1) (:y value))
+    (aset-float data (+ offset 2) (:z value))))
 
 (defn dissoc-in
   "Return nested hash with path removed"

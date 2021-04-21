@@ -152,10 +152,10 @@ void main()
 (defn make-vertices
   [face level y x]
   (let [[a b c d] (cube-map-corners face level y x)]
-    (float-array [(.x a) (.y a) (.z a) 0.0 0.0
-                  (.x b) (.y b) (.z b) 1.0 0.0
-                  (.x c) (.y c) (.z c) 0.0 1.0
-                  (.x d) (.y d) (.z d) 1.0 1.0])))
+    (float-array [(:x a) (:y a) (:z a) 0.0 0.0
+                  (:x b) (:y b) (:z b) 1.0 0.0
+                  (:x c) (:y c) (:z c) 0.0 1.0
+                  (:x d) (:y d) (:z d) 1.0 1.0])))
 
 (defn create-texture
   [varname index tex-format tex-type interpolation buffer]
@@ -221,7 +221,7 @@ void main()
 
 (GL20/glUseProgram program)
 
-(def p (float-array (projection-matrix 640 480 100 (* 4 6378000) (/ (* 60 Math/PI) 180))))
+(def p (float-array (vals (projection-matrix 640 480 100 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (defn is-leaf?
@@ -260,7 +260,7 @@ void main()
         dt (- t1 t0)
         z  (- (* dt 200) (* 4 6378000))
         angle (* (+ (* dt 0.005) -120) (/ Math/PI 180))
-        t  (float-array (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z)))]
+        t  (float-array (vals (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z))))]
     (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
     (render-tree @tree)

@@ -4,19 +4,15 @@
             [clojure.core :as c]
             [sfsim25.vector3 :refer :all]))
 
-(deftest display-test
-  (testing "Display 3D vector"
-    (is (= "(vector3 2.0 3.0 5.0)" (str (->Vector3 2 3 5))))))
-
 (deftest component-test
   (testing "Get components of 3D vector"
-    (is (= 2.0 (x (->Vector3 2 3 5))))
-    (is (= 3.0 (y (->Vector3 2 3 5))))
-    (is (= 5.0 (z (->Vector3 2 3 5))))))
+    (is (= 2.0 (:x (->Vector3 2 3 5))))
+    (is (= 3.0 (:y (->Vector3 2 3 5))))
+    (is (= 5.0 (:z (->Vector3 2 3 5))))))
 
 (deftest seqable-test
   (testing "Convert vector to sequence"
-    (is (= [2.0 3.0 5.0] (seq (->Vector3 2 3 5))))))
+    (is (= [2.0 3.0 5.0] (vals (->Vector3 2 3 5))))))
 
 (deftest norm-test
   (testing "Norm of 3D vector"
