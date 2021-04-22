@@ -111,4 +111,15 @@
     (doseq [face (range 6) [dy dx] [[0 -1] [0 1] [-1 0] [1 0]]]
       (is (= (cube-map face (+ 0.5 (* dy 0.5)) (+ 0.5 (* dx 0.5)))
              (v/+ (cube-map face 0.5 0.5)
-                  (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5)))))))
+                  (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5))))))
+  (testing "Neighbouring tiles on the same face"
+    (are [result path dy dx] (= result (neighbour-path path dy dx))
+      [:5 :0]    [:5 :2]    -1  0
+      [:5 :1]    [:5 :3]    -1  0
+      [:5 :0]    [:5 :1]     0 -1
+      [:5 :2]    [:5 :3]     0 -1
+      [:5 :2]    [:5 :0]     1  0
+      [:5 :3]    [:5 :1]     1  0
+      [:5 :1]    [:5 :0]     0  1
+      [:5 :3]    [:5 :2]     0  1
+      [:5 :3 :0] [:5 :3 :2] -1  0)))
