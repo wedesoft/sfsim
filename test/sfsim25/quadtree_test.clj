@@ -107,7 +107,7 @@
 (defn int->keyword [x] (keyword (str x)))
 
 (deftest neighbour-path-test
-  (testing "Check consistency of path to neighbouring tiles of same level with cube-map coordinates"
+  (testing "Check consistency of neighbouring faces with cube-map coordinates"
     (doseq [face (range 6) [dy dx] [[0 -1] [0 1] [-1 0] [1 0]]]
       (is (= (cube-map face (+ 0.5 (* dy 0.5)) (+ 0.5 (* dx 0.5)))
              (v/+ (cube-map face 0.5 0.5)
@@ -120,6 +120,10 @@
       [:3]       [:3]        0  0
       [:4]       [:4]        0  0
       [:5]       [:5]        0  0
+      [:5 :0]    [:5 :0]     0  0
+      [:5 :1]    [:5 :1]     0  0
+      [:5 :2]    [:5 :2]     0  0
+      [:5 :3]    [:5 :3]     0  0
       [:5 :0]    [:5 :2]    -1  0
       [:5 :1]    [:5 :3]    -1  0
       [:5 :0]    [:5 :1]     0 -1
@@ -128,6 +132,14 @@
       [:5 :3]    [:5 :1]     1  0
       [:5 :1]    [:5 :0]     0  1
       [:5 :3]    [:5 :2]     0  1
+      [:5 :3 :0] [:5 :3 :0]  0  0
       [:5 :3 :0] [:5 :3 :2] -1  0
+      [:5 :3 :1] [:5 :3 :0]  0  1
       [:5 :1 :2] [:5 :3 :0] -1  0
-      )))
+      [:5 :1 :3] [:5 :3 :1] -1  0
+      [:5 :2 :1] [:5 :3 :0]  0 -1
+      [:5 :2 :3] [:5 :3 :2]  0 -1
+      [:5 :3 :0] [:5 :1 :2]  1  0
+      [:5 :3 :1] [:5 :1 :3]  1  0
+      [:5 :3 :0] [:5 :2 :1]  0  1
+      [:5 :3 :2] [:5 :2 :3]  0  1)))

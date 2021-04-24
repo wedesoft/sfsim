@@ -142,10 +142,10 @@
                tile         (first path)
                [replacement propagate]
                  (case tile
-                   :0 (case dy -1 [:2 true ], 0 (case dx -1 [:9 false] 0 [:9 false] 1 [:1 false]), 1 [:2 false])
-                   :1 (case dy -1 [:9 false], 0 (case dx -1 [:0 false] 0 [:9 false] 1 [:9 false]), 1 [:3 false])
-                   :2 (case dy -1 [:0 false], 0 (case dx -1 [:9 false] 0 [:9 false] 1 [:3 false]), 1 [:9 false])
-                   :3 (case dy -1 [:1 false], 0 (case dx -1 [:2 false] 0 [:3 false] 1 [:9 false]), 1 [:9 false]))]
+                   :0 (case dy -1 [:2 true ], 0 (case dx -1 [:1 true ] 0 [:0 false] 1 [:1 false]), 1 [:2 false])
+                   :1 (case dy -1 [:3 true ], 0 (case dx -1 [:0 false] 0 [:1 false] 1 [:0 true ]), 1 [:3 false])
+                   :2 (case dy -1 [:0 false], 0 (case dx -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
+                   :3 (case dy -1 [:1 false], 0 (case dx -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
              [(conj tail replacement) (if propagate dy 0) (if propagate dx 0)])))))
   ([path dy dx] (first (neighbour-path path dy dx true))))
 
