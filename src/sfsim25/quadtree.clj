@@ -125,23 +125,28 @@
 
 (defn neighbour-path
   "Determine path of neighbouring tile at same level"
-  [path dy dx]
-  (let [face (first path)]
-    (if (= (count path) 1)
-      [(case face
-         :0 (case dy -1 :3, 0 (case dx -1 :4, 1 :2), 1 :1)
-         :1 (case dy -1 :0, 0 (case dx -1 :4, 1 :2), 1 :5)
-         :2 (case dy -1 :0, 0 (case dx -1 :1, 1 :3), 1 :5)
-         :3 (case dy -1 :0, 0 (case dx -1 :2, 1 :4), 1 :5)
-         :4 (case dy -1 :0, 0 (case dx -1 :3, 1 :1), 1 :5)
-         :5 (case dy -1 :1, 0 (case dx -1 :4, 1 :2), 1 :3))]
-      (let [tile (last path)]
-        (conj
-          (pop path)
-          (case tile
-            :0 (case dy  0 :1 1 :2)
-            :1 (case dy  0 :0 1 :3)
-            :2 (case dy -1 :0 0 :3)
-            :3 (case dy -1 :1 0 :2)))))))
+  ([path dy dx top-level]
+   (if (and top-level (= (count path) 1))
+     [[(case (first path)
+        :0 (case dy -1 :3, 0 (case dx -1 :4, 0 :0, 1 :2), 1 :1)
+        :1 (case dy -1 :0, 0 (case dx -1 :4, 0 :1, 1 :2), 1 :5)
+        :2 (case dy -1 :0, 0 (case dx -1 :1, 0 :2, 1 :3), 1 :5)
+        :3 (case dy -1 :0, 0 (case dx -1 :2, 0 :3, 1 :4), 1 :5)
+        :4 (case dy -1 :0, 0 (case dx -1 :3, 0 :4, 1 :1), 1 :5)
+        :5 (case dy -1 :1, 0 (case dx -1 :4, 0 :5, 1 :2), 1 :3))] 0 0]
+     (if top-level
+       [(conj (first (neighbour-path (rest path) dy dx false)) (first path)) 0 0]
+       (if (empty? path)
+         [() dy dx]
+         (let [[tail dy dx] (neighbour-path (rest path) dy dx false)
+               tile         (first path)
+               [replacement propagate]
+                 (case tile
+                   :0 (case dy -1 [:2 true ], 0 (case dx -1 [:9 false] 0 [:9 false] 1 [:1 false]), 1 [:2 false])
+                   :1 (case dy -1 [:9 false], 0 (case dx -1 [:0 false] 0 [:9 false] 1 [:9 false]), 1 [:3 false])
+                   :2 (case dy -1 [:0 false], 0 (case dx -1 [:9 false] 0 [:9 false] 1 [:3 false]), 1 [:9 false])
+                   :3 (case dy -1 [:1 false], 0 (case dx -1 [:2 false] 0 [:3 false] 1 [:9 false]), 1 [:9 false]))]
+             [(conj tail replacement) (if propagate dy 0) (if propagate dx 0)])))))
+  ([path dy dx] (first (neighbour-path path dy dx true))))
 
 (set! *unchecked-math* false)
