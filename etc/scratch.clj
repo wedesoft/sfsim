@@ -81,7 +81,8 @@ out mediump vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  fragColor = texture(tex, UV).rgb;
+  // fragColor = texture(tex, UV).rgb;
+  fragColor = vec3(1, 1, 1);
 }")
 
 (defn make-shader [source shader-type]
@@ -213,8 +214,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
