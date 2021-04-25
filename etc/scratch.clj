@@ -131,8 +131,8 @@ void main()
 (def radius1 6378000.0)
 (def radius2 6357000.0)
 
-(def tree-state (chan 1))
-(def changes (chan 1))
+(def tree-state (chan))
+(def changes (chan))
 
 (def position (atom (->Vector3 0 0 (* 3 radius1))))
 (def tree (atom {}))
