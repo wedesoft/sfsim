@@ -138,7 +138,7 @@
                cx           {:0 :x  :1 :x  :3 :x  :2 :x}
                [replacement rotation]
                  (case (first path)
-                   :0 (case dy -1 [:3 cx], 0 (case dx -1 [:4 cx], 0 [:0 c0], 1 [:2 cx]), 1 [:1 cx])
+                   :0 (case dy -1 [:3 c2], 0 (case dx -1 [:4 c1], 0 [:0 c0], 1 [:2 c3]), 1 [:1 c0])
                    :1 (case dy -1 [:0 c0], 0 (case dx -1 [:4 c0], 0 [:1 c0], 1 [:2 c0]), 1 [:5 c0])
                    :2 (case dy -1 [:0 c1], 0 (case dx -1 [:1 c0], 0 [:2 c0], 1 [:3 c0]), 1 [:5 c3])
                    :3 (case dy -1 [:0 c2], 0 (case dx -1 [:2 c0], 0 [:3 c0], 1 [:4 c0]), 1 [:5 c2])
