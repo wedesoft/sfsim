@@ -270,5 +270,6 @@ void main()
 (Display/destroy)
 
 (close! tree-state)
+(close! changes)
 
 (System/exit 0)
