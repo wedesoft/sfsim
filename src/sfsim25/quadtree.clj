@@ -135,7 +135,7 @@
            :3 (case dy -1 :0, 0 (case dx -1 :2, 0 :3, 1 :4), 1 :5)
            :4 (case dy -1 :0, 0 (case dx -1 :3, 0 :4, 1 :1), 1 :5)
            :5 (case dy -1 :1, 0 (case dx -1 :4, 0 :5, 1 :2), 1 :3))] 0 0]
-       [(conj (first (neighbour-path (rest path) dy dx false)) (first path)) 0 0])
+       [(cons (first path) (first (neighbour-path (rest path) dy dx false))) 0 0])
      (if (empty? path)
        [() dy dx]
        (let [[tail dy dx] (neighbour-path (rest path) dy dx false)
@@ -146,7 +146,7 @@
                  :1 (case dy -1 [:3 true ], 0 (case dx -1 [:0 false] 0 [:1 false] 1 [:0 true ]), 1 [:3 false])
                  :2 (case dy -1 [:0 false], 0 (case dx -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
                  :3 (case dy -1 [:1 false], 0 (case dx -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
-           [(conj tail replacement) (if propagate dy 0) (if propagate dx 0)]))))
+           [(cons replacement tail) (if propagate dy 0) (if propagate dx 0)]))))
   ([path dy dx]
    (first (neighbour-path path dy dx true))))
 
