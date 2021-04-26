@@ -139,10 +139,10 @@
                [replacement rotation]
                  (case (first path)
                    :0 (case dy -1 [:3 cx], 0 (case dx -1 [:4 cx], 0 [:0 c0], 1 [:2 cx]), 1 [:1 cx])
-                   :1 (case dy -1 [:0 c0], 0 (case dx -1 [:4 cx], 0 [:1 c0], 1 [:2 cx]), 1 [:5 cx])
-                   :2 (case dy -1 [:0 c1], 0 (case dx -1 [:1 cx], 0 [:2 c0], 1 [:3 cx]), 1 [:5 cx])
-                   :3 (case dy -1 [:0 cx], 0 (case dx -1 [:2 cx], 0 [:3 c0], 1 [:4 cx]), 1 [:5 cx])
-                   :4 (case dy -1 [:0 cx], 0 (case dx -1 [:3 cx], 0 [:4 c0], 1 [:1 cx]), 1 [:5 cx])
+                   :1 (case dy -1 [:0 c0], 0 (case dx -1 [:4 c0], 0 [:1 c0], 1 [:2 c0]), 1 [:5 c0])
+                   :2 (case dy -1 [:0 c1], 0 (case dx -1 [:1 c0], 0 [:2 c0], 1 [:3 c0]), 1 [:5 c3])
+                   :3 (case dy -1 [:0 c2], 0 (case dx -1 [:2 c0], 0 [:3 c0], 1 [:4 c0]), 1 [:5 c2])
+                   :4 (case dy -1 [:0 c3], 0 (case dx -1 [:3 c0], 0 [:4 c0], 1 [:1 c0]), 1 [:5 c1])
                    :5 (case dy -1 [:1 cx], 0 (case dx -1 [:4 cx], 0 [:5 c0], 1 [:2 cx]), 1 [:3 cx]))]
            (cons replacement (map rotation tail)))
          (let [[replacement propagate]
