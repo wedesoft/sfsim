@@ -131,15 +131,20 @@
      (let [[tail dy dx] (neighbour-path (rest path) dy dx false)
            tile         (first path)]
        (if top-level
-         (let [replacement
+         (let [c0           {:0 :0, :1 :1, :3 :3, :2 :2}
+               c1           {:0 :2, :1 :0, :3 :1, :2 :3}
+               c2           {:0 :3, :1 :2, :3 :0, :2 :1}
+               c3           {:0 :1, :1 :3, :3 :2, :2 :0}
+               cx           {:0 :x  :1 :x  :3 :x  :2 :x}
+               [replacement rotation]
                  (case (first path)
-                   :0 (case dy -1 :3, 0 (case dx -1 :4, 0 :0, 1 :2), 1 :1)
-                   :1 (case dy -1 :0, 0 (case dx -1 :4, 0 :1, 1 :2), 1 :5)
-                   :2 (case dy -1 :0, 0 (case dx -1 :1, 0 :2, 1 :3), 1 :5)
-                   :3 (case dy -1 :0, 0 (case dx -1 :2, 0 :3, 1 :4), 1 :5)
-                   :4 (case dy -1 :0, 0 (case dx -1 :3, 0 :4, 1 :1), 1 :5)
-                   :5 (case dy -1 :1, 0 (case dx -1 :4, 0 :5, 1 :2), 1 :3))]
-           (cons replacement tail))
+                   :0 (case dy -1 [:3 cx], 0 (case dx -1 [:4 cx], 0 [:0 c0], 1 [:2 cx]), 1 [:1 cx])
+                   :1 (case dy -1 [:0 c0], 0 (case dx -1 [:4 cx], 0 [:1 c0], 1 [:2 cx]), 1 [:5 cx])
+                   :2 (case dy -1 [:0 c1], 0 (case dx -1 [:1 cx], 0 [:2 c0], 1 [:3 cx]), 1 [:5 cx])
+                   :3 (case dy -1 [:0 cx], 0 (case dx -1 [:2 cx], 0 [:3 c0], 1 [:4 cx]), 1 [:5 cx])
+                   :4 (case dy -1 [:0 cx], 0 (case dx -1 [:3 cx], 0 [:4 c0], 1 [:1 cx]), 1 [:5 cx])
+                   :5 (case dy -1 [:1 cx], 0 (case dx -1 [:4 cx], 0 [:5 c0], 1 [:2 cx]), 1 [:3 cx]))]
+           (cons replacement (map rotation tail)))
          (let [[replacement propagate]
                  (case tile
                    :0 (case dy -1 [:2 true ], 0 (case dx -1 [:1 true ] 0 [:0 false] 1 [:1 false]), 1 [:2 false])
