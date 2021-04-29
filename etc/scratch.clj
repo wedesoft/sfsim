@@ -81,8 +81,8 @@ out mediump vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  // fragColor = texture(tex, UV).rgb;
-  fragColor = vec3(1, 1, 1);
+  fragColor = texture(tex, UV).rgb;
+  // fragColor = vec3(1, 1, 1);
 }")
 
 (defn make-shader [source shader-type]
@@ -139,7 +139,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 4 @position)
+    (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 1 @position)  ; TODO: increase max-level back to 4
           drop-list (doall (tiles-to-drop tree increase?))
           load-list (doall (tiles-to-load tree increase?))
           tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -214,8 +214,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
