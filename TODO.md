@@ -1,6 +1,5 @@
 # TODO
 
-* use standard ECEF coordinate system
 * use defrecord instead of deftype, use keyword accessor instead of dot-function
 * compute path to neighbours at different levels for different faces
 * adapt outer tesselation resolution to neighbouring tiles

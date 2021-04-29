@@ -9,50 +9,50 @@
 (deftest cube-faces-test
   (testing "First face of cube"
     (are [result c j i] (= result (c 0 j i))
-       1.0 cube-map-y 0 0
+       1.0 cube-map-z 0 0
       -1.0 cube-map-x 0 0
        1.0 cube-map-x 0 1
-      -1.0 cube-map-z 0 0
-       1.0 cube-map-z 1 0))
+       1.0 cube-map-y 0 0
+      -1.0 cube-map-y 1 0))
   (testing "Second face of cube"
     (are [result c j i] (= result (c 1 j i))
-       1.0 cube-map-z 0 0
-      -1.0 cube-map-x 0 0
-       1.0 cube-map-x 0 1
-       1.0 cube-map-y 0 0
-      -1.0 cube-map-y 1 0))
-  (testing "Third face of cube"
-    (are [result c j i] (= result (c 2 j i))
-       1.0 cube-map-x 0 0
-       1.0 cube-map-y 0 0
-      -1.0 cube-map-y 1 0
-       1.0 cube-map-z 0 0
-      -1.0 cube-map-z 0 1))
-  (testing "Fourth face of cube"
-    (are [result c j i] (= result (c 3 j i))
-      -1.0 cube-map-z 0 0
-       1.0 cube-map-x 0 0
-      -1.0 cube-map-x 0 1
-       1.0 cube-map-y 0 0
-      -1.0 cube-map-y 1 0))
-  (testing "Fifth face of cube"
-    (are [result c j i] (= result (c 4 j i))
-      -1.0 cube-map-x 0 0
-       1.0 cube-map-y 0 0
-      -1.0 cube-map-y 1 0
-      -1.0 cube-map-z 0 0
-       1.0 cube-map-z 0 1))
-  (testing "Sixt face of cube"
-    (are [result c j i] (= result (c 5 j i))
       -1.0 cube-map-y 0 0
       -1.0 cube-map-x 0 0
        1.0 cube-map-x 0 1
        1.0 cube-map-z 0 0
-      -1.0 cube-map-z 1 0)))
+      -1.0 cube-map-z 1 0))
+  (testing "Third face of cube"
+    (are [result c j i] (= result (c 2 j i))
+       1.0 cube-map-x 0 0
+       1.0 cube-map-z 0 0
+      -1.0 cube-map-z 1 0
+      -1.0 cube-map-y 0 0
+       1.0 cube-map-y 0 1))
+  (testing "Fourth face of cube"
+    (are [result c j i] (= result (c 3 j i))
+       1.0 cube-map-y 0 0
+       1.0 cube-map-x 0 0
+      -1.0 cube-map-x 0 1
+       1.0 cube-map-z 0 0
+      -1.0 cube-map-z 1 0))
+  (testing "Fifth face of cube"
+    (are [result c j i] (= result (c 4 j i))
+      -1.0 cube-map-x 0 0
+       1.0 cube-map-z 0 0
+      -1.0 cube-map-z 1 0
+       1.0 cube-map-y 0 0
+      -1.0 cube-map-y 0 1))
+  (testing "Sixt face of cube"
+    (are [result c j i] (= result (c 5 j i))
+      -1.0 cube-map-z 0 0
+      -1.0 cube-map-x 0 0
+       1.0 cube-map-x 0 1
+      -1.0 cube-map-y 0 0
+       1.0 cube-map-y 1 0)))
 
 (deftest cube-map-test
   (testing "Get vector to cube face"
-    (is (= (->Vector3 0.0 -1.0 1.0) (cube-map 5 0 0.5)))))
+    (is (= (->Vector3 0.0 -1.0 -1.0) (cube-map 5 0 0.5)))))
 
 (deftest cube-coordinate-test
   (testing "Test cube coordinates"
@@ -63,14 +63,14 @@
 (deftest cube-map-corners-test
   (testing "Get corners of cube map tiles"
     (are [x y z face level b a idx] (= (->Vector3 x y z) (nth (cube-map-corners face level b a) idx))
-      -1    1   -1   0 0 0 0 0
-       1    1   -1   0 0 0 0 1
-      -1    1    1   0 0 0 0 2
-       1    1    1   0 0 0 0 3
-      -0.5 -1.0 -0.5 5 2 3 1 0
-       0.0 -1.0 -0.5 5 2 3 1 1
-      -0.5 -1.0 -1.0 5 2 3 1 2
-       0.0 -1.0 -1.0 5 2 3 1 3)))
+      -1    1    1   0 0 0 0 0
+       1    1    1   0 0 0 0 1
+      -1   -1    1   0 0 0 0 2
+       1   -1    1   0 0 0 0 3
+      -0.5  0.5 -1.0 5 2 3 1 0
+       0.0  0.5 -1.0 5 2 3 1 1
+      -0.5  1.0 -1.0 5 2 3 1 2
+       0.0  1.0 -1.0 5 2 3 1 3)))
 
 (def pi Math/PI)
 
@@ -78,23 +78,23 @@
   (testing "Longitude of 3D point"
     (are [result x y z] (< (Math/abs (- result (longitude (->Vector3 x y z)))) 1e-6)
       0        1 0 0
-      (/ pi 2) 0 0 1)))
+      (/ pi 2) 0 1 0)))
 
 (deftest latitude-test
   (testing "Latitude of 3D point"
     (are [result x y z] (< (Math/abs (- result (latitude (->Vector3 x y z) 6378000 6357000))) 1e-6)
-      0              0       0 6378000
-      (/ pi 2)       0 6357000       0
+      0              0 6378000       0
+      (/ pi 2)       0       0 6357000
       0        6378000       0       0)))
 
 (deftest geodetic->cartesian-test
   (testing "Conversion from geodetic to cartesian coordinates"
     (are [x y z lon lat h] (< (norm (v/- (->Vector3 x y z) (geodetic->cartesian lon lat h 6378000.0 6357000.0))) 1e-6)
       6378000.0       0.0       0.0        0        0    0
-            0.0       0.0 6378000.0 (/ pi 2)        0    0
-            0.0 6357000.0       0.0        0 (/ pi 2)    0
+            0.0 6378000.0       0.0 (/ pi 2)        0    0
+            0.0       0.0 6357000.0        0 (/ pi 2)    0
       6379000.0       0.0       0.0        0        0 1000
-            0.0       0.0 6379000.0 (/ pi 2)        0 1000)))
+            0.0 6379000.0       0.0 (/ pi 2)        0 1000)))
 
 (deftest cartesian->geodetic-test
   (testing "Conversion from cartesian (surface) coordinates to latitude and longitude"
@@ -102,26 +102,26 @@
                                   (and (< (Math/abs (- lon (first result))) 1e-6)
                                        (< (Math/abs (- lat (second result))) 1e-6)
                                        (< (Math/abs (- height (last result))) 1e-6)))
-             0            0    0 6378000.0        0.0       0.0
-      (/ pi 2)            0    0       0.0        0.0 6378000.0
-             0     (/ pi 2)    0       0.0  6357000.0       0.0
-             0     (/ pi 2) 1000       0.0  6358000.0       0.0
-             0 (/ (- pi) 2) 1000       0.0 -6358000.0       0.0
-             0            0    0 6378000.0        0.0       0.0
-      (/ pi 2)            0    0       0.0        0.0 6378000.0
-             0            0 1000 6379000.0        0.0       0.0
-             0            0 -100 6377900.0        0.0       0.0)))
+             0            0    0 6378000.0       0.0        0.0
+      (/ pi 2)            0    0       0.0 6378000.0        0.0
+             0     (/ pi 2)    0       0.0       0.0  6357000.0
+             0     (/ pi 2) 1000       0.0       0.0  6358000.0
+             0 (/ (- pi) 2) 1000       0.0       0.0 -6358000.0
+             0            0    0 6378000.0       0.0        0.0
+      (/ pi 2)            0    0       0.0 6378000.0        0.0
+             0            0 1000 6379000.0       0.0        0.0
+             0            0 -100 6377900.0       0.0        0.0)))
 
 (deftest project-onto-ellipsoid-test
   (testing "Project a vector onto an ellipsoid"
     (are [xp yp zp x y z] (< (norm (v/- (->Vector3 xp yp zp) (project-onto-ellipsoid (->Vector3 x y z) 6378000.0 6357000.0))) 1e-6)
       6378000.0       0.0       0.0 1 0 0
-            0.0 6357000.0       0.0 0 1 0
-            0.0       0.0 6378000.0 0 0 1)))
+            0.0 6378000.0       0.0 0 1 0
+            0.0       0.0 6357000.0 0 0 1)))
 
 (deftest map-x-test
   (testing "x-coordinate on raster map"
-    (is (= 0.0 (map-x pi 675 3)))
+    (is (= 0.0 (map-x (- pi) 675 3)))
     (is (= (* 675 2.0 8) (map-x 0 675 3)))))
 
 (deftest map-y-test
@@ -133,7 +133,7 @@
   (testing "determine x-coordinates and fractions for interpolation")
     (is (= [(* 675 2 8)     (inc (* 675 2 8)) 1.0 0.0] (map-pixels-x 0                       675 3)))
     (is (= [0               1                 1.0 0.0] (map-pixels-x (- pi)                  675 3)))
-    (is (= [(dec (* 256 4)) 0                 0.5 0.5] (map-pixels-x (- (/ pi (* 256 4)) pi) 256 0))))
+    (is (= [(dec (* 256 4)) 0                 0.5 0.5] (map-pixels-x (- pi (/ pi (* 256 4))) 256 0))))
 
 (deftest map-pixels-y-test
   (testing "determine y-coordinates and fractions for interpolation"
@@ -143,19 +143,19 @@
 
 (deftest offset-longitude-test
   (testing "Offset in longitudinal direction"
-    (is (< (norm (v/- (->Vector3 0 0 (/ (* -2 pi) (* 4 675))) (offset-longitude (->Vector3 1 0 0) 0 675))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 0 1) 0 675))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* 4 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 0 2) 0 675))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 0 2) 1 675))) 1e-6))))
+    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-longitude (->Vector3 1 0 0) 0 675))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 -1 0) 0 675))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* 4 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 -2 0) 0 675))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 -2 0) 1 675))) 1e-6))))
 
 (deftest offset-latitude-test
   (testing "Offset in latitudinal direction"
-    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 1 0 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* -2 pi) (* 4 675)) 0 0) (offset-latitude (->Vector3 0 1 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 (/ (* 4 pi) (* 4 675)) 0) (offset-latitude (->Vector3 2 0 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 2 0 0) 1 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 0 (/ (* -2 pi) (* 4 675))) (offset-latitude (->Vector3 0 1 1e-8) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 (/ pi (* 4 675)) 0) (offset-latitude (->Vector3 1 0 0) 0 675 1 0.5))) 1e-6))))
+    (is (< (norm (v/- (->Vector3 0 0 (/ (* 2 pi) (* 4 675))) (offset-latitude (->Vector3 1 0 0) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 (/ (* -2 pi) (* 4 675)) 0 0) (offset-latitude (->Vector3 0 0 1) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 0 (/ (* 4 pi) (* 4 675))) (offset-latitude (->Vector3 2 0 0) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 0 (/ (* 2 pi) (* 4 675))) (offset-latitude (->Vector3 2 0 0) 1 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 0 -1e-8 1) 0 675 1 1))) 1e-6))
+    (is (< (norm (v/- (->Vector3 0 0 (/ pi (* 4 675))) (offset-latitude (->Vector3 1 0 0) 0 675 1 0.5))) 1e-6))))
 
 (deftest world-map-tile-test
   (testing "Load (and cache) map tile"
@@ -205,9 +205,9 @@
 (deftest tile-center-test
   (testing "Determine center of cube map tile"
     (with-redefs [cubemap/project-onto-ellipsoid (fn [^Vector3 p ^double radius1 ^double radius2]
-                                                   (is (= [p radius1 radius2] [(->Vector3 1.0 -0.875 0.625) 6378000.0 6357000.0]))
-                                                   (->Vector3 1000 -875 625))]
-      (is (= (tile-center 2 3 7 1 6378000.0 6357000.0) (->Vector3 1000 -875 625))))))
+                                                   (is (= [p radius1 radius2] [(->Vector3 1.0 -0.625 -0.875) 6378000.0 6357000.0]))
+                                                   (->Vector3 1000 -625 -875))]
+      (is (= (tile-center 2 3 7 1 6378000.0 6357000.0) (->Vector3 1000 -625 -875))))))
 
 (deftest color-geodetic-test
   (testing "Getting world map color for given longitude and latitude"
@@ -241,7 +241,7 @@
     (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
                                                (is (= [in-level width lon lat] [4 675 0.0 (/ (- pi) 2)]))
                                                2777.0)]
-      (is (< (norm (v/- (project-onto-globe (->Vector3 0 -1 0) 4 675 6378000 6357000) (->Vector3 0 -6359777.0 0))) 1e-6))))
+      (is (< (norm (v/- (project-onto-globe (->Vector3 0 0 -1) 4 675 6378000 6357000) (->Vector3 0 0 -6359777.0))) 1e-6))))
   (testing "Clip negative height (water) to zero"
     (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
       (is (< (norm (v/- (project-onto-globe (->Vector3 1 0 0) 4 675 6378000 6357000) (->Vector3 6378000 0 0))) 1e-6)))))

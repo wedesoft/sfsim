@@ -23,23 +23,23 @@
   "y-coordinate of point on cube face"
   ^double [^long face ^double j ^double i]
   (case face
+    0 (-  1 (* 2 j))
+    1 -1
+    2 (+ -1 (* 2 i))
+    3  1
+    4 (-  1 (* 2 i))
+    5 (+ -1 (* 2 j))))
+
+(defn cube-map-z
+  "y-coordinate of point on cube face"
+  ^double [^long face ^double j ^double i]
+  (case face
     0  1
     1 (- 1 (* 2 j))
     2 (- 1 (* 2 j))
     3 (- 1 (* 2 j))
     4 (- 1 (* 2 j))
     5 -1))
-
-(defn cube-map-z
-  "z-coordinate of point on cube face"
-  ^double [^long face ^double j ^double i]
-  (case face
-    0 (+ -1 (* 2 j))
-    1  1
-    2 (-  1 (* 2 i))
-    3 -1
-    4 (+ -1 (* 2 i))
-    5 (-  1 (* 2 j))))
 
 (defn cube-map
   "Get 3D vector to point on cube face"
@@ -61,16 +61,16 @@
    (cube-map face (cube-coordinate level 2 b 1) (cube-coordinate level 2 a 1))])
 
 (defn longitude
-  "Longitude of 3D point (West is positive)"
+  "Longitude of 3D point (East is positive)"
   ^double [^Vector3 p]
-  (Math/atan2 (:z p) (:x p)))
+  (Math/atan2 (:y p) (:x p)))
 
 (defn latitude
   "Latitude of 3D point"
   ^double [^Vector3 point ^double radius1 ^double radius2]
   (let [e (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        p (Math/sqrt (+ (sqr (:x point)) (sqr (:z point))))]
-    (Math/atan2 (:y point) (* p (- 1.0 (* e e))))))
+        p (Math/sqrt (+ (sqr (:x point)) (sqr (:y point))))]
+    (Math/atan2 (:z point) (* p (- 1.0 (* e e))))))
 
 ; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
@@ -82,23 +82,23 @@
         sin-lat         (Math/sin latitude)
         vertical-radius (/ radius1-sqr (Math/sqrt (+ (* radius1-sqr cos-lat cos-lat) (* radius2-sqr sin-lat sin-lat))))]
     (->Vector3 (* (+ vertical-radius height) cos-lat (Math/cos longitude))
-               (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-lat)
-               (* (+ vertical-radius height) cos-lat (Math/sin longitude)))))
+               (* (+ vertical-radius height) cos-lat (Math/sin longitude))
+               (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-lat))))
 
 (defn project-onto-ellipsoid
   "Project a 3D vector onto an ellipsoid"
   ^Vector3 [^Vector3 point ^double radius1 ^double radius2]
   (let [radius           (norm point)
-        xz-radius        (Math/sqrt (+ (sqr (:x point)) (sqr (:z point))))
-        cos-latitude     (/ xz-radius radius)
-        sin-latitude     (/ (:y point) radius)
-        cos-longitude    (if (zero? xz-radius) 1.0 (/ (:x point) xz-radius))
-        sin-longitude    (if (zero? xz-radius) 0.0 (/ (:z point) xz-radius))
+        xy-radius        (Math/sqrt (+ (sqr (:x point)) (sqr (:y point))))
+        cos-latitude     (/ xy-radius radius)
+        sin-latitude     (/ (:z point) radius)
+        cos-longitude    (if (zero? xy-radius) 1.0 (/ (:x point) xy-radius))
+        sin-longitude    (if (zero? xy-radius) 0.0 (/ (:y point) xy-radius))
         projected-radius (/ (* radius1 radius2) (Math/sqrt (+ (* radius1 radius1 sin-latitude sin-latitude)
                                                               (* radius2 radius2 cos-latitude cos-latitude))))]
   (->Vector3 (* cos-latitude cos-longitude projected-radius)
-             (* sin-latitude projected-radius)
-             (* cos-latitude sin-longitude projected-radius))))
+             (* cos-latitude sin-longitude projected-radius)
+             (* sin-latitude projected-radius))))
 
 (defn ellipsoid-normal
   "Get normal vector for point on ellipsoid's surface"
@@ -106,21 +106,21 @@
   (let [radius1-sqr (sqr radius1)
         radius2-sqr (sqr radius2)
         x           (/ (:x point) radius1-sqr)
-        y           (/ (:y point) radius2-sqr)
-        z           (/ (:z point) radius1-sqr)]
+        y           (/ (:y point) radius1-sqr)
+        z           (/ (:z point) radius2-sqr)]
     (normalize (->Vector3 x y z))))
 
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height"
   [^Vector3 point ^double radius1 ^double radius2]
   (let [e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        lon       (Math/atan2 (:z point) (:x point))
+        lon       (Math/atan2 (:y point) (:x point))
         iteration (fn [^Vector3 reference-point iter]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
                           normal        (ellipsoid-normal surface-point radius1 radius2)
                           height        (inner-product normal (v/- point surface-point))
-                          p             (Math/sqrt (+ (sqr (:x surface-point)) (sqr (:z surface-point))))
-                          lat           (Math/atan2 (:y surface-point) (* p (- 1.0 (* e e))))
+                          p             (Math/sqrt (+ (sqr (:x surface-point)) (sqr (:y surface-point))))
+                          lat           (Math/atan2 (:z surface-point) (* p (- 1.0 (* e e))))
                           result        (v/+ surface-point (v/* height normal))
                           error         (v/- result point)]
                       (if (or (< (norm error) 1e-6) (>= iter 10)) [lon lat height] (recur (v/- surface-point error) (inc iter)))))]
@@ -130,7 +130,7 @@
   "Compute x-coordinate on raster map"
   ^double [^double longitude ^long tilesize ^long level]
   (let [n (bit-shift-left 1 level)]
-    (* (- Math/PI longitude) (/ (* 4 n tilesize) (* 2 Math/PI)))))
+    (* (+ Math/PI longitude) (/ (* 4 n tilesize) (* 2 Math/PI)))))
 
 (defn map-y
   "Compute y-coordinate on raster map"
@@ -167,7 +167,7 @@
   ^Vector3 [^Vector3 p ^long level ^long tilesize]
   (let [lon  (longitude p)
         norm (norm p)]
-    (m/* (m/rotation-y (- lon)) (->Vector3 0 0 (- (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))))))))
+    (m/* (m/rotation-z lon) (->Vector3 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0))))
 
 (defn offset-latitude
   "Determine latitudinal offset for computing normal vector"
@@ -175,9 +175,9 @@
   (let [lon  (longitude p)
         lat  (latitude p radius1 radius2)
         norm (norm p)
-        v    (->Vector3 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0)
-        vs   (m/* (m/rotation-y (- lon)) (m/* (m/rotation-z lat) v))]
-    (->Vector3 (:x vs) (/ (* (:y vs) radius2) radius1) (:z vs))))
+        v    (->Vector3 0 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))))
+        vs   (m/* (m/rotation-z lon) (m/* (m/rotation-y (- lat)) v))]
+    (->Vector3 (:x vs) (:y vs) (/ (* (:z vs) radius2) radius1))))
 
 (def world-map-tile
   "Load and cache map tiles"
