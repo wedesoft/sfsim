@@ -1,35 +1,55 @@
-(require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
-         '[sfsim25.util :refer :all]
-         '[sfsim25.vector3 :refer (->Vector3) :as v]
-         '[sfsim25.matrix3x3 :refer (identity-matrix rotation-y)]
-         '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
-         '[sfsim25.cubemap :refer :all]
-         '[sfsim25.quadtree :refer :all])
+  (require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
+           '[sfsim25.util :refer :all]
+           '[sfsim25.vector3 :refer (->Vector3) :as v]
+           '[sfsim25.matrix3x3 :refer (identity-matrix rotation-y)]
+           '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
+           '[sfsim25.cubemap :refer :all]
+           '[sfsim25.quadtree :refer :all])
 
-(import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40]
-        '[org.lwjgl BufferUtils])
+  (import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40]
+          '[org.lwjgl BufferUtils])
 
-(def vertex-source "#version 410 core
-in mediump vec3 point;
-in mediump vec2 texcoord;
-out mediump vec2 texcoord_tcs;
-void main()
-{
-  gl_Position = vec4(point, 1);
-  texcoord_tcs = texcoord;
-}")
+  (def vertex-source "#version 410 core
+  in mediump vec3 point;
+  in mediump vec2 texcoord;
+  out mediump vec2 texcoord_tcs;
+  void main()
+  {
+    gl_Position = vec4(point, 1);
+    texcoord_tcs = texcoord;
+  }")
 
-(def tcs-source "#version 410 core
-layout(vertices = 4) out;
-in mediump vec2 texcoord_tcs[];
-out mediump vec2 texcoord_tes[];
-void main(void)
-{
-  if (gl_InvocationID == 0) {
-    gl_TessLevelOuter[0] = 32.0;
-    gl_TessLevelOuter[1] = 32.0;
-    gl_TessLevelOuter[2] = 32.0;
-    gl_TessLevelOuter[3] = 32.0;
+  (def tcs-source "#version 410 core
+  layout(vertices = 4) out;
+  in mediump vec2 texcoord_tcs[];
+  out mediump vec2 texcoord_tes[];
+  uniform int tesselate_up;
+  uniform int tesselate_left;
+  uniform int tesselate_down;
+  uniform int tesselate_right;
+  void main(void)
+  {
+    if (gl_InvocationID == 0) {
+    if (tesselate_up == 0) {
+      gl_TessLevelOuter[0] = 32.0;
+    } else {
+      gl_TessLevelOuter[0] = 16.0;
+    };
+    if (tesselate_left == 0) {
+      gl_TessLevelOuter[1] = 32.0;
+    } else {
+      gl_TessLevelOuter[1] = 16.0;
+    };
+    if (tesselate_down == 0) {
+      gl_TessLevelOuter[2] = 32.0;
+    } else {
+      gl_TessLevelOuter[2] = 16.0;
+    };
+    if (tesselate_right == 0) {
+      gl_TessLevelOuter[3] = 32.0;
+    } else {
+      gl_TessLevelOuter[3] = 16.0;
+    };
     gl_TessLevelInner[0] = 32.0;
     gl_TessLevelInner[1] = 32.0;
   }
@@ -81,8 +101,8 @@ out mediump vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  fragColor = texture(tex, UV).rgb;
-  // fragColor = vec3(1, 1, 1);
+  // fragColor = texture(tex, UV).rgb;
+  fragColor = vec3(1, 1, 1);
 }")
 
 (defn make-shader [source shader-type]
@@ -139,7 +159,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 1 @position)  ; TODO: increase max-level back to 4
+    (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 0 @position)  ; TODO: increase max-level back to 4
           drop-list (doall (tiles-to-drop tree increase?))
           load-list (doall (tiles-to-load tree increase?))
           tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -214,8 +234,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
@@ -232,6 +252,10 @@ void main()
 (defn render-tile
   [tile]
   (with-vertex-array (:vao tile)
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_up"   ) 0)
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_left" ) 0)
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_down" ) 0)
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_right") 0)
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D (:texture tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE1)
@@ -259,8 +283,8 @@ void main()
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
         dt (- t1 t0)
-        z  (- (* dt 200) (* 4 6378000))
-        angle (* (+ (* dt 0.005) -120) (/ Math/PI 180))
+        z  (- (* dt 200) (* 3 6378000))
+        angle (* (+ (* dt 0.002) 0) (/ Math/PI 180))
         t  (float-array (vals (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z))))]
     (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
