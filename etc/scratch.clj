@@ -102,7 +102,11 @@ uniform sampler2D tex;
 void main()
 {
   // fragColor = texture(tex, UV).rgb;
-  fragColor = vec3(1, 1, 1);
+  if (UV.y <= 0.5 / 32.0) {
+    fragColor = vec3(1, 0, 0);
+  } else {
+    fragColor = vec3(1, 1, 1);
+  }
 }")
 
 (defn make-shader [source shader-type]
