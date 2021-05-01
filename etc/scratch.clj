@@ -163,7 +163,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? 33 radius1 radius2 1280 60 25 0 @position)  ; TODO: increase max-level back to 4
+    (let [increase? (partial increase-level? 33 radius1 radius2 640 60 25 4 @position)
           drop-list (doall (tiles-to-drop tree increase?))
           load-list (doall (tiles-to-load tree increase?))
           tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]

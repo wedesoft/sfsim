@@ -167,3 +167,11 @@
       [:2 :2]    [:5 :1]     0  1
       [:3 :2]    [:5 :3]     1  0
       [:4 :2]    [:5 :2]     0 -1)))
+
+(deftest neighbour-paths-test
+  (testing "get the four neighbours for a given path"
+    (let [neighbours (neighbour-paths [:5 :1 :2])]
+      (is (= [:5 :1 :0] (:up    neighbours)))
+      (is (= [:5 :0 :3] (:left  neighbours)))
+      (is (= [:5 :3 :0] (:down  neighbours)))
+      (is (= [:5 :1 :3] (:right neighbours))))))

@@ -153,4 +153,12 @@
              [(cons replacement tail) (if propagate dy 0) (if propagate dx 0)])))))
   ([path dy dx] (neighbour-path path dy dx true)))
 
+(defn neighbour-paths
+  "Get the paths for the four neighbours of a tile"
+  [path]
+  {:up    (neighbour-path path -1  0)
+   :left  (neighbour-path path  0 -1)
+   :down  (neighbour-path path  1  0)
+   :right (neighbour-path path  0  1)})
+
 (set! *unchecked-math* false)
