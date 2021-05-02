@@ -173,10 +173,10 @@
     (fn [current-tree node-path]
       (reduce
         (fn [updated-tree [direction neighbour-path]]
-          (assoc-in updated-tree (conj node-path direction) (if (get-in tree neighbour-path) 1 0)))
+          (assoc-in updated-tree (conj (vec node-path) direction) (if (get-in tree neighbour-path) 1 0)))
         current-tree
         (neighbour-paths node-path)))
     tree
-    (map vec (leaf-paths tree))))
+    (leaf-paths tree)))
 
 (set! *unchecked-math* false)
