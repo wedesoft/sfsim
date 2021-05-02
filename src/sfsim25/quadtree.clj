@@ -161,4 +161,22 @@
    :down  (neighbour-path path  1  0)
    :right (neighbour-path path  0  1)})
 
+(defn leaf-paths
+  "Get a path to every leaf in the tree"
+  [tree]
+  (mapcat (fn [[k v]] (if (is-leaf? v) [(list k)] (map #(cons k %) (leaf-paths v)))) tree))
+
+(defn check-neighbours
+  "Populate quad tree with neighbourhood information"
+  [tree]
+  (reduce
+    (fn [current-tree node-path]
+      (reduce
+        (fn [updated-tree [direction neighbour-path]]
+          (assoc-in updated-tree (conj node-path direction) (if (get-in tree neighbour-path) 1 0)))
+        current-tree
+        (neighbour-paths node-path)))
+    tree
+    (map vec (leaf-paths tree))))
+
 (set! *unchecked-math* false)
