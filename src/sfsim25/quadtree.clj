@@ -164,7 +164,8 @@
 (defn leaf-paths
   "Get a path to every leaf in the tree"
   [tree]
-  (mapcat (fn [[k v]] (if (is-leaf? v) [(list k)] (map #(cons k %) (leaf-paths v)))) tree))
+  (mapcat (fn [[k v]] (if (is-leaf? v) [(list k)] (map #(cons k %) (leaf-paths v))))
+          (select-keys tree #{:0 :1 :2 :3 :4 :5})))
 
 (defn- check-neighbours-for-tile
   "Update neighbourhood information for a single tile"

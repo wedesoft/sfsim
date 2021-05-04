@@ -179,7 +179,8 @@
 (deftest leaf-paths-test
   (testing "Get a list of paths of the leaves"
     (is (= [[:1] [:2]] (leaf-paths {:1 {} :2 {}})))
-    (is (= [[:5 :1]] (leaf-paths {:5 {:1 {}}})))))
+    (is (= [[:5 :1]] (leaf-paths {:5 {:1 {}}})))
+    (is (= [[:5 :1]] (leaf-paths {:5 {:vao 42 :1 {}}})))))
 
 (deftest check-neighbours-test
   (testing "Update quad tree with neighbourhood information"

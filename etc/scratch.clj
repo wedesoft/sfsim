@@ -30,22 +30,22 @@
   void main(void)
   {
     if (gl_InvocationID == 0) {
-    if (tesselate_up == 0) {
+    if (tesselate_up == 1) {
       gl_TessLevelOuter[0] = 32.0;
     } else {
       gl_TessLevelOuter[0] = 16.0;
     };
-    if (tesselate_left == 0) {
+    if (tesselate_left == 1) {
       gl_TessLevelOuter[1] = 32.0;
     } else {
       gl_TessLevelOuter[1] = 16.0;
     };
-    if (tesselate_down == 0) {
+    if (tesselate_down == 1) {
       gl_TessLevelOuter[2] = 32.0;
     } else {
       gl_TessLevelOuter[2] = 16.0;
     };
-    if (tesselate_right == 0) {
+    if (tesselate_right == 1) {
       gl_TessLevelOuter[3] = 32.0;
     } else {
       gl_TessLevelOuter[3] = 16.0;
@@ -101,12 +101,8 @@ out mediump vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  // fragColor = texture(tex, UV).rgb;
-  if (UV.y <= 0.5 / 32.0) {
-    fragColor = vec3(1, 0, 0);
-  } else {
-    fragColor = vec3(1, 1, 1);
-  }
+  fragColor = texture(tex, UV).rgb;
+  // fragColor = vec3(1, 1, 1);
 }")
 
 (defn make-shader [source shader-type]
@@ -163,7 +159,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? 33 radius1 radius2 640 60 25 4 @position)
+    (let [increase? (partial increase-level? 33 radius1 radius2 640 60 16 4 @position)
           drop-list (doall (tiles-to-drop tree increase?))
           load-list (doall (tiles-to-load tree increase?))
           tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -238,8 +234,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
@@ -256,10 +252,10 @@ void main()
 (defn render-tile
   [tile]
   (with-vertex-array (:vao tile)
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_up"   ) 0)
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_left" ) 0)
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_down" ) 0)
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_right") 0)
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_up"   ) (:up    tile))
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_left" ) (:left  tile))
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_down" ) (:down  tile))
+    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_right") (:right tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D (:texture tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE1)
@@ -282,7 +278,9 @@ void main()
   (when-let [data (poll! changes)]
     (let [tiles (map load-tile-into-opengl (:tiles data))]
       (doseq [path (:drop data)] (unload-tile-from-opengl (get-in @tree path)))
-      (>!! tree-state (swap! tree #(quadtree-add (quadtree-drop %1 %2) %3 %4) (:drop data) (:load data) tiles))))
+      (swap! tree #(quadtree-add (quadtree-drop %1 %2) %3 %4) (:drop data) (:load data) tiles)
+      (swap! tree check-neighbours)
+      (>!! tree-state @tree)))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
