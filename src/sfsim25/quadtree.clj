@@ -166,17 +166,18 @@
   [tree]
   (mapcat (fn [[k v]] (if (is-leaf? v) [(list k)] (map #(cons k %) (leaf-paths v)))) tree))
 
+(defn- check-neighbours-for-tile
+  "Update neighbourhood information for a single tile"
+  [tree path]
+  (reduce
+    (fn [updated-tree [direction neighbour-path]]
+      (assoc-in updated-tree (conj (vec path) direction) (if (get-in tree neighbour-path) 1 0)))
+    tree
+    (neighbour-paths path)))
+
 (defn check-neighbours
   "Populate quad tree with neighbourhood information"
   [tree]
-  (reduce
-    (fn [current-tree node-path]
-      (reduce
-        (fn [updated-tree [direction neighbour-path]]
-          (assoc-in updated-tree (conj (vec node-path) direction) (if (get-in tree neighbour-path) 1 0)))
-        current-tree
-        (neighbour-paths node-path)))
-    tree
-    (leaf-paths tree)))
+  (reduce check-neighbours-for-tile tree (leaf-paths tree)))
 
 (set! *unchecked-math* false)
