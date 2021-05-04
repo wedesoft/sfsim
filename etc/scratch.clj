@@ -1,7 +1,7 @@
   (require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
            '[sfsim25.util :refer :all]
            '[sfsim25.vector3 :refer (->Vector3) :as v]
-           '[sfsim25.matrix3x3 :refer (identity-matrix rotation-y)]
+           '[sfsim25.matrix3x3 :refer (identity-matrix rotation-x rotation-y)]
            '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
            '[sfsim25.cubemap :refer :all]
            '[sfsim25.quadtree :refer :all])
@@ -101,8 +101,8 @@ out mediump vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  fragColor = texture(tex, UV).rgb;
-  // fragColor = vec3(1, 1, 1);
+  // fragColor = texture(tex, UV).rgb;
+  fragColor = vec3(1, 1, 1);
 }")
 
 (defn make-shader [source shader-type]
@@ -234,8 +234,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
@@ -286,7 +286,7 @@ void main()
   (let [t1 (System/currentTimeMillis)
         dt (- t1 t0)
         z  (- (* dt 200) (* 3 6378000))
-        angle (* (+ (* dt 0.002) 0) (/ Math/PI 180))
+        angle (* (+ (* dt 0.01) 0) (/ Math/PI 180))
         t  (float-array (vals (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z))))]
     (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
