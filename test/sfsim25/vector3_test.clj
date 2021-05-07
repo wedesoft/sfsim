@@ -32,13 +32,13 @@
 (tabular
   (fact "Cross product of two vectors"
     (cross-product ?x ?y) => ?z)
-    ?x                ?y                ?z
-    (->Vector3 1 0 0) (->Vector3 0 1 0) (->Vector3  0  0  1)
-    (->Vector3 1 0 0) (->Vector3 0 0 1) (->Vector3  0 -1  0)
-    (->Vector3 0 1 0) (->Vector3 1 0 0) (->Vector3  0  0 -1)
-    (->Vector3 0 1 0) (->Vector3 0 0 1) (->Vector3  1  0  0)
-    (->Vector3 0 0 1) (->Vector3 1 0 0) (->Vector3  0  1  0)
-    (->Vector3 0 0 1) (->Vector3 0 1 0) (->Vector3 -1  0  0))
+  ?x                ?y                ?z
+  (->Vector3 1 0 0) (->Vector3 0 1 0) (->Vector3  0  0  1)
+  (->Vector3 1 0 0) (->Vector3 0 0 1) (->Vector3  0 -1  0)
+  (->Vector3 0 1 0) (->Vector3 1 0 0) (->Vector3  0  0 -1)
+  (->Vector3 0 1 0) (->Vector3 0 0 1) (->Vector3  1  0  0)
+  (->Vector3 0 0 1) (->Vector3 1 0 0) (->Vector3  0  1  0)
+  (->Vector3 0 0 1) (->Vector3 0 1 0) (->Vector3 -1  0  0))
 
 (fact "Scaling of vector"
   (* 2 (->Vector3 2 3 5)) => (->Vector3 4 6 10))

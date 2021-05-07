@@ -28,15 +28,15 @@
 (def sa 0.5)
 (def -sa -0.5)
 
-(defn approx [m] (fn [x] (< (norm (- m x)) 1e-6)))
+(defn approx-matrix [m] (fn [x] (< (norm (- m x)) 1e-6)))
 
 (facts "Rotation matrices"
-  (rotation-x (/ pi 6)) => (approx (->Matrix3x3 1 0 0, 0 ca -sa, 0 sa ca))
-  (rotation-y (/ pi 6)) => (approx (->Matrix3x3 ca 0 sa, 0 1 0, -sa 0 ca))
-  (rotation-z (/ pi 6)) => (approx (->Matrix3x3 ca -sa 0, sa ca 0, 0 0 1)))
+  (rotation-x (/ pi 6)) => (approx-matrix (->Matrix3x3 1 0 0, 0 ca -sa, 0 sa ca))
+  (rotation-y (/ pi 6)) => (approx-matrix (->Matrix3x3 ca 0 sa, 0 1 0, -sa 0 ca))
+  (rotation-z (/ pi 6)) => (approx-matrix (->Matrix3x3 ca -sa 0, sa ca 0, 0 0 1)))
 
 (facts "Comvert rotation quaternion to rotation matrix"
-  (quaternion->matrix (->Quaternion 1 0 0 0))                => (approx (->Matrix3x3 1 0 0 0 1 0 0 0 1))
-  (quaternion->matrix (rotation (/ pi 6) (->Vector3 1 0 0))) => (approx (rotation-x (/ pi 6)))
-  (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 1 0))) => (approx (rotation-y (/ pi 6)))
-  (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 0 1))) => (approx (rotation-z (/ pi 6))))
+  (quaternion->matrix (->Quaternion 1 0 0 0))                => (approx-matrix (->Matrix3x3 1 0 0 0 1 0 0 0 1))
+  (quaternion->matrix (rotation (/ pi 6) (->Vector3 1 0 0))) => (approx-matrix (rotation-x (/ pi 6)))
+  (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 1 0))) => (approx-matrix (rotation-y (/ pi 6)))
+  (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 0 1))) => (approx-matrix (rotation-z (/ pi 6))))
