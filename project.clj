@@ -6,7 +6,8 @@
   :dependencies [[org.clojure/clojure       "1.10.3"]
                  [org.clojure/core.memoize "1.0.236"]
                  [org.clojure/core.async   "1.3.618"]
-                 [com.climate/claypoole      "1.1.4"]]
+                 [com.climate/claypoole      "1.1.4"]
+                 [midje                     "1.9.10"]]
   :main ^:skip-aot sfsim25.core
   :profiles {:run-scale-image     {:main sfsim25.scale-image}
              :run-map-tiles       {:main sfsim25.map-tiles}
