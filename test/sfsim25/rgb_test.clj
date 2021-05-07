@@ -1,20 +1,17 @@
 (ns sfsim25.rgb-test
   (:refer-clojure :exclude [+ *])
-  (:require [clojure.test :refer :all]
+  (:require [midje.sweet :refer :all]
             [sfsim25.rgb :refer :all]))
 
-(deftest component-test
-  (testing "Get components of RGB value"
-    (is (= 2.0 (:r (->RGB 2 3 5))))
-    (is (= 3.0 (:g (->RGB 2 3 5))))
-    (is (= 5.0 (:b (->RGB 2 3 5))))))
+(facts "Return components of RGB value"
+  (:r (->RGB 2 3 5)) => 2.0
+  (:g (->RGB 2 3 5)) => 3.0
+  (:b (->RGB 2 3 5)) => 5.0)
 
-(deftest add-test
-  (testing "Add RGB values"
-    (is (= (->RGB 2 3 5) (+ (->RGB 2 3 5))))
-    (is (= (->RGB 5 8 12) (+ (->RGB 2 3 5) (->RGB 3 5 7))))
-    (is (= (->RGB 10 15 23) (+ (->RGB 2 3 5) (->RGB 3 5 7) (->RGB 5 7 11))))))
+(facts "Add RGB values"
+  (+ (->RGB 2 3 5))                              => (->RGB  2  3  5)
+  (+ (->RGB 2 3 5) (->RGB 3 5 7))                => (->RGB  5  8 12)
+  (+ (->RGB 2 3 5) (->RGB 3 5 7) (->RGB 5 7 11)) => (->RGB 10 15 23))
 
-(deftest scale-test
-  (testing "Scale an RGB value"
-    (is (= (->RGB 4 6 10) (* 2 (->RGB 2 3 5))))))
+(fact "Scale RGB value"
+  (* 2 (->RGB 2 3 5)) => (->RGB 4 6 10))
