@@ -69,26 +69,26 @@
 
 (defn tiles-to-drop
   "Determine tiles to remove from the quad tree"
-  ([tree increase-level?]
-   (mapcat #(tiles-to-drop (% tree) increase-level? [%]) [:0 :1 :2 :3 :4 :5]))
-  ([tree increase-level? path]
+  ([tree increase-level-fun?]
+   (mapcat #(tiles-to-drop (% tree) increase-level-fun? [%]) [:0 :1 :2 :3 :4 :5]))
+  ([tree increase-level-fun? path]
    (cond
      (nil? tree) []
-     (and (is-flat? tree) (not (increase-level? (:face tree) (:level tree) (:y tree) (:x tree)))) (sub-paths path)
-     :else (mapcat #(tiles-to-drop (% tree) increase-level? (conj path %)) [:0 :1 :2 :3]))))
+     (and (is-flat? tree) (not (increase-level-fun? (:face tree) (:level tree) (:y tree) (:x tree)))) (sub-paths path)
+     :else (mapcat #(tiles-to-drop (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3]))))
 
 (defn tiles-to-load
   "Determine which tiles to load into the quad tree"
-  ([tree increase-level?]
+  ([tree increase-level-fun?]
    (if (empty? tree)
      [[:0] [:1] [:2] [:3] [:4] [:5]]
-     (mapcat (fn [k] (tiles-to-load (k tree) increase-level? [k])) [:0 :1 :2 :3 :4 :5])))
-  ([tree increase-level? path]
+     (mapcat (fn [k] (tiles-to-load (k tree) increase-level-fun? [k])) [:0 :1 :2 :3 :4 :5])))
+  ([tree increase-level-fun? path]
    (if (nil? tree) []
-     (let [increase? (increase-level? (:face tree) (:level tree) (:y tree) (:x tree))]
+     (let [increase? (increase-level-fun? (:face tree) (:level tree) (:y tree) (:x tree))]
        (cond
          (and (is-leaf? tree) increase?) (sub-paths path)
-         increase? (mapcat #(tiles-to-load (% tree) increase-level? (conj path %)) [:0 :1 :2 :3])
+         increase? (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3])
          :else [])))))
 
 (defn tile-meta-data
