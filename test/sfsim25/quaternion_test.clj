@@ -68,11 +68,9 @@
 (def e (Math/exp 1))
 (def -e (c/- e))
 
-(defn approx [y] (fn [x] (< (Math/abs (c/- y x)) 1e-6)))
-
 (tabular
   (fact "Exponentation of quaternions"
-    (?component (exp ?q)) => (approx ?result))
+    (?component (exp ?q)) => (roughly ?result 1e-6))
   ?q                                           ?component ?result
   (->Quaternion 0 0 pi 0)                      :a         -1.0
   (->Quaternion 0 0 pi 0)                      :c          0.0
@@ -87,7 +85,7 @@
 
 (tabular
   (fact "Represent rotation using quaternion"
-    (?component (rotation ?angle ?axis)) => (approx ?result))
+    (?component (rotation ?angle ?axis)) => (roughly ?result 1e-6))
   ?axis                     ?angle     ?component ?result
   (->Vector3 0 0 1)         0          :a         1.0
   (->Vector3 0 0 1)         (c/* 2 pi) :a        -1.0
@@ -95,8 +93,8 @@
   (->Vector3 0.36 0.48 0.8) pi         :d         0.8
   (->Vector3 0.36 0.48 0.8) (/ pi 3)   :b         0.18)
 
-(defn approx-vector [y] (fn [x] (< (v/norm (v/- y x)) 1e-6)))
+(defn roughly-vector [y] (fn [x] (< (v/norm (v/- y x)) 1e-6)))
 
 (facts "Rotate a vector using a rotation quaternion"
-  (rotate-vector (rotation 0 (->Vector3 1 0 0)) (->Vector3 2 4 8))        => (approx-vector (->Vector3 2  4 8))
-  (rotate-vector (rotation (/ pi 2) (->Vector3 1 0 0)) (->Vector3 2 4 8)) => (approx-vector (->Vector3 2 -8 4)))
+  (rotate-vector (rotation 0 (->Vector3 1 0 0)) (->Vector3 2 4 8))        => (roughly-vector (->Vector3 2  4 8))
+  (rotate-vector (rotation (/ pi 2) (->Vector3 1 0 0)) (->Vector3 2 4 8)) => (roughly-vector (->Vector3 2 -8 4)))
