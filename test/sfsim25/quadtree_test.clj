@@ -23,7 +23,7 @@
       (util/slurp-floats "globe/3/2/1/2.scale") => "2.scale"
       (util/slurp-floats "globe/3/2/1/2.normals") => "2.normals"
       (util/slurp-bytes "globe/3/2/1/2.water") => "2.water"))
-  k? result?
+  k?       result?
   :colors  "2.png"
   :normals "2.normals"
   :water   "2.water"
