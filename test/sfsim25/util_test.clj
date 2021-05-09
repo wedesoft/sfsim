@@ -1,143 +1,119 @@
 (ns sfsim25.util-test
-  (:require [clojure.test :refer :all]
+  (:require [midje.sweet :refer :all]
             [sfsim25.rgb :refer (->RGB)]
             [sfsim25.vector3 :refer (->Vector3)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 
-(deftest slurp-bytes-test
-  (testing "Load a set of bytes"
-    (is (= [2 3 5 7] (seq (slurp-bytes "test/sfsim25/fixtures/bytes.raw"))))))
+(fact "Load a set of bytes"
+  (seq (slurp-bytes "test/sfsim25/fixtures/bytes.raw")) => [2 3 5 7])
 
-(deftest slurp-shorts-test
-  (testing "Load a set of short integers"
-    (is (= [2 3 5 7] (seq (slurp-shorts "test/sfsim25/fixtures/shorts.raw"))))))
+(fact "Load a set of short integers"
+  (seq (slurp-shorts "test/sfsim25/fixtures/shorts.raw")) => [2 3 5 7])
 
-(deftest slurp-floats-test
-  (testing "Load a set of floating point numbers"
-    (is (= [2.0 3.0 5.0 7.0] (seq (slurp-floats "test/sfsim25/fixtures/floats.raw"))))))
+(fact "Load a set of floating point numbers"
+  (seq (slurp-floats "test/sfsim25/fixtures/floats.raw")) => [2.0 3.0 5.0 7.0])
 
-(deftest spit-bytes-test
-  (testing "Save a set of bytes"
-    (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
-      (spit-bytes file-name (byte-array [2 3 5 7]))
-      (is (= [2 3 5 7] (seq (slurp-bytes file-name)))))))
+(fact "Save a set of bytes"
+  (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
+    (do (spit-bytes file-name (byte-array [2 3 5 7])) (seq (slurp-bytes file-name))) => [2 3 5 7]))
 
-(deftest spit-shorts-test
-  (testing "Save a set of short integers"
-    (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
-      (spit-shorts file-name (short-array [2 3 5 7]))
-      (is (= [2 3 5 7] (seq (slurp-shorts file-name)))))))
+(fact "Save a set of short integers"
+  (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
+    (do (spit-shorts file-name (short-array [2 3 5 7])) (seq (slurp-shorts file-name))) => [2 3 5 7]))
 
-(deftest spit-floats-test
-  (testing "Save a set of floating point numbers"
-    (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
-      (spit-floats file-name (float-array [2.0 3.0 5.0 7.0]))
-      (is (= [2.0 3.0 5.0 7.0] (seq (slurp-floats file-name)))))))
+(fact "Save a set of floating point numbers"
+  (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
+    (do (spit-floats file-name (float-array [2.0 3.0 5.0 7.0])) (seq (slurp-floats file-name))) => [2.0 3.0 5.0 7.0]))
 
-(deftest tile-path-test
-  (testing "Determine file path of map tile"
-    (is (= "world/1/2/3.png" (tile-path "world" 1 3 2 ".png")))))
+(fact "Determine file path of map tile"
+  (tile-path "world" 1 3 2 ".png") => "world/1/2/3.png")
 
-(deftest tile-dir-test
-  (testing "Determine directory name of map tile"
-    (is (= "world/1/2" (tile-dir "world" 1 2)))))
+(fact "Determine directory name of map tile"
+  (tile-dir "world" 1 2) => "world/1/2")
 
-(deftest cube-path-test
-  (testing "Determine file path of cube tile"
-    (is (= "globe/5/2/1/3.png" (cube-path "globe" 5 2 3 1 ".png")))))
+(fact "Determine file path of cube tile"
+  (cube-path "globe" 5 2 3 1 ".png") => "globe/5/2/1/3.png")
 
-(deftest cube-dir-test
-  (testing "Determine directory name of cube tile"
-    (is (= "globe/5/2/1" (cube-dir "globe" 5 2 1)))))
+(fact "Determine directory name of cube tile"
+  (cube-dir "globe" 5 2 1) => "globe/5/2/1")
 
 (def pi Math/PI)
 
-(deftest sinc-test
-  (testing "Sinc function"
-    (are [result x] (< (Math/abs (- result (sinc x))) 1e-6)
-      0.0      pi
-      (/ 2 pi) (/ pi 2)
-      1.0      0.0)))
+(tabular
+  (fact "Sinc function"
+    (sinc x?) => (roughly result? 1e-6))
+  x?       result?
+  pi       0.0
+  (/ pi 2) (/ 2 pi)
+  0.0      1.0)
 
-(deftest sqr-test
-  (testing "Square values"
-    (is (= 4.0 (sqr 2)))
-    (is (= 9.0 (sqr 3)))))
+(facts "Square values"
+  (sqr 2) => 4.0
+  (sqr 3) => 9.0)
 
-(deftest roundtrip-image-test
-  (testing "Saving and loading of RGB image"
-    (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
-      (spit-image file-name {:width 4 :height 2 :data (byte-array (take 32 (cycle [1 2 3 4])))})
-      (let [{:keys [width height data]} (slurp-image file-name)]
-        (is (= 4 width))
-        (is (= 2 height))
-        (is (= '(1 2 3 4) (take 4 data)))))))
+(facts "Saving and loading of RGB image"
+  (let [file-name                   (.getPath (File/createTempFile "spit" ".png"))
+        {:keys [width height data]} (do (spit-image file-name {:width 4 :height 2 :data (byte-array (take 32 (cycle [1 2 3 4])))})
+                                        (slurp-image file-name))]
+      width         => 4
+      height        => 2
+      (take 4 data) => [1 2 3 4]))
 
-(deftest unsigned-byte-conversion-test
-  (testing "Converting unsigned byte to byte and back"
-    (is (=    0 (byte->ubyte    0)))
-    (is (=  127 (byte->ubyte  127)))
-    (is (=  128 (byte->ubyte -128)))
-    (is (=  255 (byte->ubyte   -1)))
-    (is (=    0 (ubyte->byte    0)))
-    (is (=  127 (ubyte->byte  127)))
-    (is (= -128 (ubyte->byte  128)))
-    (is (=   -1 (ubyte->byte  255)))))
+(facts "Converting unsigned byte to byte and back"
+  (byte->ubyte    0) =>    0
+  (byte->ubyte  127) =>  127
+  (byte->ubyte -128) =>  128
+  (byte->ubyte   -1) =>  255
+  (ubyte->byte    0) =>    0
+  (ubyte->byte  127) =>  127
+  (ubyte->byte  128) => -128
+  (ubyte->byte  255) =>   -1)
 
-(deftest pixel-test
-  (testing "Reading and writing image pixels"
-    (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
-      (is (= (->RGB 24 25 26) (get-pixel img 1 2))))
-    (let [img {:width 1 :height 1 :data (byte-array [252 253 254 255])}]
-      (is (= (->RGB 252 253 254) (get-pixel img 0 0))))
-    (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
-      (set-pixel! img 1 2 (->RGB 253 254 255))
-      (is (= (->RGB 253 254 255) (get-pixel img 1 2))))))
+(facts "Reading and writing image pixels"
+  (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
+    (get-pixel img 1 2) => (->RGB 24 25 26))
+  (let [img {:width 1 :height 1 :data (byte-array [252 253 254 255])}]
+    (get-pixel img 0 0) => (->RGB 252 253 254))
+  (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
+    (do (set-pixel! img 1 2 (->RGB 253 254 255)) (get-pixel img 1 2)) => (->RGB 253 254 255)))
 
-(def elevation-test
-  (testing "Reading and writing of elevation pixels"
-    (let [elevation {:width 4 :height 2 :data (short-array (range 8))}]
-      (is (= 6 (get-elevation elevation 1 2)))
-      (set-elevation! elevation 1 2 8)
-      (is (= 8 (get-elevation elevation 1 2))))))
+(facts "Reading and writing of elevation pixels"
+  (let [elevation {:width 4 :height 2 :data (short-array (range 8))}]
+    (get-elevation elevation 1 2) => 6
+    (do (set-elevation! elevation 1 2 8) (get-elevation elevation 1 2)) => 8))
 
-(def scale-test
-  (testing "Reading and writing of scale factors"
-    (let [scale {:width 4 :height 2 :data (float-array (range 8))}]
-      (is (= 6.0 (get-scale scale 1 2)))
-      (set-scale! scale 1 2 8)
-      (is (= 8.0 (get-scale scale 1 2))))))
+(facts "Reading and writing of scale factors"
+  (let [scale {:width 4 :height 2 :data (float-array (range 8))}]
+    (get-scale scale 1 2) => 6.0
+    (do (set-scale! scale 1 2 8) (get-scale scale 1 2)) => 8.0))
 
-(def water-test
-  (testing "Reading and writing of water values"
-    (let [water {:width 4 :height 2 :data (byte-array (range 8))}]
-      (is (= 6 (get-water water 1 2)))
-      (set-water! water 1 2 136)
-      (is (= 136 (get-water water 1 2))))))
+(facts "Reading and writing of water values"
+  (let [water {:width 4 :height 2 :data (byte-array (range 8))}]
+    (get-water water 1 2) => 6
+    (do (set-water! water 1 2 136) (get-water water 1 2)) => 136))
 
-(def vectors-test
-  (testing "Reading and writing of vectors"
-    (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
-      (is (= (->Vector3 18 19 20) (get-vector vectors 1 2)))
-      (set-vector! vectors 1 2 (->Vector3 24 25 26))
-      (is (= (->Vector3 24 25 26) (get-vector vectors 1 2))))))
+(facts "Reading and writing of vectors"
+  (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
+    (get-vector vectors 1 2) => (->Vector3 18 19 20)
+    (do (set-vector! vectors 1 2 (->Vector3 24 25 26)) (get-vector vectors 1 2)) => (->Vector3 24 25 26)))
 
-(def dissoc-in-test
-  (testing "Removal of entry in nested hash"
-    (is (= {} (dissoc-in {:a 42} [:a])))
-    (is (= {:a 42} (dissoc-in {:a 42 :b 51} [:b])))
-    (is (= {:a {:c 20}} (dissoc-in {:a {:b 42 :c 20}} [:a :b])))))
+(facts "Removal of entry in nested hash"
+  (dissoc-in {:a 42} [:a]) => {}
+  (dissoc-in {:a 42 :b 51} [:b]) => {:a 42}
+  (dissoc-in {:a {:b 42 :c 20}} [:a :b]) => {:a {:c 20}})
 
 (def context-test (atom nil))
-(def-context-macro with-test-ctx (fn [x] (is (= x 123)) (reset! context-test 42)) (fn [x] (is (= x 123)) (reset! context-test nil)))
-(def def-context-macro-test
-  (testing "Definition of context macro"
-    (is (= 42 (with-test-ctx 123 @context-test)))
-    (is (nil? @context-test))))
+(def-context-macro with-test-ctx
+  (fn [x] (reset! context-test (if (= x 123)  42 :error)))
+  (fn [x] (reset! context-test (if (= x 123) nil :error))))
+
+(facts "Definition of context macro"
+  (with-test-ctx 123 @context-test) => 42
+  @context-test => nil)
 
 (def-context-create-macro create-test-ctx (fn [] 123) 'with-test-ctx)
-(def def-context-create-macro-test
-  (testing "Definition of context macro"
-    (is (= (+ 123 42) (create-test-ctx ctx (+ ctx @context-test))))
-    (is (nil? @context-test))))
+
+(facts "Definition of context creating macro"
+  (create-test-ctx ctx (+ ctx @context-test)) => (+ 123 42)
+  @context-test => nil)
