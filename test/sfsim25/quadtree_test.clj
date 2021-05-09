@@ -1,6 +1,5 @@
 (ns sfsim25.quadtree-test
-  (:require [clojure.test :refer :all]
-            [midje.sweet :refer :all]
+  (:require [midje.sweet :refer :all]
             [sfsim25.quadtree :refer :all :as quadtree]
             [sfsim25.cubemap :refer (cube-map) :as cubemap]
             [sfsim25.util :as util]
