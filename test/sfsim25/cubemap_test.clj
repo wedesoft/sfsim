@@ -1,116 +1,130 @@
 (ns sfsim25.cubemap-test
-  (:require [clojure.test :refer :all]
+  (:require [midje.sweet :refer :all]
+            [clojure.test :refer :all]
             [sfsim25.vector3 :refer (->Vector3 norm) :as v]
             [sfsim25.rgb :refer (->RGB) :as r]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [sfsim25.vector3 Vector3]))
 
-(deftest cube-faces-test
-  (testing "First face of cube"
-    (are [result c j i] (= result (c 0 j i))
-       1.0 cube-map-z 0 0
-      -1.0 cube-map-x 0 0
-       1.0 cube-map-x 0 1
-       1.0 cube-map-y 0 0
-      -1.0 cube-map-y 1 0))
-  (testing "Second face of cube"
-    (are [result c j i] (= result (c 1 j i))
-      -1.0 cube-map-y 0 0
-      -1.0 cube-map-x 0 0
-       1.0 cube-map-x 0 1
-       1.0 cube-map-z 0 0
-      -1.0 cube-map-z 1 0))
-  (testing "Third face of cube"
-    (are [result c j i] (= result (c 2 j i))
-       1.0 cube-map-x 0 0
-       1.0 cube-map-z 0 0
-      -1.0 cube-map-z 1 0
-      -1.0 cube-map-y 0 0
-       1.0 cube-map-y 0 1))
-  (testing "Fourth face of cube"
-    (are [result c j i] (= result (c 3 j i))
-       1.0 cube-map-y 0 0
-       1.0 cube-map-x 0 0
-      -1.0 cube-map-x 0 1
-       1.0 cube-map-z 0 0
-      -1.0 cube-map-z 1 0))
-  (testing "Fifth face of cube"
-    (are [result c j i] (= result (c 4 j i))
-      -1.0 cube-map-x 0 0
-       1.0 cube-map-z 0 0
-      -1.0 cube-map-z 1 0
-       1.0 cube-map-y 0 0
-      -1.0 cube-map-y 0 1))
-  (testing "Sixt face of cube"
-    (are [result c j i] (= result (c 5 j i))
-      -1.0 cube-map-z 0 0
-      -1.0 cube-map-x 0 0
-       1.0 cube-map-x 0 1
-      -1.0 cube-map-y 0 0
-       1.0 cube-map-y 1 0)))
+(tabular
+  (fact "First face of cube"
+    (c? 0 j? i?) => result?)
+  c?         j? i? result?
+  cube-map-z 0  0   1.0
+  cube-map-x 0  0  -1.0
+  cube-map-x 0  1   1.0
+  cube-map-y 0  0   1.0
+  cube-map-y 1  0  -1.0)
 
-(deftest cube-map-test
-  (testing "Get vector to cube face"
-    (is (= (->Vector3 0.0 -1.0 -1.0) (cube-map 5 0 0.5)))))
+(tabular
+  (fact "Second face of cube"
+    (c? 1 j? i?) => result?)
+  c?         j? i? result?
+  cube-map-y 0  0  -1.0
+  cube-map-x 0  0  -1.0
+  cube-map-x 0  1   1.0
+  cube-map-z 0  0   1.0
+  cube-map-z 1  0  -1.0)
 
-(deftest cube-coordinate-test
-  (testing "Test cube coordinates"
-    (is (= 0.0  (cube-coordinate 0 256 0 0)))
-    (is (= 0.5  (cube-coordinate 0 256 0 127.5)))
-    (is (= 0.75 (cube-coordinate 1 256 1 127.5)))))
+(tabular
+  (fact "Third face of cube"
+    (c? 2 j? i?) => result?)
+  c?         j? i? result?
+  cube-map-x 0  0   1.0
+  cube-map-z 0  0   1.0
+  cube-map-z 1  0  -1.0
+  cube-map-y 0  0  -1.0
+  cube-map-y 0  1   1.0)
 
-(deftest cube-map-corners-test
-  (testing "Get corners of cube map tiles"
-    (are [x y z face level b a idx] (= (->Vector3 x y z) (nth (cube-map-corners face level b a) idx))
-      -1    1    1   0 0 0 0 0
-       1    1    1   0 0 0 0 1
-      -1   -1    1   0 0 0 0 2
-       1   -1    1   0 0 0 0 3
-      -0.5  0.5 -1.0 5 2 3 1 0
-       0.0  0.5 -1.0 5 2 3 1 1
-      -0.5  1.0 -1.0 5 2 3 1 2
-       0.0  1.0 -1.0 5 2 3 1 3)))
+(tabular
+  (fact "Fourth face of cube"
+    (c? 3 j? i?) => result?)
+  c?         j? i? result?
+  cube-map-y 0  0   1.0
+  cube-map-x 0  0   1.0
+  cube-map-x 0  1  -1.0
+  cube-map-z 0  0   1.0
+  cube-map-z 1  0  -1.0)
+
+(tabular
+  (fact "Fifth face of cube"
+    (c? 4 j? i?) => result?)
+  c?         j? i? result?
+  cube-map-x 0  0  -1.0
+  cube-map-z 0  0   1.0
+  cube-map-z 1  0  -1.0
+  cube-map-y 0  0   1.0
+  cube-map-y 0  1  -1.0)
+
+(tabular
+  (fact "Sixth face of cube"
+    (c? 5 j? i?) => result?)
+  c?         j? i? result?
+  cube-map-z 0  0  -1.0
+  cube-map-x 0  0  -1.0
+  cube-map-x 0  1   1.0
+  cube-map-y 0  0  -1.0
+  cube-map-y 1  0   1.0)
+
+(fact "Get vector to cube face"
+  (cube-map 5 0 0.5) => (->Vector3 0.0 -1.0 -1.0))
+
+(facts "Test cube coordinates"
+  (cube-coordinate 0 256 0     0) => 0.0
+  (cube-coordinate 0 256 0 127.5) => 0.5
+  (cube-coordinate 1 256 1 127.5) => 0.75)
+
+(tabular
+  (fact "Get corners of cube map tiles"
+    (nth (cube-map-corners face? level? b? a?) idx?) => (->Vector3 x? y? z?))
+  face? level? b? a? idx? x? y? z?
+  0 0 0 0 0 -1    1    1
+  0 0 0 0 1  1    1    1
+  0 0 0 0 2 -1   -1    1
+  0 0 0 0 3  1   -1    1
+  5 2 3 1 0 -0.5  0.5 -1.0
+  5 2 3 1 1  0.0  0.5 -1.0
+  5 2 3 1 2 -0.5  1.0 -1.0
+  5 2 3 1 3  0.0  1.0 -1.0)
 
 (def pi Math/PI)
 
-(deftest longitude-test
-  (testing "Longitude of 3D point"
-    (are [result x y z] (< (Math/abs (- result (longitude (->Vector3 x y z)))) 1e-6)
-      0        1 0 0
-      (/ pi 2) 0 1 0)))
+(facts "Longitude of 3D point"
+  (longitude (->Vector3 1 0 0)) => (roughly 0        1e-6)
+  (longitude (->Vector3 0 1 0)) => (roughly (/ pi 2) 1e-6))
 
-(deftest latitude-test
-  (testing "Latitude of 3D point"
-    (are [result x y z] (< (Math/abs (- result (latitude (->Vector3 x y z) 6378000 6357000))) 1e-6)
-      0              0 6378000       0
-      (/ pi 2)       0       0 6357000
-      0        6378000       0       0)))
+(facts "Latitude of 3D point"
+  (latitude (->Vector3 0 6378000 0) 6378000 6357000) => (roughly 0        1e-6)
+  (latitude (->Vector3 0 0 6357000) 6378000 6357000) => (roughly (/ pi 2) 1e-6)
+  (latitude (->Vector3 6378000 0 0) 6378000 6357000) => (roughly 0        1e-6))
 
-(deftest geodetic->cartesian-test
-  (testing "Conversion from geodetic to cartesian coordinates"
-    (are [x y z lon lat h] (< (norm (v/- (->Vector3 x y z) (geodetic->cartesian lon lat h 6378000.0 6357000.0))) 1e-6)
-      6378000.0       0.0       0.0        0        0    0
-            0.0 6378000.0       0.0 (/ pi 2)        0    0
-            0.0       0.0 6357000.0        0 (/ pi 2)    0
-      6379000.0       0.0       0.0        0        0 1000
-            0.0 6379000.0       0.0 (/ pi 2)        0 1000)))
+(defn roughly-vector [y] (fn [x] (< (v/norm (v/- y x)) 1e-6)))
 
-(deftest cartesian->geodetic-test
-  (testing "Conversion from cartesian (surface) coordinates to latitude and longitude"
-    (are [lon lat height x y z] (let [result (cartesian->geodetic (->Vector3 x y z) 6378000.0 6357000.0)]
-                                  (and (< (Math/abs (- lon (first result))) 1e-6)
-                                       (< (Math/abs (- lat (second result))) 1e-6)
-                                       (< (Math/abs (- height (last result))) 1e-6)))
-             0            0    0 6378000.0       0.0        0.0
-      (/ pi 2)            0    0       0.0 6378000.0        0.0
-             0     (/ pi 2)    0       0.0       0.0  6357000.0
-             0     (/ pi 2) 1000       0.0       0.0  6358000.0
-             0 (/ (- pi) 2) 1000       0.0       0.0 -6358000.0
-             0            0    0 6378000.0       0.0        0.0
-      (/ pi 2)            0    0       0.0 6378000.0        0.0
-             0            0 1000 6379000.0       0.0        0.0
-             0            0 -100 6377900.0       0.0        0.0)))
+(tabular
+  (fact "Conversion from geodetic to cartesian coordinates"
+    (geodetic->cartesian lon? lat? h? 6378000.0 6357000.0) => (roughly-vector (->Vector3 x? y? z?)))
+      lon?     lat?   h?        x?        y?        z?
+         0        0    0 6378000.0       0.0       0.0
+  (/ pi 2)        0    0       0.0 6378000.0       0.0
+         0 (/ pi 2)    0       0.0       0.0 6357000.0
+         0        0 1000 6379000.0       0.0       0.0
+  (/ pi 2)        0 1000       0.0 6379000.0       0.0)
+
+(tabular
+  (fact "Conversion from cartesian (surface) coordinates to latitude and longitude"
+    (cartesian->geodetic (->Vector3 x? y? z?) 6378000.0 6357000.0) =>
+      (fn [[lon lat height]] (and ((roughly lon?) lon) ((roughly lat?) lat) ((roughly height?) height))))
+         x?        y?         z?           lon?         lat? height?
+  6378000.0       0.0        0.0              0            0       0
+        0.0 6378000.0        0.0       (/ pi 2)            0       0
+        0.0       0.0  6357000.0              0     (/ pi 2)       0
+        0.0       0.0  6358000.0              0     (/ pi 2)    1000
+        0.0       0.0 -6358000.0              0 (/ (- pi) 2)    1000
+  6378000.0       0.0        0.0              0            0       0
+        0.0 6378000.0        0.0       (/ pi 2)            0       0
+  6379000.0       0.0        0.0              0            0    1000
+  6377900.0       0.0        0.0              0            0    -100)
 
 (deftest project-onto-ellipsoid-test
   (testing "Project a vector onto an ellipsoid"
@@ -163,44 +177,38 @@
                   util/tile-path   str]
       (is (= '("world235.png") (world-map-tile 2 3 5))))))
 
-(deftest elevation-tile-test
-  (testing "Load (and cache) elevation tile"
-    (let [path (atom nil)]
-      (with-redefs [util/slurp-shorts (fn [arg] (reset! path arg) (short-array [2 3 5 7]))
-                    util/tile-path    str]
-        (is (= 2 (:width (elevation-tile 2 3 5))))
-        (is (= 2 (:height (elevation-tile 2 3 5))))
-        (is (= [2 3 5 7] (seq (:data (elevation-tile 2 3 5) 2))))
-        (is (= @path "elevation235.raw"))))))
+(with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
+              util/tile-path    str]
+  (facts "Load (and cache) elevation tile"
+    (:width (elevation-tile 2 3 5)) => 2
+    (:height (elevation-tile 2 3 5)) => 2
+    (seq (:data (elevation-tile 2 3 5))) => [2 3 5 7]))
 
-(deftest world-map-pixel-test
-  (testing "Read pixels from world map tile"
-    (with-redefs [cubemap/world-map-tile list
-                  util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
-      (is (= '(get-pixel (5 0 0) 240 320) (world-map-pixel 240 320 5 675)))
-      (is (= '(get-pixel (5 2 1) 240 320) (world-map-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675))))))
+(with-redefs [cubemap/world-map-tile list
+              util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
+  (facts "Read pixels from world map tile"
+    (world-map-pixel 240 320 5 675) => '(get-pixel (5 0 0) 240 320)
+    (world-map-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => '(get-pixel (5 2 1) 240 320)))
 
-(deftest elevation-pixel-test
-  (testing "Read pixels from elevation tile"
-    (let [args (atom nil)]
-      (with-redefs [cubemap/elevation-tile list
-                    util/get-elevation     (fn ^long [img ^long y ^long x] (reset! args (list img y x)) 42)]
-        (is (= 42 (elevation-pixel 240 320 5 675)))
-        (is (= '((5 0 0) 240 320) @args))
-        (is (= (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) 42))
-        (is (= '((5 2 1) 240 320) @args))))))
+(let [args (atom nil)]
+  (with-redefs [cubemap/elevation-tile list
+                util/get-elevation     (fn [img ^long y ^long x] (reset! args (list img y x)) 42)]
+    (facts "Read pixels from elevation tile"
+      (elevation-pixel 240 320 5 675) => 42
+      @args => '((5 0 0) 240 320)
+      (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => 42
+      @args => '((5 2 1) 240 320))))
 
-(deftest map-interpolation-test
-  (testing "Interpolation of map pixels"
-    (let [x-info    [0 1 0.75 0.25]
-          y-info    [8 9 0.5  0.5 ]
-          get-pixel (fn [dy dx in-level width]
-                      (is (= in-level 5))
-                      (is (= width 675))
-                      ({[8 0] 2, [8 1] 3, [9 0] 5, [9 1] 7} [dy dx]))]
-      (with-redefs [cubemap/map-pixels-x (fn [^double lon ^long size ^long level] (is (= [lon size level] [135.0 675 5])) x-info)
-                    cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (is (= [lat size level] [ 45.0 675 5])) y-info)]
-        (is (= 3.875 (map-interpolation 5 675 135.0 45.0 get-pixel + *)))))))
+
+(let [x-info    [0 1 0.75 0.25]
+      y-info    [8 9 0.5  0.5 ]
+      get-pixel (fn [dy dx in-level width]
+                  (fact in-level => 5)
+                  (fact width => 675)
+                  ({[8 0] 2, [8 1] 3, [9 0] 5, [9 1] 7} [dy dx]))]
+  (with-redefs [cubemap/map-pixels-x (fn [^double lon ^long size ^long level] (fact [lon size level] => [135.0 675 5]) x-info)
+                cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (fact [lat size level] => [ 45.0 675 5]) y-info)]
+    (fact (map-interpolation 5 675 135.0 45.0 get-pixel + *) => 3.875)))
 
 (deftest tile-center-test
   (testing "Determine center of cube map tile"

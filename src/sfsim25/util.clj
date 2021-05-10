@@ -140,7 +140,7 @@
 
 (defn get-elevation
   "Read elevation value from an elevation tile"
-  ^long [{:keys [width height data]} ^long y ^long x]
+  [{:keys [width height data]} ^long y ^long x]
   (aget data (+ (* width y) x)))
 
 (defn set-elevation!

@@ -189,7 +189,7 @@
 (def elevation-tile
   "Load and cache elevation tiles"
   (z/lru
-    (fn ^shorts [^long in-level ^long ty ^long tx]
+    (fn [in-level ty tx]
       (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
             size (int (Math/round (Math/sqrt (alength data))))]
         {:width size :height size :data data}))
@@ -207,7 +207,7 @@
 
 (defn elevation-pixel
   "Get elevation value for given pixel coordinates"
-  [^long dy ^long dx ^long in-level ^long width]
+  ^long [^long dy ^long dx ^long in-level ^long width]
   (let [ty  (quot dy width)
         tx  (quot dx width)
         py  (mod dy width)
