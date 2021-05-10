@@ -16,15 +16,18 @@
 
 (fact "Save a set of bytes"
   (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
-    (do (spit-bytes file-name (byte-array [2 3 5 7])) (seq (slurp-bytes file-name))) => [2 3 5 7]))
+    (spit-bytes file-name (byte-array [2 3 5 7])) => anything
+    (seq (slurp-bytes file-name)) => [2 3 5 7]))
 
 (fact "Save a set of short integers"
   (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
-    (do (spit-shorts file-name (short-array [2 3 5 7])) (seq (slurp-shorts file-name))) => [2 3 5 7]))
+    (spit-shorts file-name (short-array [2 3 5 7])) => anything
+    (seq (slurp-shorts file-name)) => [2 3 5 7]))
 
 (fact "Save a set of floating point numbers"
   (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
-    (do (spit-floats file-name (float-array [2.0 3.0 5.0 7.0])) (seq (slurp-floats file-name))) => [2.0 3.0 5.0 7.0]))
+    (spit-floats file-name (float-array [2.0 3.0 5.0 7.0])) => anything
+    (seq (slurp-floats file-name)) => [2.0 3.0 5.0 7.0]))
 
 (fact "Determine file path of map tile"
   (tile-path "world" 1 3 2 ".png") => "world/1/2/3.png")
@@ -53,12 +56,11 @@
   (sqr 3) => 9.0)
 
 (facts "Saving and loading of RGB image"
-  (let [file-name                   (.getPath (File/createTempFile "spit" ".png"))
-        {:keys [width height data]} (do (spit-image file-name {:width 4 :height 2 :data (byte-array (take 32 (cycle [1 2 3 4])))})
-                                        (slurp-image file-name))]
-      width         => 4
-      height        => 2
-      (take 4 data) => [1 2 3 4]))
+  (let [file-name                   (.getPath (File/createTempFile "spit" ".png"))]
+      (spit-image file-name {:width 4 :height 2 :data (byte-array (take 32 (cycle [1 2 3 4])))}) => anything
+      (:width  (slurp-image file-name)) => 4
+      (:height (slurp-image file-name)) => 2
+      (take 4 (:data (slurp-image file-name))) => [1 2 3 4]))
 
 (facts "Converting unsigned byte to byte and back"
   (byte->ubyte    0) =>    0
@@ -76,27 +78,32 @@
   (let [img {:width 1 :height 1 :data (byte-array [252 253 254 255])}]
     (get-pixel img 0 0) => (->RGB 252 253 254))
   (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
-    (do (set-pixel! img 1 2 (->RGB 253 254 255)) (get-pixel img 1 2)) => (->RGB 253 254 255)))
+    (set-pixel! img 1 2 (->RGB 253 254 255)) => anything
+    (get-pixel img 1 2) => (->RGB 253 254 255)))
 
 (facts "Reading and writing of elevation pixels"
   (let [elevation {:width 4 :height 2 :data (short-array (range 8))}]
     (get-elevation elevation 1 2) => 6
-    (do (set-elevation! elevation 1 2 8) (get-elevation elevation 1 2)) => 8))
+    (set-elevation! elevation 1 2 8) => anything
+    (get-elevation elevation 1 2) => 8))
 
 (facts "Reading and writing of scale factors"
   (let [scale {:width 4 :height 2 :data (float-array (range 8))}]
     (get-scale scale 1 2) => 6.0
-    (do (set-scale! scale 1 2 8) (get-scale scale 1 2)) => 8.0))
+    (set-scale! scale 1 2 8) => anything
+    (get-scale scale 1 2) => 8.0))
 
 (facts "Reading and writing of water values"
   (let [water {:width 4 :height 2 :data (byte-array (range 8))}]
     (get-water water 1 2) => 6
-    (do (set-water! water 1 2 136) (get-water water 1 2)) => 136))
+    (set-water! water 1 2 136) => anything
+    (get-water water 1 2) => 136))
 
 (facts "Reading and writing of vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
     (get-vector vectors 1 2) => (->Vector3 18 19 20)
-    (do (set-vector! vectors 1 2 (->Vector3 24 25 26)) (get-vector vectors 1 2)) => (->Vector3 24 25 26)))
+    (set-vector! vectors 1 2 (->Vector3 24 25 26)) => anything
+    (get-vector vectors 1 2) => (->Vector3 24 25 26)))
 
 (facts "Removal of entry in nested hash"
   (dissoc-in {:a 42} [:a]) => {}
