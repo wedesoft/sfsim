@@ -171,11 +171,11 @@
     (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 0 -1e-8 1) 0 675 1 1))) 1e-6))
     (is (< (norm (v/- (->Vector3 0 0 (/ pi (* 4 675))) (offset-latitude (->Vector3 1 0 0) 0 675 1 0.5))) 1e-6))))
 
-(deftest world-map-tile-test
-  (testing "Load (and cache) map tile"
-    (with-redefs [util/slurp-image list
-                  util/tile-path   str]
-      (is (= '("world235.png") (world-map-tile 2 3 5))))))
+(fact "Load (and cache) map tile"
+  (world-map-tile 2 3 5) => :map-tile
+  (provided
+    (util/slurp-image "world235.png") => :map-tile
+    (util/tile-path "world" 2 3 5 ".png") => "world235.png"))
 
 (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
               util/tile-path    str]
