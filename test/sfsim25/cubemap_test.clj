@@ -174,8 +174,8 @@
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
   (provided
-    (util/slurp-image "world235.png") => :map-tile
-    (util/tile-path "world" 2 3 5 ".png") => "world235.png"))
+    (util/slurp-image "world235.png") => :map-tile :times irrelevant
+    (util/tile-path "world" 2 3 5 ".png") => "world235.png" :times irrelevant))
 
 (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
               util/tile-path    str]
@@ -203,12 +203,13 @@
 (let [x-info    [0 1 0.75 0.25]
       y-info    [8 9 0.5  0.5 ]
       get-pixel (fn [dy dx in-level width]
-                  (fact in-level => 5)
-                  (fact width => 675)
+                  (fact "in-level argument to get-pixel" in-level => 5)
+                  (fact "width argument to get-pixel" width => 675)
                   ({[8 0] 2, [8 1] 3, [9 0] 5, [9 1] 7} [dy dx]))]
   (with-redefs [cubemap/map-pixels-x (fn [^double lon ^long size ^long level] (fact [lon size level] => [135.0 675 5]) x-info)
                 cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (fact [lat size level] => [ 45.0 675 5]) y-info)]
-    (fact (map-interpolation 5 675 135.0 45.0 get-pixel + *) => 3.875)))
+    (fact "Interpolation of map pixels"
+      (map-interpolation 5 675 135.0 45.0 get-pixel + *) => 3.875)))
 
 (deftest tile-center-test
   (testing "Determine center of cube map tile"
