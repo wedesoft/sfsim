@@ -114,7 +114,7 @@
 (tabular
   (fact "Conversion from cartesian (surface) coordinates to latitude and longitude"
     (cartesian->geodetic (->Vector3 x? y? z?) 6378000.0 6357000.0) =>
-      (fn [[lon lat height]] (and ((roughly lon?) lon) ((roughly lat?) lat) ((roughly height?) height))))
+      (just (roughly lon? 1e-6) (roughly lat? 1e-6) (roughly height? 1e-6)))
          x?        y?         z?           lon?         lat? height?
   6378000.0       0.0        0.0              0            0       0
         0.0 6378000.0        0.0       (/ pi 2)            0       0
