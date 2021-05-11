@@ -1,6 +1,5 @@
 (ns sfsim25.cubemap-test
   (:require [midje.sweet :refer :all]
-            [clojure.test :refer :all]
             [sfsim25.vector3 :refer (->Vector3 norm) :as v]
             [sfsim25.rgb :refer (->RGB) :as r]
             [sfsim25.util :as util]
@@ -206,80 +205,74 @@
     (fact "Interpolation of map pixels"
       (map-interpolation 5 675 135.0 45.0 get-pixel + *) => 3.875)))
 
-(deftest tile-center-test
-  (testing "Determine center of cube map tile"
-    (with-redefs [cubemap/project-onto-ellipsoid (fn [^Vector3 p ^double radius1 ^double radius2]
-                                                   (is (= [p radius1 radius2] [(->Vector3 1.0 -0.625 -0.875) 6378000.0 6357000.0]))
-                                                   (->Vector3 1000 -625 -875))]
-      (is (= (tile-center 2 3 7 1 6378000.0 6357000.0) (->Vector3 1000 -625 -875))))))
+(with-redefs [cubemap/project-onto-ellipsoid (fn [^Vector3 p ^double radius1 ^double radius2]
+                                               (fact [p radius1 radius2] => [(->Vector3 1.0 -0.625 -0.875) 6378000.0 6357000.0])
+                                               (->Vector3 1000 -625 -875))]
+  (fact "Determine center of cube map tile"
+    (tile-center 2 3 7 1 6378000.0 6357000.0) => (->Vector3 1000 -625 -875)))
 
-(deftest color-geodetic-test
-  (testing "Getting world map color for given longitude and latitude"
-    (with-redefs [cubemap/map-interpolation (fn [& args]
-                                              (is (= args [5 675 135.0 45.0 world-map-pixel r/+ r/*]))
-                                              (->RGB 3 5 7))]
-      (is (= (->RGB 3 5 7) (color-geodetic 5 675 135.0 45.0))))))
+(fact "Getting world map color for given longitude and latitude"
+  (color-geodetic 5 675 135.0 45.0) => (->RGB 3 5 7)
+  (provided
+    (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel r/+ r/*) => (->RGB 3 5 7)))
 
-(deftest elevation-geodetic-test
-  (testing "Getting elevation value for given longitude and latitude"
-    (with-redefs [cubemap/map-interpolation (fn [& args]
-                                              (is (= args [5 675 135.0 45.0 elevation-pixel + *]))
-                                              42.0)]
-      (is (= 42.0 (elevation-geodetic 5 675 135.0 45.0))))))
+(fact "Getting elevation value for given longitude and latitude"
+  (elevation-geodetic 5 675 135.0 45.0) => 42.0
+  (provided
+    (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
 
-(deftest water-geodetic-test
-  (testing "Test height zero maps to zero water"
-    (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
-                                       (is (= [in-level width lon lat] [5 675 135.0 45.0]))
-                                       0)]
-      (is (= (water-geodetic 5 675 135.0 45.0) 0))))
-  (testing "Test that height -500 maps to 255"
-    (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
-      (is (= (water-geodetic 5 675 0.0 0.0) 255))))
-  (testing "Test that positive height maps to 0"
-    (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] 100)]
-      (is (= (water-geodetic 5 675 0.0 0.0) 0)))))
+(fact "Test height zero maps to zero water"
+  (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
+                                     (fact [in-level width lon lat] => [5 675 135.0 45.0])
+                                     0)]
+    (water-geodetic 5 675 135.0 45.0) => 0))
 
-(deftest project-onto-globe-test
-  (testing "Project point onto globe"
-    (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
-                                               (is (= [in-level width lon lat] [4 675 0.0 (/ (- pi) 2)]))
-                                               2777.0)]
-      (is (< (norm (v/- (project-onto-globe (->Vector3 0 0 -1) 4 675 6378000 6357000) (->Vector3 0 0 -6359777.0))) 1e-6))))
-  (testing "Clip negative height (water) to zero"
-    (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
-      (is (< (norm (v/- (project-onto-globe (->Vector3 1 0 0) 4 675 6378000 6357000) (->Vector3 6378000 0 0))) 1e-6)))))
+(fact "Test that height -500 maps to 255"
+  (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
+    (water-geodetic 5 675 0.0 0.0) => 255))
 
-(deftest surrounding-points-test
-  (testing "Determine surrounding points for a location on the globe"
-    (let [ps (atom [])]
-      (with-redefs [cubemap/offset-longitude (fn [^Vector3 p ^long level ^long tilesize]
-                                               (is (= [p level tilesize] [(->Vector3 1 0 0) 7 33]))
-                                               (->Vector3 0 0 -0.1))
-                    cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]
-                                               (is (= [p level tilesize radius1 radius2] [(->Vector3 1 0 0) 7 33 6378000 6357000]))
-                                               (->Vector3 0 0.1 0))
-                    cubemap/project-onto-globe (fn [p in-level width radius1 radius2]
-                                                 (is (= [in-level width radius1 radius2] [5 675 6378000 6357000]))
-                                                 (swap! ps conj p)
-                                                 (->Vector3 (* 2 (:x p)) (* 2 (:y p)) (* 2 (:z p))))]
-        (let [pts (surrounding-points (->Vector3 1 0 0) 5 7 675 33 6378000 6357000)]
-          (doseq [j [-1 0 1] i [-1 0 1]]
-            (let [k (+ (* 3 (inc j)) (inc i))]
-              (is (= (->Vector3 2 (* 0.2 j) (* -0.2 i)) (nth pts k)))
-              (is (= (->Vector3 1 (* 0.1 j) (* -0.1 i)) (nth @ps k))))))))))
+(fact "Test that positive height maps to 0"
+  (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] 100)]
+    (water-geodetic 5 675 0.0 0.0) => 0))
 
-(deftest normal-for-point-test
-  (testing "Get normal vector for point on flat part of elevation map"
-    (with-redefs [cubemap/surrounding-points (fn [& args]
-                                               (is (= args [(->Vector3 1 0 0) 5 7 675 33 6378000 6357000]))
-                                               (for [j [-1 0 1] i [-1 0 1]] (->Vector3 6378000 j (- i))))]
-      (is (< (norm (v/- (->Vector3 1 0 0) (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6))))
-  (testing "Get normal vector for point on elevation map sloped in longitudinal direction"
-    (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 i) j (- i))))]
-      (is (< (norm (v/- (->Vector3 (Math/sqrt 0.5) 0 (Math/sqrt 0.5))
-                        (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6))))
-  (testing "Get normal vector for point on elevation map sloped in latitudinal direction"
-    (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 j) j (- i))))]
-      (is (< (norm (v/- (->Vector3 (Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0)
-                        (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000))) 1e-6)))))
+(fact "Project point onto globe"
+  (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
+                                             (fact [in-level width lon lat] => [4 675 0.0 (/ (- pi) 2)])
+                                             2777.0)]
+    (project-onto-globe (->Vector3 0 0 -1) 4 675 6378000 6357000) => (roughly-vector (->Vector3 0 0 -6359777.0)) 1e-6))
+
+(fact "Clip negative height (water) to zero"
+  (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
+    (project-onto-globe (->Vector3 1 0 0) 4 675 6378000 6357000) => (roughly-vector (->Vector3 6378000 0 0)) 1e-6))
+
+(facts "Determine surrounding points for a location on the globe"
+  (let [ps (atom [])]
+    (with-redefs [cubemap/offset-longitude (fn [^Vector3 p ^long level ^long tilesize]
+                                             (fact [p level tilesize] => [(->Vector3 1 0 0) 7 33])
+                                             (->Vector3 0 0 -0.1))
+                  cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]
+                                             (fact [p level tilesize radius1 radius2] => [(->Vector3 1 0 0) 7 33 6378000 6357000])
+                                             (->Vector3 0 0.1 0))
+                  cubemap/project-onto-globe (fn [p in-level width radius1 radius2]
+                                               (fact [in-level width radius1 radius2] => [5 675 6378000 6357000])
+                                               (swap! ps conj p)
+                                               (->Vector3 (* 2 (:x p)) (* 2 (:y p)) (* 2 (:z p))))]
+      (let [pts (surrounding-points (->Vector3 1 0 0) 5 7 675 33 6378000 6357000)]
+        (doseq [j [-1 0 1] i [-1 0 1]]
+          (let [k (+ (* 3 (inc j)) (inc i))]
+            (->Vector3 2 (* 0.2 j) (* -0.2 i)) => (nth pts k)
+            (->Vector3 1 (* 0.1 j) (* -0.1 i)) => (nth @ps k)))))))
+
+(fact "Get normal vector for point on flat part of elevation map"
+  (with-redefs [cubemap/surrounding-points (fn [& args]
+                                             (fact args => [(->Vector3 1 0 0) 5 7 675 33 6378000 6357000])
+                                             (for [j [-1 0 1] i [-1 0 1]] (->Vector3 6378000 j (- i))))]
+    (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000) => (->Vector3 1 0 0)))
+
+(fact "Get normal vector for point on elevation map sloped in longitudinal direction"
+  (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 i) j (- i))))]
+    (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000) => (roughly-vector (->Vector3 (Math/sqrt 0.5) 0 (Math/sqrt 0.5)))))
+
+(fact "Get normal vector for point on elevation map sloped in latitudinal direction"
+  (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (->Vector3 (+ 6378000 j) j (- i))))]
+    (normal-for-point (->Vector3 1 0 0) 5 7 675 33 6378000 6357000) => (roughly-vector (->Vector3 (Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0))))
