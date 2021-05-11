@@ -126,50 +126,45 @@
   6379000.0       0.0        0.0              0            0    1000
   6377900.0       0.0        0.0              0            0    -100)
 
-(deftest project-onto-ellipsoid-test
-  (testing "Project a vector onto an ellipsoid"
-    (are [xp yp zp x y z] (< (norm (v/- (->Vector3 xp yp zp) (project-onto-ellipsoid (->Vector3 x y z) 6378000.0 6357000.0))) 1e-6)
-      6378000.0       0.0       0.0 1 0 0
-            0.0 6378000.0       0.0 0 1 0
-            0.0       0.0 6357000.0 0 0 1)))
+(tabular
+  (fact "Project a vector onto an ellipsoid"
+    (project-onto-ellipsoid (->Vector3 x? y? z?) 6378000.0 6357000.0) => (roughly-vector (->Vector3 xp? yp? zp?)))
+   x? y? z?       xp?       yp?       zp?
+   1  0  0  6378000.0       0.0       0.0
+   0  1  0        0.0 6378000.0       0.0
+   0  0  1        0.0       0.0 6357000.0)
 
-(deftest map-x-test
-  (testing "x-coordinate on raster map"
-    (is (= 0.0 (map-x (- pi) 675 3)))
-    (is (= (* 675 2.0 8) (map-x 0 675 3)))))
+(facts "x-coordinate on raster map"
+  (map-x (- pi) 675 3) => 0.0
+  (map-x 0 675 3) => (* 675 2.0 8))
 
-(deftest map-y-test
-  (testing "y-coordinate on raster map"
-    (is (= 0.0 (map-y (/ pi 2) 675 3)))
-    (is (= (* 675 8.0) (map-y 0 675 3)))))
+(facts "y-coordinate on raster map"
+  (map-y (/ pi 2) 675 3) => 0.0
+  (map-y 0 675 3) => (* 675 8.0))
 
-(deftest map-pixels-x-test
-  (testing "determine x-coordinates and fractions for interpolation")
-    (is (= [(* 675 2 8)     (inc (* 675 2 8)) 1.0 0.0] (map-pixels-x 0                       675 3)))
-    (is (= [0               1                 1.0 0.0] (map-pixels-x (- pi)                  675 3)))
-    (is (= [(dec (* 256 4)) 0                 0.5 0.5] (map-pixels-x (- pi (/ pi (* 256 4))) 256 0))))
+(facts "determine x-coordinates and fractions for interpolation"
+  (map-pixels-x 0                       675 3) => [(* 675 2 8)     (inc (* 675 2 8)) 1.0 0.0]
+  (map-pixels-x (- pi)                  675 3) => [0               1                 1.0 0.0]
+  (map-pixels-x (- pi (/ pi (* 256 4))) 256 0) => [(dec (* 256 4)) 0                 0.5 0.5])
 
-(deftest map-pixels-y-test
-  (testing "determine y-coordinates and fractions for interpolation"
-    (is (= [(* 675 8)         (inc (* 675 8))   1.0 0.0] (map-pixels-y 0                675 3)))
-    (is (= [(dec (* 675 2 8)) (dec (* 675 2 8)) 1.0 0.0] (map-pixels-y (- (/ pi 2))     675 3)))
-    (is (= [(dec 256)         256               0.5 0.5] (map-pixels-y (/ pi (* 4 256)) 256 0)))))
+(facts "determine y-coordinates and fractions for interpolation"
+  (map-pixels-y 0                675 3) => [(* 675 8)         (inc (* 675 8))   1.0 0.0]
+  (map-pixels-y (- (/ pi 2))     675 3) => [(dec (* 675 2 8)) (dec (* 675 2 8)) 1.0 0.0]
+  (map-pixels-y (/ pi (* 4 256)) 256 0) => [(dec 256)         256               0.5 0.5])
 
-(deftest offset-longitude-test
-  (testing "Offset in longitudinal direction"
-    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-longitude (->Vector3 1 0 0) 0 675))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 -1 0) 0 675))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* 4 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 -2 0) 0 675))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0) (offset-longitude (->Vector3 0 -2 0) 1 675))) 1e-6))))
+(facts "Offset in longitudinal direction"
+  (offset-longitude (->Vector3 1  0 0) 0 675) => (roughly-vector (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0))
+  (offset-longitude (->Vector3 0 -1 0) 0 675) => (roughly-vector (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0))
+  (offset-longitude (->Vector3 0 -2 0) 0 675) => (roughly-vector (->Vector3 (/ (* 4 pi) (* 4 675)) 0 0))
+  (offset-longitude (->Vector3 0 -2 0) 1 675) => (roughly-vector (->Vector3 (/ (* 2 pi) (* 4 675)) 0 0)))
 
-(deftest offset-latitude-test
-  (testing "Offset in latitudinal direction"
-    (is (< (norm (v/- (->Vector3 0 0 (/ (* 2 pi) (* 4 675))) (offset-latitude (->Vector3 1 0 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 (/ (* -2 pi) (* 4 675)) 0 0) (offset-latitude (->Vector3 0 0 1) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 0 (/ (* 4 pi) (* 4 675))) (offset-latitude (->Vector3 2 0 0) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 0 (/ (* 2 pi) (* 4 675))) (offset-latitude (->Vector3 2 0 0) 1 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0) (offset-latitude (->Vector3 0 -1e-8 1) 0 675 1 1))) 1e-6))
-    (is (< (norm (v/- (->Vector3 0 0 (/ pi (* 4 675))) (offset-latitude (->Vector3 1 0 0) 0 675 1 0.5))) 1e-6))))
+(facts "Offset in latitudinal direction"
+  (offset-latitude (->Vector3 1 0 0) 0 675 1 1)     => (roughly-vector (->Vector3 0 0 (/ (* 2 pi) (* 4 675))))
+  (offset-latitude (->Vector3 0 0 1) 0 675 1 1)     => (roughly-vector (->Vector3 (/ (* -2 pi) (* 4 675)) 0 0))
+  (offset-latitude (->Vector3 2 0 0) 0 675 1 1)     => (roughly-vector (->Vector3 0 0 (/ (* 4 pi) (* 4 675))))
+  (offset-latitude (->Vector3 2 0 0) 1 675 1 1)     => (roughly-vector (->Vector3 0 0 (/ (* 2 pi) (* 4 675))))
+  (offset-latitude (->Vector3 0 -1e-8 1) 0 675 1 1) => (roughly-vector (->Vector3 0 (/ (* 2 pi) (* 4 675)) 0))
+  (offset-latitude (->Vector3 1 0 0) 0 675 1 0.5)   => (roughly-vector (->Vector3 0 0 (/ pi (* 4 675)))))
 
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
