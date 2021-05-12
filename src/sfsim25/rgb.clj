@@ -1,4 +1,5 @@
 (ns sfsim25.rgb
+  "RGB algebra implementation."
   (:refer-clojure :exclude [+ *])
   (:require [clojure.core :as c]))
 

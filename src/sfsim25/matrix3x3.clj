@@ -1,4 +1,5 @@
 (ns sfsim25.matrix3x3
+  "Matrix operations involving 3x3 matrices and 3D vectors."
   (:refer-clojure :exclude [* -])
   (:require [clojure.core :as c]
             [sfsim25.vector3 :refer (->Vector3)]

@@ -1,4 +1,5 @@
 (ns sfsim25.quaternion
+  "Complex algebra implementation."
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
             [sfsim25.util :refer (sinc)]

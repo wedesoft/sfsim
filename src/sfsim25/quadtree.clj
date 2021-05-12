@@ -1,4 +1,5 @@
 (ns sfsim25.quadtree
+  "Manage quad tree of map tiles."
   (:require [sfsim25.vector3 :refer (norm) :as v]
             [sfsim25.cubemap :refer (tile-center)]
             [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes dissoc-in)]))

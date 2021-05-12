@@ -1,4 +1,5 @@
 (ns sfsim25.scale-image
+  "Convert large map image into smaller image."
   (:import [magick MagickImage ImageInfo])
   (:gen-class))
 

@@ -1,4 +1,5 @@
 (ns sfsim25.vector4
+  "Homogeneous 3D vectors."
   (:require [sfsim25.vector3 :refer (->Vector3)])
   (:import [sfsim25.vector3 Vector3]))
 

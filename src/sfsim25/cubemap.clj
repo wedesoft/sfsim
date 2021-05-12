@@ -1,4 +1,5 @@
 (ns sfsim25.cubemap
+  "Conversions from cube coordinates (face, j, i) to geodetic coordinates (longitude, latitude)."
   (:require [clojure.core.memoize :as z]
             [sfsim25.vector3 :as v :refer (->Vector3 norm normalize cross-product inner-product)]
             [sfsim25.rgb :as r]

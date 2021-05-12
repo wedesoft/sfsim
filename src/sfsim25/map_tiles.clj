@@ -1,4 +1,5 @@
 (ns sfsim25.map-tiles
+  "Split up large Mercator image into smaller ones."
   (:import [magick MagickImage ImageInfo]
            [java.awt Rectangle]
            [java.io File])

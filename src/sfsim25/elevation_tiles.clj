@@ -1,4 +1,5 @@
 (ns sfsim25.elevation-tiles
+  "Split large Mercator elevation image into smaller images."
   (:import [java.io File])
   (:require [sfsim25.util :refer (slurp-shorts spit-shorts tile-dir tile-path)])
   (:gen-class))

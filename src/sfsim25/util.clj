@@ -1,4 +1,5 @@
 (ns sfsim25.util
+  "Various utility functions."
   (:require [clojure.java.io :as io]
             [sfsim25.rgb :refer (->RGB)]
             [sfsim25.vector3 :refer (->Vector3)])

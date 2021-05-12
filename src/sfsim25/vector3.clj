@@ -1,4 +1,5 @@
 (ns sfsim25.vector3
+  "3D vector algebra implementation."
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]))
 

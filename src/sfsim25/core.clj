@@ -1,4 +1,5 @@
 (ns sfsim25.core
+  "Space flight simulator main program."
   (:import [org.lwjgl.opengl Display GL11]
            [org.lwjgl.input Keyboard])
   (:gen-class))

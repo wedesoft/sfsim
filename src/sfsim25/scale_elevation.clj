@@ -1,4 +1,5 @@
 (ns sfsim25.scale-elevation
+  "Convert large elevation image into lower resolution image."
   (:require [sfsim25.util :refer (slurp-shorts spit-shorts)])
   (:gen-class))
 

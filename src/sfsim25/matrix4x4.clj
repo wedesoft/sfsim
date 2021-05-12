@@ -1,4 +1,5 @@
 (ns sfsim25.matrix4x4
+  "Matrix operations for 4x4 homogeneous matrices and homogeneous 3D vectors."
   (:refer-clojure :exclude [*])
   (:require [clojure.core :as c]
             [sfsim25.vector3 :refer (->Vector3)]
