@@ -1,7 +1,6 @@
 # TODO
 
 * compute path to neighbours at different levels for different faces
-* switch unit tests to Midje
 * adapt outer tesselation resolution to neighbouring tiles
 * redesign floating point math of height maps
 * implement and test dropping and loading of tiles

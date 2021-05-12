@@ -171,44 +171,44 @@
     (util/slurp-image "world235.png") => :map-tile :times irrelevant
     (util/tile-path "world" 2 3 5 ".png") => "world235.png" :times irrelevant))
 
-(with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
-              util/tile-path    str]
-  (facts "Load (and cache) elevation tile"
+(facts "Load (and cache) elevation tile"
+  (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
+                util/tile-path    str]
     (:width (elevation-tile 2 3 5)) => 2
     (:height (elevation-tile 2 3 5)) => 2
     (seq (:data (elevation-tile 2 3 5))) => [2 3 5 7]))
 
-(with-redefs [cubemap/world-map-tile list
-              util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
-  (facts "Read pixels from world map tile"
+(facts "Read pixels from world map tile"
+  (with-redefs [cubemap/world-map-tile list
+                util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
     (world-map-pixel 240 320 5 675) => '(get-pixel (5 0 0) 240 320)
     (world-map-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => '(get-pixel (5 2 1) 240 320)))
 
-(let [args (atom nil)]
-  (with-redefs [cubemap/elevation-tile list
-                util/get-elevation     (fn [img ^long y ^long x] (reset! args (list img y x)) 42)]
-    (facts "Read pixels from elevation tile"
+(facts "Read pixels from elevation tile"
+  (let [args (atom nil)]
+    (with-redefs [cubemap/elevation-tile list
+                  util/get-elevation     (fn [img ^long y ^long x] (reset! args (list img y x)) 42)]
       (elevation-pixel 240 320 5 675) => 42
       @args => '((5 0 0) 240 320)
       (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => 42
       @args => '((5 2 1) 240 320))))
 
 
-(let [x-info    [0 1 0.75 0.25]
-      y-info    [8 9 0.5  0.5 ]
-      get-pixel (fn [dy dx in-level width]
-                  (fact "in-level argument to get-pixel" in-level => 5)
-                  (fact "width argument to get-pixel" width => 675)
-                  ({[8 0] 2, [8 1] 3, [9 0] 5, [9 1] 7} [dy dx]))]
-  (with-redefs [cubemap/map-pixels-x (fn [^double lon ^long size ^long level] (fact [lon size level] => [135.0 675 5]) x-info)
-                cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (fact [lat size level] => [ 45.0 675 5]) y-info)]
-    (fact "Interpolation of map pixels"
+(fact "Interpolation of map pixels"
+  (let [x-info    [0 1 0.75 0.25]
+        y-info    [8 9 0.5  0.5 ]
+        get-pixel (fn [dy dx in-level width]
+                    (fact "in-level argument to get-pixel" in-level => 5)
+                    (fact "width argument to get-pixel" width => 675)
+                    ({[8 0] 2, [8 1] 3, [9 0] 5, [9 1] 7} [dy dx]))]
+    (with-redefs [cubemap/map-pixels-x (fn [^double lon ^long size ^long level] (fact [lon size level] => [135.0 675 5]) x-info)
+                  cubemap/map-pixels-y (fn [^double lat ^long size ^long level] (fact [lat size level] => [ 45.0 675 5]) y-info)]
       (map-interpolation 5 675 135.0 45.0 get-pixel + *) => 3.875)))
 
-(with-redefs [cubemap/project-onto-ellipsoid (fn [^Vector3 p ^double radius1 ^double radius2]
-                                               (fact [p radius1 radius2] => [(->Vector3 1.0 -0.625 -0.875) 6378000.0 6357000.0])
-                                               (->Vector3 1000 -625 -875))]
-  (fact "Determine center of cube map tile"
+(fact "Determine center of cube map tile"
+  (with-redefs [cubemap/project-onto-ellipsoid (fn [^Vector3 p ^double radius1 ^double radius2]
+                                                 (fact [p radius1 radius2] => [(->Vector3 1.0 -0.625 -0.875) 6378000.0 6357000.0])
+                                                 (->Vector3 1000 -625 -875))]
     (tile-center 2 3 7 1 6378000.0 6357000.0) => (->Vector3 1000 -625 -875)))
 
 (fact "Getting world map color for given longitude and latitude"
