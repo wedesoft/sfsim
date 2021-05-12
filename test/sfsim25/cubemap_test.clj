@@ -6,9 +6,8 @@
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [sfsim25.vector3 Vector3]))
 
-(tabular
-  (fact "First face of cube"
-    (c? 0 j? i?) => result?)
+(tabular "First face of cube"
+  (fact (c? 0 j? i?) => result?)
   c?         j? i? result?
   cube-map-z 0  0   1.0
   cube-map-x 0  0  -1.0
@@ -16,9 +15,8 @@
   cube-map-y 0  0   1.0
   cube-map-y 1  0  -1.0)
 
-(tabular
-  (fact "Second face of cube"
-    (c? 1 j? i?) => result?)
+(tabular "Second face of cube"
+  (fact (c? 1 j? i?) => result?)
   c?         j? i? result?
   cube-map-y 0  0  -1.0
   cube-map-x 0  0  -1.0
@@ -26,9 +24,8 @@
   cube-map-z 0  0   1.0
   cube-map-z 1  0  -1.0)
 
-(tabular
-  (fact "Third face of cube"
-    (c? 2 j? i?) => result?)
+(tabular "Third face of cube"
+  (fact (c? 2 j? i?) => result?)
   c?         j? i? result?
   cube-map-x 0  0   1.0
   cube-map-z 0  0   1.0
@@ -36,9 +33,8 @@
   cube-map-y 0  0  -1.0
   cube-map-y 0  1   1.0)
 
-(tabular
-  (fact "Fourth face of cube"
-    (c? 3 j? i?) => result?)
+(tabular "Fourth face of cube"
+  (fact (c? 3 j? i?) => result?)
   c?         j? i? result?
   cube-map-y 0  0   1.0
   cube-map-x 0  0   1.0
@@ -46,9 +42,8 @@
   cube-map-z 0  0   1.0
   cube-map-z 1  0  -1.0)
 
-(tabular
-  (fact "Fifth face of cube"
-    (c? 4 j? i?) => result?)
+(tabular "Fifth face of cube"
+  (fact (c? 4 j? i?) => result?)
   c?         j? i? result?
   cube-map-x 0  0  -1.0
   cube-map-z 0  0   1.0
@@ -56,9 +51,8 @@
   cube-map-y 0  0   1.0
   cube-map-y 0  1  -1.0)
 
-(tabular
-  (fact "Sixth face of cube"
-    (c? 5 j? i?) => result?)
+(tabular "Sixth face of cube"
+  (fact (c? 5 j? i?) => result?)
   c?         j? i? result?
   cube-map-z 0  0  -1.0
   cube-map-x 0  0  -1.0
@@ -74,9 +68,8 @@
   (cube-coordinate 0 256 0 127.5) => 0.5
   (cube-coordinate 1 256 1 127.5) => 0.75)
 
-(tabular
-  (fact "Get corners of cube map tiles"
-    (nth (cube-map-corners face? level? b? a?) idx?) => (->Vector3 x? y? z?))
+(tabular "Get corners of cube map tiles"
+  (fact (nth (cube-map-corners face? level? b? a?) idx?) => (->Vector3 x? y? z?))
   face? level? b? a? idx? x? y? z?
   0 0 0 0 0 -1    1    1
   0 0 0 0 1  1    1    1
@@ -100,8 +93,8 @@
 
 (defn roughly-vector [y] (fn [x] (< (v/norm (v/- y x)) 1e-6)))
 
-(tabular
-  (fact "Conversion from geodetic to cartesian coordinates"
+(tabular "Conversion from geodetic to cartesian coordinates"
+  (fact
     (geodetic->cartesian lon? lat? h? 6378000.0 6357000.0) => (roughly-vector (->Vector3 x? y? z?)))
       lon?     lat?   h?        x?        y?        z?
          0        0    0 6378000.0       0.0       0.0
@@ -110,8 +103,8 @@
          0        0 1000 6379000.0       0.0       0.0
   (/ pi 2)        0 1000       0.0 6379000.0       0.0)
 
-(tabular
-  (fact "Conversion from cartesian (surface) coordinates to latitude and longitude"
+(tabular "Conversion from cartesian (surface) coordinates to latitude and longitude"
+  (fact
     (cartesian->geodetic (->Vector3 x? y? z?) 6378000.0 6357000.0) =>
       (just (roughly lon? 1e-6) (roughly lat? 1e-6) (roughly height? 1e-6)))
          x?        y?         z?           lon?         lat? height?
@@ -125,8 +118,8 @@
   6379000.0       0.0        0.0              0            0    1000
   6377900.0       0.0        0.0              0            0    -100)
 
-(tabular
-  (fact "Project a vector onto an ellipsoid"
+(tabular "Project a vector onto an ellipsoid"
+  (fact
     (project-onto-ellipsoid (->Vector3 x? y? z?) 6378000.0 6357000.0) => (roughly-vector (->Vector3 xp? yp? zp?)))
    x? y? z?       xp?       yp?       zp?
    1  0  0  6378000.0       0.0       0.0

@@ -26,9 +26,8 @@
 (fact "Subtract two quaternions"
   (- (->Quaternion 6 8 10 12) (->Quaternion 5 6 7 8)) => (->Quaternion 1 2 3 4))
 
-(tabular
-  (fact "Multiply two quaternions"
-    (* ?a ?b) => ?c)
+(tabular "Multiply two quaternions"
+  (fact (* ?a ?b) => ?c)
   ?a ?b ?c
   o  o  o
   o  i  i
@@ -68,9 +67,8 @@
 (def e (Math/exp 1))
 (def -e (c/- e))
 
-(tabular
-  (fact "Exponentation of quaternions"
-    (?component (exp ?q)) => (roughly ?result 1e-6))
+(tabular "Exponentation of quaternions"
+  (fact (?component (exp ?q)) => (roughly ?result 1e-6))
   ?q                                           ?component ?result
   (->Quaternion 0 0 pi 0)                      :a         -1.0
   (->Quaternion 0 0 pi 0)                      :c          0.0
@@ -83,9 +81,8 @@
   (->Quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0) :b          0.8
   (->Quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0) :c          0.6)
 
-(tabular
-  (fact "Represent rotation using quaternion"
-    (?component (rotation ?angle ?axis)) => (roughly ?result 1e-6))
+(tabular "Represent rotation using quaternion"
+  (fact (?component (rotation ?angle ?axis)) => (roughly ?result 1e-6))
   ?axis                     ?angle     ?component ?result
   (->Vector3 0 0 1)         0          :a         1.0
   (->Vector3 0 0 1)         (c/* 2 pi) :a        -1.0
