@@ -69,11 +69,13 @@ void main()
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
   vec2 d = mix(texcoord_tes[3], texcoord_tes[2], gl_TessCoord.x);
   texcoord_geo = mix(c, d, gl_TessCoord.y);
-  float s = texture(hf, texcoord_geo).g;
+  // float s = texture(hf, texcoord_geo).g;
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(a, b, gl_TessCoord.y);
-  gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
+  float s = 1.0 / sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  // gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
+  gl_Position = projection * transform * vec4(p.xyz * s * 6378000, 1);
 }")
 
 (def geo-source "#version 410 core
@@ -242,7 +244,7 @@ void main()
 
 (GL20/glUseProgram program)
 
-(def p (float-array (vals (projection-matrix 640 480 100 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
+(def p (float-array (vals (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (defn is-leaf?
