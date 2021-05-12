@@ -1,4 +1,4 @@
-(ns sfsim25.matrix3x3-test
+(ns sfsim25.t-matrix3x3
   (:refer-clojure :exclude [* -])
   (:require [midje.sweet :refer :all]
             [sfsim25.matrix3x3 :refer :all]

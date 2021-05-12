@@ -1,4 +1,4 @@
-(ns sfsim25.rgb-test
+(ns sfsim25.t-rgb
   (:refer-clojure :exclude [+ *])
   (:require [midje.sweet :refer :all]
             [sfsim25.rgb :refer :all]))

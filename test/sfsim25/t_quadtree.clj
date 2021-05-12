@@ -1,4 +1,4 @@
-(ns sfsim25.quadtree-test
+(ns sfsim25.t-quadtree
   (:require [midje.sweet :refer :all]
             [sfsim25.quadtree :refer :all :as quadtree]
             [sfsim25.cubemap :refer (cube-map) :as cubemap]

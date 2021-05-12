@@ -1,4 +1,4 @@
-(ns sfsim25.quaternion-test
+(ns sfsim25.t-quaternion
   (:refer-clojure :exclude [+ - *])
   (:require [midje.sweet :refer :all]
             [clojure.core :as c]

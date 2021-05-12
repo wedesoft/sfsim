@@ -1,4 +1,4 @@
-(ns sfsim25.util-test
+(ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
             [sfsim25.rgb :refer (->RGB)]
             [sfsim25.vector3 :refer (->Vector3)]

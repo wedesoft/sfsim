@@ -1,4 +1,4 @@
-(ns sfsim25.vector4-test
+(ns sfsim25.t-vector4
   (:require [midje.sweet :refer :all]
             [sfsim25.vector4 :refer :all]
             [sfsim25.vector3 :refer (->Vector3)]))

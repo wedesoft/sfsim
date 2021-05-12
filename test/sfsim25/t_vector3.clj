@@ -1,4 +1,4 @@
-(ns sfsim25.vector3-test
+(ns sfsim25.t-vector3
   (:refer-clojure :exclude [+ - *])
   (:require [midje.sweet :refer :all]
             [clojure.core :as c]

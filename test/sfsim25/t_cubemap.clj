@@ -1,4 +1,4 @@
-(ns sfsim25.cubemap-test
+(ns sfsim25.t-cubemap
   (:require [midje.sweet :refer :all]
             [sfsim25.vector3 :refer (->Vector3 norm) :as v]
             [sfsim25.rgb :refer (->RGB) :as r]
