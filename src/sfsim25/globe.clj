@@ -42,7 +42,7 @@
                 wet              (water-geodetic in-level width lon lat)]
             (set-pixel! tile v u color)
             (set-water! water v u wet)
-            (set-scale! scale v u (/ (norm point) (norm p)))
+            (set-scale! scale v u (/ (norm point) (norm p) 6388000.0))
             (set-vector! normals v u normal)))
         (locking *out* (println (cube-path "globe" k out-level b a ".*")))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))

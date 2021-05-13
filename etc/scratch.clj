@@ -69,13 +69,13 @@ void main()
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
   vec2 d = mix(texcoord_tes[3], texcoord_tes[2], gl_TessCoord.x);
   texcoord_geo = mix(c, d, gl_TessCoord.y);
-  // float s = texture(hf, texcoord_geo).g;
+  float s = texture(hf, texcoord_geo).r;
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(a, b, gl_TessCoord.y);
-  float s = 1.0 / sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
-  // gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
-  gl_Position = projection * transform * vec4(p.xyz * s * 6378000, 1);
+  // float s = 1.0 / sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
+  // gl_Position = projection * transform * vec4(p.xyz * s * 6378000, 1);
 }")
 
 (def geo-source "#version 410 core
@@ -161,7 +161,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? 33 radius1 radius2 640 60 16 4 @position)
+    (let [increase? (partial increase-level? 33 radius1 radius2 640 60 16 3 @position)
           drop-list (doall (tiles-to-drop tree increase?))
           load-list (doall (tiles-to-load tree increase?))
           tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -211,9 +211,9 @@ void main()
       (GL20/glEnableVertexAttribArray 0)
       (GL20/glEnableVertexAttribArray 1)
       (let [pixels      (get-in tile [:colors :data])
-            heights     (float-array (map #(/ % 6388000.0) (:scales tile)))
+            heights     (:scales tile)
             texture     (create-texture "tex" 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
-            heightfield (create-texture "hf" 1 GL11/GL_LUMINANCE GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
+            heightfield (create-texture "hf" 1 GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
         (assoc tile :vao vao :vbo vbo :idx idx :texture texture :heightfield heightfield)))))
 
 (defn unload-tile-from-opengl

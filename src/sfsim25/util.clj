@@ -156,7 +156,7 @@
 
 (defn set-scale!
   "Write scale value to a scale tile"
-  [{:keys [width height data]} ^long y ^long x ^long value]
+  [{:keys [width height data]} ^long y ^long x ^double value]
   (aset-float data (+ (* width y) x) value))
 
 (defn get-water

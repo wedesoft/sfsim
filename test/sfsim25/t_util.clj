@@ -89,8 +89,8 @@
 (facts "Reading and writing of scale factors"
   (let [scale {:width 4 :height 2 :data (float-array (range 8))}]
     (get-scale scale 1 2) => 6.0
-    (set-scale! scale 1 2 8) => anything
-    (get-scale scale 1 2) => 8.0))
+    (set-scale! scale 1 2 8.5) => anything
+    (get-scale scale 1 2) => 8.5))
 
 (facts "Reading and writing of water values"
   (let [water {:width 4 :height 2 :data (byte-array (range 8))}]
@@ -101,8 +101,8 @@
 (facts "Reading and writing of vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
     (get-vector vectors 1 2) => (->Vector3 18 19 20)
-    (set-vector! vectors 1 2 (->Vector3 24 25 26)) => anything
-    (get-vector vectors 1 2) => (->Vector3 24 25 26)))
+    (set-vector! vectors 1 2 (->Vector3 24.5 25.5 26.5)) => anything
+    (get-vector vectors 1 2) => (->Vector3 24.5 25.5 26.5)))
 
 (facts "Removal of entry in nested hash"
   (dissoc-in {:a 42} [:a]) => {}
