@@ -10,3 +10,5 @@
 * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
 * Skydome scaled to ZFAR * 0.5
 * always add child nodes or remove child nodes?
+
+[OpenGL question](https://gamedev.stackexchange.com/questions/192358/opengl-height-map-accuracy-for-planetary-rendering)

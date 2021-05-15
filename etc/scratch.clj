@@ -69,11 +69,11 @@ void main()
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
   vec2 d = mix(texcoord_tes[3], texcoord_tes[2], gl_TessCoord.x);
   texcoord_geo = mix(c, d, gl_TessCoord.y);
-  float s = texture(hf, texcoord_geo).r;
+  // float s = texture(hf, texcoord_geo).r;
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(a, b, gl_TessCoord.y);
-  // float s = 1.0 / sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  float s = 1.0 / sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
   gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
   // gl_Position = projection * transform * vec4(p.xyz * s * 6378000, 1);
 }")
@@ -103,8 +103,8 @@ out mediump vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  // fragColor = texture(tex, UV).rgb;
-  fragColor = vec3(1, 1, 1);
+  fragColor = texture(tex, UV).rgb;
+  // fragColor = vec3(1, 1, 1);
 }")
 
 (defn make-shader [source shader-type]
@@ -159,9 +159,11 @@ void main()
 (def position (atom (->Vector3 0 0 (* 3 radius1))))
 (def tree (atom {}))
 
+(def tilesize 33)
+
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? 33 radius1 radius2 640 60 16 3 @position)
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 16 3 @position)
           drop-list (doall (tiles-to-drop tree increase?))
           load-list (doall (tiles-to-load tree increase?))
           tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -172,13 +174,16 @@ void main()
 
 (def-context-create-macro create-vertex-array (fn [] (GL30/glGenVertexArrays)) 'with-vertex-array)
 
+(def c0 (/ 0.5 tilesize))
+(def c1 (- 1.0 (/ 0.5 tilesize)))
+
 (defn make-vertices
   [face level y x]
   (let [[a b c d] (cube-map-corners face level y x)]
-    (float-array [(:x a) (:y a) (:z a) 0.0 0.0
-                  (:x b) (:y b) (:z b) 1.0 0.0
-                  (:x c) (:y c) (:z c) 0.0 1.0
-                  (:x d) (:y d) (:z d) 1.0 1.0])))
+    (float-array [(:x a) (:y a) (:z a) c0 c0
+                  (:x b) (:y b) (:z b) c1 c0
+                  (:x c) (:y c) (:z c) c0 c1
+                  (:x d) (:y d) (:z d) c1 c1])))
 
 (defn create-texture
   [varname index tex-format tex-type interpolation buffer]
@@ -186,9 +191,9 @@ void main()
     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
     (GL20/glUniform1i (GL20/glGetUniformLocation program varname) index)
-    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB 33 33 0 tex-format tex-type buffer)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB tilesize tilesize 0 tex-format tex-type buffer)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER interpolation)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER interpolation)
     texture))
@@ -236,8 +241,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
@@ -288,7 +293,7 @@ void main()
   (let [t1 (System/currentTimeMillis)
         dt (- t1 t0)
         z  (- (* dt 200) (* 3 6378000))
-        angle (* (+ (* dt 0.01) 0) (/ Math/PI 180))
+        angle (* (+ (* dt 0.005) 0) (/ Math/PI 180))
         t  (float-array (vals (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z))))]
     (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
