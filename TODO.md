@@ -1,7 +1,8 @@
 # TODO
 
-* compute path to neighbours at different levels for different faces
-* adapt outer tesselation resolution to neighbouring tiles
+* use higher resolution for colour texture
+* use lower resolution for height map if outer tessellation level is lower
+* use normal maps for shading
 * redesign floating point math of height maps
 * implement and test dropping and loading of tiles
 * adapt z-range depending on distance to globe

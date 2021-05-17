@@ -73,9 +73,7 @@ void main()
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(a, b, gl_TessCoord.y);
-  // float s = 1.0 / sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
   gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
-  // gl_Position = projection * transform * vec4(p.xyz * s * 6378000, 1);
 }")
 
 (def geo-source "#version 410 core
@@ -163,7 +161,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 16 3 @position)
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 16 4 @position)
           drop-list (doall (tiles-to-drop tree increase?))
           load-list (doall (tiles-to-load tree increase?))
           tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
@@ -192,8 +190,8 @@ void main()
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
     (GL20/glUniform1i (GL20/glGetUniformLocation program varname) index)
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internal-format tilesize tilesize 0 tex-format tex-type buffer)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER interpolation)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER interpolation)
     texture))
@@ -217,7 +215,7 @@ void main()
       (GL20/glEnableVertexAttribArray 1)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
-            texture     (create-texture "tex" 0 GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_NEAREST (make-byte-buffer pixels))
+            texture     (create-texture "tex" 0 GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
             heightfield (create-texture "hf" 1 GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
         (assoc tile :vao vao :vbo vbo :idx idx :texture texture :heightfield heightfield)))))
 
@@ -241,8 +239,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
