@@ -1,35 +1,35 @@
-  (require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
-           '[sfsim25.util :refer :all]
-           '[sfsim25.vector3 :refer (->Vector3) :as v]
-           '[sfsim25.matrix3x3 :refer (identity-matrix rotation-x rotation-y)]
-           '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
-           '[sfsim25.cubemap :refer :all]
-           '[sfsim25.quadtree :refer :all])
+(require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
+         '[sfsim25.util :refer :all]
+         '[sfsim25.vector3 :refer (->Vector3) :as v]
+         '[sfsim25.matrix3x3 :refer (identity-matrix rotation-x rotation-y)]
+         '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
+         '[sfsim25.cubemap :refer :all]
+         '[sfsim25.quadtree :refer :all])
 
-  (import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40]
-          '[org.lwjgl BufferUtils])
+(import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40]
+        '[org.lwjgl BufferUtils])
 
-  (def vertex-source "#version 410 core
-  in mediump vec3 point;
-  in mediump vec2 texcoord;
-  out mediump vec2 texcoord_tcs;
-  void main()
-  {
-    gl_Position = vec4(point, 1);
-    texcoord_tcs = texcoord;
-  }")
+(def vertex-source "#version 410 core
+in mediump vec3 point;
+in mediump vec2 texcoord;
+out mediump vec2 texcoord_tcs;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  texcoord_tcs = texcoord;
+}")
 
-  (def tcs-source "#version 410 core
-  layout(vertices = 4) out;
-  in mediump vec2 texcoord_tcs[];
-  out mediump vec2 texcoord_tes[];
-  uniform int tesselate_up;
-  uniform int tesselate_left;
-  uniform int tesselate_down;
-  uniform int tesselate_right;
-  void main(void)
-  {
-    if (gl_InvocationID == 0) {
+(def tcs-source "#version 410 core
+layout(vertices = 4) out;
+in mediump vec2 texcoord_tcs[];
+out mediump vec2 texcoord_tes[];
+uniform int tesselate_up;
+uniform int tesselate_left;
+uniform int tesselate_down;
+uniform int tesselate_right;
+void main(void)
+{
+  if (gl_InvocationID == 0) {
     if (tesselate_up == 1) {
       gl_TessLevelOuter[0] = 32.0;
     } else {
