@@ -182,4 +182,12 @@
   [tree]
   (reduce check-neighbours-for-tile tree (leaf-paths tree)))
 
+(defn update-level-of-detail
+  "Return tree with updated level of detail (LOD), a list of dropped tiles and a list of new paths"
+  [tree increase-level-fun?]
+  (let [drop-list (tiles-to-drop tree increase-level-fun?)]
+    {:tree (quadtree-drop tree drop-list)
+     :drop (quadtree-extract tree drop-list)
+     :load (tiles-to-load tree increase-level-fun?)}))
+
 (set! *unchecked-math* false)

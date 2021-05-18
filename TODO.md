@@ -1,10 +1,10 @@
 # TODO
 
+* implement and test dropping and loading of tiles
 * use higher resolution for colour texture
 * use lower resolution for height map if outer tessellation level is lower
 * use normal maps for shading
 * redesign floating point math of height maps
-* implement and test dropping and loading of tiles
 * adapt z-range depending on distance to globe
 * method to process paths from quad tree (e.g. load/unload OpenGL objects)
 * Get scale-image to work on large images

@@ -177,3 +177,15 @@
   (get-in (check-neighbours {:5 {}})            [:5 :left]   ) => 0
   (get-in (check-neighbours {:1 {} :5 {}})      [:1 :down]   ) => 1
   (get-in (check-neighbours {:5 {:1 {} :3 {}}}) [:5 :1 :down]) => 1)
+
+(facts "Update level of detail (LOD)"
+  (let [face     (fn [f] {:face f, :level 0, :y 0, :x 0})
+        flat     {:0 (face 0), :1 (face 1), :2 (face 2), :3 (face 3), :4 (face 4), :5 (face 5)}
+        quad     (fn [f] (merge (face f) {:0 {:id 1} :1 {:id 2} :2 {:id 3} :3 {:id 4}}))
+        one-face {:0 (face 0), :1 (face 1), :2 (quad 2) , :3 (face 3), :4 (face 4), :5 (face 5)}]
+    (:tree (update-level-of-detail flat (constantly false))) => flat
+    (:drop (update-level-of-detail flat (constantly false))) => []
+    (:drop (update-level-of-detail one-face (constantly false))) => [{:id 1} {:id 2} {:id 3} {:id 4}]
+    (:tree (update-level-of-detail one-face (constantly false))) => flat
+    (:load (update-level-of-detail flat (constantly false))) => []
+    (:load (update-level-of-detail flat #(= %& [2 0 0 0]))) => [[:2 :0] [:2 :1] [:2 :2] [:2 :3]]))
