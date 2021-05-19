@@ -161,11 +161,8 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 16 4 @position)
-          drop-list (doall (tiles-to-drop tree increase?))
-          load-list (doall (tiles-to-load tree increase?))
-          tiles     (doall (load-tiles-data (tiles-meta-data load-list)))]
-      (>! changes {:drop drop-list :load load-list :tiles tiles})
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 16 4 @position)]
+      (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 
 (def-context-macro with-vertex-array (fn [vao] (GL30/glBindVertexArray vao)) (fn [vao] (GL30/glBindVertexArray 0)))
@@ -281,11 +278,9 @@ void main()
 (def t0 (System/currentTimeMillis))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
-    (let [tiles (map load-tile-into-opengl (:tiles data))]
-      (doseq [path (:drop data)] (unload-tile-from-opengl (get-in @tree path)))
-      (swap! tree #(quadtree-add (quadtree-drop %1 %2) %3 %4) (:drop data) (:load data) tiles)
-      (swap! tree check-neighbours)
-      (>!! tree-state @tree)))
+    (doseq [tile (:drop data)] (unload-tile-from-opengl tile))
+    (let [loaded-tiles (map load-tile-into-opengl (quadtree-extract (:tree data) (:load data)))]
+      (>!! tree-state (reset! tree (quadtree-add (:tree data) (:load data) loaded-tiles)))))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)

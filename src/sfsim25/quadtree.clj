@@ -184,10 +184,13 @@
 
 (defn update-level-of-detail
   "Return tree with updated level of detail (LOD), a list of dropped tiles and a list of new paths"
-  [tree increase-level-fun?]
-  (let [drop-list (tiles-to-drop tree increase-level-fun?)]
-    {:tree (quadtree-drop tree drop-list)
+  [tree increase-level-fun? neighbours?]
+  (let [drop-list (tiles-to-drop tree increase-level-fun?)
+        load-list (tiles-to-load tree increase-level-fun?)
+        new-tiles (load-tiles-data (tiles-meta-data load-list))
+        check     (if neighbours? check-neighbours identity)]
+    {:tree (check (quadtree-add (quadtree-drop tree drop-list) load-list new-tiles))
      :drop (quadtree-extract tree drop-list)
-     :load (tiles-to-load tree increase-level-fun?)}))
+     :load load-list}))
 
 (set! *unchecked-math* false)
