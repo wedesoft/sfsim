@@ -120,9 +120,14 @@
   (map (partial get-in tree) paths))
 
 (defn quadtree-drop
-  "Drop tiles from quad tree"
+  "Drop tiles specified by path list from quad tree"
   [tree paths]
   (reduce dissoc-in tree paths))
+
+(defn quadtree-update
+  "Update tiles with specified paths"
+  [tree paths fun & args]
+  (reduce (fn [tree path] (apply update-in tree path fun args)) tree paths))
 
 (defn neighbour-path
   "Determine path of neighbouring tile at same level"

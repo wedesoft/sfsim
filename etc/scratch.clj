@@ -279,8 +279,7 @@ void main()
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
     (doseq [tile (:drop data)] (unload-tile-from-opengl tile))
-    (let [loaded-tiles (map load-tile-into-opengl (quadtree-extract (:tree data) (:load data)))]
-      (>!! tree-state (reset! tree (quadtree-add (:tree data) (:load data) loaded-tiles)))))
+    (>!! tree-state (reset! tree (quadtree-update (:tree data) (:load data) load-tile-into-opengl))))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
