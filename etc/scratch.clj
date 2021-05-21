@@ -30,22 +30,22 @@ uniform int tesselate_right;
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    if (tesselate_up == 1) {
+    if (tesselate_up != 0) {
       gl_TessLevelOuter[0] = 32.0;
     } else {
       gl_TessLevelOuter[0] = 16.0;
     };
-    if (tesselate_left == 1) {
+    if (tesselate_left != 0) {
       gl_TessLevelOuter[1] = 32.0;
     } else {
       gl_TessLevelOuter[1] = 16.0;
     };
-    if (tesselate_down == 1) {
+    if (tesselate_down != 0) {
       gl_TessLevelOuter[2] = 32.0;
     } else {
       gl_TessLevelOuter[2] = 16.0;
     };
-    if (tesselate_right == 1) {
+    if (tesselate_right != 0) {
       gl_TessLevelOuter[3] = 32.0;
     } else {
       gl_TessLevelOuter[3] = 16.0;
@@ -102,7 +102,6 @@ uniform sampler2D tex;
 void main()
 {
   fragColor = texture(tex, UV).rgb;
-  // fragColor = vec3(1, 1, 1);
 }")
 
 (defn make-shader [source shader-type]
@@ -161,7 +160,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 16 4 @position)]
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 20 3 @position)]
       (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 
@@ -212,7 +211,7 @@ void main()
       (GL20/glEnableVertexAttribArray 1)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
-            texture     (create-texture "tex" 0 GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
+            texture     (create-texture "tex" 0 GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_NEAREST (make-byte-buffer pixels))
             heightfield (create-texture "hf" 1 GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
         (assoc tile :vao vao :vbo vbo :idx idx :texture texture :heightfield heightfield)))))
 
@@ -236,8 +235,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
