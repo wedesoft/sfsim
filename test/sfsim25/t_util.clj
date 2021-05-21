@@ -44,8 +44,8 @@
 (def pi Math/PI)
 
 (tabular "Sinc function"
-  (fact (sinc x?) => (roughly result? 1e-6))
-  x?       result?
+  (fact (sinc ?x) => (roughly ?result 1e-6))
+  ?x       ?result
   pi       0.0
   (/ pi 2) (/ 2 pi)
   0.0      1.0)

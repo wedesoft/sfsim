@@ -15,13 +15,13 @@
     (quadtree/quad-size 2 33 6378000.0 1280 150000.0 60.0) => 10.0))
 
 (tabular "Load normals, scale factors and colors for a tile"
-  (fact (k? (load-tile-data 3 2 2 1)) => result?
+  (fact (?k (load-tile-data 3 2 2 1)) => ?result
     (provided
       (util/slurp-image "globe/3/2/1/2.png") => "2.png"
       (util/slurp-floats "globe/3/2/1/2.scale") => "2.scale"
       (util/slurp-floats "globe/3/2/1/2.normals") => "2.normals"
       (util/slurp-bytes "globe/3/2/1/2.water") => "2.water"))
-  k?       result?
+  ?k       ?result
   :colors  "2.png"
   :normals "2.normals"
   :water   "2.water"
@@ -31,8 +31,8 @@
   :x       1)
 
 (tabular "Get information for loading sub tiles"
-  (fact (nth (sub-tiles-info 3 2 2 1) i?) => result?)
-  i? result?
+  (fact (nth (sub-tiles-info 3 2 2 1) ?i) => ?result)
+  ?i ?result
   0  {:face 3 :level 3 :y 4 :x 2}
   1  {:face 3 :level 3 :y 4 :x 3}
   2  {:face 3 :level 3 :y 5 :x 2}
@@ -66,8 +66,8 @@
     (tiles-to-load sub-quad (fn [face level y x] (= [5 2] [face level]))) => []))
 
 (tabular "Convert tile path to face, level, y and x"
-  (fact (tile-meta-data path?) => {:face face? :level level? :y y? :x x?})
-  path?      face? level? y? x?
+  (fact (tile-meta-data ?path) => {:face ?face :level ?level :y ?y :x ?x})
+  ?path      ?face ?level ?y ?x
   [:5]       5     0      0  0
   [:5 :0]    5     1      0  0
   [:5 :1]    5     1      0  1
@@ -106,8 +106,8 @@
       (v/+ (cube-map face 0.5 0.5) (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5))))
 
 (tabular "Same tile or neighbouring tiles on the same face"
-  (fact (neighbour-path path? dy? dx?) => result?)
-  path?      dy? dx? result?
+  (fact (neighbour-path ?path ?dy ?dx) => ?result)
+  ?path      ?dy ?dx ?result
   [:0]        0   0  [:0]
   [:1]        0   0  [:1]
   [:2]        0   0  [:2]
@@ -163,8 +163,8 @@
   [:5 :2]     0  -1  [:4 :2])
 
 (tabular "Get the four neighbours for a given path of a tile"
-  (fact (k? (neighbour-paths [:5 :1 :2])) => path?)
-  k?     path?
+  (fact (?k (neighbour-paths [:5 :1 :2])) => ?path)
+  ?k     ?path
   :up    [:5 :1 :0]
   :left  [:5 :0 :3]
   :down  [:5 :3 :0]
