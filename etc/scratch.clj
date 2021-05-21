@@ -7,6 +7,7 @@
          '[sfsim25.quadtree :refer :all])
 
 (import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40]
+        '[org.lwjgl.input Keyboard]
         '[org.lwjgl BufferUtils])
 
 (def vertex-source "#version 410 core
@@ -134,6 +135,8 @@ void main()
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
+
+(Keyboard/create)
 
 (GL11/glClearColor 0.0 0.0 0.0 0.0)
 (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
@@ -279,6 +282,8 @@ void main()
   (when-let [data (poll! changes)]
     (doseq [tile (:drop data)] (unload-tile-from-opengl tile))
     (>!! tree-state (reset! tree (quadtree-update (:tree data) (:load data) load-tile-into-opengl))))
+  (if (Keyboard/next)
+    (println (Keyboard/getEventKey) (Keyboard/getEventKeyState)))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
@@ -291,6 +296,7 @@ void main()
     (render-tree @tree)
     (Display/update)))
 
+(Keyboard/destroy)
 (Display/destroy)
 
 (close! tree-state)

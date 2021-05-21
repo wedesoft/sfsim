@@ -1,6 +1,6 @@
 # TODO
 
-* implement and test dropping and loading of tiles
+* fly around using keyboard
 * use higher resolution for colour texture
 * use lower resolution for height map if outer tessellation level is lower
 * use normal maps for shading
