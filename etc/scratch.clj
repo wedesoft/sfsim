@@ -277,24 +277,30 @@ void main()
 
 (>!! tree-state @tree)
 
-(def t0 (System/currentTimeMillis))
+(def keystates (atom {}))
+
+(def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
     (doseq [tile (:drop data)] (unload-tile-from-opengl tile))
     (>!! tree-state (reset! tree (quadtree-update (:tree data) (:load data) load-tile-into-opengl))))
-  (if (Keyboard/next)
-    (println (Keyboard/getEventKey) (Keyboard/getEventKeyState)))
+  (while (Keyboard/next)
+    (let [state      (Keyboard/getEventKeyState)
+          event-key  (Keyboard/getEventKey)]
+      (cond
+        (= event-key Keyboard/KEY_UP) (swap! keystates assoc :up state)
+        (= event-key Keyboard/KEY_DOWN) (swap! keystates assoc :down state))))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
-        dt (- t1 t0)
-        z  (- (* dt 200) (* 3 6378000))
-        angle (* (+ (* dt 0.005) 0) (/ Math/PI 180))
-        t  (float-array (vals (matrix3x3->matrix4x4 (rotation-y angle) (->Vector3 0 0 z))))]
-    (reset! position (->Vector3 (* (Math/sin angle) z) 0 (* (Math/cos angle) (- z))))
-    (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
-    (render-tree @tree)
-    (Display/update)))
+        dt (- t1 @t0)
+        v  (* (if (:up @keystates) 1000 (if (:down @keystates) -1000 0)) dt)]
+    (swap! t0 + dt)
+    (swap! position v/+ (->Vector3 0 0 (- v)))
+    (let [t (float-array (vals (matrix3x3->matrix4x4 (identity-matrix) (v/- @position))))]
+      (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
+      (render-tree @tree)
+      (Display/update))))
 
 (Keyboard/destroy)
 (Display/destroy)
