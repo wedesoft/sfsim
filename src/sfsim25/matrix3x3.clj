@@ -79,5 +79,15 @@
                  (:y a) (:y b) (:y c)
                  (:z a) (:z b) (:z c))))
 
+(defmacro def-matrix-multiplication
+  "Define a matrix multiplication for square matrices"
+  [method-name dimension]
+  `(defn ~method-name [~'m1 ~'m2]
+     (~(symbol (str "->Matrix" dimension \x dimension))
+        ~@(for [j (range 1 (inc dimension)) i (range 1 (inc dimension))]
+            `(c/+ ~@(for [k (range 1 (inc dimension))] `(c/* (~(keyword (str \m j k)) ~'m1) (~(keyword (str \m k i)) ~'m2))))))))
+
+(def-matrix-multiplication x 3)
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
