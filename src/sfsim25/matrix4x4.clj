@@ -4,7 +4,7 @@
   (:require [clojure.core :as c]
             [sfsim25.vector3 :refer (->Vector3)]
             [sfsim25.vector4 :refer (->Vector4)]
-            [sfsim25.matrix3x3 :refer (->Matrix3x3)])
+            [sfsim25.matrix3x3 :refer (->Matrix3x3 def-matrix-multiplication)])
   (:import [sfsim25.vector3 Vector3]
            [sfsim25.vector4 Vector4]
            [sfsim25.matrix3x3 Matrix3x3]))
@@ -43,5 +43,7 @@
                   0 dy  0  0
                   0  0 c1 c2
                   0  0 -1  0)))
+
+(def-matrix-multiplication x 4)
 
 (set! *unchecked-math* false)
