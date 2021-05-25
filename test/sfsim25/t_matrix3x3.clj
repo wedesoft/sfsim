@@ -49,3 +49,15 @@
   (permutations [1]) => [[1]]
   (permutations [1 2]) => [[1 2] [2 1]]
   (permutations [1 2 3]) => [[1 2 3] [1 3 2] [2 1 3] [2 3 1] [3 1 2] [3 2 1]])
+
+(facts "Count number of inversions in a permutation"
+  (count-inversions [1 2 3]) => 0
+  (count-inversions [2 1 3]) => 1
+  (count-inversions [3 1 2]) => 2
+  (count-inversions [3 2 1]) => 3)
+
+(facts "Parity of permutation"
+  (parity-of-permutation [1 2 3]) =>  1
+  (parity-of-permutation [2 1 3]) => -1
+  (parity-of-permutation [3 1 2]) =>  1
+  (parity-of-permutation [3 2 1]) => -1)

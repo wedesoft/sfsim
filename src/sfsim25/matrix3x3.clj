@@ -98,5 +98,15 @@
       (fn [i] (map #(into [(nth v i)] %) (permutations (into (subvec v 0 i) (subvec v (inc i) (count v))))))
       (range (count v)))))
 
+(defn count-inversions
+  "Count the number of inversions in a permutation"
+  [v]
+  (if (empty? v) 0 (+ (count (filter #(< % (first v)) (rest v))) (count-inversions (rest v)))))
+
+(defn parity-of-permutation
+  "Return the parity (sign) of a permutation"
+  [v]
+  (-> v count-inversions even? {true 1, false -1}))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
