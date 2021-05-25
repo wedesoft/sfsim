@@ -43,3 +43,9 @@
 
 (fact "Multiply two 3x3 matrices"
   (x (->Matrix3x3 1 2 3, 4 5 6, 7 8 9) (->Matrix3x3 2 3 4, 5 6 7, 8 9 10)) => (->Matrix3x3 36 42 48, 81 96 111, 126 150 174))
+
+(facts "Get permutations of vector"
+  (permutations []) => [[]]
+  (permutations [1]) => [[1]]
+  (permutations [1 2]) => [[1 2] [2 1]]
+  (permutations [1 2 3]) => [[1 2 3] [1 3 2] [2 1 3] [2 3 1] [3 1 2] [3 2 1]])

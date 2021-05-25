@@ -89,5 +89,14 @@
 
 (def-matrix-multiplication x 3)
 
+(defn permutations
+  "Return a list of all permutations of the specified vector"
+  [v]
+  (if (<= (count v) 1)
+    (list v)
+    (mapcat
+      (fn [i] (map #(into [(nth v i)] %) (permutations (into (subvec v 0 i) (subvec v (inc i) (count v))))))
+      (range (count v)))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
