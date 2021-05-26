@@ -31,3 +31,6 @@
 (fact "Multiply two 4x4 matrices"
   (x (->Matrix4x4 1 2 3 4, 5 6 7 8, 9 10 11 12, 13 14 15 16) (->Matrix4x4 2 3 4 5, 6 7 8 9, 10 11 12 13, 14 15 16 17))
   => (->Matrix4x4 100 110 120 130, 228 254 280 306, 356 398 440 482, 484 542 600 658))
+
+(fact "Determinant of 4x4 matrix"
+  (determinant4x4 (->Matrix4x4 2 3 5 7, 11 13 17 19, 23 29 31 37, 41 43 47 53)) => 880.0)

@@ -106,7 +106,22 @@
 (defn parity-of-permutation
   "Return the parity (sign) of a permutation"
   [v]
-  (-> v count-inversions even? {true 1, false -1}))
+  (-> v count-inversions even? {true c/+, false c/-}))
+
+(defmacro def-determinant
+  "Implement computation of determinant for square matrices"
+  [method-name indices-y indices-x]
+  (let [perms    (permutations indices-x)
+        parities (map parity-of-permutation perms)]
+  `(defn ~method-name [~'m]
+    (c/+
+     ~@(map
+         (fn [perm parity]
+           (list parity (cons c/* (map #(list (keyword (str \m %1 %2)) 'm) indices-y perm))))
+         perms
+         parities)))))
+
+(def-determinant determinant3x3 [1 2 3] [1 2 3])
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

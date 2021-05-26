@@ -1,6 +1,7 @@
 (ns sfsim25.t-matrix3x3
   (:refer-clojure :exclude [* -])
-  (:require [midje.sweet :refer :all]
+  (:require [clojure.core :as c]
+            [midje.sweet :refer :all]
             [sfsim25.matrix3x3 :refer :all]
             [sfsim25.vector3 :refer (->Vector3)]
             [sfsim25.quaternion :refer (->Quaternion rotation)]))
@@ -57,7 +58,10 @@
   (count-inversions [3 2 1]) => 3)
 
 (facts "Parity of permutation"
-  (parity-of-permutation [1 2 3]) =>  1
-  (parity-of-permutation [2 1 3]) => -1
-  (parity-of-permutation [3 1 2]) =>  1
-  (parity-of-permutation [3 2 1]) => -1)
+  (parity-of-permutation [1 2 3]) => (exactly c/+)
+  (parity-of-permutation [2 1 3]) => (exactly c/-)
+  (parity-of-permutation [3 1 2]) => (exactly c/+)
+  (parity-of-permutation [3 2 1]) => (exactly c/-))
+
+(fact "Determinant of 3x3 matrix"
+  (determinant3x3 (->Matrix3x3 2 3 5, 7 11 13, 17 19 23)) => -78.0)
