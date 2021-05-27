@@ -1,5 +1,7 @@
 # TODO
 
+* use clojure.core.matrix
+* improve performance of quaternions (see clojure.core.matrix implementation)
 * handle distance zero in quad-size
 * fly around using keyboard
 * use higher resolution for colour texture
