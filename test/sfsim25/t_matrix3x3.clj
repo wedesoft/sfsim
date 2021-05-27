@@ -10,12 +10,6 @@
 
 (defn roughly-matrix [m] (fn [x] (< (norm (- m x)) 1e-6)))
 
-(facts "Comvert rotation quaternion to rotation matrix"
-  (quaternion->matrix (->Quaternion 1 0 0 0))                => (roughly-matrix (->Matrix3x3 1 0 0 0 1 0 0 0 1))
-  (quaternion->matrix (rotation (/ pi 6) (->Vector3 1 0 0))) => (roughly-matrix (rotation-x (/ pi 6)))
-  (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 1 0))) => (roughly-matrix (rotation-y (/ pi 6)))
-  (quaternion->matrix (rotation (/ pi 6) (->Vector3 0 0 1))) => (roughly-matrix (rotation-z (/ pi 6))))
-
 (fact "Multiply two 3x3 matrices"
   (x (->Matrix3x3 1 2 3, 4 5 6, 7 8 9) (->Matrix3x3 2 3 4, 5 6 7, 8 9 10)) => (->Matrix3x3 36 42 48, 81 96 111, 126 150 174))
 
