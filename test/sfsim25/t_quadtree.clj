@@ -1,17 +1,17 @@
 (ns sfsim25.t-quadtree
   (:require [midje.sweet :refer :all]
+            [clojure.core.matrix :refer :all]
             [sfsim25.quadtree :refer :all :as quadtree]
             [sfsim25.cubemap :refer (cube-map) :as cubemap]
-            [sfsim25.util :as util]
-            [sfsim25.vector3 :refer (->Vector3) :as v]))
+            [sfsim25.util :as util]))
 
 (fact "Determine the size of a quad on the screen"
   (quad-size 2 33 6378000.0 1024 1000000.0 60.0) => (/ (* 512 (/ (/ 6378000.0 2 32) 1000000.0)) (Math/tan (Math/toRadians 30.0))))
 
 (facts "Decide whether to increase quadtree level or not"
-  (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 3 (->Vector3 200000 0 0) 5 2 0 1) => truthy
+  (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 3 (matrix [200000 0 0]) 5 2 0 1) => truthy
   (provided
-    (cubemap/tile-center 5 2 0 1 6378000.0 6357000.0) => (->Vector3 50000 0 0)
+    (cubemap/tile-center 5 2 0 1 6378000.0 6357000.0) => (matrix [50000 0 0])
     (quadtree/quad-size 2 33 6378000.0 1280 150000.0 60.0) => 10.0))
 
 (tabular "Load normals, scale factors and colors for a tile"
@@ -103,7 +103,7 @@
 (doseq [face (range 6) [dy dx] [[0 -1] [0 1] [-1 0] [1 0]]]
   (fact "Check consistency of neighbouring faces with cube-map coordinates"
     (cube-map face (+ 0.5 (* dy 0.5)) (+ 0.5 (* dx 0.5))) =>
-      (v/+ (cube-map face 0.5 0.5) (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5))))
+      (add (cube-map face 0.5 0.5) (cube-map (keyword->int (first (neighbour-path [(int->keyword face)] dy dx))) 0.5 0.5))))
 
 (tabular "Same tile or neighbouring tiles on the same face"
   (fact (neighbour-path ?path ?dy ?dx) => ?result)

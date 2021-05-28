@@ -1,6 +1,7 @@
 (ns sfsim25.quadtree
   "Manage quad tree of map tiles."
-  (:require [sfsim25.vector3 :refer (norm) :as v]
+  (:require [clojure.core.matrix :refer :all]
+            [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.cubemap :refer (tile-center)]
             [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes dissoc-in)]))
 
@@ -19,7 +20,7 @@
   "Determine screen size of a quad given the camera position"
   [tilesize radius1 radius2 width angle position face level y x]
   (let [center   (tile-center face level y x radius1 radius2)
-        distance (norm (v/- position center))]
+        distance (norm (sub position center))]
     (quad-size level tilesize radius1 width distance angle)))
 
 (defn increase-level?
