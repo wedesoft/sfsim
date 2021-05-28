@@ -1,6 +1,6 @@
 (ns sfsim25.t-matrix
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix sub identity-matrix)]
+            [clojure.core.matrix :refer (matrix sub identity-matrix mmul)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.matrix :refer :all]
             [sfsim25.quaternion :refer (->Quaternion rotation)]))
@@ -25,3 +25,18 @@
   (quaternion->matrix (rotation (/ pi 6) (matrix [1 0 0]))) => (roughly-matrix (rotation-x (/ pi 6)))
   (quaternion->matrix (rotation (/ pi 6) (matrix [0 1 0]))) => (roughly-matrix (rotation-y (/ pi 6)))
   (quaternion->matrix (rotation (/ pi 6) (matrix [0 0 1]))) => (roughly-matrix (rotation-z (/ pi 6))))
+
+(fact "Project homogeneous coordinate to cartesian"
+  (project (matrix [4 6 10 2])) => (matrix [2 3 5]))
+
+(fact "Creating a 4x4 matrix from a 3x3 matrix and a translation vector"
+  (transformation-matrix (matrix [[1 2 3] [5 6 7] [9 10 11]]) (matrix [4 8 12])) => (matrix [[1 2 3 4] [5 6 7 8] [9 10 11 12] [0 0 0 1]]))
+
+(defn roughly-vector [y] (fn [x] (< (norm (sub y x)) 1e-6)))
+
+(fact "OpenGL projection matrix"
+  (let [m (projection-matrix 640 480 5.0 1000.0 (* 0.5 pi))]
+    (project (mmul m (matrix [0    0    -5 1]))) => (roughly-vector (matrix [0 0 -1]))
+    (project (mmul m (matrix [0    0 -1000 1]))) => (roughly-vector (matrix [0 0  1]))
+    (project (mmul m (matrix [5    0    -5 1]))) => (roughly-vector (matrix [1 0 -1]))
+    (project (mmul m (matrix [0 3.75    -5 1]))) => (roughly-vector (matrix [0 1 -1]))))

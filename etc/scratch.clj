@@ -1,8 +1,7 @@
-(require '[clojure.core.async :refer (go go-loop chan <! >! <!! >!! poll! close!) :as a]
+(require '[clojure.core.async :refer (go-loop chan <! >! <!! >!! poll! close!) :as a]
+         '[clojure.core.matrix :refer :all]
          '[sfsim25.util :refer :all]
-         '[sfsim25.vector3 :refer (->Vector3) :as v]
-         '[sfsim25.matrix3x3 :refer (identity-matrix rotation-x rotation-y)]
-         '[sfsim25.matrix4x4 :refer (matrix3x3->matrix4x4 projection-matrix)]
+         '[sfsim25.matrix :refer :all]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all])
 
@@ -156,7 +155,7 @@ void main()
 (def tree-state (chan))
 (def changes (chan))
 
-(def position (atom (->Vector3 0 0 (* 3 radius1))))
+(def position (atom (matrix [0 0 (* 3 radius1)])))
 (def tree (atom {}))
 
 (def tilesize 33)
@@ -177,10 +176,10 @@ void main()
 (defn make-vertices
   [face level y x]
   (let [[a b c d] (cube-map-corners face level y x)]
-    (float-array [(:x a) (:y a) (:z a) c0 c0
-                  (:x b) (:y b) (:z b) c1 c0
-                  (:x c) (:y c) (:z c) c0 c1
-                  (:x d) (:y d) (:z d) c1 c1])))
+    (float-array [(mget a 0) (mget a 1) (mget a 2) c0 c0
+                  (mget b 0) (mget b 1) (mget b 2) c1 c0
+                  (mget c 0) (mget c 1) (mget c 2) c0 c1
+                  (mget d 0) (mget d 1) (mget d 2) c1 c1])))
 
 (defn create-texture
   [varname index internal-format tex-format tex-type interpolation buffer]
@@ -296,8 +295,8 @@ void main()
         dt (- t1 @t0)
         v  (* (if (:up @keystates) 1000 (if (:down @keystates) -1000 0)) dt)]
     (swap! t0 + dt)
-    (swap! position v/+ (->Vector3 0 0 (- v)))
-    (let [t (float-array (vals (matrix3x3->matrix4x4 (identity-matrix) (v/- @position))))]
+    (swap! position add (matrix [0 0 (- v)]))
+    (let [t (float-array (vals (transformation-matrix (identity-matrix) (sub @position))))]
       (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
       (render-tree @tree)
       (Display/update))))

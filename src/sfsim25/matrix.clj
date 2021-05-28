@@ -43,5 +43,30 @@
         c (rotate-vector q (matrix [0 0 1]))]
     (transpose (matrix [a b c]))))
 
+(defn project
+  "Project homogeneous coordinate to cartesian"
+  ^Vector [^Vector v]
+  (div (matrix [(mget v 0) (mget v 1) (mget v 2)]) (mget v 3)))
+
+(defn transformation-matrix
+  "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
+  ^Matrix [^Matrix m ^Vector v]
+  (matrix [[(mget m 0 0) (mget m 0 1) (mget m 0 2) (mget v 0)]
+           [(mget m 1 0) (mget m 1 1) (mget m 1 2) (mget v 1)]
+           [(mget m 2 0) (mget m 2 1) (mget m 2 2) (mget v 2)]
+           [           0            0            0          1]]))
+
+(defn projection-matrix
+  "Compute OpenGL projection matrix (frustum)"
+  [width height near far field-of-view]
+  (let [dx (/ 1 (Math/tan (/ field-of-view 2)))
+        dy (-> dx (* width) (/ height))
+        c1 (/ (+ near far) (- near far))
+        c2 (/ (* 2 near far) (- near far))]
+    (matrix [[dx  0  0  0]
+             [ 0 dy  0  0]
+             [ 0  0 c1 c2]
+             [ 0  0 -1  0]])))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
