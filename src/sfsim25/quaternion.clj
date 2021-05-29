@@ -59,12 +59,12 @@
   (let [factor (/ 1.0 (norm2 q))]
     (->Quaternion (c/* (:a q) factor) (c/* (c/- (:b q)) factor) (c/* (c/- (:c q)) factor) (c/* (c/- (:d q)) factor))))
 
-(defn vector3->quaternion
+(defn vector->quaternion
   "Convert 3D vector to quaternion"
   ^Quaternion [^Vector v]
   (apply ->Quaternion 0.0 v))
 
-(defn quaternion->vector3
+(defn quaternion->vector
   "Convert quaternion to 3D vector"
   ^Vector [^Quaternion q]
   (matrix [(:b q) (:c q) (:d q)]))
@@ -73,7 +73,7 @@
   "Exponentiation of quaternion"
   ^Quaternion [^Quaternion q]
   (let [scale      (Math/exp (:a q))
-        rotation   (l/norm (quaternion->vector3 q))
+        rotation   (l/norm (quaternion->vector q))
         cos-scale  (c/* scale (Math/cos rotation))
         sinc-scale (c/* scale (sinc rotation))]
     (->Quaternion cos-scale (c/* sinc-scale (:b q)) (c/* sinc-scale (:c q)) (c/* sinc-scale (:d q)))))
@@ -82,12 +82,12 @@
   "Generate quaternion to represent rotation"
   ^Quaternion [^double theta ^Vector v]
   (let [scale (/ theta 2)]
-    (exp (vector3->quaternion (mul scale v)))))
+    (exp (vector->quaternion (mul scale v)))))
 
 (defn rotate-vector
   "Rotate a vector with a rotation represented by a quaternion"
   ^Vector [^Quaternion q ^Vector v]
-  (quaternion->vector3 (* (* q (vector3->quaternion v)) (conjugate q))))
+  (quaternion->vector (* (* q (vector->quaternion v)) (conjugate q))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

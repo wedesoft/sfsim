@@ -61,8 +61,8 @@
   (inverse (->Quaternion 0.432 0.576 0.96 1.6)) => (->Quaternion 0.108 -0.144 -0.24 -0.4))
 
 (facts "Convert 3D vector to quaternion and back"
-  (vector3->quaternion (matrix [2 3 5]))      => (->Quaternion 0 2 3 5)
-  (quaternion->vector3 (->Quaternion 0 2 3 5)) => (matrix [2 3 5]))
+  (vector->quaternion (matrix [2 3 5]))      => (->Quaternion 0 2 3 5)
+  (quaternion->vector (->Quaternion 0 2 3 5)) => (matrix [2 3 5]))
 
 (def pi Math/PI)
 (def e (Math/exp 1))
