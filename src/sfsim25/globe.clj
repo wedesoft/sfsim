@@ -7,8 +7,7 @@
             [sfsim25.util :refer (tile-path spit-image spit-bytes spit-floats set-pixel! set-water! set-vector! set-scale! cube-dir
                                   cube-path ubyte->byte)]
             [sfsim25.vector3 :refer (norm)])
-  (:import [java.io File]
-           [sfsim25.vector3 Vector3])
+  (:import [java.io File])
   (:gen-class))
 
 (set! *unchecked-math* true)

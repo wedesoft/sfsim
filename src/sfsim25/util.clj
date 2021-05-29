@@ -7,8 +7,7 @@
            [java.io ByteArrayOutputStream]
            [magick MagickImage ImageInfo ColorspaceType]
            [mikera.vectorz Vector]
-           [sfsim25.rgb RGB]
-           [sfsim25.vector3 Vector3]))
+           [sfsim25.rgb RGB]))
 
 (defn slurp-bytes
   "Read bytes from a file"
