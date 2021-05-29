@@ -1,7 +1,7 @@
 (ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
+            [clojure.core.matrix :refer :all]
             [sfsim25.rgb :refer (->RGB)]
-            [sfsim25.vector3 :refer (->Vector3)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 
@@ -100,9 +100,9 @@
 
 (facts "Reading and writing of vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
-    (get-vector vectors 1 2) => (->Vector3 18 19 20)
-    (set-vector! vectors 1 2 (->Vector3 24.5 25.5 26.5)) => anything
-    (get-vector vectors 1 2) => (->Vector3 24.5 25.5 26.5)))
+    (get-vector vectors 1 2) => (matrix [18 19 20])
+    (set-vector! vectors 1 2 (matrix [24.5 25.5 26.5])) => anything
+    (get-vector vectors 1 2) => (matrix [24.5 25.5 26.5])))
 
 (facts "Removal of entry in nested hash"
   (dissoc-in {:a 42} [:a]) => {}

@@ -1,11 +1,12 @@
 (ns sfsim25.util
   "Various utility functions."
   (:require [clojure.java.io :as io]
-            [sfsim25.rgb :refer (->RGB)]
-            [sfsim25.vector3 :refer (->Vector3)])
+            [clojure.core.matrix :refer :all]
+            [sfsim25.rgb :refer (->RGB)])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [magick MagickImage ImageInfo ColorspaceType]
+           [mikera.vectorz Vector]
            [sfsim25.rgb RGB]
            [sfsim25.vector3 Vector3]))
 
@@ -171,19 +172,19 @@
 
 (defn get-vector
   "Read vector from a vectors tile"
-  ^Vector3 [{:keys [width height data]} ^long y ^long x]
+  ^Vector [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (->Vector3 (aget data offset      )
-               (aget data (+ offset 1))
-               (aget data (+ offset 2)))))
+    (matrix [(aget data offset      )
+             (aget data (+ offset 1))
+             (aget data (+ offset 2))])))
 
 (defn set-vector!
   "Write vector value to vectors tile"
-  [{:keys [width height data]} ^long y ^long x ^Vector3 value]
+  [{:keys [width height data]} ^long y ^long x ^Vector value]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-float data offset       (:x value))
-    (aset-float data (+ offset 1) (:y value))
-    (aset-float data (+ offset 2) (:z value))))
+    (aset-float data offset       (mget value 0))
+    (aset-float data (+ offset 1) (mget value 1))
+    (aset-float data (+ offset 2) (mget value 2))))
 
 (defn dissoc-in
   "Return nested hash with path removed"
