@@ -245,7 +245,7 @@ void main()
 
 (GL20/glUseProgram program)
 
-(def p (float-array (vals (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
+(def p (float-array (eseq (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (defn is-leaf?
@@ -296,7 +296,7 @@ void main()
         v  (* (if (:up @keystates) 1000 (if (:down @keystates) -1000 0)) dt)]
     (swap! t0 + dt)
     (swap! position add (matrix [0 0 (- v)]))
-    (let [t (float-array (vals (transformation-matrix (identity-matrix) (sub @position))))]
+    (let [t (float-array (eseq (transformation-matrix (identity-matrix 3) (sub @position))))]
       (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
       (render-tree @tree)
       (Display/update))))
