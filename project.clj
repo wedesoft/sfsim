@@ -24,5 +24,7 @@
             "run-globe"           ["with-profile" "run-globe"           "run"]}
   :resource-paths ["/usr/share/java/lwjgl.jar"
                    "/usr/share/java/jmagick.jar"]
+  :plugins [[lein-midje "3.2.1"]
+            [lein-codox "0.10.7"]]
   :target-path "target/%s"
   :jvm-opts ["-Xmx2g"])
