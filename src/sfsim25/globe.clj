@@ -2,11 +2,11 @@
   "Convert Mercator image and elevation data into cube map tiles."
   (:require [clojure.core.memoize :as m]
             [com.climate.claypoole :as cp]
+            [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.cubemap :refer (cube-map cube-coordinate color-geodetic water-geodetic project-onto-globe normal-for-point
                                      cartesian->geodetic)]
             [sfsim25.util :refer (tile-path spit-image spit-bytes spit-floats set-pixel! set-water! set-vector! set-scale! cube-dir
-                                  cube-path ubyte->byte)]
-            [sfsim25.vector3 :refer (norm)])
+                                  cube-path ubyte->byte)])
   (:import [java.io File])
   (:gen-class))
 
