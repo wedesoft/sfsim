@@ -1,7 +1,5 @@
 # TODO
 
-* use clojure.core.matrix
-* improve performance of quaternions (see clojure.core.matrix implementation)
 * handle distance zero in quad-size
 * fly around using keyboard
 * use higher resolution for colour texture
@@ -9,7 +7,7 @@
 * use normal maps for shading
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe
-* method to process paths from quad tree (e.g. load/unload OpenGL objects)
+* improve performance of quaternions (see clojure.core.matrix implementation)
 * Get scale-image to work on large images
 * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
 * Skydome scaled to ZFAR * 0.5
