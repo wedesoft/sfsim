@@ -1,9 +1,10 @@
 (require '[clojure.core.async :refer (go-loop chan <! >! <!! >!! poll! close!) :as a]
          '[clojure.core.matrix :refer :all]
          '[sfsim25.util :refer :all]
-         '[sfsim25.matrix :refer :all]
+         '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
          '[sfsim25.cubemap :refer :all]
-         '[sfsim25.quadtree :refer :all])
+         '[sfsim25.quadtree :refer :all]
+         '[sfsim25.quaternion :as q])
 
 (import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40]
         '[org.lwjgl.input Keyboard]
@@ -156,6 +157,8 @@ void main()
 (def changes (chan))
 
 (def position (atom (matrix [0 0 (* 3 radius1)])))
+(def orientation (atom (q/->Quaternion 1 0 0 0)))
+
 (def tree (atom {}))
 
 (def tilesize 33)
@@ -213,7 +216,7 @@ void main()
       (GL20/glEnableVertexAttribArray 1)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
-            texture     (create-texture "tex" 0 GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_NEAREST (make-byte-buffer pixels))
+            texture     (create-texture "tex" 0 GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
             heightfield (create-texture "hf" 1 GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
         (assoc tile :vao vao :vbo vbo :idx idx :texture texture :heightfield heightfield)))))
 
@@ -237,8 +240,8 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
@@ -286,17 +289,21 @@ void main()
   (while (Keyboard/next)
     (let [state      (Keyboard/getEventKeyState)
           event-key  (Keyboard/getEventKey)]
-      (cond
-        (= event-key Keyboard/KEY_UP) (swap! keystates assoc :up state)
-        (= event-key Keyboard/KEY_DOWN) (swap! keystates assoc :down state))))
+      (swap! keystates assoc event-key state)))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
         dt (- t1 @t0)
-        v  (* (if (:up @keystates) 1000 (if (:down @keystates) -1000 0)) dt)]
+        ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
+        rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
+        rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
+        v  (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))]
     (swap! t0 + dt)
-    (swap! position add (matrix [0 0 (- v)]))
-    (let [t (float-array (eseq (transformation-matrix (identity-matrix 3) (sub @position))))]
+    (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+    (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
+    (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
+    (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
+    (let [t (float-array (eseq (inverse (transformation-matrix (quaternion->matrix @orientation) @position))))]
       (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
       (render-tree @tree)
       (Display/update))))
