@@ -4,7 +4,7 @@
   (:require [clojure.core :as c]
             [clojure.core.matrix :refer (matrix mul)]
             [clojure.core.matrix.linear :as l]
-            [sfsim25.util :refer (sinc)])
+            [sfsim25.util :refer (sinc sqr)])
   (:import [mikera.vectorz Vector]))
 
 (set! *unchecked-math* true)
@@ -35,7 +35,7 @@
 (defn norm2
   "Compute square of norm of quaternion"
   ^double [^Quaternion q]
-  (c/+ (c/* (:a q) (:a q)) (c/* (:b q) (:b q)) (c/* (:c q) (:c q)) (c/* (:d q) (:d q))))
+  (c/+ (sqr (:a q)) (sqr (:b q)) (sqr (:c q)) (sqr (:d q))))
 
 (defn norm
   "Compute norm of quaternion"
