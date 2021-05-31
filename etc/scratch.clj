@@ -162,6 +162,7 @@ void main()
 (def tree (atom {}))
 
 (def tilesize 33)
+(def ctilesize 129)
 
 (go-loop []
   (if-let [tree (<! tree-state)]
@@ -185,12 +186,12 @@ void main()
                   (mget d 0) (mget d 1) (mget d 2) c1 c1])))
 
 (defn create-texture
-  [varname index internal-format tex-format tex-type interpolation buffer]
+  [varname index size internal-format tex-format tex-type interpolation buffer]
   (let [texture (GL11/glGenTextures)]
     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
     (GL20/glUniform1i (GL20/glGetUniformLocation program varname) index)
-    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internal-format tilesize tilesize 0 tex-format tex-type buffer)
+    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internal-format size size 0 tex-format tex-type buffer)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER interpolation)
@@ -216,8 +217,8 @@ void main()
       (GL20/glEnableVertexAttribArray 1)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
-            texture     (create-texture "tex" 0 GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
-            heightfield (create-texture "hf" 1 GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
+            texture     (create-texture "tex" 0 ctilesize GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
+            heightfield (create-texture "hf" 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
         (assoc tile :vao vao :vbo vbo :idx idx :texture texture :heightfield heightfield)))))
 
 (defn unload-tile-from-opengl
