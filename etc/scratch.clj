@@ -13,17 +13,22 @@
 (def vertex-source "#version 410 core
 in mediump vec3 point;
 in mediump vec2 texcoord;
+in mediump vec2 ctexcoord;
 out mediump vec2 texcoord_tcs;
+out mediump vec2 ctexcoord_tcs;
 void main()
 {
   gl_Position = vec4(point, 1);
   texcoord_tcs = texcoord;
+  ctexcoord_tcs = ctexcoord;
 }")
 
 (def tcs-source "#version 410 core
 layout(vertices = 4) out;
 in mediump vec2 texcoord_tcs[];
+in mediump vec2 ctexcoord_tcs[];
 out mediump vec2 texcoord_tes[];
+out mediump vec2 ctexcoord_tes[];
 uniform int tesselate_up;
 uniform int tesselate_left;
 uniform int tesselate_down;
@@ -56,12 +61,14 @@ void main(void)
   }
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
   texcoord_tes[gl_InvocationID] = texcoord_tcs[gl_InvocationID];
+  ctexcoord_tes[gl_InvocationID] = ctexcoord_tcs[gl_InvocationID];
 }")
 
 (def tes-source "#version 410 core
 layout(quads, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
-out mediump vec2 texcoord_geo;
+in mediump vec2 ctexcoord_tes[];
+out mediump vec2 ctexcoord_geo;
 uniform sampler2D hf;
 uniform mat4 projection;
 uniform mat4 transform;
@@ -69,7 +76,10 @@ void main()
 {
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
   vec2 d = mix(texcoord_tes[3], texcoord_tes[2], gl_TessCoord.x);
-  texcoord_geo = mix(c, d, gl_TessCoord.y);
+  vec2 texcoord_geo = mix(c, d, gl_TessCoord.y);
+  vec2 cc = mix(ctexcoord_tes[0], ctexcoord_tes[1], gl_TessCoord.x);
+  vec2 cd = mix(ctexcoord_tes[3], ctexcoord_tes[2], gl_TessCoord.x);
+  ctexcoord_geo = mix(cc, cd, gl_TessCoord.y);
   float s = texture(hf, texcoord_geo).r;
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
@@ -79,19 +89,19 @@ void main()
 
 (def geo-source "#version 410 core
 layout(triangles) in;
-in mediump vec2 texcoord_geo[3];
+in mediump vec2 ctexcoord_geo[3];
 layout(triangle_strip, max_vertices = 3) out;
 out mediump vec2 UV;
 void main(void)
 {
 	gl_Position = gl_in[0].gl_Position;
-  UV = texcoord_geo[0];
+  UV = ctexcoord_geo[0];
 	EmitVertex();
 	gl_Position = gl_in[1].gl_Position;
-  UV = texcoord_geo[1];
+  UV = ctexcoord_geo[1];
 	EmitVertex();
 	gl_Position = gl_in[2].gl_Position;
-  UV = texcoord_geo[2];
+  UV = ctexcoord_geo[2];
 	EmitVertex();
 	EndPrimitive();
 }")
@@ -177,13 +187,16 @@ void main()
 (def c0 (/ 0.5 tilesize))
 (def c1 (- 1.0 (/ 0.5 tilesize)))
 
+(def d0 (/ 0.5 ctilesize))
+(def d1 (- 1.0 (/ 0.5 ctilesize)))
+
 (defn make-vertices
   [face level y x]
   (let [[a b c d] (cube-map-corners face level y x)]
-    (float-array [(mget a 0) (mget a 1) (mget a 2) c0 c0
-                  (mget b 0) (mget b 1) (mget b 2) c1 c0
-                  (mget c 0) (mget c 1) (mget c 2) c0 c1
-                  (mget d 0) (mget d 1) (mget d 2) c1 c1])))
+    (float-array [(mget a 0) (mget a 1) (mget a 2) c0 c0 d0 d0
+                  (mget b 0) (mget b 1) (mget b 2) c1 c0 d1 d0
+                  (mget c 0) (mget c 1) (mget c 2) c0 c1 d0 d1
+                  (mget d 0) (mget d 1) (mget d 2) c1 c1 d1 d1])))
 
 (defn create-texture
   [varname index size internal-format tex-format tex-type interpolation buffer]
@@ -210,11 +223,14 @@ void main()
       (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
       (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW)
       (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   )
-                                  3 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 0 Float/BYTES))
+                                  3 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 0 Float/BYTES))
       (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord")
-                                  2 GL11/GL_FLOAT false (* 5 Float/BYTES) (* 3 Float/BYTES))
+                                  2 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 3 Float/BYTES))
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "ctexcoord")
+                                  2 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 5 Float/BYTES))
       (GL20/glEnableVertexAttribArray 0)
       (GL20/glEnableVertexAttribArray 1)
+      (GL20/glEnableVertexAttribArray 2)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
             texture     (create-texture "tex" 0 ctilesize GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
@@ -226,6 +242,7 @@ void main()
   (with-vertex-array (:vao tile)
     (GL20/glDisableVertexAttribArray 0)
     (GL20/glDisableVertexAttribArray 1)
+    (GL20/glDisableVertexAttribArray 2)
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
     (GL11/glDeleteTextures (:texture tile))
