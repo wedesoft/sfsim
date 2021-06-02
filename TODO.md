@@ -1,6 +1,5 @@
 # TODO
 
-* use higher resolution for colour texture (different texture coordinates required)
 * handle distance zero in quad-size
 * use lower resolution for height map if outer tessellation level is lower
 * use normal maps for shading
