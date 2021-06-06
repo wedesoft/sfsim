@@ -1,6 +1,5 @@
 # TODO
 
-* handle distance zero in quad-size
 * use lower resolution for height map if outer tessellation level is lower
 * use normal maps for shading
 * redesign floating point math of height maps

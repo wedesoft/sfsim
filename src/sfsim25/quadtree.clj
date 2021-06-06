@@ -13,7 +13,7 @@
   (let [cnt         (bit-shift-left 1 level)
         real-size   (/ (* 2 radius1) cnt (dec tilesize))
         f           (/ width 2 (-> angle (/ 2) Math/toRadians Math/tan))
-        screen-size (* (/ real-size distance) f)]
+        screen-size (* (/ real-size (max 1 distance)) f)]
     screen-size))
 
 (defn- quad-size-for-camera-position
