@@ -126,9 +126,9 @@
   (reduce dissoc-in tree paths))
 
 (defn quadtree-update
-  "Update tiles with specified paths"
-  [tree paths fun & args]
-  (reduce (fn [tree path] (apply update-in tree path fun args)) tree paths))
+  "Update tiles with specified paths using a function with optional arguments from lists"
+  [tree paths fun & arglists]
+  (reduce (fn [tree [path & args]] (apply update-in tree path fun args)) tree (apply map list paths arglists)))
 
 (defn neighbour-path
   "Determine path of neighbouring tile at same level"
@@ -198,5 +198,15 @@
     {:tree (check (quadtree-add (quadtree-drop tree drop-list) load-list new-tiles))
      :drop (quadtree-extract tree drop-list)
      :load load-list}))
+
+(defn parent-path
+  "Get path of parent for specified path"
+  [path]
+  (subvec path 0 (dec (count path))))
+
+(defn add-parent-info
+  "Add parent data to a tile"
+  [tile parent]
+  (assoc tile :parent (select-keys parent [:level :face :x :y :heightfield :colors :normals])))
 
 (set! *unchecked-math* false)

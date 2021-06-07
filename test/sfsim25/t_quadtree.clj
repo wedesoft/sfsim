@@ -96,7 +96,7 @@
 (facts "Update tiles of quad tree"
   (quadtree-update {:3 {}} [] identity) => {:3 {}}
   (quadtree-update {:3 {:id 5}} [[:3]] #(update % :id inc)) => {:3 {:id 6}}
-  (quadtree-update {:3 {:id 5}} [[:3]] #(update %1 :id (partial + %2)) 2) => {:3 {:id 7}})
+  (quadtree-update {:3 {:id 5}} [[:3]] #(update %1 :id (partial + %2)) [2]) => {:3 {:id 7}})
 
 (defn keyword->int [x] (Integer/parseInt (name x)))
 (defn int->keyword [x] (keyword (str x)))
@@ -198,3 +198,20 @@
       (:load (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => [[:2 :0] [:2 :1] [:2 :2] [:2 :3]]
       (:tree (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => one-face
       (get-in (update-level-of-detail flat (constantly false) true) [:tree :2 :up]) => 1)))
+
+(fact "Get path of parent node"
+  (parent-path [:1 :2 :3]) => [:1 :2])
+
+(fact "Add parent information"
+  (add-parent-info {:level 3} {:level 2}) => {:level 3 :parent {:level 2}}
+  (add-parent-info {:level 3} {:level 2 :1 {:level 3}}) => {:level 3 :parent {:level 2}}
+  (tabular "Preserve specific keys"
+    (fact (add-parent-info {:level 3} {?k 42}) => {:level 3 :parent {?k 42}})
+    ?k
+    :level
+    :face
+    :x
+    :y
+    :heightfield
+    :colors
+    :normals))

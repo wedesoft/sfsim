@@ -299,11 +299,23 @@ void main()
 
 (def keystates (atom {}))
 
+(defn unload-tiles-from-opengl
+  [tiles]
+  (doseq [tile tiles] (unload-tiles-from-opengl tile)))
+
+(defn load-tiles-into-opengl
+  [tree paths]
+  (quadtree-update tree paths load-tile-into-opengl))
+
+(defn add-parent-infos
+  [tree paths]
+  (quadtree-update tree paths add-parent-info (quadtree-extract tree (map parent-path paths))))
+
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
-    (doseq [tile (:drop data)] (unload-tile-from-opengl tile))
-    (>!! tree-state (reset! tree (quadtree-update (:tree data) (:load data) load-tile-into-opengl))))
+    (unload-tiles-from-opengl (:drop data))
+    (>!! tree-state (reset! tree (load-tiles-into-opengl (add-parent-infos (:tree data) (:load data)) (:load data)))))
   (while (Keyboard/next)
     (let [state      (Keyboard/getEventKeyState)
           event-key  (Keyboard/getEventKey)]
