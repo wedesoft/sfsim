@@ -202,7 +202,7 @@
 (fact "Get path of parent node"
   (parent-path [:1 :2 :3]) => [:1 :2])
 
-(fact "Add parent information"
+(facts "Add parent information to a tile"
   (add-parent-info {:level 3} {:level 2}) => {:level 3 :parent {:level 2}}
   (add-parent-info {:level 3} {:level 2 :1 {:level 3}}) => {:level 3 :parent {:level 2}}
   (tabular "Preserve specific keys"
@@ -215,3 +215,7 @@
     :heightfield
     :colors
     :normals))
+
+(facts "Add parent information to multiple locations in tree"
+  (update-tree-parents {:level 0} []) => {:level 0}
+  (update-tree-parents {:level 0 :2 {:level 1}} [[:2]]) => {:level 0 :2 {:level 1 :parent {:level 0}}})

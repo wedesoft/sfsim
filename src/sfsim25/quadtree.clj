@@ -209,4 +209,9 @@
   [tile parent]
   (assoc tile :parent (select-keys parent [:level :face :x :y :heightfield :colors :normals])))
 
+(defn update-tree-parents
+  "Add parent info to specified paths in tree"
+  [tree paths]
+  (quadtree-update tree paths add-parent-info (quadtree-extract tree (map parent-path paths))))
+
 (set! *unchecked-math* false)
