@@ -331,6 +331,7 @@ void main()
     (let [t (float-array (eseq (inverse (transformation-matrix (quaternion->matrix @orientation) @position))))]
       (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
       (render-tree @tree)
+      (GL11/glFlush)
       (Display/update))))
 
 (Keyboard/destroy)
