@@ -252,9 +252,8 @@ void main()
     (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
     (GL15/glDeleteBuffers (:idx tile))
     (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
-    (GL15/glDeleteBuffers (:vbo tile))
-    (GL30/glBindVertexArray 0)
-    (GL30/glDeleteVertexArrays (:vao tile))))
+    (GL15/glDeleteBuffers (:vbo tile)))
+  (GL30/glDeleteVertexArrays (:vao tile)))
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
