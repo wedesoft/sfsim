@@ -27,4 +27,4 @@
   :plugins [[lein-midje "3.2.1"]
             [lein-codox "0.10.7"]]
   :target-path "target/%s"
-  :jvm-opts ["-Xmx2g"])
+  :jvm-opts ["-Xmx500M"])
