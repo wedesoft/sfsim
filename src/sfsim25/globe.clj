@@ -29,7 +29,7 @@
         radius1            6378000.0
         radius2            6357000.0]
     (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
-      (let [tile    {:width color-tilesize :height color-tilesize :data (byte-array (* 4 (sqr color-tilesize)))}
+      (let [tile    {:width color-tilesize :height color-tilesize :data (int-array (sqr color-tilesize))}
             water   {:width elevation-tilesize :height elevation-tilesize :data (byte-array (sqr elevation-tilesize))}
             scale   {:width elevation-tilesize :height elevation-tilesize :data (float-array (sqr elevation-tilesize))}
             normals {:width elevation-tilesize :height elevation-tilesize :data (float-array (* 3 (sqr elevation-tilesize)))}]

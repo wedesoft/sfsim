@@ -55,11 +55,12 @@
   (sqr 3) => 9.0)
 
 (facts "Saving and loading of RGB image"
-  (let [file-name                   (.getPath (File/createTempFile "spit" ".png"))]
-      (spit-image file-name {:width 4 :height 2 :data (byte-array (take 32 (cycle [1 2 3 4])))}) => anything
+  (let [file-name (.getPath (File/createTempFile "spit" ".png"))
+        value     (bit-or (bit-shift-left -1 24) (bit-shift-left 1 16) (bit-shift-left 2 8) 3)]
+      (spit-image file-name {:width 4 :height 2 :data (int-array (repeat 8 value))})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
-      (take 4 (:data (slurp-image file-name))) => [1 2 3 4]))
+      (first (:data (slurp-image file-name))) => value))
 
 (facts "Converting unsigned byte to byte and back"
   (byte->ubyte    0) =>    0
@@ -72,11 +73,11 @@
   (ubyte->byte  255) =>   -1)
 
 (facts "Reading and writing image pixels"
-  (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
-    (get-pixel img 1 2) => (->RGB 24 25 26))
-  (let [img {:width 1 :height 1 :data (byte-array [252 253 254 255])}]
-    (get-pixel img 0 0) => (->RGB 252 253 254))
-  (let [img {:width 4 :height 2 :data (byte-array (range 32))}]
+  (let [img {:width 4 :height 2 :data (int-array [0 0 0 0 0 0 0 (bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
+    (get-pixel img 1 3) => (->RGB 1 2 3))
+  (let [img {:width 1 :height 1 :data (int-array [(bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
+    (get-pixel img 0 0) => (->RGB 1 2 3))
+  (let [img {:width 4 :height 2 :data (int-array (repeat 8 0))}]
     (set-pixel! img 1 2 (->RGB 253 254 255)) => anything
     (get-pixel img 1 2) => (->RGB 253 254 255)))
 

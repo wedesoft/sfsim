@@ -6,6 +6,8 @@
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [magick MagickImage ImageInfo ColorspaceType]
+           [ij.io Opener]
+           [ij.process ImageConverter]
            [mikera.vectorz Vector]
            [sfsim25.rgb RGB]))
 
@@ -92,27 +94,15 @@
 (defn spit-image
   "Save an RGB image"
   [^String file-name {:keys [width height data]}]
-  (let [info  (ImageInfo.)
-        image (MagickImage.)]
-    (.constituteImage image width height "RGBA" data)
-    (.setSize info (str width \x height))
-    (.setDepth info 8)
-    (.setColorspace info ColorspaceType/RGBColorspace)
-    (.setFileName image file-name)
-    (.writeImage image info)
-    image))
+  0
+  )
 
 (defn slurp-image
   "Load an RGB image"
   [^String file-name]
-  (let [info      (ImageInfo. file-name)
-        image     (MagickImage. info)
-        dimension (.getDimension image)]
-    (doto info
-      (.setDepth 8)
-      (.setColorspace ColorspaceType/RGBColorspace)
-      (.setMagick "RGBA"))
-    {:width (.width dimension) :height (.height dimension) :data (.imageToBlob image info)}))
+  (let [img (.openImage (Opener.) file-name)]
+    (.convertToRGB (ImageConverter. img))
+    {:width (.getWidth img) :height (.getHeight img) :data (.getPixels (.getProcessor img))}))
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
@@ -127,17 +117,18 @@
 (defn get-pixel
   "Read color value from a pixel of an image"
   ^RGB [{:keys [width height data]} ^long y ^long x]
-  (let [offset (* 4 (+ (* width y) x))]
-    (->RGB (byte->ubyte (aget data offset)) (byte->ubyte (aget data (inc offset))) (byte->ubyte (aget data (inc (inc offset)))))))
+  (let [offset (+ (* width y) x)
+        value  (aget data offset)]
+    (->RGB (bit-shift-right (bit-and 0xff0000 value) 16) (bit-shift-right (bit-and 0xff00 value) 8) (bit-and 0xff value))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
   [{:keys [width height data]} ^long y ^long x ^RGB c]
-  (let [offset (* 4 (+ (* width y) x))]
-    (aset-byte data offset       (ubyte->byte (:r c)))
-    (aset-byte data (+ offset 1) (ubyte->byte (:g c)))
-    (aset-byte data (+ offset 2) (ubyte->byte (:b c)))
-    (aset-byte data (+ offset 3) (ubyte->byte 255))))
+  (let [offset (+ (* width y) x)]
+    (aset-int data offset (bit-or (bit-shift-left -1 24)
+                                  (bit-shift-left (Math/round (:r c)) 16)
+                                  (bit-shift-left (Math/round (:g c)) 8)
+                                  (Math/round (:b c))))))
 
 (defn get-elevation
   "Read elevation value from an elevation tile"
