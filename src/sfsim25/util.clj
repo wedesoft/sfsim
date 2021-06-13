@@ -5,9 +5,9 @@
             [sfsim25.rgb :refer (->RGB)])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
-           [magick MagickImage ImageInfo ColorspaceType]
-           [ij.io Opener]
-           [ij.process ImageConverter]
+           [ij ImagePlus]
+           [ij.io Opener FileSaver]
+           [ij.process ImageConverter ColorProcessor]
            [mikera.vectorz Vector]
            [sfsim25.rgb RGB]))
 
@@ -92,10 +92,12 @@
   (* x x))
 
 (defn spit-image
-  "Save an RGB image"
+  "Save RGB image as PNG file"
   [^String file-name {:keys [width height data]}]
-  0
-  )
+  (let [processor (ColorProcessor. width height data)
+        img       (ImagePlus.)]
+    (.setProcessor img processor)
+    (.saveAsPng (FileSaver. img) file-name)))
 
 (defn slurp-image
   "Load an RGB image"

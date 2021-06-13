@@ -6,9 +6,10 @@
          '[sfsim25.quadtree :refer :all]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40]
+(import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 Util]
         '[org.lwjgl.input Keyboard]
         '[org.lwjgl BufferUtils])
+
 
 (def vertex-source "#version 410 core
 in mediump vec3 point;
@@ -233,7 +234,7 @@ void main()
       (GL20/glEnableVertexAttribArray 2)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
-            texture     (create-texture "tex" 0 ctilesize GL11/GL_RGB GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer pixels))
+            texture     (create-texture "tex" 0 ctilesize GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-int-buffer pixels))
             heightfield (create-texture "hf" 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
         (assoc tile :vao vao :vbo vbo :idx idx :texture texture :heightfield heightfield)))))
 

@@ -23,8 +23,6 @@
             "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
             "run-globe"           ["with-profile" "run-globe"           "run"]}
   :resource-paths ["/usr/share/java/lwjgl.jar"
-                   "/usr/share/java/jmagick.jar"
-                   "/usr/share/java/imglib2.jar"
                    "/usr/share/java/ij.jar"]
   :plugins [[lein-midje "3.2.1"]
             [lein-codox "0.10.7"]]
