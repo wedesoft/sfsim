@@ -177,7 +177,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 8 6 @position)]
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 8 5 @position)]
       (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 

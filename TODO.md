@@ -1,6 +1,6 @@
 # TODO
 
-* memory leak, try https://imagej.net/libs/imglib2/
+* port map-tiles to ImageJ
 * use lower resolution for height map if outer tessellation level is lower
 * use normal maps for shading
 * redesign floating point math of height maps
