@@ -1,8 +1,8 @@
 (ns sfsim25.map-tiles
   "Split up large Mercator image into smaller ones."
-  (:import [magick MagickImage ImageInfo]
-           [java.awt Rectangle]
-           [java.io File])
+  (:import [java.io File]
+           [ij ImagePlus]
+           [ij.io Opener FileSaver])
   (:require [sfsim25.util :refer (tile-dir tile-path)])
   (:gen-class))
 
@@ -18,15 +18,15 @@
         prefix      (nth args 3)
         dy          (bit-shift-left (Integer/parseInt (nth args 4)) level)
         dx          (bit-shift-left (Integer/parseInt (nth args 5)) level)
-        info        (ImageInfo. input-image)
-        image       (MagickImage. info)
-        dimension   (.getDimension image)
-        [w h]       [(.width dimension) (.height dimension)]]
+        img         (.openImage (Opener.) input-image)
+        [w h]       [(.getWidth img) (.getHeight img)]
+        processor   (.getProcessor img)]
     (doseq [j (range (/ h tilesize)) i (range (/ w tilesize))]
-      (let [rectangle (Rectangle. (* i tilesize) (* j tilesize) tilesize tilesize)
-            tile      (.cropImage image rectangle)
+      (.setRoi processor (* i tilesize) (* j tilesize) tilesize tilesize )
+      (let [cropped   (.crop processor)
+            tile      (ImagePlus.)
             dir       (tile-dir prefix level (+ i dx))
             path      (tile-path prefix level (+ j dy) (+ i dx) ".png")]
+        (.setProcessor tile cropped)
         (.mkdirs (File. dir))
-        (.setFileName tile path)
-        (.writeImage tile info)))))
+        (.saveAsPng (FileSaver. tile) path)))))
