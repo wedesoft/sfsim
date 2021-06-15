@@ -5,7 +5,7 @@
   (:gen-class))
 
 (defn -main
-  "Main program opening a window"
+  "Space flight simulator main function"
   [& args]
   (let [running (atom true)]
     (Display/setTitle "sfsim25")
