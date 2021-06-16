@@ -20,7 +20,7 @@
     (provided
       (util/slurp-image "globe/3/2/1/2.png") => "2.png"
       (util/slurp-floats "globe/3/2/1/2.scale") => "2.scale"
-      (util/slurp-floats "globe/3/2/1/2.normals") => "2.normals"
+      (util/slurp-image "globe/3/2/1/2.normals.png") => "2.normals"
       (util/slurp-bytes "globe/3/2/1/2.water") => "2.water"))
   ?k       ?result
   :colors  "2.png"
