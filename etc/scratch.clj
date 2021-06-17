@@ -111,9 +111,12 @@ void main(void)
 in mediump vec2 UV;
 out mediump vec3 fragColor;
 uniform sampler2D tex;
+uniform sampler2D normals;
 void main()
 {
-  fragColor = texture(tex, UV).rgb;
+  vec3 normal = texture(normals, UV).xyz;
+  normal = (normal - 0.5) * 2;
+  fragColor = texture(tex, UV).rgb * max(0.9 * normal.x, 0.1);
 }")
 
 (defn make-shader [source shader-type]
@@ -234,9 +237,11 @@ void main()
       (GL20/glEnableVertexAttribArray 2)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
+            normals     (get-in tile [:normals :data])
             texture     (create-texture "tex" 0 ctilesize GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-int-buffer pixels))
-            heightfield (create-texture "hf" 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))]
-        (assoc tile :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield)))))
+            heightfield (create-texture "hf" 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))
+            normal-map  (create-texture "normals" 2 ctilesize GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-int-buffer normals))]
+        (assoc tile :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map)))))
 
 (defn unload-tile-from-opengl
   [tile]
@@ -250,6 +255,9 @@ void main()
     (GL13/glActiveTexture GL13/GL_TEXTURE1)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
     (GL11/glDeleteTextures (:height-tex tile))
+    (GL13/glActiveTexture GL13/GL_TEXTURE2)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
+    (GL11/glDeleteTextures (:normal-tex tile))
     (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
     (GL15/glDeleteBuffers (:idx tile))
     (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
@@ -284,6 +292,8 @@ void main()
     (GL11/glBindTexture GL11/GL_TEXTURE_2D (:color-tex tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE1)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D (:height-tex tile))
+    (GL13/glActiveTexture GL13/GL_TEXTURE2)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D (:normal-tex tile))
     (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
     (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
 
