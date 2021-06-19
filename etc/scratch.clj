@@ -112,11 +112,12 @@ in mediump vec2 UV;
 out mediump vec3 fragColor;
 uniform sampler2D tex;
 uniform sampler2D normals;
+uniform vec3 light;
 void main()
 {
   vec3 normal = texture(normals, UV).xyz;
   normal = (normal - 0.5) * 2;
-  fragColor = texture(tex, UV).rgb * max(0.9 * normal.x, 0.1);
+  fragColor = texture(tex, UV).rgb * max(0.9 * dot(light, normal), 0.1);
 }")
 
 (defn make-shader [source shader-type]
@@ -180,7 +181,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 40 1 @position)]
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 10 2 @position)]
       (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 
@@ -317,6 +318,8 @@ void main()
   [tree paths]
   (quadtree-update tree paths load-tile-into-opengl))
 
+(def light (atom 0))
+
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
@@ -333,14 +336,17 @@ void main()
         ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
         rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
         rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
+        l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))
         v  (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
     (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
+    (swap! light + (* l dt))
     (let [t (float-array (eseq (inverse (transformation-matrix (quaternion->matrix @orientation) @position))))]
       (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
+      (GL20/glUniform3f (GL20/glGetUniformLocation program "light") (Math/cos @light) (Math/sin @light) 0)
       (render-tree @tree)
       (GL11/glFlush)
       (Display/update))))
