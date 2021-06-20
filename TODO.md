@@ -1,9 +1,9 @@
 # TODO
 
+* render water reflections
 * render atmosphere
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe
-* render water reflections
 * improve performance of quaternions (see clojure.core.matrix implementation)
 * Get scale-image to work on large images
 * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
