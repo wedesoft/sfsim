@@ -70,6 +70,7 @@ layout(quads, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
 in mediump vec2 ctexcoord_tes[];
 out mediump vec2 ctexcoord_geo;
+out mediump vec3 vertex;
 uniform sampler2D hf;
 uniform mat4 projection;
 uniform mat4 transform;
@@ -86,38 +87,48 @@ void main()
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(a, b, gl_TessCoord.y);
   gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
+  vertex = (transform * vec4(p.xyz * s * 6388000, 1)).xyz;
 }")
 
 (def geo-source "#version 410 core
 layout(triangles) in;
 in mediump vec2 ctexcoord_geo[3];
+in mediump vec3 vertex[3];
 layout(triangle_strip, max_vertices = 3) out;
 out mediump vec2 UV;
+out mediump vec3 v;
 void main(void)
 {
 	gl_Position = gl_in[0].gl_Position;
   UV = ctexcoord_geo[0];
+  v = vertex[0];
 	EmitVertex();
 	gl_Position = gl_in[1].gl_Position;
   UV = ctexcoord_geo[1];
+  v = vertex[1];
 	EmitVertex();
 	gl_Position = gl_in[2].gl_Position;
   UV = ctexcoord_geo[2];
+  v = vertex[2];
 	EmitVertex();
 	EndPrimitive();
 }")
 
 (def fragment-source "#version 410 core
 in mediump vec2 UV;
+in mediump vec3 v;
 out mediump vec3 fragColor;
 uniform sampler2D tex;
 uniform sampler2D normals;
 uniform vec3 light;
+uniform mat4 transform;
 void main()
 {
   vec3 normal = texture(normals, UV).xyz;
   normal = (normal - 0.5) * 2;
-  fragColor = texture(tex, UV).rgb * max(0.9 * dot(light, normal), 0.1);
+  float specular = pow(max(dot((transform * vec4(reflect(light, normal), 0)).xyz, normalize(v)), 0), 100);
+  float diffuse = max(dot(light, normal), 0.05);
+  fragColor = texture(tex, UV).rgb * (specular + diffuse);
 }")
 
 (defn make-shader [source shader-type]
