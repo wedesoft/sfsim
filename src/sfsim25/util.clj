@@ -166,17 +166,17 @@
   "Read vector from a vectors tile"
   ^Vector [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (matrix [(aget data offset      )
+    (matrix [(aget data (+ offset 2))
              (aget data (+ offset 1))
-             (aget data (+ offset 2))])))
+             (aget data (+ offset 0))])))
 
 (defn set-vector!
   "Write vector value to vectors tile"
   [{:keys [width height data]} ^long y ^long x ^Vector value]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-float data offset       (mget value 0))
+    (aset-float data (+ offset 2) (mget value 0))
     (aset-float data (+ offset 1) (mget value 1))
-    (aset-float data (+ offset 2) (mget value 2))))
+    (aset-float data (+ offset 0) (mget value 2))))
 
 (defn dissoc-in
   "Return nested hash with path removed"

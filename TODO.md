@@ -1,6 +1,6 @@
 # TODO
 
-* render water reflections
+* restrict specular reflection to water areas
 * render atmosphere
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe

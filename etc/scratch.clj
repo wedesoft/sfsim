@@ -125,7 +125,6 @@ uniform mat4 transform;
 void main()
 {
   vec3 normal = texture(normals, UV).xyz;
-  normal = (normal - 0.5) * 2;
   float specular = pow(max(dot((transform * vec4(reflect(light, normal), 0)).xyz, normalize(v)), 0), 100);
   float diffuse = max(dot(light, normal), 0.05);
   fragColor = texture(tex, UV).rgb * (specular + diffuse);
@@ -192,7 +191,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 10 3 @position)]
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 10 0 @position)]
       (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 
@@ -249,10 +248,10 @@ void main()
       (GL20/glEnableVertexAttribArray 2)
       (let [pixels      (get-in tile [:colors :data])
             heights     (:scales tile)
-            normals     (get-in tile [:normals :data])
+            normals     (:normals tile)
             texture     (create-texture "tex" 0 ctilesize GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-int-buffer pixels))
             heightfield (create-texture "hf" 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))
-            normal-map  (create-texture "normals" 2 ctilesize GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-int-buffer normals))]
+            normal-map  (create-texture "normals" 2 ctilesize GL30/GL_RGBA32F GL12/GL_BGR GL11/GL_FLOAT GL11/GL_LINEAR (make-float-buffer normals))]
         (assoc tile :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map)))))
 
 (defn unload-tile-from-opengl

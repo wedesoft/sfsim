@@ -32,7 +32,7 @@
       (let [tile    {:width color-tilesize :height color-tilesize :data (int-array (sqr color-tilesize))}
             water   {:width elevation-tilesize :height elevation-tilesize :data (byte-array (sqr elevation-tilesize))}
             scale   {:width elevation-tilesize :height elevation-tilesize :data (float-array (sqr elevation-tilesize))}
-            normals {:width color-tilesize :height color-tilesize :data (int-array (sqr color-tilesize))}]
+            normals {:width color-tilesize :height color-tilesize :data (float-array (* 3 (sqr color-tilesize)))}]
         (doseq [v (range elevation-tilesize) u (range elevation-tilesize)]
           (let [j                (cube-coordinate out-level elevation-tilesize b v)
                 i                (cube-coordinate out-level elevation-tilesize a u)
@@ -49,16 +49,15 @@
                 point            (project-onto-globe p in-level width radius1 radius2)
                 [lon lat height] (cartesian->geodetic point radius1 radius2)
                 normal           (normal-for-point point in-level out-level width color-tilesize radius1 radius2)
-                normal-encoded   (apply ->RGB (add (mul 127.5 normal) 127.5))
                 color            (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)]
-            (set-pixel! normals v u normal-encoded)
+            (set-vector! normals v u normal)
             (set-pixel! tile v u color)))
         (locking *out* (println (cube-path "globe" k out-level b a ".*")))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tile)
         (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))
         (spit-floats (cube-path "globe" k out-level b a ".scale") (:data scale))
-        (spit-image (cube-path "globe" k out-level b a ".normals.png") normals)))
+        (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))))
     (System/exit 0)))
 
 (set! *unchecked-math* false)

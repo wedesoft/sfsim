@@ -101,7 +101,7 @@
 
 (facts "Reading and writing of vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
-    (get-vector vectors 1 2) => (matrix [18 19 20])
+    (get-vector vectors 1 2) => (matrix [20.0 19.0 18.0])
     (set-vector! vectors 1 2 (matrix [24.5 25.5 26.5])) => anything
     (get-vector vectors 1 2) => (matrix [24.5 25.5 26.5])))
 

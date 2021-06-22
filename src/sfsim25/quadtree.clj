@@ -38,7 +38,7 @@
    :x       x
    :colors  (slurp-image  (cube-path "globe" face level y x ".png"))
    :scales  (slurp-floats (cube-path "globe" face level y x ".scale"))
-   :normals (slurp-image  (cube-path "globe" face level y x ".normals.png"))
+   :normals (slurp-floats  (cube-path "globe" face level y x ".normals"))
    :water   (slurp-bytes  (cube-path "globe" face level y x ".water"))})
 
 (defn sub-tiles-info
