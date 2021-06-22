@@ -30,7 +30,7 @@
         radius2            6357000.0]
     (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
       (let [tile    {:width color-tilesize :height color-tilesize :data (int-array (sqr color-tilesize))}
-            water   {:width elevation-tilesize :height elevation-tilesize :data (byte-array (sqr elevation-tilesize))}
+            water   {:width (+ color-tilesize 3) :height color-tilesize :data (byte-array (* color-tilesize (+ color-tilesize 3)))}
             scale   {:width elevation-tilesize :height elevation-tilesize :data (float-array (sqr elevation-tilesize))}
             normals {:width color-tilesize :height color-tilesize :data (float-array (* 3 (sqr color-tilesize)))}]
         (doseq [v (range elevation-tilesize) u (range elevation-tilesize)]
@@ -38,9 +38,7 @@
                 i                (cube-coordinate out-level elevation-tilesize a u)
                 p                (cube-map k j i)
                 point            (project-onto-globe p in-level width radius1 radius2)
-                [lon lat height] (cartesian->geodetic point radius1 radius2)
-                wet              (water-geodetic in-level width lon lat)]
-            (set-water! water v u wet)
+                [lon lat height] (cartesian->geodetic point radius1 radius2)]
             (set-scale! scale v u (/ (norm point) (norm p) 6388000.0))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
           (let [j                (cube-coordinate out-level color-tilesize b v)
@@ -49,9 +47,11 @@
                 point            (project-onto-globe p in-level width radius1 radius2)
                 [lon lat height] (cartesian->geodetic point radius1 radius2)
                 normal           (normal-for-point point in-level out-level width color-tilesize radius1 radius2)
-                color            (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)]
+                color            (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)
+                wet              (water-geodetic (min 5 (+ in-level sublevel)) width lon lat)]
             (set-vector! normals v u normal)
-            (set-pixel! tile v u color)))
+            (set-pixel! tile v u color)
+            (set-water! water v u wet)))
         (locking *out* (println (cube-path "globe" k out-level b a ".*")))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tile)

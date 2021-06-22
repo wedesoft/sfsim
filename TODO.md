@@ -1,5 +1,6 @@
 # TODO
 
+* clean up code for integer alignment of rows of water byte array
 * restrict specular reflection to water areas
 * render atmosphere
 * redesign floating point math of height maps
@@ -8,5 +9,6 @@
 * Get scale-image to work on large images
 * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
 * Skydome scaled to ZFAR * 0.5
+* use short integers for normal vector textures?
 
 [OpenGL question](https://gamedev.stackexchange.com/questions/192358/opengl-height-map-accuracy-for-planetary-rendering)
