@@ -195,7 +195,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 10 0 @position)]
+    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 10 3 @position)]
       (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 
@@ -258,7 +258,8 @@ void main()
             heightfield (create-texture "hf" 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))
             normal-map  (create-texture "normals" 2 ctilesize GL30/GL_RGBA32F GL12/GL_BGR GL11/GL_FLOAT GL11/GL_LINEAR (make-float-buffer normals))
             water-map   (create-texture "water" 3 ctilesize GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer water))]
-        (assoc tile :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map :water-tex water-map)))))
+        (assoc (dissoc tile :colors :scales :normals :water)
+               :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map :water-tex water-map)))))
 
 (defn unload-tile-from-opengl
   [tile]
