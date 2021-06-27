@@ -1,7 +1,5 @@
 # TODO
 
-* clean up code for integer alignment of rows of water byte array
-* restrict specular reflection to water areas
 * render atmosphere
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe

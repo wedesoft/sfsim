@@ -124,3 +124,10 @@
 (facts "Definition of context creating macro"
   (create-test-ctx ctx (+ ctx @context-test)) => (+ 123 42)
   @context-test => nil)
+
+(facts "Alignment function"
+  (align-address 0 4) => 0
+  (align-address 8 4) => 8
+  (align-address 7 4) => 8
+  (align-address 6 4) => 8
+  (align-address 6 2) => 6)

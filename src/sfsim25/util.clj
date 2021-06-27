@@ -196,8 +196,14 @@
           ~'result#))))
 
 (defmacro def-context-create-macro
-  "Define context macro creating opening and closing a context object"
+  "Define context macro creating, opening and closing a context object"
   [method constructor ctx-macro]
   `(defmacro ~method [object# & body#]
      `(let [~object# (~~constructor)]
         (~~ctx-macro ~object# ~@body#))))
+
+(defn align-address
+  "Function for aligning an address with specified alignment"
+  ^long [^long address ^long alignment]
+  (let [mask (dec alignment)]
+    (bit-and (+ address mask) (bit-not mask))))
