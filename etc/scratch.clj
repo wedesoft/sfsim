@@ -380,3 +380,113 @@ void main()
 (close! changes)
 
 (System/exit 0)
+
+; --------------------------------------------------------------------------------
+
+(require '[clojure.core.matrix :refer :all]
+         '[sfsim25.util :refer :all]
+         '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
+         '[sfsim25.quaternion :as q])
+
+(import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 Util]
+        '[org.lwjgl.input Keyboard]
+        '[org.lwjgl BufferUtils])
+
+
+(Display/setTitle "scratch")
+(Display/setDisplayMode (DisplayMode. 640 480))
+(Display/create)
+
+(Keyboard/create)
+
+(GL11/glClearColor 0.0 0.0 0.0 0.0)
+(GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
+
+(Display/update)
+
+(def vertex-source "#version 130
+in mediump vec3 point;
+uniform mat4 projection;
+void main()
+{
+  gl_Position = projection * vec4(point, 1);
+}")
+
+(def fragment-source "#version 130
+out mediump vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}")
+
+(defn make-shader [source shader-type]
+  (let [shader (GL20/glCreateShader shader-type)]
+    (GL20/glShaderSource shader source)
+    (GL20/glCompileShader shader)
+    (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
+      (throw (Exception. (GL20/glGetShaderInfoLog shader 1024))))
+    shader))
+
+(defn make-program [& shaders]
+  (let [program (GL20/glCreateProgram)]
+    (doseq [shader shaders] (GL20/glAttachShader program shader))
+    (GL20/glLinkProgram program)
+    (if (zero? (GL20/glGetShaderi program GL20/GL_LINK_STATUS))
+      (throw (Exception. (GL20/glGetShaderInfoLog program 1024))))
+    program))
+
+(def vertex-shader (make-shader vertex-source GL20/GL_VERTEX_SHADER))
+(def fragment-shader (make-shader fragment-source GL20/GL_FRAGMENT_SHADER))
+(def program (make-program vertex-shader fragment-shader))
+
+(GL11/glEnable GL11/GL_CULL_FACE)
+(GL11/glCullFace GL11/GL_BACK)
+
+(defmacro def-make-buffer [method create-buffer]
+  `(defn ~method [data#]
+     (let [buffer# (~create-buffer (count data#))]
+       (.put buffer# data#)
+       (.flip buffer#)
+       buffer#)))
+
+(def-make-buffer make-float-buffer BufferUtils/createFloatBuffer)
+(def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
+(def-make-buffer make-byte-buffer BufferUtils/createByteBuffer)
+
+;      2------3          ^ y
+;     /|     /|          |/
+;    6-+----7 |       ---+--->
+;    | 0----+-1         /|   x
+;    |/     |/       z L
+;    4------5
+
+(def indices (make-int-buffer (int-array [0 1 3 2 4 6 7 5 2 3 7 6 0 4 5 1 0 2 6 4 1 5 7 3])))
+
+(def vertices (make-float-buffer (float-array [-1 -1 -1 1 -1 -1 -1 1 -1 1 1 -1 -1 -1 1 1 -1 1 -1 1 1 1 1 1])))
+
+(def vao (GL30/glGenVertexArrays))
+(GL30/glBindVertexArray vao)
+(def vbo (GL15/glGenBuffers))
+(GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
+(GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices GL15/GL_STATIC_DRAW)
+(def idx (GL15/glGenBuffers))
+(GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
+(GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices GL15/GL_STATIC_DRAW)
+(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point") 3 GL11/GL_FLOAT false (* 3 Float/BYTES) (* 0 Float/BYTES))
+(GL20/glEnableVertexAttribArray 0)
+
+(GL20/glUseProgram program)
+
+(def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 120 Math/PI) 180)))))
+(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
+
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+
+(while (not (Display/isCloseRequested))
+  (GL11/glClearColor 0.2 0.2 0.2 0.0)
+  (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
+  (GL30/glBindVertexArray vao)
+  (GL11/glDrawElements GL11/GL_QUADS 24 GL11/GL_UNSIGNED_INT 0)
+  (Display/update))
+
+(System/exit 0)
