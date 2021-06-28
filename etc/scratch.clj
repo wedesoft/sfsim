@@ -507,4 +507,7 @@ void main()
   (GL11/glDrawElements GL11/GL_QUADS 24 GL11/GL_UNSIGNED_INT 0)
   (Display/update))
 
+(Keyboard/destroy)
+(Display/destroy)
+
 (System/exit 0)
