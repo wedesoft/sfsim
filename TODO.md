@@ -1,6 +1,8 @@
 # TODO
 
+* make postprocessing prototype (write article?)
 * render atmosphere
+* use highp for position, lowp for color, mediump for texture coordinates
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe
 * improve performance of quaternions (see clojure.core.matrix implementation)

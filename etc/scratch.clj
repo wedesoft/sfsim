@@ -406,17 +406,34 @@ void main()
 
 (def vertex-source "#version 130
 in mediump vec3 point;
+out mediump vec3 pos;
 uniform mat4 projection;
 void main()
 {
   gl_Position = projection * vec4(point, 1);
+  pos = point;
 }")
 
 (def fragment-source "#version 130
 out mediump vec3 fragColor;
+in mediump vec3 pos;
 void main()
 {
-  fragColor = vec3(1, 1, 1);
+  float r = 0.5;
+  vec3 o = vec3(0, 0, 0);
+  vec3 u = normalize(pos);
+  vec3 c = vec3(0, 0, -1);
+  float discr = pow(dot(u, o - c), 2) - (pow(distance(o, c), 2) - r * r);
+  if (discr > 0) {
+    float discr2 = sqrt(discr);
+    float m = -dot(u, o - c);
+    float d1 = m - discr2;
+    float d2 = m + discr2;
+    float g = 1 - pow(2.0, d1 - d2);
+    fragColor = vec3(g, g, g);
+  } else {
+    fragColor = vec3(0, 0, 0);
+  }
 }")
 
 (defn make-shader [source shader-type]
@@ -480,7 +497,8 @@ void main()
 (def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 120 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (while (not (Display/isCloseRequested))
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
