@@ -12,7 +12,7 @@
 
 
 (def vertex-source "#version 410 core
-in mediump vec3 point;
+in highp vec3 point;
 in mediump vec2 texcoord;
 in mediump vec2 ctexcoord;
 out mediump vec2 texcoord_tcs;
@@ -70,7 +70,7 @@ layout(quads, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
 in mediump vec2 ctexcoord_tes[];
 out mediump vec2 ctexcoord_geo;
-out mediump vec3 vertex;
+out highp vec3 vertex;
 uniform sampler2D hf;
 uniform mat4 projection;
 uniform mat4 transform;
@@ -93,10 +93,10 @@ void main()
 (def geo-source "#version 410 core
 layout(triangles) in;
 in mediump vec2 ctexcoord_geo[3];
-in mediump vec3 vertex[3];
+in highp vec3 vertex[3];
 layout(triangle_strip, max_vertices = 3) out;
 out mediump vec2 UV;
-out mediump vec3 v;
+out highp vec3 v;
 void main(void)
 {
 	gl_Position = gl_in[0].gl_Position;
@@ -116,8 +116,8 @@ void main(void)
 
 (def fragment-source "#version 410 core
 in mediump vec2 UV;
-in mediump vec3 v;
-out mediump vec3 fragColor;
+in highp vec3 v;
+out lowp vec3 fragColor;
 uniform sampler2D tex;
 uniform sampler2D normals;
 uniform sampler2D water;
@@ -405,8 +405,8 @@ void main()
 (Display/update)
 
 (def vertex-source "#version 130
-in mediump vec3 point;
-out mediump vec3 pos;
+in highp vec3 point;
+out highp vec3 pos;
 uniform mat4 projection;
 void main()
 {
@@ -414,22 +414,29 @@ void main()
   pos = point;
 }")
 
+; https://www.youtube.com/watch?v=DxfEbulyFcY
+
 (def fragment-source "#version 130
-out mediump vec3 fragColor;
-in mediump vec3 pos;
+out lowp vec3 fragColor;
+in highp vec3 pos;
+
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
+  vec3 offset = origin - centre;
+  float discr = pow(dot(direction, offset), 2) - (pow(length(offset), 2) - radius * radius);
+  if (discr > 0) {
+    float d2 = sqrt(discr);
+    float m = -dot(direction, offset);
+    return vec2(m - d2, 2 * d2);
+  } else {
+    return vec2(0, 0);
+  }
+}
+
 void main()
 {
-  float r = 0.5;
-  vec3 o = vec3(0, 0, 0);
-  vec3 u = normalize(pos);
-  vec3 c = vec3(0, 0, -1);
-  float discr = pow(dot(u, o - c), 2) - (pow(distance(o, c), 2) - r * r);
-  if (discr > 0) {
-    float discr2 = sqrt(discr);
-    float m = -dot(u, o - c);
-    float d1 = m - discr2;
-    float d2 = m + discr2;
-    float g = 1 - pow(2.0, d1 - d2);
+  vec2 intersect = ray_sphere(vec3(0, 0, -1), 0.5, vec3(0, 0, 0), normalize(pos));
+  if (intersect.y > 0) {
+    float g = 1 - pow(0.5, intersect.y);
     fragColor = vec3(g, g, g);
   } else {
     fragColor = vec3(0, 0, 0);

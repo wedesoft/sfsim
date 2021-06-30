@@ -1,6 +1,5 @@
 # TODO
 
-* make postprocessing prototype (write article?)
 * render atmosphere
 * use highp for position, lowp for color, mediump for texture coordinates
 * redesign floating point math of height maps
