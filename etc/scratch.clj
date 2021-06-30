@@ -434,12 +434,17 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
 
 void main()
 {
-  vec2 intersect = ray_sphere(vec3(0, 0, -1), 0.5, vec3(0, 0, 0), normalize(pos));
-  if (intersect.y > 0) {
-    float g = 1 - pow(0.5, intersect.y);
-    fragColor = vec3(g, g, g);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, -1), 0.6, vec3(0, 0, 0), normalize(pos));
+  vec2 planet = ray_sphere(vec3(0, 0, -1), 0.5, vec3(0, 0, 0), normalize(pos));
+  if (planet.y > 0) {
+    fragColor = vec3(1, 1, 1);
   } else {
-    fragColor = vec3(0, 0, 0);
+    if (atmosphere.y > 0) {
+      float g = 1 - pow(0.5, atmosphere.y);
+      fragColor = vec3(g, g, g);
+    } else {
+      fragColor = vec3(0, 0, 0);
+    }
   }
 }")
 
