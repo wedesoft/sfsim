@@ -432,6 +432,26 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   }
 }
 
+float density(vec3 point) {
+  vec3 centre = vec3(0, 0, -1);
+  float height = distance(point, centre) - 0.5;
+  float height01 = height / (0.6 - 0.5);
+  return exp(-height01 * 2) * (1 - height01);
+}
+
+float calculate_light(vec3 origin, vec3 direction, float ray_length)
+{
+  vec3 point = origin;
+  int num_points = 5;
+  float step_size = ray_length / (num_points - 1);
+  float light = 0;
+  for (int i=0; i<num_points; i++) {
+
+    point += direction * step_size;
+  }
+  return light;
+}
+
 void main()
 {
   vec2 atmosphere = ray_sphere(vec3(0, 0, -1), 0.6, vec3(0, 0, 0), normalize(pos));
