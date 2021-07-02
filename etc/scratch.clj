@@ -436,7 +436,21 @@ float density(vec3 point) {
   vec3 centre = vec3(0, 0, -1);
   float height = distance(point, centre) - 0.5;
   float height01 = height / (0.6 - 0.5);
-  return exp(-height01 * 2) * (1 - height01);
+  float falloff = 2;
+  return exp(-height01 * falloff) * (1 - height01);
+}
+
+float optical_depth(vec3 origin, vec3 direction, float ray_length)
+{
+  vec3 point = origin;
+  int num_points = 5;
+  float step_size = ray_length / (num_points - 1);
+  float depth = 0;
+  for (int i=0; i<num_points; i++) {
+    depth += density(point) * step_size;
+    point += direction * step_size;
+  }
+  return depth;
 }
 
 float calculate_light(vec3 origin, vec3 direction, float ray_length)
@@ -446,7 +460,13 @@ float calculate_light(vec3 origin, vec3 direction, float ray_length)
   float step_size = ray_length / (num_points - 1);
   float light = 0;
   for (int i=0; i<num_points; i++) {
-
+    vec3 sun_direction = normalize(vec3(0, 1, -1));
+    float sunray_length = ray_sphere(vec3(0, 0, -1), 0.6, point, sun_direction).y;
+    float sunray_depth = optical_depth(point, sun_direction, sunray_length);
+    float view_depth = optical_depth (point, -direction, step_size * i);
+    float transmittance = exp(-(sunray_depth + view_depth));
+    float point_density = density(point);
+    light += point_density * transmittance * step_size;
     point += direction * step_size;
   }
   return light;
@@ -454,14 +474,16 @@ float calculate_light(vec3 origin, vec3 direction, float ray_length)
 
 void main()
 {
-  vec2 atmosphere = ray_sphere(vec3(0, 0, -1), 0.6, vec3(0, 0, 0), normalize(pos));
-  vec2 planet = ray_sphere(vec3(0, 0, -1), 0.5, vec3(0, 0, 0), normalize(pos));
+  vec3 direction = normalize(pos);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, -1), 0.6, vec3(0, 0, 0), direction);
+  vec2 planet = ray_sphere(vec3(0, 0, -1), 0.5, vec3(0, 0, 0), direction);
   if (planet.y > 0) {
     fragColor = vec3(1, 1, 1);
   } else {
     if (atmosphere.y > 0) {
-      float g = 1 - pow(0.5, atmosphere.y);
-      fragColor = vec3(g, g, g);
+      vec3 point = vec3(0, 0, 0) + direction * atmosphere.x;
+      float light = calculate_light(point, direction, atmosphere.y);
+      fragColor = vec3(light, light, light);
     } else {
       fragColor = vec3(0, 0, 0);
     }
