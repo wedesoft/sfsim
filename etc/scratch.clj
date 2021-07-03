@@ -571,7 +571,7 @@ void main()
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
     (swap! light + (* l dt)))
-  (GL20/glUniform3f (GL20/glGetUniformLocation program "light") (Math/cos @light) (Math/sin @light) 0)
+  (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light))
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (GL30/glBindVertexArray vao)
