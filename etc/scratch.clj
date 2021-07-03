@@ -454,19 +454,25 @@ float optical_depth(vec3 origin, vec3 direction, float ray_length)
   return depth;
 }
 
-float calculate_light(vec3 origin, vec3 direction, float ray_length)
+vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 {
   vec3 point = origin;
   int num_points = 5;
   float step_size = ray_length / (num_points - 1);
-  float scatter = 0;
+  vec3 scatter = vec3(0, 0, 0);
+  vec3 wavelength = vec3(700, 530, 440);
+  float scatter_strength = 3.0;
+  float scatter_r = pow(400 / wavelength.r, 4) * scatter_strength;
+  float scatter_g = pow(400 / wavelength.g, 4) * scatter_strength;
+  float scatter_b = pow(400 / wavelength.b, 4) * scatter_strength;
+  vec3 scatter_coeffs = vec3(scatter_r, scatter_g, scatter_b);
   for (int i=0; i<num_points; i++) {
     float sunray_length = ray_sphere(vec3(0, 0, -1), 0.7, point, light).y;
     float sunray_depth = optical_depth(point, light, sunray_length);
     float view_depth = optical_depth (point, -direction, step_size * i);
-    float transmittance = exp(-(sunray_depth + view_depth));
+    vec3 transmittance = exp(-(sunray_depth + view_depth) * scatter_coeffs);
     float point_density = density(point);
-    scatter += point_density * transmittance * step_size;
+    scatter += point_density * transmittance * scatter_coeffs * step_size;
     point += direction * step_size;
   }
   return scatter;
@@ -486,8 +492,8 @@ void main()
   };
   if (atmosphere.y > 0) {
     vec3 point = vec3(0, 0, 0) + direction * atmosphere.x;
-    float scatter = calculate_light(point, direction, atmosphere.y);
-    fragColor = vec3(scatter, scatter, scatter) + (1 - scatter) * bg;
+    vec3 scatter = calculate_light(point, direction, atmosphere.y);
+    fragColor = scatter + (1 - scatter) * bg;
   } else {
     fragColor = vec3(0, 0, 0);
   }
