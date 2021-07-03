@@ -419,6 +419,7 @@ void main()
 (def fragment-source "#version 130
 out lowp vec3 fragColor;
 in highp vec3 pos;
+uniform vec3 light;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   vec3 offset = origin - centre;
@@ -458,18 +459,17 @@ float calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 point = origin;
   int num_points = 5;
   float step_size = ray_length / (num_points - 1);
-  float light = 0;
+  float scatter = 0;
   for (int i=0; i<num_points; i++) {
-    vec3 sun_direction = normalize(vec3(0, 1, -1));
-    float sunray_length = ray_sphere(vec3(0, 0, -1), 0.7, point, sun_direction).y;
-    float sunray_depth = optical_depth(point, sun_direction, sunray_length);
+    float sunray_length = ray_sphere(vec3(0, 0, -1), 0.7, point, light).y;
+    float sunray_depth = optical_depth(point, light, sunray_length);
     float view_depth = optical_depth (point, -direction, step_size * i);
     float transmittance = exp(-(sunray_depth + view_depth));
     float point_density = density(point);
-    light += point_density * transmittance * step_size;
+    scatter += point_density * transmittance * step_size;
     point += direction * step_size;
   }
-  return light;
+  return scatter;
 }
 
 void main()
@@ -486,8 +486,8 @@ void main()
   };
   if (atmosphere.y > 0) {
     vec3 point = vec3(0, 0, 0) + direction * atmosphere.x;
-    float light = calculate_light(point, direction, atmosphere.y);
-    fragColor = vec3(light, light, light) + (1 - light) * bg;
+    float scatter = calculate_light(point, direction, atmosphere.y);
+    fragColor = vec3(scatter, scatter, scatter) + (1 - scatter) * bg;
   } else {
     fragColor = vec3(0, 0, 0);
   }
@@ -557,7 +557,21 @@ void main()
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
+(def light (atom 0))
+(def keystates (atom {}))
+
+(def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
+  (while (Keyboard/next)
+    (let [state      (Keyboard/getEventKeyState)
+          event-key  (Keyboard/getEventKey)]
+      (swap! keystates assoc event-key state)))
+  (let [t1 (System/currentTimeMillis)
+        dt (- t1 @t0)
+        l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
+    (swap! t0 + dt)
+    (swap! light + (* l dt)))
+  (GL20/glUniform3f (GL20/glGetUniformLocation program "light") (Math/cos @light) (Math/sin @light) 0)
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (GL30/glBindVertexArray vao)
