@@ -1,6 +1,9 @@
 # TODO
 
-* render atmosphere
+* fly into atmosphere
+* compute shadow in atmosphere
+* use lookup texture to optimise atmospheric rendering
+* compute color on ground
 * use highp for position, lowp for color, mediump for texture coordinates
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe
