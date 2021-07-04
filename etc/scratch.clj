@@ -434,7 +434,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
 }
 
 float density(vec3 point) {
-  vec3 centre = vec3(0, 0, -1);
+  vec3 centre = vec3(0, 0, 0);
   float height = distance(point, centre) - 0.5;
   float height01 = height / (0.7 - 0.5);
   float falloff = 2;
@@ -467,7 +467,7 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   float scatter_b = pow(400 / wavelength.b, 4) * scatter_strength;
   vec3 scatter_coeffs = vec3(scatter_r, scatter_g, scatter_b);
   for (int i=0; i<num_points; i++) {
-    float sunray_length = ray_sphere(vec3(0, 0, -1), 0.7, point, light).y;
+    float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
     float sunray_depth = optical_depth(point, light, sunray_length);
     float view_depth = optical_depth (point, -direction, step_size * i);
     vec3 transmittance = exp(-(sunray_depth + view_depth) * scatter_coeffs);
@@ -481,8 +481,8 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 void main()
 {
   vec3 direction = normalize(pos);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, -1), 0.7, vec3(0, 0, 0), direction);
-  vec2 planet = ray_sphere(vec3(0, 0, -1), 0.5, vec3(0, 0, 0), direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 0.7, vec3(0, 0, 1), direction);
+  vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, vec3(0, 0, 1), direction);
   vec3 bg;
   if (planet.y > 0) {
     bg = vec3(0.5, 0.5, 0.5);
@@ -491,7 +491,7 @@ void main()
     bg = vec3(0, 0, 0);
   };
   if (atmosphere.y > 0) {
-    vec3 point = vec3(0, 0, 0) + direction * atmosphere.x;
+    vec3 point = vec3(0, 0, 1) + direction * atmosphere.x;
     vec3 scatter = calculate_light(point, direction, atmosphere.y);
     fragColor = scatter + (1 - scatter) * bg;
   } else {
@@ -563,6 +563,7 @@ void main()
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
+(def position (atom (matrix [0 0 -1])))
 (def light (atom 0))
 (def keystates (atom {}))
 
@@ -574,6 +575,10 @@ void main()
       (swap! keystates assoc event-key state)))
   (let [t1 (System/currentTimeMillis)
         dt (- t1 @t0)
+        ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
+        rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
+        rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
+        v  (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
     (swap! light + (* l dt)))
