@@ -408,10 +408,11 @@ void main()
 in highp vec3 point;
 out highp vec3 pos;
 uniform mat4 projection;
+uniform mat4 transform;
 void main()
 {
   gl_Position = projection * vec4(point, 1);
-  pos = point;
+  pos = (transform * vec4(point, 0)).xyz;
 }")
 
 ; https://www.youtube.com/watch?v=DxfEbulyFcY
@@ -564,6 +565,8 @@ void main()
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 (def position (atom (matrix [0 0 -1])))
+(def orientation (atom (q/->Quaternion 1 0 0 0)))
+
 (def light (atom 0))
 (def keystates (atom {}))
 
@@ -578,11 +581,17 @@ void main()
         ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
         rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
         rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-        v  (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))
+        v  (if (@keystates Keyboard/KEY_PRIOR) 0.05 (if (@keystates Keyboard/KEY_NEXT) -0.05 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
+    (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+    (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
+    (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
+    (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt)))
-  (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light))
+  (let [t (float-array (eseq (inverse (transformation-matrix (quaternion->matrix @orientation) @position))))]
+    (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
+    (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light)))
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (GL30/glBindVertexArray vao)
