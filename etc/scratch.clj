@@ -482,8 +482,9 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 void main()
 {
   vec3 direction = normalize(pos);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 0.7, vec3(0, 0, 1), direction);
-  vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, vec3(0, 0, 1), direction);
+  vec3 position = vec3(0, 0, 2);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 0.7, position, direction);
+  vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, position, direction);
   vec3 bg;
   if (planet.y > 0 && planet.x > 0) {
     bg = vec3(0.5, 0.5, 0.5);
@@ -496,7 +497,7 @@ void main()
     atmosphere.x = 0;
   }
   if (atmosphere.y > 0) {
-    vec3 point = vec3(0, 0, 1) + direction * atmosphere.x;
+    vec3 point = position + direction * atmosphere.x;
     vec3 scatter = calculate_light(point, direction, atmosphere.y);
     fragColor = scatter + (1 - scatter) * bg;
   } else {
@@ -562,13 +563,13 @@ void main()
 
 (GL20/glUseProgram program)
 
-(def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 120 Math/PI) 180)))))
+(def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
-(def position (atom (matrix [0 0 -1])))
+(def position (atom (matrix [0 0 -2])))
 (def orientation (atom (q/->Quaternion 1 0 0 0)))
 
 (def light (atom 0))
