@@ -465,7 +465,7 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   float step_size = ray_length / (num_points - 1);
   vec3 scatter = vec3(0, 0, 0);
   vec3 wavelength = vec3(700, 530, 440);
-  float scatter_strength = 3.0;
+  float scatter_strength = 5.0;
   float scatter_r = pow(400 / wavelength.r, 4) * scatter_strength;
   float scatter_g = pow(400 / wavelength.g, 4) * scatter_strength;
   float scatter_b = pow(400 / wavelength.b, 4) * scatter_strength;
@@ -588,7 +588,7 @@ void main()
         ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
         rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
         rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-        v  (if (@keystates Keyboard/KEY_PRIOR) 0.001 (if (@keystates Keyboard/KEY_NEXT) -0.001 0))
+        v  (if (@keystates Keyboard/KEY_PRIOR) 0.0001 (if (@keystates Keyboard/KEY_NEXT) -0.0001 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
