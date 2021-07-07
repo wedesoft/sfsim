@@ -407,12 +407,14 @@ void main()
 (def vertex-source "#version 130
 in highp vec3 point;
 out highp vec3 pos;
+out highp vec3 orig;
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 itransform;
 void main()
 {
   gl_Position = projection * vec4(point, 1);
-  pos = (transform * vec4(point, 0)).xyz;
+  pos = (itransform * vec4(point, 0)).xyz;
+  orig = (itransform * vec4(0, 0, 0, 1)).xyz;
 }")
 
 ; https://www.youtube.com/watch?v=DxfEbulyFcY
@@ -420,6 +422,7 @@ void main()
 (def fragment-source "#version 130
 out lowp vec3 fragColor;
 in highp vec3 pos;
+in highp vec3 orig;
 uniform vec3 light;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
@@ -482,9 +485,8 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 void main()
 {
   vec3 direction = normalize(pos);
-  vec3 position = vec3(0, 0, 2);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 0.7, position, direction);
-  vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, position, direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 0.7, orig, direction);
+  vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, orig, direction);
   vec3 bg;
   if (planet.y > 0 && planet.x > 0) {
     bg = vec3(0.5, 0.5, 0.5);
@@ -497,7 +499,7 @@ void main()
     atmosphere.x = 0;
   }
   if (atmosphere.y > 0) {
-    vec3 point = position + direction * atmosphere.x;
+    vec3 point = orig + direction * atmosphere.x;
     vec3 scatter = calculate_light(point, direction, atmosphere.y);
     fragColor = scatter + (1 - scatter) * bg;
   } else {
@@ -569,7 +571,7 @@ void main()
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
-(def position (atom (matrix [0 0 -2])))
+(def position (atom (matrix [0 0 2])))
 (def orientation (atom (q/->Quaternion 1 0 0 0)))
 
 (def light (atom 0))
@@ -586,7 +588,7 @@ void main()
         ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
         rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
         rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-        v  (if (@keystates Keyboard/KEY_PRIOR) 0.05 (if (@keystates Keyboard/KEY_NEXT) -0.05 0))
+        v  (if (@keystates Keyboard/KEY_PRIOR) 0.001 (if (@keystates Keyboard/KEY_NEXT) -0.001 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
@@ -594,8 +596,8 @@ void main()
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt)))
-  (let [t (float-array (eseq (inverse (transformation-matrix (quaternion->matrix @orientation) @position))))]
-    (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
+  (let [t (float-array (eseq (transformation-matrix (quaternion->matrix @orientation) @position)))]
+    (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "itransform") true (make-float-buffer t))
     (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light)))
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
