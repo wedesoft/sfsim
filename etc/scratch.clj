@@ -498,14 +498,18 @@ void main()
     bg = vec3(b, b, b);
     atmosphere.y = planet.x - atmosphere.x;
   } else {
-    bg = vec3(0, 0, 0);
+    if (dot(light, direction) > 0 && length(cross(light, direction)) < 0.005) {
+      bg = vec3(1, 1, 1);
+    } else {
+      bg = vec3(0, 0, 0);
+    }
   };
   if (atmosphere.y > 0) {
     vec3 point = orig + direction * atmosphere.x;
     vec3 scatter = calculate_light(point, direction, atmosphere.y);
     fragColor = scatter + (1 - scatter) * bg;
   } else {
-    fragColor = vec3(0, 0, 0);
+    fragColor = bg;
   }
 }")
 

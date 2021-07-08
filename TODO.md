@@ -1,6 +1,6 @@
 # TODO
 
-* fly into atmosphere
+* mie scattering
 * compute shadow in atmosphere
 * use lookup texture to optimise atmospheric rendering
 * compute color on ground
