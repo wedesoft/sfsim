@@ -452,22 +452,22 @@ float density(vec3 point) {
 
 float optical_depth(vec3 origin, vec3 direction, float ray_length)
 {
-  vec3 point = origin;
-  int num_points = 5;
-  float step_size = ray_length / (num_points - 1);
+  int num_points = 10;
+  float step_size = ray_length / num_points;
+  vec3 point = origin + 0.5 * step_size * direction;
   float depth = 0;
   for (int i=0; i<num_points; i++) {
     depth += density(point) * step_size;
     point += direction * step_size;
-  }
+  };
   return depth;
 }
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 {
-  vec3 point = origin;
-  int num_points = 5;
-  float step_size = ray_length / (num_points - 1);
+  int num_points = 10;
+  float step_size = ray_length / num_points;
+  vec3 point = origin + 0.5 * step_size * direction;
   vec3 scatter = vec3(0, 0, 0);
   vec3 wavelength = vec3(700, 530, 440);
   float scatter_strength = 5.0;
@@ -483,7 +483,7 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
     float point_density = density(point);
     scatter += point_density * transmittance * scatter_coeffs * step_size;
     point += direction * step_size;
-  }
+  };
   return scatter;
 }
 
