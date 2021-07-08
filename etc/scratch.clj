@@ -431,7 +431,12 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   if (discr > 0) {
     float d2 = sqrt(discr);
     float m = -dot(direction, offset);
-    return vec2(m - d2, 2 * d2);
+    vec2 result = vec2(m - d2, 2 * d2);
+    if (result.x < 0) {
+      result.y = max(0, result.y + result.x);
+      result.x = 0;
+    };
+    return result;
   } else {
     return vec2(0, 0);
   }
@@ -488,16 +493,13 @@ void main()
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 0.7, orig, direction);
   vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, orig, direction);
   vec3 bg;
-  if (planet.y > 0 && planet.x > 0) {
-    bg = vec3(0.5, 0.5, 0.5);
+  if (planet.x > 0) {
+    float b = max(dot(orig + planet.x * direction, light), 0.0) * 0.95 + 0.05;
+    bg = vec3(b, b, b);
     atmosphere.y = planet.x - atmosphere.x;
   } else {
     bg = vec3(0, 0, 0);
   };
-  if (atmosphere.x < 0) {
-    atmosphere.y += atmosphere.x;
-    atmosphere.x = 0;
-  }
   if (atmosphere.y > 0) {
     vec3 point = orig + direction * atmosphere.x;
     vec3 scatter = calculate_light(point, direction, atmosphere.y);
