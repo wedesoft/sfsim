@@ -418,6 +418,7 @@ void main()
 }")
 
 ; https://www.youtube.com/watch?v=DxfEbulyFcY
+; https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering
 
 (def fragment-source "#version 130
 out lowp vec3 fragColor;
@@ -425,6 +426,7 @@ in highp vec3 pos;
 in highp vec3 orig;
 uniform vec3 light;
 uniform float scatter_strength;
+uniform float g;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   vec3 offset = origin - centre;
@@ -474,12 +476,15 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   float scatter_r = pow(400 / wavelength.r, 4) * scatter_strength;
   float scatter_g = pow(400 / wavelength.g, 4) * scatter_strength;
   float scatter_b = pow(400 / wavelength.b, 4) * scatter_strength;
+  float mie = 5;
   vec3 scatter_coeffs = vec3(scatter_r, scatter_g, scatter_b);
   for (int i=0; i<num_points; i++) {
     float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
     float sunray_depth = optical_depth(point, light, sunray_length);
-    float view_depth = optical_depth (point, -direction, step_size * i);
-    vec3 transmittance = exp(-(sunray_depth + view_depth) * scatter_coeffs);
+    float view_depth = optical_depth(point, -direction, step_size * i);
+    float cos_theta = dot(direction, light);
+    float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
+    vec3 transmittance = exp(-(sunray_depth + view_depth) * scatter_coeffs) * phase;
     float point_density = density(point);
     scatter += point_density * transmittance * scatter_coeffs * step_size;
     point += direction * step_size;
@@ -582,7 +587,8 @@ void main()
 
 (def light (atom 0))
 (def keystates (atom {}))
-(def scatter-strength (atom 20.0))
+(def scatter-strength (atom 10.0))
+(def g (atom 0.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -596,16 +602,19 @@ void main()
         rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
         rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
         v  (if (@keystates Keyboard/KEY_PRIOR) 0.0001 (if (@keystates Keyboard/KEY_NEXT) -0.0001 0))
+        d  (if (@keystates Keyboard/KEY_A) 0.0001 (if (@keystates Keyboard/KEY_B) -0.0001 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
     (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
+    (swap! g + (* d dt))
     (swap! light + (* l dt)))
   (let [t (float-array (eseq (transformation-matrix (quaternion->matrix @orientation) @position)))]
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "itransform") true (make-float-buffer t))
     (GL20/glUniform1f (GL20/glGetUniformLocation program "scatter_strength") @scatter-strength)
+    (GL20/glUniform1f (GL20/glGetUniformLocation program "g") @g)
     (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light)))
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
