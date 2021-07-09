@@ -424,6 +424,7 @@ out lowp vec3 fragColor;
 in highp vec3 pos;
 in highp vec3 orig;
 uniform vec3 light;
+uniform float scatter_strength;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   vec3 offset = origin - centre;
@@ -470,7 +471,6 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 point = origin + 0.5 * step_size * direction;
   vec3 scatter = vec3(0, 0, 0);
   vec3 wavelength = vec3(700, 530, 440);
-  float scatter_strength = 5.0;
   float scatter_r = pow(400 / wavelength.r, 4) * scatter_strength;
   float scatter_g = pow(400 / wavelength.g, 4) * scatter_strength;
   float scatter_b = pow(400 / wavelength.b, 4) * scatter_strength;
@@ -582,6 +582,7 @@ void main()
 
 (def light (atom 0))
 (def keystates (atom {}))
+(def scatter-strength (atom 20.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -604,6 +605,7 @@ void main()
     (swap! light + (* l dt)))
   (let [t (float-array (eseq (transformation-matrix (quaternion->matrix @orientation) @position)))]
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "itransform") true (make-float-buffer t))
+    (GL20/glUniform1f (GL20/glGetUniformLocation program "scatter_strength") @scatter-strength)
     (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light)))
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
