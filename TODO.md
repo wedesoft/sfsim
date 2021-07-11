@@ -1,7 +1,6 @@
 # TODO
 
-* Mie scattering
-* LWJGL 3
+* separate accumulation of Mie and Rayleigh scattering
 * compute shadow in atmosphere
 * use lookup texture to optimise atmospheric rendering
 * compute color on ground
