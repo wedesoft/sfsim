@@ -587,8 +587,8 @@ void main()
 
 (def light (atom 0))
 (def keystates (atom {}))
-(def scatter-strength (atom 10.0))
-(def g (atom 0.0))
+(def scatter-strength (atom 30.0))
+(def g (atom 0.4))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
