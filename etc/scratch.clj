@@ -473,11 +473,8 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 point = origin + 0.5 * step_size * direction;
   vec3 scatter = vec3(0, 0, 0);
   vec3 wavelength = vec3(700, 530, 440);
-  float scatter_r = pow(400 / wavelength.r, 4) * scatter_strength;
-  float scatter_g = pow(400 / wavelength.g, 4) * scatter_strength;
-  float scatter_b = pow(400 / wavelength.b, 4) * scatter_strength;
   float mie = 5;
-  vec3 scatter_coeffs = vec3(scatter_r, scatter_g, scatter_b);
+  vec3 scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * scatter_strength;
   for (int i=0; i<num_points; i++) {
     float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
     float sunray_depth = optical_depth(point, light, sunray_length);
@@ -503,7 +500,7 @@ void main()
     bg = vec3(b, b, b);
     atmosphere.y = planet.x - atmosphere.x;
   } else {
-    if (dot(light, direction) > 0 && length(cross(light, direction)) < 0.005) {
+    if (dot(light, direction) > 0 && length(cross(light, direction)) < 0.01) {
       bg = vec3(1, 1, 1);
     } else {
       bg = vec3(0, 0, 0);
