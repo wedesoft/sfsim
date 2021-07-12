@@ -425,7 +425,8 @@ out lowp vec3 fragColor;
 in highp vec3 pos;
 in highp vec3 orig;
 uniform vec3 light;
-uniform float scatter_strength;
+uniform float rayleigh_scatter_strength;
+uniform float mie_scatter_strength;
 uniform float g;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
@@ -473,17 +474,18 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 point = origin + 0.5 * step_size * direction;
   vec3 scatter = vec3(0, 0, 0);
   vec3 wavelength = vec3(700, 530, 440);
-  float mie = 5;
-  vec3 scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * scatter_strength;
+  vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
   for (int i=0; i<num_points; i++) {
     float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
     float sunray_depth = optical_depth(point, light, sunray_length);
     float view_depth = optical_depth(point, -direction, step_size * i);
     float cos_theta = dot(direction, light);
     float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
-    vec3 transmittance = exp(-(sunray_depth + view_depth) * scatter_coeffs) * phase;
+    vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
+    float mie_transmittance = exp(-(sunray_depth + view_depth) * mie_scatter_strength) * phase;
     float point_density = density(point);
-    scatter += point_density * transmittance * scatter_coeffs * step_size;
+    scatter += point_density * rayleigh_transmittance * rayleigh_scatter_coeffs * step_size;
+    scatter += point_density * mie_transmittance * mie_scatter_strength * step_size;
     point += direction * step_size;
   };
   return scatter;
@@ -584,8 +586,9 @@ void main()
 
 (def light (atom 0))
 (def keystates (atom {}))
-(def scatter-strength (atom 30.0))
-(def g (atom 0.4))
+(def rayleigh-scatter-strength (atom 25))
+(def mie-scatter-strength (atom 1.0))
+(def g (atom 0.92))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -601,6 +604,7 @@ void main()
         v  (if (@keystates Keyboard/KEY_PRIOR) 0.0001 (if (@keystates Keyboard/KEY_NEXT) -0.0001 0))
         d  (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
         s  (if (@keystates Keyboard/KEY_W) 0.01 (if (@keystates Keyboard/KEY_S) -0.01 0))
+        m  (if (@keystates Keyboard/KEY_E) 0.01 (if (@keystates Keyboard/KEY_D) -0.01 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
@@ -608,13 +612,16 @@ void main()
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! g + (* d dt))
-    (swap! scatter-strength + (* s dt))
+    (swap! rayleigh-scatter-strength + (* s dt))
+    (swap! mie-scatter-strength + (* m dt))
     (swap! light + (* l dt)))
   (let [t (float-array (eseq (transformation-matrix (quaternion->matrix @orientation) @position)))]
     (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "itransform") true (make-float-buffer t))
-    (GL20/glUniform1f (GL20/glGetUniformLocation program "scatter_strength") @scatter-strength)
+    (GL20/glUniform1f (GL20/glGetUniformLocation program "rayleigh_scatter_strength") @rayleigh-scatter-strength)
+    (GL20/glUniform1f (GL20/glGetUniformLocation program "mie_scatter_strength") @mie-scatter-strength)
     (GL20/glUniform1f (GL20/glGetUniformLocation program "g") @g)
     (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light)))
+  (println "rayleigh:" @rayleigh-scatter-strength "mie:" @mie-scatter-strength "g:" @g)
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (GL30/glBindVertexArray vao)
