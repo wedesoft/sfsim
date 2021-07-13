@@ -1,10 +1,9 @@
 # TODO
 
-* separate accumulation of Mie and Rayleigh scattering
+* compute optical depth for ground illumination
 * compute shadow in atmosphere
 * use lookup texture to optimise atmospheric rendering
-* compute color on ground
-* use highp for position, lowp for color, mediump for texture coordinates
+* volumetric clouds
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe
 * improve performance of quaternions (see clojure.core.matrix implementation)
