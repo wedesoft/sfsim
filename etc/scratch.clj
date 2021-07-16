@@ -580,7 +580,7 @@ void main()
 (def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
-(def dens (float-array (map (comp #(Math/exp (- (* 3 %))) #(/ % 255.0)) (range 256))))
+(def dens (float-array (map (comp #(* (- 1 %) (Math/exp (- (* 4 %)))) #(/ % 255.0)) (range 256))))
 ( dens-texture (GL11/glGenTextures))
 (GL13/glActiveTexture GL13/GL_TEXTURE0)
 (GL11/glBindTexture GL11/GL_TEXTURE_1D dens-texture)
