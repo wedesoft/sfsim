@@ -419,6 +419,7 @@ void main()
 
 ; https://www.youtube.com/watch?v=DxfEbulyFcY
 ; https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering
+; http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.98.9071&rep=rep1&type=pdf
 
 (def fragment-source "#version 130
 out lowp vec3 fragColor;
