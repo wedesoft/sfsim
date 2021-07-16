@@ -1,8 +1,8 @@
 # TODO
 
-* compute optical depth for ground illumination
-* compute shadow in atmosphere
 * use lookup texture to optimise atmospheric rendering
+* compute shadow in atmosphere
+* compute optical depth for ground illumination
 * volumetric clouds
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe
