@@ -1,6 +1,7 @@
 # TODO
 
-* use lookup texture to optimise atmospheric rendering
+* use lookup textures to optimise atmospheric rendering
+* soft transition into planet's shadow
 * compute shadow in atmosphere
 * compute optical depth for ground illumination
 * volumetric clouds
