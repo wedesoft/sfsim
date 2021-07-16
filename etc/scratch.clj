@@ -590,6 +590,29 @@ void main()
 (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
 (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
 
+(defn densf [point]
+  (let [height (- (length point) 0.5)
+        height01 (/ height (- 0.7 0.5))]
+    (* (- 1 height01) (Math/exp (- (* 4 height01))))))
+
+(defn ray-sphere [origin direction radius]
+  (let [discr (- (Math/pow (dot direction origin) 2) (- (Math/pow (length origin) 2) (Math/pow radius 2)))]
+    (if (> discr 0)
+      (let [d2 (Math/sqrt discr)
+            m  (- (dot direction origin))
+            s0 (- m d2)
+            d  (* 2 d2)]
+        (if (< s0 0)
+          (max 0 (+ d s0))
+          d))
+      0)))
+
+(defn optical-depth [origin direction]
+  (let [ray-length (ray-sphere origin direction 0.7)
+        num-points 10
+        step_size (/ ray-length num-points)]
+    (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))))
+
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
