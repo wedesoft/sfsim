@@ -456,19 +456,6 @@ float density(vec3 point) {
   return texture(dens, height01).r;
 }
 
-float optical_depth_old(vec3 origin, vec3 direction, float ray_length)
-{
-  int num_points = 10;
-  float step_size = ray_length / num_points;
-  vec3 point = origin + 0.5 * step_size * direction;
-  float depth = 0;
-  for (int i=0; i<num_points; i++) {
-    depth += density(point) * step_size;
-    point += direction * step_size;
-  };
-  return depth;
-}
-
 float optical_depth(vec3 origin, vec3 direction)
 {
   vec3 centre = vec3(0, 0, 0);
@@ -481,9 +468,20 @@ float optical_depth(vec3 origin, vec3 direction)
   return texture(dep, vec2(height01, cos_angle01)).r;
 }
 
+float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
+{
+  vec3 point = origin + direction * ray_length;
+  vec3 centre = vec3(0, 0, 0);
+  if (dot(direction, origin - centre) > 0) {
+    return optical_depth(origin, direction) - optical_depth(point, direction);
+  } else {
+    return optical_depth(point, -direction) - optical_depth(origin, -direction);
+  }
+}
+
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 {
-  int num_points = 25;
+  int num_points = 100;
   float step_size = ray_length / num_points;
   vec3 point = origin + 0.5 * step_size * direction;
   vec3 scatter = vec3(0, 0, 0);
@@ -493,7 +491,7 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
     if (ray_sphere(vec3(0, 0, 0), 0.5, point, light).y <= 0) {
       float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
       float sunray_depth = optical_depth(point, light);
-      float view_depth = optical_depth_old(point, -direction, step_size * i);
+      float view_depth = optical_depth_ltd(point, -direction, step_size * i);
       float cos_theta = dot(direction, light);
       float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
       vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
