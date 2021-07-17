@@ -430,6 +430,7 @@ uniform float rayleigh_scatter_strength;
 uniform float mie_scatter_strength;
 uniform float g;
 uniform sampler1D dens;
+uniform sampler2D dep;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   vec3 offset = origin - centre;
@@ -455,7 +456,7 @@ float density(vec3 point) {
   return texture(dens, height01).r;
 }
 
-float optical_depth(vec3 origin, vec3 direction, float ray_length)
+float optical_depth_old(vec3 origin, vec3 direction, float ray_length)
 {
   int num_points = 10;
   float step_size = ray_length / num_points;
@@ -466,6 +467,18 @@ float optical_depth(vec3 origin, vec3 direction, float ray_length)
     point += direction * step_size;
   };
   return depth;
+}
+
+float optical_depth(vec3 origin, vec3 direction)
+{
+  vec3 centre = vec3(0, 0, 0);
+  float dist = distance(origin, centre);
+  float height = dist - 0.5;
+  float height01 = height / (0.7 - 0.5);
+  vec3 normal = origin / dist;
+  float cos_angle = dot(normal, direction);
+  float cos_angle01 = 0.5 + 0.5 * cos_angle;
+  return texture(dep, vec2(height01, cos_angle01)).r;
 }
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
@@ -479,8 +492,8 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   for (int i=0; i<num_points; i++) {
     if (ray_sphere(vec3(0, 0, 0), 0.5, point, light).y <= 0) {
       float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
-      float sunray_depth = optical_depth(point, light, sunray_length);
-      float view_depth = optical_depth(point, -direction, step_size * i);
+      float sunray_depth = optical_depth(point, light);
+      float view_depth = optical_depth_old(point, -direction, step_size * i);
       float cos_theta = dot(direction, light);
       float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
       vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
@@ -581,20 +594,12 @@ void main()
 (def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
-(def dens (float-array (map (comp #(* (- 1 %) (Math/exp (- (* 4 %)))) #(/ % 255.0)) (range 256))))
-(def dens-texture (GL11/glGenTextures))
-(GL13/glActiveTexture GL13/GL_TEXTURE0)
-(GL11/glBindTexture GL11/GL_TEXTURE_1D dens-texture)
-(GL20/glUniform1i (GL20/glGetUniformLocation program "dens") 0)
-(GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F 256 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dens))
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
-
 (defn densf [point]
   (let [height (- (length point) 0.5)
         height01 (/ height (- 0.7 0.5))]
     (* (- 1 height01) (Math/exp (- (* 4 height01))))))
+
+(def dens (float-array (map (comp #(* (- 1 %) (Math/exp (- (* 4 %)))) #(/ % 255.0)) (range 256))))
 
 (defn ray-sphere [origin direction radius]
   (let [discr (- (Math/pow (dot direction origin) 2) (- (Math/pow (length origin) 2) (Math/pow radius 2)))]
@@ -610,9 +615,37 @@ void main()
 
 (defn optical-depth [origin direction]
   (let [ray-length (ray-sphere origin direction 0.7)
-        num-points 10
+        num-points 20
         step_size (/ ray-length num-points)]
     (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))))
+
+(def dep
+  (for [j (range 256) i (range 256)]
+    (let [dist      (+ 0.5 (* i (/ (- 0.7 0.5) 63)))
+          origin    (matrix [0 dist 0])
+          cos-angle (- (* j (/ 2.0 63)) 1)
+          sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
+          direction (matrix [sin-angle cos-angle 0])]
+      (optical-depth origin direction))))
+
+(def dens-texture (GL11/glGenTextures))
+(GL13/glActiveTexture GL13/GL_TEXTURE0)
+(GL11/glBindTexture GL11/GL_TEXTURE_1D dens-texture)
+(GL20/glUniform1i (GL20/glGetUniformLocation program "dens") 0)
+(GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F 256 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dens))
+(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+
+(def dep-texture (GL11/glGenTextures))
+(GL13/glActiveTexture GL13/GL_TEXTURE1)
+(GL11/glBindTexture GL11/GL_TEXTURE_2D dep-texture)
+(GL20/glUniform1i (GL20/glGetUniformLocation program "dep") 1)
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F 256 256 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dep))
+(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
 
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
