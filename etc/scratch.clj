@@ -502,9 +502,19 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
   for (int i=0; i<num_points; i++) {
     if (ray_sphere(vec3(0, 0, 0), 0.5, point, light).y <= 0) {
-      float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
-      float sunray_depth = optical_depth_old(point, light, sunray_length);
-      float view_depth = optical_depth_old(point, -direction, step_size * i);
+      float sunray_depth;
+      float view_depth;
+      if (pos.x < 0) {
+        float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
+        sunray_depth = optical_depth_old(point, light, sunray_length);
+      } else {
+        sunray_depth = optical_depth(point, light);
+      };
+      if (pos.y > 0) {
+        view_depth = optical_depth_old(point, -direction, step_size * i);
+      } else {
+        view_depth = optical_depth_ltd(point, -direction, step_size * i);
+      };
       float cos_theta = dot(direction, light);
       float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
       vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
