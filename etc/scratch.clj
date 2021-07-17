@@ -632,9 +632,9 @@ void main()
 
 (def dep
   (for [j (range 256) i (range 256)]
-    (let [dist      (+ 0.5 (* i (/ (- 0.7 0.5) 63)))
+    (let [dist      (+ 0.5 (* i (/ (- 0.7 0.5) 255)))
           origin    (matrix [0 dist 0])
-          cos-angle (- (* j (/ 2.0 63)) 1)
+          cos-angle (- (* j (/ 2.0 255)) 1)
           sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
           direction (matrix [sin-angle cos-angle 0])]
       (optical-depth origin direction))))
@@ -667,7 +667,7 @@ void main()
 (def light (atom 0))
 (def keystates (atom {}))
 (def rayleigh-scatter-strength (atom 25))
-(def mie-scatter-strength (atom 1.0))
+(def mie-scatter-strength (atom 0.5))
 (def g (atom 0.92))
 
 (def t0 (atom (System/currentTimeMillis)))
