@@ -464,7 +464,7 @@ float optical_depth(vec3 origin, vec3 direction)
   float height01 = height / (0.7 - 0.5);
   vec3 normal = origin / dist;
   float cos_angle = dot(normal, direction);
-  float cos_angle01 = 0.5 + 0.5 * cos_angle;
+  float cos_angle01 = 0.5 - 0.5 * cos_angle;
   return texture(dep, vec2(height01, cos_angle01)).r;
 }
 
