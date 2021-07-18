@@ -464,7 +464,7 @@ float optical_depth(vec3 origin, vec3 direction)
   float height01 = height / (0.7 - 0.5);
   vec3 normal = origin / dist;
   float cos_angle = dot(normal, direction);
-  float cos_angle01 = 0.5 - 0.5 * cos_angle;
+  float cos_angle01 = 0.5 + 0.5 * cos_angle;
   return texture(dep, vec2(height01, cos_angle01)).r;
 }
 
@@ -479,19 +479,6 @@ float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
   }
 }
 
-float optical_depth_old(vec3 origin, vec3 direction, float ray_length)
-{
-  int num_points = 10;
-  float step_size = ray_length / num_points;
-  vec3 point = origin + 0.5 * step_size * direction;
-  float depth = 0;
-  for (int i=0; i<num_points; i++) {
-    depth += density(point) * step_size;
-    point += direction * step_size;
-  };
-  return depth;
-}
-
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 {
   int num_points = 100;
@@ -502,19 +489,8 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
   for (int i=0; i<num_points; i++) {
     if (ray_sphere(vec3(0, 0, 0), 0.5, point, light).y <= 0) {
-      float sunray_depth;
-      float view_depth;
-      if (pos.x < 0) {
-        float sunray_length = ray_sphere(vec3(0, 0, 0), 0.7, point, light).y;
-        sunray_depth = optical_depth_old(point, light, sunray_length);
-      } else {
-        sunray_depth = optical_depth(point, light);
-      };
-      if (pos.y > 0) {
-        view_depth = optical_depth_old(point, -direction, step_size * i);
-      } else {
-        view_depth = optical_depth_ltd(point, -direction, step_size * i);
-      };
+      float sunray_depth = optical_depth(point, light);
+      float view_depth = optical_depth_ltd(point, -direction, step_size * i);
       float cos_theta = dot(direction, light);
       float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
       vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
@@ -615,12 +591,14 @@ void main()
 (def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
+(def size 256)
+
 (defn densf [point]
   (let [height (- (length point) 0.5)
         height01 (/ height (- 0.7 0.5))]
     (* (- 1 height01) (Math/exp (- (* 4 height01))))))
 
-(def dens (float-array (map (comp #(* (- 1 %) (Math/exp (- (* 4 %)))) #(/ % 255.0)) (range 256))))
+(def dens (float-array (map (comp #(* (- 1 %) (Math/exp (- (* 4 %)))) #(/ % (dec size))) (range size))))
 
 (defn ray-sphere [origin direction radius]
   (let [discr (- (Math/pow (dot direction origin) 2) (- (Math/pow (length origin) 2) (Math/pow radius 2)))]
@@ -641,19 +619,20 @@ void main()
     (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))))
 
 (def dep
-  (for [j (range 256) i (range 256)]
-    (let [dist      (+ 0.5 (* i (/ (- 0.7 0.5) 255)))
-          origin    (matrix [0 dist 0])
-          cos-angle (- (* j (/ 2.0 255)) 1)
-          sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
-          direction (matrix [sin-angle cos-angle 0])]
-      (optical-depth origin direction))))
+  (float-array
+    (for [j (range size) i (range size)]
+      (let [dist      (+ 0.5 (* i (/ (- 0.7 0.5) (dec size))))
+            origin    (matrix [0 dist 0])
+            cos-angle (- (* j (/ 2.0 (dec size))) 1)
+            sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
+            direction (matrix [sin-angle cos-angle 0])]
+        (optical-depth origin direction)))))
 
 (def dens-texture (GL11/glGenTextures))
 (GL13/glActiveTexture GL13/GL_TEXTURE0)
 (GL11/glBindTexture GL11/GL_TEXTURE_1D dens-texture)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "dens") 0)
-(GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F 256 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dens))
+(GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F size 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dens))
 (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
 (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
@@ -662,11 +641,11 @@ void main()
 (GL13/glActiveTexture GL13/GL_TEXTURE1)
 (GL11/glBindTexture GL11/GL_TEXTURE_2D dep-texture)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "dep") 1)
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F 256 256 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dep))
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F size size 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dep))
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
 
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
