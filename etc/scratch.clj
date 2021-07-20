@@ -509,8 +509,12 @@ void main()
   vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, orig, direction);
   vec3 bg;
   if (planet.x > 0) {
-    float b = max(dot(orig + planet.x * direction, light), 0.0) * 0.95 + 0.05;
-    bg = vec3(b, b, b);
+    vec3 wavelength = vec3(700, 530, 440);
+    vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
+    vec3 point = orig + planet.x * direction;
+    float view_depth = optical_depth(point, light);
+    vec3 rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
+    bg = max(dot(2 * point, light), 0.0) * rayleigh_transmittance;
     atmosphere.y = planet.x - atmosphere.x;
   } else {
     if (dot(light, direction) > 0 && length(cross(light, direction)) < 0.01) {

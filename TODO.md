@@ -1,6 +1,5 @@
 # TODO
 
-* compute ground illumination
 * soft transition into planet's shadow
 * compute shadow in atmosphere
 * volumetric clouds
