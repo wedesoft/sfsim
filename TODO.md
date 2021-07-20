@@ -1,7 +1,8 @@
 # TODO
 
-* soft transition into planet's shadow
+* TDD of optical depth, ray-sphere, and other functions
 * compute shadow in atmosphere
+* soft transition into planet's shadow
 * volumetric clouds
 * redesign floating point math of height maps
 * adapt z-range depending on distance to globe
