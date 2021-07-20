@@ -612,11 +612,9 @@ void main()
 
 (defn optical-depth [origin direction]
   (let [ray-length (ray-sphere origin direction 0.7)
-        planet     (ray-sphere origin direction 0.5)
         num-points 20
-        step_size (/ ray-length num-points)
-        depth (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))]
-    (+ depth (max (* (- planet 1e-1) 100) 0))))
+        step_size (/ ray-length num-points)]
+    (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))))
 
 (def dep
   (float-array
@@ -655,9 +653,9 @@ void main()
 
 (def light (atom 0))
 (def keystates (atom {}))
-(def rayleigh-scatter-strength (atom 20))
-(def mie-scatter-strength (atom 1.0))
-(def g (atom 0.98))
+(def rayleigh-scatter-strength (atom 32))
+(def mie-scatter-strength (atom 0.3))
+(def g (atom 0.96))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
