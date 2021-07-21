@@ -1,6 +1,7 @@
 # TODO
 
 * TDD of optical depth, ray-sphere, and other functions
+* use Earth dimensions in atmosphere prototype
 * compute shadow in atmosphere
 * soft transition into planet's shadow
 * volumetric clouds
