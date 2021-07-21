@@ -598,7 +598,7 @@ void main()
 (defn densf [point]
   (let [height (- (length point) 0.5)
         height01 (/ height (- 0.7 0.5))]
-    (* (- 1 height01) (Math/exp (- (* 4 height01))))))
+    (Math/exp (- (* 5 height01)))))
 
 (def dens (float-array (map (comp #(* (- 1 %) (Math/exp (- (* 4 %)))) #(/ % (dec size))) (range size))))
 
