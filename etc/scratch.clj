@@ -517,8 +517,9 @@ void main()
     bg = max(dot(2 * point, light), 0.0) * rayleigh_transmittance;
     atmosphere.y = planet.x - atmosphere.x;
   } else {
-    if (dot(light, direction) > 0 && length(cross(light, direction)) < 0.01) {
-      bg = vec3(1, 1, 1);
+    if (dot(light, direction) > 0) {
+      float b = pow(dot(light, direction), 2000);
+      bg = vec3(b, b, b);
     } else {
       bg = vec3(0, 0, 0);
     }
@@ -658,7 +659,7 @@ void main()
 (def light (atom 0))
 (def keystates (atom {}))
 (def rayleigh-scatter-strength (atom 32))
-(def mie-scatter-strength (atom 0.3))
+(def mie-scatter-strength (atom 0.15))
 (def g (atom 0.96))
 
 (def t0 (atom (System/currentTimeMillis)))
@@ -675,7 +676,7 @@ void main()
         v  (if (@keystates Keyboard/KEY_PRIOR) 0.0001 (if (@keystates Keyboard/KEY_NEXT) -0.0001 0))
         d  (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
         s  (if (@keystates Keyboard/KEY_W) 0.01 (if (@keystates Keyboard/KEY_S) -0.01 0))
-        m  (if (@keystates Keyboard/KEY_E) 0.01 (if (@keystates Keyboard/KEY_D) -0.01 0))
+        m  (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
