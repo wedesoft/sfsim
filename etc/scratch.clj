@@ -385,6 +385,7 @@ void main()
 
 (require '[clojure.core.matrix :refer :all]
          '[sfsim25.util :refer :all]
+         '[sfsim25.atmosphere :refer :all]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
          '[sfsim25.quaternion :as q])
 
@@ -597,11 +598,9 @@ void main()
 (def size 256)
 
 (defn densf [point]
-  (let [height (- (length point) 0.5)
-        height01 (/ height (- 0.7 0.5))]
-    (Math/exp (- (* 5 height01)))))
+  (air-density (- (length point) 0.5) 1.0 (/ 0.2 6)))
 
-(def dens (float-array (map (comp #(* (- 1 %) (Math/exp (- (* 4 %)))) #(/ % (dec size))) (range size))))
+(def dens (float-array (map #(air-density % 1.0 (/ (dec size) 6)) (range size))))
 
 (defn ray-sphere [origin direction radius]
   (let [discr (- (Math/pow (dot direction origin) 2) (- (Math/pow (length origin) 2) (Math/pow radius 2)))]
