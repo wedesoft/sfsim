@@ -602,20 +602,8 @@ void main()
 
 (def dens (float-array (map #(air-density % 1.0 (/ (dec size) 6)) (range size))))
 
-(defn ray-sphere [origin direction radius]
-  (let [discr (- (Math/pow (dot direction origin) 2) (- (Math/pow (length origin) 2) (Math/pow radius 2)))]
-    (if (> discr 0)
-      (let [d2 (Math/sqrt discr)
-            m  (- (dot direction origin))
-            s0 (- m d2)
-            d  (* 2 d2)]
-        (if (< s0 0)
-          (max 0 (+ d s0))
-          d))
-      0)))
-
 (defn optical-depth [origin direction]
-  (let [ray-length (ray-sphere origin direction 0.7)
+  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) 0.7 origin direction))
         num-points 20
         step_size (/ ray-length num-points)]
     (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))))
