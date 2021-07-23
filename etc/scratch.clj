@@ -435,7 +435,7 @@ uniform sampler2D dep;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   vec3 offset = origin - centre;
-  float discr = pow(dot(direction, offset), 2) - (pow(length(offset), 2) - radius * radius);
+  float discr = pow(dot(direction, offset), 2) - (dot(offset, offset) - radius * radius);
   if (discr > 0) {
     float d2 = sqrt(discr);
     float m = -dot(direction, offset);
