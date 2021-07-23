@@ -1,6 +1,6 @@
 # TODO
 
-* intersection of ray with ellipsoid
+* intersection of ray with ellipsoid in shader
 * TDD of optical depth and other functions
 * use Earth dimensions in atmosphere prototype
 * compute shadow in atmosphere
