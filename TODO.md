@@ -1,7 +1,8 @@
 # TODO
 
+* intersection of ray with ellipsoid
+* TDD of optical depth and other functions
 * use Earth dimensions in atmosphere prototype
-* TDD of optical depth, ray-sphere, and other functions
 * compute shadow in atmosphere
 * soft transition into planet's shadow
 * volumetric clouds
