@@ -452,8 +452,8 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
 
 float density(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
-  float height = distance(point, centre) - 0.5;
-  float height01 = height / (0.7 - 0.5);
+  float height = distance(point, centre) - 6378000;
+  float height01 = height / 55000;
   return texture(dens, height01).r;
 }
 
@@ -461,8 +461,8 @@ float optical_depth(vec3 origin, vec3 direction)
 {
   vec3 centre = vec3(0, 0, 0);
   float dist = distance(origin, centre);
-  float height = dist - 0.5;
-  float height01 = height / (0.7 - 0.5);
+  float height = dist - 6378000;
+  float height01 = height / 55000;
   vec3 normal = origin / dist;
   float cos_angle = dot(normal, direction);
   float cos_angle01 = 0.5 + 0.5 * cos_angle;
@@ -506,8 +506,8 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 void main()
 {
   vec3 direction = normalize(pos);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 0.7, orig, direction);
-  vec2 planet = ray_sphere(vec3(0, 0, 0), 0.5, orig, direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 55000, orig, direction);
+  vec2 planet = ray_sphere(vec3(0, 0, 0), 6378000, orig, direction);
   vec3 bg;
   if (planet.x > 0) {
     vec3 wavelength = vec3(700, 530, 440);
@@ -515,11 +515,11 @@ void main()
     vec3 point = orig + planet.x * direction;
     float view_depth = optical_depth(point, light);
     vec3 rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
-    bg = max(dot(2 * point, light), 0.0) * rayleigh_transmittance;
+    bg = max(0.5 * dot(point / 6378000, light), 0.0) * rayleigh_transmittance;
     atmosphere.y = planet.x - atmosphere.x;
   } else {
     if (dot(light, direction) > 0) {
-      float b = pow(dot(light, direction), 2000);
+      float b = pow(dot(light, direction), 8000);
       bg = vec3(b, b, b);
     } else {
       bg = vec3(0, 0, 0);
@@ -598,12 +598,12 @@ void main()
 (def size 256)
 
 (defn densf [point]
-  (air-density (- (length point) 0.5) 1.0 (/ 0.2 6)))
+  (air-density (- (length point) 6378000) 1.0 8429))
 
-(def dens (float-array (map #(air-density % 1.0 (/ (dec size) 6)) (range size))))
+(def dens (float-array (map #(air-density % 1.0 (/ (dec size) 6.525)) (range size))))
 
 (defn optical-depth [origin direction]
-  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) 0.7 origin direction))
+  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ 6378000 55000) origin direction))
         num-points 20
         step_size (/ ray-length num-points)]
     (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))))
@@ -611,7 +611,7 @@ void main()
 (def dep
   (float-array
     (for [j (range size) i (range size)]
-      (let [dist      (+ 0.5 (* i (/ (- 0.7 0.5) (dec size))))
+      (let [dist      (+ 6378000 (* i (/ 55000 (dec size))))
             origin    (matrix [0 dist 0])
             cos-angle (- (* j (/ 2.0 (dec size))) 1)
             sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
@@ -640,13 +640,13 @@ void main()
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
-(def position (atom (matrix [0 0 2])))
+(def position (atom (matrix [0 6378001 0])))
 (def orientation (atom (q/->Quaternion 1 0 0 0)))
 
 (def light (atom 0))
 (def keystates (atom {}))
-(def rayleigh-scatter-strength (atom 32))
-(def mie-scatter-strength (atom 0.15))
+(def rayleigh-scatter-strength (atom 0.00003))
+(def mie-scatter-strength (atom 0.0000001))
 (def g (atom 0.96))
 
 (def t0 (atom (System/currentTimeMillis)))
@@ -660,7 +660,7 @@ void main()
         ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
         rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
         rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-        v  (if (@keystates Keyboard/KEY_PRIOR) 0.0001 (if (@keystates Keyboard/KEY_NEXT) -0.0001 0))
+        v  (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))
         d  (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
         s  (if (@keystates Keyboard/KEY_W) 0.01 (if (@keystates Keyboard/KEY_S) -0.01 0))
         m  (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
