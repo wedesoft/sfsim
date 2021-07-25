@@ -2,7 +2,7 @@
 
 * intersection of ray with ellipsoid in shader
 * TDD of optical depth and other functions
-* use Earth dimensions in atmosphere prototype
+* night-time textures
 * compute shadow in atmosphere
 * soft transition into planet's shadow
 * volumetric clouds
