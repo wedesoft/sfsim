@@ -575,9 +575,9 @@ void main()
 ;    |/     |/       z L
 ;    4------5
 
-(def indices (make-int-buffer (int-array [0 1 3 2 4 6 7 5 2 3 7 6 0 4 5 1 0 2 6 4 1 5 7 3])))
+(def indices (make-int-buffer (int-array [0 1 3 2])))
 
-(def vertices (make-float-buffer (float-array [-1 -1 -1 1 -1 -1 -1 1 -1 1 1 -1 -1 -1 1 1 -1 1 -1 1 1 1 1 1])))
+(def vertices (make-float-buffer (float-array (map #(* % 4 6378000) [-1 -1 -1 1 -1 -1 -1  1 -1 1  1 -1]))))
 
 (def vao (GL30/glGenVertexArrays))
 (GL30/glBindVertexArray vao)
@@ -592,7 +592,7 @@ void main()
 
 (GL20/glUseProgram program)
 
-(def p (float-array (eseq (projection-matrix 640 480 0.01 2 (/ (* 60 Math/PI) 180)))))
+(def p (float-array (eseq (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (def size 256)
@@ -643,10 +643,10 @@ void main()
 (def position (atom (matrix [0 6378001 0])))
 (def orientation (atom (q/->Quaternion 1 0 0 0)))
 
-(def light (atom 0))
+(def light (atom -1.4))
 (def keystates (atom {}))
 (def rayleigh-scatter-strength (atom 0.00003))
-(def mie-scatter-strength (atom 0.0000001))
+(def mie-scatter-strength (atom 0.0000002))
 (def g (atom 0.96))
 
 (def t0 (atom (System/currentTimeMillis)))
@@ -664,7 +664,7 @@ void main()
         d  (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
         s  (if (@keystates Keyboard/KEY_W) 1e-7 (if (@keystates Keyboard/KEY_S) -1e-7 0))
         m  (if (@keystates Keyboard/KEY_E) 1e-8 (if (@keystates Keyboard/KEY_D) -1e-8 0))
-        l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
+        l  (if (@keystates Keyboard/KEY_ADD) 0.0003 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0003 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
     (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
