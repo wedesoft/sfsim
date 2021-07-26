@@ -395,7 +395,10 @@ void main()
 
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 640 480))
+(def desktop (Display/getDesktopDisplayMode))
+(Display/setDisplayModeAndFullscreen desktop)
+; (def desktop (DisplayMode. 640 480))
+; (Display/setDisplayMode desktop)
 (Display/create (PixelFormat. 0 24 0 8))
 
 (Keyboard/create)
@@ -592,7 +595,7 @@ void main()
 
 (GL20/glUseProgram program)
 
-(def p (float-array (eseq (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
+(def p (float-array (eseq (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
 (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
 
 (def size 256)
