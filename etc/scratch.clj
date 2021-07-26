@@ -395,10 +395,10 @@ void main()
 
 
 (Display/setTitle "scratch")
-(def desktop (Display/getDesktopDisplayMode))
-(Display/setDisplayModeAndFullscreen desktop)
-; (def desktop (DisplayMode. 640 480))
-; (Display/setDisplayMode desktop)
+; (def desktop (Display/getDesktopDisplayMode))
+; (Display/setDisplayModeAndFullscreen desktop)
+(def desktop (DisplayMode. 1280 720))
+(Display/setDisplayMode desktop)
 (Display/create (PixelFormat. 0 24 0 8))
 
 (Keyboard/create)
@@ -485,7 +485,7 @@ float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 {
-  int num_points = 50;
+  int num_points = 10;
   float step_size = ray_length / num_points;
   vec3 point = origin + 0.5 * step_size * direction;
   vec3 scatter = vec3(0, 0, 0);
