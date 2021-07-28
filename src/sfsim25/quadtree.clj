@@ -163,10 +163,10 @@
 (defn neighbour-paths
   "Get the paths for the four neighbours of a tile"
   [path]
-  {:up    (neighbour-path path -1  0)
-   :left  (neighbour-path path  0 -1)
-   :down  (neighbour-path path  1  0)
-   :right (neighbour-path path  0  1)})
+  {::up    (neighbour-path path -1  0)
+   ::left  (neighbour-path path  0 -1)
+   ::down  (neighbour-path path  1  0)
+   ::right (neighbour-path path  0  1)})
 
 (defn leaf-paths
   "Get a path to every leaf in the tree"

@@ -166,10 +166,10 @@
 (tabular "Get the four neighbours for a given path of a tile"
   (fact (?k (neighbour-paths [:5 :1 :2])) => ?path)
   ?k     ?path
-  :up    [:5 :1 :0]
-  :left  [:5 :0 :3]
-  :down  [:5 :3 :0]
-  :right [:5 :1 :3])
+  :sfsim25.quadtree/up    [:5 :1 :0]
+  :sfsim25.quadtree/left  [:5 :0 :3]
+  :sfsim25.quadtree/down  [:5 :3 :0]
+  :sfsim25.quadtree/right [:5 :1 :3])
 
 (facts "Get a list of paths of the leaves"
   (leaf-paths {:1 {} :2 {}})        => [[:1] [:2]]
@@ -177,12 +177,12 @@
   (leaf-paths {:5 {:vao 42 :1 {}}}) => [[:5 :1]])
 
 (facts "Update quad tree with neighbourhood information"
-  (get-in (check-neighbours {:5 {} :1 {}})      [:5 :up]     ) => 1
-  (get-in (check-neighbours {:5 {}})            [:5 :up]     ) => 0
-  (get-in (check-neighbours {:5 {} :4 {}})      [:5 :left]   ) => 1
-  (get-in (check-neighbours {:5 {}})            [:5 :left]   ) => 0
-  (get-in (check-neighbours {:1 {} :5 {}})      [:1 :down]   ) => 1
-  (get-in (check-neighbours {:5 {:1 {} :3 {}}}) [:5 :1 :down]) => 1)
+  (get-in (check-neighbours {:5 {} :1 {}})      [:5 :sfsim25.quadtree/up]     ) => 1
+  (get-in (check-neighbours {:5 {}})            [:5 :sfsim25.quadtree/up]     ) => 0
+  (get-in (check-neighbours {:5 {} :4 {}})      [:5 :sfsim25.quadtree/left]   ) => 1
+  (get-in (check-neighbours {:5 {}})            [:5 :sfsim25.quadtree/left]   ) => 0
+  (get-in (check-neighbours {:1 {} :5 {}})      [:1 :sfsim25.quadtree/down]   ) => 1
+  (get-in (check-neighbours {:5 {:1 {} :3 {}}}) [:5 :1 :sfsim25.quadtree/down]) => 1)
 
 (facts "Update level of detail (LOD)"
   (with-redefs [quadtree/load-tile-data (fn [face level y x] (fact face => 2 level => 1) {:id (+ (* y 2) x 1)})]
@@ -197,7 +197,7 @@
       (:load (update-level-of-detail flat (constantly false) false)) => []
       (:load (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => [[:2 :0] [:2 :1] [:2 :2] [:2 :3]]
       (:tree (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => one-face
-      (get-in (update-level-of-detail flat (constantly false) true) [:tree :2 :up]) => 1)))
+      (get-in (update-level-of-detail flat (constantly false) true) [:tree :2 :sfsim25.quadtree/up]) => 1)))
 
 (fact "Get path of parent node"
   (parent-path [:1 :2 :3]) => [:1 :2])
