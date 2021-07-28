@@ -454,9 +454,13 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   }
 }
 
+vec3 scale(vec3 v) {
+  return vec3(v.x, v.y, v.z * 2);
+}
+
 float density(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
-  float height = distance(point, centre) - 6378000;
+  float height = distance(scale(point), centre) - 6378000;
   float height01 = height / 55000;
   return texture(dens, height01).r;
 }
@@ -464,11 +468,11 @@ float density(vec3 point) {
 float optical_depth(vec3 origin, vec3 direction)
 {
   vec3 centre = vec3(0, 0, 0);
-  float dist = distance(origin, centre);
+  float dist = distance(scale(origin), centre);
   float height = dist - 6378000;
   float height01 = height / 55000;
-  vec3 normal = origin / dist;
-  float cos_angle = dot(normal, direction);
+  vec3 normal = scale(origin) / dist;
+  float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
   float cos_angle01 = 0.5 + 0.5 * cos_angle;
   return texture(dep, vec2(height01, cos_angle01)).r;
 }
@@ -510,8 +514,8 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 void main()
 {
   vec3 direction = normalize(pos);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 55000, orig, direction);
-  vec2 planet = ray_sphere(vec3(0, 0, 0), 6378000, orig, direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 55000, scale(orig), scale(direction));
+  vec2 planet = ray_sphere(vec3(0, 0, 0), 6378000, scale(orig), scale(direction));
   vec3 bg;
   if (planet.x > 0) {
     vec3 wavelength = vec3(700, 530, 440);
@@ -644,8 +648,9 @@ void main()
 ; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
-(def position (atom (matrix [0 6378001 0])))
-(def orientation (atom (q/->Quaternion 1 0 0 0)))
+; (def position (atom (matrix [0 6378001 0])))
+(def position (atom (matrix [0 (* -3 6378000) 0])))
+(def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
 (def light (atom -1.4))
 (def keystates (atom {}))
