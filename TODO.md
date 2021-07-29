@@ -14,5 +14,3 @@
 * Skydome scaled to ZFAR * 0.5
 * use short integers for normal vector textures?
 * soft-dock, hard-dock
-
-[OpenGL question](https://gamedev.stackexchange.com/questions/192358/opengl-height-map-accuracy-for-planetary-rendering)
