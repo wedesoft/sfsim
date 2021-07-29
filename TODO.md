@@ -1,6 +1,5 @@
 # TODO
 
-* intersection of ray with ellipsoid in shader
 * rendering tests using framebuffer object
 * TDD of optical depth and other functions
 * night-time textures
