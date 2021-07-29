@@ -481,10 +481,10 @@ float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
 {
   vec3 point = origin + direction * ray_length;
   vec3 centre = vec3(0, 0, 0);
-  if (dot(direction, origin - centre) > 0) {
-    return optical_depth(origin, direction) - optical_depth(point, direction);
+  if (dot(scale(direction), origin - centre) > 0) {
+    return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
   } else {
-    return optical_depth(point, -direction) - optical_depth(origin, -direction);
+    return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
   }
 }
 
@@ -649,7 +649,7 @@ void main()
 (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
 
 ; (def position (atom (matrix [0 6378001 0])))
-(def position (atom (matrix [0 (* -3 6378000) 0])))
+(def position (atom (matrix [0 (* -3 6378000) (* 0.5 6378000)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
 (def light (atom -1.4))
@@ -673,7 +673,7 @@ void main()
         d  (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
         s  (if (@keystates Keyboard/KEY_W) 1e-7 (if (@keystates Keyboard/KEY_S) -1e-7 0))
         m  (if (@keystates Keyboard/KEY_E) 1e-8 (if (@keystates Keyboard/KEY_D) -1e-8 0))
-        l  (if (@keystates Keyboard/KEY_ADD) 0.0003 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0003 0))]
+        l  (if (@keystates Keyboard/KEY_ADD) 0.0006 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0006 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
     (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
