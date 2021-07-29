@@ -481,7 +481,7 @@ float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
 {
   vec3 point = origin + direction * ray_length;
   vec3 centre = vec3(0, 0, 0);
-  if (dot(scale(direction), origin - centre) > 0) {
+  if (dot(scale(direction), scale(origin) - centre) > 0) {
     return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
   } else {
     return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
