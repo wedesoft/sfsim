@@ -2,6 +2,7 @@
 
 * rendering tests using framebuffer object GL30/glGenFramebuffers, GL30/glBindFramebuffer, GL30/GL\_FRAMEBUFFER,
   GL11/glReadPixels, GL11/glViewport
+* build shaders using selmer
 * TDD of optical depth and other functions
 * night-time textures
 * compute shadow in atmosphere
