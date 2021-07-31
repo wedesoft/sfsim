@@ -704,13 +704,18 @@ void main()
 
 ; --------------------------------------------------------------------------------
 
+(require '[sfsim25.util :refer (slurp-image)])
 (import '[org.lwjgl.opengl Pbuffer PixelFormat Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 Util]
         '[org.lwjgl BufferUtils])
 
 (def pbuffer (Pbuffer. 160 120 (PixelFormat. 24 8 0 0 0) nil nil))
 (.makeCurrent pbuffer)
 (def pixels (BufferUtils/createIntBuffer (* 160 120)))
-(GL11/glClearColor 1.0 0.0 0.0 0.0)
+(GL11/glClearColor 1.0 0.0 0.0 1.0)
 (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
 (GL11/glReadPixels 0 0 160 120 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixels)
 (.destroy pbuffer)
+(def a (int-array (* 160 120)))
+(.get pixels a)
+
+(slurp-image "test/sfsim25/fixtures/red.png")
