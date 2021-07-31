@@ -5,10 +5,6 @@
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode]))
 
-(Display/setTitle "sfsim25.t-render")
-(Display/setDisplayMode (DisplayMode. 160 120))
-(Display/create)
-
 (defn is-image [filename]
   (fn [other]
     (let [img (slurp-image filename)]
@@ -17,7 +13,4 @@
            (= (seq (:data img)) (seq (:data other)))))))
 
 (fact "Render background color"
-  (offscreen-render 160 120
-    (clear (->RGB 1.0 0.0 0.0))) => (is-image "test/sfsim25/fixtures/red.png"))
-
-(Display/destroy)
+  (offscreen-render 160 120 (clear (->RGB 1.0 0.0 0.0))) => (is-image "test/sfsim25/fixtures/red.png"))
