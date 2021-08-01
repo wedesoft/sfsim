@@ -14,3 +14,23 @@
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (->RGB 1.0 0.0 0.0))) => (is-image "test/sfsim25/fixtures/red.png"))
+
+(def vertex-source "#version 410 core
+in highp vec3 point;
+void main()
+{
+  gl_Position = vec4(point, 1);
+}")
+
+(def fragment-source "#version 410 core
+out lowp vec3 fragColor;
+void main()
+{
+  fragColor = vec3(0.0, 0.0, 1.0);
+}")
+
+(fact "Render a quad"
+  (offscreen-render 160 120
+    (let [prog (make-program :vertex vertex-source :fragment fragment-source)]
+      (clear (->RGB 0.0 0.0 0.0))
+      (destroy-program prog))) => (is-image "test/sfsim25/fixtures/red.png"))
