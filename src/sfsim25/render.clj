@@ -12,6 +12,7 @@
          pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 0 0 0) nil nil)
          data#    (int-array (* ~width ~height))]
      (.makeCurrent pbuffer#)
+     (GL11/glViewport 0 0 ~width ~height)
      ~@body
      (GL11/glReadPixels 0 0 ~width ~height GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixels#)
      (.releaseContext pbuffer#)
