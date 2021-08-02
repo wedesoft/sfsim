@@ -694,7 +694,7 @@ void main()
   (GL11/glClearColor 0.2 0.2 0.2 0.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (GL30/glBindVertexArray vao)
-  (GL11/glDrawElements GL11/GL_QUADS 24 GL11/GL_UNSIGNED_INT 0)
+  (GL11/glDrawElements GL11/GL_QUADS 4 GL11/GL_UNSIGNED_INT 0)
   (Display/update))
 
 (Keyboard/destroy)
