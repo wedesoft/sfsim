@@ -1,7 +1,8 @@
 # TODO
 
-* rendering tests using framebuffer object GL30/glGenFramebuffers, GL30/glBindFramebuffer, GL30/GL\_FRAMEBUFFER,
-  GL11/glReadPixels, GL11/glViewport
+* test switching rendering between two different objects
+* test more than one vertex attribute
+* render of texture
 * build shaders using selmer
 * TDD of optical depth and other functions
 * night-time textures
@@ -82,3 +83,4 @@
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
 * atmospheric rendering, clouds, water, elevation maps, fractal micro textures and maps
+* beep-beep sound, paraglider audio?

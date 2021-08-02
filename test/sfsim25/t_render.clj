@@ -1,7 +1,7 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
             [sfsim25.rgb :refer (->RGB)]
-            [sfsim25.util :refer (slurp-image)]
+            [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode]))
 
@@ -31,6 +31,11 @@ void main()
 
 (fact "Render a quad"
   (offscreen-render 160 120
-    (let [prog (make-program :vertex vertex-minimal-source :fragment fragment-minimal-source)]
+    (let [program  (make-program :vertex vertex-minimal-source :fragment fragment-minimal-source)
+          indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          vao      (make-vao program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
-      (destroy-program prog))) => (is-image "test/sfsim25/fixtures/red.png"))
+      (render-quads program vao)
+      (destroy-vao vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/quad.png"))

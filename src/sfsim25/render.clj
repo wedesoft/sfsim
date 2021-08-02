@@ -1,6 +1,6 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL20]
+  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL15 GL20 GL30]
            [org.lwjgl BufferUtils]))
 
 (defmacro offscreen-render [width height & body]
@@ -56,3 +56,54 @@
     (GL20/glDetachShader program shader)
     (GL20/glDeleteShader shader))
   (GL20/glDeleteProgram program))
+
+(defmacro def-make-buffer [method create-buffer]
+  `(defn ~method [data#]
+     (let [buffer# (~create-buffer (count data#))]
+       (.put buffer# data#)
+       (.flip buffer#)
+       buffer#)))
+
+(def-make-buffer make-float-buffer BufferUtils/createFloatBuffer)
+(def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
+(def-make-buffer make-byte-buffer BufferUtils/createByteBuffer)
+
+(defn make-vao
+  "Create vertex array object and vertex buffer objects"
+  [program indices vertices attributes]
+  (let [vao (GL30/glGenVertexArrays)]
+    (GL30/glBindVertexArray vao)
+    (let [vbo  (GL15/glGenBuffers)
+          idx  (GL15/glGenBuffers)]
+      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
+      (GL15/glBufferData GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)) GL15/GL_STATIC_DRAW)
+      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
+      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)) GL15/GL_STATIC_DRAW)
+      (let [attribute-pairs (partition 2 attributes)
+            sizes           (map second attribute-pairs)
+            stride          (apply + sizes)
+            offsets         (reductions + (cons 0 (butlast sizes)))]
+        (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
+          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) (name attribute)) size GL11/GL_FLOAT false
+                                      (* stride Float/BYTES) (* offset Float/BYTES))
+          (GL20/glEnableVertexAttribArray i))
+        {:vao vao :vbo vbo :idx idx}))))
+
+(defn destroy-vao
+  "Destroy vertex array object and vertex buffer objects"
+  [{:keys [vao vbo idx]}]
+  (GL30/glBindVertexArray vao)
+  (GL20/glDisableVertexAttribArray 0)
+  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
+  (GL15/glDeleteBuffers idx)
+  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
+  (GL15/glDeleteBuffers vbo)
+  (GL30/glBindVertexArray 0)
+  (GL30/glDeleteVertexArrays vao))
+
+(defn render-quads
+  "Render one or more quads"
+  [program vao]
+  (GL20/glUseProgram (:program program))
+  (GL30/glBindVertexArray (:vao vao))
+  (GL11/glDrawElements GL11/GL_QUADS 4 GL11/GL_UNSIGNED_INT 0))
