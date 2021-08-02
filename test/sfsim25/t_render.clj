@@ -31,9 +31,9 @@ void main()
 
 (fact "Render a quad"
   (offscreen-render 160 120
-    (let [program  (make-program :vertex vertex-minimal-source :fragment fragment-minimal-source)
-          indices  [0 1 3 2]
+    (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          program  (make-program :vertex vertex-minimal-source :fragment fragment-minimal-source)
           vao      (make-vao program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
       (render-quads program vao)
