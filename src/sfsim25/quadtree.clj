@@ -158,7 +158,8 @@
                    :2 (case dy -1 [:0 false], 0 (case dx -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
                    :3 (case dy -1 [:1 false], 0 (case dx -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
              [(cons replacement tail) (if propagate dy 0) (if propagate dx 0)])))))
-  ([path dy dx] (neighbour-path path dy dx true)))
+  ([path dy dx]
+   (neighbour-path path dy dx true)))
 
 (defn neighbour-paths
   "Get the paths for the four neighbours of a tile"

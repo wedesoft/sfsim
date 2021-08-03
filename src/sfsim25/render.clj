@@ -65,8 +65,8 @@
        buffer#)))
 
 (def-make-buffer make-float-buffer BufferUtils/createFloatBuffer)
-(def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
-(def-make-buffer make-byte-buffer BufferUtils/createByteBuffer)
+(def-make-buffer make-int-buffer   BufferUtils/createIntBuffer  )
+(def-make-buffer make-byte-buffer  BufferUtils/createByteBuffer )
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
