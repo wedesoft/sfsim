@@ -3,7 +3,9 @@
   (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL15 GL20 GL30]
            [org.lwjgl BufferUtils]))
 
-(defmacro offscreen-render [width height & body]
+(defmacro offscreen-render
+  "Macro to use a pbuffer for offscreen rendering"
+  [width height & body]
   `(let [pixels#  (BufferUtils/createIntBuffer (* ~width ~height))
          pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 24 0 0) nil nil)
          data#    (int-array (* ~width ~height))]
@@ -19,6 +21,7 @@
          (.destroy pbuffer#)))))
 
 (defn clear [color]
+  "Set clear color and clear color buffer as well as depth buffer"
   (GL11/glClearColor (:r color) (:g color) (:b color) 1.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
 
@@ -58,6 +61,7 @@
   (GL20/glDeleteProgram program))
 
 (defmacro def-make-buffer [method create-buffer]
+  "Create a buffer object for binary input/output"
   `(defn ~method [data#]
      (let [buffer# (~create-buffer (count data#))]
        (.put buffer# data#)
@@ -111,7 +115,9 @@
   (GL30/glBindVertexArray vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS n GL11/GL_UNSIGNED_INT 0))
 
-(defmacro raster-lines [& body]
+(defmacro raster-lines
+  "Macro for temporarily switching polygon rasterization to line mode"
+  [& body]
   `(do
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
      ~@body
