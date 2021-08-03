@@ -110,3 +110,9 @@
   (GL20/glUseProgram (:program program))
   (GL30/glBindVertexArray vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS n GL11/GL_UNSIGNED_INT 0))
+
+(defmacro raster-lines [& body]
+  `(do
+     (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+     ~@body
+     (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))

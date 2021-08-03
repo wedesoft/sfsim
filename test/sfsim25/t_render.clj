@@ -105,3 +105,14 @@ void main()
       (destroy-vertex-array-object vao1)
       (destroy-program program2)
       (destroy-program program1))) => (is-image "test/sfsim25/fixtures/objects.png"))
+
+(fact "Render lines only"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (->RGB 0.0 0.0 0.0))
+      (raster-lines (render-quads program vao))
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/lines.png"))
