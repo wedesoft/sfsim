@@ -456,7 +456,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
 }
 
 vec3 scale(vec3 v) {
-  return vec3(v.x, v.y, v.z * 2);
+  return vec3(v.x, v.y, v.z * 6378000 / 6357000);
 }
 
 float density(vec3 point) {
@@ -655,7 +655,7 @@ void main()
 
 (def light (atom -1.4))
 (def keystates (atom {}))
-(def rayleigh-scatter-strength (atom 0.00003))
+(def rayleigh-scatter-strength (atom 0.00009))
 (def mie-scatter-strength (atom 0.0000002))
 (def g (atom 0.96))
 

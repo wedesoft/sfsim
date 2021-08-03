@@ -2,6 +2,7 @@
 
 * test tessellation
 * render of texture
+* test texture lookup
 * build shaders using selmer
 * TDD of optical depth and other functions
 * night-time textures
