@@ -5,7 +5,7 @@
 
 (defmacro offscreen-render [width height & body]
   `(let [pixels#  (BufferUtils/createIntBuffer (* ~width ~height))
-         pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 0 0 0) nil nil)
+         pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 24 0 0) nil nil)
          data#    (int-array (* ~width ~height))]
      (.makeCurrent pbuffer#)
      (GL11/glViewport 0 0 ~width ~height)
@@ -20,7 +20,7 @@
 
 (defn clear [color]
   (GL11/glClearColor (:r color) (:g color) (:b color) 1.0)
-  (GL11/glClear GL11/GL_COLOR_BUFFER_BIT))
+  (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
 
 (defn make-shader [source shader-type]
   "Compile a GLSL shader"
@@ -104,6 +104,7 @@
 (defn render-quads
   "Render one or more quads"
   [program {:keys [vao n]}]
+  (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL20/glUseProgram (:program program))
   (GL30/glBindVertexArray vao)
   (GL11/glDrawElements GL11/GL_QUADS n GL11/GL_UNSIGNED_INT 0))

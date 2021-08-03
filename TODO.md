@@ -1,6 +1,5 @@
 # TODO
 
-* z-buffering
 * test tessellation
 * render of texture
 * build shaders using selmer
