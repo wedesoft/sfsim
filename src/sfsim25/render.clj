@@ -105,6 +105,8 @@
   "Render one or more quads"
   [program {:keys [vertex-array-object n]}]
   (GL11/glEnable GL11/GL_DEPTH_TEST)
+  (GL11/glEnable GL11/GL_CULL_FACE)
+  (GL11/glCullFace GL11/GL_BACK)
   (GL20/glUseProgram (:program program))
   (GL30/glBindVertexArray vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS n GL11/GL_UNSIGNED_INT 0))
