@@ -1,6 +1,7 @@
 # TODO
 
-* test switching rendering between two different objects
+* z-buffering
+* test tessellation
 * render of texture
 * build shaders using selmer
 * TDD of optical depth and other functions

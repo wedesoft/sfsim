@@ -16,14 +16,14 @@
 (fact "Render background color"
   (offscreen-render 160 120 (clear (->RGB 1.0 0.0 0.0))) => (is-image "test/sfsim25/fixtures/red.png"))
 
-(def vertex-minimal-source "#version 410 core
+(def vertex-passthrough "#version 410 core
 in highp vec3 point;
 void main()
 {
   gl_Position = vec4(point, 1);
 }")
 
-(def fragment-minimal-source "#version 410 core
+(def fragment-blue "#version 410 core
 out lowp vec3 fragColor;
 void main()
 {
@@ -34,7 +34,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
-          program  (make-program :vertex vertex-minimal-source :fragment fragment-minimal-source)
+          program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao      (make-vao program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
       (render-quads program vao)
@@ -81,3 +81,27 @@ void main()
       (render-quads program vao)
       (destroy-vao vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quads.png"))
+
+(def fragment-red "#version 410 core
+out lowp vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1.0, 0.0, 0.0);
+}")
+
+(fact "Correct switching between two vertex array objects and shader programs"
+  (offscreen-render 160 120
+    (let [indices   [0 1 3 2]
+          vertices1 [-1.0 -1.0 0.0, 0.5 -1.0 0.0, -1.0 0.5 0.0, 0.5 0.5 0.0]
+          vertices2 [-0.5 -0.5 0.0, 1.0 -0.5 0.0, -0.5 1.0 0.0, 1.0 1.0 0.0]
+          program1  (make-program :vertex vertex-passthrough :fragment fragment-red)
+          program2  (make-program :vertex vertex-passthrough :fragment fragment-blue)
+          vao1      (make-vao program1 indices vertices1 [:point 3])
+          vao2      (make-vao program2 indices vertices2 [:point 3])]
+      (clear (->RGB 0.0 0.0 0.0))
+      (render-quads program1 vao1)
+      (render-quads program2 vao2)
+      (destroy-vao vao2)
+      (destroy-vao vao1)
+      (destroy-program program2)
+      (destroy-program program1))) => (is-image "test/sfsim25/fixtures/objects.png"))
