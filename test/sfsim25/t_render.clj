@@ -5,12 +5,13 @@
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode]))
 
+; Compare RGB components of image and ignore alpha values.
 (defn is-image [filename]
   (fn [other]
     (let [img (slurp-image filename)]
       (and (= (:width img) (:width other))
            (= (:height img) (:height other))
-           (= (seq (:data img)) (seq (:data other)))))))
+           (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (->RGB 1.0 0.0 0.0))) => (is-image "test/sfsim25/fixtures/red.png"))
@@ -43,16 +44,16 @@ void main()
 (def vertex-color-source "#version 410 core
 in highp vec3 point;
 in mediump vec2 uv;
-out lowp vec4 color;
+out lowp vec3 color;
 void main()
 {
   gl_Position = vec4(point, 1);
-  color = vec4(uv.x, 0.5, uv.y, 1.0);
+  color = vec3(uv.x, 0.5, uv.y);
 }")
 
 (def fragment-color-source "#version 410 core
-in mediump vec4 color;
-out lowp vec4 fragColor;
+in mediump vec3 color;
+out lowp vec3 fragColor;
 void main()
 {
   fragColor = color;
