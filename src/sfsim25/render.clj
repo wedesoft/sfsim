@@ -68,16 +68,16 @@
 (def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
 (def-make-buffer make-byte-buffer BufferUtils/createByteBuffer)
 
-(defn make-vao
+(defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
   [program indices vertices attributes]
-  (let [vao (GL30/glGenVertexArrays)]
-    (GL30/glBindVertexArray vao)
-    (let [vbo  (GL15/glGenBuffers)
-          idx  (GL15/glGenBuffers)]
-      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
+  (let [vertex-array-object (GL30/glGenVertexArrays)]
+    (GL30/glBindVertexArray vertex-array-object)
+    (let [array-buffer (GL15/glGenBuffers)
+          index-buffer (GL15/glGenBuffers)]
+      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
       (GL15/glBufferData GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)) GL15/GL_STATIC_DRAW)
-      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
+      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
       (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)) GL15/GL_STATIC_DRAW)
       (let [attribute-pairs (partition 2 attributes)
             sizes           (map second attribute-pairs)
@@ -87,24 +87,24 @@
           (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) (name attribute)) size GL11/GL_FLOAT false
                                       (* stride Float/BYTES) (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
-        {:vao vao :vbo vbo :idx idx :n (count indices)}))))
+        {:vertex-array-object vertex-array-object :array-buffer array-buffer :index-buffer index-buffer :n (count indices)}))))
 
-(defn destroy-vao
+(defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
-  [{:keys [vao vbo idx]}]
-  (GL30/glBindVertexArray vao)
+  [{:keys [vertex-array-object array-buffer index-buffer]}]
+  (GL30/glBindVertexArray vertex-array-object)
   (GL20/glDisableVertexAttribArray 0)
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
-  (GL15/glDeleteBuffers idx)
+  (GL15/glDeleteBuffers index-buffer)
   (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
-  (GL15/glDeleteBuffers vbo)
+  (GL15/glDeleteBuffers array-buffer)
   (GL30/glBindVertexArray 0)
-  (GL30/glDeleteVertexArrays vao))
+  (GL30/glDeleteVertexArrays vertex-array-object))
 
 (defn render-quads
   "Render one or more quads"
-  [program {:keys [vao n]}]
+  [program {:keys [vertex-array-object n]}]
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL20/glUseProgram (:program program))
-  (GL30/glBindVertexArray vao)
+  (GL30/glBindVertexArray vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS n GL11/GL_UNSIGNED_INT 0))

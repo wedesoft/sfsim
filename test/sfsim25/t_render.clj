@@ -35,10 +35,10 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
           program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
-          vao      (make-vao program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
       (render-quads program vao)
-      (destroy-vao vao)
+      (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quad.png"))
 
 (def vertex-color-source "#version 410 core
@@ -64,10 +64,10 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
           program  (make-program :vertex vertex-color-source :fragment fragment-color-source)
-          vao      (make-vao program indices vertices [:point 3 :uv 2])]
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
       (render-quads program vao)
-      (destroy-vao vao)
+      (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/colors.png"))
 
 (fact "Render two quads with depth testing"
@@ -76,10 +76,10 @@ void main()
           vertices [-1.0 -1.0 -0.1 1.0 0.0, 0.5 -1.0 -0.1 1.0 0.0, -1.0 0.5 -0.1 1.0 0.0, 0.5 0.5 -0.1 1.0 0.0,
                     -0.5 -0.5  0.1 0.0 1.0, 1.0 -0.5  0.1 0.0 1.0, -0.5 1.0  0.1 0.0 1.0, 1.0 1.0  0.1 0.0 1.0]
           program  (make-program :vertex vertex-color-source :fragment fragment-color-source)
-          vao      (make-vao program indices vertices [:point 3 :uv 2])]
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
       (render-quads program vao)
-      (destroy-vao vao)
+      (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quads.png"))
 
 (def fragment-red "#version 410 core
@@ -96,12 +96,12 @@ void main()
           vertices2 [-0.5 -0.5 0.0, 1.0 -0.5 0.0, -0.5 1.0 0.0, 1.0 1.0 0.0]
           program1  (make-program :vertex vertex-passthrough :fragment fragment-red)
           program2  (make-program :vertex vertex-passthrough :fragment fragment-blue)
-          vao1      (make-vao program1 indices vertices1 [:point 3])
-          vao2      (make-vao program2 indices vertices2 [:point 3])]
+          vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
+          vao2      (make-vertex-array-object program2 indices vertices2 [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
       (render-quads program1 vao1)
       (render-quads program2 vao2)
-      (destroy-vao vao2)
-      (destroy-vao vao1)
+      (destroy-vertex-array-object vao2)
+      (destroy-vertex-array-object vao1)
       (destroy-program program2)
       (destroy-program program1))) => (is-image "test/sfsim25/fixtures/objects.png"))
