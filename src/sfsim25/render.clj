@@ -87,7 +87,7 @@
           (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) (name attribute)) size GL11/GL_FLOAT false
                                       (* stride Float/BYTES) (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
-        {:vao vao :vbo vbo :idx idx}))))
+        {:vao vao :vbo vbo :idx idx :n (count indices)}))))
 
 (defn destroy-vao
   "Destroy vertex array object and vertex buffer objects"
@@ -103,7 +103,7 @@
 
 (defn render-quads
   "Render one or more quads"
-  [program vao]
+  [program {:keys [vao n]}]
   (GL20/glUseProgram (:program program))
-  (GL30/glBindVertexArray (:vao vao))
-  (GL11/glDrawElements GL11/GL_QUADS 4 GL11/GL_UNSIGNED_INT 0))
+  (GL30/glBindVertexArray vao)
+  (GL11/glDrawElements GL11/GL_QUADS n GL11/GL_UNSIGNED_INT 0))

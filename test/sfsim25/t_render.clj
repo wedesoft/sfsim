@@ -69,3 +69,15 @@ void main()
       (render-quads program vao)
       (destroy-vao vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/colors.png"))
+
+(fact "Render two quads"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2, 4 5 7 6]
+          vertices [-1.0 -1.0 0.0 1.0 0.0, 0.5 -1.0 0.0 1.0 0.0, -1.0 0.5 0.0 1.0 0.0, 0.5 0.5 0.0 1.0 0.0,
+                    -0.5 -0.5 0.0 0.0 1.0, 1.0 -0.5 0.0 0.0 1.0, -0.5 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 0.0 1.0]
+          program  (make-program :vertex vertex-color-source :fragment fragment-color-source)
+          vao      (make-vao program indices vertices [:point 3 :uv 2])]
+      (clear (->RGB 0.0 0.0 0.0))
+      (render-quads program vao)
+      (destroy-vao vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/quads.png"))

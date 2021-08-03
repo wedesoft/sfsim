@@ -1,7 +1,6 @@
 # TODO
 
 * test switching rendering between two different objects
-* test two quads
 * render of texture
 * build shaders using selmer
 * TDD of optical depth and other functions
