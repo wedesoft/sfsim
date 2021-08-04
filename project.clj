@@ -8,8 +8,7 @@
                  [org.clojure/core.async   "1.3.618"]
                  [com.climate/claypoole      "1.1.4"]
                  [net.mikera/core.matrix    "0.62.0"]
-                 [net.mikera/vectorz-clj    "0.48.0"]
-                 [selmer                   "1.12.44"]]
+                 [net.mikera/vectorz-clj    "0.48.0"]]
   :main ^:skip-aot sfsim25.core
   :profiles {:run-scale-image     {:main sfsim25.scale-image}
              :run-map-tiles       {:main sfsim25.map-tiles}

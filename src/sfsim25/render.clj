@@ -1,5 +1,6 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
+  (:require [clojure.core.matrix :refer (mget)])
   (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL15 GL20 GL30]
            [org.lwjgl BufferUtils]))
 
@@ -109,6 +110,11 @@
   "Set uniform float variable in shader"
   [program k value]
   (GL20/glUniform1f (GL20/glGetUniformLocation (:program program) (name k)) value))
+
+(defn uniform-vector3
+  "Set uniform 3D vector in shader"
+  [program k value]
+  (GL20/glUniform3f (GL20/glGetUniformLocation (:program program) (name k)) (mget value 0) (mget value 1) (mget value 2)))
 
 (defmacro use-program
   "Use program and set uniform variables"

@@ -1,5 +1,6 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
+            [clojure.core.matrix :refer (matrix)]
             [sfsim25.rgb :refer (->RGB)]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
@@ -117,7 +118,7 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/lines.png"))
 
-(def fragment-uniform "#version 410 core
+(def fragment-uniform-floats "#version 410 core
 out lowp vec3 fragColor;
 uniform float red;
 uniform float green;
@@ -131,9 +132,28 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
-          program  (make-program :vertex vertex-passthrough :fragment fragment-uniform)
+          program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-floats)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
       (render-quads (use-program program (uniform-float :red 1.0) (uniform-float :green 0.5) (uniform-float :blue 0.0)) vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/uniform.png"))
+
+(def fragment-uniform-vector3 "#version 410 core
+out lowp vec3 fragColor;
+uniform vec3 color;
+void main()
+{
+  fragColor = color;
+}")
+
+(fact "Set uniform 3D vector"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-vector3)
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (->RGB 0.0 0.0 0.0))
+      (render-quads (use-program program (uniform-vector3 :color (matrix [1.0 0.5 0.0]))) vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/uniform.png"))
