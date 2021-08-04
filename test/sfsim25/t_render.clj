@@ -37,7 +37,7 @@ void main()
           program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
-      (render-quads program vao)
+      (render-quads (use-program program) vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quad.png"))
 
@@ -66,7 +66,7 @@ void main()
           program  (make-program :vertex vertex-color-source :fragment fragment-color-source)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
-      (render-quads program vao)
+      (render-quads (use-program program) vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/colors.png"))
 
@@ -78,7 +78,7 @@ void main()
           program  (make-program :vertex vertex-color-source :fragment fragment-color-source)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
-      (render-quads program vao)
+      (render-quads (use-program program) vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quads.png"))
 
@@ -99,8 +99,8 @@ void main()
           vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
           vao2      (make-vertex-array-object program2 indices vertices2 [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
-      (render-quads program1 vao1)
-      (render-quads program2 vao2)
+      (render-quads (use-program program1) vao1)
+      (render-quads (use-program program2) vao2)
       (destroy-vertex-array-object vao2)
       (destroy-vertex-array-object vao1)
       (destroy-program program2)
@@ -113,7 +113,7 @@ void main()
           program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
-      (raster-lines (render-quads program vao))
+      (raster-lines (render-quads (use-program program) vao))
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/lines.png"))
 
@@ -134,9 +134,6 @@ void main()
           program  (make-program :vertex vertex-passthrough :fragment fragment-uniform)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
-      (render-quads program vao
-        (uniform-float program :red   1.0)
-        (uniform-float program :green 0.5)
-        (uniform-float program :blue  0.0))
+      (render-quads (use-program program (uniform-float :red 1.0) (uniform-float :green 0.5) (uniform-float :blue 0.0)) vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/uniform.png"))
