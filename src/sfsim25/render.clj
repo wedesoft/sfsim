@@ -107,12 +107,12 @@
   (GL30/glDeleteVertexArrays vertex-array-object))
 
 (defn uniform-float
-  "Set uniform float variable in shader"
+  "Set uniform float variable in current shader program"
   [program k value]
   (GL20/glUniform1f (GL20/glGetUniformLocation (:program program) (name k)) value))
 
 (defn uniform-vector3
-  "Set uniform 3D vector in shader"
+  "Set uniform 3D vector in current shader program"
   [program k value]
   (GL20/glUniform3f (GL20/glGetUniformLocation (:program program) (name k)) (mget value 0) (mget value 1) (mget value 2)))
 
