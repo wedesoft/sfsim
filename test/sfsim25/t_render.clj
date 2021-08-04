@@ -127,7 +127,7 @@ void main()
   fragColor = vec3(red, green, blue);
 }")
 
-(fact "Render a quad"
+(fact "Set uniform floating point numbers"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
