@@ -116,3 +116,27 @@ void main()
       (raster-lines (render-quads program vao))
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/lines.png"))
+
+(def fragment-uniform "#version 410 core
+out lowp vec3 fragColor;
+uniform float red;
+uniform float green;
+uniform float blue;
+void main()
+{
+  fragColor = vec3(red, green, blue);
+}")
+
+(fact "Render a quad"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          program  (make-program :vertex vertex-passthrough :fragment fragment-uniform)
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (->RGB 0.0 0.0 0.0))
+      (render-quads program vao
+        (uniform-float program :red   1.0)
+        (uniform-float program :green 0.5)
+        (uniform-float program :blue  0.0))
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/uniform.png"))

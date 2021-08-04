@@ -105,15 +105,17 @@
   (GL30/glBindVertexArray 0)
   (GL30/glDeleteVertexArrays vertex-array-object))
 
-(defn render-quads
+(defmacro render-quads
   "Render one or more quads"
-  [program {:keys [vertex-array-object n]}]
-  (GL11/glEnable GL11/GL_DEPTH_TEST)
-  (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace GL11/GL_BACK)
-  (GL20/glUseProgram (:program program))
-  (GL30/glBindVertexArray vertex-array-object)
-  (GL11/glDrawElements GL11/GL_QUADS n GL11/GL_UNSIGNED_INT 0))
+  [program vertex-array-object & setup]
+  `(do
+     (GL11/glEnable GL11/GL_DEPTH_TEST)
+     (GL11/glEnable GL11/GL_CULL_FACE)
+     (GL11/glCullFace GL11/GL_BACK)
+     (GL20/glUseProgram (:program ~program))
+     (GL30/glBindVertexArray (:vertex-array-object ~vertex-array-object))
+     ~@setup
+     (GL11/glDrawElements GL11/GL_QUADS (:n ~vertex-array-object) GL11/GL_UNSIGNED_INT 0)))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
@@ -122,3 +124,8 @@
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
      ~@body
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
+
+(defn uniform-float
+  "Set uniform float variable in shader"
+  [program k value]
+  (GL20/glUniform1f (GL20/glGetUniformLocation (:program program) (name k)) value))

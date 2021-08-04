@@ -1,5 +1,6 @@
 # TODO
 
+* uniform variables
 * test tessellation
 * render of texture
 * test texture lookup
@@ -17,7 +18,7 @@
 * Skydome scaled to ZFAR * 0.5
 * use short integers for normal vector textures?
 * soft-dock, hard-dock
-* EF2000 like cockpit controls (quick access views)
+* EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
