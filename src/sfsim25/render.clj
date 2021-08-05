@@ -123,16 +123,14 @@
      (GL20/glUseProgram (:program ~program))
      ~@(map (fn [[method & args]] `(~method ~program ~@args)) uniforms)))
 
-(defmacro render-quads
+(defn render-quads
   "Render one or more quads"
-  [program-code vertex-array-object]
-  `(do
-     (GL11/glEnable GL11/GL_DEPTH_TEST)
-     (GL11/glEnable GL11/GL_CULL_FACE)
-     (GL11/glCullFace GL11/GL_BACK)
-     ~program-code
-     (GL30/glBindVertexArray (:vertex-array-object ~vertex-array-object))
-     (GL11/glDrawElements GL11/GL_QUADS (:n ~vertex-array-object) GL11/GL_UNSIGNED_INT 0)))
+  [vertex-array-object]
+  (GL11/glEnable GL11/GL_DEPTH_TEST)
+  (GL11/glEnable GL11/GL_CULL_FACE)
+  (GL11/glCullFace GL11/GL_BACK)
+  (GL30/glBindVertexArray (:vertex-array-object vertex-array-object))
+  (GL11/glDrawElements GL11/GL_QUADS (:n vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
