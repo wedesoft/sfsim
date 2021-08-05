@@ -1,6 +1,5 @@
 # TODO
 
-* uniform variables (matrix)
 * render of texture (uniform samplers)
 * test texture lookup
 * test tessellation

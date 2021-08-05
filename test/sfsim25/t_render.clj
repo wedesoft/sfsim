@@ -1,6 +1,6 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix)]
+            [clojure.core.matrix :refer (matrix identity-matrix)]
             [sfsim25.rgb :refer (->RGB)]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
@@ -165,3 +165,23 @@ void main()
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/uniform.png"))
+
+(def vertex-rotate "#version 410 core
+in highp vec3 point;
+uniform mat4 transform;
+void main()
+{
+  gl_Position = transform * vec4(point, 1);
+}")
+
+(fact "Set uniform 4x4 matrix"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          program  (make-program :vertex vertex-rotate :fragment fragment-blue)
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-matrix4 :transform (identity-matrix 4)))
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/quad.png"))
