@@ -1,9 +1,9 @@
 # TODO
 
 * uniform variables (matrix)
-* test tessellation
-* render of texture
+* render of texture (uniform samplers)
 * test texture lookup
+* test tessellation
 * TDD of optical depth and other functions
 * night-time textures
 * compute shadow in atmosphere
