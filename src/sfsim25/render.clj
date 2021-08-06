@@ -92,13 +92,17 @@
           (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) (name attribute)) size GL11/GL_FLOAT false
                                       (* stride Float/BYTES) (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
-        {:vertex-array-object vertex-array-object :array-buffer array-buffer :index-buffer index-buffer :n (count indices)}))))
+        {:vertex-array-object vertex-array-object
+         :array-buffer        array-buffer
+         :index-buffer        index-buffer
+         :nrows               (count indices)
+         :ncols               (count attribute-pairs)}))))
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
-  [{:keys [vertex-array-object array-buffer index-buffer]}]
+  [{:keys [vertex-array-object array-buffer index-buffer ncols]}]
   (GL30/glBindVertexArray vertex-array-object)
-  (GL20/glDisableVertexAttribArray 0)
+  (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
   (GL15/glDeleteBuffers index-buffer)
   (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
@@ -135,7 +139,7 @@
   (GL11/glEnable GL11/GL_CULL_FACE)
   (GL11/glCullFace GL11/GL_BACK)
   (GL30/glBindVertexArray (:vertex-array-object vertex-array-object))
-  (GL11/glDrawElements GL11/GL_QUADS (:n vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL11/GL_QUADS (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
