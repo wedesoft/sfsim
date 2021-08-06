@@ -43,7 +43,7 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quad.png"))
 
-(def vertex-color-source "#version 410 core
+(def vertex-color "#version 410 core
 in highp vec3 point;
 in mediump vec2 uv;
 out lowp vec3 color;
@@ -53,7 +53,7 @@ void main()
   color = vec3(uv.x, 0.5, uv.y);
 }")
 
-(def fragment-color-source "#version 410 core
+(def fragment-color "#version 410 core
 in mediump vec3 color;
 out lowp vec3 fragColor;
 void main()
@@ -65,7 +65,7 @@ void main()
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
-          program  (make-program :vertex vertex-color-source :fragment fragment-color-source)
+          program  (make-program :vertex vertex-color :fragment fragment-color)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
       (use-program program)
@@ -78,7 +78,7 @@ void main()
     (let [indices  [0 1 3 2, 4 5 7 6]
           vertices [-1.0 -1.0 -0.1 1.0 0.0, 0.5 -1.0 -0.1 1.0 0.0, -1.0 0.5 -0.1 1.0 0.0, 0.5 0.5 -0.1 1.0 0.0,
                     -0.5 -0.5  0.1 0.0 1.0, 1.0 -0.5  0.1 0.0 1.0, -0.5 1.0  0.1 0.0 1.0, 1.0 1.0  0.1 0.0 1.0]
-          program  (make-program :vertex vertex-color-source :fragment fragment-color-source)
+          program  (make-program :vertex vertex-color :fragment fragment-color)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
       (use-program program)
@@ -166,7 +166,7 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/uniform.png"))
 
-(def vertex-rotate "#version 410 core
+(def vertex-transform "#version 410 core
 in highp vec3 point;
 uniform mat4 transform;
 void main()
@@ -178,10 +178,45 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
-          program  (make-program :vertex vertex-rotate :fragment fragment-blue)
+          program  (make-program :vertex vertex-transform :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
       (use-program program (uniform-matrix4 :transform (identity-matrix 4)))
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quad.png"))
+
+(def vertex-texture "#version 410 core
+in highp vec3 point;
+in mediump vec2 uv;
+out lowp vec3 color;
+out mediump vec2 uv_fragment;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  uv_fragment = uv;
+}")
+
+(def fragment-texture "#version 410 core
+in mediump vec2 uv_fragment;
+out lowp vec3 fragColor;
+uniform sampler2D tex;
+void main()
+{
+  fragColor = texture(tex, uv_fragment).rgb;
+}")
+
+(fact "Render 2D texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-rgb-texture "test/sfsim25/pattern.png")]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/texture.png"))

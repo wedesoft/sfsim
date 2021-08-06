@@ -1,7 +1,8 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
-  (:require [clojure.core.matrix :refer (mget eseq)])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL15 GL20 GL30]
+  (:require [clojure.core.matrix :refer (mget eseq)]
+            [sfsim25.util :refer (slurp-image)])
+  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30]
            [org.lwjgl BufferUtils]))
 
 (defmacro offscreen-render
@@ -125,6 +126,11 @@
   [program k value]
   (GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) (name k)) true (make-float-buffer (float-array (eseq value)))))
 
+(defn uniform-sampler
+  "Set index of uniform sampler in current shader program"
+  [program k value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
+
 (defmacro use-program
   "Use program and set uniform variables"
   [program & uniforms]
@@ -148,3 +154,29 @@
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
      ~@body
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
+
+(defn make-rgb-texture
+  "Load RGB image from file and load it into an OpenGL texture"
+  [filename]
+  (let [image   (slurp-image filename)
+        texture (GL11/glGenTextures)
+        buffer  (make-int-buffer (:data image))]
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
+    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB (:width image) (:height image) 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buffer)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+    {:texture texture :target GL11/GL_TEXTURE_2D}))
+
+(defn destroy-texture
+  "Delete an OpenGL texture"
+  [texture]
+  (GL11/glDeleteTextures (:texture texture)))
+
+(defn use-textures
+  "Specify textures to be used in the next rendering operation"
+  [& textures]
+  (doseq [[i texture] (map list (range) textures)]
+    (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
+    (GL11/glBindTexture (:target texture) (:texture texture))))

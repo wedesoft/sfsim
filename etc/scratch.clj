@@ -220,7 +220,7 @@ void main()
 (defn create-texture
   [varname index size internal-format tex-format tex-type interpolation buffer]
   (let [texture (GL11/glGenTextures)]
-    (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
+    ; (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
     (GL20/glUniform1i (GL20/glGetUniformLocation program varname) index)
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internal-format size size 0 tex-format tex-type buffer)

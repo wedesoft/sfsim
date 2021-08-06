@@ -1,7 +1,8 @@
 # TODO
 
-* render of texture (uniform samplers)
-* test texture lookup
+* test two textures
+* render 1D texture
+* onscreen render
 * test tessellation
 * TDD of optical depth and other functions
 * night-time textures
