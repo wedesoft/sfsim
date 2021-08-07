@@ -14,6 +14,11 @@
            (= (:height img) (:height other))
            (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
 
+; Use this test function to record the image the first time.
+(defn record-image [filename]
+  (fn [other]
+    (spit-image filename other)))
+
 (fact "Render background color"
   (offscreen-render 160 120 (clear (->RGB 1.0 0.0 0.0))) => (is-image "test/sfsim25/fixtures/red.png"))
 
