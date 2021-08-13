@@ -22,6 +22,15 @@
          (.releaseContext pbuffer#)
          (.destroy pbuffer#)))))
 
+(defmacro onscreen-render
+  "Macro to use the current display for rendering"
+  [width height & body]
+  `(do
+     (Display/makeCurrent)
+     (GL11/glViewport 0 0 ~width ~height)
+     ~@body
+     (Display/update)))
+
 (defn clear [color]
   "Set clear color and clear color buffer as well as depth buffer"
   (GL11/glClearColor (:r color) (:g color) (:b color) 1.0)
