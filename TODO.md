@@ -1,6 +1,5 @@
 # TODO
 
-* test two textures with different interpolation parameters (do the parameters refer to the bound texture or the active texture?)
 * render 1D texture
 * test tessellation
 * TDD of optical depth and other functions
