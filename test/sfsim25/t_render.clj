@@ -211,7 +211,7 @@ void main()
   fragColor = texture(tex, uv_fragment).rgb;
 }")
 
-(fact "Render 2D texture"
+(fact "Render 2D RGB texture"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
@@ -225,3 +225,18 @@ void main()
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/texture.png"))
+
+(fact "Render 2D floating-point texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-float-texture {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats.png"))

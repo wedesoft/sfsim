@@ -1,7 +1,7 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
   (:require [clojure.core.matrix :refer (mget eseq)]
-            [sfsim25.util :refer (slurp-image)])
+            [sfsim25.util :refer (slurp-image def-context-macro def-context-create-macro)])
   (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30]
            [org.lwjgl BufferUtils]))
 
@@ -164,20 +164,44 @@
      ~@body
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
 
+(defn- texture-wrap-clamp
+  "Set wrapping mode of active 2D texture"
+  []
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
+
+(defn- texture-interpolate-linear
+  "Set interpolation of active 2D texture to linear interpolation"
+  []
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
+
+(def-context-macro with-2d-texture (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)) (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)))
+
+(def-context-create-macro create-2d-texture (fn [] (GL11/glGenTextures)) 'with-2d-texture)
+
 (defn make-rgb-texture
   "Load RGB image from file and load it into an OpenGL texture"
   [filename]
   (let [image   (slurp-image filename)
-        texture (GL11/glGenTextures)
         buffer  (make-int-buffer (:data image))]
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
-    (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
-    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB (:width image) (:height image) 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buffer)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
-    {:texture texture :target GL11/GL_TEXTURE_2D}))
+    (create-2d-texture texture
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB (:width image) (:height image) 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buffer)
+      (texture-wrap-clamp)
+      (texture-interpolate-linear)
+      {:texture texture :target GL11/GL_TEXTURE_2D})))
+
+(defn make-float-texture
+  "Load floating-point data into red-channel of an OpenGL texture"
+  [image]
+  (let [buffer  (make-float-buffer (:data image))]
+    (GL13/glActiveTexture GL13/GL_TEXTURE0)
+    (create-2d-texture texture
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F (:width image) (:height image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
+      (texture-wrap-clamp)
+      (texture-interpolate-linear)
+      {:texture texture :target GL11/GL_TEXTURE_2D})))
 
 (defn destroy-texture
   "Delete an OpenGL texture"
