@@ -232,7 +232,7 @@ void main()
           vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
           program  (make-program :vertex vertex-texture :fragment fragment-texture)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-float-texture {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
+          tex      (make-float-texture-2d {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
       (clear (->RGB 0.0 0.0 0.0))
       (use-program program (uniform-sampler :tex 0))
       (use-textures tex)
@@ -240,3 +240,27 @@ void main()
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats.png"))
+
+(def fragment-texture-1d "#version 410 core
+in mediump vec2 uv_fragment;
+out lowp vec3 fragColor;
+uniform sampler1D tex;
+void main()
+{
+  fragColor = texture(tex, uv_fragment.x).rgb;
+}")
+
+(fact "Render 1D floating-point texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture-1d)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-float-texture-1d (float-array [0.0 1.0]))]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats-1d.png"))

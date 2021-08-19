@@ -1,6 +1,5 @@
 # TODO
 
-* render 1D floating-point single-channel texture
 * test tessellation
 * TDD of optical depth and other functions
 * night-time textures

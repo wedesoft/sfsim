@@ -164,19 +164,23 @@
      ~@body
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
 
-(defn- texture-wrap-clamp
+(defn- texture-wrap-clamp-2d
   "Set wrapping mode of active 2D texture"
   []
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
 
-(defn- texture-interpolate-linear
+(defn- texture-interpolate-linear-2d
   "Set interpolation of active 2D texture to linear interpolation"
   []
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
+(def-context-macro with-1d-texture (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_1D texture)) (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_1D 0)))
+
 (def-context-macro with-2d-texture (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)) (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)))
+
+(def-context-create-macro create-1d-texture (fn [] (GL11/glGenTextures)) 'with-1d-texture)
 
 (def-context-create-macro create-2d-texture (fn [] (GL11/glGenTextures)) 'with-2d-texture)
 
@@ -188,12 +192,24 @@
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (create-2d-texture texture
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB (:width image) (:height image) 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buffer)
-      (texture-wrap-clamp)
-      (texture-interpolate-linear)
+      (texture-wrap-clamp-2d)
+      (texture-interpolate-linear-2d)
       {:texture texture :target GL11/GL_TEXTURE_2D})))
 
-(defn make-float-texture
-  "Load floating-point data into red-channel of an OpenGL texture"
+(defn make-float-texture-1d
+  "Load floating-point 1D data into red-channel of an OpenGL texture"
+  [data]
+  (let [buffer  (make-float-buffer data)]
+    (GL13/glActiveTexture GL13/GL_TEXTURE0)
+    (create-1d-texture texture
+      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F (count data) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
+      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+      {:texture texture :target GL11/GL_TEXTURE_1D})))
+
+(defn make-float-texture-2d
+  "Load floating-point 2D data into red-channel of an OpenGL texture"
   [image]
   (let [buffer  (make-float-buffer (:data image))]
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
