@@ -1,6 +1,5 @@
 # TODO
 
-* test tessellation
 * TDD of optical depth and other functions
 * night-time textures
 * compute shadow in atmosphere

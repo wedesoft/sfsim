@@ -2,7 +2,7 @@
   "Functions for doing OpenGL rendering"
   (:require [clojure.core.matrix :refer (mget eseq)]
             [sfsim25.util :refer (slurp-image def-context-macro def-context-create-macro)])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30]
+  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40]
            [org.lwjgl BufferUtils]))
 
 (defmacro offscreen-render
@@ -52,11 +52,14 @@
 
 (defn make-program
   "Compile and link a shader program"
-  [& {:keys [vertex fragment]}]
-  (let [vertex-shader   (make-shader vertex GL20/GL_VERTEX_SHADER)
-        fragment-shader (make-shader fragment GL20/GL_FRAGMENT_SHADER)]
+  [& {:keys [vertex tess-control tess-evaluation geometry fragment]}]
+  (let [vertex-shader          (make-shader vertex GL20/GL_VERTEX_SHADER)
+        tess-control-shader    (if tess-control (make-shader tess-control GL40/GL_TESS_CONTROL_SHADER))
+        tess-evaluation-shader (if tess-evaluation (make-shader tess-evaluation GL40/GL_TESS_EVALUATION_SHADER))
+        geometry-shader        (if geometry (make-shader geometry GL32/GL_GEOMETRY_SHADER))
+        fragment-shader        (make-shader fragment GL20/GL_FRAGMENT_SHADER) ]
     (let [program (GL20/glCreateProgram)
-          shaders [vertex-shader fragment-shader]]
+          shaders (remove nil? [vertex-shader tess-control-shader tess-evaluation-shader geometry-shader fragment-shader])]
       (doseq [shader shaders] (GL20/glAttachShader program shader))
       (GL20/glLinkProgram program)
       (if (zero? (GL20/glGetShaderi program GL20/GL_LINK_STATUS))
@@ -147,14 +150,26 @@
      (GL20/glUseProgram (:program ~program))
      ~@(map (fn [[method & args]] `(~method ~program ~@args)) uniforms)))
 
-(defn render-quads
-  "Render one or more quads"
+(defn- setup-vertex-array-object
+  "Initialise rendering of a vertex array object"
   [vertex-array-object]
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
   (GL11/glCullFace GL11/GL_BACK)
-  (GL30/glBindVertexArray (:vertex-array-object vertex-array-object))
+  (GL30/glBindVertexArray (:vertex-array-object vertex-array-object)))
+
+(defn render-quads
+  "Render one or more quads"
+  [vertex-array-object]
+  (setup-vertex-array-object vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+
+(defn render-patches
+  "Render one or more tessellated quads"
+  [vertex-array-object]
+  (setup-vertex-array-object vertex-array-object)
+  (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
+  (GL11/glDrawElements GL40/GL_PATCHES (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
@@ -215,8 +230,8 @@
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (create-2d-texture texture
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F (:width image) (:height image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
-      (texture-wrap-clamp)
-      (texture-interpolate-linear)
+      (texture-wrap-clamp-2d)
+      (texture-interpolate-linear-2d)
       {:texture texture :target GL11/GL_TEXTURE_2D})))
 
 (defn destroy-texture

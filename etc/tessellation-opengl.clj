@@ -203,7 +203,7 @@ void main()
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   ;(GL20/glUseProgram program)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES 16 GL11/GL_UNSIGNED_INT 0)
+  (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)
   (Display/update)
   (Thread/sleep 40))
 

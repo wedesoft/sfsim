@@ -264,3 +264,61 @@ void main()
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats-1d.png"))
+
+(def vertex-tessellation "#version 410 core
+in highp vec3 point;
+void main()
+{
+  gl_Position = vec4(point, 1);
+}")
+
+(def control-uniform "#version 410 core
+layout(vertices = 4) out;
+void main(void)
+{
+  if (gl_InvocationID == 0) {
+    gl_TessLevelOuter[0] = 4.0;
+    gl_TessLevelOuter[1] = 4.0;
+    gl_TessLevelOuter[2] = 4.0;
+    gl_TessLevelOuter[3] = 4.0;
+    gl_TessLevelInner[0] = 4.0;
+    gl_TessLevelInner[1] = 4.0;
+  }
+  gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+}")
+
+(def evaluation-mix "#version 410 core
+layout(quads, equal_spacing, ccw) in;
+void main()
+{
+  vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
+  vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
+  gl_Position = mix(a, b, gl_TessCoord.y);
+}")
+
+(def geometry-triangle "#version 410 core
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 3) out;
+void main(void)
+{
+	gl_Position = gl_in[0].gl_Position;
+	EmitVertex();
+	gl_Position = gl_in[1].gl_Position;
+	EmitVertex();
+	gl_Position = gl_in[2].gl_Position;
+	EmitVertex();
+	EndPrimitive();
+}")
+
+(fact "Subdivide quad using a tessellation shader"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
+          program  (make-program :vertex vertex-tessellation :tess-control control-uniform :tess-evaluation evaluation-mix
+                                 :geometry geometry-triangle :fragment fragment-blue)
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program)
+      (raster-lines (render-patches vao))
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/tesselation.png"))
