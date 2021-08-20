@@ -1,6 +1,9 @@
 # TODO
 
-* TDD of optical depth and other functions
+* TDD of optical depth function
+* TDD of optical density function
+* use render module in Earth prototype
+* use render module in atmosphere prototype
 * night-time textures
 * compute shadow in atmosphere
 * soft transition into planet's shadow
