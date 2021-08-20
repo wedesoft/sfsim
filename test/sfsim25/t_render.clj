@@ -265,13 +265,6 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats-1d.png"))
 
-(def vertex-tessellation "#version 410 core
-in highp vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
-
 (def control-uniform "#version 410 core
 layout(vertices = 4) out;
 void main(void)
@@ -314,7 +307,7 @@ void main(void)
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-          program  (make-program :vertex vertex-tessellation :tess-control control-uniform :tess-evaluation evaluation-mix
+          program  (make-program :vertex vertex-passthrough :tess-control control-uniform :tess-evaluation evaluation-mix
                                  :geometry geometry-triangle :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
