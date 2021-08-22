@@ -609,7 +609,7 @@ void main()
 (defn densf [point]
   (air-density (- (length point) 6378000) 1.0 8429))
 
-(def dens (float-array (map #(air-density % 1.0 (/ (dec size) 6.525)) (range size))))
+(def dens (density-table 1.0 size 55000 8429))
 
 (defn optical-depth [origin direction]
   (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ 6378000 55000) origin direction))

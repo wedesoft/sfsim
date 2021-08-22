@@ -11,6 +11,11 @@
   ^double [^double height ^double base ^double scale]
   (* base (Math/exp (- (/ height scale)))))
 
+(defn density-table
+  "Create a lookup table for air density values"
+  ^floats [^double base ^long size ^double height ^double scale]
+  (float-array (map #(air-density (* % (/ height (dec size))) base scale) (range size))))
+
 (defn ray-sphere
   "Compute intersection of line with sphere"
   ^clojure.lang.PersistentArrayMap [^Vector centre ^double radius ^Vector origin ^Vector direction]
