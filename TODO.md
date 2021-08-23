@@ -1,7 +1,6 @@
 # TODO
 
-* TDD of optical depth function
-* TDD of optical density function
+* TDD of optical density table
 * use render module in Earth prototype
 * use render module in atmosphere prototype
 * night-time textures

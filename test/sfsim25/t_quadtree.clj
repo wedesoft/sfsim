@@ -11,9 +11,9 @@
 
 (facts "Decide whether to increase quadtree level or not"
   (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 3 (matrix [200000 0 0]) 5 2 0 1) => truthy
-  (provided
-    (cubemap/tile-center 5 2 0 1 6378000.0 6357000.0) => (matrix [50000 0 0])
-    (quadtree/quad-size 2 33 6378000.0 1280 150000.0 60.0) => 10.0))
+    (provided
+      (cubemap/tile-center 5 2 0 1 6378000.0 6357000.0) => (matrix [50000 0 0])
+      (quadtree/quad-size 2 33 6378000.0 1280 150000.0 60.0) => 10.0))
 
 (tabular "Load normals, scale factors and colors for a tile"
   (fact (?k (load-tile-data 3 2 2 1)) => ?result
@@ -41,9 +41,9 @@
 
 (fact "Load multiple tiles"
   (load-tiles-data [{:face 3 :level 2 :y 3 :x 1} {:face 2 :level 3 :y 1 :x 0}]) => [:data-a :data-b]
-  (provided
-    (load-tile-data 3 2 3 1) => :data-a
-    (load-tile-data 2 3 1 0) => :data-b))
+    (provided
+      (load-tile-data 3 2 3 1) => :data-a
+      (load-tile-data 2 3 1 0) => :data-b))
 
 (facts "Determine list of tiles to remove"
   (let [quad     {:5 {:face 2 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}

@@ -1,7 +1,8 @@
 (ns sfsim25.t-atmosphere
   (:require [midje.sweet :refer :all]
             [clojure.core.matrix :refer (matrix)]
-            [sfsim25.atmosphere :refer :all]))
+            [sfsim25.atmosphere :refer :all :as atmosphere])
+  (:import [mikera.vectorz Vector]))
 
 (def radius1 6378000.0)
 (def radius2 6357000.0)
@@ -31,3 +32,16 @@
   (ray-ellipsoid (matrix [0 0 0]) 1 0.5 (matrix [-2 0  0]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
   (ray-ellipsoid (matrix [0 0 0]) 1 0.5 (matrix [ 0 0 -2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}
   (ray-ellipsoid (matrix [0 0 4]) 1 0.5 (matrix [ 0 0  2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0})
+
+(facts "Compute optical depth of atmosphere at different points and for different directions"
+  (with-redefs [atmosphere/ray-sphere
+                (fn [^Vector centre ^double radius ^Vector origin ^Vector direction]
+                  (fact [centre radius origin direction] => [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
+                  {:length 20.0})
+                atmosphere/air-density-at-point
+                (fn ^double [^Vector point ^double base ^double radius ^double scale]
+                  (fact [base radius scale] => [1.0 1000.0 42.0])
+                  (fact (.contains [(matrix [5 1010 0]) (matrix [15 1010 0])] point) => true)
+                  (println point)
+                  0.25)]
+    (optical-depth (matrix [0 1010 0]) (matrix [1 0 0]) 1.0 1000 100 42 2))  => (+ (* 0.25 10) (* 0.25 10)))

@@ -161,9 +161,9 @@
 
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
-  (provided
-    (util/slurp-image "world235.png") => :map-tile :times irrelevant
-    (util/tile-path "world" 2 3 5 ".png") => "world235.png" :times irrelevant))
+    (provided
+      (util/slurp-image "world235.png") => :map-tile :times irrelevant
+      (util/tile-path "world" 2 3 5 ".png") => "world235.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
   (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
@@ -207,13 +207,13 @@
 
 (fact "Getting world map color for given longitude and latitude"
   (color-geodetic 5 675 135.0 45.0) => (->RGB 3 5 7)
-  (provided
-    (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel r/+ r/*) => (->RGB 3 5 7)))
+    (provided
+      (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel r/+ r/*) => (->RGB 3 5 7)))
 
 (fact "Getting elevation value for given longitude and latitude"
   (elevation-geodetic 5 675 135.0 45.0) => 42.0
-  (provided
-    (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
+    (provided
+      (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
 
 (fact "Test height zero maps to zero water"
   (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]

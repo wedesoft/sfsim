@@ -608,15 +608,6 @@ void main()
 
 (def dens (air-density-table 1.0 size 55000 8429))
 
-(defn optical-depth [origin direction]
-  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ 6378000 55000) origin direction))
-        num-points 20
-        step_size (/ ray-length num-points)]
-    (reduce + (map (comp #(* % step_size)
-                         #(air-density-at-point % 1.0 6378000 8429)
-                         #(add origin (mul (+ 0.5 %) step_size direction)))
-                   (range num-points)))))
-
 (def dep
   (float-array
     (for [j (range size) i (range size)]
@@ -625,7 +616,7 @@ void main()
             cos-angle (- (* j (/ 2.0 (dec size))) 1)
             sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
             direction (matrix [sin-angle cos-angle 0])]
-        (optical-depth origin direction)))))
+        (optical-depth origin direction 1.0 6378000 55000 8429 20)))))
 
 (def dens-texture (GL11/glGenTextures))
 (GL13/glActiveTexture GL13/GL_TEXTURE0)

@@ -42,4 +42,14 @@
         scale  (fn [v] (matrix [(mget v 0) (mget v 1) (* factor (mget v 2))]))]
   (ray-sphere (scale centre) radius1 (scale origin) (scale direction))))
 
+(defn optical-depth
+  "Return optical depth of atmosphere at different points and for different directions"
+  [point direction base radius height scale num-points]
+  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ radius height) point direction))
+        step-size  (/ ray-length num-points)]
+    (reduce + (map (comp #(* % step-size)
+                         #(air-density-at-point % base radius scale)
+                         #(add point (mul (+ 0.5 %) step-size direction)))
+                   (range num-points)))))
+
 (set! *unchecked-math* false)
