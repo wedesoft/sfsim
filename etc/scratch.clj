@@ -606,16 +606,16 @@ void main()
 
 (def size 256)
 
-(defn densf [point]
-  (air-density (- (length point) 6378000) 1.0 8429))
-
-(def dens (density-table 1.0 size 55000 8429))
+(def dens (air-density-table 1.0 size 55000 8429))
 
 (defn optical-depth [origin direction]
   (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ 6378000 55000) origin direction))
         num-points 20
         step_size (/ ray-length num-points)]
-    (reduce + (map (comp #(* % step_size) densf #(add origin (mul (+ 0.5 %) step_size direction))) (range num-points)))))
+    (reduce + (map (comp #(* % step_size)
+                         #(air-density-at-point % 1.0 6378000 8429)
+                         #(add origin (mul (+ 0.5 %) step_size direction)))
+                   (range num-points)))))
 
 (def dep
   (float-array

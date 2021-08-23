@@ -7,14 +7,19 @@
 (set! *unchecked-math* true)
 
 (defn air-density
-  "Compute pressure of atmosphere at specified height"
+  "Compute density of atmosphere at specified height"
   ^double [^double height ^double base ^double scale]
   (* base (Math/exp (- (/ height scale)))))
 
-(defn density-table
+(defn air-density-table
   "Create a lookup table for air density values"
   ^floats [^double base ^long size ^double height ^double scale]
   (float-array (map #(air-density (* % (/ height (dec size))) base scale) (range size))))
+
+(defn air-density-at-point
+  "Determine the atmospheric density at a given 3D point"
+  ^double [^Vector point ^double base ^double radius ^double scale]
+  (air-density (- (length point) radius) base scale))
 
 (defn ray-sphere
   "Compute intersection of line with sphere"
