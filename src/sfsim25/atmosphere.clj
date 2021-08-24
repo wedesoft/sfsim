@@ -46,10 +46,9 @@
   "Return optical depth of atmosphere at different points and for different directions"
   [point direction base radius height scale num-points]
   (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ radius height) point direction))
-        step-size  (/ ray-length num-points)]
-    (reduce + (map (comp #(* % step-size)
-                         #(air-density-at-point % base radius scale)
-                         #(add point (mul (+ 0.5 %) step-size direction)))
+        step-size  (/ ray-length num-points)
+        nth-point  #(add point (mul (+ 0.5 %) step-size direction))]
+    (reduce + (map #(-> % nth-point (air-density-at-point base radius scale) (* step-size))
                    (range num-points)))))
 
 (set! *unchecked-math* false)
