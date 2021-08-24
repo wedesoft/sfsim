@@ -608,15 +608,7 @@ void main()
 
 (def dens (air-density-table 1.0 size 55000 8429))
 
-(def dep
-  (float-array
-    (for [j (range size) i (range size)]
-      (let [dist      (+ 6378000 (* i (/ 55000 (dec size))))
-            origin    (matrix [0 dist 0])
-            cos-angle (- (* j (/ 2.0 (dec size))) 1)
-            sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
-            direction (matrix [sin-angle cos-angle 0])]
-        (optical-depth origin direction 1.0 6378000 55000 8429 20)))))
+(def dep (optical-depth-table size size 1.0 6378000 55000 8429 20))
 
 (def dens-texture (GL11/glGenTextures))
 (GL13/glActiveTexture GL13/GL_TEXTURE0)
@@ -631,7 +623,7 @@ void main()
 (GL13/glActiveTexture GL13/GL_TEXTURE1)
 (GL11/glBindTexture GL11/GL_TEXTURE_2D dep-texture)
 (GL20/glUniform1i (GL20/glGetUniformLocation program "dep") 1)
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F size size 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dep))
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F size size 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer (:data dep)))
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)

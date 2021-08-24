@@ -44,3 +44,12 @@
                   (fact (.contains [(matrix [5 1010 0]) (matrix [15 1010 0])] point) => true)
                   0.25)]
     (optical-depth (matrix [0 1010 0]) (matrix [1 0 0]) 1.0 1000 100 42 2))  => (+ (* 0.25 10) (* 0.25 10)))
+
+(facts "Lookup table for optical density"
+  (let [result (optical-depth-table 5 9 1.0 1000 100 8 20)]
+    (:width result) => 5
+    (:height result) => 9
+    (count (:data result)) => (* 5 9)
+    (nth (:data result) (* 5 8)) => (roughly (optical-depth (matrix [0 1000 0]) (matrix [0 1 0]) 1.0 1000 100 8 20) 1e-4)
+    (nth (:data result) (* 5 4)) => (roughly (optical-depth (matrix [0 1000 0]) (matrix [1 0 0]) 1.0 1000 100 8 20) 1e-4)
+    (nth (:data result) (+ (* 5 4) 2)) => (roughly (optical-depth (matrix [0 1050 0]) (matrix [1 0 0]) 1.0 1000 100 8 20) 1e-4)))

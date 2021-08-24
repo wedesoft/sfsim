@@ -12,9 +12,9 @@
   (* base (Math/exp (- (/ height scale)))))
 
 (defn air-density-table
-  "Create a lookup table for air density values"
-  ^floats [^double base ^long size ^double height ^double scale]
-  (float-array (map #(air-density (* % (/ height (dec size))) base scale) (range size))))
+  "Create a lookup table for air density values for different heights"
+  ^floats [^double base ^long size ^double max-height ^double scale]
+  (float-array (map #(air-density (* % (/ max-height (dec size))) base scale) (range size))))
 
 (defn air-density-at-point
   "Determine the atmospheric density at a given 3D point"
@@ -44,11 +44,23 @@
 
 (defn optical-depth
   "Return optical depth of atmosphere at different points and for different directions"
-  [point direction base radius height scale num-points]
-  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ radius height) point direction))
+  [point direction base radius max-height scale num-points]
+  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ radius max-height) point direction))
         step-size  (/ ray-length num-points)
         nth-point  #(add point (mul (+ 0.5 %) step-size direction))]
     (reduce + (map #(-> % nth-point (air-density-at-point base radius scale) (* step-size))
                    (range num-points)))))
+
+(defn optical-depth-table
+  "Create lookup table for optical density for different directions (rows) and heights (columns)"
+  [width height base radius max-height scale num-points]
+  (let [data (for [j (range height) i (range width)]
+               (let [dist      (+ radius (* i (/ max-height (dec width))))
+                     point     (matrix [0 dist 0])
+                     cos-angle (- (* j (/ 2.0 (dec height))) 1)
+                     sin-angle (Math/sqrt (- 1 (* cos-angle cos-angle)))
+                     direction (matrix [sin-angle cos-angle 0])]
+                 (optical-depth point direction base radius max-height scale num-points)))]
+    {:width width :height height :data (float-array data)}))
 
 (set! *unchecked-math* false)

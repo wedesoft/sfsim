@@ -187,7 +187,6 @@
       (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => 42
       @args => '((5 2 1) 240 320))))
 
-
 (fact "Interpolation of map pixels"
   (let [x-info    [0 1 0.75 0.25]
         y-info    [8 9 0.5  0.5 ]
