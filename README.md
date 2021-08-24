@@ -1,6 +1,11 @@
 # Space Flight Simulator 2025
 This is a work in progress.
 
+```
+sudo aptitude install openjdk-11-jre liblwjgl-java libij-java leiningen
+lein midje
+```
+
 # External Links
 
 * [Orbiter 2016](https://github.com/mschweiger/orbiter)
