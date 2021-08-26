@@ -135,17 +135,6 @@ void main()
   fragColor = mix(landColor, waterColor, wet);
 }")
 
-(defmacro def-make-buffer [method create-buffer]
-  `(defn ~method [data#]
-     (let [buffer# (~create-buffer (count data#))]
-       (.put buffer# data#)
-       (.flip buffer#)
-       buffer#)))
-
-(def-make-buffer make-float-buffer BufferUtils/createFloatBuffer)
-(def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
-(def-make-buffer make-byte-buffer BufferUtils/createByteBuffer)
-
 (Display/setTitle "scratch")
 ; (def desktop (Display/getDesktopDisplayMode))
 ; (Display/setDisplayModeAndFullscreen desktop)
