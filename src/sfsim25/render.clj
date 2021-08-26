@@ -57,7 +57,7 @@
         tess-control-shader    (if tess-control (make-shader tess-control GL40/GL_TESS_CONTROL_SHADER))
         tess-evaluation-shader (if tess-evaluation (make-shader tess-evaluation GL40/GL_TESS_EVALUATION_SHADER))
         geometry-shader        (if geometry (make-shader geometry GL32/GL_GEOMETRY_SHADER))
-        fragment-shader        (make-shader fragment GL20/GL_FRAGMENT_SHADER) ]
+        fragment-shader        (make-shader fragment GL20/GL_FRAGMENT_SHADER)]
     (let [program (GL20/glCreateProgram)
           shaders (remove nil? [vertex-shader tess-control-shader tess-evaluation-shader geometry-shader fragment-shader])]
       (doseq [shader shaders] (GL20/glAttachShader program shader))

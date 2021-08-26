@@ -162,6 +162,8 @@ void main()
 (def-make-buffer make-byte-buffer BufferUtils/createByteBuffer)
 
 (Display/setTitle "scratch")
+; (def desktop (Display/getDesktopDisplayMode))
+; (Display/setDisplayModeAndFullscreen desktop)
 (Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
 
@@ -386,6 +388,8 @@ void main()
 (require '[clojure.core.matrix :refer :all]
          '[sfsim25.util :refer :all]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.render :refer :all]
+         '[sfsim25.rgb :refer (->RGB)]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
          '[sfsim25.quaternion :as q])
 
@@ -393,20 +397,6 @@ void main()
         '[org.lwjgl.input Keyboard]
         '[org.lwjgl BufferUtils])
 
-
-(Display/setTitle "scratch")
-; (def desktop (Display/getDesktopDisplayMode))
-; (Display/setDisplayModeAndFullscreen desktop)
-(def desktop (DisplayMode. 1280 720))
-(Display/setDisplayMode desktop)
-(Display/create (PixelFormat. 24, 0, 24, 0, 1))
-
-(Keyboard/create)
-
-(GL11/glClearColor 0.0 0.0 0.0 0.0)
-(GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-
-(Display/update)
 
 (def vertex-source "#version 130
 in highp vec3 point;
@@ -420,11 +410,6 @@ void main()
   pos = (itransform * vec4(point, 0)).xyz;
   orig = (itransform * vec4(0, 0, 0, 1)).xyz;
 }")
-
-; https://www.youtube.com/watch?v=DxfEbulyFcY
-; https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering
-; http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.98.9071&rep=rep1&type=pdf
-; https://math.stackexchange.com/questions/2931909/normal-of-a-point-on-the-surface-of-an-ellipsoid/2931931
 
 (def fragment-source "#version 130
 out lowp vec3 fragColor;
@@ -543,96 +528,23 @@ void main()
   }
 }")
 
-(defn make-shader [source shader-type]
-  (let [shader (GL20/glCreateShader shader-type)]
-    (GL20/glShaderSource shader source)
-    (GL20/glCompileShader shader)
-    (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
-      (throw (Exception. (GL20/glGetShaderInfoLog shader 1024))))
-    shader))
+(Display/setTitle "atmosphere")
+(def desktop (DisplayMode. 1280 720))
+(Display/setDisplayMode desktop)
+(Display/create (PixelFormat. 24, 0, 24, 0, 1))
+(Keyboard/create)
 
-(defn make-program [& shaders]
-  (let [program (GL20/glCreateProgram)]
-    (doseq [shader shaders] (GL20/glAttachShader program shader))
-    (GL20/glLinkProgram program)
-    (if (zero? (GL20/glGetShaderi program GL20/GL_LINK_STATUS))
-      (throw (Exception. (GL20/glGetShaderInfoLog program 1024))))
-    program))
+(def program (make-program :vertex vertex-source :fragment fragment-source))
 
-(def vertex-shader (make-shader vertex-source GL20/GL_VERTEX_SHADER))
-(def fragment-shader (make-shader fragment-source GL20/GL_FRAGMENT_SHADER))
-(def program (make-program vertex-shader fragment-shader))
+(def indices [0 1 3 2])
+(def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
+(def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-(GL11/glEnable GL11/GL_CULL_FACE)
-(GL11/glCullFace GL11/GL_BACK)
+(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
-(defmacro def-make-buffer [method create-buffer]
-  `(defn ~method [data#]
-     (let [buffer# (~create-buffer (count data#))]
-       (.put buffer# data#)
-       (.flip buffer#)
-       buffer#)))
+(def density-texture (make-float-texture-1d (air-density-table 1.0 256 55000 8429)))
+(def depth-texture (make-float-texture-2d (optical-depth-table 256 256 1.0 6378000 55000 8429 20)))
 
-(def-make-buffer make-float-buffer BufferUtils/createFloatBuffer)
-(def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
-(def-make-buffer make-byte-buffer BufferUtils/createByteBuffer)
-
-;      2------3          ^ y
-;     /|     /|          |/
-;    6-+----7 |       ---+--->
-;    | 0----+-1         /|   x
-;    |/     |/       z L
-;    4------5
-
-(def indices (make-int-buffer (int-array [0 1 3 2])))
-
-(def vertices (make-float-buffer (float-array (map #(* % 4 6378000) [-1 -1 -1 1 -1 -1 -1  1 -1 1  1 -1]))))
-
-(def vao (GL30/glGenVertexArrays))
-(GL30/glBindVertexArray vao)
-(def vbo (GL15/glGenBuffers))
-(GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
-(GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices GL15/GL_STATIC_DRAW)
-(def idx (GL15/glGenBuffers))
-(GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
-(GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices GL15/GL_STATIC_DRAW)
-(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point") 3 GL11/GL_FLOAT false (* 3 Float/BYTES) (* 0 Float/BYTES))
-(GL20/glEnableVertexAttribArray 0)
-
-(GL20/glUseProgram program)
-
-(def p (float-array (eseq (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
-(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
-
-(def size 256)
-
-(def dens (air-density-table 1.0 size 55000 8429))
-
-(def dep (optical-depth-table size size 1.0 6378000 55000 8429 20))
-
-(def dens-texture (GL11/glGenTextures))
-(GL13/glActiveTexture GL13/GL_TEXTURE0)
-(GL11/glBindTexture GL11/GL_TEXTURE_1D dens-texture)
-(GL20/glUniform1i (GL20/glGetUniformLocation program "dens") 0)
-(GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F size 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer dens))
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-(GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
-
-(def dep-texture (GL11/glGenTextures))
-(GL13/glActiveTexture GL13/GL_TEXTURE1)
-(GL11/glBindTexture GL11/GL_TEXTURE_2D dep-texture)
-(GL20/glUniform1i (GL20/glGetUniformLocation program "dep") 1)
-(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F size size 0 GL11/GL_RED GL11/GL_FLOAT (make-float-buffer (:data dep)))
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
-
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
-
-; (def position (atom (matrix [0 6378001 0])))
 (def position (atom (matrix [0 (* -3 6378000) (* 0.5 6378000)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
@@ -640,7 +552,7 @@ void main()
 (def keystates (atom {}))
 (def rayleigh-scatter-strength (atom 0.00009))
 (def mie-scatter-strength (atom 0.0000002))
-(def g (atom 0.96))
+(def g (atom 0.9))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -667,20 +579,25 @@ void main()
     (swap! rayleigh-scatter-strength + (* s dt))
     (swap! mie-scatter-strength + (* m dt))
     (swap! light + (* l dt)))
-  (let [t (float-array (eseq (transformation-matrix (quaternion->matrix @orientation) @position)))]
-    (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "itransform") true (make-float-buffer t))
-    (GL20/glUniform1f (GL20/glGetUniformLocation program "rayleigh_scatter_strength") @rayleigh-scatter-strength)
-    (GL20/glUniform1f (GL20/glGetUniformLocation program "mie_scatter_strength") @mie-scatter-strength)
-    (GL20/glUniform1f (GL20/glGetUniformLocation program "g") @g)
-    (GL20/glUniform3f (GL20/glGetUniformLocation program "light") 0 (Math/cos @light) (Math/sin @light)))
-  (println "rayleigh:" @rayleigh-scatter-strength "mie:" @mie-scatter-strength "g:" @g)
-  (GL11/glClearColor 0.2 0.2 0.2 0.0)
-  (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-  (GL30/glBindVertexArray vao)
-  (GL11/glDrawElements GL11/GL_QUADS 4 GL11/GL_UNSIGNED_INT 0)
-  (Display/update))
+  (onscreen-render (.getWidth desktop) (.getHeight desktop)
+    (use-program program
+      (uniform-matrix4 :projection projection)
+      (uniform-sampler :dens 0)
+      (uniform-sampler :dep 1)
+      (uniform-matrix4 :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
+      (uniform-float :rayleigh_scatter_strength @rayleigh-scatter-strength)
+      (uniform-float :mie_scatter_strength @mie-scatter-strength)
+      (uniform-float :g @g)
+      (uniform-vector3 :light (matrix [0 (Math/cos @light) (Math/sin @light)])))
+    (use-textures density-texture depth-texture)
+    (clear (->RGB 0 0 0))
+    (render-quads vao)
+    (println "rayleigh:" @rayleigh-scatter-strength "mie:" @mie-scatter-strength "g:" @g)))
+
+(destroy-texture depth-texture)
+(destroy-texture density-texture)
+(destroy-vertex-array-object vao)
+(destroy-program program)
 
 (Keyboard/destroy)
 (Display/destroy)
-
-(System/exit 0)
