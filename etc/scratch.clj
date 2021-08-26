@@ -188,7 +188,7 @@ void main()
   (let [texture (GL11/glGenTextures)]
     ; (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
-    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) varname) index)
+    (use-program program (uniform-sampler varname index))
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internal-format size size 0 tex-format tex-type buffer)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
@@ -220,10 +220,10 @@ void main()
             heights     (:scales tile)
             normals     (:normals tile)
             water       (:water tile)
-            texture     (create-texture "tex" 0 ctilesize GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-int-buffer pixels))
-            heightfield (create-texture "hf" 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))
-            normal-map  (create-texture "normals" 2 ctilesize GL30/GL_RGBA32F GL12/GL_BGR GL11/GL_FLOAT GL11/GL_LINEAR (make-float-buffer normals))
-            water-map   (create-texture "water" 3 ctilesize GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer water))]
+            texture     (create-texture :tex 0 ctilesize GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-int-buffer pixels))
+            heightfield (create-texture :hf 1 tilesize GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT GL11/GL_NEAREST (make-float-buffer heights))
+            normal-map  (create-texture :normals 2 ctilesize GL30/GL_RGBA32F GL12/GL_BGR GL11/GL_FLOAT GL11/GL_LINEAR (make-float-buffer normals))
+            water-map   (create-texture :water 3 ctilesize GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer water))]
         (assoc (dissoc tile :colors :scales :normals :water)
                :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map :water-tex water-map)))))
 
@@ -261,8 +261,8 @@ void main()
 
 (GL20/glUseProgram (:program program))
 
-(def p (float-array (eseq (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
-(GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) "projection") true (make-float-buffer p))
+(use-program program
+  (uniform-matrix4 :projection (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 
 (defn is-leaf?
   [node]
