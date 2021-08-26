@@ -399,8 +399,8 @@ uniform vec3 light;
 uniform float rayleigh_scatter_strength;
 uniform float mie_scatter_strength;
 uniform float g;
-uniform sampler1D dens;
-uniform sampler2D dep;
+uniform sampler1D density_texture;
+uniform sampler2D depth_texture;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   vec3 offset = origin - centre;
@@ -427,8 +427,8 @@ vec3 scale(vec3 v) {
 float density(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
   float height = distance(scale(point), centre) - 6378000;
-  float height01 = height / 55000;
-  return texture(dens, height01).r;
+  float height01 = height / 80000;
+  return texture(density_texture, height01).r;
 }
 
 float optical_depth(vec3 origin, vec3 direction)
@@ -436,11 +436,11 @@ float optical_depth(vec3 origin, vec3 direction)
   vec3 centre = vec3(0, 0, 0);
   float dist = distance(scale(origin), centre);
   float height = dist - 6378000;
-  float height01 = height / 55000;
+  float height01 = height / 80000;
   vec3 normal = scale(origin) / dist;
   float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
   float cos_angle01 = 0.5 + 0.5 * cos_angle;
-  return texture(dep, vec2(height01, cos_angle01)).r;
+  return texture(depth_texture, vec2(height01, cos_angle01)).r;
 }
 
 float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
@@ -480,7 +480,7 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 void main()
 {
   vec3 direction = normalize(pos);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 55000, scale(orig), scale(direction));
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(orig), scale(direction));
   vec2 planet = ray_sphere(vec3(0, 0, 0), 6378000, scale(orig), scale(direction));
   vec3 bg;
   if (planet.x > 0) {
@@ -522,8 +522,8 @@ void main()
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
-(def density-texture (make-float-texture-1d (air-density-table 1.0 256 55000 8429)))
-(def depth-texture (make-float-texture-2d (optical-depth-table 256 256 1.0 6378000 55000 8429 20)))
+(def density-texture (make-float-texture-1d (air-density-table 1.0 256 80000 8429)))
+(def depth-texture (make-float-texture-2d (optical-depth-table 256 256 1.0 6378000 80000 8429 20)))
 
 (def position (atom (matrix [0 (* -3 6378000) (* 0.5 6378000)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
@@ -562,8 +562,8 @@ void main()
   (onscreen-render (.getWidth desktop) (.getHeight desktop)
     (use-program program
       (uniform-matrix4 :projection projection)
-      (uniform-sampler :dens 0)
-      (uniform-sampler :dep 1)
+      (uniform-sampler :density_texture 0)
+      (uniform-sampler :depth_texture 1)
       (uniform-matrix4 :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
       (uniform-float :rayleigh_scatter_strength @rayleigh-scatter-strength)
       (uniform-float :mie_scatter_strength @mie-scatter-strength)
