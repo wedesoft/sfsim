@@ -1,7 +1,7 @@
 # TODO
 
+* define and test uniform-int
 * use render module in Earth prototype
-* use render module in atmosphere prototype
 * night-time textures
 * compute shadow in atmosphere
 * soft transition into planet's shadow

@@ -332,12 +332,12 @@ void main()
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt))
-    (let [t (float-array (eseq (inverse (transformation-matrix (quaternion->matrix @orientation) @position))))]
-      (GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) "transform") true (make-float-buffer t))
-      (GL20/glUniform3f (GL20/glGetUniformLocation (:program program) "light") (Math/cos @light) (Math/sin @light) 0)
-      (render-tree @tree)
-      (GL11/glFlush)
-      (Display/update))))
+    (use-program program
+      (uniform-matrix4 :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
+      (uniform-vector3 :light (matrix [(Math/cos @light) (Math/sin @light) 0])))
+    (render-tree @tree)
+    (GL11/glFlush)
+    (Display/update)))
 
 (destroy-program program)
 
