@@ -143,11 +143,6 @@ void main()
 
 (Keyboard/create)
 
-(GL11/glClearColor 0.0 0.0 0.0 0.0)
-(GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-
-(Display/update)
-
 (def program (make-program :vertex vertex-source :tess-control tcs-source :tess-evaluation tes-source :geometry geo-source :fragment fragment-source))
 
 (def radius1 6378000.0)
