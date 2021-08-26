@@ -1,6 +1,7 @@
 (require '[clojure.core.async :refer (go-loop chan <! >! <!! >!! poll! close!) :as a]
          '[clojure.core.matrix :refer :all]
          '[sfsim25.util :refer :all]
+         '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all]
@@ -134,22 +135,6 @@ void main()
   fragColor = mix(landColor, waterColor, wet);
 }")
 
-(defn make-shader [source shader-type]
-  (let [shader (GL20/glCreateShader shader-type)]
-    (GL20/glShaderSource shader source)
-    (GL20/glCompileShader shader)
-    (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
-      (throw (Exception. (GL20/glGetShaderInfoLog shader 1024))))
-    shader))
-
-(defn make-program [& shaders]
-  (let [program (GL20/glCreateProgram)]
-    (doseq [shader shaders] (GL20/glAttachShader program shader))
-    (GL20/glLinkProgram program)
-    (if (zero? (GL20/glGetShaderi program GL20/GL_LINK_STATUS))
-      (throw (Exception. (GL20/glGetShaderInfoLog program 1024))))
-    program))
-
 (defmacro def-make-buffer [method create-buffer]
   `(defn ~method [data#]
      (let [buffer# (~create-buffer (count data#))]
@@ -174,12 +159,7 @@ void main()
 
 (Display/update)
 
-(def vertex-shader (make-shader vertex-source GL20/GL_VERTEX_SHADER))
-(def fragment-shader (make-shader fragment-source GL20/GL_FRAGMENT_SHADER))
-(def tcs-shader (make-shader tcs-source GL40/GL_TESS_CONTROL_SHADER))
-(def tes-shader (make-shader tes-source GL40/GL_TESS_EVALUATION_SHADER))
-(def geo-shader (make-shader geo-source GL32/GL_GEOMETRY_SHADER))
-(def program (make-program vertex-shader fragment-shader geo-shader tcs-shader tes-shader))
+(def program (make-program :vertex vertex-source :tess-control tcs-source :tess-evaluation tes-source :geometry geo-source :fragment fragment-source))
 
 (def radius1 6378000.0)
 (def radius2 6357000.0)
@@ -224,7 +204,7 @@ void main()
   (let [texture (GL11/glGenTextures)]
     ; (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
-    (GL20/glUniform1i (GL20/glGetUniformLocation program varname) index)
+    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) varname) index)
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internal-format size size 0 tex-format tex-type buffer)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
@@ -243,11 +223,11 @@ void main()
       (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW)
       (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
       (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW)
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   )
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) "point"   )
                                   3 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 0 Float/BYTES))
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "texcoord")
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) "texcoord")
                                   2 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 3 Float/BYTES))
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "ctexcoord")
+      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) "ctexcoord")
                                   2 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 5 Float/BYTES))
       (GL20/glEnableVertexAttribArray 0)
       (GL20/glEnableVertexAttribArray 1)
@@ -295,10 +275,10 @@ void main()
 (GL11/glEnable GL11/GL_CULL_FACE)
 (GL11/glCullFace GL11/GL_BACK)
 
-(GL20/glUseProgram program)
+(GL20/glUseProgram (:program program))
 
 (def p (float-array (eseq (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))))
-(GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "projection") true (make-float-buffer p))
+(GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) "projection") true (make-float-buffer p))
 
 (defn is-leaf?
   [node]
@@ -307,10 +287,10 @@ void main()
 (defn render-tile
   [tile]
   (with-vertex-array (:vao tile)
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_up"   ) (:sfsim25.quadtree/up    tile))
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_left" ) (:sfsim25.quadtree/left  tile))
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_down" ) (:sfsim25.quadtree/down  tile))
-    (GL20/glUniform1i (GL20/glGetUniformLocation program "tesselate_right") (:sfsim25.quadtree/right tile))
+    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_up"   ) (:sfsim25.quadtree/up    tile))
+    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_left" ) (:sfsim25.quadtree/left  tile))
+    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_down" ) (:sfsim25.quadtree/down  tile))
+    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_right") (:sfsim25.quadtree/right tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D (:color-tex tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE1)
@@ -369,11 +349,13 @@ void main()
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt))
     (let [t (float-array (eseq (inverse (transformation-matrix (quaternion->matrix @orientation) @position))))]
-      (GL20/glUniformMatrix4 (GL20/glGetUniformLocation program "transform") true (make-float-buffer t))
-      (GL20/glUniform3f (GL20/glGetUniformLocation program "light") (Math/cos @light) (Math/sin @light) 0)
+      (GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) "transform") true (make-float-buffer t))
+      (GL20/glUniform3f (GL20/glGetUniformLocation (:program program) "light") (Math/cos @light) (Math/sin @light) 0)
       (render-tree @tree)
       (GL11/glFlush)
       (Display/update))))
+
+(destroy-program program)
 
 (Keyboard/destroy)
 (Display/destroy)
