@@ -386,16 +386,14 @@ void main()
 ; --------------------------------------------------------------------------------
 
 (require '[clojure.core.matrix :refer :all]
-         '[sfsim25.util :refer :all]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.render :refer :all]
          '[sfsim25.rgb :refer (->RGB)]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.opengl Display DisplayMode PixelFormat GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 Util]
-        '[org.lwjgl.input Keyboard]
-        '[org.lwjgl BufferUtils])
+(import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
+        '[org.lwjgl.input Keyboard])
 
 
 (def vertex-source "#version 130
