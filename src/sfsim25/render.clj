@@ -1,7 +1,7 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
   (:require [clojure.core.matrix :refer (mget eseq)]
-            [sfsim25.util :refer (slurp-image def-context-macro def-context-create-macro)])
+            [sfsim25.util :refer (def-context-macro def-context-create-macro)])
   (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40]
            [org.lwjgl BufferUtils]))
 
@@ -200,10 +200,9 @@
 (def-context-create-macro create-2d-texture (fn [] (GL11/glGenTextures)) 'with-2d-texture)
 
 (defn make-rgb-texture
-  "Load RGB image from file and load it into an OpenGL texture"
-  [filename]
-  (let [image   (slurp-image filename)
-        buffer  (make-int-buffer (:data image))]
+  "Load RGB image into an OpenGL texture"
+  [image]
+  (let [buffer (make-int-buffer (:data image))]
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (create-2d-texture texture
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB (:width image) (:height image) 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buffer)

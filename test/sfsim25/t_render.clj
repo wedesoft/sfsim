@@ -217,7 +217,7 @@ void main()
           vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
           program  (make-program :vertex vertex-texture :fragment fragment-texture)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-rgb-texture "test/sfsim25/pattern.png")]
+          tex      (make-rgb-texture (slurp-image "test/sfsim25/pattern.png"))]
       (clear (->RGB 0.0 0.0 0.0))
       (use-program program (uniform-sampler :tex 0))
       (use-textures tex)
