@@ -241,6 +241,21 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats.png"))
 
+(fact "Render 2D unsigned-byte texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-ubyte-texture-2d {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/ubytes.png"))
+
 (def fragment-texture-1d "#version 410 core
 in mediump vec2 uv_fragment;
 out lowp vec3 fragColor;

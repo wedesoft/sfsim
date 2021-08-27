@@ -218,15 +218,16 @@ void main()
       (GL20/glEnableVertexAttribArray 2)
       (use-program program
         (uniform-sampler :tex 0)
-        (uniform-sampler :hf 1))
+        (uniform-sampler :hf 1)
+        (uniform-sampler :water 3))
       (let [pixels      (:colors tile)
             heights     {:width tilesize :height tilesize :data (:scales tile)}
             normals     (:normals tile)
-            water       (:water tile)
+            water       {:width ctilesize :height ctilesize :data (:water tile)}
             texture     (make-rgb-texture pixels)
             heightfield (make-float-texture-2d heights)
             normal-map  (create-texture :normals 2 ctilesize GL30/GL_RGBA32F GL12/GL_BGR GL11/GL_FLOAT GL11/GL_LINEAR (make-float-buffer normals))
-            water-map   (create-texture :water 3 ctilesize GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE GL11/GL_LINEAR (make-byte-buffer water))]
+            water-map   (make-ubyte-texture-2d water)]
         (assoc (dissoc tile :colors :scales :normals :water)
                :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map :water-tex water-map)))))
 
@@ -239,7 +240,7 @@ void main()
     (destroy-texture (:color-tex tile))
     (destroy-texture (:height-tex tile))
     (GL11/glDeleteTextures (:normal-tex tile))
-    (GL11/glDeleteTextures (:water-tex tile))
+    (destroy-texture (:water-tex tile))
     (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
     (GL15/glDeleteBuffers (:idx tile))
     (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
@@ -274,7 +275,7 @@ void main()
     (GL13/glActiveTexture GL13/GL_TEXTURE2)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D (:normal-tex tile))
     (GL13/glActiveTexture GL13/GL_TEXTURE3)
-    (GL11/glBindTexture GL11/GL_TEXTURE_2D (:water-tex tile))
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D (:texture (:water-tex tile)))
     (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
     (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
 

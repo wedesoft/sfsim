@@ -225,10 +225,21 @@
 (defn make-float-texture-2d
   "Load floating-point 2D data into red-channel of an OpenGL texture"
   [image]
-  (let [buffer  (make-float-buffer (:data image))]
+  (let [buffer (make-float-buffer (:data image))]
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (create-2d-texture texture
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F (:width image) (:height image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
+      (texture-wrap-clamp-2d)
+      (texture-interpolate-linear-2d)
+      {:texture texture :target GL11/GL_TEXTURE_2D})))
+
+(defn make-ubyte-texture-2d
+  "Load unsigned-byte 2D data into red-channel of an OpenGL texture (data needs to be 32-bit aligned!)"
+  [image]
+  (let [buffer (make-byte-buffer (:data image))]
+    (GL13/glActiveTexture GL13/GL_TEXTURE0)
+    (create-2d-texture texture
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RED (:width image) (:height image) 0 GL11/GL_RED GL11/GL_UNSIGNED_BYTE buffer)
       (texture-wrap-clamp-2d)
       (texture-interpolate-linear-2d)
       {:texture texture :target GL11/GL_TEXTURE_2D})))
