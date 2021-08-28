@@ -183,19 +183,6 @@ void main()
                   (mget c 0) (mget c 1) (mget c 2) c0 c1 d0 d1
                   (mget d 0) (mget d 1) (mget d 2) c1 c1 d1 d1])))
 
-(defn create-texture
-  [varname index size internal-format tex-format tex-type interpolation buffer]
-  (let [texture (GL11/glGenTextures)]
-    ; (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
-    (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)
-    (use-program program (uniform-sampler varname index))
-    (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internal-format size size 0 tex-format tex-type buffer)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER interpolation)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER interpolation)
-    texture))
-
 (defn load-tile-into-opengl
   [tile]
   (create-vertex-array vao
@@ -221,14 +208,10 @@ void main()
         (uniform-sampler :hf 1)
         (uniform-sampler :normals 2)
         (uniform-sampler :water 3))
-      (let [pixels      (:colors tile)
-            heights     {:width tilesize :height tilesize :data (:scales tile)}
-            normals     {:width ctilesize :height ctilesize :data (:normals tile)}
-            water       {:width ctilesize :height ctilesize :data (:water tile)}
-            texture     (make-rgb-texture pixels)
-            heightfield (make-float-texture-2d heights)
-            normal-map  (make-vector-texture-2d normals)
-            water-map   (make-ubyte-texture-2d water)]
+      (let [texture     (make-rgb-texture (:colors tile))
+            heightfield (make-float-texture-2d {:width tilesize :height tilesize :data (:scales tile)})
+            normal-map  (make-vector-texture-2d {:width ctilesize :height ctilesize :data (:normals tile)})
+            water-map   (make-ubyte-texture-2d {:width ctilesize :height ctilesize :data (:water tile)})]
         (assoc (dissoc tile :colors :scales :normals :water)
                :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map :water-tex water-map)))))
 
