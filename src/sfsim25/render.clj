@@ -199,17 +199,6 @@
 
 (def-context-create-macro create-2d-texture (fn [] (GL11/glGenTextures)) 'with-2d-texture)
 
-(defn make-rgb-texture
-  "Load RGB image into an OpenGL texture"
-  [image]
-  (let [buffer (make-int-buffer (:data image))]
-    (GL13/glActiveTexture GL13/GL_TEXTURE0)
-    (create-2d-texture texture
-      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGB (:width image) (:height image) 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buffer)
-      (texture-wrap-clamp-2d)
-      (texture-interpolate-linear-2d)
-      {:texture texture :target GL11/GL_TEXTURE_2D})))
-
 (defn make-float-texture-1d
   "Load floating-point 1D data into red-channel of an OpenGL texture"
   [data]
@@ -222,27 +211,36 @@
       (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
       {:texture texture :target GL11/GL_TEXTURE_1D})))
 
-(defn make-float-texture-2d
-  "Load floating-point 2D data into red-channel of an OpenGL texture"
-  [image]
-  (let [buffer (make-float-buffer (:data image))]
+(defn- make-texture-2d
+  [image make-buffer internalformat format_ type_]
+  "Initialise a 2D texture"
+  (let [buffer (make-buffer (:data image))]
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (create-2d-texture texture
-      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_R32F (:width image) (:height image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer)
       (texture-wrap-clamp-2d)
       (texture-interpolate-linear-2d)
       {:texture texture :target GL11/GL_TEXTURE_2D})))
 
+(defn make-rgb-texture
+  "Load RGB image into an OpenGL texture"
+  [image]
+  (make-texture-2d image make-int-buffer GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE))
+
+(defn make-float-texture-2d
+  "Load floating-point 2D data into red-channel of an OpenGL texture"
+  [image]
+  (make-texture-2d image make-float-buffer GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
+
 (defn make-ubyte-texture-2d
   "Load unsigned-byte 2D data into red-channel of an OpenGL texture (data needs to be 32-bit aligned!)"
   [image]
-  (let [buffer (make-byte-buffer (:data image))]
-    (GL13/glActiveTexture GL13/GL_TEXTURE0)
-    (create-2d-texture texture
-      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RED (:width image) (:height image) 0 GL11/GL_RED GL11/GL_UNSIGNED_BYTE buffer)
-      (texture-wrap-clamp-2d)
-      (texture-interpolate-linear-2d)
-      {:texture texture :target GL11/GL_TEXTURE_2D})))
+  (make-texture-2d image make-byte-buffer GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
+
+(defn make-vector-texture-2d
+  "Load floating point 2D array of 3D vectors into OpenGL texture"
+  [image]
+  (make-texture-2d image make-float-buffer GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
 
 (defn destroy-texture
   "Delete an OpenGL texture"

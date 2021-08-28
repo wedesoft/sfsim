@@ -202,60 +202,6 @@ void main()
   uv_fragment = uv;
 }")
 
-(def fragment-texture "#version 410 core
-in mediump vec2 uv_fragment;
-out lowp vec3 fragColor;
-uniform sampler2D tex;
-void main()
-{
-  fragColor = texture(tex, uv_fragment).rgb;
-}")
-
-(fact "Render 2D RGB texture"
-  (offscreen-render 64 64
-    (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
-          program  (make-program :vertex vertex-texture :fragment fragment-texture)
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-rgb-texture (slurp-image "test/sfsim25/pattern.png"))]
-      (clear (->RGB 0.0 0.0 0.0))
-      (use-program program (uniform-sampler :tex 0))
-      (use-textures tex)
-      (render-quads vao)
-      (destroy-texture tex)
-      (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/texture.png"))
-
-(fact "Render 2D floating-point texture"
-  (offscreen-render 64 64
-    (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
-          program  (make-program :vertex vertex-texture :fragment fragment-texture)
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-float-texture-2d {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
-      (clear (->RGB 0.0 0.0 0.0))
-      (use-program program (uniform-sampler :tex 0))
-      (use-textures tex)
-      (render-quads vao)
-      (destroy-texture tex)
-      (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats.png"))
-
-(fact "Render 2D unsigned-byte texture"
-  (offscreen-render 64 64
-    (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
-          program  (make-program :vertex vertex-texture :fragment fragment-texture)
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-ubyte-texture-2d {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
-      (clear (->RGB 0.0 0.0 0.0))
-      (use-program program (uniform-sampler :tex 0))
-      (use-textures tex)
-      (render-quads vao)
-      (destroy-texture tex)
-      (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/ubytes.png"))
-
 (def fragment-texture-1d "#version 410 core
 in mediump vec2 uv_fragment;
 out lowp vec3 fragColor;
@@ -279,6 +225,75 @@ void main()
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats-1d.png"))
+
+(def fragment-texture-2d "#version 410 core
+in mediump vec2 uv_fragment;
+out lowp vec3 fragColor;
+uniform sampler2D tex;
+void main()
+{
+  fragColor = texture(tex, uv_fragment).rgb;
+}")
+
+(fact "Render 2D RGB texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-rgb-texture (slurp-image "test/sfsim25/pattern.png"))]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/texture.png"))
+
+(fact "Render 2D floating-point texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-float-texture-2d {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/floats.png"))
+
+(fact "Render 2D unsigned-byte texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-ubyte-texture-2d {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/ubytes.png"))
+
+(fact "Render 2D vector texture"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex      (make-vector-texture-2d {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program (uniform-sampler :tex 0))
+      (use-textures tex)
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/vectors.png"))
 
 (def control-uniform "#version 410 core
 layout(vertices = 4) out;

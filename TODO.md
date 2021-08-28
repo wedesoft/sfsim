@@ -1,6 +1,5 @@
 # TODO
 
-* float vector texture
 * define and test uniform-int
 * use render module in Earth prototype
 * night-time textures
