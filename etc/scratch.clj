@@ -218,14 +218,14 @@ void main()
 (defn render-tile
   [tile]
   (use-program program
-    (uniform-sampler :tex 0)
-    (uniform-sampler :hf 1)
+    (uniform-sampler :tex     0)
+    (uniform-sampler :hf      1)
     (uniform-sampler :normals 2)
-    (uniform-sampler :water 3))
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_up"   ) (:sfsim25.quadtree/up    tile))
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_left" ) (:sfsim25.quadtree/left  tile))
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_down" ) (:sfsim25.quadtree/down  tile))
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_right") (:sfsim25.quadtree/right tile))
+    (uniform-sampler :water   3)
+    (uniform-int :tesselate_up    (:sfsim25.quadtree/up    tile))
+    (uniform-int :tesselate_left  (:sfsim25.quadtree/left  tile))
+    (uniform-int :tesselate_down  (:sfsim25.quadtree/down  tile))
+    (uniform-int :tesselate_right (:sfsim25.quadtree/right tile)))
   (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile))
   (render-patches (:vao tile)))
 
