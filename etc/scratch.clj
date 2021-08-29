@@ -3,6 +3,7 @@
          '[sfsim25.util :refer :all]
          '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
+         '[sfsim25.rgb :refer (->RGB)]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all]
          '[sfsim25.quaternion :as q])
@@ -198,17 +199,11 @@ void main()
   (destroy-texture (:water-tex tile))
   (destroy-vertex-array-object (:vao tile)))
 
-(GL11/glEnable GL11/GL_DEPTH_TEST)
-
-; (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-(GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)
-
-(GL11/glEnable GL11/GL_CULL_FACE)
-(GL11/glCullFace GL11/GL_BACK)
-
-(GL20/glUseProgram (:program program))
-
 (use-program program
+  (uniform-sampler :tex     0)
+  (uniform-sampler :hf      1)
+  (uniform-sampler :normals 2)
+  (uniform-sampler :water   3)
   (uniform-matrix4 :projection (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 
 (defn is-leaf?
@@ -218,10 +213,6 @@ void main()
 (defn render-tile
   [tile]
   (use-program program
-    (uniform-sampler :tex     0)
-    (uniform-sampler :hf      1)
-    (uniform-sampler :normals 2)
-    (uniform-sampler :water   3)
     (uniform-int :tesselate_up    (:sfsim25.quadtree/up    tile))
     (uniform-int :tesselate_left  (:sfsim25.quadtree/left  tile))
     (uniform-int :tesselate_down  (:sfsim25.quadtree/down  tile))
@@ -260,8 +251,6 @@ void main()
     (let [state      (Keyboard/getEventKeyState)
           event-key  (Keyboard/getEventKey)]
       (swap! keystates assoc event-key state)))
-  (GL11/glClearColor 0.0 0.0 0.0 0.0)
-  (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
   (let [t1 (System/currentTimeMillis)
         dt (- t1 @t0)
         ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
@@ -275,11 +264,13 @@ void main()
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt))
-    (use-program program
-      (uniform-matrix4 :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
-      (uniform-vector3 :light (matrix [(Math/cos @light) (Math/sin @light) 0])))
-    (render-tree @tree)
-    (GL11/glFlush)
+    (onscreen-render 640 480
+      (clear (->RGB 0.0 0.0 0.0))
+      (use-program program
+        (uniform-matrix4 :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
+        (uniform-vector3 :light (matrix [(Math/cos @light) (Math/sin @light) 0])))
+      (render-tree @tree)
+      (GL11/glFlush))
     (Display/update)))
 
 (destroy-program program)
