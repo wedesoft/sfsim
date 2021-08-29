@@ -8,9 +8,8 @@
          '[sfsim25.quadtree :refer :all]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.opengl Pbuffer Display DisplayMode GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 Util]
-        '[org.lwjgl.input Keyboard]
-        '[org.lwjgl BufferUtils])
+(import '[org.lwjgl.opengl Display DisplayMode GL11]
+        '[org.lwjgl.input Keyboard])
 
 
 (def vertex-source "#version 410 core
