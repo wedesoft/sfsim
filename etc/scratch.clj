@@ -165,10 +165,6 @@ void main()
       (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 
-(def-context-macro with-vertex-array (fn [vao] (GL30/glBindVertexArray vao)) (fn [vao] (GL30/glBindVertexArray 0)))
-
-(def-context-create-macro create-vertex-array (fn [] (GL30/glGenVertexArrays)) 'with-vertex-array)
-
 (def c0 (/ 0.5 tilesize))
 (def c1 (- 1.0 (/ 0.5 tilesize)))
 
@@ -178,58 +174,29 @@ void main()
 (defn make-vertices
   [face level y x]
   (let [[a b c d] (cube-map-corners face level y x)]
-    (float-array [(mget a 0) (mget a 1) (mget a 2) c0 c0 d0 d0
-                  (mget b 0) (mget b 1) (mget b 2) c1 c0 d1 d0
-                  (mget c 0) (mget c 1) (mget c 2) c0 c1 d0 d1
-                  (mget d 0) (mget d 1) (mget d 2) c1 c1 d1 d1])))
+    [(mget a 0) (mget a 1) (mget a 2) c0 c0 d0 d0
+     (mget b 0) (mget b 1) (mget b 2) c1 c0 d1 d0
+     (mget c 0) (mget c 1) (mget c 2) c0 c1 d0 d1
+     (mget d 0) (mget d 1) (mget d 2) c1 c1 d1 d1]))
 
 (defn load-tile-into-opengl
   [tile]
-  (create-vertex-array vao
-    (let [vbo             (GL15/glGenBuffers)
-          vertices-buffer (make-float-buffer (make-vertices (:face tile) (:level tile) (:y tile) (:x tile)))
-          idx             (GL15/glGenBuffers)
-          indices-buffer  (make-int-buffer (int-array [0 2 3 1]))]
-      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo)
-      (GL15/glBufferData GL15/GL_ARRAY_BUFFER vertices-buffer GL15/GL_STATIC_DRAW)
-      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER idx)
-      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW)
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) "point"   )
-                                  3 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 0 Float/BYTES))
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) "texcoord")
-                                  2 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 3 Float/BYTES))
-      (GL20/glVertexAttribPointer (GL20/glGetAttribLocation (:program program) "ctexcoord")
-                                  2 GL11/GL_FLOAT false (* 7 Float/BYTES) (* 5 Float/BYTES))
-      (GL20/glEnableVertexAttribArray 0)
-      (GL20/glEnableVertexAttribArray 1)
-      (GL20/glEnableVertexAttribArray 2)
-      (use-program program
-        (uniform-sampler :tex 0)
-        (uniform-sampler :hf 1)
-        (uniform-sampler :normals 2)
-        (uniform-sampler :water 3))
-      (let [texture     (make-rgb-texture (:colors tile))
-            heightfield (make-float-texture-2d {:width tilesize :height tilesize :data (:scales tile)})
-            normal-map  (make-vector-texture-2d {:width ctilesize :height ctilesize :data (:normals tile)})
-            water-map   (make-ubyte-texture-2d {:width ctilesize :height ctilesize :data (:water tile)})]
-        (assoc (dissoc tile :colors :scales :normals :water)
-               :vao vao :vbo vbo :idx idx :color-tex texture :height-tex heightfield :normal-tex normal-map :water-tex water-map)))))
+  (let [vao (make-vertex-array-object program [0 2 3 1] (make-vertices (:face tile) (:level tile) (:y tile) (:x tile))
+                                      [:point 3 :texcoord 2 :ctexcoord 2])
+        texture     (make-rgb-texture (:colors tile))
+        heightfield (make-float-texture-2d {:width tilesize :height tilesize :data (:scales tile)})
+        normal-map  (make-vector-texture-2d {:width ctilesize :height ctilesize :data (:normals tile)})
+        water-map   (make-ubyte-texture-2d {:width ctilesize :height ctilesize :data (:water tile)})]
+    (assoc (dissoc tile :colors :scales :normals :water)
+           :vao vao :color-tex texture :height-tex heightfield :normal-tex normal-map :water-tex water-map)))
 
 (defn unload-tile-from-opengl
   [tile]
-  (with-vertex-array (:vao tile)
-    (GL20/glDisableVertexAttribArray 0)
-    (GL20/glDisableVertexAttribArray 1)
-    (GL20/glDisableVertexAttribArray 2)
-    (destroy-texture (:color-tex tile))
-    (destroy-texture (:height-tex tile))
-    (destroy-texture (:normal-tex tile))
-    (destroy-texture (:water-tex tile))
-    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
-    (GL15/glDeleteBuffers (:idx tile))
-    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
-    (GL15/glDeleteBuffers (:vbo tile)))
-  (GL30/glDeleteVertexArrays (:vao tile)))
+  (destroy-texture (:color-tex tile))
+  (destroy-texture (:height-tex tile))
+  (destroy-texture (:normal-tex tile))
+  (destroy-texture (:water-tex tile))
+  (destroy-vertex-array-object (:vao tile)))
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
@@ -250,14 +217,17 @@ void main()
 
 (defn render-tile
   [tile]
-  (with-vertex-array (:vao tile)
-    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_up"   ) (:sfsim25.quadtree/up    tile))
-    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_left" ) (:sfsim25.quadtree/left  tile))
-    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_down" ) (:sfsim25.quadtree/down  tile))
-    (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_right") (:sfsim25.quadtree/right tile))
-    (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile))
-    (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-    (GL11/glDrawElements GL40/GL_PATCHES 4 GL11/GL_UNSIGNED_INT 0)))
+  (use-program program
+    (uniform-sampler :tex 0)
+    (uniform-sampler :hf 1)
+    (uniform-sampler :normals 2)
+    (uniform-sampler :water 3))
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_up"   ) (:sfsim25.quadtree/up    tile))
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_left" ) (:sfsim25.quadtree/left  tile))
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_down" ) (:sfsim25.quadtree/down  tile))
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) "tesselate_right") (:sfsim25.quadtree/right tile))
+  (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile))
+  (render-patches (:vao tile)))
 
 (defn render-tree
   [node]

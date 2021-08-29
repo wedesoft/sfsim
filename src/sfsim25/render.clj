@@ -128,6 +128,11 @@
   [program k value]
   (GL20/glUniform1f (GL20/glGetUniformLocation (:program program) (name k)) value))
 
+(defn uniform-int
+  "Set uniform integer variable in current shader program"
+  [program k value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
+
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program"
   [program k value]
