@@ -1,6 +1,7 @@
 # TODO
 
 * merge Earth and atmosphere prototype
+* speed up rendering (distance based culling in quad tree?)
 * night-time textures
 * compute shadow in atmosphere
 * soft transition into planet's shadow
