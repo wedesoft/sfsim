@@ -206,10 +206,6 @@ void main()
   (uniform-sampler :water   3)
   (uniform-matrix4 :projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 
-(defn is-leaf?
-  [node]
-  (not (or (nil? node) (contains? node :0) (contains? node :1) (contains? node :2) (contains? node :3))))
-
 (defn render-tile
   [tile]
   (use-program program

@@ -54,8 +54,8 @@
   [metadata]
   (map (fn [{:keys [face level y x]}] (load-tile-data face level y x)) metadata))
 
-(defn- is-leaf?
-  "Check whether node is a leaf"
+(defn is-leaf?
+  "Check whether specified tree node is a leaf"
   [node]
   (not (or (nil? node) (contains? node :0) (contains? node :1) (contains? node :2) (contains? node :3))))
 

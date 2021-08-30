@@ -45,6 +45,14 @@
       (load-tile-data 3 2 3 1) => :data-a
       (load-tile-data 2 3 1 0) => :data-b))
 
+(facts "Check whether specified tree node is a leaf"
+  (is-leaf? {:data "test"}) => true
+  (is-leaf? nil) => false
+  (is-leaf? {:0 {}}) => false
+  (is-leaf? {:1 {}}) => false
+  (is-leaf? {:2 {}}) => false
+  (is-leaf? {:3 {}}) => false)
+
 (facts "Determine list of tiles to remove"
   (let [quad     {:5 {:face 2 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}
         sub-quad {:5 {:0 {} :1 {} :2 {:0 {} :1 {} :2 {} :3 {}} :3 {}}}
