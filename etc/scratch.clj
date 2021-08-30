@@ -138,7 +138,8 @@ void main()
 (Display/setTitle "scratch")
 ; (def desktop (Display/getDesktopDisplayMode))
 ; (Display/setDisplayModeAndFullscreen desktop)
-(Display/setDisplayMode (DisplayMode. 640 480))
+(def desktop (DisplayMode. 1280 720))
+(Display/setDisplayMode desktop)
 (Display/create)
 
 (Keyboard/create)
@@ -161,7 +162,7 @@ void main()
 
 (go-loop []
   (if-let [tree (<! tree-state)]
-    (let [increase? (partial increase-level? tilesize radius1 radius2 640 60 10 3 @position)]
+    (let [increase? (partial increase-level? tilesize radius1 radius2 (.getWidth desktop) 60 10 3 @position)]
       (>! changes (update-level-of-detail tree increase? true))
       (recur))))
 
@@ -203,7 +204,7 @@ void main()
   (uniform-sampler :hf      1)
   (uniform-sampler :normals 2)
   (uniform-sampler :water   3)
-  (uniform-matrix4 :projection (projection-matrix 640 480 10000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
+  (uniform-matrix4 :projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 
 (defn is-leaf?
   [node]
@@ -263,7 +264,7 @@ void main()
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt))
-    (onscreen-render 640 480
+    (onscreen-render  (.getWidth desktop) (.getHeight desktop)
       (clear (->RGB 0.0 0.0 0.0))
       (use-program program
         (uniform-matrix4 :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
