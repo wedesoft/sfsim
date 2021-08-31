@@ -98,27 +98,27 @@ in mediump vec2 ctexcoord_geo[3];
 in highp vec3 vertex[3];
 layout(triangle_strip, max_vertices = 3) out;
 out mediump vec2 UV;
-out highp vec3 v;
+out highp vec3 orig;
 void main(void)
 {
 	gl_Position = gl_in[0].gl_Position;
   UV = ctexcoord_geo[0];
-  v = vertex[0];
+  orig = vertex[0];
 	EmitVertex();
 	gl_Position = gl_in[1].gl_Position;
   UV = ctexcoord_geo[1];
-  v = vertex[1];
+  orig = vertex[1];
 	EmitVertex();
 	gl_Position = gl_in[2].gl_Position;
   UV = ctexcoord_geo[2];
-  v = vertex[2];
+  orig = vertex[2];
 	EmitVertex();
 	EndPrimitive();
 }")
 
 (def fragment-source "#version 410 core
 in mediump vec2 UV;
-in highp vec3 v;
+in highp vec3 orig;
 out lowp vec3 fragColor;
 uniform sampler2D tex;
 uniform sampler2D normals;
@@ -131,7 +131,7 @@ void main()
 {
   vec3 normal = texture(normals, UV).xyz;
   float wet = texture(water, UV).r;
-  float specular = pow(max(dot((transform * vec4(reflect(light, normal), 0)).xyz, normalize(v)), 0), 50);
+  float specular = pow(max(dot((transform * vec4(reflect(light, normal), 0)).xyz, normalize(orig)), 0), 50);
   float diffuse = max(dot(light, normal), 0.05);
   vec3 landColor = texture(tex, UV).rgb * diffuse;
   vec3 waterColor = vec3(0.09, 0.11, 0.34) * diffuse + 0.5 * specular;
