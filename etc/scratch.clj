@@ -4,6 +4,7 @@
          '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
          '[sfsim25.rgb :refer (->RGB)]
+         '[sfsim25.atmosphere :refer :all]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all]
          '[sfsim25.quaternion :as q])
@@ -124,6 +125,8 @@ uniform sampler2D normals;
 uniform sampler2D water;
 uniform vec3 light;
 uniform mat4 transform;
+uniform sampler1D density_texture;
+uniform sampler2D depth_texture;
 void main()
 {
   vec3 normal = texture(normals, UV).xyz;
@@ -146,14 +149,17 @@ void main()
 
 (def program (make-program :vertex vertex-source :tess-control tcs-source :tess-evaluation tes-source :geometry geo-source :fragment fragment-source))
 
+(def density-texture (make-float-texture-1d (air-density-table 1.0 256 80000 8429)))
+(def depth-texture (make-float-texture-2d (optical-depth-table 256 256 1.0 6378000 80000 8429 20)))
+
 (def radius1 6378000.0)
 (def radius2 6357000.0)
 
 (def tree-state (chan))
 (def changes (chan))
 
-(def position (atom (matrix [0 0 (* 3 radius1)])))
-(def orientation (atom (q/->Quaternion 1 0 0 0)))
+(def position (atom (matrix [0 (* -3 radius1) (* 0.5 6378000)])))
+(def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
 (def tree (atom {}))
 
@@ -200,10 +206,12 @@ void main()
   (destroy-vertex-array-object (:vao tile)))
 
 (use-program program
-  (uniform-sampler :tex     0)
-  (uniform-sampler :hf      1)
-  (uniform-sampler :normals 2)
-  (uniform-sampler :water   3)
+  (uniform-sampler :tex             0)
+  (uniform-sampler :hf              1)
+  (uniform-sampler :normals         2)
+  (uniform-sampler :water           3)
+  (uniform-sampler :density_texture 4)
+  (uniform-sampler :depth_texture   5)
   (uniform-matrix4 :projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180))))
 
 (defn render-tile
@@ -213,7 +221,7 @@ void main()
     (uniform-int :tesselate_left  (:sfsim25.quadtree/left  tile))
     (uniform-int :tesselate_down  (:sfsim25.quadtree/down  tile))
     (uniform-int :tesselate_right (:sfsim25.quadtree/right tile)))
-  (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile))
+  (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile) density-texture depth-texture)
   (render-patches (:vao tile)))
 
 (defn render-tree
@@ -236,7 +244,7 @@ void main()
   [tree paths]
   (quadtree-update tree paths load-tile-into-opengl))
 
-(def light (atom 0))
+(def light (atom -1.4))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
