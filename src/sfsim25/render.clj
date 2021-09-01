@@ -38,13 +38,13 @@
   (GL11/glClearColor (:r color) (:g color) (:b color) 1.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
 
-(defn make-shader [source shader-type]
+(defn make-shader [context source shader-type]
   "Compile a GLSL shader"
   (let [shader (GL20/glCreateShader shader-type)]
     (GL20/glShaderSource shader source)
     (GL20/glCompileShader shader)
     (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
-      (throw (Exception. (GL20/glGetShaderInfoLog shader 1024))))
+      (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024)))))
     shader))
 
 (defn destroy-shader
@@ -55,11 +55,12 @@
 (defn make-program
   "Compile and link a shader program"
   [& {:keys [vertex tess-control tess-evaluation geometry fragment]}]
-  (let [vertex-shader          (make-shader vertex GL20/GL_VERTEX_SHADER)
-        tess-control-shader    (if tess-control (make-shader tess-control GL40/GL_TESS_CONTROL_SHADER))
-        tess-evaluation-shader (if tess-evaluation (make-shader tess-evaluation GL40/GL_TESS_EVALUATION_SHADER))
-        geometry-shader        (if geometry (make-shader geometry GL32/GL_GEOMETRY_SHADER))
-        fragment-shader        (make-shader fragment GL20/GL_FRAGMENT_SHADER)]
+  (let [vertex-shader          (make-shader "vertex shader" vertex GL20/GL_VERTEX_SHADER)
+        tess-control-shader    (if tess-control (make-shader "tessellation control" tess-control GL40/GL_TESS_CONTROL_SHADER))
+        tess-evaluation-shader (if tess-evaluation
+                                 (make-shader "tessellation evaluation" tess-evaluation GL40/GL_TESS_EVALUATION_SHADER))
+        geometry-shader        (if geometry (make-shader "geometry" geometry GL32/GL_GEOMETRY_SHADER))
+        fragment-shader        (make-shader "fragment" fragment GL20/GL_FRAGMENT_SHADER)]
     (let [program (GL20/glCreateProgram)
           shaders (remove nil? [vertex-shader tess-control-shader tess-evaluation-shader geometry-shader fragment-shader])]
       (doseq [shader shaders] (GL20/glAttachShader program shader))

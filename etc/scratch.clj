@@ -73,9 +73,11 @@ in mediump vec2 texcoord_tes[];
 in mediump vec2 ctexcoord_tes[];
 out mediump vec2 ctexcoord_geo;
 out highp vec3 vertex;
+out highp vec3 origin;
 uniform sampler2D hf;
 uniform mat4 projection;
 uniform mat4 transform;
+uniform mat4 itransform;
 void main()
 {
   vec2 c = mix(texcoord_tes[0], texcoord_tes[1], gl_TessCoord.x);
@@ -89,8 +91,12 @@ void main()
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(a, b, gl_TessCoord.y);
   gl_Position = projection * transform * vec4(p.xyz * s * 6388000, 1);
-  vertex = (transform * vec4(p.xyz * s * 6388000, 1)).xyz;
+  vertex = p.xyz * s * 6388000;
 }")
+
+; point on planet is p.xyz * s * 6388000
+; camera position in world coordinates is (itransform * vec4(0, 0, 0, 1)).xyz
+; vector in atmosphere is camera - point
 
 (def geo-source "#version 410 core
 layout(triangles) in;
@@ -127,11 +133,12 @@ uniform vec3 light;
 uniform mat4 transform;
 uniform sampler1D density_texture;
 uniform sampler2D depth_texture;
+uniform mat4 itransform;
 void main()
 {
   vec3 normal = texture(normals, UV).xyz;
   float wet = texture(water, UV).r;
-  float specular = pow(max(dot((transform * vec4(reflect(light, normal), 0)).xyz, normalize(pos)), 0), 50);
+  float specular = pow(max(dot(reflect(light, normal), normalize(pos - (itransform * vec4(0, 0, 0, 1)).xyz)), 0), 50);
   float diffuse = max(dot(light, normal), 0.05);
   vec3 landColor = texture(tex, UV).rgb * diffuse;
   vec3 waterColor = vec3(0.09, 0.11, 0.34) * diffuse + 0.5 * specular;
@@ -272,6 +279,7 @@ void main()
       (clear (->RGB 0.0 0.0 0.0))
       (use-program program
         (uniform-matrix4 :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
+        (uniform-matrix4 :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
         (uniform-vector3 :light (matrix [(Math/cos @light) (Math/sin @light) 0])))
       (render-tree @tree)
       (GL11/glFlush))
