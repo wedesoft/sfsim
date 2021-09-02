@@ -94,10 +94,6 @@ void main()
   vertex = p.xyz * s * 6388000;
 }")
 
-; point on planet is p.xyz * s * 6388000
-; camera position in world coordinates is (itransform * vec4(0, 0, 0, 1)).xyz
-; vector in atmosphere is camera - point
-
 (def geo-source "#version 410 core
 layout(triangles) in;
 in mediump vec2 ctexcoord_geo[3];
@@ -138,8 +134,15 @@ void main()
 {
   vec3 normal = texture(normals, UV).xyz;
   float wet = texture(water, UV).r;
-  float specular = pow(max(dot(reflect(light, normal), normalize(pos - (itransform * vec4(0, 0, 0, 1)).xyz)), 0), 50);
-  float diffuse = max(dot(light, normal), 0.05);
+  float specular;
+  float diffuse;
+  if (dot(light, normal) > 0) {
+    specular = pow(max(dot(reflect(light, normal), normalize(pos - (itransform * vec4(0, 0, 0, 1)).xyz)), 0), 50);
+    diffuse = dot(light, normal);
+  } else {
+    specular = 0.0;
+    diffuse = 0.0;
+  };
   vec3 landColor = texture(tex, UV).rgb * diffuse;
   vec3 waterColor = vec3(0.09, 0.11, 0.34) * diffuse + 0.5 * specular;
   fragColor = mix(landColor, waterColor, wet);
