@@ -118,6 +118,8 @@ void main(void)
 	EndPrimitive();
 }")
 
+; TODO: compute itransform * vec4(0, 0, 0, 1) only once
+
 (def fragment-source "#version 410 core
 in mediump vec2 UV;
 in highp vec3 pos;
@@ -130,21 +132,45 @@ uniform mat4 transform;
 uniform sampler1D density_texture;
 uniform sampler2D depth_texture;
 uniform mat4 itransform;
+
+vec3 scale(vec3 v) {
+  return vec3(v.x, v.y, v.z * 6378000 / 6357000);
+}
+
+float optical_depth(vec3 origin, vec3 direction)
+{
+  vec3 centre = vec3(0, 0, 0);
+  float dist = distance(scale(origin), centre);
+  float height = dist - 6378000;
+  float height01 = height / 80000;
+  vec3 normal = scale(origin) / dist;
+  float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
+  float cos_angle01 = 0.5 + 0.5 * cos_angle;
+  return texture(depth_texture, vec2(height01, cos_angle01)).r;
+}
+
 void main()
 {
+  float rayleigh_scatter_strength = 0.00009;
   vec3 normal = texture(normals, UV).xyz;
   float wet = texture(water, UV).r;
   float specular;
   float diffuse;
+  vec3 rayleigh_transmittance;
+  vec3 wavelength = vec3(700, 530, 440);
   if (dot(light, normal) > 0) {
+    vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
+    float view_depth = optical_depth(pos, light);
+    rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
     specular = pow(max(dot(reflect(light, normal), normalize(pos - (itransform * vec4(0, 0, 0, 1)).xyz)), 0), 50);
     diffuse = dot(light, normal);
   } else {
     specular = 0.0;
     diffuse = 0.0;
+    rayleigh_transmittance = vec3(0, 0, 0);
   };
   vec3 landColor = texture(tex, UV).rgb * diffuse;
-  vec3 waterColor = vec3(0.09, 0.11, 0.34) * diffuse + 0.5 * specular;
+  vec3 waterColor = (vec3(0.09, 0.11, 0.34) * diffuse + 0.5 * specular) * rayleigh_transmittance;
   fragColor = mix(landColor, waterColor, wet);
 }")
 
