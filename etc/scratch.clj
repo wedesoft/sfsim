@@ -119,6 +119,7 @@ void main(void)
 }")
 
 ; TODO: compute itransform * vec4(0, 0, 0, 1) only once
+; TODO: compute Mie scattering of reflected light?
 
 (def fragment-source "#version 410 core
 in mediump vec2 UV;
