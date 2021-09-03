@@ -32,29 +32,26 @@ in mediump vec2 texcoord_tcs[];
 in mediump vec2 ctexcoord_tcs[];
 out mediump vec2 texcoord_tes[];
 out mediump vec2 ctexcoord_tes[];
-uniform int tesselate_up;
-uniform int tesselate_left;
-uniform int tesselate_down;
-uniform int tesselate_right;
+uniform int tesselation;
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    if (tesselate_up != 0) {
+    if ((tesselation & 1) != 0) {
       gl_TessLevelOuter[0] = 32.0;
     } else {
       gl_TessLevelOuter[0] = 16.0;
     };
-    if (tesselate_left != 0) {
+    if ((tesselation & 2) != 0) {
       gl_TessLevelOuter[1] = 32.0;
     } else {
       gl_TessLevelOuter[1] = 16.0;
     };
-    if (tesselate_down != 0) {
+    if ((tesselation & 4) != 0) {
       gl_TessLevelOuter[2] = 32.0;
     } else {
       gl_TessLevelOuter[2] = 16.0;
     };
-    if (tesselate_right != 0) {
+    if ((tesselation & 8) != 0) {
       gl_TessLevelOuter[3] = 32.0;
     } else {
       gl_TessLevelOuter[3] = 16.0;
@@ -256,10 +253,10 @@ void main()
 
 (defn render-tile
   [tile]
-  (uniform-int program :tesselate_up    (:sfsim25.quadtree/up    tile))
-  (uniform-int program :tesselate_left  (:sfsim25.quadtree/left  tile))
-  (uniform-int program :tesselate_down  (:sfsim25.quadtree/down  tile))
-  (uniform-int program :tesselate_right (:sfsim25.quadtree/right tile))
+  (uniform-int program :tesselation (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
+                                            (if (:sfsim25.quadtree/left  tile) 2 0)
+                                            (if (:sfsim25.quadtree/down  tile) 4 0)
+                                            (if (:sfsim25.quadtree/right tile) 8 0)))
   (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile) density-texture depth-texture)
   (render-patches (:vao tile)))
 
@@ -285,6 +282,7 @@ void main()
 
 (def light (atom -1.4))
 
+(do
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
@@ -314,7 +312,9 @@ void main()
       (uniform-vector3 program :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
       (render-tree @tree)
       (GL11/glFlush))
-    (Display/update)))
+    (Display/update))))
+
+; (prof/serve-files 8080)
 
 (destroy-program program)
 

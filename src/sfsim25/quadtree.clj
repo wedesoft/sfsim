@@ -180,7 +180,7 @@
   [tree path]
   (reduce
     (fn [updated-tree [direction neighbour-path]]
-      (assoc-in updated-tree (conj (vec path) direction) (if (get-in tree neighbour-path) 1 0)))
+      (assoc-in updated-tree (conj (vec path) direction) (boolean (get-in tree neighbour-path))))
     tree
     (neighbour-paths path)))
 

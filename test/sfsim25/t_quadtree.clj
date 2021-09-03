@@ -185,12 +185,12 @@
   (leaf-paths {:5 {:vao 42 :1 {}}}) => [[:5 :1]])
 
 (facts "Update quad tree with neighbourhood information"
-  (get-in (check-neighbours {:5 {} :1 {}})      [:5 :sfsim25.quadtree/up]     ) => 1
-  (get-in (check-neighbours {:5 {}})            [:5 :sfsim25.quadtree/up]     ) => 0
-  (get-in (check-neighbours {:5 {} :4 {}})      [:5 :sfsim25.quadtree/left]   ) => 1
-  (get-in (check-neighbours {:5 {}})            [:5 :sfsim25.quadtree/left]   ) => 0
-  (get-in (check-neighbours {:1 {} :5 {}})      [:1 :sfsim25.quadtree/down]   ) => 1
-  (get-in (check-neighbours {:5 {:1 {} :3 {}}}) [:5 :1 :sfsim25.quadtree/down]) => 1)
+  (get-in (check-neighbours {:5 {} :1 {}})      [:5 :sfsim25.quadtree/up]     ) => true
+  (get-in (check-neighbours {:5 {}})            [:5 :sfsim25.quadtree/up]     ) => false
+  (get-in (check-neighbours {:5 {} :4 {}})      [:5 :sfsim25.quadtree/left]   ) => true
+  (get-in (check-neighbours {:5 {}})            [:5 :sfsim25.quadtree/left]   ) => false
+  (get-in (check-neighbours {:1 {} :5 {}})      [:1 :sfsim25.quadtree/down]   ) => true
+  (get-in (check-neighbours {:5 {:1 {} :3 {}}}) [:5 :1 :sfsim25.quadtree/down]) => true)
 
 (facts "Update level of detail (LOD)"
   (with-redefs [quadtree/load-tile-data (fn [face level y x] (fact face => 2 level => 1) {:id (+ (* y 2) x 1)})]
@@ -205,7 +205,7 @@
       (:load (update-level-of-detail flat (constantly false) false)) => []
       (:load (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => [[:2 :0] [:2 :1] [:2 :2] [:2 :3]]
       (:tree (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => one-face
-      (get-in (update-level-of-detail flat (constantly false) true) [:tree :2 :sfsim25.quadtree/up]) => 1)))
+      (get-in (update-level-of-detail flat (constantly false) true) [:tree :2 :sfsim25.quadtree/up]) => true)))
 
 (fact "Get path of parent node"
   (parent-path [:1 :2 :3]) => [:1 :2])

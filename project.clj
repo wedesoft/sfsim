@@ -3,12 +3,13 @@
   :url "https://github.com/wedesoft/sfsim25"
   :license {:name "GPL-3.0-or-later"
             :url "https://www.gnu.org/licenses/gpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure       "1.10.3"]
-                 [org.clojure/core.memoize "1.0.236"]
-                 [org.clojure/core.async   "1.3.618"]
-                 [com.climate/claypoole      "1.1.4"]
-                 [net.mikera/core.matrix    "0.62.0"]
-                 [net.mikera/vectorz-clj    "0.48.0"]]
+  :dependencies [[org.clojure/clojure                     "1.10.3"]
+                 [org.clojure/core.memoize               "1.0.236"]
+                 [org.clojure/core.async                 "1.3.618"]
+                 [com.climate/claypoole                    "1.1.4"]
+                 [com.clojure-goes-fast/clj-async-profiler "0.5.1"]
+                 [net.mikera/core.matrix                  "0.62.0"]
+                 [net.mikera/vectorz-clj                  "0.48.0"]]
   :main ^:skip-aot sfsim25.core
   :profiles {:run-scale-image     {:main sfsim25.scale-image}
              :run-map-tiles       {:main sfsim25.map-tiles}
@@ -27,4 +28,4 @@
   :plugins [[lein-midje "3.2.1"]
             [lein-codox "0.10.7"]]
   :target-path "target/%s"
-  :jvm-opts ["-Xmx2g"])
+  :jvm-opts ["-Xmx2g" "-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"])
