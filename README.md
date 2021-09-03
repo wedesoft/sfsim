@@ -19,3 +19,4 @@ lein midje
 * [NVidia article on atmospheric scattering](https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering)
 * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
 * [Normal vectors of ellipsoid](https://math.stackexchange.com/questions/2931909/normal-of-a-point-on-the-surface-of-an-ellipsoid/2931931)
+* [Clojure performance flame graphs](https://github.com/clojure-goes-fast/clj-async-profiler)

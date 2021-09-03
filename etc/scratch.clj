@@ -1,5 +1,6 @@
 (require '[clojure.core.async :refer (go-loop chan <! >! <!! >!! poll! close!) :as a]
          '[clojure.core.matrix :refer :all]
+         '[clj-async-profiler.core :as prof]
          '[sfsim25.util :refer :all]
          '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
@@ -32,26 +33,26 @@ in mediump vec2 texcoord_tcs[];
 in mediump vec2 ctexcoord_tcs[];
 out mediump vec2 texcoord_tes[];
 out mediump vec2 ctexcoord_tes[];
-uniform int tesselation;
+uniform int tessellation;
 void main(void)
 {
   if (gl_InvocationID == 0) {
-    if ((tesselation & 1) != 0) {
+    if ((tessellation & 1) != 0) {
       gl_TessLevelOuter[0] = 32.0;
     } else {
       gl_TessLevelOuter[0] = 16.0;
     };
-    if ((tesselation & 2) != 0) {
+    if ((tessellation & 2) != 0) {
       gl_TessLevelOuter[1] = 32.0;
     } else {
       gl_TessLevelOuter[1] = 16.0;
     };
-    if ((tesselation & 4) != 0) {
+    if ((tessellation & 4) != 0) {
       gl_TessLevelOuter[2] = 32.0;
     } else {
       gl_TessLevelOuter[2] = 16.0;
     };
-    if ((tesselation & 8) != 0) {
+    if ((tessellation & 8) != 0) {
       gl_TessLevelOuter[3] = 32.0;
     } else {
       gl_TessLevelOuter[3] = 16.0;
@@ -135,6 +136,13 @@ vec3 scale(vec3 v) {
   return vec3(v.x, v.y, v.z * 6378000 / 6357000);
 }
 
+float density(vec3 point) {
+  vec3 centre = vec3(0, 0, 0);
+  float height = distance(scale(point), centre) - 6378000;
+  float height01 = height / 80000;
+  return texture(density_texture, height01).r;
+}
+
 float optical_depth(vec3 origin, vec3 direction)
 {
   vec3 centre = vec3(0, 0, 0);
@@ -145,6 +153,43 @@ float optical_depth(vec3 origin, vec3 direction)
   float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
   float cos_angle01 = 0.5 + 0.5 * cos_angle;
   return texture(depth_texture, vec2(height01, cos_angle01)).r;
+}
+
+float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
+{
+  vec3 point = origin + direction * ray_length;
+  vec3 centre = vec3(0, 0, 0);
+  if (dot(scale(direction), scale(origin) - centre) > 0) {
+    return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
+  } else {
+    return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
+  }
+}
+
+vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
+{
+  float rayleigh_scatter_strength = 0.00009;
+  float mie_scatter_strength = 0.0000002;
+  float g = 0.9;
+  int num_points = 10;
+  float step_size = ray_length / num_points;
+  vec3 point = origin + 0.5 * step_size * direction;
+  vec3 scatter = vec3(0, 0, 0);
+  vec3 wavelength = vec3(700, 530, 440);
+  vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
+  for (int i=0; i<num_points; i++) {
+    float sunray_depth = optical_depth(point, light);
+    float view_depth = optical_depth_ltd(point, -direction, step_size * i);
+    float cos_theta = dot(direction, light);
+    float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
+    vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
+    float mie_transmittance = exp(-(sunray_depth + view_depth) * mie_scatter_strength) * phase;
+    float point_density = density(point);
+    scatter += point_density * rayleigh_transmittance * rayleigh_scatter_coeffs * step_size;
+    scatter += point_density * mie_transmittance * mie_scatter_strength * step_size;
+    point += direction * step_size;
+  };
+  return scatter;
 }
 
 void main()
@@ -168,7 +213,7 @@ void main()
     rayleigh_transmittance = vec3(0, 0, 0);
   };
   vec3 landColor = texture(tex, UV).rgb * diffuse;
-  vec3 waterColor = (vec3(0.09, 0.11, 0.34) * diffuse + 0.5 * specular) * rayleigh_transmittance;
+  vec3 waterColor = vec3(0.09, 0.11, 0.34) * diffuse * rayleigh_transmittance + 0.5 * specular;
   fragColor = mix(landColor, waterColor, wet);
 }")
 
@@ -251,14 +296,19 @@ void main()
 (uniform-sampler program :depth_texture   5)
 (uniform-matrix4 program :projection projection)
 
+(def tess-value (atom -1))
+
 (defn render-tile
   [tile]
-  (uniform-int program :tesselation (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
-                                            (if (:sfsim25.quadtree/left  tile) 2 0)
-                                            (if (:sfsim25.quadtree/down  tile) 4 0)
-                                            (if (:sfsim25.quadtree/right tile) 8 0)))
-  (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile) density-texture depth-texture)
-  (render-patches (:vao tile)))
+  (let [tessellate (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
+                           (if (:sfsim25.quadtree/left  tile) 2 0)
+                           (if (:sfsim25.quadtree/down  tile) 4 0)
+                           (if (:sfsim25.quadtree/right tile) 8 0))]
+    (when (not= @tess-value tessellate)
+      (uniform-int program :tessellation tessellate)
+      (reset! tess-value tessellate))
+    (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile) density-texture depth-texture)
+    (render-patches (:vao tile))))
 
 (defn render-tree
   [node]
@@ -282,7 +332,10 @@ void main()
 
 (def light (atom -1.4))
 
-(do
+(
+ ;prof/profile
+ do
+ (do
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
@@ -312,7 +365,7 @@ void main()
       (uniform-vector3 program :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
       (render-tree @tree)
       (GL11/glFlush))
-    (Display/update))))
+    (Display/update)))))
 
 ; (prof/serve-files 8080)
 
