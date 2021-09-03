@@ -151,12 +151,10 @@
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
   (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
 
-(defmacro use-program
-  "Use program and set uniform variables"
-  [program & uniforms]
-  `(do
-     (GL20/glUseProgram (:program ~program))
-     ~@(map (fn [[method & args]] `(~method ~program ~@args)) uniforms)))
+(defn use-program
+  "Use specified shader program"
+  [program]
+  (GL20/glUseProgram (:program program)))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
