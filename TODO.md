@@ -1,6 +1,7 @@
 # TODO
 
 * merge Earth and atmosphere prototype
+* more data-centric API for rendering
 * speed up rendering (distance based culling in quad tree?)
 * night-time textures
 * compute shadow in atmosphere

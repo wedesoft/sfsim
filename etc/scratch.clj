@@ -136,6 +136,24 @@ vec3 scale(vec3 v) {
   return vec3(v.x, v.y, v.z * 6378000 / 6357000);
 }
 
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
+  vec3 offset = origin - centre;
+  float direction_sqr = dot(direction, direction);
+  float discriminant = pow(dot(direction, offset), 2) - direction_sqr * (dot(offset, offset) - radius * radius);
+  if (discriminant > 0) {
+    float length2 = sqrt(discriminant) / direction_sqr;
+    float middle = -dot(direction, offset) / direction_sqr;
+    vec2 result = vec2(middle - length2, 2 * length2);
+    if (result.x < 0) {
+      result.y = max(0, result.y + result.x);
+      result.x = 0;
+    };
+    return result;
+  } else {
+    return vec2(0, 0);
+  }
+}
+
 float density(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
   float height = distance(scale(point), centre) - 6378000;
@@ -199,22 +217,29 @@ void main()
   float wet = texture(water, UV).r;
   float specular;
   float diffuse;
+  vec3 camera = (itransform * vec4(0, 0, 0, 1)).xyz;
+  vec3 direction = normalize(pos - camera);
   vec3 rayleigh_transmittance;
   vec3 wavelength = vec3(700, 530, 440);
   if (dot(light, normal) > 0) {
     vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
     float view_depth = optical_depth(pos, light);
     rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
-    specular = pow(max(dot(reflect(light, normal), normalize(pos - (itransform * vec4(0, 0, 0, 1)).xyz)), 0), 50);
+    specular = pow(max(dot(reflect(light, normal), direction), 0), 50);
     diffuse = dot(light, normal);
   } else {
-    specular = 0.0;
+    specular = pow(max(dot(reflect(light, normal), direction), 0), 50);// TODO: is this correct?
     diffuse = 0.0;
     rayleigh_transmittance = vec3(0, 0, 0);
   };
-  vec3 landColor = texture(tex, UV).rgb * diffuse;
-  vec3 waterColor = vec3(0.09, 0.11, 0.34) * diffuse * rayleigh_transmittance + 0.5 * specular;
-  fragColor = mix(landColor, waterColor, wet);
+  vec3 land_color = texture(tex, UV).rgb * diffuse;
+  vec3 water_color = vec3(0.09, 0.11, 0.34) * diffuse * rayleigh_transmittance + 0.5 * specular;
+  vec3 background_color = mix(land_color, water_color, wet);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(camera), scale(direction));
+  vec3 point = camera + atmosphere.x * direction;
+  atmosphere.y = length(pos - point);
+  vec3 scatter = calculate_light(point, direction, atmosphere.y);
+  fragColor = scatter + (1 - scatter) * background_color;
 }")
 
 (Display/setTitle "scratch")
