@@ -228,7 +228,7 @@ void main()
     specular = pow(max(dot(reflect(light, normal), direction), 0), 50);
     diffuse = dot(light, normal);
   } else {
-    specular = pow(max(dot(reflect(light, normal), direction), 0), 50);// TODO: is this correct?
+    specular = 0.0;
     diffuse = 0.0;
     rayleigh_transmittance = vec3(0, 0, 0);
   };
