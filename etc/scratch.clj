@@ -321,17 +321,13 @@ void main()
 (uniform-sampler program :depth_texture   5)
 (uniform-matrix4 program :projection projection)
 
-(def tess-value (atom -1))
-
 (defn render-tile
   [tile]
   (let [tessellate (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
-    (when (not= @tess-value tessellate)
-      (uniform-int program :tessellation tessellate)
-      (reset! tess-value tessellate))
+    (uniform-int program :tessellation tessellate)
     (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile) density-texture depth-texture)
     (render-patches (:vao tile))))
 
