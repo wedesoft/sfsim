@@ -55,7 +55,7 @@
 (defn make-program
   "Compile and link a shader program"
   [& {:keys [vertex tess-control tess-evaluation geometry fragment]}]
-  (let [vertex-shader          (make-shader "vertex shader" vertex GL20/GL_VERTEX_SHADER)
+  (let [vertex-shader          (make-shader "vertex" vertex GL20/GL_VERTEX_SHADER)
         tess-control-shader    (if tess-control (make-shader "tessellation control" tess-control GL40/GL_TESS_CONTROL_SHADER))
         tess-evaluation-shader (if tess-evaluation
                                  (make-shader "tessellation evaluation" tess-evaluation GL40/GL_TESS_EVALUATION_SHADER))
