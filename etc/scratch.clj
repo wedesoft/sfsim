@@ -310,7 +310,7 @@ void main()
   (destroy-texture (:water-tex tile))
   (destroy-vertex-array-object (:vao tile)))
 
-(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
+(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 1000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
 (use-program program)
 (uniform-sampler program :tex             0)
