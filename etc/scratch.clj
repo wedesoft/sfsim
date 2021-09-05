@@ -214,7 +214,6 @@ void main()
 {
   float rayleigh_scatter_strength = 0.00009;
   vec3 normal = texture(normals, UV).xyz;
-  float wet = texture(water, UV).r;
   float specular;
   float diffuse;
   vec3 camera = (itransform * vec4(0, 0, 0, 1)).xyz;
@@ -234,11 +233,12 @@ void main()
   };
   vec3 land_color = texture(tex, UV).rgb * diffuse;
   vec3 water_color = vec3(0.09, 0.11, 0.34) * diffuse * rayleigh_transmittance + 0.5 * specular;
+  float wet = texture(water, UV).r;
   vec3 background_color = mix(land_color, water_color, wet);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(camera), scale(direction));
   vec3 point = camera + atmosphere.x * direction;
-  atmosphere.y = length(pos - point);
-  vec3 scatter = calculate_light(point, direction, atmosphere.y);
+  float dist = distance(pos, point);
+  vec3 scatter = calculate_light(point, direction, dist);
   fragColor = scatter + (1 - scatter) * background_color;
 }")
 
@@ -252,7 +252,12 @@ void main()
 
 (Keyboard/create)
 
-(def program (make-program :vertex vertex-source :tess-control tcs-source :tess-evaluation tes-source :geometry geo-source :fragment fragment-source))
+(def program-planet
+  (make-program :vertex vertex-source
+                :tess-control tcs-source
+                :tess-evaluation tes-source
+                :geometry geo-source
+                :fragment fragment-source))
 
 (def density-texture (make-float-texture-1d (air-density-table 1.0 256 80000 8429)))
 (def depth-texture (make-float-texture-2d (optical-depth-table 256 256 1.0 6378000 80000 8429 20)))
@@ -293,7 +298,7 @@ void main()
 
 (defn load-tile-into-opengl
   [tile]
-  (let [vao (make-vertex-array-object program [0 2 3 1] (make-vertices (:face tile) (:level tile) (:y tile) (:x tile))
+  (let [vao (make-vertex-array-object program-planet [0 2 3 1] (make-vertices (:face tile) (:level tile) (:y tile) (:x tile))
                                       [:point 3 :texcoord 2 :ctexcoord 2])
         texture     (make-rgb-texture (:colors tile))
         heightfield (make-float-texture-2d {:width tilesize :height tilesize :data (:scales tile)})
@@ -312,14 +317,14 @@ void main()
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 1000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
-(use-program program)
-(uniform-sampler program :tex             0)
-(uniform-sampler program :hf              1)
-(uniform-sampler program :normals         2)
-(uniform-sampler program :water           3)
-(uniform-sampler program :density_texture 4)
-(uniform-sampler program :depth_texture   5)
-(uniform-matrix4 program :projection projection)
+(use-program program-planet)
+(uniform-sampler program-planet :tex             0)
+(uniform-sampler program-planet :hf              1)
+(uniform-sampler program-planet :normals         2)
+(uniform-sampler program-planet :water           3)
+(uniform-sampler program-planet :density_texture 4)
+(uniform-sampler program-planet :depth_texture   5)
+(uniform-matrix4 program-planet :projection projection)
 
 (defn render-tile
   [tile]
@@ -327,7 +332,7 @@ void main()
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
-    (uniform-int program :tessellation tessellate)
+    (uniform-int program-planet :tessellation tessellate)
     (use-textures (:color-tex tile) (:height-tex tile) (:normal-tex tile) (:water-tex tile) density-texture depth-texture)
     (render-patches (:vao tile))))
 
@@ -381,16 +386,16 @@ void main()
     (swap! light + (* l dt))
     (onscreen-render  (.getWidth desktop) (.getHeight desktop)
       (clear (->RGB 0.0 0.0 0.0))
-      (uniform-matrix4 program :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
-      (uniform-matrix4 program :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
-      (uniform-vector3 program :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
+      (uniform-matrix4 program-planet :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
+      (uniform-matrix4 program-planet :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
+      (uniform-vector3 program-planet :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
       (render-tree @tree)
       (GL11/glFlush))
     (Display/update)))))
 
 ; (prof/serve-files 8080)
 
-(destroy-program program)
+(destroy-program program-planet)
 
 (Keyboard/destroy)
 (Display/destroy)
