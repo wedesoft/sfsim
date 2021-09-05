@@ -14,7 +14,7 @@
         '[org.lwjgl.input Keyboard])
 
 
-(def vertex-source "#version 410 core
+(def vertex-source-planet "#version 410 core
 in highp vec3 point;
 in mediump vec2 texcoord;
 in mediump vec2 ctexcoord;
@@ -27,7 +27,7 @@ void main()
   ctexcoord_tcs = ctexcoord;
 }")
 
-(def tcs-source "#version 410 core
+(def tcs-source-planet "#version 410 core
 layout(vertices = 4) out;
 in mediump vec2 texcoord_tcs[];
 in mediump vec2 ctexcoord_tcs[];
@@ -65,7 +65,7 @@ void main(void)
   ctexcoord_tes[gl_InvocationID] = ctexcoord_tcs[gl_InvocationID];
 }")
 
-(def tes-source "#version 410 core
+(def tes-source-planet "#version 410 core
 layout(quads, equal_spacing, ccw) in;
 in mediump vec2 texcoord_tes[];
 in mediump vec2 ctexcoord_tes[];
@@ -92,7 +92,7 @@ void main()
   vertex = p.xyz * s * 6388000;
 }")
 
-(def geo-source "#version 410 core
+(def geo-source-planet "#version 410 core
 layout(triangles) in;
 in mediump vec2 ctexcoord_geo[3];
 in highp vec3 vertex[3];
@@ -119,7 +119,7 @@ void main(void)
 ; TODO: compute itransform * vec4(0, 0, 0, 1) only once
 ; TODO: compute Mie scattering of reflected light?
 
-(def fragment-source "#version 410 core
+(def fragment-source-planet "#version 410 core
 in mediump vec2 UV;
 in highp vec3 pos;
 out lowp vec3 fragColor;
@@ -253,11 +253,11 @@ void main()
 (Keyboard/create)
 
 (def program-planet
-  (make-program :vertex vertex-source
-                :tess-control tcs-source
-                :tess-evaluation tes-source
-                :geometry geo-source
-                :fragment fragment-source))
+  (make-program :vertex vertex-source-planet
+                :tess-control tcs-source-planet
+                :tess-evaluation tes-source-planet
+                :geometry geo-source-planet
+                :fragment fragment-source-planet))
 
 (def density-texture (make-float-texture-1d (air-density-table 1.0 256 80000 8429)))
 (def depth-texture (make-float-texture-2d (optical-depth-table 256 256 1.0 6378000 80000 8429 20)))
@@ -418,7 +418,7 @@ void main()
         '[org.lwjgl.input Keyboard])
 
 
-(def vertex-source "#version 130
+(def vertex-source-atmosphere "#version 130
 in highp vec3 point;
 out highp vec3 pos;
 out highp vec3 orig;
@@ -431,7 +431,7 @@ void main()
   orig = (itransform * vec4(0, 0, 0, 1)).xyz;
 }")
 
-(def fragment-source "#version 130
+(def fragment-source-atmosphere "#version 130
 out lowp vec3 fragColor;
 in highp vec3 pos;
 in highp vec3 orig;
@@ -554,7 +554,7 @@ void main()
 (Display/create (PixelFormat. 24, 0, 24, 0, 1))
 (Keyboard/create)
 
-(def program (make-program :vertex vertex-source :fragment fragment-source))
+(def program (make-program :vertex vertex-source-atmosphere :fragment fragment-source-atmosphere))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
