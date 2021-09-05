@@ -242,6 +242,137 @@ void main()
   fragColor = scatter + (1 - scatter) * background_color;
 }")
 
+(def vertex-source-atmosphere "#version 130
+in highp vec3 point;
+out highp vec3 pos;
+out highp vec3 orig;
+uniform mat4 projection;
+uniform mat4 itransform;
+void main()
+{
+  gl_Position = projection * vec4(point, 1);
+  pos = (itransform * vec4(point, 0)).xyz;
+  orig = (itransform * vec4(0, 0, 0, 1)).xyz;
+}")
+
+(def fragment-source-atmosphere "#version 130
+out lowp vec3 fragColor;
+in highp vec3 pos;
+in highp vec3 orig;
+uniform vec3 light;
+uniform sampler1D density_texture;
+uniform sampler2D depth_texture;
+
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
+  vec3 offset = origin - centre;
+  float direction_sqr = dot(direction, direction);
+  float discriminant = pow(dot(direction, offset), 2) - direction_sqr * (dot(offset, offset) - radius * radius);
+  if (discriminant > 0) {
+    float length2 = sqrt(discriminant) / direction_sqr;
+    float middle = -dot(direction, offset) / direction_sqr;
+    vec2 result = vec2(middle - length2, 2 * length2);
+    if (result.x < 0) {
+      result.y = max(0, result.y + result.x);
+      result.x = 0;
+    };
+    return result;
+  } else {
+    return vec2(0, 0);
+  }
+}
+
+vec3 scale(vec3 v) {
+  return vec3(v.x, v.y, v.z * 6378000 / 6357000);
+}
+
+float density(vec3 point) {
+  vec3 centre = vec3(0, 0, 0);
+  float height = distance(scale(point), centre) - 6378000;
+  float height01 = height / 80000;
+  return texture(density_texture, height01).r;
+}
+
+float optical_depth(vec3 origin, vec3 direction)
+{
+  vec3 centre = vec3(0, 0, 0);
+  float dist = distance(scale(origin), centre);
+  float height = dist - 6378000;
+  float height01 = height / 80000;
+  vec3 normal = scale(origin) / dist;
+  float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
+  float cos_angle01 = 0.5 + 0.5 * cos_angle;
+  return texture(depth_texture, vec2(height01, cos_angle01)).r;
+}
+
+float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
+{
+  vec3 point = origin + direction * ray_length;
+  vec3 centre = vec3(0, 0, 0);
+  if (dot(scale(direction), scale(origin) - centre) > 0) {
+    return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
+  } else {
+    return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
+  }
+}
+
+vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
+{
+  float rayleigh_scatter_strength = 0.00009;
+  float mie_scatter_strength = 0.0000002;
+  float g = 0.9;
+  int num_points = 10;
+  float step_size = ray_length / num_points;
+  vec3 point = origin + 0.5 * step_size * direction;
+  vec3 scatter = vec3(0, 0, 0);
+  vec3 wavelength = vec3(700, 530, 440);
+  vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
+  for (int i=0; i<num_points; i++) {
+    float sunray_depth = optical_depth(point, light);
+    float view_depth = optical_depth_ltd(point, -direction, step_size * i);
+    float cos_theta = dot(direction, light);
+    float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
+    vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
+    float mie_transmittance = exp(-(sunray_depth + view_depth) * mie_scatter_strength) * phase;
+    float point_density = density(point);
+    scatter += point_density * rayleigh_transmittance * rayleigh_scatter_coeffs * step_size;
+    scatter += point_density * mie_transmittance * mie_scatter_strength * step_size;
+    point += direction * step_size;
+  };
+  return scatter;
+}
+
+void main()
+{
+  vec3 direction = normalize(pos);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(orig), scale(direction));
+  vec2 planet = ray_sphere(vec3(0, 0, 0), 6378000, scale(orig), scale(direction));
+  float rayleigh_scatter_strength = 0.00009;
+  vec3 bg;
+  if (planet.x > 0) {
+    vec3 wavelength = vec3(700, 530, 440);
+    vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
+    vec3 point = orig + planet.x * direction;
+    float view_depth = optical_depth(point, light);
+    vec3 rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
+    bg = max(0.5 * dot(point / 6378000, light), 0.0) * rayleigh_transmittance;
+    atmosphere.y = planet.x - atmosphere.x;
+  } else {
+    if (dot(light, direction) > 0) {
+      float b = pow(dot(light, direction), 8000);
+      bg = vec3(b, b, b);
+    } else {
+      bg = vec3(0, 0, 0);
+    }
+  };
+  if (atmosphere.y > 0) {
+    vec3 point = orig + direction * atmosphere.x;
+    vec3 scatter = calculate_light(point, direction, atmosphere.y);
+    fragColor = scatter + (1 - scatter) * bg;
+  } else {
+    fragColor = bg;
+  }
+}")
+
 (Display/setTitle "scratch")
 ; (def desktop (Display/getDesktopDisplayMode))
 ; (Display/setDisplayModeAndFullscreen desktop)
@@ -258,6 +389,14 @@ void main()
                 :tess-evaluation tes-source-planet
                 :geometry geo-source-planet
                 :fragment fragment-source-planet))
+
+(def program-atmosphere
+  (make-program :vertex vertex-source-atmosphere
+                :fragment fragment-source-atmosphere))
+
+(def indices [0 1 3 2])
+(def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
+(def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
 
 (def density-texture (make-float-texture-1d (air-density-table 1.0 256 80000 8429)))
 (def depth-texture (make-float-texture-2d (optical-depth-table 256 256 1.0 6378000 80000 8429 20)))
@@ -315,7 +454,7 @@ void main()
   (destroy-texture (:water-tex tile))
   (destroy-vertex-array-object (:vao tile)))
 
-(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 1000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
+(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
 (use-program program-planet)
 (uniform-sampler program-planet :tex             0)
@@ -325,6 +464,11 @@ void main()
 (uniform-sampler program-planet :density_texture 4)
 (uniform-sampler program-planet :depth_texture   5)
 (uniform-matrix4 program-planet :projection projection)
+
+(use-program program-atmosphere)
+(uniform-sampler program-atmosphere :density_texture 0)
+(uniform-sampler program-atmosphere :depth_texture 1)
+(uniform-matrix4 program-atmosphere :projection projection)
 
 (defn render-tile
   [tile]
@@ -385,16 +529,27 @@ void main()
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt))
     (onscreen-render  (.getWidth desktop) (.getHeight desktop)
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (->RGB 0.0 0.5 0.0))
+      (use-program program-planet)
       (uniform-matrix4 program-planet :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
       (uniform-matrix4 program-planet :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
       (uniform-vector3 program-planet :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
       (render-tree @tree)
+      (use-program program-atmosphere)
+      (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
+      (uniform-vector3 program-atmosphere :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
+      (use-textures density-texture depth-texture)
+      (render-quads vao)
       (GL11/glFlush))
     (Display/update)))))
 
 ; (prof/serve-files 8080)
 
+(destroy-texture depth-texture)
+(destroy-texture density-texture)
+(destroy-vertex-array-object vao)
+
+(destroy-program program-atmosphere)
 (destroy-program program-planet)
 
 (Keyboard/destroy)
@@ -554,11 +709,11 @@ void main()
 (Display/create (PixelFormat. 24, 0, 24, 0, 1))
 (Keyboard/create)
 
-(def program (make-program :vertex vertex-source-atmosphere :fragment fragment-source-atmosphere))
+(def program-atmosphere (make-program :vertex vertex-source-atmosphere :fragment fragment-source-atmosphere))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
-(def vao (make-vertex-array-object program indices vertices [:point 3]))
+(def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
@@ -600,15 +755,15 @@ void main()
     (swap! mie-scatter-strength + (* m dt))
     (swap! light + (* l dt)))
   (onscreen-render (.getWidth desktop) (.getHeight desktop)
-    (use-program program)
-    (uniform-matrix4 program :projection projection)
-    (uniform-sampler program :density_texture 0)
-    (uniform-sampler program :depth_texture 1)
-    (uniform-matrix4 program :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
-    (uniform-float program :rayleigh_scatter_strength @rayleigh-scatter-strength)
-    (uniform-float program :mie_scatter_strength @mie-scatter-strength)
-    (uniform-float program :g @g)
-    (uniform-vector3 program :light (matrix [0 (Math/cos @light) (Math/sin @light)]))
+    (use-program program-atmosphere)
+    (uniform-matrix4 program-atmosphere :projection projection)
+    (uniform-sampler program-atmosphere :density_texture 0)
+    (uniform-sampler program-atmosphere :depth_texture 1)
+    (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
+    (uniform-float program-atmosphere :rayleigh_scatter_strength @rayleigh-scatter-strength)
+    (uniform-float program-atmosphere :mie_scatter_strength @mie-scatter-strength)
+    (uniform-float program-atmosphere :g @g)
+    (uniform-vector3 program-atmosphere :light (matrix [0 (Math/cos @light) (Math/sin @light)]))
     (use-textures density-texture depth-texture)
     (clear (->RGB 0 0 0))
     (render-quads vao)
@@ -617,7 +772,7 @@ void main()
 (destroy-texture depth-texture)
 (destroy-texture density-texture)
 (destroy-vertex-array-object vao)
-(destroy-program program)
+(destroy-program program-atmosphere)
 
 (Keyboard/destroy)
 (Display/destroy)
