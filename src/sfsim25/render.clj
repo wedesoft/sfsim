@@ -126,35 +126,35 @@
   (GL30/glBindVertexArray 0)
   (GL30/glDeleteVertexArrays vertex-array-object))
 
-(defn uniform-float
-  "Set uniform float variable in current shader program"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^double value]
-  (GL20/glUniform1f (GL20/glGetUniformLocation (:program program) (name k)) value))
-
-(defn uniform-int
-  "Set uniform integer variable in current shader program"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
-
-(defn uniform-vector3
-  "Set uniform 3D vector in current shader program"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Vector value]
-  (GL20/glUniform3f (GL20/glGetUniformLocation (:program program) (name k)) (mget value 0) (mget value 1) (mget value 2)))
-
-(defn uniform-matrix4
-  "Set uniform 4x4 matrix in current shader program"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]
-  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) (name k)) true (make-float-buffer (float-array (eseq value)))))
-
-(defn uniform-sampler
-  "Set index of uniform sampler in current shader program"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
-
 (defn use-program
   "Use specified shader program"
   [program]
   (GL20/glUseProgram (:program program)))
+
+(defn uniform-float
+  "Set uniform float variable in current shader program (set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^double value]
+  (GL20/glUniform1f (GL20/glGetUniformLocation (:program program) (name k)) value))
+
+(defn uniform-int
+  "Set uniform integer variable in current shader program (set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
+
+(defn uniform-vector3
+  "Set uniform 3D vector in current shader program (set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Vector value]
+  (GL20/glUniform3f (GL20/glGetUniformLocation (:program program) (name k)) (mget value 0) (mget value 1) (mget value 2)))
+
+(defn uniform-matrix4
+  "Set uniform 4x4 matrix in current shader program (set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]
+  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) (name k)) true (make-float-buffer (float-array (eseq value)))))
+
+(defn uniform-sampler
+  "Set index of uniform sampler in current shader program (set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
