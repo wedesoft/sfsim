@@ -129,6 +129,9 @@ out lowp vec3 fragColor;
 uniform sampler2D tex;
 uniform sampler2D normals;
 uniform sampler2D water;
+uniform float rayleigh_scatter_strength;
+uniform float mie_scatter_strength;
+uniform float g;
 uniform vec3 light;
 uniform mat4 transform;
 uniform sampler1D density_texture;
@@ -173,9 +176,6 @@ float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 {
-  float rayleigh_scatter_strength = 0.00009;
-  float mie_scatter_strength = 0.0000002;
-  float g = 0.9;
   int num_points = 10;
   float step_size = ray_length / num_points;
   vec3 point = origin + 0.5 * step_size * direction;
@@ -199,7 +199,6 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 
 void main()
 {
-  float rayleigh_scatter_strength = 0.00009;
   vec3 normal = texture(normals, UV).xyz;
   float specular;
   float diffuse;
@@ -242,31 +241,19 @@ void main()
   orig = (itransform * vec4(0, 0, 0, 1)).xyz;
 }")
 
-(def fragment-source-atmosphere "#version 130
+(def fragment-source-atmosphere
+  (template/eval "#version 130
 out lowp vec3 fragColor;
 in highp vec3 pos;
 in highp vec3 orig;
 uniform vec3 light;
+uniform float rayleigh_scatter_strength;
+uniform float mie_scatter_strength;
+uniform float g;
 uniform sampler1D density_texture;
 uniform sampler2D depth_texture;
 
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
-  vec3 offset = origin - centre;
-  float direction_sqr = dot(direction, direction);
-  float discriminant = pow(dot(direction, offset), 2) - direction_sqr * (dot(offset, offset) - radius * radius);
-  if (discriminant > 0) {
-    float length2 = sqrt(discriminant) / direction_sqr;
-    float middle = -dot(direction, offset) / direction_sqr;
-    vec2 result = vec2(middle - length2, 2 * length2);
-    if (result.x < 0) {
-      result.y = max(0, result.y + result.x);
-      result.x = 0;
-    };
-    return result;
-  } else {
-    return vec2(0, 0);
-  }
-}
+<%= shaders/ray-sphere %>
 
 vec3 scale(vec3 v) {
   return vec3(v.x, v.y, v.z * 6378000 / 6357000);
@@ -304,9 +291,6 @@ float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
 {
-  float rayleigh_scatter_strength = 0.00009;
-  float mie_scatter_strength = 0.0000002;
-  float g = 0.9;
   int num_points = 10;
   float step_size = ray_length / num_points;
   vec3 point = origin + 0.5 * step_size * direction;
@@ -333,7 +317,6 @@ void main()
   vec3 direction = normalize(pos);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(orig), scale(direction));
   vec2 planet = ray_sphere(vec3(0, 0, 0), 6378000, scale(orig), scale(direction));
-  float rayleigh_scatter_strength = 0.00009;
   vec3 bg;
   if (planet.x > 0) {
     vec3 wavelength = vec3(700, 530, 440);
@@ -358,7 +341,7 @@ void main()
   } else {
     fragColor = bg;
   }
-}")
+}"))
 
 (Display/setTitle "scratch")
 ; (def desktop (Display/getDesktopDisplayMode))
@@ -477,8 +460,6 @@ void main()
 
 (>!! tree-state @tree)
 
-(def keystates (atom {}))
-
 (defn unload-tiles-from-opengl
   [tiles]
   (doseq [tile tiles] (unload-tile-from-opengl tile)))
@@ -488,6 +469,10 @@ void main()
   (quadtree-update tree paths load-tile-into-opengl))
 
 (def light (atom -1.4))
+(def keystates (atom {}))
+(def rayleigh-scatter-strength (atom 0.00009))
+(def mie-scatter-strength (atom 0.0000002))
+(def g (atom 0.9))
 
 (
  ;prof/profile
@@ -508,23 +493,36 @@ void main()
         rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
         rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
         l  (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))
-        v  (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))]
+        v  (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))
+        d  (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
+        s  (if (@keystates Keyboard/KEY_W) 1e-7 (if (@keystates Keyboard/KEY_S) -1e-7 0))
+        m  (if (@keystates Keyboard/KEY_E) 1e-8 (if (@keystates Keyboard/KEY_D) -1e-8 0))]
     (swap! t0 + dt)
     (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
     (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
     (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
     (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
     (swap! light + (* l dt))
+    (swap! g + (* d dt))
+    (swap! rayleigh-scatter-strength + (* s dt))
+    (swap! mie-scatter-strength + (* m dt))
     (onscreen-render  (.getWidth desktop) (.getHeight desktop)
+      (println "rayleigh:" @rayleigh-scatter-strength "mie:" @mie-scatter-strength "g:" @g)
       (clear (->RGB 0.0 0.5 0.0))
       (use-program program-planet)
       (uniform-matrix4 program-planet :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
       (uniform-matrix4 program-planet :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
       (uniform-vector3 program-planet :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
+      (uniform-float program-planet :rayleigh_scatter_strength @rayleigh-scatter-strength)
+      (uniform-float program-planet :mie_scatter_strength @mie-scatter-strength)
+      (uniform-float program-planet :g @g)
       (render-tree @tree)
       (use-program program-atmosphere)
       (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
       (uniform-vector3 program-atmosphere :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
+      (uniform-float program-atmosphere :rayleigh_scatter_strength @rayleigh-scatter-strength)
+      (uniform-float program-atmosphere :mie_scatter_strength @mie-scatter-strength)
+      (uniform-float program-atmosphere :g @g)
       (use-textures density-texture depth-texture)
       (render-quads vao)
       (GL11/glFlush))
