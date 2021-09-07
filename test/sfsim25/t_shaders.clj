@@ -35,9 +35,9 @@ out lowp vec3 fragColor;
 <%= ray-sphere %>
 void main()
 {
-  float thickness = 0.5 * ray_sphere(vec3(0, 0, 0), 1, vec3(pos.x, pos.y, -1), vec3(0, 0, 1)).y;
-  fragColor = vec3(thickness, thickness, thickness);
-}" {:ray-sphere ray-sphere}))
+  vec2 solution = 0.5 * ray_sphere(vec3(0, 0, 0), 1, vec3(pos.x, pos.y, -1), vec3(0, 0, 1));
+  fragColor = vec3(solution.x, solution.y, 0);
+}"))
 
 (fact "Intersection with sphere"
   (offscreen-render 64 64
