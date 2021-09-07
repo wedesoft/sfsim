@@ -1,8 +1,10 @@
 (require '[clojure.core.async :refer (go-loop chan <! >! <!! >!! poll! close!) :as a]
          '[clojure.core.matrix :refer :all]
+         '[comb.template :as template]
          '[clj-async-profiler.core :as prof]
          '[sfsim25.util :refer :all]
          '[sfsim25.render :refer :all]
+         '[sfsim25.shaders :as shaders]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
          '[sfsim25.rgb :refer (->RGB)]
          '[sfsim25.atmosphere :refer :all]
@@ -119,7 +121,8 @@ void main(void)
 ; TODO: compute itransform * vec4(0, 0, 0, 1) only once
 ; TODO: compute Mie scattering of reflected light?
 
-(def fragment-source-planet "#version 410 core
+(def fragment-source-planet
+  (template/eval "#version 410 core
 in mediump vec2 UV;
 in highp vec3 pos;
 out lowp vec3 fragColor;
@@ -136,23 +139,7 @@ vec3 scale(vec3 v) {
   return vec3(v.x, v.y, v.z * 6378000 / 6357000);
 }
 
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
-  vec3 offset = origin - centre;
-  float direction_sqr = dot(direction, direction);
-  float discriminant = pow(dot(direction, offset), 2) - direction_sqr * (dot(offset, offset) - radius * radius);
-  if (discriminant > 0) {
-    float length2 = sqrt(discriminant) / direction_sqr;
-    float middle = -dot(direction, offset) / direction_sqr;
-    vec2 result = vec2(middle - length2, 2 * length2);
-    if (result.x < 0) {
-      result.y = max(0, result.y + result.x);
-      result.x = 0;
-    };
-    return result;
-  } else {
-    return vec2(0, 0);
-  }
-}
+<%= shaders/ray-sphere %>
 
 float density(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
@@ -240,7 +227,7 @@ void main()
   float dist = distance(pos, point);
   vec3 scatter = calculate_light(point, direction, dist);
   fragColor = scatter + (1 - scatter) * background_color;
-}")
+}"))
 
 (def vertex-source-atmosphere "#version 130
 in highp vec3 point;
