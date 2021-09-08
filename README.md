@@ -20,3 +20,4 @@ lein midje
 * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
 * [Normal vectors of ellipsoid](https://math.stackexchange.com/questions/2931909/normal-of-a-point-on-the-surface-of-an-ellipsoid/2931931)
 * [Clojure performance flame graphs](https://github.com/clojure-goes-fast/clj-async-profiler)
+* [How to calculate your horizon distance](https://darkskydiary.wordpress.com/2015/05/25/how-to-calculate-your-horizon-distance/)

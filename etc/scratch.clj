@@ -507,7 +507,7 @@ void main()
       (clear (->RGB 0.0 0.5 0.0))
       (use-program program-planet)
       (uniform-matrix4 program-planet :projection
-                       (projection-matrix (.getWidth desktop) (.getHeight desktop) (* 0.001 di) di (/ (* 60 Math/PI) 180)))
+                       (projection-matrix (.getWidth desktop) (.getHeight desktop) (* 1e-5 di) di (/ (* 60 Math/PI) 180)))
       (uniform-matrix4 program-planet :transform (inverse (transformation-matrix (quaternion->matrix @orientation) @position)))
       (uniform-matrix4 program-planet :itransform (transformation-matrix (quaternion->matrix @orientation) @position))
       (uniform-vector3 program-planet :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
