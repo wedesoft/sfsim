@@ -204,21 +204,16 @@ void main()
   float diffuse;
   vec3 camera = (itransform * vec4(0, 0, 0, 1)).xyz;
   vec3 direction = normalize(pos - camera);
-  vec3 rayleigh_transmittance;
   vec3 wavelength = vec3(700, 530, 440);
   if (dot(light, normal) > 0) {
-    vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
-    float view_depth = optical_depth(pos, light);
-    rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
     specular = pow(max(dot(reflect(light, normal), direction), 0), 50);
     diffuse = dot(light, normal);
   } else {
     specular = 0.0;
     diffuse = 0.0;
-    rayleigh_transmittance = vec3(0, 0, 0);
   };
   vec3 land_color = texture(tex, UV).rgb * diffuse;
-  vec3 water_color = vec3(0.09, 0.11, 0.34) * diffuse * rayleigh_transmittance + 0.5 * specular;
+  vec3 water_color = vec3(0.09, 0.11, 0.34) * diffuse + 0.5 * specular;
   float wet = texture(water, UV).r;
   vec3 background_color = mix(land_color, water_color, wet);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(camera), scale(direction));
