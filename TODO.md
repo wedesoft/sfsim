@@ -1,5 +1,6 @@
 # TODO
 
+* add type hints to avoid reflection in render module
 * more data-centric API for rendering
 * speed up rendering (distance based culling in quad tree?)
 * night-time textures

@@ -14,6 +14,7 @@
 (import '[org.lwjgl.opengl Display DisplayMode GL11]
         '[org.lwjgl.input Keyboard])
 
+(set! *warn-on-reflection* true)
 
 (def vertex-source-planet "#version 410 core
 in highp vec3 point;

@@ -38,7 +38,7 @@
   (GL11/glClearColor (:r color) (:g color) (:b color) 1.0)
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
 
-(defn make-shader [context source shader-type]
+(defn make-shader [^String context ^String source ^long shader-type]
   "Compile a GLSL shader"
   (let [shader (GL20/glCreateShader shader-type)]
     (GL20/glShaderSource shader source)
@@ -129,32 +129,32 @@
 (defn use-program
   "Use specified shader program"
   [program]
-  (GL20/glUseProgram (:program program)))
+  (GL20/glUseProgram ^long (:program program)))
 
 (defn uniform-float
   "Set uniform float variable in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^double value]
-  (GL20/glUniform1f (GL20/glGetUniformLocation (:program program) (name k)) value))
+  (GL20/glUniform1f (GL20/glGetUniformLocation ^long (:program program) (name k)) value))
 
 (defn uniform-int
   "Set uniform integer variable in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^long (:program program) (name k)) value))
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Vector value]
-  (GL20/glUniform3f (GL20/glGetUniformLocation (:program program) (name k)) (mget value 0) (mget value 1) (mget value 2)))
+  (GL20/glUniform3f (GL20/glGetUniformLocation ^long (:program program) (name k)) (mget value 0) (mget value 1) (mget value 2)))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]
-  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation (:program program) (name k)) true (make-float-buffer (float-array (eseq value)))))
+  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^long (:program program) (name k)) true (make-float-buffer (float-array (eseq value)))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation (:program program) (name k)) value))
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^long (:program program) (name k)) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
@@ -162,20 +162,20 @@
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
   (GL11/glCullFace GL11/GL_BACK)
-  (GL30/glBindVertexArray (:vertex-array-object vertex-array-object)))
+  (GL30/glBindVertexArray ^long (:vertex-array-object vertex-array-object)))
 
 (defn render-quads
   "Render one or more quads"
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_QUADS (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL11/GL_QUADS ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-patches
   "Render one or more tessellated quads"
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL40/GL_PATCHES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
