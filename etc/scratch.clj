@@ -1,7 +1,6 @@
 (require '[clojure.core.async :refer (go-loop chan <! >! <!! >!! poll! close!) :as a]
          '[clojure.core.matrix :refer :all]
          '[comb.template :as template]
-         '[clj-async-profiler.core :as prof]
          '[sfsim25.util :refer :all]
          '[sfsim25.render :refer :all]
          '[sfsim25.shaders :as shaders]
@@ -468,10 +467,7 @@ void main()
 (def mie-scatter-strength (atom 0.0000002))
 (def g (atom 0.9))
 
-(
- ;prof/profile
- do
- (do
+(do
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
   (when-let [data (poll! changes)]
@@ -524,11 +520,9 @@ void main()
       (use-textures density-texture depth-texture)
       (render-quads vao)
       (GL11/glFlush))
-    (Display/update)))))
+    (Display/update))))
 
 (println "rayleigh:" @rayleigh-scatter-strength "mie:" @mie-scatter-strength "g:" @g)
-
-; (prof/serve-files 8080)
 
 (destroy-texture depth-texture)
 (destroy-texture density-texture)

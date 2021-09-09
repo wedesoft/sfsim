@@ -9,8 +9,7 @@
                  [com.climate/claypoole                    "1.1.4"]
                  [net.mikera/core.matrix                  "0.62.0"]
                  [net.mikera/vectorz-clj                  "0.48.0"]
-                 [comb                                     "0.1.1"]
-                 [com.clojure-goes-fast/clj-async-profiler "0.5.1"]]
+                 [comb                                     "0.1.1"]]
   :main ^:skip-aot sfsim25.core
   :profiles {:run-scale-image     {:main sfsim25.scale-image}
              :run-map-tiles       {:main sfsim25.map-tiles}
@@ -29,4 +28,4 @@
   :plugins [[lein-midje "3.2.1"]
             [lein-codox "0.10.7"]]
   :target-path "target/%s"
-  :jvm-opts ["-Xmx2g" "-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"])
+  :jvm-opts ["-Xmx2g"])
