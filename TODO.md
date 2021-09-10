@@ -1,12 +1,10 @@
 # TODO
 
-* add type hints to avoid reflection in render module
-* more data-centric API for rendering
-* speed up rendering (distance based culling in quad tree?)
-* night-time textures
 * compute shadow in atmosphere
 * soft transition into planet's shadow
+* night-time textures
 * volumetric clouds
+* use data-centric APIs
 * redesign floating point math of height maps
 * improve performance of quaternions (see clojure.core.matrix implementation)
 * Get scale-image to work on large images
