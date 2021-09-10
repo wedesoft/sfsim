@@ -41,7 +41,7 @@
                 atmosphere/air-density-at-point
                 (fn ^double [^Vector point ^double base ^double radius ^double scale]
                   (fact [base radius scale] => [1.0 1000.0 42.0])
-                  (fact (.contains [(matrix [5 1010 0]) (matrix [15 1010 0])] point) => true)
+                  (fact (.contains [(matrix [5.0 1010.0 0.0]) (matrix [15.0 1010.0 0.0])] point) => true)
                   0.25)]
     (optical-depth (matrix [0 1010 0]) (matrix [1 0 0]) 1.0 1000 100 42 2))  => (+ (* 0.25 10) (* 0.25 10)))
 
