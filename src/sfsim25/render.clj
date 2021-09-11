@@ -69,14 +69,12 @@
       (GL20/glLinkProgram program)
       (if (zero? (GL20/glGetShaderi program GL20/GL_LINK_STATUS))
         (throw (Exception. (GL20/glGetShaderInfoLog program 1024))))
-      {:program program :shaders shaders})))
+      (doseq [shader shaders] (destroy-shader shader))
+      program)))
 
 (defn destroy-program
   "Delete a program and associated shaders"
-  [{:keys [program shaders]}]
-  (doseq [shader shaders]
-    (GL20/glDetachShader program shader)
-    (GL20/glDeleteShader shader))
+  [program]
   (GL20/glDeleteProgram program))
 
 (defmacro def-make-buffer [method create-buffer]
@@ -124,7 +122,7 @@
             stride          (apply + sizes)
             offsets         (reductions + (cons 0 (butlast sizes)))]
         (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
-          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^int (:program program) (name attribute)) ^int size
+          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^int program (name attribute)) ^int size
                                       GL11/GL_FLOAT false ^int (* stride Float/BYTES) ^int (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
         {:vertex-array-object vertex-array-object
@@ -148,32 +146,32 @@
 (defn use-program
   "Use specified shader program"
   [program]
-  (GL20/glUseProgram ^int (:program program)))
+  (GL20/glUseProgram ^int program))
 
 (defn uniform-float
   "Set uniform float variable in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^double value]
-  (GL20/glUniform1f (GL20/glGetUniformLocation ^int (:program program) (name k)) value))
+  (GL20/glUniform1f (GL20/glGetUniformLocation ^int program (name k)) value))
 
 (defn uniform-int
   "Set uniform integer variable in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^int (:program program) (name k)) value))
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program (name k)) value))
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Vector value]
-  (GL20/glUniform3f (GL20/glGetUniformLocation ^int (:program program) (name k)) (mget value 0) (mget value 1) (mget value 2)))
+  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program (name k)) (mget value 0) (mget value 1) (mget value 2)))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]
-  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int (:program program) (name k)) true (make-float-buffer (float-array (eseq value)))))
+  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int program (name k)) true (make-float-buffer (float-array (eseq value)))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^int (:program program) (name k)) value))
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program (name k)) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
