@@ -1,5 +1,6 @@
 # TODO
 
+* use interface blocks in shaders
 * compute shadow in atmosphere
 * soft transition into planet's shadow
 * night-time textures
@@ -16,8 +17,7 @@
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
-* 3DS object hierarchy (use lib3ds?)
-* 3DS load vertex array objects
+* glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp
 * determine contact points
 * Euler integration
 * multiple contacts
