@@ -1,5 +1,6 @@
 # TODO
 
+* use glDepthRange and glClipControl?
 * use interface blocks in shaders
 * compute shadow in atmosphere
 * soft transition into planet's shadow
