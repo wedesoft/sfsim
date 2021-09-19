@@ -7,6 +7,14 @@
            [mikera.vectorz Vector]
            [mikera.matrixx Matrix]))
 
+(defn setup-rendering
+  "Common code for setting up rendering"
+  [width height]
+  (GL11/glViewport 0 0 width height)
+  (GL11/glEnable GL11/GL_DEPTH_TEST)
+  (GL11/glEnable GL11/GL_CULL_FACE)
+  (GL11/glCullFace GL11/GL_BACK))
+
 (defmacro offscreen-render
   "Macro to use a pbuffer for offscreen rendering"
   [width height & body]
@@ -14,7 +22,7 @@
          pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 24 0 0) nil nil)
          data#    (int-array (* ~width ~height))]
      (.makeCurrent pbuffer#)
-     (GL11/glViewport 0 0 ~width ~height)
+     (setup-rendering ~width ~height)
      (try
        ~@body
        (GL11/glReadPixels 0 0 ~width ~height GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixels#)
@@ -29,7 +37,7 @@
   [width height & body]
   `(do
      (Display/makeCurrent)
-     (GL11/glViewport 0 0 ~width ~height)
+     (setup-rendering ~width ~height)
      ~@body
      (Display/update)))
 
@@ -67,8 +75,8 @@
           shaders (remove nil? [vertex-shader tess-control-shader tess-evaluation-shader geometry-shader fragment-shader])]
       (doseq [shader shaders] (GL20/glAttachShader program shader))
       (GL20/glLinkProgram program)
-      (if (zero? (GL20/glGetShaderi program GL20/GL_LINK_STATUS))
-        (throw (Exception. (GL20/glGetShaderInfoLog program 1024))))
+      (if (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
+        (throw (Exception. (GL20/glGetProgramInfoLog program 1024))))
       (doseq [shader shaders] (destroy-shader shader))
       program)))
 
@@ -176,9 +184,6 @@
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
   [vertex-array-object]
-  (GL11/glEnable GL11/GL_DEPTH_TEST)
-  (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace GL11/GL_BACK)
   (GL30/glBindVertexArray ^int (:vertex-array-object vertex-array-object)))
 
 (defn render-quads
