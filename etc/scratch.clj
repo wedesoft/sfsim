@@ -14,7 +14,7 @@
 (import '[org.lwjgl.opengl Display DisplayMode GL11]
         '[org.lwjgl.input Keyboard])
 
-(set! *warn-on-reflection* true)
+; (set! *warn-on-reflection* true)
 
 (def vertex-source-planet "#version 410 core
 in highp vec3 point;
@@ -468,6 +468,7 @@ void main()
 (def mie-scatter-strength (atom 0.0000002))
 (def g (atom 0.9))
 
+
 (do
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -502,6 +503,8 @@ void main()
     (swap! mie-scatter-strength + (* m dt))
     (onscreen-render  (.getWidth desktop) (.getHeight desktop)
       (clear (->RGB 0.0 0.5 0.0))
+      (GL11/glDisable GL11/GL_CULL_FACE); TODO: enable this again
+      (GL11/glDisable GL11/GL_DEPTH_TEST); TODO: enable this again
       (use-program program-planet)
       (uniform-matrix4 program-planet :projection
                        (projection-matrix (.getWidth desktop) (.getHeight desktop) (* 1e-5 di) di (/ (* 60 Math/PI) 180)))

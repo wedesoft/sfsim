@@ -59,14 +59,14 @@
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"
   [width height near far field-of-view]
-  (let [dx (/ -1.0 (Math/tan (/ field-of-view 2.0)))
+  (let [dx (/ 1.0 (Math/tan (/ field-of-view 2.0)))
         dy (-> dx (* width) (/ height))
-        a  (/ (* far near) (- near far))
-        b  (/ near (- near far))]
+        a  (/ (* far near) (- far near))
+        b  (/ near (- far near))]
     (matrix [[dx  0  0  0]
              [ 0 dy  0  0]
              [ 0  0  b  a]
-             [ 0  0  1  0]])))
+             [ 0  0 -1  0]])))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
