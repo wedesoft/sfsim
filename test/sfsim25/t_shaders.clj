@@ -42,7 +42,7 @@ void main()
 (fact "Intersection with sphere"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-sphere-test)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))

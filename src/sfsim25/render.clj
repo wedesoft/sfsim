@@ -2,7 +2,7 @@
   "Functions for doing OpenGL rendering"
   (:require [clojure.core.matrix :refer (mget eseq)]
             [sfsim25.util :refer (def-context-macro def-context-create-macro)])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40]
+  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl BufferUtils]
            [mikera.vectorz Vector]
            [mikera.matrixx Matrix]))
@@ -13,7 +13,9 @@
   (GL11/glViewport 0 0 width height)
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace GL11/GL_BACK))
+  (GL11/glCullFace GL11/GL_BACK)
+  (GL11/glDepthFunc GL11/GL_GREATER); Reversed-z rendering requires greater to be comparison function
+  (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
 (defmacro offscreen-render
   "Macro to use a pbuffer for offscreen rendering"
@@ -45,6 +47,7 @@
   "Set clear color and clear color buffer as well as depth buffer"
   [color]
   (GL11/glClearColor (:r color) (:g color) (:b color) 1.0)
+  (GL11/glClearDepth 0.0); Reversed-z rendering requires initial depth to be zero.
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
 
 (defn make-shader

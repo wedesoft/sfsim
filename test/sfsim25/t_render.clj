@@ -39,7 +39,7 @@ void main()
 (fact "Render a quad"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
-          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -69,7 +69,7 @@ void main()
 (fact "Shader with two vertex attributes"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex vertex-color :fragment fragment-color)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -81,8 +81,8 @@ void main()
 (fact "Render two quads with depth testing"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2, 4 5 7 6]
-          vertices [-1.0 -1.0 -0.1 1.0 0.0, 0.5 -1.0 -0.1 1.0 0.0, -1.0 0.5 -0.1 1.0 0.0, 0.5 0.5 -0.1 1.0 0.0,
-                    -0.5 -0.5  0.1 0.0 1.0, 1.0 -0.5  0.1 0.0 1.0, -0.5 1.0  0.1 0.0 1.0, 1.0 1.0  0.1 0.0 1.0]
+          vertices [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0,
+                    -0.5 -0.5 0.1 0.0 1.0, 1.0 -0.5 0.1 0.0 1.0, -0.5 1.0 0.1 0.0 1.0, 1.0 1.0 0.1 0.0 1.0]
           program  (make-program :vertex vertex-color :fragment fragment-color)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -102,7 +102,7 @@ void main()
   (offscreen-render 160 120
     (let [indices   [0 1 3 2]
           vertices1 [-1.0 -1.0 0.1, 0.5 -1.0 0.1, -1.0 0.5 0.1, 0.5 0.5 0.1]
-          vertices2 [-0.5 -0.5 0.0, 1.0 -0.5 0.0, -0.5 1.0 0.0, 1.0 1.0 0.0]
+          vertices2 [-0.5 -0.5 0.2, 1.0 -0.5 0.2, -0.5 1.0 0.2, 1.0 1.0 0.2]
           program1  (make-program :vertex vertex-passthrough :fragment fragment-red)
           program2  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
@@ -120,7 +120,7 @@ void main()
 (fact "Render lines only"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
-          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -142,7 +142,7 @@ void main()
 (fact "Set uniform floating point numbers"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
-          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-floats)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -167,7 +167,7 @@ void main()
 (fact "Set uniform integer numbers"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
-          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-ints)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -190,7 +190,7 @@ void main()
 (fact "Set uniform 3D vector"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
-          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-vector3)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -211,7 +211,7 @@ void main()
 (fact "Set uniform 4x4 matrix"
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
-          vertices [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5 0.5 0.0, 0.5 0.5 0.0]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-transform :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (->RGB 0.0 0.0 0.0))
@@ -244,7 +244,7 @@ void main()
 (fact "Render 1D floating-point texture"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex vertex-texture :fragment fragment-texture-1d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-float-texture-1d (float-array [0.0 1.0]))]
@@ -269,7 +269,7 @@ void main()
 (fact "Render 2D RGB texture"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-rgb-texture (slurp-image "test/sfsim25/pattern.png"))]
@@ -285,7 +285,7 @@ void main()
 (fact "Render 2D floating-point texture"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-float-texture-2d {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
@@ -301,7 +301,7 @@ void main()
 (fact "Render 2D unsigned-byte texture"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-ubyte-texture-2d {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
@@ -317,7 +317,7 @@ void main()
 (fact "Render 2D vector texture"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0 0.0 0.0, 1.0 -1.0 0.0 1.0 0.0, -1.0 1.0 0.0 0.0 1.0, 1.0 1.0 0.0 1.0 1.0]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-vector-texture-2d {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
@@ -371,7 +371,7 @@ void main(void)
 (fact "Subdivide quad using a tessellation shader"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           program  (make-program :vertex vertex-passthrough :tess-control control-uniform :tess-evaluation evaluation-mix
                                  :geometry geometry-triangle :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
