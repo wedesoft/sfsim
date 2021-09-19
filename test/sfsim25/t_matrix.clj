@@ -36,7 +36,8 @@
 
 (fact "OpenGL projection matrix"
   (let [m (projection-matrix 640 480 5.0 1000.0 (* 0.5 pi))]
-    (project (mmul m (matrix [0    0    -5 1]))) => (roughly-vector (matrix [0 0 -1]))
-    (project (mmul m (matrix [0    0 -1000 1]))) => (roughly-vector (matrix [0 0  1]))
-    (project (mmul m (matrix [5    0    -5 1]))) => (roughly-vector (matrix [1 0 -1]))
-    (project (mmul m (matrix [0 3.75    -5 1]))) => (roughly-vector (matrix [0 1 -1]))))
+    (project (mmul m (matrix [   0    0    -5 1]))) => (roughly-vector (matrix [0 0 1]))
+    (project (mmul m (matrix [   0    0 -1000 1]))) => (roughly-vector (matrix [0 0 0]))
+    (project (mmul m (matrix [1000    0 -1000 1]))) => (roughly-vector (matrix [1 0 0]))
+    (project (mmul m (matrix [   5    0    -5 1]))) => (roughly-vector (matrix [1 0 1]))
+    (project (mmul m (matrix [   0 3.75    -5 1]))) => (roughly-vector (matrix [0 1 1]))))
