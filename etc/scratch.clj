@@ -503,8 +503,6 @@ void main()
     (swap! mie-scatter-strength + (* m dt))
     (onscreen-render  (.getWidth desktop) (.getHeight desktop)
       (clear (->RGB 0.0 0.5 0.0))
-      (GL11/glDisable GL11/GL_CULL_FACE); TODO: enable this again
-      (GL11/glDisable GL11/GL_DEPTH_TEST); TODO: enable this again
       (use-program program-planet)
       (uniform-matrix4 program-planet :projection
                        (projection-matrix (.getWidth desktop) (.getHeight desktop) (* 1e-5 di) di (/ (* 60 Math/PI) 180)))
