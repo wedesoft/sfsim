@@ -1,6 +1,6 @@
 # TODO
 
-* reversed-z rendering, use glDepthRange and glClipControl
+* move some setup code from setup-vertex-array-object to program initialisation?
 * use interface blocks in shaders
 * compute shadow in atmosphere
 * soft transition into planet's shadow

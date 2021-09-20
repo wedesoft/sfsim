@@ -10,12 +10,7 @@
 (defn setup-rendering
   "Common code for setting up rendering"
   [width height]
-  (GL11/glViewport 0 0 width height)
-  (GL11/glEnable GL11/GL_DEPTH_TEST)
-  (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace GL11/GL_BACK)
-  (GL11/glDepthFunc GL11/GL_GREATER); Reversed-z rendering requires greater to be comparison function
-  (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
+  (GL11/glViewport 0 0 width height))
 
 (defmacro offscreen-render
   "Macro to use a pbuffer for offscreen rendering"
@@ -187,6 +182,11 @@
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
   [vertex-array-object]
+  (GL11/glEnable GL11/GL_DEPTH_TEST)
+  (GL11/glEnable GL11/GL_CULL_FACE)
+  (GL11/glCullFace GL11/GL_BACK)
+  (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater to be comparison function
+  (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE)
   (GL30/glBindVertexArray ^int (:vertex-array-object vertex-array-object)))
 
 (defn render-quads
