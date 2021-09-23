@@ -14,7 +14,7 @@
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
   (GL11/glCullFace GL11/GL_BACK)
-  (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater to be comparison function
+  (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
 (defmacro offscreen-render

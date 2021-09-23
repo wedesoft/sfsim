@@ -17,7 +17,7 @@
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
-* glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp
+* glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
 * determine contact points
 * Euler integration
 * multiple contacts
