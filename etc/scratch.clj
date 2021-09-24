@@ -11,7 +11,7 @@
          '[sfsim25.quadtree :refer :all]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.opengl Display DisplayMode GL11]
+(import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
         '[org.lwjgl.input Keyboard])
 
 ; (set! *warn-on-reflection* true)
@@ -344,6 +344,7 @@ void main()
 (def desktop (DisplayMode. 1280 720))
 ; (def desktop (DisplayMode. 640 480))
 (Display/setDisplayMode desktop)
+; (Display/create (PixelFormat. 8 24 0 4))
 (Display/create)
 
 (Keyboard/create)
