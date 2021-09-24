@@ -1,6 +1,6 @@
 # Space Flight Simulator 2025
 
-This is a work in progress. Requires GLSL 4.10.
+This is a work in progress. Requires OpenGL 4.5.
 
 ```
 sudo aptitude install openjdk-11-jre liblwjgl-java libij-java leiningen
