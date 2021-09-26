@@ -1,5 +1,6 @@
 # TODO
 
+* check atmosphere computation (horizon is white when sun is up)
 * use interface blocks in shaders
 * compute shadow in atmosphere
 * soft transition into planet's shadow
