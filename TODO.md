@@ -5,7 +5,10 @@
 * compute shadow in atmosphere
 * soft transition into planet's shadow
 * night-time textures
-* volumetric clouds
+* volumetric clouds or billboard clouds
+* glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
+* normal maps
+* text rendering using bitmap fonts
 * use data-centric APIs
 * redesign floating point math of height maps
 * improve performance of quaternions (see clojure.core.matrix implementation)
@@ -18,7 +21,6 @@
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
-* glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
 * determine contact points
 * Euler integration
 * multiple contacts
