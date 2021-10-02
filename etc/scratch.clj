@@ -144,34 +144,57 @@ vec3 scale(vec3 v) {
 
 <%= shaders/ray-sphere %>
 
-float density(vec3 point) {
+float density2(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
   float height = distance(scale(point), centre) - 6378000;
   float height01 = height / 80000;
   return texture(density_texture, height01).r;
 }
 
-float optical_depth(vec3 origin, vec3 direction)
-{
+float density(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
-  float dist = distance(scale(origin), centre);
-  float height = dist - 6378000;
-  float height01 = height / 80000;
-  vec3 normal = scale(origin) / dist;
-  float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
-  float cos_angle01 = 0.5 + 0.5 * cos_angle;
-  return texture(depth_texture, vec2(height01, cos_angle01)).r;
+  float height = distance(scale(point), centre) - 6378000;
+  return exp(-height / 8429);
 }
 
-float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
+// float optical_depth2(vec3 origin, vec3 direction)
+// {
+//   vec3 centre = vec3(0, 0, 0);
+//   float dist = distance(scale(origin), centre);
+//   float height = dist - 6378000;
+//   float height01 = height / 80000;
+//   vec3 normal = scale(origin) / dist;
+//   float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
+//   float cos_angle01 = 0.5 + 0.5 * cos_angle;
+//   return texture(depth_texture, vec2(height01, cos_angle01)).r;
+// }
+
+float optical_depth(vec3 origin, vec3 direction, float ray_length)
 {
-  vec3 point = origin + direction * ray_length;
-  vec3 centre = vec3(0, 0, 0);
-  if (dot(scale(direction), scale(origin) - centre) > 0) {
-    return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
-  } else {
-    return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
-  }
+  int num_points = 10;
+  float step_size = ray_length / num_points;
+  vec3 point = origin + 0.5 * step_size * direction;
+  float depth = 0;
+  for (int i=0; i<num_points; i++) {
+    depth += density(point) * step_size;
+    point += direction * step_size;
+  };
+  return depth;
+}
+
+// float optical_depth_ltd2(vec3 origin, vec3 direction, float ray_length)
+// {
+//   vec3 point = origin + direction * ray_length;
+//   vec3 centre = vec3(0, 0, 0);
+//   if (dot(scale(direction), scale(origin) - centre) > 0) {
+//     return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
+//   } else {
+//     return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
+//   }
+// }
+
+float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length) {
+  return optical_depth(origin, direction, ray_length);
 }
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
@@ -183,7 +206,9 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 wavelength = vec3(700, 530, 440);
   vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
   for (int i=0; i<num_points; i++) {
-    float sunray_depth = optical_depth(point, light);
+    float sunray_length = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(point), scale(light)).y;
+    float sunray_depth = optical_depth(point, light, sunray_length);
+    // float sunray_depth = optical_depth(point, light);
     float view_depth = optical_depth_ltd(point, -direction, step_size * i);
     float cos_theta = dot(direction, light);
     float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
@@ -254,34 +279,57 @@ vec3 scale(vec3 v) {
   return vec3(v.x, v.y, v.z * 6378000 / 6357000);
 }
 
+// float density(vec3 point) {
+//   vec3 centre = vec3(0, 0, 0);
+//   float height = distance(scale(point), centre) - 6378000;
+//   float height01 = height / 80000;
+//   return texture(density_texture, height01).r;
+// }
+//
+// float optical_depth(vec3 origin, vec3 direction)
+// {
+//   vec3 centre = vec3(0, 0, 0);
+//   float dist = distance(scale(origin), centre);
+//   float height = dist - 6378000;
+//   float height01 = height / 80000;
+//   vec3 normal = scale(origin) / dist;
+//   float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
+//   float cos_angle01 = 0.5 + 0.5 * cos_angle;
+//   return texture(depth_texture, vec2(height01, cos_angle01)).r;
+// }
+
+// float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
+// {
+//   vec3 point = origin + direction * ray_length;
+//   vec3 centre = vec3(0, 0, 0);
+//   if (dot(scale(direction), scale(origin) - centre) > 0) {
+//     return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
+//   } else {
+//     return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
+//   }
+// }
+
 float density(vec3 point) {
   vec3 centre = vec3(0, 0, 0);
   float height = distance(scale(point), centre) - 6378000;
-  float height01 = height / 80000;
-  return texture(density_texture, height01).r;
+  return exp(-height / 8429);
 }
 
-float optical_depth(vec3 origin, vec3 direction)
+float optical_depth(vec3 origin, vec3 direction, float ray_length)
 {
-  vec3 centre = vec3(0, 0, 0);
-  float dist = distance(scale(origin), centre);
-  float height = dist - 6378000;
-  float height01 = height / 80000;
-  vec3 normal = scale(origin) / dist;
-  float cos_angle = dot(normal, scale(direction) / length(scale(direction)));
-  float cos_angle01 = 0.5 + 0.5 * cos_angle;
-  return texture(depth_texture, vec2(height01, cos_angle01)).r;
+  int num_points = 10;
+  float step_size = ray_length / num_points;
+  vec3 point = origin + 0.5 * step_size * direction;
+  float depth = 0;
+  for (int i=0; i<num_points; i++) {
+    depth += density(point) * step_size;
+    point += direction * step_size;
+  };
+  return depth;
 }
 
-float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length)
-{
-  vec3 point = origin + direction * ray_length;
-  vec3 centre = vec3(0, 0, 0);
-  if (dot(scale(direction), scale(origin) - centre) > 0) {
-    return max(optical_depth(origin, direction) - optical_depth(point, direction), 0);
-  } else {
-    return max(optical_depth(point, -direction) - optical_depth(origin, -direction), 0);
-  }
+float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length) {
+  return optical_depth(origin, direction, ray_length);
 }
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
@@ -293,7 +341,9 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 wavelength = vec3(700, 530, 440);
   vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
   for (int i=0; i<num_points; i++) {
-    float sunray_depth = optical_depth(point, light);
+    float sunray_length = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(point), scale(light)).y;
+    float sunray_depth = optical_depth(point, light, sunray_length);
+    // float sunray_depth = optical_depth(point, light);
     float view_depth = optical_depth_ltd(point, -direction, step_size * i);
     float cos_theta = dot(direction, light);
     float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
@@ -317,7 +367,8 @@ void main()
     vec3 wavelength = vec3(700, 530, 440);
     vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
     vec3 point = orig + planet.x * direction;
-    float view_depth = optical_depth(point, light);
+    float sunray_length = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(point), scale(light)).y;
+    float view_depth = optical_depth(point, light, sunray_length);
     vec3 rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
     bg = max(0.5 * dot(point / 6378000, light), 0.0) * rayleigh_transmittance;
     atmosphere.y = planet.x - atmosphere.x;
