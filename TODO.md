@@ -1,6 +1,7 @@
 # TODO
 
 * check atmosphere computation (horizon is white when sun is up)
+* rendering of sunlight and moonlight
 * use interface blocks in shaders
 * compute shadow in atmosphere
 * soft transition into planet's shadow
@@ -10,6 +11,7 @@
 * normal maps
 * text rendering using bitmap fonts
 * use data-centric APIs
+* use glTexSubImage2D?
 * redesign floating point math of height maps
 * improve performance of quaternions (see clojure.core.matrix implementation)
 * Get scale-image to work on large images
