@@ -151,10 +151,10 @@ float density2(vec3 point) {
   return texture(density_texture, height01).r;
 }
 
-float density(vec3 point) {
+float density(vec3 point, float falloff) {
   vec3 centre = vec3(0, 0, 0);
   float height = distance(scale(point), centre) - 6378000;
-  return exp(-height / 8429);
+  return exp(-height / falloff);// 8429
 }
 
 // float optical_depth2(vec3 origin, vec3 direction)
@@ -169,14 +169,14 @@ float density(vec3 point) {
 //   return texture(depth_texture, vec2(height01, cos_angle01)).r;
 // }
 
-float optical_depth(vec3 origin, vec3 direction, float ray_length)
+float optical_depth(vec3 origin, vec3 direction, float ray_length, float falloff)
 {
   int num_points = 10;
   float step_size = ray_length / num_points;
   vec3 point = origin + 0.5 * step_size * direction;
   float depth = 0;
   for (int i=0; i<num_points; i++) {
-    depth += density(point) * step_size;
+    depth += density(point, falloff) * step_size;
     point += direction * step_size;
   };
   return depth;
@@ -193,8 +193,8 @@ float optical_depth(vec3 origin, vec3 direction, float ray_length)
 //   }
 // }
 
-float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length) {
-  return optical_depth(origin, direction, ray_length);
+float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length, float falloff) {
+  return optical_depth(origin, direction, ray_length, falloff);
 }
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
@@ -207,16 +207,19 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
   for (int i=0; i<num_points; i++) {
     float sunray_length = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(point), scale(light)).y;
-    float sunray_depth = optical_depth(point, light, sunray_length);
+    float sunray_depth_rayleigh = optical_depth(point, light, sunray_length, 8429);
+    float sunray_depth_mie = optical_depth(point, light, sunray_length, 1200);
     // float sunray_depth = optical_depth(point, light);
-    float view_depth = optical_depth_ltd(point, -direction, step_size * i);
+    float view_depth_rayleigh = optical_depth_ltd(point, -direction, step_size * i, 8429);
+    float view_depth_mie = optical_depth_ltd(point, -direction, step_size * i, 1200);
     float cos_theta = dot(direction, light);
     float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
-    vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
-    float mie_transmittance = exp(-(sunray_depth + view_depth) * mie_scatter_strength) * phase;
-    float point_density = density(point);
-    scatter += point_density * rayleigh_transmittance * rayleigh_scatter_coeffs * step_size;
-    scatter += point_density * mie_transmittance * mie_scatter_strength * step_size;
+    vec3 rayleigh_transmittance = exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs);
+    float mie_transmittance = exp(-(sunray_depth_mie + view_depth_mie) * mie_scatter_strength) * phase;
+    float point_density_rayleigh = density(point, 8420);
+    float point_density_mie = density(point, 1200);
+    scatter += point_density_rayleigh * rayleigh_transmittance * rayleigh_scatter_coeffs * step_size;
+    scatter += point_density_mie * mie_transmittance * mie_scatter_strength * step_size;
     point += direction * step_size;
   };
   return scatter;
@@ -309,27 +312,27 @@ vec3 scale(vec3 v) {
 //   }
 // }
 
-float density(vec3 point) {
+float density(vec3 point, float falloff) {
   vec3 centre = vec3(0, 0, 0);
   float height = distance(scale(point), centre) - 6378000;
-  return exp(-height / 8429);
+  return exp(-height / falloff);// 8429
 }
 
-float optical_depth(vec3 origin, vec3 direction, float ray_length)
+float optical_depth(vec3 origin, vec3 direction, float ray_length, float falloff)
 {
   int num_points = 10;
   float step_size = ray_length / num_points;
   vec3 point = origin + 0.5 * step_size * direction;
   float depth = 0;
   for (int i=0; i<num_points; i++) {
-    depth += density(point) * step_size;
+    depth += density(point, falloff) * step_size;
     point += direction * step_size;
   };
   return depth;
 }
 
-float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length) {
-  return optical_depth(origin, direction, ray_length);
+float optical_depth_ltd(vec3 origin, vec3 direction, float ray_length, float falloff) {
+  return optical_depth(origin, direction, ray_length, falloff);
 }
 
 vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
@@ -342,16 +345,19 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
   vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
   for (int i=0; i<num_points; i++) {
     float sunray_length = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(point), scale(light)).y;
-    float sunray_depth = optical_depth(point, light, sunray_length);
+    float sunray_depth_rayleigh = optical_depth(point, light, sunray_length, 8429);
+    float sunray_depth_mie = optical_depth(point, light, sunray_length, 1200);
     // float sunray_depth = optical_depth(point, light);
-    float view_depth = optical_depth_ltd(point, -direction, step_size * i);
+    float view_depth_rayleigh = optical_depth_ltd(point, -direction, step_size * i, 8429);
+    float view_depth_mie = optical_depth_ltd(point, -direction, step_size * i, 1200);
     float cos_theta = dot(direction, light);
     float phase = (3.0 * (1 - g * g)) / (2.0 * (2.0 + g * g)) * (1.0 + cos_theta * cos_theta) / (1 + g * g - 2 * g * cos_theta);
-    vec3 rayleigh_transmittance = exp(-(sunray_depth + view_depth) * rayleigh_scatter_coeffs);
-    float mie_transmittance = exp(-(sunray_depth + view_depth) * mie_scatter_strength) * phase;
-    float point_density = density(point);
-    scatter += point_density * rayleigh_transmittance * rayleigh_scatter_coeffs * step_size;
-    scatter += point_density * mie_transmittance * mie_scatter_strength * step_size;
+    vec3 rayleigh_transmittance = exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs);
+    float mie_transmittance = exp(-(sunray_depth_mie + view_depth_mie) * mie_scatter_strength) * phase;
+    float point_density_rayleigh = density(point, 8420);
+    float point_density_mie = density(point, 1200);
+    scatter += point_density_rayleigh * rayleigh_transmittance * rayleigh_scatter_coeffs * step_size;
+    scatter += point_density_mie * mie_transmittance * mie_scatter_strength * step_size;
     point += direction * step_size;
   };
   return scatter;
@@ -368,7 +374,7 @@ void main()
     vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
     vec3 point = orig + planet.x * direction;
     float sunray_length = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(point), scale(light)).y;
-    float view_depth = optical_depth(point, light, sunray_length);
+    float view_depth = optical_depth(point, light, sunray_length, 8429);
     vec3 rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
     bg = max(0.5 * dot(point / 6378000, light), 0.0) * rayleigh_transmittance;
     atmosphere.y = planet.x - atmosphere.x;

@@ -1,6 +1,7 @@
 # TODO
 
 * check atmosphere computation (horizon is white when sun is up)
+* add ozone layer
 * rendering of sunlight and moonlight
 * use interface blocks in shaders
 * compute shadow in atmosphere
