@@ -214,8 +214,10 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
     float view_depth_rayleigh = optical_depth_ltd(point, -direction, step_size * i, 8429);
     float view_depth_mie = optical_depth_ltd(point, -direction, step_size * i, 1200);
     float cos_theta = dot(direction, light);
+    float rayleigh_phase = 1.0 / (4 * pi) * (3.0 / 4.0) * (1 + cos_theta * cos_theta);
+    // rayleigh_phase = 1.0;
     float mie_phase = 1.0 / (4 * pi) * (1 - g * g) / pow(1 + g * g - 2 * g * cos_theta, 1.5);
-    vec3 rayleigh_transmittance = exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs);
+    vec3 rayleigh_transmittance = 8 * exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs) * rayleigh_phase;
     float mie_transmittance = exp(-(sunray_depth_mie + view_depth_mie) * mie_scatter_strength) * mie_phase;
     float point_density_rayleigh = density(point, 8420);
     float point_density_mie = density(point, 1200);
@@ -353,8 +355,10 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
     float view_depth_rayleigh = optical_depth_ltd(point, -direction, step_size * i, 8429);
     float view_depth_mie = optical_depth_ltd(point, -direction, step_size * i, 1200);
     float cos_theta = dot(direction, light);
+    float rayleigh_phase = 1.0 / (4 * pi) * (3 / 4.0) * (1 + cos_theta * cos_theta);
+    // rayleigh_phase = 1.0;
     float mie_phase = 1.0 / (4 * pi) * (1 - g * g) / pow(1 + g * g - 2 * g * cos_theta, 1.5);
-    vec3 rayleigh_transmittance = exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs);
+    vec3 rayleigh_transmittance = 8 * exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs) * rayleigh_phase;
     float mie_transmittance = exp(-(sunray_depth_mie + view_depth_mie) * mie_scatter_strength) * mie_phase;
     float point_density_rayleigh = density(point, 8420);
     float point_density_mie = density(point, 1200);
@@ -512,10 +516,9 @@ void main()
 
 (def light (atom -1.4))
 (def keystates (atom {}))
-(def rayleigh-scatter-strength (atom 0.00009))
-(def mie-scatter-strength (atom 0.0000002))
-(def g (atom 0.9))
-
+(def rayleigh-scatter-strength (atom 9.0e-5))
+(def mie-scatter-strength (atom 1.2e-6))
+(def g (atom 0.98))
 
 (do
 (def t0 (atom (System/currentTimeMillis)))

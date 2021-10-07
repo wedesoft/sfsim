@@ -1,6 +1,5 @@
 # TODO
 
-* implement Rayleigh phase-function
 * add ozone layer
 * compute atmosphere colour in vertex shader
 * implement multiple scattering
