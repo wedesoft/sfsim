@@ -367,25 +367,13 @@ void main()
 {
   vec3 direction = normalize(pos);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(orig), scale(direction));
-  vec2 planet = ray_sphere(vec3(0, 0, 0), 6378000, scale(orig), scale(direction));
   vec3 bg;
-  if (planet.x > 0) {
-    vec3 wavelength = vec3(700, 530, 440);
-    vec3 rayleigh_scatter_coeffs = pow(400 / wavelength, vec3(4, 4, 4)) * rayleigh_scatter_strength;
-    vec3 point = orig + planet.x * direction;
-    float sunray_length = ray_sphere(vec3(0, 0, 0), 6378000 + 80000, scale(point), scale(light)).y;
-    float view_depth = optical_depth(point, light, sunray_length, 8429);
-    vec3 rayleigh_transmittance = exp(-view_depth * rayleigh_scatter_coeffs);
-    bg = max(0.5 * dot(point / 6378000, light), 0.0) * rayleigh_transmittance;
-    atmosphere.y = planet.x - atmosphere.x;
+  if (dot(light, direction) > 0) {
+    float b = pow(dot(light, direction), 8000);
+    bg = vec3(b, b, b);
   } else {
-    if (dot(light, direction) > 0) {
-      float b = pow(dot(light, direction), 8000);
-      bg = vec3(b, b, b);
-    } else {
-      bg = vec3(0, 0, 0);
-    }
-  };
+    bg = vec3(0, 0, 0);
+  }
   if (atmosphere.y > 0) {
     vec3 point = orig + direction * atmosphere.x;
     vec3 scatter = calculate_light(point, direction, atmosphere.y);
