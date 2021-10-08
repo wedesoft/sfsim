@@ -1,6 +1,7 @@
 # TODO
 
 * add ozone layer
+* absorption
 * compute atmosphere colour in vertex shader
 * implement multiple scattering
 * rendering of sunlight and moonlight
