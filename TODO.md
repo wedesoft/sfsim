@@ -1,5 +1,7 @@
 # TODO
 
+* Mie extinction
+* transmission function (both scattering types)
 * add ozone layer
 * absorption
 * compute atmosphere colour in vertex shader

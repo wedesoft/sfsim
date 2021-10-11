@@ -63,3 +63,10 @@
   (phase-rayleigh  0) => (roughly (/ 3 (* 16 Math/PI)))
   (phase-rayleigh  1) => (roughly (/ 6 (* 16 Math/PI)))
   (phase-rayleigh -1) => (roughly (/ 6 (* 16 Math/PI))))
+
+(facts "Mie phase function"
+  (phase-mie 0    0) => (roughly (/ 3 (* 16 Math/PI)))
+  (phase-mie 0    1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase-mie 0   -1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase-mie 0.5  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
+  (phase-mie 0.5  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5)))))

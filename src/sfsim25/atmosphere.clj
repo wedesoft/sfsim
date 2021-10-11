@@ -73,4 +73,9 @@
   [mu]
   (/ (* 3 (+ 1 (sqr mu))) (* 16 Math/PI)))
 
+(defn phase-mie
+  "Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)"
+  [g mu]
+  (/ (* 3 (- 1 (sqr g)) (+ 1 (sqr mu))) (* 8 Math/PI (+ 2 (sqr g)) (Math/pow (- (+ 1 (sqr g)) (* 2 g mu)) 1.5))))
+
 (set! *unchecked-math* false)
