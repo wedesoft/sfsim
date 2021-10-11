@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix)]
+            [clojure.core.matrix :refer (matrix mget)]
             [sfsim25.atmosphere :refer :all :as atmosphere])
   (:import [mikera.vectorz Vector]))
 
@@ -53,3 +53,8 @@
     (nth (:data result) (* 5 8)) => (roughly (optical-depth (matrix [0 1000 0]) (matrix [0 1 0]) 1.0 1000 100 8 20) 1e-4)
     (nth (:data result) (* 5 4)) => (roughly (optical-depth (matrix [0 1000 0]) (matrix [1 0 0]) 1.0 1000 100 8 20) 1e-4)
     (nth (:data result) (+ (* 5 4) 2)) => (roughly (optical-depth (matrix [0 1050 0]) (matrix [1 0 0]) 1.0 1000 100 8 20) 1e-4)))
+
+(facts "Compute approximate air density at different heights"
+  (mget (scattering          0 (matrix [5.8e-6]) 8000) 0) => 5.8e-6
+  (mget (scattering       8000 (matrix [5.8e-6]) 8000) 0) => (roughly (/ 5.8e-6 Math/E) 1e-12)
+  (mget (scattering (* 2 8000) (matrix [5.8e-6]) 8000) 0) => (roughly (/ 5.8e-6 Math/E Math/E) 1e-12))

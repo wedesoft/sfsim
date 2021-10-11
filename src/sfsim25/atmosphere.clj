@@ -63,4 +63,9 @@
                  (optical-depth point direction base radius max-height scale num-points)))]
     {:width width :height height :data (float-array data)}))
 
+(defn scattering
+  "Compute scattering amount in atmosphere"
+  ^Vector [^double height ^Vector base ^double scale]
+  (mul base (Math/exp (- (/ height scale)))))
+
 (set! *unchecked-math* false)
