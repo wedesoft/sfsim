@@ -68,4 +68,9 @@
   ^Vector [^double height ^Vector base ^double scale]
   (mul base (Math/exp (- (/ height scale)))))
 
+(defn phase-rayleigh
+  "Rayleigh scattering phase function depending on mu = cos(theta) where theta is angle between incident and scattering direction"
+  [mu]
+  (/ (* 3 (+ 1 (sqr mu))) (* 16 Math/PI)))
+
 (set! *unchecked-math* false)

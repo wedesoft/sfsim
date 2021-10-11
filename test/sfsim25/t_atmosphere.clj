@@ -58,3 +58,8 @@
   (mget (scattering          0 (matrix [5.8e-6]) 8000) 0) => 5.8e-6
   (mget (scattering       8000 (matrix [5.8e-6]) 8000) 0) => (roughly (/ 5.8e-6 Math/E) 1e-12)
   (mget (scattering (* 2 8000) (matrix [5.8e-6]) 8000) 0) => (roughly (/ 5.8e-6 Math/E Math/E) 1e-12))
+
+(facts "Rayleigh phase function"
+  (phase-rayleigh  0) => (roughly (/ 3 (* 16 Math/PI)))
+  (phase-rayleigh  1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase-rayleigh -1) => (roughly (/ 6 (* 16 Math/PI))))
