@@ -216,7 +216,7 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
     float cos_theta = dot(direction, light);
     float rayleigh_phase = 1.0 / (4 * pi) * (3.0 / 4.0) * (1 + cos_theta * cos_theta);
     // rayleigh_phase = 1.0;
-    float mie_phase = 1.0 / (4 * pi) * (1 - g * g) / pow(1 + g * g - 2 * g * cos_theta, 1.5);
+    float mie_phase = 3.0 / (8 * pi) * (1 - g * g) * (1 + cos_theta * cos_theta) / ((2 + g * g) * pow(1 + g * g - 2 * g * cos_theta, 1.5));
     vec3 rayleigh_transmittance = 8 * exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs) * rayleigh_phase;
     float mie_transmittance = 8 * exp(-(sunray_depth_mie + view_depth_mie) * mie_scatter_strength) * mie_phase;
     float point_density_rayleigh = density(point, 7994);
@@ -357,7 +357,7 @@ vec3 calculate_light(vec3 origin, vec3 direction, float ray_length)
     float cos_theta = dot(direction, light);
     float rayleigh_phase = 1.0 / (4 * pi) * (3.0 / 4.0) * (1 + cos_theta * cos_theta);
     // rayleigh_phase = 1.0;
-    float mie_phase = 1.0 / (4 * pi) * (1 - g * g) / pow(1 + g * g - 2 * g * cos_theta, 1.5);
+    float mie_phase = 3.0 / (8 * pi) * (1 - g * g) * (1 + cos_theta * cos_theta) / ((2 + g * g) * pow(1 + g * g - 2 * g * cos_theta, 1.5));
     vec3 rayleigh_transmittance = 8 * exp(-(sunray_depth_rayleigh + view_depth_rayleigh) * rayleigh_scatter_coeffs) * rayleigh_phase;
     float mie_transmittance = 8 * exp(-(sunray_depth_mie + view_depth_mie) * mie_scatter_strength) * mie_phase;
     float point_density_rayleigh = density(point, 7994);
