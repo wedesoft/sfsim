@@ -70,13 +70,18 @@
 
 (defn scattering-rayleigh
   "Compute Rayleigh scattering for given atmosphere and height"
-  ^Vector [{:atmosphere/keys [rayleigh-base rayleigh-scale]} height]
+  ^Vector [{:sfsim25.atmosphere/keys [rayleigh-base rayleigh-scale]} ^double height]
   (scattering rayleigh-base rayleigh-scale height))
 
 (defn scattering-mie
   "Compute Mie scattering for given atmosphere and height"
-  ^Vector [{:atmosphere/keys [mie-base mie-scale]} height]
+  ^Vector [{:sfsim25.atmosphere/keys [mie-base mie-scale]} ^double height]
   (scattering mie-base mie-scale height))
+
+(defn extinction-mie
+  "Compute Mie extinction for given atmosphere and height (Rayleigh extinction equals Rayleigh scattering)"
+  ^Vector [atmosphere ^double height]
+  (div (scattering-mie atmosphere height) (::mie-scatter-quotient atmosphere)))
 
 (defn phase-rayleigh
   "Rayleigh scattering phase function depending on mu = cos(theta) where theta is angle between incident and scattering direction"
@@ -85,7 +90,7 @@
 
 (defn phase-mie
   "Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)"
-  [{:atmosphere/keys [g]} mu]
+  [{:sfsim25.atmosphere/keys [g]} mu]
   (/ (* 3 (- 1 (sqr g)) (+ 1 (sqr mu))) (* 8 Math/PI (+ 2 (sqr g)) (Math/pow (- (+ 1 (sqr g)) (* 2 g mu)) 1.5))))
 
 (set! *unchecked-math* false)
