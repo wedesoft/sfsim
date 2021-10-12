@@ -1,7 +1,7 @@
 # TODO
 
-* Mie extinction
-* transmission function (both scattering types)
+* Mie absorption, overall extinction, overall scatter
+* transmission function (uses overall extinction and needs to know radius of planet)
 * add ozone layer
 * absorption
 * compute atmosphere colour in vertex shader

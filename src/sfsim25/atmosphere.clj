@@ -64,9 +64,19 @@
     {:width width :height height :data (float-array data)}))
 
 (defn scattering
-  "Compute scattering amount in atmosphere"
-  ^Vector [^double height ^Vector base ^double scale]
+  "Compute scattering or absorption amount in atmosphere"
+  ^Vector [^Vector base ^double scale ^double height]
   (mul base (Math/exp (- (/ height scale)))))
+
+(defn scattering-rayleigh
+  "Compute Rayleigh scattering for given atmosphere and height"
+  ^Vector [{:atmosphere/keys [rayleigh-base rayleigh-scale]} height]
+  (scattering rayleigh-base rayleigh-scale height))
+
+(defn scattering-mie
+  "Compute Mie scattering for given atmosphere and height"
+  ^Vector [{:atmosphere/keys [mie-base mie-scale]} height]
+  (scattering mie-base mie-scale height))
 
 (defn phase-rayleigh
   "Rayleigh scattering phase function depending on mu = cos(theta) where theta is angle between incident and scattering direction"
@@ -75,7 +85,7 @@
 
 (defn phase-mie
   "Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)"
-  [g mu]
+  [{:atmosphere/keys [g]} mu]
   (/ (* 3 (- 1 (sqr g)) (+ 1 (sqr mu))) (* 8 Math/PI (+ 2 (sqr g)) (Math/pow (- (+ 1 (sqr g)) (* 2 g mu)) 1.5))))
 
 (set! *unchecked-math* false)
