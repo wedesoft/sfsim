@@ -22,12 +22,12 @@
   (air-density-at-point (matrix [1010 0 0]) 1.0 1000 10) => (roughly (/ 1.0 Math/E) 1e-6))
 
 (facts "Determine height above surface for given point"
-  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [10 0 0])) => 0.0
-  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [13 0 0])) => 3.0
-  (height #:sfsim25.atmosphere{:centre (matrix [2 0 0]) :radius 10} (matrix [13 0 0])) => 1.0)
+  (height #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius 10} (matrix [10 0 0])) => 0.0
+  (height #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius 10} (matrix [13 0 0])) => 3.0
+  (height #:sfsim25.atmosphere{:sphere-centre (matrix [2 0 0]) :sphere-radius 10} (matrix [13 0 0])) => 1.0)
 
 (facts "Compute intersection of line with sphere"
-  (let [sphere #:sfsim25.atmosphere{:centre (matrix [0 0 3]) :radius 1}]
+  (let [sphere #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 3]) :sphere-radius 1}]
     (ray-sphere sphere (matrix [-2 0 3]) (matrix [0 1 0])) => {:distance 0.0 :length 0.0}
     (ray-sphere sphere (matrix [-2 0 3]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
     (ray-sphere sphere (matrix [ 0 0 3]) (matrix [1 0 0])) => {:distance 0.0 :length 1.0}
@@ -35,15 +35,16 @@
     (ray-sphere sphere (matrix [-2 0 3]) (matrix [2 0 0])) => {:distance 0.5 :length 1.0}))
 
 (facts "Compute intersection of line with ellipsoid"
-  (let [ellipsoid (fn [z] #:sfsim25.atmosphere{:centre (matrix [0 0 z]) :radius1 1 :radius2 0.5})]
-  (ray-ellipsoid (ellipsoid 0) (matrix [-2 0  0]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
-  (ray-ellipsoid (ellipsoid 0) (matrix [ 0 0 -2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}
-  (ray-ellipsoid (ellipsoid 4) (matrix [ 0 0  2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}))
+  (let [ellipsoid (fn [z] #:sfsim25.atmosphere{:ellipsoid-centre (matrix [0 0 z]) :ellipsoid-radius1 1 :ellipsoid-radius2 0.5})]
+    (ray-ellipsoid (ellipsoid 0) (matrix [-2 0  0]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
+    (ray-ellipsoid (ellipsoid 0) (matrix [ 0 0 -2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}
+    (ray-ellipsoid (ellipsoid 4) (matrix [ 0 0  2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}))
 
 (facts "Compute optical depth of atmosphere at different points and for different directions"
   (with-redefs [atmosphere/ray-sphere
-                (fn [{:sfsim25.atmosphere/keys [centre radius]} ^Vector origin ^Vector direction]
-                  (fact [centre radius origin direction] => [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
+                (fn [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} ^Vector origin ^Vector direction]
+                  (fact [sphere-centre sphere-radius origin direction] =>
+                        [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
                   {:length 20.0})
                 atmosphere/air-density-at-point
                 (fn ^double [^Vector point ^double base ^double radius ^double scale]
@@ -90,7 +91,7 @@
 
 (facts "Transmittance function"
   (let [radius   6378000
-        earth    #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius radius}
+        earth    #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius}
         rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
         mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
         both     [rayleigh mie]

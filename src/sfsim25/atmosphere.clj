@@ -23,15 +23,15 @@
 
 (defn height
   "Determine height above surface of sphere"
-  ^double [{:sfsim25.atmosphere/keys [centre radius]} ^Vector point]
-  (- (length (sub point centre)) radius))
+  ^double [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} ^Vector point]
+  (- (length (sub point sphere-centre)) sphere-radius))
 
 (defn ray-sphere
   "Compute intersection of line with sphere"
-  ^clojure.lang.PersistentArrayMap [{:sfsim25.atmosphere/keys [centre radius]} ^Vector origin ^Vector direction]
-  (let [offset        (sub origin centre)
+  ^clojure.lang.PersistentArrayMap [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} ^Vector origin ^Vector direction]
+  (let [offset        (sub origin sphere-centre)
         direction-sqr (dot direction direction)
-        discriminant  (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))]
+        discriminant  (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr sphere-radius))))]
     (if (> discriminant 0)
       (let [length2 (/ (Math/sqrt discriminant) direction-sqr)
             middle  (- (/ (dot direction offset) direction-sqr))]
@@ -42,15 +42,15 @@
 
 (defn ray-ellipsoid
   "Compute intersection of line with ellipsoid"
-  [{:sfsim25.atmosphere/keys [centre radius1 radius2]} origin direction]
-  (let [factor (/ radius1 radius2)
+  [{:sfsim25.atmosphere/keys [ellipsoid-centre ellipsoid-radius1 ellipsoid-radius2]} origin direction]
+  (let [factor (/ ellipsoid-radius1 ellipsoid-radius2)
         scale  (fn [v] (matrix [(mget v 0) (mget v 1) (* factor (mget v 2))]))]
-  (ray-sphere {::centre (scale centre) ::radius radius1} (scale origin) (scale direction))))
+  (ray-sphere {::sphere-centre (scale ellipsoid-centre) ::sphere-radius ellipsoid-radius1} (scale origin) (scale direction))))
 
 (defn optical-depth
   "Return optical depth of atmosphere at different points and for different directions"
   [point direction base radius max-height scale num-points]
-  (let [ray-length (:length (ray-sphere {::centre (matrix [0 0 0]) ::radius (+ radius max-height)} point direction))
+  (let [ray-length (:length (ray-sphere {::sphere-centre (matrix [0 0 0]) ::sphere-radius (+ radius max-height)} point direction))
         step-size  (/ ray-length num-points)
         nth-point  #(add point (mul (+ 0.5 %) step-size direction))]
     (reduce + (map #(-> % nth-point (air-density-at-point base radius scale) (* step-size))
