@@ -1,6 +1,6 @@
 # TODO
 
-* transmission function (compute overall extinction and needs to know radius of planet)
+* transmission function (n samples of overall extinction and needs to know radius of planet)
 * add ozone layer
 * absorption
 * compute atmosphere colour in vertex shader

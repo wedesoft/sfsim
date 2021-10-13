@@ -54,33 +54,28 @@
     (nth (:data result) (* 5 4)) => (roughly (optical-depth (matrix [0 1000 0]) (matrix [1 0 0]) 1.0 1000 100 8 20) 1e-4)
     (nth (:data result) (+ (* 5 4) 2)) => (roughly (optical-depth (matrix [0 1050 0]) (matrix [1 0 0]) 1.0 1000 100 8 20) 1e-4)))
 
-(facts "Compute approximate air density at different heights (testing with one component vector, normally three components)"
-  (mget (scattering (matrix [5.8e-6]) 8000          0) 0) => 5.8e-6
-  (mget (scattering (matrix [5.8e-6]) 8000       8000) 0) => (roughly (/ 5.8e-6 Math/E) 1e-12)
-  (mget (scattering (matrix [5.8e-6]) 8000 (* 2 8000)) 0) => (roughly (/ 5.8e-6 Math/E Math/E) 1e-12))
+(facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
+  (let [rayleigh {:sfsim25.atmosphere/base (matrix [5.8e-6]) :sfsim25.atmosphere/scale 8000}]
+    (mget (scattering rayleigh          0) 0) => 5.8e-6
+    (mget (scattering rayleigh       8000) 0) => (roughly (/ 5.8e-6 Math/E) 1e-12)
+    (mget (scattering rayleigh (* 2 8000)) 0) => (roughly (/ 5.8e-6 Math/E Math/E) 1e-12))
+  (let [mie {:sfsim25.atmosphere/base (matrix [2e-5]) :sfsim25.atmosphere/scale 1200}]
+    (mget (scattering mie 1200) 0) => (roughly (/ 2e-5 Math/E))))
 
-(fact "Compute Rayleigh scattering/extinction (testing with one component vector, normally three components)"
-  (let [atmosphere {:sfsim25.atmosphere/rayleigh-base (matrix [5.8e-6]) :sfsim25.atmosphere/rayleigh-scale 8000}]
-    (mget (scattering-rayleigh atmosphere 8000) 0) => (roughly (/ 5.8e-6 Math/E))))
-
-(fact "Compute Mie scattering (testing with one component vector, normally three components)"
-  (let [atmosphere {:sfsim25.atmosphere/mie-base (matrix [2e-5]) :sfsim25.atmosphere/mie-scale 1200}]
-    (mget (scattering-mie atmosphere 1200) 0) => (roughly (/ 2e-5 Math/E))))
-
-(fact "Compute sum of Mie scattering and Mie absorption (i.e. Mie extinction)"
-  (let [atmosphere {:sfsim25.atmosphere/mie-base (matrix [2e-5])
-                    :sfsim25.atmosphere/mie-scale 1200
-                    :sfsim25.atmosphere/mie-scatter-quotient 0.9}]
-    (mget (extinction-mie atmosphere 1200) 0) => (roughly (/ 2e-5 0.9 Math/E))))
+(fact "Compute sum of scattering and absorption (i.e. Mie extinction)"
+  (let [mie {:sfsim25.atmosphere/base (matrix [2e-5]) :sfsim25.atmosphere/scale 1200 :sfsim25.atmosphere/scatter-quotient 0.9}]
+    (mget (extinction mie 1200) 0) => (roughly (/ 2e-5 0.9 Math/E)))
+  (let [rayleigh {:sfsim25.atmosphere/base (matrix [2e-5]) :sfsim25.atmosphere/scale 8000}]
+    (mget (extinction rayleigh 8000) 0) => (roughly (/ 2e-5 Math/E))))
 
 (facts "Rayleigh phase function"
-  (phase-rayleigh  0) => (roughly (/ 3 (* 16 Math/PI)))
-  (phase-rayleigh  1) => (roughly (/ 6 (* 16 Math/PI)))
-  (phase-rayleigh -1) => (roughly (/ 6 (* 16 Math/PI))))
+  (phase {}  0) => (roughly (/ 3 (* 16 Math/PI)))
+  (phase {}  1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase {} -1) => (roughly (/ 6 (* 16 Math/PI))))
 
 (facts "Mie phase function"
-  (phase-mie {:sfsim25.atmosphere/g 0}    0) => (roughly (/ 3 (* 16 Math/PI)))
-  (phase-mie {:sfsim25.atmosphere/g 0}    1) => (roughly (/ 6 (* 16 Math/PI)))
-  (phase-mie {:sfsim25.atmosphere/g 0}   -1) => (roughly (/ 6 (* 16 Math/PI)))
-  (phase-mie {:sfsim25.atmosphere/g 0.5}  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
-  (phase-mie {:sfsim25.atmosphere/g 0.5}  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5)))))
+  (phase {:sfsim25.atmosphere/g 0}    0) => (roughly (/ 3 (* 16 Math/PI)))
+  (phase {:sfsim25.atmosphere/g 0}    1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase {:sfsim25.atmosphere/g 0}   -1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase {:sfsim25.atmosphere/g 0.5}  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
+  (phase {:sfsim25.atmosphere/g 0.5}  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5)))))
