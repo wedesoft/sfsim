@@ -91,6 +91,6 @@
         stepsize    (/ (length (sub x0 x)) steps)
         interpolate (fn [s] (add (mul (- 1 s) x) (mul s x0)))
         scatter-sum (fn [h] (apply add (map #(extinction % h) scatter)))]
-    (exp (sub (apply add (map (comp (partial mul stepsize) scatter-sum (partial height sphere) interpolate) samples))))))
+    (exp (sub (apply add (map #(->> % interpolate (height sphere) scatter-sum (mul stepsize)) samples))))))
 
 (set! *unchecked-math* false)
