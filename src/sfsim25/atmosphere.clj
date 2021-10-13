@@ -28,7 +28,7 @@
 
 (defn ray-sphere
   "Compute intersection of line with sphere"
-  ^clojure.lang.PersistentArrayMap [^Vector centre ^double radius ^Vector origin ^Vector direction]
+  ^clojure.lang.PersistentArrayMap [{:sfsim25.atmosphere/keys [centre radius]} ^Vector origin ^Vector direction]
   (let [offset        (sub origin centre)
         direction-sqr (dot direction direction)
         discriminant  (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))]
@@ -45,12 +45,12 @@
   [centre radius1 radius2 origin direction]
   (let [factor (/ radius1 radius2)
         scale  (fn [v] (matrix [(mget v 0) (mget v 1) (* factor (mget v 2))]))]
-  (ray-sphere (scale centre) radius1 (scale origin) (scale direction))))
+  (ray-sphere {::centre (scale centre) ::radius radius1} (scale origin) (scale direction))))
 
 (defn optical-depth
   "Return optical depth of atmosphere at different points and for different directions"
   [point direction base radius max-height scale num-points]
-  (let [ray-length (:length (ray-sphere (matrix [0 0 0]) (+ radius max-height) point direction))
+  (let [ray-length (:length (ray-sphere {::centre (matrix [0 0 0]) ::radius (+ radius max-height)} point direction))
         step-size  (/ ray-length num-points)
         nth-point  #(add point (mul (+ 0.5 %) step-size direction))]
     (reduce + (map #(-> % nth-point (air-density-at-point base radius scale) (* step-size))

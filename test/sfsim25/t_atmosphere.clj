@@ -27,11 +27,12 @@
   (height (matrix [2 0 0]) 10 (matrix [13 0 0])) => 1.0)
 
 (facts "Compute intersection of line with sphere"
-  (ray-sphere (matrix [0 0 3]) 1 (matrix [-2 0 3]) (matrix [0 1 0])) => {:distance 0.0 :length 0.0}
-  (ray-sphere (matrix [0 0 3]) 1 (matrix [-2 0 3]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
-  (ray-sphere (matrix [0 0 3]) 1 (matrix [ 0 0 3]) (matrix [1 0 0])) => {:distance 0.0 :length 1.0}
-  (ray-sphere (matrix [0 0 3]) 1 (matrix [ 2 0 3]) (matrix [1 0 0])) => {:distance 0.0 :length 0.0}
-  (ray-sphere (matrix [0 0 3]) 1 (matrix [-2 0 3]) (matrix [2 0 0])) => {:distance 0.5 :length 1.0})
+  (let [sphere {:sfsim25.atmosphere/centre (matrix [0 0 3]) :sfsim25.atmosphere/radius 1}]
+    (ray-sphere sphere (matrix [-2 0 3]) (matrix [0 1 0])) => {:distance 0.0 :length 0.0}
+    (ray-sphere sphere (matrix [-2 0 3]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
+    (ray-sphere sphere (matrix [ 0 0 3]) (matrix [1 0 0])) => {:distance 0.0 :length 1.0}
+    (ray-sphere sphere (matrix [ 2 0 3]) (matrix [1 0 0])) => {:distance 0.0 :length 0.0}
+    (ray-sphere sphere (matrix [-2 0 3]) (matrix [2 0 0])) => {:distance 0.5 :length 1.0}))
 
 (facts "Compute intersection of line with ellipsoid"
   (ray-ellipsoid (matrix [0 0 0]) 1 0.5 (matrix [-2 0  0]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
@@ -40,7 +41,7 @@
 
 (facts "Compute optical depth of atmosphere at different points and for different directions"
   (with-redefs [atmosphere/ray-sphere
-                (fn [^Vector centre ^double radius ^Vector origin ^Vector direction]
+                (fn [{:sfsim25.atmosphere/keys [centre radius]} ^Vector origin ^Vector direction]
                   (fact [centre radius origin direction] => [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
                   {:length 20.0})
                 atmosphere/air-density-at-point
@@ -48,7 +49,7 @@
                   (fact [base radius scale] => [1.0 1000.0 42.0])
                   (fact (.contains [(matrix [5.0 1010.0 0.0]) (matrix [15.0 1010.0 0.0])] point) => true)
                   0.25)]
-    (optical-depth (matrix [0 1010 0]) (matrix [1 0 0]) 1.0 1000 100 42 2))  => (+ (* 0.25 10) (* 0.25 10)))
+    (optical-depth (matrix [0 1010 0]) (matrix [1 0 0]) 1.0 1000.0 100 42 2))  => (+ (* 0.25 10) (* 0.25 10)))
 
 (facts "Lookup table for optical density"
   (let [result (optical-depth-table 5 9 1.0 1000 100 8 20)]
