@@ -55,17 +55,19 @@
     (nth (:data result) (+ (* 5 4) 2)) => (roughly (optical-depth (matrix [0 1050 0]) (matrix [1 0 0]) 1.0 1000 100 8 20) 1e-4)))
 
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
-  (let [rayleigh {:sfsim25.atmosphere/base (matrix [5.8e-6]) :sfsim25.atmosphere/scale 8000}]
+  (let [rayleigh {:sfsim25.atmosphere/scatter-base (matrix [5.8e-6]) :sfsim25.atmosphere/scatter-scale 8000}]
     (mget (scattering rayleigh          0) 0) => 5.8e-6
     (mget (scattering rayleigh       8000) 0) => (roughly (/ 5.8e-6 Math/E) 1e-12)
     (mget (scattering rayleigh (* 2 8000)) 0) => (roughly (/ 5.8e-6 Math/E Math/E) 1e-12))
-  (let [mie {:sfsim25.atmosphere/base (matrix [2e-5]) :sfsim25.atmosphere/scale 1200}]
+  (let [mie {:sfsim25.atmosphere/scatter-base (matrix [2e-5]) :sfsim25.atmosphere/scatter-scale 1200}]
     (mget (scattering mie 1200) 0) => (roughly (/ 2e-5 Math/E))))
 
 (fact "Compute sum of scattering and absorption (i.e. Mie extinction)"
-  (let [mie {:sfsim25.atmosphere/base (matrix [2e-5]) :sfsim25.atmosphere/scale 1200 :sfsim25.atmosphere/scatter-quotient 0.9}]
+  (let [mie {:sfsim25.atmosphere/scatter-base (matrix [2e-5])
+             :sfsim25.atmosphere/scatter-scale 1200
+             :sfsim25.atmosphere/scatter-quotient 0.9}]
     (mget (extinction mie 1200) 0) => (roughly (/ 2e-5 0.9 Math/E)))
-  (let [rayleigh {:sfsim25.atmosphere/base (matrix [2e-5]) :sfsim25.atmosphere/scale 8000}]
+  (let [rayleigh {:sfsim25.atmosphere/scatter-base (matrix [2e-5]) :sfsim25.atmosphere/scatter-scale 8000}]
     (mget (extinction rayleigh 8000) 0) => (roughly (/ 2e-5 Math/E))))
 
 (facts "Rayleigh phase function"
@@ -74,8 +76,8 @@
   (phase {} -1) => (roughly (/ 6 (* 16 Math/PI))))
 
 (facts "Mie phase function"
-  (phase {:sfsim25.atmosphere/g 0}    0) => (roughly (/ 3 (* 16 Math/PI)))
-  (phase {:sfsim25.atmosphere/g 0}    1) => (roughly (/ 6 (* 16 Math/PI)))
-  (phase {:sfsim25.atmosphere/g 0}   -1) => (roughly (/ 6 (* 16 Math/PI)))
-  (phase {:sfsim25.atmosphere/g 0.5}  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
-  (phase {:sfsim25.atmosphere/g 0.5}  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5)))))
+  (phase {:sfsim25.atmosphere/scatter-g 0}    0) => (roughly (/ 3 (* 16 Math/PI)))
+  (phase {:sfsim25.atmosphere/scatter-g 0}    1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase {:sfsim25.atmosphere/scatter-g 0}   -1) => (roughly (/ 6 (* 16 Math/PI)))
+  (phase {:sfsim25.atmosphere/scatter-g 0.5}  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
+  (phase {:sfsim25.atmosphere/scatter-g 0.5}  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5)))))

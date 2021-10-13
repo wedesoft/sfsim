@@ -65,8 +65,8 @@
 
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
-  ^Vector [{:sfsim25.atmosphere/keys [base scale]} ^double height]
-  (mul base (Math/exp (- (/ height scale)))))
+  ^Vector [{:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
+  (mul scatter-base (Math/exp (- (/ height scatter-scale)))))
 
 (defn extinction
   "Compute Mie extinction for given atmosphere and height (Rayleigh extinction equals Rayleigh scattering)"
@@ -75,7 +75,8 @@
 
 (defn phase
   "Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)"
-  [{:sfsim25.atmosphere/keys [g] :or {g 0}} mu]
-  (/ (* 3 (- 1 (sqr g)) (+ 1 (sqr mu))) (* 8 Math/PI (+ 2 (sqr g)) (Math/pow (- (+ 1 (sqr g)) (* 2 g mu)) 1.5))))
+  [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
+  (/ (* 3 (- 1 (sqr scatter-g)) (+ 1 (sqr mu)))
+     (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
 
 (set! *unchecked-math* false)
