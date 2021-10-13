@@ -23,7 +23,7 @@
 
 (defn height
   "Determine height above surface of sphere"
-  ^double [^Vector centre ^double radius ^Vector point]
+  ^double [{:sfsim25.atmosphere/keys [centre radius]} ^Vector point]
   (- (length (sub point centre)) radius))
 
 (defn ray-sphere
@@ -83,5 +83,14 @@
   [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
   (/ (* 3 (- 1 (sqr scatter-g)) (+ 1 (sqr mu)))
      (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
+
+(defn transmittance
+  "Compute transmission of light between two points given extinction caused by different scattering effects"
+  [sphere scatter steps x x0]
+  (let [samples     (map #(/ (+ 0.5 %) steps) (range steps))
+        stepsize    (/ (length (sub x0 x)) steps)
+        interpolate (fn [s] (add (mul (- 1 s) x) (mul s x0)))
+        scatter-sum (fn [h] (apply add (map #(extinction % h) scatter)))]
+    (exp (sub (apply add (map (comp (partial mul stepsize) scatter-sum (partial height sphere) interpolate) samples))))))
 
 (set! *unchecked-math* false)

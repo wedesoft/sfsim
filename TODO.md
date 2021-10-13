@@ -1,6 +1,6 @@
 # TODO
 
-* transmission function (n samples of overall extinction and needs to know radius of planet)
+* deeper nesting of namespaces: sphere, scatter
 * represent ray using hash
 * add ozone layer
 * absorption

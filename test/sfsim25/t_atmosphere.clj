@@ -22,9 +22,9 @@
   (air-density-at-point (matrix [1010 0 0]) 1.0 1000 10) => (roughly (/ 1.0 Math/E) 1e-6))
 
 (facts "Determine height above surface for given point"
-  (height (matrix [0 0 0]) 10 (matrix [10 0 0])) => 0.0
-  (height (matrix [0 0 0]) 10 (matrix [13 0 0])) => 3.0
-  (height (matrix [2 0 0]) 10 (matrix [13 0 0])) => 1.0)
+  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [10 0 0])) => 0.0
+  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [13 0 0])) => 3.0
+  (height #:sfsim25.atmosphere{:centre (matrix [2 0 0]) :radius 10} (matrix [13 0 0])) => 1.0)
 
 (facts "Compute intersection of line with sphere"
   (let [sphere #:sfsim25.atmosphere{:centre (matrix [0 0 3]) :radius 1}]
@@ -87,3 +87,15 @@
     (phase (g 0  ) -1) => (roughly (/ 6 (* 16 Math/PI)))
     (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
     (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5))))))
+
+(facts "Transmittance function"
+  (let [radius   6378000
+        earth    #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius radius}
+        rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
+        mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
+        both     [rayleigh mie]
+        x        (matrix [0 radius 0])
+        l        1000]
+    (mget (transmittance earth [rayleigh] 10 x (matrix [0 radius 0])) 0) => (roughly 1.0 1e-6)
+    (mget (transmittance earth [rayleigh] 10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l 5.8e-6))))
+    (mget (transmittance earth both       10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))))))
