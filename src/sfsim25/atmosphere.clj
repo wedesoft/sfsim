@@ -70,8 +70,8 @@
 
 (defn extinction
   "Compute Mie extinction for given atmosphere and height (Rayleigh extinction equals Rayleigh scattering)"
-  ^Vector [atmosphere ^double height]
-  (div (scattering atmosphere height) (or (::scatter-quotient atmosphere) 1)))
+  ^Vector [scattering-type ^double height]
+  (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1)))
 
 (defn phase
   "Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)"
