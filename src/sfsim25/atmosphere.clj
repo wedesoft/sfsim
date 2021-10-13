@@ -21,6 +21,11 @@
   ^double [^Vector point ^double base ^double radius ^double scale]
   (air-density (- (length point) radius) base scale))
 
+(defn height
+  "Determine height above surface of sphere"
+  ^double [^Vector centre ^double radius ^Vector point]
+  (- (length (sub point centre)) radius))
+
 (defn ray-sphere
   "Compute intersection of line with sphere"
   ^clojure.lang.PersistentArrayMap [^Vector centre ^double radius ^Vector origin ^Vector direction]

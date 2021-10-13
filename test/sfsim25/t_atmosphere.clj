@@ -21,6 +21,11 @@
   (air-density-at-point (matrix [1000 0 0]) 1.0 1000 10) => 1.0
   (air-density-at-point (matrix [1010 0 0]) 1.0 1000 10) => (roughly (/ 1.0 Math/E) 1e-6))
 
+(facts "Determine height above surface for given point"
+  (height (matrix [0 0 0]) 10 (matrix [10 0 0])) => 0.0
+  (height (matrix [0 0 0]) 10 (matrix [13 0 0])) => 3.0
+  (height (matrix [2 0 0]) 10 (matrix [13 0 0])) => 1.0)
+
 (facts "Compute intersection of line with sphere"
   (ray-sphere (matrix [0 0 3]) 1 (matrix [-2 0 3]) (matrix [0 1 0])) => {:distance 0.0 :length 0.0}
   (ray-sphere (matrix [0 0 3]) 1 (matrix [-2 0 3]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
