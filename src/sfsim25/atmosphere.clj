@@ -42,7 +42,7 @@
 
 (defn ray-ellipsoid
   "Compute intersection of line with ellipsoid"
-  [centre radius1 radius2 origin direction]
+  [{:sfsim25.atmosphere/keys [centre radius1 radius2]} origin direction]
   (let [factor (/ radius1 radius2)
         scale  (fn [v] (matrix [(mget v 0) (mget v 1) (* factor (mget v 2))]))]
   (ray-sphere {::centre (scale centre) ::radius radius1} (scale origin) (scale direction))))

@@ -35,9 +35,12 @@
     (ray-sphere sphere (matrix [-2 0 3]) (matrix [2 0 0])) => {:distance 0.5 :length 1.0}))
 
 (facts "Compute intersection of line with ellipsoid"
-  (ray-ellipsoid (matrix [0 0 0]) 1 0.5 (matrix [-2 0  0]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
-  (ray-ellipsoid (matrix [0 0 0]) 1 0.5 (matrix [ 0 0 -2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}
-  (ray-ellipsoid (matrix [0 0 4]) 1 0.5 (matrix [ 0 0  2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0})
+  (let [ellipsoid (fn [z] {:sfsim25.atmosphere/centre (matrix [0 0 z])
+                           :sfsim25.atmosphere/radius1 1
+                           :sfsim25.atmosphere/radius2 0.5})]
+  (ray-ellipsoid (ellipsoid 0) (matrix [-2 0  0]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
+  (ray-ellipsoid (ellipsoid 0) (matrix [ 0 0 -2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}
+  (ray-ellipsoid (ellipsoid 4) (matrix [ 0 0  2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}))
 
 (facts "Compute optical depth of atmosphere at different points and for different directions"
   (with-redefs [atmosphere/ray-sphere
