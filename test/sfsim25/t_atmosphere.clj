@@ -67,7 +67,8 @@
              :sfsim25.atmosphere/scatter-scale 1200
              :sfsim25.atmosphere/scatter-quotient 0.9}]
     (mget (extinction mie 1200) 0) => (roughly (/ 2e-5 0.9 Math/E)))
-  (let [rayleigh {:sfsim25.atmosphere/scatter-base (matrix [2e-5]) :sfsim25.atmosphere/scatter-scale 8000}]
+  (let [rayleigh {:sfsim25.atmosphere/scatter-base (matrix [2e-5])
+                  :sfsim25.atmosphere/scatter-scale 8000}]
     (mget (extinction rayleigh 8000) 0) => (roughly (/ 2e-5 Math/E))))
 
 (facts "Rayleigh phase function"
