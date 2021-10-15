@@ -100,3 +100,12 @@
     (mget (transmittance earth [rayleigh] 10 x (matrix [0 radius 0])) 0) => (roughly 1.0 1e-6)
     (mget (transmittance earth [rayleigh] 10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l 5.8e-6))))
     (mget (transmittance earth both       10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))))))
+
+(facts "Intersection of ray with fringe of atmosphere or surface of planet"
+  (let [radius 6378000
+        height 100000
+        earth  #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius :height height}]
+    (ray-extremity earth (matrix [0 radius 0]) (matrix [0 -1 0])) => (matrix [0 radius 0])
+    (ray-extremity earth (matrix [0 (+ radius 100) 0]) (matrix [0 -1 0])) => (matrix [0 radius 0])
+    (ray-extremity earth (matrix [0 radius 0]) (matrix [0 1 0])) => (matrix [0 (+ radius height) 0])
+    (ray-extremity earth (matrix [0 (- radius 0.1) 0]) (matrix [0 1 0])) => (matrix [0 (+ radius height) 0])))

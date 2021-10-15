@@ -93,4 +93,13 @@
         scatter-sum (fn [h] (apply add (map #(extinction % h) scatter)))]
     (exp (sub (apply add (map #(->> % interpolate (height sphere) scatter-sum (mul stepsize)) samples))))))
 
+(defn ray-extremity
+  "Return the intersection of the ray with the fringe of the atmosphere or the surface of the planet"
+  [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius height]} point direction]
+  (let [{:keys [distance length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius sphere-radius} point direction)]
+    (if (and (> length 0) (< (dot (sub point sphere-centre) direction) 0))
+      (add point (mul distance direction))
+      (let [{:keys [length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius (+ sphere-radius height)} point direction)]
+        (add point (mul length direction))))))
+
 (set! *unchecked-math* false)
