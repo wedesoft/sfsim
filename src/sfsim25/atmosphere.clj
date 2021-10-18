@@ -85,7 +85,7 @@
      (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
 
 (defn transmittance
-  "Compute transmission of light between two points given extinction caused by different scattering effects"
+  "Compute transmission of light between two points x and x0 given extinction caused by different scattering effects"
   [sphere scatter steps x x0]
   (let [samples     (map #(/ (+ 0.5 %) steps) (range steps))
         stepsize    (/ (length (sub x0 x)) steps)
@@ -101,5 +101,15 @@
       (add point (mul distance direction))
       (let [{:keys [length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius (+ sphere-radius height)} point direction)]
         (add point (mul length direction))))))
+
+(defn epsilon0
+  "Compute scatter-free radiation emitted from surface of planet (depends on position of sun) or fringe of atmosphere (zero)"
+  [planet sun-light x0 sun-direction]
+  (let [radial-vector (sub x0 (::sphere-centre planet))
+        vector-length (length radial-vector)
+        normal        (div radial-vector vector-length)]
+    (if (> (* 2 vector-length) (+ (* 2 (::sphere-radius planet)) (::height planet)))
+      (matrix [0 0 0])
+      (mul (max 0 (dot normal sun-direction)) sun-light))))
 
 (set! *unchecked-math* false)

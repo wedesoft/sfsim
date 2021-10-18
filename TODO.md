@@ -1,6 +1,8 @@
 # TODO
 
+* epsilon
 * deeper nesting of namespaces: sphere, scatter
+* replace RGB with Vector?
 * represent ray using hash
 * add ozone layer
 * absorption
