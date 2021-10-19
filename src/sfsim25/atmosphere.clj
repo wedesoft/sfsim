@@ -112,4 +112,32 @@
       (matrix [0 0 0])
       (mul (max 0 (dot normal sun-direction)) sun-light))))
 
+(defn integrate-circle
+  "Numerically integrate function in the range from zero to pi"
+  [steps fun]
+  (let [samples (map #(* 2 Math/PI (/ (+ 0.5 %) steps)) (range steps))
+        weight  (/ (* 2 Math/PI) steps)]
+    (* (reduce + (map fun samples)) weight)))
+
+(defn integral-half-sphere
+  "Integrate over half unit sphere oriented along normal"
+  [steps normal fun]
+  (let [steps4  (bit-shift-right steps 2)
+        samples (map #(* (/ Math/PI 2) (/ (+ 0.5 %) steps4)) (range steps4))
+        delta2  (/ Math/PI steps4 4)]
+    (reduce +
+      (map (fn [theta]
+        (let [factor    (- (Math/cos (- theta delta2)) (Math/cos (+ theta delta2)))
+              ringsteps (int (ceil (* (Math/sin theta) steps)))]
+          (* (integrate-circle
+               steps
+               (fn [phi]
+                 (let [x (Math/cos theta)
+                       y (* (Math/sin theta) (Math/cos phi))
+                       z (* (Math/sin theta) (Math/sin phi))]
+                   (println (matrix [x y z]))
+                   (fun (matrix [x y z])))))
+             factor)))
+        samples))))
+
 (set! *unchecked-math* false)

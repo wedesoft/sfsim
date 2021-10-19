@@ -122,3 +122,11 @@
     (epsilon0 moved sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => sun-light
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0 0 0])
     (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0 0 0])))
+
+(facts "Integrate over a circle"
+  (integrate-circle 64 (fn [x] 0)) => 0.0
+  (integrate-circle 64 (fn [x] 1)) => (roughly (* 2 Math/PI) 1e-3))
+
+(facts "Integrate over half unit sphere"
+  (integral-half-sphere 64 (matrix [1 0 0]) (fn [v] 0)) => 0.0
+  (integral-half-sphere 64 (matrix [1 0 0]) (fn [v] 1)) => (roughly (* 2 Math/PI) 1e-3))
