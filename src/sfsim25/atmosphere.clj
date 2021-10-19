@@ -128,14 +128,15 @@
     (reduce +
       (map (fn [theta]
         (let [factor    (- (Math/cos (- theta delta2)) (Math/cos (+ theta delta2)))
-              ringsteps (int (ceil (* (Math/sin theta) steps)))]
+              ringsteps (int (ceil (* (Math/sin theta) steps)))
+              cos-theta (Math/cos theta)
+              sin-theta (Math/sin theta)]
           (* (integrate-circle
-               steps
+               ringsteps
                (fn [phi]
-                 (let [x (Math/cos theta)
-                       y (* (Math/sin theta) (Math/cos phi))
-                       z (* (Math/sin theta) (Math/sin phi))]
-                   (println (matrix [x y z]))
+                 (let [x cos-theta
+                       y (* sin-theta (Math/cos phi))
+                       z (* sin-theta (Math/sin phi))]
                    (fun (matrix [x y z])))))
              factor)))
         samples))))
