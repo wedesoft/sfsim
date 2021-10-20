@@ -32,12 +32,12 @@
 (fact "Creating a 4x4 matrix from a 3x3 matrix and a translation vector"
   (transformation-matrix (matrix [[1 2 3] [5 6 7] [9 10 11]]) (matrix [4 8 12])) => (matrix [[1 2 3 4] [5 6 7 8] [9 10 11 12] [0 0 0 1]]))
 
-(defn roughly-vector [y] (fn [x] (< (norm (sub y x)) 1e-6)))
+(defn roughly-vector [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (fact "OpenGL projection matrix"
   (let [m (projection-matrix 640 480 5.0 1000.0 (* 0.5 pi))]
-    (project (mmul m (matrix [   0    0    -5 1]))) => (roughly-vector (matrix [0 0 1]))
-    (project (mmul m (matrix [   0    0 -1000 1]))) => (roughly-vector (matrix [0 0 0]))
-    (project (mmul m (matrix [1000    0 -1000 1]))) => (roughly-vector (matrix [1 0 0]))
-    (project (mmul m (matrix [   5    0    -5 1]))) => (roughly-vector (matrix [1 0 1]))
-    (project (mmul m (matrix [   0 3.75    -5 1]))) => (roughly-vector (matrix [0 1 1]))))
+    (project (mmul m (matrix [   0    0    -5 1]))) => (roughly-vector (matrix [0 0 1]) 1e-6)
+    (project (mmul m (matrix [   0    0 -1000 1]))) => (roughly-vector (matrix [0 0 0]) 1e-6)
+    (project (mmul m (matrix [1000    0 -1000 1]))) => (roughly-vector (matrix [1 0 0]) 1e-6)
+    (project (mmul m (matrix [   5    0    -5 1]))) => (roughly-vector (matrix [1 0 1]) 1e-6)
+    (project (mmul m (matrix [   0 3.75    -5 1]))) => (roughly-vector (matrix [0 1 1]) 1e-6)))

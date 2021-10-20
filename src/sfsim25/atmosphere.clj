@@ -117,7 +117,7 @@
   [steps fun]
   (let [samples (map #(* 2 Math/PI (/ (+ 0.5 %) steps)) (range steps))
         weight  (/ (* 2 Math/PI) steps)]
-    (* (reduce + (map fun samples)) weight)))
+    (mul (reduce add (map fun samples)) weight)))
 
 (defn integral-half-sphere
   "Integrate over half unit sphere oriented along normal"

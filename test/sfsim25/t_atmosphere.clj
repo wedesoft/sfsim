@@ -1,6 +1,7 @@
 (ns sfsim25.t-atmosphere
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix mget)]
+            [clojure.core.matrix :refer (matrix mget sub)]
+            [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.atmosphere :refer :all :as atmosphere])
   (:import [mikera.vectorz Vector]))
 
@@ -123,9 +124,11 @@
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0 0 0])
     (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0 0 0])))
 
+(defn roughly-vector [y error] (fn [x] (<= (norm (sub y x)) error)))
+
 (facts "Integrate over a circle"
-  (integrate-circle 64 (fn [x] 0)) => 0.0
-  (integrate-circle 64 (fn [x] 1)) => (roughly (* 2 Math/PI) 1e-3))
+  (integrate-circle 64 (fn [x] (matrix [0]))) => (matrix [0])
+  (integrate-circle 64 (fn [x] (matrix [1]))) => (roughly-vector (matrix (* 2 Math/PI)) 1e-6))
 
 (facts "Integrate over half unit sphere"
   (integral-half-sphere 64 (matrix [1 0 0]) (fn [v] 0)) => 0.0

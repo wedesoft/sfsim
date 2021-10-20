@@ -1,6 +1,7 @@
 # TODO
 
 * normal vector for integration over half-sphere
+* integrate vector values on half-sphere
 * epsilon
 * deeper nesting of namespaces: sphere, scatter
 * replace RGB with Vector?
