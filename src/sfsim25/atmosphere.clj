@@ -125,20 +125,20 @@
   (let [steps4  (bit-shift-right steps 2)
         samples (map #(* (/ Math/PI 2) (/ (+ 0.5 %) steps4)) (range steps4))
         delta2  (/ Math/PI steps4 4)]
-    (reduce +
+    (reduce add
       (map (fn [theta]
         (let [factor    (- (Math/cos (- theta delta2)) (Math/cos (+ theta delta2)))
               ringsteps (int (ceil (* (Math/sin theta) steps)))
               cos-theta (Math/cos theta)
               sin-theta (Math/sin theta)]
-          (* (integrate-circle
-               ringsteps
-               (fn [phi]
-                 (let [x cos-theta
-                       y (* sin-theta (Math/cos phi))
-                       z (* sin-theta (Math/sin phi))]
-                   (fun (matrix [x y z])))))
-             factor)))
+          (mul (integrate-circle
+                 ringsteps
+                 (fn [phi]
+                   (let [x cos-theta
+                         y (* sin-theta (Math/cos phi))
+                         z (* sin-theta (Math/sin phi))]
+                     (fun (matrix [x y z])))))
+               factor)))
         samples))))
 
 (set! *unchecked-math* false)
