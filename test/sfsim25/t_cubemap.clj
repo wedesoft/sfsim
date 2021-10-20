@@ -92,11 +92,11 @@
   (latitude (matrix [0 0 6357000]) 6378000 6357000) => (roughly (/ pi 2) 1e-6)
   (latitude (matrix [6378000 0 0]) 6378000 6357000) => (roughly 0        1e-6))
 
-(defn roughly-vector [y error] (fn [x] (<= (norm (sub y x)) error)))
+(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (tabular "Conversion from geodetic to cartesian coordinates"
   (fact
-    (geodetic->cartesian ?lon ?lat ?h 6378000.0 6357000.0) => (roughly-vector (matrix [?x ?y ?z]) 1e-6))
+    (geodetic->cartesian ?lon ?lat ?h 6378000.0 6357000.0) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
       ?lon     ?lat   ?h        ?x        ?y        ?z
          0        0    0 6378000.0       0.0       0.0
   (/ pi 2)        0    0       0.0 6378000.0       0.0
@@ -121,7 +121,7 @@
 
 (tabular "Project a vector onto an ellipsoid"
   (fact
-    (project-onto-ellipsoid (matrix [?x ?y ?z]) 6378000.0 6357000.0) => (roughly-vector (matrix [?xp ?yp ?zp]) 1e-6))
+    (project-onto-ellipsoid (matrix [?x ?y ?z]) 6378000.0 6357000.0) => (roughly-matrix (matrix [?xp ?yp ?zp]) 1e-6))
    ?x ?y ?z       ?xp       ?yp       ?zp
    1  0  0  6378000.0       0.0       0.0
    0  1  0        0.0 6378000.0       0.0
@@ -146,18 +146,18 @@
   (map-pixels-y (/ pi (* 4 256)) 256 0) => [(dec 256)         256               0.5 0.5])
 
 (facts "Offset in longitudinal direction"
-  (offset-longitude (matrix [1  0 0]) 0 675) => (roughly-vector (matrix [0 (/ (* 2 pi) (* 4 675)) 0]) 1e-6)
-  (offset-longitude (matrix [0 -1 0]) 0 675) => (roughly-vector (matrix [(/ (* 2 pi) (* 4 675)) 0 0]) 1e-6)
-  (offset-longitude (matrix [0 -2 0]) 0 675) => (roughly-vector (matrix [(/ (* 4 pi) (* 4 675)) 0 0]) 1e-6)
-  (offset-longitude (matrix [0 -2 0]) 1 675) => (roughly-vector (matrix [(/ (* 2 pi) (* 4 675)) 0 0]) 1e-6))
+  (offset-longitude (matrix [1  0 0]) 0 675) => (roughly-matrix (matrix [0 (/ (* 2 pi) (* 4 675)) 0]) 1e-6)
+  (offset-longitude (matrix [0 -1 0]) 0 675) => (roughly-matrix (matrix [(/ (* 2 pi) (* 4 675)) 0 0]) 1e-6)
+  (offset-longitude (matrix [0 -2 0]) 0 675) => (roughly-matrix (matrix [(/ (* 4 pi) (* 4 675)) 0 0]) 1e-6)
+  (offset-longitude (matrix [0 -2 0]) 1 675) => (roughly-matrix (matrix [(/ (* 2 pi) (* 4 675)) 0 0]) 1e-6))
 
 (facts "Offset in latitudinal direction"
-  (offset-latitude (matrix [1 0 0]) 0 675 1 1)     => (roughly-vector (matrix [0 0 (/ (* 2 pi) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [0 0 1]) 0 675 1 1)     => (roughly-vector (matrix [(/ (* -2 pi) (* 4 675)) 0 0]) 1e-6)
-  (offset-latitude (matrix [2 0 0]) 0 675 1 1)     => (roughly-vector (matrix [0 0 (/ (* 4 pi) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [2 0 0]) 1 675 1 1)     => (roughly-vector (matrix [0 0 (/ (* 2 pi) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [0 -1e-8 1]) 0 675 1 1) => (roughly-vector (matrix [0 (/ (* 2 pi) (* 4 675)) 0]) 1e-6)
-  (offset-latitude (matrix [1 0 0]) 0 675 1 0.5)   => (roughly-vector (matrix [0 0 (/ pi (* 4 675))]) 1e-6))
+  (offset-latitude (matrix [1 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 pi) (* 4 675))]) 1e-6)
+  (offset-latitude (matrix [0 0 1]) 0 675 1 1)     => (roughly-matrix (matrix [(/ (* -2 pi) (* 4 675)) 0 0]) 1e-6)
+  (offset-latitude (matrix [2 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 4 pi) (* 4 675))]) 1e-6)
+  (offset-latitude (matrix [2 0 0]) 1 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 pi) (* 4 675))]) 1e-6)
+  (offset-latitude (matrix [0 -1e-8 1]) 0 675 1 1) => (roughly-matrix (matrix [0 (/ (* 2 pi) (* 4 675)) 0]) 1e-6)
+  (offset-latitude (matrix [1 0 0]) 0 675 1 0.5)   => (roughly-matrix (matrix [0 0 (/ pi (* 4 675))]) 1e-6))
 
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
@@ -232,11 +232,11 @@
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
                                              (fact [in-level width lon lat] => [4 675 0.0 (/ (- pi) 2)])
                                              2777.0)]
-    (project-onto-globe (matrix [0 0 -1]) 4 675 6378000 6357000) => (roughly-vector (matrix [0 0 -6359777.0]) 1e-6)))
+    (project-onto-globe (matrix [0 0 -1]) 4 675 6378000 6357000) => (roughly-matrix (matrix [0 0 -6359777.0]) 1e-6)))
 
 (fact "Clip negative height (water) to zero"
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
-    (project-onto-globe (matrix [1 0 0]) 4 675 6378000 6357000) => (roughly-vector (matrix [6378000 0 0]) 1e-6)))
+    (project-onto-globe (matrix [1 0 0]) 4 675 6378000 6357000) => (roughly-matrix (matrix [6378000 0 0]) 1e-6)))
 
 (facts "Determine surrounding points for a location on the globe"
   (let [ps (atom [])]
@@ -253,8 +253,8 @@
       (let [pts (surrounding-points (matrix [1 0 0]) 5 7 675 33 6378000 6357000)]
         (doseq [j [-1 0 1] i [-1 0 1]]
           (let [k (+ (* 3 (inc j)) (inc i))]
-            (matrix [2 (* 0.2 j) (* -0.2 i)]) => (roughly-vector (nth pts k) 1e-6)
-            (matrix [1 (* 0.1 j) (* -0.1 i)]) => (roughly-vector (nth @ps k) 1e-6)))))))
+            (matrix [2 (* 0.2 j) (* -0.2 i)]) => (roughly-matrix (nth pts k) 1e-6)
+            (matrix [1 (* 0.1 j) (* -0.1 i)]) => (roughly-matrix (nth @ps k) 1e-6)))))))
 
 (fact "Get normal vector for point on flat part of elevation map"
   (with-redefs [cubemap/surrounding-points (fn [& args]
@@ -265,9 +265,9 @@
 (fact "Get normal vector for point on elevation map sloped in longitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (matrix [(+ 6378000 i) j (- i)])))]
     (normal-for-point (matrix [1 0 0]) 5 7 675 33 6378000 6357000) =>
-    (roughly-vector (matrix [(Math/sqrt 0.5) 0 (Math/sqrt 0.5)]) 1e-6)))
+    (roughly-matrix (matrix [(Math/sqrt 0.5) 0 (Math/sqrt 0.5)]) 1e-6)))
 
 (fact "Get normal vector for point on elevation map sloped in latitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (matrix [(+ 6378000 j) j (- i)])))]
     (normal-for-point (matrix [1 0 0]) 5 7 675 33 6378000 6357000) =>
-    (roughly-vector (matrix [(Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0]) 1e-6)))
+    (roughly-matrix (matrix [(Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0]) 1e-6)))

@@ -112,6 +112,19 @@
       (matrix [0 0 0])
       (mul (max 0 (dot normal sun-direction)) sun-light))))
 
+(defn orthogonal
+  "Create orthogonal vector to specified 3D vector"
+  [n]
+  (let [b (first (sort-by #(abs (dot n %)) (identity-matrix 3)))]
+    (normalise (cross n b))))
+
+(defn oriented-matrix
+  "Create an isometry with given normal vector as first column"
+  [n]
+  (let [o1 (orthogonal n)
+        o2 (cross n o1)]
+    (transpose (matrix [n o1 o2]))))
+
 (defn integrate-circle
   "Numerically integrate function in the range from zero to pi"
   [steps fun]

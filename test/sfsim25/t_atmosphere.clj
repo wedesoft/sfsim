@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix mget sub)]
+            [clojure.core.matrix :refer (matrix mget sub dot slice mmul transpose identity-matrix det)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.atmosphere :refer :all :as atmosphere])
   (:import [mikera.vectorz Vector]))
@@ -124,14 +124,28 @@
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0 0 0])
     (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0 0 0])))
 
-(defn roughly-vector [y error] (fn [x] (<= (norm (sub y x)) error)))
+(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
+
+(facts "Generate orthogonal vector"
+  (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0
+  (norm (orthogonal (matrix [1 0 0]))) => 1.0
+  (dot (orthogonal (matrix [0 1 0])) (matrix [0 1 0])) => 0.0
+  (norm (orthogonal (matrix [0 1 0]))) => 1.0
+  (dot (orthogonal (matrix [0 0 1])) (matrix [0 0 1])) => 0.0)
+
+(facts "Generate isometry with given normal vector as first column"
+  (let [n (matrix [0.36 0.48 0.8])
+        m (oriented-matrix n)]
+    (slice m 1 0) => (roughly-matrix n 1e-6)
+    (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3) 1e-6)
+    (det m) => (roughly 1.0 1e-6)))
 
 (facts "Integrate over a circle"
   (integrate-circle 64 (fn [x] (matrix [0]))) => (matrix [0])
-  (integrate-circle 64 (fn [x] (matrix [1]))) => (roughly-vector (matrix (* 2 Math/PI)) 1e-6))
+  (integrate-circle 64 (fn [x] (matrix [1]))) => (roughly-matrix (matrix (* 2 Math/PI)) 1e-6))
 
 (facts "Integrate over half unit sphere"
   (let [up (matrix [1 0 0])]
     (integral-half-sphere 64 up (fn [v] (matrix [0]))) => (matrix [0])
-    (integral-half-sphere 64 up (fn [v] (matrix [1]))) => (roughly-vector (matrix [(* 2 Math/PI)]) 1e-6)
-    (integral-half-sphere 64 up (fn [v] (matrix [1 (mget v 1) (mget v 2)]))) => (roughly-vector (matrix [(* 2 Math/PI) 0 0]) 1e-6)))
+    (integral-half-sphere 64 up (fn [v] (matrix [1]))) => (roughly-matrix (matrix [(* 2 Math/PI)]) 1e-6)
+    (integral-half-sphere 64 up (fn [v] (matrix [1 (mget v 1) (mget v 2)]))) => (roughly-matrix (matrix [(* 2 Math/PI) 0 0]) 1e-6)))
