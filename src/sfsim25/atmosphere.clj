@@ -132,17 +132,16 @@
         weight  (/ (* 2 Math/PI) steps)]
     (mul (reduce add (map fun samples)) weight)))
 
-(defn integral-half-sphere
-  "Integrate over half unit sphere oriented along normal"
-  [steps normal fun]
-  (let [steps4  (bit-shift-right steps 2)
-        samples (map #(* (/ Math/PI 2) (/ (+ 0.5 %) steps4)) (range steps4))
-        delta2  (/ Math/PI steps4 4)
+(defn- spherical-integral
+  "Integrate over specified range of sphere"
+  [theta-steps phi-steps theta-range normal fun]
+  (let [samples (map #(* theta-range (/ (+ 0.5 %) theta-steps)) (range theta-steps))
+        delta2  (/ theta-range theta-steps 2)
         mat     (oriented-matrix normal)]
     (reduce add
       (map (fn [theta]
         (let [factor    (- (Math/cos (- theta delta2)) (Math/cos (+ theta delta2)))
-              ringsteps (int (ceil (* (Math/sin theta) steps)))
+              ringsteps (int (ceil (* (Math/sin theta) phi-steps)))
               cos-theta (Math/cos theta)
               sin-theta (Math/sin theta)]
           (mul (integrate-circle
@@ -154,5 +153,15 @@
                      (fun (mmul mat (matrix [x y z]))))))
                factor)))
         samples))))
+
+(defn integral-half-sphere
+  "Integrate over half unit sphere oriented along normal"
+  [steps normal fun]
+  (spherical-integral (bit-shift-right steps 2) steps (/ Math/PI 2) normal fun))
+
+(defn integral-sphere
+  "Integrate over a full unit sphere"
+  [steps normal fun]
+  (spherical-integral (bit-shift-right steps 1) steps Math/PI normal fun))
 
 (set! *unchecked-math* false)
