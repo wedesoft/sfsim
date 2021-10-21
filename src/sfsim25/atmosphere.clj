@@ -137,7 +137,8 @@
   [steps normal fun]
   (let [steps4  (bit-shift-right steps 2)
         samples (map #(* (/ Math/PI 2) (/ (+ 0.5 %) steps4)) (range steps4))
-        delta2  (/ Math/PI steps4 4)]
+        delta2  (/ Math/PI steps4 4)
+        mat     (oriented-matrix normal)]
     (reduce add
       (map (fn [theta]
         (let [factor    (- (Math/cos (- theta delta2)) (Math/cos (+ theta delta2)))
@@ -150,7 +151,7 @@
                    (let [x cos-theta
                          y (* sin-theta (Math/cos phi))
                          z (* sin-theta (Math/sin phi))]
-                     (fun (matrix [x y z])))))
+                     (fun (mmul mat (matrix [x y z]))))))
                factor)))
         samples))))
 

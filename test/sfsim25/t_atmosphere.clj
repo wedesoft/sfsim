@@ -145,7 +145,9 @@
   (integrate-circle 64 (fn [x] (matrix [1]))) => (roughly-matrix (matrix (* 2 Math/PI)) 1e-6))
 
 (facts "Integrate over half unit sphere"
-  (let [up (matrix [1 0 0])]
-    (integral-half-sphere 64 up (fn [v] (matrix [0]))) => (matrix [0])
-    (integral-half-sphere 64 up (fn [v] (matrix [1]))) => (roughly-matrix (matrix [(* 2 Math/PI)]) 1e-6)
-    (integral-half-sphere 64 up (fn [v] (matrix [1 (mget v 1) (mget v 2)]))) => (roughly-matrix (matrix [(* 2 Math/PI) 0 0]) 1e-6)))
+  (let [left (matrix [1 0 0])
+        up   (matrix [0 1 0])]
+    (integral-half-sphere 64 left (fn [v] (matrix [0]))) => (matrix [0])
+    (integral-half-sphere 64 left (fn [v] (matrix [1]))) => (roughly-matrix (matrix [(* 2 Math/PI)]) 1e-6)
+    (integral-half-sphere 64 left (fn [v] (matrix [1 (mget v 1) (mget v 2)]))) => (roughly-matrix (matrix [(* 2 Math/PI) 0 0]) 1e-6)
+    (integral-half-sphere 64 up (fn [v] (matrix [(mget v 0) 1 (mget v 2)]))) => (roughly-matrix (matrix [0 (* 2 Math/PI) 0]) 1e-6)))
