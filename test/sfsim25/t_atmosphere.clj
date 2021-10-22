@@ -98,6 +98,18 @@
     (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
     (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5))))))
 
+(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
+
+(facts "Integrate over a ray"
+  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [1 0 0])} 10 0 (fn [x] (matrix [2])))
+  => (roughly-matrix (matrix [0]) 1e-6)
+  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [1 0 0])} 10 3 (fn [x] (matrix [2])))
+  => (roughly-matrix (matrix [6]) 1e-6)
+  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [1 0 0])} 10 3 (fn [x] (matrix [(mget x 0)])))
+  => (roughly-matrix (matrix [10.5]) 1e-6)
+  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [2 0 0])} 10 1.5 (fn [x] (matrix [(mget x 0)])))
+  => (roughly-matrix (matrix [10.5]) 1e-6))
+
 (facts "Transmittance function"
   (let [radius   6378000
         earth    #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius}
@@ -136,8 +148,6 @@
     (epsilon0 moved sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => sun-light
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0 0 0])
     (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0 0 0])))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (facts "Generate orthogonal vector"
   (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0

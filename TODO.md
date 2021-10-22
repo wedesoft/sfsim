@@ -1,6 +1,6 @@
 # TODO
 
-* integral over ray
+* move sphere and ray into own namespace
 * epsilon
 * deeper nesting of namespaces: sphere, scatter
 * replace RGB with Vector?

@@ -89,14 +89,20 @@
   (/ (* 3 (- 1 (sqr scatter-g)) (+ 1 (sqr mu)))
      (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
 
+(defn integrate-ray
+  "Integrate given function over a ray in 3D space"
+  [{:sfsim25.atmosphere/keys [ray-origin ray-direction]} steps distance fun]
+  (let [stepsize      (/ distance steps)
+        samples       (map #(* (+ 0.5 %) stepsize) (range steps))
+        interpolate   (fn [s] (add ray-origin (mul s ray-direction)))
+        direction-len (length ray-direction)]
+    (apply add (map #(->> % interpolate fun (mul stepsize direction-len)) samples))))
+
 (defn transmittance
   "Compute transmission of light between two points x and x0 given extinction caused by different scattering effects"
   [sphere scatter steps x x0]
-  (let [samples     (map #(/ (+ 0.5 %) steps) (range steps))
-        stepsize    (/ (length (sub x0 x)) steps)
-        interpolate (fn [s] (add (mul (- 1 s) x) (mul s x0)))
-        scatter-sum (fn [h] (apply add (map #(extinction % h) scatter)))]
-    (exp (sub (apply add (map #(->> % interpolate (height sphere) scatter-sum (mul stepsize)) samples))))))
+  (let [fun (fn [point] (apply add (map #(extinction % (height sphere point)) scatter)))]
+    (exp (sub (integrate-ray #:sfsim25.atmosphere{:ray-origin x :ray-direction (sub x0 x)} steps 1.0 fun)))))
 
 (defn ray-extremity
   "Return the intersection of the ray with the fringe of the atmosphere or the surface of the planet"
