@@ -1,5 +1,6 @@
 # TODO
 
+* integral over ray
 * epsilon
 * deeper nesting of namespaces: sphere, scatter
 * replace RGB with Vector?

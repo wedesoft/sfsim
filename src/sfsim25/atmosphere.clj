@@ -28,13 +28,15 @@
 
 (defn ray-sphere
   "Compute intersection of line with sphere"
-  ^clojure.lang.PersistentArrayMap [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} ^Vector origin ^Vector direction]
-  (let [offset        (sub origin sphere-centre)
-        direction-sqr (dot direction direction)
-        discriminant  (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr sphere-radius))))]
+  ^clojure.lang.PersistentArrayMap
+  [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]}
+   {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
+  (let [offset        (sub ray-origin sphere-centre)
+        direction-sqr (dot ray-direction ray-direction)
+        discriminant  (- (sqr (dot ray-direction offset)) (* direction-sqr (- (dot offset offset) (sqr sphere-radius))))]
     (if (> discriminant 0)
       (let [length2 (/ (Math/sqrt discriminant) direction-sqr)
-            middle  (- (/ (dot direction offset) direction-sqr))]
+            middle  (- (/ (dot ray-direction offset) direction-sqr))]
         (if (< middle length2)
           {:distance 0.0 :length (max 0.0 (+ middle length2))}
           {:distance (- middle length2) :length (* 2 length2)}))
@@ -42,15 +44,18 @@
 
 (defn ray-ellipsoid
   "Compute intersection of line with ellipsoid"
-  [{:sfsim25.atmosphere/keys [ellipsoid-centre ellipsoid-radius1 ellipsoid-radius2]} origin direction]
+  [{:sfsim25.atmosphere/keys [ellipsoid-centre ellipsoid-radius1 ellipsoid-radius2]}
+   {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
   (let [factor (/ ellipsoid-radius1 ellipsoid-radius2)
         scale  (fn [v] (matrix [(mget v 0) (mget v 1) (* factor (mget v 2))]))]
-  (ray-sphere {::sphere-centre (scale ellipsoid-centre) ::sphere-radius ellipsoid-radius1} (scale origin) (scale direction))))
+  (ray-sphere {::sphere-centre (scale ellipsoid-centre) ::sphere-radius ellipsoid-radius1}
+              {::ray-origin (scale ray-origin) ::ray-direction (scale ray-direction)})))
 
 (defn optical-depth
   "Return optical depth of atmosphere at different points and for different directions"
   [point direction base radius max-height scale num-points]
-  (let [ray-length (:length (ray-sphere {::sphere-centre (matrix [0 0 0]) ::sphere-radius (+ radius max-height)} point direction))
+  (let [ray-length (:length (ray-sphere {::sphere-centre (matrix [0 0 0]) ::sphere-radius (+ radius max-height)}
+                                        {::ray-origin point ::ray-direction direction}))
         step-size  (/ ray-length num-points)
         nth-point  #(add point (mul (+ 0.5 %) step-size direction))]
     (reduce + (map #(-> % nth-point (air-density-at-point base radius scale) (* step-size))
@@ -95,12 +100,14 @@
 
 (defn ray-extremity
   "Return the intersection of the ray with the fringe of the atmosphere or the surface of the planet"
-  [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius height]} point direction]
-  (let [{:keys [distance length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius sphere-radius} point direction)]
-    (if (and (> length 0) (< (dot (sub point sphere-centre) direction) 0))
-      (add point (mul distance direction))
-      (let [{:keys [length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius (+ sphere-radius height)} point direction)]
-        (add point (mul length direction))))))
+  [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius height]} {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
+  (let [{:keys [distance length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius sphere-radius}
+                                              {::ray-origin ray-origin ::ray-direction ray-direction})]
+    (if (and (> length 0) (< (dot (sub ray-origin sphere-centre) ray-direction) 0))
+      (add ray-origin (mul distance ray-direction))
+      (let [{:keys [length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius (+ sphere-radius height)}
+                                         {::ray-origin ray-origin ::ray-direction ray-direction})]
+        (add ray-origin (mul length ray-direction))))))
 
 (defn epsilon0
   "Compute scatter-free radiation emitted from surface of planet (depends on position of sun) or fringe of atmosphere (zero)"

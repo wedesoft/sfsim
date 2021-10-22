@@ -29,23 +29,31 @@
 
 (facts "Compute intersection of line with sphere"
   (let [sphere #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 3]) :sphere-radius 1}]
-    (ray-sphere sphere (matrix [-2 0 3]) (matrix [0 1 0])) => {:distance 0.0 :length 0.0}
-    (ray-sphere sphere (matrix [-2 0 3]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
-    (ray-sphere sphere (matrix [ 0 0 3]) (matrix [1 0 0])) => {:distance 0.0 :length 1.0}
-    (ray-sphere sphere (matrix [ 2 0 3]) (matrix [1 0 0])) => {:distance 0.0 :length 0.0}
-    (ray-sphere sphere (matrix [-2 0 3]) (matrix [2 0 0])) => {:distance 0.5 :length 1.0}))
+    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [-2 0 3]) :ray-direction (matrix [0 1 0])})
+    => {:distance 0.0 :length 0.0}
+    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [-2 0 3]) :ray-direction (matrix [1 0 0])})
+    => {:distance 1.0 :length 2.0}
+    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [ 0 0 3]) :ray-direction (matrix [1 0 0])})
+    => {:distance 0.0 :length 1.0}
+    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [ 2 0 3]) :ray-direction (matrix [1 0 0])})
+    => {:distance 0.0 :length 0.0}
+    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [-2 0 3]) :ray-direction (matrix [2 0 0])})
+    => {:distance 0.5 :length 1.0}))
 
 (facts "Compute intersection of line with ellipsoid"
   (let [ellipsoid (fn [z] #:sfsim25.atmosphere{:ellipsoid-centre (matrix [0 0 z]) :ellipsoid-radius1 1 :ellipsoid-radius2 0.5})]
-    (ray-ellipsoid (ellipsoid 0) (matrix [-2 0  0]) (matrix [1 0 0])) => {:distance 1.0 :length 2.0}
-    (ray-ellipsoid (ellipsoid 0) (matrix [ 0 0 -2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}
-    (ray-ellipsoid (ellipsoid 4) (matrix [ 0 0  2]) (matrix [0 0 1])) => {:distance 1.5 :length 1.0}))
+    (ray-ellipsoid (ellipsoid 0) #:sfsim25.atmosphere{:ray-origin (matrix [-2 0  0]) :ray-direction (matrix [1 0 0])})
+    => {:distance 1.0 :length 2.0}
+    (ray-ellipsoid (ellipsoid 0) #:sfsim25.atmosphere{:ray-origin (matrix [ 0 0 -2]) :ray-direction (matrix [0 0 1])})
+    => {:distance 1.5 :length 1.0}
+    (ray-ellipsoid (ellipsoid 4) #:sfsim25.atmosphere{:ray-origin (matrix [ 0 0  2]) :ray-direction (matrix [0 0 1])})
+    => {:distance 1.5 :length 1.0}))
 
 (facts "Compute optical depth of atmosphere at different points and for different directions"
   (with-redefs [atmosphere/ray-sphere
-                (fn [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} ^Vector origin ^Vector direction]
-                  (fact [sphere-centre sphere-radius origin direction] =>
-                        [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
+                (fn [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
+                  (fact [sphere-centre sphere-radius ray-origin ray-direction]
+                        => [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
                   {:length 20.0})
                 atmosphere/air-density-at-point
                 (fn ^double [^Vector point ^double base ^double radius ^double scale]
@@ -107,11 +115,16 @@
         height 100000
         earth  #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius :height height}
         moved  #:sfsim25.atmosphere{:sphere-centre (matrix [0 (* 2 radius) 0]) :sphere-radius radius :height height}]
-    (ray-extremity earth (matrix [0 radius 0]) (matrix [0 -1 0]))         => (matrix [0 radius 0])
-    (ray-extremity earth (matrix [0 (+ radius 100) 0]) (matrix [0 -1 0])) => (matrix [0 radius 0])
-    (ray-extremity moved (matrix [0 radius 0]) (matrix [0 1 0]))          => (matrix [0 radius 0])
-    (ray-extremity earth (matrix [0 radius 0]) (matrix [0 1 0]))          => (matrix [0 (+ radius height) 0])
-    (ray-extremity earth (matrix [0 (- radius 0.1) 0]) (matrix [0 1 0]))  => (matrix [0 (+ radius height) 0])))
+    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 radius 0]) :ray-direction (matrix [0 -1 0])})
+    => (matrix [0 radius 0])
+    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 (+ radius 100) 0]) :ray-direction (matrix [0 -1 0])})
+    => (matrix [0 radius 0])
+    (ray-extremity moved #:sfsim25.atmosphere{:ray-origin (matrix [0 radius 0]) :ray-direction (matrix [0 1 0])})
+    => (matrix [0 radius 0])
+    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 radius 0]) :ray-direction (matrix [0 1 0])})
+    => (matrix [0 (+ radius height) 0])
+    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 (- radius 0.1) 0]) :ray-direction (matrix [0 1 0])})
+    => (matrix [0 (+ radius height) 0])))
 
 (facts "Scatter-free radiation emitted from surface of planet or fringe of atmosphere"
   (let [radius    6378000
