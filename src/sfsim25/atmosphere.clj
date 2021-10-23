@@ -1,6 +1,8 @@
 (ns sfsim25.atmosphere
   "Functions for computing the atmosphere"
   (:require [clojure.core.matrix :refer :all]
+            [sfsim25.ray :refer :all]
+            [sfsim25.sphere :refer :all]
             [sfsim25.util :refer :all])
   (:import [mikera.vectorz Vector]))
 
@@ -26,36 +28,11 @@
   ^double [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} ^Vector point]
   (- (length (sub point sphere-centre)) sphere-radius))
 
-(defn ray-sphere
-  "Compute intersection of line with sphere"
-  ^clojure.lang.PersistentArrayMap
-  [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]}
-   {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
-  (let [offset        (sub ray-origin sphere-centre)
-        direction-sqr (dot ray-direction ray-direction)
-        discriminant  (- (sqr (dot ray-direction offset)) (* direction-sqr (- (dot offset offset) (sqr sphere-radius))))]
-    (if (> discriminant 0)
-      (let [length2 (/ (Math/sqrt discriminant) direction-sqr)
-            middle  (- (/ (dot ray-direction offset) direction-sqr))]
-        (if (< middle length2)
-          {:distance 0.0 :length (max 0.0 (+ middle length2))}
-          {:distance (- middle length2) :length (* 2 length2)}))
-      {:distance 0.0 :length 0.0})))
-
-(defn ray-ellipsoid
-  "Compute intersection of line with ellipsoid"
-  [{:sfsim25.atmosphere/keys [ellipsoid-centre ellipsoid-radius1 ellipsoid-radius2]}
-   {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
-  (let [factor (/ ellipsoid-radius1 ellipsoid-radius2)
-        scale  (fn [v] (matrix [(mget v 0) (mget v 1) (* factor (mget v 2))]))]
-  (ray-sphere {::sphere-centre (scale ellipsoid-centre) ::sphere-radius ellipsoid-radius1}
-              {::ray-origin (scale ray-origin) ::ray-direction (scale ray-direction)})))
-
 (defn optical-depth
   "Return optical depth of atmosphere at different points and for different directions"
   [point direction base radius max-height scale num-points]
-  (let [ray-length (:length (ray-sphere {::sphere-centre (matrix [0 0 0]) ::sphere-radius (+ radius max-height)}
-                                        {::ray-origin point ::ray-direction direction}))
+  (let [ray-length (:length (ray-sphere-intersection #:sfsim25.sphere{:sphere-centre (matrix [0 0 0]) :sphere-radius (+ radius max-height)}
+                                                     #:sfsim25.ray{:origin point :direction direction}))
         step-size  (/ ray-length num-points)
         nth-point  #(add point (mul (+ 0.5 %) step-size direction))]
     (reduce + (map #(-> % nth-point (air-density-at-point base radius scale) (* step-size))
@@ -89,31 +66,22 @@
   (/ (* 3 (- 1 (sqr scatter-g)) (+ 1 (sqr mu)))
      (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
 
-(defn integrate-ray
-  "Integrate given function over a ray in 3D space"
-  [{:sfsim25.atmosphere/keys [ray-origin ray-direction]} steps distance fun]
-  (let [stepsize      (/ distance steps)
-        samples       (map #(* (+ 0.5 %) stepsize) (range steps))
-        interpolate   (fn [s] (add ray-origin (mul s ray-direction)))
-        direction-len (length ray-direction)]
-    (apply add (map #(->> % interpolate fun (mul stepsize direction-len)) samples))))
-
 (defn transmittance
   "Compute transmission of light between two points x and x0 given extinction caused by different scattering effects"
   [sphere scatter steps x x0]
   (let [fun (fn [point] (apply add (map #(extinction % (height sphere point)) scatter)))]
-    (exp (sub (integrate-ray #:sfsim25.atmosphere{:ray-origin x :ray-direction (sub x0 x)} steps 1.0 fun)))))
+    (exp (sub (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 fun)))))
 
 (defn ray-extremity
   "Return the intersection of the ray with the fringe of the atmosphere or the surface of the planet"
-  [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius height]} {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
-  (let [{:keys [distance length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius sphere-radius}
-                                              {::ray-origin ray-origin ::ray-direction ray-direction})]
-    (if (and (> length 0) (< (dot (sub ray-origin sphere-centre) ray-direction) 0))
-      (add ray-origin (mul distance ray-direction))
-      (let [{:keys [length]} (ray-sphere {::sphere-centre sphere-centre ::sphere-radius (+ sphere-radius height)}
-                                         {::ray-origin ray-origin ::ray-direction ray-direction})]
-        (add ray-origin (mul length ray-direction))))))
+  [{:sfsim25.sphere/keys [sphere-centre sphere-radius] height ::height} {:sfsim25.ray/keys [origin direction]}]
+  (let [{:keys [distance length]} (ray-sphere-intersection #:sfsim25.sphere{:sphere-centre sphere-centre :sphere-radius sphere-radius}
+                                                           #:sfsim25.ray{:origin origin :direction direction})]
+    (if (and (> length 0) (< (dot (sub origin sphere-centre) direction) 0))
+      (add origin (mul distance direction))
+      (let [{:keys [length]} (ray-sphere-intersection #:sfsim25.sphere{:sphere-centre sphere-centre :sphere-radius (+ sphere-radius height)}
+                                                      #:sfsim25.ray{:origin origin :direction direction})]
+        (add origin (mul length direction))))))
 
 (defn epsilon0
   "Compute scatter-free radiation emitted from surface of planet (depends on position of sun) or fringe of atmosphere (zero)"
@@ -122,7 +90,7 @@
         vector-length (length radial-vector)
         normal        (div radial-vector vector-length)]
     (if (> (* 2 vector-length) (+ (* 2 (::sphere-radius planet)) (::height planet)))
-      (matrix [0 0 0])
+      (matrix [0.0 0.0 0.0])
       (mul (max 0 (dot normal sun-direction)) sun-light))))
 
 (defn orthogonal

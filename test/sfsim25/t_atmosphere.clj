@@ -2,6 +2,7 @@
   (:require [midje.sweet :refer :all]
             [clojure.core.matrix :refer (matrix mget sub dot slice mmul transpose identity-matrix det)]
             [clojure.core.matrix.linear :refer (norm)]
+            [sfsim25.sphere :as sphere]
             [sfsim25.atmosphere :refer :all :as atmosphere])
   (:import [mikera.vectorz Vector]))
 
@@ -27,32 +28,10 @@
   (height #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius 10} (matrix [13 0 0])) => 3.0
   (height #:sfsim25.atmosphere{:sphere-centre (matrix [2 0 0]) :sphere-radius 10} (matrix [13 0 0])) => 1.0)
 
-(facts "Compute intersection of line with sphere"
-  (let [sphere #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 3]) :sphere-radius 1}]
-    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [-2 0 3]) :ray-direction (matrix [0 1 0])})
-    => {:distance 0.0 :length 0.0}
-    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [-2 0 3]) :ray-direction (matrix [1 0 0])})
-    => {:distance 1.0 :length 2.0}
-    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [ 0 0 3]) :ray-direction (matrix [1 0 0])})
-    => {:distance 0.0 :length 1.0}
-    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [ 2 0 3]) :ray-direction (matrix [1 0 0])})
-    => {:distance 0.0 :length 0.0}
-    (ray-sphere sphere #:sfsim25.atmosphere{:ray-origin (matrix [-2 0 3]) :ray-direction (matrix [2 0 0])})
-    => {:distance 0.5 :length 1.0}))
-
-(facts "Compute intersection of line with ellipsoid"
-  (let [ellipsoid (fn [z] #:sfsim25.atmosphere{:ellipsoid-centre (matrix [0 0 z]) :ellipsoid-radius1 1 :ellipsoid-radius2 0.5})]
-    (ray-ellipsoid (ellipsoid 0) #:sfsim25.atmosphere{:ray-origin (matrix [-2 0  0]) :ray-direction (matrix [1 0 0])})
-    => {:distance 1.0 :length 2.0}
-    (ray-ellipsoid (ellipsoid 0) #:sfsim25.atmosphere{:ray-origin (matrix [ 0 0 -2]) :ray-direction (matrix [0 0 1])})
-    => {:distance 1.5 :length 1.0}
-    (ray-ellipsoid (ellipsoid 4) #:sfsim25.atmosphere{:ray-origin (matrix [ 0 0  2]) :ray-direction (matrix [0 0 1])})
-    => {:distance 1.5 :length 1.0}))
-
 (facts "Compute optical depth of atmosphere at different points and for different directions"
-  (with-redefs [atmosphere/ray-sphere
-                (fn [{:sfsim25.atmosphere/keys [sphere-centre sphere-radius]} {:sfsim25.atmosphere/keys [ray-origin ray-direction]}]
-                  (fact [sphere-centre sphere-radius ray-origin ray-direction]
+  (with-redefs [sphere/ray-sphere-intersection
+                (fn [{:sfsim25.sphere/keys [sphere-centre sphere-radius]} {:sfsim25.ray/keys [origin direction]}]
+                  (fact [sphere-centre sphere-radius origin direction]
                         => [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
                   {:length 20.0})
                 atmosphere/air-density-at-point
@@ -100,16 +79,6 @@
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
-(facts "Integrate over a ray"
-  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [1 0 0])} 10 0 (fn [x] (matrix [2])))
-  => (roughly-matrix (matrix [0]) 1e-6)
-  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [1 0 0])} 10 3 (fn [x] (matrix [2])))
-  => (roughly-matrix (matrix [6]) 1e-6)
-  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [1 0 0])} 10 3 (fn [x] (matrix [(mget x 0)])))
-  => (roughly-matrix (matrix [10.5]) 1e-6)
-  (integrate-ray #:sfsim25.atmosphere{:ray-origin (matrix [2 3 5]) :ray-direction (matrix [2 0 0])} 10 1.5 (fn [x] (matrix [(mget x 0)])))
-  => (roughly-matrix (matrix [10.5]) 1e-6))
-
 (facts "Transmittance function"
   (let [radius   6378000
         earth    #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius}
@@ -123,31 +92,31 @@
     (mget (transmittance earth both       10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))))))
 
 (facts "Intersection of ray with fringe of atmosphere or surface of planet"
-  (let [radius 6378000
-        height 100000
-        earth  #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius :height height}
-        moved  #:sfsim25.atmosphere{:sphere-centre (matrix [0 (* 2 radius) 0]) :sphere-radius radius :height height}]
-    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 radius 0]) :ray-direction (matrix [0 -1 0])})
-    => (matrix [0 radius 0])
-    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 (+ radius 100) 0]) :ray-direction (matrix [0 -1 0])})
-    => (matrix [0 radius 0])
-    (ray-extremity moved #:sfsim25.atmosphere{:ray-origin (matrix [0 radius 0]) :ray-direction (matrix [0 1 0])})
-    => (matrix [0 radius 0])
-    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 radius 0]) :ray-direction (matrix [0 1 0])})
-    => (matrix [0 (+ radius height) 0])
-    (ray-extremity earth #:sfsim25.atmosphere{:ray-origin (matrix [0 (- radius 0.1) 0]) :ray-direction (matrix [0 1 0])})
-    => (matrix [0 (+ radius height) 0])))
+  (let [radius 6378000.0
+        height 100000.0
+        earth  #:sfsim25.sphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius :sfsim25.atmosphere/height height}
+        moved  #:sfsim25.sphere{:sphere-centre (matrix [0 (* 2 radius) 0]) :sphere-radius radius :sfsim25.atmosphere/height height}]
+    (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 -1 0])})
+    => (matrix [0.0 radius 0.0])
+    (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 (+ radius 100) 0]) :direction (matrix [0 -1 0])})
+    => (matrix [0.0 radius 0.0])
+    (ray-extremity moved #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
+    => (matrix [0.0 radius 0.0])
+    (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
+    => (matrix [0.0 (+ radius height) 0.0])
+    (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 (- radius 0.1) 0]) :direction (matrix [0 1 0])})
+    => (matrix [0.0 (+ radius height) 0.0])))
 
 (facts "Scatter-free radiation emitted from surface of planet or fringe of atmosphere"
-  (let [radius    6378000
-        height    100000
+  (let [radius    6378000.0
+        height    100000.0
         earth     #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius :height height}
         moved     #:sfsim25.atmosphere{:sphere-centre (matrix [0 (* 2 radius) 0]) :sphere-radius radius :height height}
-        sun-light (matrix [1 1 1])]
-    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0 0 0])
+        sun-light (matrix [1.0 1.0 1.0])]
+    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
     (epsilon0 moved sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => sun-light
-    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0 0 0])
-    (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0 0 0])))
+    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0])
+    (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0.0 0.0 0.0])))
 
 (facts "Generate orthogonal vector"
   (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0
@@ -164,18 +133,18 @@
     (det m) => (roughly 1.0 1e-6)))
 
 (facts "Integrate over a circle"
-  (integrate-circle 64 (fn [x] (matrix [0]))) => (matrix [0])
+  (integrate-circle 64 (fn [x] (matrix [0]))) => (roughly-matrix (matrix [0]) 1e-6)
   (integrate-circle 64 (fn [x] (matrix [1]))) => (roughly-matrix (matrix (* 2 Math/PI)) 1e-6))
 
 (facts "Integrate over half unit sphere"
   (let [left (matrix [1 0 0])
         up   (matrix [0 1 0])]
-    (integral-half-sphere 64 left (fn [v] (matrix [0]))) => (matrix [0])
+    (integral-half-sphere 64 left (fn [v] (matrix [0]))) => (roughly-matrix (matrix [0]) 1e-6)
     (integral-half-sphere 64 left (fn [v] (matrix [1]))) => (roughly-matrix (matrix [(* 2 Math/PI)]) 1e-6)
     (integral-half-sphere 64 left (fn [v] (matrix [1 (mget v 1) (mget v 2)]))) => (roughly-matrix (matrix [(* 2 Math/PI) 0 0]) 1e-6)
     (integral-half-sphere 64 up (fn [v] (matrix [(mget v 0) 1 (mget v 2)]))) => (roughly-matrix (matrix [0 (* 2 Math/PI) 0]) 1e-6)))
 
 (facts "Integrate over unit sphere"
   (let [left (matrix [1 0 0])]
-    (integral-sphere 64 left (fn [v] (matrix [0]))) => (matrix [0])
+    (integral-sphere 64 left (fn [v] (matrix [0]))) => (roughly-matrix (matrix [0]) 1e-6)
     (integral-sphere 64 left (fn [v] (matrix [1]))) => (roughly-matrix (matrix [(* 4 Math/PI)]) 1e-6)))
