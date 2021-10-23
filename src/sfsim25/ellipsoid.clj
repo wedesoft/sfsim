@@ -5,8 +5,8 @@
 
 (defn ray-ellipsoid-intersection
   "Compute intersection of line with ellipsoid"
-  [{:sfsim25.ellipsoid/keys [ellipsoid-centre ellipsoid-radius1 ellipsoid-radius2]} {:sfsim25.ray/keys [origin direction]}]
-  (let [factor (/ ellipsoid-radius1 ellipsoid-radius2)
+  [{:sfsim25.ellipsoid/keys [centre major-radius minor-radius]} {:sfsim25.ray/keys [origin direction]}]
+  (let [factor (/ major-radius minor-radius)
         scale  (fn [v] (matrix [(mget v 0) (mget v 1) (* factor (mget v 2))]))]
-  (ray-sphere-intersection #:sfsim25.sphere{:sphere-centre (scale ellipsoid-centre) :sphere-radius ellipsoid-radius1}
+  (ray-sphere-intersection #:sfsim25.sphere{:centre (scale centre) :radius major-radius}
                            #:sfsim25.ray{:origin (scale origin) :direction (scale direction)})))

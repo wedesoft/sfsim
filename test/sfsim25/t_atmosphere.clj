@@ -24,14 +24,14 @@
   (air-density-at-point (matrix [1010 0 0]) 1.0 1000 10) => (roughly (/ 1.0 Math/E) 1e-6))
 
 (facts "Determine height above surface for given point"
-  (height #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius 10} (matrix [10 0 0])) => 0.0
-  (height #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius 10} (matrix [13 0 0])) => 3.0
-  (height #:sfsim25.atmosphere{:sphere-centre (matrix [2 0 0]) :sphere-radius 10} (matrix [13 0 0])) => 1.0)
+  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [10 0 0])) => 0.0
+  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [13 0 0])) => 3.0
+  (height #:sfsim25.atmosphere{:centre (matrix [2 0 0]) :radius 10} (matrix [13 0 0])) => 1.0)
 
 (facts "Compute optical depth of atmosphere at different points and for different directions"
   (with-redefs [sphere/ray-sphere-intersection
-                (fn [{:sfsim25.sphere/keys [sphere-centre sphere-radius]} {:sfsim25.ray/keys [origin direction]}]
-                  (fact [sphere-centre sphere-radius origin direction]
+                (fn [{:sfsim25.sphere/keys [centre radius]} {:sfsim25.ray/keys [origin direction]}]
+                  (fact [centre radius origin direction]
                         => [(matrix [0 0 0]) 1100.0 (matrix [0 1010 0]) (matrix [1 0 0])])
                   {:length 20.0})
                 atmosphere/air-density-at-point
@@ -81,7 +81,7 @@
 
 (facts "Transmittance function"
   (let [radius   6378000
-        earth    #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius}
+        earth    #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius radius}
         rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
         mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
         both     [rayleigh mie]
@@ -94,8 +94,8 @@
 (facts "Intersection of ray with fringe of atmosphere or surface of planet"
   (let [radius 6378000.0
         height 100000.0
-        earth  #:sfsim25.sphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius :sfsim25.atmosphere/height height}
-        moved  #:sfsim25.sphere{:sphere-centre (matrix [0 (* 2 radius) 0]) :sphere-radius radius :sfsim25.atmosphere/height height}]
+        earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        moved  #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}]
     (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 -1 0])})
     => (matrix [0.0 radius 0.0])
     (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 (+ radius 100) 0]) :direction (matrix [0 -1 0])})
@@ -110,8 +110,8 @@
 (facts "Scatter-free radiation emitted from surface of planet or fringe of atmosphere"
   (let [radius    6378000.0
         height    100000.0
-        earth     #:sfsim25.atmosphere{:sphere-centre (matrix [0 0 0]) :sphere-radius radius :height height}
-        moved     #:sfsim25.atmosphere{:sphere-centre (matrix [0 (* 2 radius) 0]) :sphere-radius radius :height height}
+        earth     #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius radius :height height}
+        moved     #:sfsim25.atmosphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :height height}
         sun-light (matrix [1.0 1.0 1.0])]
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
     (epsilon0 moved sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => sun-light

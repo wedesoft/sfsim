@@ -6,10 +6,10 @@
 (defn ray-sphere-intersection
   "Compute intersection of line with sphere"
   ^clojure.lang.PersistentArrayMap
-  [{:sfsim25.sphere/keys [sphere-centre sphere-radius]} {:sfsim25.ray/keys [origin direction]}]
-  (let [offset        (sub origin sphere-centre)
+  [{:sfsim25.sphere/keys [centre radius]} {:sfsim25.ray/keys [origin direction]}]
+  (let [offset        (sub origin centre)
         direction-sqr (dot direction direction)
-        discriminant  (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr sphere-radius))))]
+        discriminant  (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))]
     (if (> discriminant 0)
       (let [length2 (/ (Math/sqrt discriminant) direction-sqr)
             middle  (- (/ (dot direction offset) direction-sqr))]
