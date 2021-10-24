@@ -103,8 +103,8 @@
 (facts "Scatter-free radiation emitted from surface of planet or fringe of atmosphere"
   (let [radius    6378000.0
         height    100000.0
-        earth     #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius radius :height height}
-        moved     #:sfsim25.atmosphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :height height}
+        earth     #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        moved     #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}
         sun-light (matrix [1.0 1.0 1.0])]
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
     (epsilon0 moved sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => sun-light
