@@ -2,7 +2,13 @@
   "Functions dealing with spheres"
   (:require [clojure.core.matrix :refer :all]
             [sfsim25.matrix :refer :all]
-            [sfsim25.util :refer :all]))
+            [sfsim25.util :refer :all])
+  (:import [mikera.vectorz Vector]))
+
+(defn height
+  "Determine height above surface of sphere"
+  ^double [{:sfsim25.sphere/keys [centre radius]} ^Vector point]
+  (- (length (sub point centre)) radius))
 
 (defn ray-sphere-intersection
   "Compute intersection of line with sphere"

@@ -23,11 +23,6 @@
   ^double [^Vector point ^double base ^double radius ^double scale]
   (air-density (- (length point) radius) base scale))
 
-(defn height
-  "Determine height above surface of sphere"
-  ^double [{:sfsim25.atmosphere/keys [centre radius]} ^Vector point]
-  (- (length (sub point centre)) radius))
-
 (defn optical-depth
   "Return optical depth of atmosphere at different points and for different directions"
   [point direction base radius max-height scale num-points]

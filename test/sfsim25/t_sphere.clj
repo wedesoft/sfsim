@@ -4,6 +4,11 @@
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.sphere :refer :all]))
 
+(facts "Determine height above surface for given point"
+  (height #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius 10} (matrix [10 0 0])) => 0.0
+  (height #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius 10} (matrix [13 0 0])) => 3.0
+  (height #:sfsim25.sphere{:centre (matrix [2 0 0]) :radius 10} (matrix [13 0 0])) => 1.0)
+
 (facts "Compute intersection of line with sphere"
   (let [sphere #:sfsim25.sphere{:centre (matrix [0 0 3]) :radius 1}]
     (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [0 1 0])})

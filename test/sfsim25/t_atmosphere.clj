@@ -23,11 +23,6 @@
   (air-density-at-point (matrix [1000 0 0]) 1.0 1000 10) => 1.0
   (air-density-at-point (matrix [1010 0 0]) 1.0 1000 10) => (roughly (/ 1.0 Math/E) 1e-6))
 
-(facts "Determine height above surface for given point"
-  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [10 0 0])) => 0.0
-  (height #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius 10} (matrix [13 0 0])) => 3.0
-  (height #:sfsim25.atmosphere{:centre (matrix [2 0 0]) :radius 10} (matrix [13 0 0])) => 1.0)
-
 (facts "Compute optical depth of atmosphere at different points and for different directions"
   (with-redefs [sphere/ray-sphere-intersection
                 (fn [{:sfsim25.sphere/keys [centre radius]} {:sfsim25.ray/keys [origin direction]}]
@@ -79,7 +74,7 @@
 
 (facts "Transmittance function"
   (let [radius   6378000
-        earth    #:sfsim25.atmosphere{:centre (matrix [0 0 0]) :radius radius}
+        earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
         rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
         mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
         both     [rayleigh mie]
