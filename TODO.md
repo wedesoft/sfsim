@@ -1,6 +1,5 @@
 # TODO
 
-* move orthogonal and oriented-matrix into vector namespace?
 * epsilon
 * deeper nesting of namespaces: sphere, scatter
 * replace RGB with Vector?

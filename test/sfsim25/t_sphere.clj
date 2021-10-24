@@ -17,21 +17,7 @@
     (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [2 0 0])})
     => {:distance 0.5 :length 1.0}))
 
-(facts "Generate orthogonal vector"
-  (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0
-  (norm (orthogonal (matrix [1 0 0]))) => 1.0
-  (dot (orthogonal (matrix [0 1 0])) (matrix [0 1 0])) => 0.0
-  (norm (orthogonal (matrix [0 1 0]))) => 1.0
-  (dot (orthogonal (matrix [0 0 1])) (matrix [0 0 1])) => 0.0)
-
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
-
-(facts "Generate isometry with given normal vector as first column"
-  (let [n (matrix [0.36 0.48 0.8])
-        m (oriented-matrix n)]
-    (slice m 1 0) => (roughly-matrix n 1e-6)
-    (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3) 1e-6)
-    (det m) => (roughly 1.0 1e-6)))
 
 (facts "Integrate over a circle"
   (integrate-circle 64 (fn [x] (matrix [0]))) => (roughly-matrix (matrix [0]) 1e-6)

@@ -1,6 +1,7 @@
 (ns sfsim25.sphere
   "Functions dealing with spheres"
   (:require [clojure.core.matrix :refer :all]
+            [sfsim25.matrix :refer :all]
             [sfsim25.util :refer :all]))
 
 (defn ray-sphere-intersection
@@ -17,19 +18,6 @@
           {:distance 0.0 :length (max 0.0 (+ middle length2))}
           {:distance (- middle length2) :length (* 2 length2)}))
       {:distance 0.0 :length 0.0})))
-
-(defn orthogonal
-  "Create orthogonal vector to specified 3D vector"
-  [n]
-  (let [b (first (sort-by #(abs (dot n %)) (identity-matrix 3)))]
-    (normalise (cross n b))))
-
-(defn oriented-matrix
-  "Create an isometry with given normal vector as first column"
-  [n]
-  (let [o1 (orthogonal n)
-        o2 (cross n o1)]
-    (transpose (matrix [n o1 o2]))))
 
 (defn integrate-circle
   "Numerically integrate function in the range from zero to pi"
