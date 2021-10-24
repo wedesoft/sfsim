@@ -61,12 +61,6 @@
   (/ (* 3 (- 1 (sqr scatter-g)) (+ 1 (sqr mu)))
      (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
 
-(defn transmittance
-  "Compute transmission of light between two points x and x0 given extinction caused by different scattering effects"
-  [sphere scatter steps x x0]
-  (let [fun (fn [point] (apply add (map #(extinction % (height sphere point)) scatter)))]
-    (exp (sub (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 fun)))))
-
 (defn ray-extremity
   "Return the intersection of the ray with the fringe of the atmosphere or the surface of the planet"
   [{:sfsim25.sphere/keys [centre radius] height ::height} {:sfsim25.ray/keys [origin direction]}]
@@ -77,6 +71,14 @@
       (let [{:keys [length]} (ray-sphere-intersection #:sfsim25.sphere{:centre centre :radius (+ radius height)}
                                                       #:sfsim25.ray{:origin origin :direction direction})]
         (add origin (mul length direction))))))
+
+(defn transmittance
+  "Compute transmission of light between two points x and x0 given extinction caused by different scattering effects"
+  ([sphere scatter steps x x0]
+   (let [fun (fn [point] (apply add (map #(extinction % (height sphere point)) scatter)))]
+     (exp (sub (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 fun)))))
+  ([planet scatter steps ray]
+   (transmittance planet scatter steps (:sfsim25.ray/origin ray) (ray-extremity planet ray))))
 
 (defn epsilon0
   "Compute scatter-free radiation emitted from surface of planet (depends on position of sun) or fringe of atmosphere (zero)"

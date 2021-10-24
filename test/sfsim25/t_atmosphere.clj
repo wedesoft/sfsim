@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix mget sub dot slice mmul transpose identity-matrix det)]
+            [clojure.core.matrix :refer :all]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.sphere :as sphere]
             [sfsim25.atmosphere :refer :all :as atmosphere])
@@ -72,18 +72,6 @@
     (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
     (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5))))))
 
-(facts "Transmittance function"
-  (let [radius   6378000
-        earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
-        rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
-        mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
-        both     [rayleigh mie]
-        x        (matrix [0 radius 0])
-        l        1000]
-    (mget (transmittance earth [rayleigh] 10 x (matrix [0 radius 0])) 0) => (roughly 1.0 1e-6)
-    (mget (transmittance earth [rayleigh] 10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l 5.8e-6))))
-    (mget (transmittance earth both       10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))))))
-
 (facts "Intersection of ray with fringe of atmosphere or surface of planet"
   (let [radius 6378000.0
         height 100000.0
@@ -100,7 +88,23 @@
     (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 (- radius 0.1) 0]) :direction (matrix [0 1 0])})
     => (matrix [0.0 (+ radius height) 0.0])))
 
-(facts "Scatter-free radiation emitted from surface of planet or fringe of atmosphere"
+(facts "Transmittance function"
+  (let [radius   6378000.0
+        height   100000.0
+        earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
+        mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
+        both     [rayleigh mie]
+        x        (matrix [0 radius 0])
+        l        1000]
+    (mget (transmittance earth [rayleigh] 10 x (matrix [0 radius 0])) 0) => (roughly 1.0 1e-6)
+    (mget (transmittance earth [rayleigh] 10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l 5.8e-6))))
+    (mget (transmittance earth both       10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))))
+    (with-redefs [atmosphere/ray-extremity (fn [planet {:sfsim25.ray/keys [origin direction]}] (add origin (mul direction l)))]
+      (mget (transmittance earth [rayleigh] 10 #:sfsim25.ray{:origin x :direction (matrix [1 0 0])}) 0)
+      => (roughly (Math/exp (- (* l 5.8e-6)))))))
+
+(facts "Scatter-free radiation emitted from surface of planet or fringe of atmosphere (E[L0])"
   (let [radius    6378000.0
         height    100000.0
         earth     #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
@@ -108,5 +112,6 @@
         sun-light (matrix [1.0 1.0 1.0])]
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
     (epsilon0 moved sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => sun-light
+    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 1 0]))             => sun-light
     (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0])
     (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0.0 0.0 0.0])))
