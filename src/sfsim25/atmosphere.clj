@@ -86,6 +86,12 @@
   (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
         vector-length (length radial-vector)
         normal        (div radial-vector vector-length)]
-    (mul (max 0 (dot normal sun-direction)) (transmittance planet scatter steps x) sun-light)))
+    (mul (max 0 (dot normal sun-direction))
+         (transmittance planet scatter steps #:sfsim25.ray{:origin x :direction sun-direction}) sun-light)))
+
+(defn in-scatter0
+  "Compute single-scatter in-scattering of light in atmosphere"
+  [planet scatter sun-light x view-direction sun-direction]
+  (mul sun-light (scattering (first scatter) (height planet x)) (phase (first scatter) (dot view-direction sun-direction))))
 
 (set! *unchecked-math* false)

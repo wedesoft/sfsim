@@ -111,8 +111,33 @@
         moved     #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}
         sun-light (matrix [1.0 1.0 1.0])]
     (with-redefs [atmosphere/transmittance
-                  (fn [planet scatter steps x] (fact [scatter steps x] => [[] 10 (matrix [0 radius 0])]) (matrix [0.5 0.5 0.5]))]
+                  (fn [planet scatter steps {:sfsim25.ray/keys [origin direction]}]
+                      (fact [scatter steps origin] => [[] 10 (matrix [0 radius 0])])
+                      (matrix [0.5 0.5 0.5]))]
       (epsilon0 earth [] 10 sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
       (epsilon0 moved [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (mul 0.5 sun-light)
       (epsilon0 earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 1 0]))             => (mul 0.5 sun-light)
       (epsilon0 earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0]))))
+
+(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
+
+(facts "Single-scatter in-scattered light (J[l0])"
+  (let [radius        6378000.0
+        height        100000.0
+        earth         #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        moved         #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}
+        mie           #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
+        sun-light     (matrix [1.0 1.0 1.0])
+        sun-direction (matrix [1.0 0.0 0.0])]
+    (with-redefs [atmosphere/scattering
+                  (fn ^Vector [mie ^double height]
+                      (facts (:sfsim25.atmosphere/scatter-base mie) => (matrix [2e-5 2e-5 2e-5])
+                             height => 1000.0)
+                      (matrix [2e-5 2e-5 2e-5]))
+                  atmosphere/phase
+                  (fn [mie mu]
+                      (facts (:sfsim25.atmosphere/scatter-g mie) => 0.76
+                             mu => 0.36)
+                      0.1)]; TODO: factor in transmittance
+      (in-scatter0 earth [mie] sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction)
+      => (roughly-matrix (mul sun-light 2e-5 0.1) 1e-6))))
