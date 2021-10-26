@@ -104,14 +104,15 @@
       (mget (transmittance earth [rayleigh] 10 #:sfsim25.ray{:origin x :direction (matrix [1 0 0])}) 0)
       => (roughly (Math/exp (- (* l 5.8e-6)))))))
 
-(facts "Scatter-free radiation emitted from surface of planet or fringe of atmosphere (E[L0])"
+(facts "Scatter-free radiation emitted from surface of planet (E[L0])"
   (let [radius    6378000.0
         height    100000.0
         earth     #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
         moved     #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}
         sun-light (matrix [1.0 1.0 1.0])]
-    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
-    (epsilon0 moved sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => sun-light
-    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 1 0]))             => sun-light
-    (epsilon0 earth sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0])
-    (epsilon0 earth sun-light (matrix [0 (+ radius height) 0]) (matrix [0 1 0]))  => (matrix [0.0 0.0 0.0])))
+    (with-redefs [atmosphere/transmittance
+                  (fn [planet scatter steps x] (fact [scatter steps x] => [[] 10 (matrix [0 radius 0])]) (matrix [0.5 0.5 0.5]))]
+      (epsilon0 earth [] 10 sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
+      (epsilon0 moved [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (mul 0.5 sun-light)
+      (epsilon0 earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 1 0]))             => (mul 0.5 sun-light)
+      (epsilon0 earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0]))))

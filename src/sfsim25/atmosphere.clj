@@ -81,13 +81,11 @@
    (transmittance planet scatter steps (:sfsim25.ray/origin ray) (ray-extremity planet ray))))
 
 (defn epsilon0
-  "Compute scatter-free radiation emitted from surface of planet (depends on position of sun) or fringe of atmosphere (zero)"
-  [planet sun-light x0 sun-direction]
-  (let [radial-vector (sub x0 (:sfsim25.sphere/centre planet))
+  "Compute scatter-free radiation emitted from surface of planet (depends on position of sun)"
+  [planet scatter steps sun-light x sun-direction]
+  (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
         vector-length (length radial-vector)
         normal        (div radial-vector vector-length)]
-    (if (> (* 2 vector-length) (+ (* 2 (:sfsim25.sphere/radius planet)) (::height planet)))
-      (matrix [0.0 0.0 0.0])
-      (mul (max 0 (dot normal sun-direction)) sun-light))))
+    (mul (max 0 (dot normal sun-direction)) (transmittance planet scatter steps x) sun-light)))
 
 (set! *unchecked-math* false)
