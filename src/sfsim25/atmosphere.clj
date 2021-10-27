@@ -91,7 +91,10 @@
 
 (defn in-scatter0
   "Compute single-scatter in-scattering of light in atmosphere"
-  [planet scatter sun-light x view-direction sun-direction]
-  (mul sun-light (scattering (first scatter) (height planet x)) (phase (first scatter) (dot view-direction sun-direction))))
+  [planet scatter steps sun-light x view-direction sun-direction]
+  (let [height-of-x  (height planet x)
+        scatter-at-x #(mul (scattering % height-of-x) (phase (first scatter) (dot view-direction sun-direction)))
+        sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
+    (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps sun-ray))))
 
 (set! *unchecked-math* false)

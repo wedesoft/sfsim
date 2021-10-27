@@ -138,6 +138,13 @@
                   (fn [mie mu]
                       (facts (:sfsim25.atmosphere/scatter-g mie) => 0.76
                              mu => 0.36)
-                      0.1)]; TODO: factor in transmittance
-      (in-scatter0 earth [mie] sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction)
-      => (roughly-matrix (mul sun-light 2e-5 0.1) 1e-6))))
+                      0.1)
+                  atmosphere/transmittance
+                  (fn [planet scatter steps ray]
+                      (facts (:sfsim25.atmosphere/scatter-g (first scatter)) => 0.76
+                             steps => 10
+                             (:sfsim25.ray/origin ray) => (matrix [0 (+ radius 1000) 0])
+                             (:sfsim25.ray/direction ray) => sun-direction)
+                      (matrix [0.5 0.5 0.5]))]
+      (in-scatter0 earth [mie] 10 sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction)
+      => (roughly-matrix (mul sun-light 2e-5 0.1 0.5) 1e-6))))
