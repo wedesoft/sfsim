@@ -91,8 +91,8 @@
   (matrix [0.36 0.48 0.8]) pi         :d         0.8
   (matrix [0.36 0.48 0.8]) (/ pi 3)   :b         0.18)
 
-(defn roughly-vector [y] (fn [x] (< (l/norm (sub y x)) 1e-6)))
+(defn roughly-matrix [y error] (fn [x] (<= (l/norm (sub y x)) error)))
 
 (facts "Rotate a vector using a rotation quaternion"
-  (rotate-vector (rotation 0 (matrix [1 0 0])) (matrix [2 4 8]))        => (roughly-vector (matrix [2  4 8]))
-  (rotate-vector (rotation (/ pi 2) (matrix [1 0 0])) (matrix [2 4 8])) => (roughly-vector (matrix [2 -8 4])))
+  (rotate-vector (rotation 0 (matrix [1 0 0])) (matrix [2 4 8]))        => (roughly-matrix (matrix [2  4 8]) 1e-6)
+  (rotate-vector (rotation (/ pi 2) (matrix [1 0 0])) (matrix [2 4 8])) => (roughly-matrix (matrix [2 -8 4]) 1e-6))
