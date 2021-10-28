@@ -89,12 +89,19 @@
     (mul (max 0 (dot normal sun-direction))
          (transmittance planet scatter steps #:sfsim25.ray{:origin x :direction sun-direction}) sun-light)))
 
-(defn in-scatter0
-  "Compute single-scatter in-scattering of light in atmosphere"
+(defn point-scatter
+  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere"
   [planet scatter steps sun-light x view-direction sun-direction]
   (let [height-of-x  (height planet x)
         scatter-at-x #(mul (scattering % height-of-x) (phase (first scatter) (dot view-direction sun-direction)))
         sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
     (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps sun-ray))))
+
+(defn ray-scatter
+  "Compute in-scattering of light from a given direction"
+  [planet scatter steps point-scatter x view-direction sun-direction]
+  (let [x0  (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction})
+        ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]
+    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
 
 (set! *unchecked-math* false)
