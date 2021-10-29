@@ -80,8 +80,8 @@
   ([planet scatter steps ray]
    (transmittance planet scatter steps (:sfsim25.ray/origin ray) (ray-extremity planet ray))))
 
-(defn epsilon0
-  "Compute scatter-free radiation emitted from surface of planet (depends on position of sun)"
+(defn surface-radiance-base
+  "Compute scatter-free radiation emitted from surface of planet (E) depending on position of sun"
   [planet scatter steps sun-light x sun-direction]
   (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
         vector-length (length radial-vector)
@@ -89,16 +89,26 @@
     (mul (max 0 (dot normal sun-direction))
          (transmittance planet scatter steps #:sfsim25.ray{:origin x :direction sun-direction}) sun-light)))
 
-(defn point-scatter
-  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere"
+(defn point-scatter-base
+  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
   [planet scatter steps sun-light x view-direction sun-direction]
   (let [height-of-x  (height planet x)
-        scatter-at-x #(mul (scattering % height-of-x) (phase (first scatter) (dot view-direction sun-direction)))
+        scatter-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction sun-direction)))
         sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
     (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps sun-ray))))
 
+(defn point-scatter; TODO: radiance of surface
+  "Compute in-scattering of light at a point and given direction in atmosphere (J)"
+  [planet scatter ray-scatter steps x view-direction sun-direction]
+  (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
+        height-of-x  (height planet x)
+        scatter-at-x #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
+    (integral-sphere steps
+                     (normalise radial-vector)
+                     (fn [omega] (mul (apply add (map (partial scatter-at-x omega) scatter)) (ray-scatter x omega sun-direction))))))
+
 (defn ray-scatter
-  "Compute in-scattering of light from a given direction"
+  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
   [planet scatter steps point-scatter x view-direction sun-direction]
   (let [x0  (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction})
         ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]

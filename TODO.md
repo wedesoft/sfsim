@@ -1,6 +1,6 @@
 # TODO
 
-* deeper nesting of namespaces: sphere, scatter
+* add ground-component (E) to point-scatter function
 * replace RGB with Vector?
 * represent ray using hash
 * add ozone layer
