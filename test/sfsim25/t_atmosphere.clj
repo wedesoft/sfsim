@@ -78,15 +78,17 @@
         earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
         moved  #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}]
     (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 -1 0])})
-    => (matrix [0.0 radius 0.0])
+    => #:sfsim25.atmosphere{:point (matrix [0.0 radius 0.0]) :surface true}
     (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 (+ radius 100) 0]) :direction (matrix [0 -1 0])})
-    => (matrix [0.0 radius 0.0])
+    => #:sfsim25.atmosphere{:point (matrix [0.0 radius 0.0]) :surface true}
     (ray-extremity moved #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
-    => (matrix [0.0 radius 0.0])
+    => #:sfsim25.atmosphere{:point (matrix [0.0 radius 0.0]) :surface true}
     (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
-    => (matrix [0.0 (+ radius height) 0.0])
+    => #:sfsim25.atmosphere{:point (matrix [0.0 (+ radius height) 0.0]) :surface false}
     (ray-extremity earth #:sfsim25.ray{:origin (matrix [0 (- radius 0.1) 0]) :direction (matrix [0 1 0])})
-    => (matrix [0.0 (+ radius height) 0.0])))
+    => #:sfsim25.atmosphere{:point (matrix [0.0 (+ radius height) 0.0]) :surface false}
+    (ray-extremity earth #:sfsim25.ray {:origin (matrix [0 (+ radius height 0.1) 0]) :direction (matrix [0 1 0])})
+    => #:sfsim25.atmosphere{:point (matrix [0.0 (+ radius height 0.1) 0.0]) :surface false}))
 
 (facts "Transmittance function"
   (let [radius   6378000.0
@@ -100,7 +102,8 @@
     (mget (transmittance earth [rayleigh] 10 x (matrix [0 radius 0])) 0) => (roughly 1.0 1e-6)
     (mget (transmittance earth [rayleigh] 10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l 5.8e-6))))
     (mget (transmittance earth both       10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))))
-    (with-redefs [atmosphere/ray-extremity (fn [planet {:sfsim25.ray/keys [origin direction]}] (add origin (mul direction l)))]
+    (with-redefs [atmosphere/ray-extremity (fn [planet {:sfsim25.ray/keys [origin direction]}]
+                                               {:sfsim25.atmosphere/point (add origin (mul direction l))})]
       (mget (transmittance earth [rayleigh] 10 #:sfsim25.ray{:origin x :direction (matrix [1 0 0])}) 0)
       => (roughly (Math/exp (- (* l 5.8e-6)))))))
 

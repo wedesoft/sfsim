@@ -67,10 +67,10 @@
   (let [{:keys [distance length]} (ray-sphere-intersection #:sfsim25.sphere{:centre centre :radius radius}
                                                            #:sfsim25.ray{:origin origin :direction direction})]
     (if (and (> length 0) (< (dot (sub origin centre) direction) 0))
-      (add origin (mul distance direction))
+      {::point (add origin (mul distance direction)) ::surface true}
       (let [{:keys [length]} (ray-sphere-intersection #:sfsim25.sphere{:centre centre :radius (+ radius height)}
                                                       #:sfsim25.ray{:origin origin :direction direction})]
-        (add origin (mul length direction))))))
+        {::point (add origin (mul length direction)) ::surface false}))))
 
 (defn transmittance
   "Compute transmission of light between two points x and x0 given extinction caused by different scattering effects"
@@ -78,7 +78,7 @@
    (let [fun (fn [point] (apply add (map #(extinction % (height sphere point)) scatter)))]
      (exp (sub (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 fun)))))
   ([planet scatter steps ray]
-   (transmittance planet scatter steps (:sfsim25.ray/origin ray) (ray-extremity planet ray))))
+   (transmittance planet scatter steps (:sfsim25.ray/origin ray) (::point (ray-extremity planet ray)))))
 
 (defn surface-radiance-base
   "Compute scatter-free radiation emitted from surface of planet (E) depending on position of sun"
@@ -97,21 +97,21 @@
         sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
     (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps sun-ray))))
 
+(defn ray-scatter
+  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
+  [planet scatter steps point-scatter x view-direction sun-direction]
+  (let [x0  (::point (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction}))
+        ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]
+    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
+
 (defn point-scatter; TODO: radiance of surface
   "Compute in-scattering of light at a point and given direction in atmosphere (J)"
   [planet scatter ray-scatter steps x view-direction sun-direction]
   (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
-        height-of-x  (height planet x)
-        scatter-at-x #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
+        height-of-x   (height planet x)
+        scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
     (integral-sphere steps
                      (normalise radial-vector)
                      (fn [omega] (mul (apply add (map (partial scatter-at-x omega) scatter)) (ray-scatter x omega sun-direction))))))
-
-(defn ray-scatter
-  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
-  [planet scatter steps point-scatter x view-direction sun-direction]
-  (let [x0  (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction})
-        ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]
-    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
 
 (set! *unchecked-math* false)
