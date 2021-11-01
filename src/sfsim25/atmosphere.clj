@@ -107,11 +107,11 @@
 (defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
   [planet scatter ray-scatter surface-radiance sun-light sphere-steps ray-steps x view-direction sun-direction]
-  (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
+  (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))
         height-of-x   (height planet x)
         scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
     (integral-sphere sphere-steps
-                     (normalise radial-vector)
+                     normal
                      (fn [omega]
                          (let [ray       #:sfsim25.ray{:origin x :direction omega}
                                extremity (ray-extremity planet ray)
