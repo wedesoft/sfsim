@@ -171,20 +171,53 @@
       => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6))))
 
 (facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"
-  (let [radius        6378000.0
-        height        100000.0
-        x             (matrix [0 radius 0])
-        sun-direction (matrix [0.36 0.48 0.8])
-        earth         #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-        mie           #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
-        ray-scatter   (fn [x view-direction sun-direction] (matrix [1 2 3]))]
-    (with-redefs [atmosphere/phase
-                  (fn [mie mu] 0.5)
-                  sphere/integral-sphere
-                  (fn [steps normal fun]
-                      (facts steps => 64
-                             normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
-                             (fun (matrix [0 1 0])) => (roughly-matrix (mul 0.5 (matrix [1 2 3]) (matrix [2e-5 2e-5 2e-5])) 1e-10))
-                    (matrix [2e-5 3e-5 5e-5]))]
-      (point-scatter earth [mie] ray-scatter 64 x (matrix [0 1 0]) sun-direction)
-      => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10))))
+  (let [radius           6378000.0
+        height           100000.0
+        x1               (matrix [0 radius 0])
+        x2               (matrix [0 (+ radius height) 0])
+        sun-direction    (matrix [0.36 0.48 0.8])
+        sun-light        (matrix [1 1 1])
+        earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
+                                          :sfsim25.atmosphere/brightness (mul Math/PI (matrix [0.3 0.3 0.3]))}
+        mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
+        zero             #:sfsim25.atmosphere{:scatter-base (matrix [0 0 0]) :scatter-scale 1000}
+        ray-scatter1     (fn [x view-direction sun-direction]
+                             (facts x => x1 view-direction => (matrix [0 1 0]) sun-direction => (matrix [0.36 0.48 0.8]))
+                             (matrix [1 2 3]))
+        ray-scatter2     (fn [x view-direction sun-direction]
+                             (facts x => x2 view-direction => (matrix [0 -1 0]) sun-direction => (matrix [0.36 0.48 0.8]))
+                             (matrix [1 2 3]))
+        surface-radiance (fn [x sun-direction]
+                             (facts x => x1 sun-direction => (matrix [0.36 0.48 0.8]))
+                             (matrix [3 4 5]))]
+    (with-redefs [atmosphere/phase (fn [mie mu] 0.5)]
+      (with-redefs [atmosphere/ray-extremity
+                    (fn [planet ray] {:sfsim25.atmosphere/point (matrix [0 0 0]) :sfsim25.atmosphere/surface false})
+                    sphere/integral-sphere
+                    (fn [steps normal fun]
+                        (facts steps => 64
+                               normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
+                               (fun (matrix [0 1 0])) => (roughly-matrix (mul 0.5 (matrix [1 2 3]) (matrix [2e-5 2e-5 2e-5])) 1e-10))
+                      (matrix [2e-5 3e-5 5e-5]))]
+        (point-scatter earth [mie] ray-scatter1 surface-radiance sun-light 64 10 x1 (matrix [0 1 0]) sun-direction)
+        => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10))
+      (with-redefs (atmosphere/ray-extremity
+                    (fn [planet ray]
+                        (facts planet => earth
+                               ray => #:sfsim25.ray{:origin x2 :direction (matrix [0 -1 0])})
+                        {:sfsim25.atmosphere/point (matrix [0 radius 0]) :sfsim25.atmosphere/surface true})
+                    atmosphere/transmittance
+                    (fn [planet scatter steps x x0]
+                        (facts planet => earth
+                               steps => 10
+                               x => x2
+                               x0 => (matrix [0 radius 0]))
+                        (matrix [0.9 0.8 0.7]))
+                    sphere/integral-sphere
+                    (fn [steps normal fun]
+                        (facts steps => 64
+                               normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
+                               (fun (matrix [0 -1 0])) => (roughly-matrix (mul (matrix [3 4 5]) (matrix [0.9 0.8 0.7]) 0.3) 1e-10))
+                      (matrix [2e-5 3e-5 5e-5])))
+        (point-scatter earth [zero] ray-scatter2 surface-radiance sun-light 64 10 x2 (matrix [0 1 0]) sun-direction)
+        => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10)))))

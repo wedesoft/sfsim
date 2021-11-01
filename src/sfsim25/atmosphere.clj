@@ -81,7 +81,7 @@
    (transmittance planet scatter steps (:sfsim25.ray/origin ray) (::point (ray-extremity planet ray)))))
 
 (defn surface-radiance-base
-  "Compute scatter-free radiation emitted from surface of planet (E) depending on position of sun"
+  "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
   [planet scatter steps sun-light x sun-direction]
   (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
         vector-length (length radial-vector)
@@ -104,14 +104,20 @@
         ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]
     (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
 
-(defn point-scatter; TODO: radiance of surface
+(defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J)"
-  [planet scatter ray-scatter steps x view-direction sun-direction]
+  [planet scatter ray-scatter surface-radiance sun-light sphere-steps ray-steps x view-direction sun-direction]
   (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
         height-of-x   (height planet x)
         scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
-    (integral-sphere steps
+    (integral-sphere sphere-steps
                      (normalise radial-vector)
-                     (fn [omega] (mul (apply add (map (partial scatter-at-x omega) scatter)) (ray-scatter x omega sun-direction))))))
+                     (fn [omega]
+                         (let [ray                                        #:sfsim25.ray{:origin x :direction omega}
+                               {:sfsim25.atmosphere/keys [point surface]} (ray-extremity planet ray)]
+                           (add (mul (apply add (map (partial scatter-at-x omega) scatter)) (ray-scatter x omega sun-direction))
+                                (if surface (mul (transmittance planet scatter ray-steps x point)
+                                                 (div (::brightness planet) Math/PI)
+                                                 (surface-radiance point sun-direction)) (matrix [0 0 0]))))))))
 
 (set! *unchecked-math* false)
