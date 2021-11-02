@@ -221,3 +221,23 @@
                       (matrix [2e-5 3e-5 5e-5])))
         (point-scatter earth [mie] ray-scatter2 surface-radiance sun-light 64 10 x2 (matrix [0 1 0]) sun-direction)
         => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10)))))
+
+(facts "Scattered light emitted from surface of planet depending on ray scatter (E(S))"
+  (let [radius        6378000.0
+        height        100000.0
+        x             (matrix [0 radius 0])
+        sun-direction (matrix [0.6 0.8 0])
+        earth         #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
+                                       :sfsim25.atmosphere/brightness (mul Math/PI (matrix [0.3 0.3 0.3]))}
+        ray-scatter   (fn [x view-direction sun-direction]
+                          (facts x => (matrix [0 radius 0])
+                                 view-direction => (matrix [0.36 0.48 0.8])
+                                 sun-direction => (matrix [0.6 0.8 0]))
+                          (matrix [1 2 3]))]
+    (with-redefs [sphere/integral-half-sphere
+                  (fn [steps normal fun]
+                      (facts steps => 64
+                             normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
+                             (fun (matrix [0.36 0.48 0.8])) => (mul 0.48 (matrix [1 2 3])))
+                      (matrix [0.2 0.3 0.5]))]
+      (surface-radiance earth ray-scatter 64 x sun-direction) => (matrix [0.2 0.3 0.5]))))

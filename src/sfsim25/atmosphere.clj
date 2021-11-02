@@ -125,4 +125,10 @@
                                             (surface-radiance x0 sun-direction))
                                        (matrix [0 0 0])))))))))
 
+(defn surface-radiance
+  "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
+  [planet ray-scatter steps x sun-direction]
+  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
+    (integral-half-sphere steps normal (fn [omega] (mul (ray-scatter x omega sun-direction) (dot omega normal))))))
+
 (set! *unchecked-math* false)

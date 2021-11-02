@@ -1,6 +1,5 @@
 # TODO
 
-* add ground-component (E) to point-scatter function
 * replace RGB with Vector?
 * represent ray using hash
 * add ozone layer
