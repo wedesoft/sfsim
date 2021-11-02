@@ -117,11 +117,12 @@
                                extremity (ray-extremity planet ray)
                                x0        (::point extremity)
                                surface   (::surface extremity)]
-                           (add (mul (apply add (map (partial scatter-at-x omega) scatter)) (ray-scatter x omega sun-direction))
-                                (if surface
-                                  (mul (transmittance planet scatter ray-steps x x0)
-                                       (div (::brightness planet) Math/PI)
-                                       (surface-radiance x0 sun-direction))
-                                  (matrix [0 0 0]))))))))
+                           (mul (apply add (map (partial scatter-at-x omega) scatter))
+                                (add (ray-scatter x omega sun-direction)
+                                     (if surface
+                                       (mul (transmittance planet scatter ray-steps x x0)
+                                            (div (::brightness planet) Math/PI)
+                                            (surface-radiance x0 sun-direction))
+                                       (matrix [0 0 0])))))))))
 
 (set! *unchecked-math* false)
