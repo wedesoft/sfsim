@@ -1,5 +1,6 @@
 # TODO
 
+* sample transmittance table and implement lookup
 * replace RGB with Vector?
 * represent ray using hash
 * add ozone layer
