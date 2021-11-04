@@ -51,7 +51,7 @@
   (mul scatter-base (Math/exp (- (/ height scatter-scale)))))
 
 (defn extinction
-  "Compute Mie extinction for given atmosphere and height (Rayleigh extinction equals Rayleigh scattering)"
+  "Compute Mie or Rayleigh extinction for given atmosphere and height"
   ^Vector [scattering-type ^double height]
   (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1)))
 

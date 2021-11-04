@@ -26,7 +26,7 @@
       {:distance 0.0 :length 0.0})))
 
 (defn integrate-circle
-  "Numerically integrate function in the range from zero to pi"
+  "Numerically integrate function in the range from zero to two pi"
   [steps fun]
   (let [samples (map #(* 2 Math/PI (/ (+ 0.5 %) steps)) (range steps))
         weight  (/ (* 2 Math/PI) steps)]
