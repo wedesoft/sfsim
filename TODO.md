@@ -1,5 +1,7 @@
 # TODO
 
+* up to 4D interpolation
+* mapping and sampling for symmetric functions
 * sample transmittance table and implement lookup
 * replace RGB with Vector?
 * represent ray using hash
