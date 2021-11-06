@@ -591,31 +591,3 @@ void main()
 (close! changes)
 
 (System/exit 0)
-
-; --------------------------------------------------------------------------------
-
-; https://incanter.github.io/incanter/interpolation-api.html
-
-(defn mapping [a b size] (fn [x] (* (dec size) (/ (- x a) (- b a)))))
-(defn sample [a b size] (fn [i] (+ (* (/ i (dec size)) (- b a)) a)))
-(defn lookup [f s size] (vec (map (comp f s) (range size))))
-(defn clip [i size] (min (max i 0) (dec size)))
-(defn mix [u v t] (+ (* (- 1 t) u) (* t v)))
-
-(defn interpolate [f a b size]
-  (let [m (mapping a b size)
-        s (sample a b size)
-        l (lookup f s size)]
-    (fn [x]
-        (let [i (clip (m x) size)
-              u (floor i)
-              v (min (inc u) (dec size))
-              t (- i u)]
-          (mix (nth l u) (nth l v) t)))))
-
-(defn f [x] (* x x))
-
-(def fc (interpolate f -1 1 16))
-
-(doseq [x (range -1.2 1.2 0.1)]
-       (println (format "%5.2f %5.2f %5.2f"x (f x) (fc x))))

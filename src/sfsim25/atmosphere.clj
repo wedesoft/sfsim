@@ -1,10 +1,10 @@
 (ns sfsim25.atmosphere
-  "Functions for computing the atmosphere"
-  (:require [clojure.core.matrix :refer :all]
-            [sfsim25.ray :refer :all]
-            [sfsim25.sphere :refer :all]
-            [sfsim25.util :refer :all])
-  (:import [mikera.vectorz Vector]))
+    "Functions for computing the atmosphere"
+    (:require [clojure.core.matrix :refer :all]
+              [sfsim25.ray :refer :all]
+              [sfsim25.sphere :refer :all]
+              [sfsim25.util :refer :all])
+    (:import [mikera.vectorz Vector]))
 
 (set! *unchecked-math* true)
 

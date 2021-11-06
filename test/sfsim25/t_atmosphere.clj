@@ -1,10 +1,10 @@
 (ns sfsim25.t-atmosphere
-  (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer :all]
-            [clojure.core.matrix.linear :refer (norm)]
-            [sfsim25.sphere :as sphere]
-            [sfsim25.atmosphere :refer :all :as atmosphere])
-  (:import [mikera.vectorz Vector]))
+    (:require [midje.sweet :refer :all]
+              [clojure.core.matrix :refer :all]
+              [clojure.core.matrix.linear :refer (norm)]
+              [sfsim25.sphere :as sphere]
+              [sfsim25.atmosphere :refer :all :as atmosphere])
+    (:import [mikera.vectorz Vector]))
 
 (def radius1 6378000.0)
 (def radius2 6357000.0)

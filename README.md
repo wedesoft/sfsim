@@ -23,3 +23,4 @@ lein midje
 * [How to calculate your horizon distance](https://darkskydiary.wordpress.com/2015/05/25/how-to-calculate-your-horizon-distance/)
 * [Reversed-z rendering in OpenGL](https://nlguillemot.wordpress.com/2016/12/07/reversed-z-in-opengl/)
 * [Reversed-z rendering precision](https://developer.nvidia.com/content/depth-precision-visualized)
+* [Incanter interpolation API](https://incanter.github.io/incanter/interpolation-api.html)
