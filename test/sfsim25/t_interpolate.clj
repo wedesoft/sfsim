@@ -45,3 +45,11 @@
           1.5 2.5
          -5   9.0
           3   4.0)
+
+(tabular "Linear interpolation using a table"
+         (fact ((interpolation (vec [9 4 1 0 1 4]) -3 2 6) ?x) => ?result)
+         ?x   ?result
+         -3   9.0
+          1.5 2.5
+         -5   9.0
+          3   4.0)

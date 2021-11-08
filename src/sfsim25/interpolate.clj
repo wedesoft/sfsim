@@ -32,14 +32,18 @@
   [a b scalar]
   (+ (* (- 1 scalar) a) (* scalar b)))
 
-(defn interpolate
-  "Linear interpolation of function"
-  [fun minimum maximum size]
-  (let [mapping (linear-mapping minimum maximum size)
-        lut     (table fun minimum maximum size)]
+(defn interpolation
+  "Linear interpolation of data table"
+  [lut minimum maximum size]
+  (let [mapping (linear-mapping minimum maximum size)]
     (fn [x]
         (let [i (clip (mapping x) size)
               u (Math/floor i)
               v (clip (inc u) size)
               s (- i u)]
           (mix (nth lut u) (nth lut v) s)))))
+
+(defn interpolate
+  "Linear interpolation of function"
+  [fun minimum maximum size]
+  (interpolation (table fun minimum maximum size) minimum maximum size))
