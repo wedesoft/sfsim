@@ -42,27 +42,27 @@
 (defn interpolation
   "Linear interpolation of data table"
   [lut minimum maximum]
-  (if (= (count (dimensions lut)) 1)
-    (let [size    (count lut)
-          mapping (linear-mapping minimum maximum size)]
-      (fn [x]
-          (let [i (clip (mapping x) size)
-                u (Math/floor i)
-                v (clip (inc u) size)
-                s (- i u)]
-            (mix (nth lut u) (nth lut v) s))))
+  (if (= (count (dimensions lut)) 1); TODO: interpolation for empty minimum and maximum
+    (fn [x]
+        (let [size    (count lut)
+              mapping (linear-mapping (first minimum) (first maximum) size)
+              i       (clip (mapping x) size)
+              u       (Math/floor i)
+              v       (clip (inc u) size)
+              s       (- i u)]
+          (mix (nth lut u) (nth lut v) s)))
     (fn [y x]
         (let [size    (count lut)
               mapping (linear-mapping (first minimum) (first maximum) size)
               i       (clip (mapping y) size)
-              u (Math/floor i)
-              v (clip (inc u) size)
-              s (- i u)]
-          (mix ((interpolation (nth lut u) (last minimum) (last maximum)) x)
-               ((interpolation (nth lut v) (last minimum) (last maximum)) x)
+              u       (Math/floor i)
+              v       (clip (inc u) size)
+              s       (- i u)]
+          (mix ((interpolation (nth lut u) (rest minimum) (rest maximum)) x)
+               ((interpolation (nth lut v) (rest minimum) (rest maximum)) x)
                s)))))
 
 (defn interpolate
   "Linear interpolation of function"
   [fun minimum maximum size]
-  (interpolation (table fun minimum maximum size) minimum maximum))
+  (interpolation (table fun (first minimum) (first maximum) size) minimum maximum))
