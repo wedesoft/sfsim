@@ -30,19 +30,37 @@
 (defn mix
   "Linear mixing of values"
   [a b scalar]
-  (+ (* (- 1 scalar) a) (* scalar b)))
+  (add (mul (- 1 scalar) a) (mul scalar b)))
+
+(defn dimensions
+  "Return shape of lookup table"
+  [lut]
+  (if (vector? lut)
+    (into [(count lut)] (dimensions (nth lut 0)))
+    []))
 
 (defn interpolation
   "Linear interpolation of data table"
   [lut minimum maximum]
-  (let [size    (count lut)
-        mapping (linear-mapping minimum maximum size)]
-    (fn [x]
-        (let [i (clip (mapping x) size)
+  (if (= (count (dimensions lut)) 1)
+    (let [size    (count lut)
+          mapping (linear-mapping minimum maximum size)]
+      (fn [x]
+          (let [i (clip (mapping x) size)
+                u (Math/floor i)
+                v (clip (inc u) size)
+                s (- i u)]
+            (mix (nth lut u) (nth lut v) s))))
+    (fn [y x]
+        (let [size    (count lut)
+              mapping (linear-mapping (first minimum) (first maximum) size)
+              i       (clip (mapping y) size)
               u (Math/floor i)
               v (clip (inc u) size)
               s (- i u)]
-          (mix (nth lut u) (nth lut v) s)))))
+          (mix ((interpolation (nth lut u) (last minimum) (last maximum)) x)
+               ((interpolation (nth lut v) (last minimum) (last maximum)) x)
+               s)))))
 
 (defn interpolate
   "Linear interpolation of function"
