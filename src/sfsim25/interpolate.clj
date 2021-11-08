@@ -34,8 +34,9 @@
 
 (defn interpolation
   "Linear interpolation of data table"
-  [lut minimum maximum size]
-  (let [mapping (linear-mapping minimum maximum size)]
+  [lut minimum maximum]
+  (let [size    (count lut)
+        mapping (linear-mapping minimum maximum size)]
     (fn [x]
         (let [i (clip (mapping x) size)
               u (Math/floor i)
@@ -46,4 +47,4 @@
 (defn interpolate
   "Linear interpolation of function"
   [fun minimum maximum size]
-  (interpolation (table fun minimum maximum size) minimum maximum size))
+  (interpolation (table fun minimum maximum size) minimum maximum))

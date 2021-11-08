@@ -38,16 +38,16 @@
          1    4
          0.5  1.0)
 
-(tabular "Linear interpolation of function"
-         (fact ((interpolate #(* % %) -3 2 6) ?x) => ?result)
+(tabular "Linear interpolation using a table"
+         (fact ((interpolation [9 4 1 0 1 4] -3 2) ?x) => ?result)
          ?x   ?result
          -3   9.0
           1.5 2.5
          -5   9.0
           3   4.0)
 
-(tabular "Linear interpolation using a table"
-         (fact ((interpolation (vec [9 4 1 0 1 4]) -3 2 6) ?x) => ?result)
+(tabular "Linear interpolation of function"
+         (fact ((interpolate #(* % %) -3 2 6) ?x) => ?result)
          ?x   ?result
          -3   9.0
           1.5 2.5
