@@ -55,7 +55,7 @@
       ((interpolation [(matrix [2 3 5]) (matrix [3 5 9])] [-1] [1]) 0) => (matrix [2.5 4 7]))
 
 (tabular "Linear interpolation of scalar function"
-         (fact ((interpolate #(* % %) [-3] [2] 6) ?x) => ?result)
+         (fact ((interpolate #(* % %) [-3] [2] [6]) ?x) => ?result)
          ?x   ?result
          -3   9.0
           1.5 2.5
