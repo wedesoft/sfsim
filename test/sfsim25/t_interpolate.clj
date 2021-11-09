@@ -21,7 +21,10 @@
       (lookup #(* % %) (linear-sampling -3 2 6) 6) => [9 4 1 0 1 4])
 
 (fact "Create linear table of function"
-      (table #(* % %) -3 2 6) => [9 4 1 0 1 4])
+      (table #(* % %) [-3] [2] [6]) => [9 4 1 0 1 4])
+
+(fact "Create 2D table of function"
+      (table * [1 3] [2 5] [2 3]) => [[3 4 5] [6 8 10]])
 
 (tabular "Clip value to given range"
          (fact (clip ?i 16) => ?result)
@@ -54,14 +57,6 @@
 (fact "Linear interpolation using a table of vectors"
       ((interpolation [(matrix [2 3 5]) (matrix [3 5 9])] [-1] [1]) 0) => (matrix [2.5 4 7]))
 
-(tabular "Linear interpolation of scalar function"
-         (fact ((interpolate #(* % %) [-3] [2] [6]) ?x) => ?result)
-         ?x   ?result
-         -3   9.0
-          1.5 2.5
-         -5   9.0
-          3   4.0)
-
 (tabular "Linear interpolation using a 2D table"
          (fact ((interpolation [[2 3 5] [7 11 13]] [?y0 ?x0] [?y1 ?x1]) ?y ?x) => ?result)
          ?y0  ?x0 ?y1 ?x1  ?y  ?x  ?result
@@ -71,3 +66,11 @@
           0   0   1   2    1   0   7.0
           0   0   1   2    0.5 0   4.5
          -3   0   1   2   -1   0   4.5)
+
+(tabular "Linear interpolation of scalar function"
+         (fact ((interpolate #(* % %) [-3] [2] [6]) ?x) => ?result)
+         ?x   ?result
+         -3   9.0
+          1.5 2.5
+         -5   9.0
+          3   4.0)

@@ -20,7 +20,11 @@
 (defn table
   "Create 1-dimensional lookup table using linear sampling"
   [fun minimum maximum size]
-  (lookup fun (linear-sampling minimum maximum size) size))
+  (if (empty? size)
+    (fun)
+    (lookup #(table (partial fun %) (rest minimum) (rest maximum) (rest size))
+            (linear-sampling (first minimum) (first maximum) (first size))
+            (first size))))
 
 (defn clip
   "Clip a value to [0, size - 1]"
@@ -58,4 +62,4 @@
 (defn interpolate
   "Linear interpolation of function"
   [fun minimum maximum size]
-  (interpolation (table fun (first minimum) (first maximum) (first size)) minimum maximum))
+  (interpolation (table fun minimum maximum size) minimum maximum))
