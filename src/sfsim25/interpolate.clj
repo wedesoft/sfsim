@@ -2,6 +2,8 @@
     "N-dimensional interpolation"
     (:require [clojure.core.matrix :refer :all]))
 
+(set! *unchecked-math* true)
+
 (defn linear-mapping
   "Linear mapping onto interpolation table of given size"
   [minimum maximum size]
@@ -63,3 +65,5 @@
   "Linear interpolation of function"
   [fun minimum maximum size]
   (interpolation (table fun minimum maximum size) minimum maximum))
+
+(set! *unchecked-math* false)
