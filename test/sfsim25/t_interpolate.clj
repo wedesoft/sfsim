@@ -10,21 +10,21 @@
           4 15
           0  5)
 
-(tabular "Linear sampling"
-         (fact ((linear-sampling -2 4 16) ?i) => (roughly ?result 1e-6))
+(tabular "Inverse linear sampling"
+         (fact ((inverse-linear-mapping -2 4 16) ?i) => (roughly ?result 1e-6))
          ?i ?result
           0 -2
          15  4
           5  0)
 
 (fact "Make lookup table of function"
-      (lookup #(* % %) (linear-sampling -3 2 6) 6) => [9 4 1 0 1 4])
+      (sample-function #(* % %) (inverse-linear-mapping -3 2 6) 6) => [9 4 1 0 1 4])
 
 (fact "Create linear table of function"
-      (table #(* % %) [-3] [2] [6]) => [9 4 1 0 1 4])
+      (make-lookup-table #(* % %) [-3] [2] [6]) => [9 4 1 0 1 4])
 
 (fact "Create 2D table of function"
-      (table * [1 3] [2 5] [2 3]) => [[3 4 5] [6 8 10]])
+      (make-lookup-table * [1 3] [2 5] [2 3]) => [[3 4 5] [6 8 10]])
 
 (tabular "Clip value to given range"
          (fact (clip ?i 16) => ?result)
