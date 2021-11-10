@@ -3,12 +3,15 @@
               [clojure.core.matrix :refer :all]
               [sfsim25.interpolate :refer :all]))
 
-(tabular "Linear mapping"
-         (fact ((linear-mapping -2 4 16) ?x) => (roughly ?result 1e-6))
+(tabular "1D linear mapping"
+         (fact ((linear-mapping [-2] [4] [16]) ?x) => [?result])
          ?x ?result
          -2  0
           4 15
           0  5)
+
+(fact "2D linear mapping"
+      ((linear-mapping [-2 -1] [4 1] [16 5]) 4 0) => [15 2])
 
 (tabular "Inverse linear sampling"
          (fact ((inverse-linear-mapping -2 4 16) ?i) => (roughly ?result 1e-6))

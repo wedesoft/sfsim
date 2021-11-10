@@ -7,7 +7,7 @@
 (defn linear-mapping
   "Linear mapping onto interpolation table of given size"
   [minimum maximum size]
-  (fn [x] (-> x (- minimum) (/ (- maximum minimum)) (* (dec size)))))
+  (fn [& x] (map (fn [v a b n] (-> v (- a) (/ (- b a)) (* (dec n)))) x minimum maximum size)))
 
 (defn inverse-linear-mapping
   "Inverse linear mapping to get sample values for lookup table"
@@ -52,8 +52,8 @@
     (fn [] lut)
     (fn [x & coords]
         (let [size    (count lut)
-              mapping (linear-mapping (first minimum) (first maximum) size)
-              i       (clip (mapping x) size)
+              mapping (linear-mapping [(first minimum)] [(first maximum)] [size])
+              i       (clip (first (mapping x)) size)
               u       (Math/floor i)
               v       (clip (inc u) size)
               s       (- i u)]
