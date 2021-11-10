@@ -13,15 +13,18 @@
 (fact "2D linear mapping"
       ((linear-mapping [-2 -1] [4 1] [16 5]) 4 0) => [15 2])
 
-(tabular "Inverse linear sampling"
-         (fact ((inverse-linear-mapping -2 4 16) ?i) => (roughly ?result 1e-6))
+(tabular "1D inverse linear sampling"
+         (fact ((inverse-linear-mapping [-2] [4] [16]) ?i) => [?result])
          ?i ?result
           0 -2
          15  4
           5  0)
 
+(fact "2D inverse linear mapping"
+      ((inverse-linear-mapping [-2 -1] [4 1] [16 5]) 15 2) => [4 0])
+
 (fact "Make lookup table of function"
-      (sample-function #(* % %) (inverse-linear-mapping -3 2 6) 6) => [9 4 1 0 1 4])
+      (sample-function #(* % %) (inverse-linear-mapping [-3] [2] [6]) 6) => [9 4 1 0 1 4])
 
 (fact "Create linear table of function"
       (make-lookup-table #(* % %) [-3] [2] [6]) => [9 4 1 0 1 4])

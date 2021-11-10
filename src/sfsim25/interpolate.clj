@@ -7,17 +7,17 @@
 (defn linear-mapping
   "Linear mapping onto interpolation table of given size"
   [minimum maximum size]
-  (fn [& x] (map (fn [v a b n] (-> v (- a) (/ (- b a)) (* (dec n)))) x minimum maximum size)))
+  (fn [& point] (map (fn [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minimum maximum size)))
 
 (defn inverse-linear-mapping
   "Inverse linear mapping to get sample values for lookup table"
   [minimum maximum size]
-  (fn [i] (-> i (/ (dec size)) (* (- maximum minimum)) (+ minimum))))
+  (fn [& indices] (map (fn [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minimum maximum size)))
 
 (defn sample-function
   "Create 1-dimensional lookup table"
   [fun inverse-mapping size]
-  (vec (map (comp fun inverse-mapping) (range size))))
+  (vec (map (comp fun first inverse-mapping) (range size))))
 
 (defn make-lookup-table
   "Create 1-dimensional lookup table using linear sampling"
@@ -25,7 +25,7 @@
   (if (empty? size)
     (fun)
     (sample-function #(make-lookup-table (partial fun %) (rest minimum) (rest maximum) (rest size))
-                     (inverse-linear-mapping (first minimum) (first maximum) (first size))
+                     (inverse-linear-mapping [(first minimum)] [(first maximum)] [(first size)])
                      (first size))))
 
 (defn clip
