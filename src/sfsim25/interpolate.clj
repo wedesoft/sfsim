@@ -14,19 +14,17 @@
   [minimum maximum size]
   (fn [& indices] (map (fn [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minimum maximum size)))
 
-(defn sample-function
-  "Create 1-dimensional lookup table"
-  [fun inverse-mapping size]
-  (vec (map (comp fun first inverse-mapping) (range size))))
+(defn- sample-function
+  "Recursively take samples from a function"
+  [sample-fun size args]
+  (if (empty? size)
+    (sample-fun args)
+    (vec (map #(sample-function sample-fun (rest size) (conj args %)) (range (first size))))))
 
 (defn make-lookup-table
-  "Create 1-dimensional lookup table using linear sampling"
-  [fun minimum maximum size]
-  (if (empty? size)
-    (fun)
-    (sample-function #(make-lookup-table (partial fun %) (rest minimum) (rest maximum) (rest size))
-                     (inverse-linear-mapping [(first minimum)] [(first maximum)] [(first size)])
-                     (first size))))
+  "Create n-dimensional lookup table using given function to sample and inverse mapping"
+  [fun inverse-mapping size]
+  (sample-function (fn [args] (apply fun (apply inverse-mapping args))) size []))
 
 (defn clip
   "Clip a value to [0, size - 1]"
@@ -45,25 +43,27 @@
     (into [(count lut)] (dimensions (nth lut 0)))
     []))
 
-(defn interpolation
-  "Linear interpolation of data table"
-  [lut minimum maximum]
-  (if (empty? minimum)
-    (fn [] lut)
-    (fn [x & coords]
-        (let [size    (count lut)
-              mapping (linear-mapping [(first minimum)] [(first maximum)] [size])
-              i       (clip (first (mapping x)) size)
-              u       (Math/floor i)
-              v       (clip (inc u) size)
-              s       (- i u)]
-          (mix (apply (interpolation (nth lut u) (rest minimum) (rest maximum)) coords)
-               (apply (interpolation (nth lut v) (rest minimum) (rest maximum)) coords)
-               s)))))
+(defn- interpolation
+  "Linear interpolation for point in table"
+  [lut point]
+  (if (empty? point)
+    lut
+    (let [size       (count lut)
+          [c & args] point
+          i          (clip c size)
+          u          (Math/floor i)
+          v          (clip (inc u) size)
+          s          (- i u)]
+      (mix (interpolation (nth lut u) args) (interpolation (nth lut v) args) s))))
 
-(defn interpolate
+(defn interpolate-table
+  "Linear interpolation using lookup table and mapping function"
+  [lut mapping]
+  (fn [& coords] (interpolation lut (apply mapping coords))))
+
+(defn interpolate-function
   "Linear interpolation of function"
-  [fun minimum maximum size]
-  (interpolation (make-lookup-table fun minimum maximum size) minimum maximum))
+  [fun mapping inverse-mapping size]
+  (interpolate-table (make-lookup-table fun inverse-mapping size) mapping))
 
 (set! *unchecked-math* false)
