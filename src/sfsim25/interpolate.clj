@@ -17,7 +17,7 @@
 (defn linear-space
   "Create forward and backward mapping for linear sampling"
   [minima maxima shape]
-  {::forward (linear-mapping minima maxima shape) ::backward (inverse-linear-mapping minima maxima shape)})
+  {::forward (linear-mapping minima maxima shape) ::backward (inverse-linear-mapping minima maxima shape) ::shape shape})
 
 (defn- sample-function
   "Recursively take samples from a function"
@@ -28,8 +28,8 @@
 
 (defn make-lookup-table
   "Create n-dimensional lookup table using given function to sample and inverse mapping"
-  [fun space shape]
-  (sample-function (fn [args] (apply fun (apply (::backward space) args))) shape []))
+  [fun space]
+  (sample-function (fn [args] (apply fun (apply (::backward space) args))) (::shape space) []))
 
 (defn clip
   "Clip a value to [0, size - 1]"
@@ -68,7 +68,7 @@
 
 (defn interpolate-function
   "Linear interpolation of function"
-  [fun space shape]
-  (interpolate-table (make-lookup-table fun space shape) (::forward space)))
+  [fun space]
+  (interpolate-table (make-lookup-table fun space) (::forward space)))
 
 (set! *unchecked-math* false)

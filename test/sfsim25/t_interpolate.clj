@@ -26,13 +26,14 @@
 
 (facts "Pair of mapping and inverse mapping"
        ((:sfsim25.interpolate/forward (linear-space [-2 -1] [4 1] [16 5])) 4 0) => [15 2]
-       ((:sfsim25.interpolate/backward (linear-space [-2 -1] [4 1] [16 5])) 15 2) => [4 0])
+       ((:sfsim25.interpolate/backward (linear-space [-2 -1] [4 1] [16 5])) 15 2) => [4 0]
+       (:sfsim25.interpolate/shape (linear-space [-2 -1] [4 1] [16 5])) => [16 5])
 
 (fact "Create linear table of function"
-      (make-lookup-table sqr (linear-space [-3] [2] [6]) [6]) => [9.0 4.0 1.0 0.0 1.0 4.0])
+      (make-lookup-table sqr (linear-space [-3] [2] [6])) => [9.0 4.0 1.0 0.0 1.0 4.0])
 
 (fact "Create 2D table of function"
-      (make-lookup-table * (linear-space [1 3] [2 5] [2 3]) [2 3]) => [[3 4 5] [6 8 10]])
+      (make-lookup-table * (linear-space [1 3] [2 5] [2 3])) => [[3 4 5] [6 8 10]])
 
 (tabular "Clip value to given range"
          (fact (clip ?i 16) => ?result)
@@ -76,7 +77,7 @@
          -3   0   1   2   -1   0   4.5)
 
 (tabular "Linear interpolation of scalar function"
-         (fact ((interpolate-function sqr (linear-space [-3] [2] [6]) [6]) ?x) => ?result)
+         (fact ((interpolate-function sqr (linear-space [-3] [2] [6])) ?x) => ?result)
          ?x   ?result
          -3   9.0
           1.5 2.5
