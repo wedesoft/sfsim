@@ -618,7 +618,9 @@ void main()
 
 (defn apply-comp [f g] (fn [& args] (apply f (apply g args))))
 
-(def transmittance-space #:sfsim25.interpolate{:forward (apply-comp (linear-forward [0 -1] [height 1] [64 64]) transmittance-forward) :backward (apply-comp transmittance-backward (linear-backward [0 -1] [height 1] [64 64])) :shape [64 64]})
+(def shp [64 64])
+
+(def transmittance-space #:sfsim25.interpolate{:forward (apply-comp (linear-forward [0 -1] [height 1] shp) transmittance-forward) :backward (apply-comp transmittance-backward (linear-backward [0 -1] [height 1] shp)) :shape shp})
 
 (defn fun [point direction] (transmittance earth [mie rayleigh] 10 #:sfsim25.ray{:origin point :direction direction}))
 
