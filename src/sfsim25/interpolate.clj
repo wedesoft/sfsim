@@ -5,26 +5,31 @@
 (set! *unchecked-math* true)
 
 (defn linear-mapping
-  "Linear mapping onto interpolation table of given size"
-  [minimum maximum size]
-  (fn [& point] (map (fn [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minimum maximum size)))
+  "Linear mapping onto interpolation table of given shape"
+  [minima maxima shape]
+  (fn [& point] (map (fn [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
 
 (defn inverse-linear-mapping
   "Inverse linear mapping to get sample values for lookup table"
-  [minimum maximum size]
-  (fn [& indices] (map (fn [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minimum maximum size)))
+  [minima maxima shape]
+  (fn [& indices] (map (fn [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
+
+(defn linear-space
+  "Create forward and backward mapping for linear sampling"
+  [minima maxima shape]
+  {::forward (linear-mapping minima maxima shape) ::backward (inverse-linear-mapping minima maxima shape)})
 
 (defn- sample-function
   "Recursively take samples from a function"
-  [sample-fun size args]
-  (if (empty? size)
+  [sample-fun shape args]
+  (if (empty? shape)
     (sample-fun args)
-    (vec (map #(sample-function sample-fun (rest size) (conj args %)) (range (first size))))))
+    (vec (map #(sample-function sample-fun (rest shape) (conj args %)) (range (first shape))))))
 
 (defn make-lookup-table
   "Create n-dimensional lookup table using given function to sample and inverse mapping"
-  [fun inverse-mapping size]
-  (sample-function (fn [args] (apply fun (apply inverse-mapping args))) size []))
+  [fun space shape]
+  (sample-function (fn [args] (apply fun (apply (::backward space) args))) shape []))
 
 (defn clip
   "Clip a value to [0, size - 1]"
@@ -63,7 +68,7 @@
 
 (defn interpolate-function
   "Linear interpolation of function"
-  [fun mapping inverse-mapping size]
-  (interpolate-table (make-lookup-table fun inverse-mapping size) mapping))
+  [fun space shape]
+  (interpolate-table (make-lookup-table fun space shape) (::forward space)))
 
 (set! *unchecked-math* false)
