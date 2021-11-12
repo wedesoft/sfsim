@@ -591,3 +591,35 @@ void main()
 (close! changes)
 
 (System/exit 0)
+
+; --------------------------------------------------------------------------------
+(require '[clojure.core.matrix :refer :all])
+(require '[clojure.core.matrix.linear :refer (norm)])
+(require '[sfsim25.interpolate :refer :all])
+(require '[sfsim25.atmosphere :refer :all])
+
+(def radius 6378000.0)
+(def height 100000.0)
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
+
+(defn transmittance-forward
+  [point direction]
+  (let [h (- (norm point) radius)
+        c (/ (dot point direction) (* (norm point) (norm direction)))]
+    [h c]))
+
+(defn transmittance-backward
+  [h c]
+  (let [point     (matrix [(+ radius h) 0 0])
+        direction (matrix [c (Math/sqrt (- 1 (* c c))) 0])]
+    [point direction]))
+
+(defn apply-comp [f g] (fn [& args] (apply f (apply g args))))
+
+(def transmittance-space #:sfsim25.interpolate{:forward (apply-comp (linear-forward [0 -1] [height 1] [64 64]) transmittance-forward) :backward (apply-comp transmittance-backward (linear-backward [0 -1] [height 1] [64 64])) :shape [64 64]})
+
+(defn fun [point direction] (transmittance earth [mie rayleigh] 10 #:sfsim25.ray{:origin point :direction direction}))
+
+(make-lookup-table fun transmittance-space)

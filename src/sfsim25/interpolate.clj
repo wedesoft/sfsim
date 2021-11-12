@@ -4,12 +4,12 @@
 
 (set! *unchecked-math* true)
 
-(defn linear-mapping
+(defn linear-forward
   "Linear mapping onto interpolation table of given shape"
   [minima maxima shape]
   (fn [& point] (map (fn [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
 
-(defn inverse-linear-mapping
+(defn linear-backward
   "Inverse linear mapping to get sample values for lookup table"
   [minima maxima shape]
   (fn [& indices] (map (fn [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
@@ -17,7 +17,7 @@
 (defn linear-space
   "Create forward and backward mapping for linear sampling"
   [minima maxima shape]
-  {::forward (linear-mapping minima maxima shape) ::backward (inverse-linear-mapping minima maxima shape) ::shape shape})
+  {::forward (linear-forward minima maxima shape) ::backward (linear-backward minima maxima shape) ::shape shape})
 
 (defn- sample-function
   "Recursively take samples from a function"
