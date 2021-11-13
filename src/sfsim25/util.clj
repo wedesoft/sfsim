@@ -207,3 +207,8 @@
   ^long [^long address ^long alignment]
   (let [mask (dec alignment)]
     (bit-and (+ address mask) (bit-not mask))))
+
+(defn comp*
+  "Combine multiple-argument functions"
+  [f g]
+  (fn [& args] (apply f (apply g args))))

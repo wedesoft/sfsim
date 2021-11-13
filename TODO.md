@@ -1,6 +1,7 @@
 # TODO
 
 * sample transmittance table and implement lookup
+* add non-linear mapping to make sampling more even
 * replace RGB with Vector?
 * represent ray using hash
 * add ozone layer

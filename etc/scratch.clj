@@ -597,6 +597,8 @@ void main()
 (require '[clojure.core.matrix.linear :refer (norm)])
 (require '[sfsim25.interpolate :refer :all])
 (require '[sfsim25.atmosphere :refer :all])
+(require '[sfsim25.matrix :refer :all])
+(require '[sfsim25.util :refer :all])
 
 (def radius 6378000.0)
 (def height 100000.0)
@@ -604,24 +606,46 @@ void main()
 (def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 
+(def shp [128 128])
+
 (defn transmittance-forward
   [point direction]
-  (let [h (- (norm point) radius)
-        c (/ (dot point direction) (* (norm point) (norm direction)))]
-    [h c]))
+  (let [height        (- (norm point) radius)
+        cos-direction (/ (dot point direction) (* (norm point) (norm direction)))]
+    [height cos-direction]))
 
 (defn transmittance-backward
-  [h c]
-  (let [point     (matrix [(+ radius h) 0 0])
-        direction (matrix [c (Math/sqrt (- 1 (* c c))) 0])]
+  [height cos-direction]
+  (let [point     (matrix [(+ radius height) 0 0])
+        direction (matrix [cos-direction (Math/sqrt (- 1 (* cos-direction cos-direction))) 0])]
     [point direction]))
 
-(defn apply-comp [f g] (fn [& args] (apply f (apply g args))))
+(def transmittance-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1] [height 1] shp) transmittance-forward) :backward (comp* transmittance-backward (linear-backward [0 -1] [height 1] shp)) :shape shp})
 
-(def shp [64 64])
+(defn transmittance-earth [x v] (transmittance earth [mie rayleigh] 10 #:sfsim25.ray{:origin x :direction v}))
 
-(def transmittance-space #:sfsim25.interpolate{:forward (apply-comp (linear-forward [0 -1] [height 1] shp) transmittance-forward) :backward (apply-comp transmittance-backward (linear-backward [0 -1] [height 1] shp)) :shape shp})
+(def T (interpolate-function transmittance-earth transmittance-space))
 
-(defn fun [point direction] (transmittance earth [mie rayleigh] 10 #:sfsim25.ray{:origin point :direction direction}))
+(defn surface-radiance-forward [point sun-direction] (transmittance-forward point sun-direction))
+(defn surface-radiance-backward [height cos-sun-direction] (transmittance-backward height cos-sun-direction))
 
-(make-lookup-table fun transmittance-space)
+(def surface-radiance-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1] [height 1] shp) surface-radiance-forward) :backward (comp* surface-radiance-backward (linear-backward [0 -1] [height 1] shp)) :shape shp})
+
+(defn surface-radiance-base-earth [point sun-direction] (surface-radiance-base earth [mie rayleigh] 10 (matrix [1 1 1]) point sun-direction))
+
+(def dE (interpolate-function surface-radiance-base-earth surface-radiance-space))
+
+(defn clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
+
+(defn ray-scatter-forward
+  [point direction sun-direction]
+  (let [height                (- (norm point) radius)
+        horizon               (oriented-matrix (normalise point))
+        direction-rotated     (mmul horizon (normalise direction))
+        sun-direction-rotated (mmul horizon (normalise direction))
+        cos-direction         (mget direction-rotated 0)
+        cos-sun-direction     (mget sun-direction-rotated 0)
+        direction-angle       (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
+        sun-direction-angle   (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
+        angle-difference      (clip-angle (- sun-direction-angle direction-angle))]
+    [height cos-direction cos-sun-direction angle-difference]))

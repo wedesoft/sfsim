@@ -131,3 +131,6 @@
   (align-address 7 4) => 8
   (align-address 6 4) => 8
   (align-address 6 2) => 6)
+
+(facts "Combine multiple-argument functions"
+       ((comp* + vector) 1 2 3) => 6)
