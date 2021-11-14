@@ -1,6 +1,9 @@
 # TODO
 
+* dS should depend on direction of sun
+* function names: interpolate-value, interpolation-table
 * sample transmittance table and implement lookup
+* have atmosphere functions accept transmittance function
 * add non-linear mapping to make sampling more even
 * replace RGB with Vector?
 * represent ray using hash

@@ -616,8 +616,9 @@ void main()
 
 (defn transmittance-backward
   [height cos-direction]
-  (let [point     (matrix [(+ radius height) 0 0])
-        direction (matrix [cos-direction (Math/sqrt (- 1 (* cos-direction cos-direction))) 0])]
+  (let [point         (matrix [(+ radius height) 0 0])
+        sin-direction (Math/sqrt (- 1 (* cos-direction cos-direction)))
+        direction     (matrix [cos-direction sin-direction 0])]
     [point direction]))
 
 (def transmittance-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1] [height 1] shp) transmittance-forward) :backward (comp* transmittance-backward (linear-backward [0 -1] [height 1] shp)) :shape shp})
@@ -649,3 +650,22 @@ void main()
         sun-direction-angle   (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
         angle-difference      (clip-angle (- sun-direction-angle direction-angle))]
     [height cos-direction cos-sun-direction angle-difference]))
+
+(defn ray-scatter-backward
+  [height cos-direction cos-sun-direction angle-difference]
+  (let [point             (matrix [(+ radius height) 0 0])
+        sin-direction     (Math/sqrt (- 1 (* cos-direction cos-direction)))
+        direction         (matrix [cos-direction sin-direction 0])
+        sin-sun-direction (Math/sqrt (- 1 (* cos-sun-direction cos-sun-direction)))
+        cos-angle-diff    (Math/cos angle-difference)
+        sin-angle-diff    (Math/sin angle-difference)
+        sun-direction     (matrix [cos-sun-direction (* sin-sun-direction cos-angle-diff) (* sin-sun-direction sin-angle-diff)])]
+    [point direction sun-direction]))
+
+(def shp2 [8 8 8 8])
+
+(def ray-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2) ray-scatter-forward) :backward (comp* ray-scatter-backward (linear-backward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2)) :shape shp2})
+
+(defn ray-scatter-base-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
+
+(def dS (interpolate-function ray-scatter-base-earth ray-scatter-space))
