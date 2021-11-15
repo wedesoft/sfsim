@@ -56,7 +56,7 @@
        (dimensions [(matrix [1 2 3]) (matrix [4 5 6])]) => [2])
 
 (tabular "Linear interpolation using a table of scalar values"
-         (fact ((interpolate-table [9 4 1 0 1 4] (linear-forward [-3] [2] [6])) ?x) => ?result)
+         (fact ((interpolation-table [9 4 1 0 1 4] (linear-forward [-3] [2] [6])) ?x) => ?result)
          ?x   ?result
          -3   9.0
           1.5 2.5
@@ -64,10 +64,10 @@
           3   4.0)
 
 (fact "Linear interpolation using a table of vectors"
-      ((interpolate-table [(matrix [2 3 5]) (matrix [3 5 9])] (linear-forward [-1] [1] [2])) 0) => (matrix [2.5 4 7]))
+      ((interpolation-table [(matrix [2 3 5]) (matrix [3 5 9])] (linear-forward [-1] [1] [2])) 0) => (matrix [2.5 4 7]))
 
 (tabular "Linear interpolation using a 2D table"
-         (fact ((interpolate-table [[2 3 5] [7 11 13]] (linear-forward [?y0 ?x0] [?y1 ?x1] [2 3])) ?y ?x) => ?result)
+         (fact ((interpolation-table [[2 3 5] [7 11 13]] (linear-forward [?y0 ?x0] [?y1 ?x1] [2 3])) ?y ?x) => ?result)
          ?y0  ?x0 ?y1 ?x1  ?y  ?x  ?result
           0   0   1   2    0   0   2.0
           0   0   1   2    0   2   5.0

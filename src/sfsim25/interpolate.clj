@@ -48,7 +48,7 @@
     (into [(count lut)] (dimensions (nth lut 0)))
     []))
 
-(defn- interpolation
+(defn- interpolate-value
   "Linear interpolation for point in table"
   [lut point]
   (if (empty? point)
@@ -59,16 +59,16 @@
           u          (Math/floor i)
           v          (clip (inc u) size)
           s          (- i u)]
-      (mix (interpolation (nth lut u) args) (interpolation (nth lut v) args) s))))
+      (mix (interpolate-value (nth lut u) args) (interpolate-value (nth lut v) args) s))))
 
-(defn interpolate-table
+(defn interpolation-table
   "Linear interpolation using lookup table and mapping function"
   [lut mapping]
-  (fn [& coords] (interpolation lut (apply mapping coords))))
+  (fn [& coords] (interpolate-value lut (apply mapping coords))))
 
 (defn interpolate-function
   "Linear interpolation of function"
   [fun space]
-  (interpolate-table (make-lookup-table fun space) (::forward space)))
+  (interpolation-table (make-lookup-table fun space) (::forward space)))
 
 (set! *unchecked-math* false)
