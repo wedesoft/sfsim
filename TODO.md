@@ -1,6 +1,5 @@
 # TODO
 
-* dS should depend on direction of sun
 * function names: interpolate-value, interpolation-table
 * sample transmittance table and implement lookup
 * have atmosphere functions accept transmittance function

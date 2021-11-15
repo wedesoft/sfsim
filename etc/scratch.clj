@@ -593,6 +593,7 @@ void main()
 (System/exit 0)
 
 ; --------------------------------------------------------------------------------
+
 (require '[clojure.core.matrix :refer :all])
 (require '[clojure.core.matrix.linear :refer (norm)])
 (require '[sfsim25.interpolate :refer :all])
@@ -643,7 +644,7 @@ void main()
   (let [height                (- (norm point) radius)
         horizon               (oriented-matrix (normalise point))
         direction-rotated     (mmul horizon (normalise direction))
-        sun-direction-rotated (mmul horizon (normalise direction))
+        sun-direction-rotated (mmul horizon (normalise sun-direction))
         cos-direction         (mget direction-rotated 0)
         cos-sun-direction     (mget sun-direction-rotated 0)
         direction-angle       (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
@@ -662,7 +663,7 @@ void main()
         sun-direction     (matrix [cos-sun-direction (* sin-sun-direction cos-angle-diff) (* sin-sun-direction sin-angle-diff)])]
     [point direction sun-direction]))
 
-(def shp2 [8 8 8 8])
+(def shp2 [16 16 16 16])
 
 (def ray-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2) ray-scatter-forward) :backward (comp* ray-scatter-backward (linear-backward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2)) :shape shp2})
 
