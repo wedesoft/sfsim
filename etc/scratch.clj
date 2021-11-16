@@ -603,7 +603,7 @@ void main()
 
 (def radius 6378000.0)
 (def height 100000.0)
-(def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height})
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
 (def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 
@@ -663,10 +663,21 @@ void main()
         sun-direction     (matrix [cos-sun-direction (* sin-sun-direction cos-angle-diff) (* sin-sun-direction sin-angle-diff)])]
     [point direction sun-direction]))
 
-(def shp2 [16 16 16 16])
+(def shp2 [8 8 8 8])
 
 (def ray-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2) ray-scatter-forward) :backward (comp* ray-scatter-backward (linear-backward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2)) :shape shp2})
 
 (defn ray-scatter-base-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
 
 (def dS (interpolate-function ray-scatter-base-earth ray-scatter-space))
+
+(defn point-scatter-earth [point direction sun-direction] (point-scatter earth [mie rayleigh] dS dE (matrix [1 1 1]) 16 10 point direction sun-direction))
+
+(def point-scatter-forward ray-scatter-forward)
+(def point-scatter-backward ray-scatter-backward)
+
+(def shp2 [8 8 8 8])
+
+(def point-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2) point-scatter-forward) :backward (comp* point-scatter-backward (linear-backward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2)) :shape shp2})
+
+(def dJ (interpolate-function point-scatter-earth point-scatter-space))
