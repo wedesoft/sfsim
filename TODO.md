@@ -1,8 +1,9 @@
 # TODO
 
-* sample transmittance table and implement lookup
-* have atmosphere functions accept transmittance function
+* iteratively sum E and S function
+* visualise sky luminance S
 * add non-linear mapping to make sampling more even
+* have atmosphere functions accept transmittance function and use sampling
 * replace RGB with Vector?
 * represent ray using hash
 * add ozone layer
