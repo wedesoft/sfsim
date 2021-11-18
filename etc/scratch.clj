@@ -599,15 +599,16 @@ void main()
 (require '[sfsim25.interpolate :refer :all])
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.matrix :refer :all])
+(require '[sfsim25.rgb :refer (->RGB)])
 (require '[sfsim25.util :refer :all])
 
 (def radius 6378000.0)
 (def height 100000.0)
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 
-(def shp [8 8])
+(def shp [16 16])
 
 (defn transmittance-forward
   [point direction]
@@ -663,7 +664,7 @@ void main()
         sun-direction     (matrix [cos-sun-direction (* sin-sun-direction cos-angle-diff) (* sin-sun-direction sin-angle-diff)])]
     [point direction sun-direction]))
 
-(def shp2 [8 8 8 8])
+(def shp2 [16 16 16 16])
 
 (def ray-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2) ray-scatter-forward) :backward (comp* ray-scatter-backward (linear-backward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2)) :shape shp2})
 
@@ -688,3 +689,20 @@ void main()
 
 (defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 dJ point direction sun-direction))
 (def dS (interpolate-function ray-scatter-earth ray-scatter-space))
+
+(def S dS)
+
+(def w2 150)
+(def -w2 (- w2))
+(def w (inc (* 2 w2)))
+
+(def img {:width w :height w :data (int-array (sqr w))})
+
+(doseq [y (range -w2 (inc w2)) x (range -w2 (inc w2))]
+       (let [r (Math/hypot y x)]
+         (if (<= r w2)
+           (let [z (Math/sqrt (- (sqr w2) (* r r)))
+                 v (S (matrix [radius 0 0]) (matrix [z x y]) (matrix [1 0 0]))]
+             (set-pixel! img (+ y w2) (+ x w2) (apply ->RGB (mul 6000 v)))))))
+
+(show-image img)
