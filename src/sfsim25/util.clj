@@ -99,6 +99,14 @@
     (.setProcessor img processor)
     (.saveAsPng (FileSaver. img) file-name)))
 
+(defn show-image
+  "Open a window displaying the image"
+  [{:keys [width height data]}]
+  (let [processor (ColorProcessor. width height data)
+        img       (ImagePlus.)]
+    (.setProcessor img processor)
+    (.show img)))
+
 (defn slurp-image
   "Load an RGB image"
   [^String file-name]
