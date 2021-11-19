@@ -124,14 +124,21 @@
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
-(facts "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
-  (let [radius        6378000.0
-        height        100000.0
-        earth         #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-        mie           #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
-        sun-light     (matrix [1.0 1.0 1.0])
-        sun-direction (matrix [1.0 0.0 0.0])]
-    (with-redefs [atmosphere/scattering
+(fact "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
+  (let [radius         6378000.0
+        height         100000.0
+        earth          #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        mie            #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
+        sun-light      (matrix [1.0 1.0 1.0])
+        sun-direction  (matrix [1.0 0.0 0.0])
+        sun-direction2 (matrix [-1.0 0.0 0.0])]
+    (with-redefs [atmosphere/ray-extremity
+                  (fn [planet ray]
+                      (facts planet => earth
+                             (:sfsim25.ray/origin ray) => (matrix [0 (+ radius 1000) 0])
+                             (:sfsim25.ray/direction ray) => sun-direction)
+                      {:sfsim25.atmosphere/surface false})
+                  atmosphere/scattering
                   (fn ^Vector [mie ^double height]
                       (facts (:sfsim25.atmosphere/scatter-base mie) => (matrix [2e-5 2e-5 2e-5])
                              height => 1000.0)
@@ -149,7 +156,15 @@
                              (:sfsim25.ray/direction ray) => sun-direction)
                       (matrix [0.5 0.5 0.5]))]
       (point-scatter-base earth [mie] 10 sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction)
-      => (roughly-matrix (mul sun-light 2e-5 0.1 0.5) 1e-12))))
+      => (roughly-matrix (mul sun-light 2e-5 0.1 0.5) 1e-12))
+    (with-redefs [atmosphere/ray-extremity
+                  (fn [planet ray]
+                      (facts planet => earth
+                             (:sfsim25.ray/origin ray) => (matrix [0 (+ radius 1000) 0])
+                             (:sfsim25.ray/direction ray) => sun-direction2)
+                      {:sfsim25.atmosphere/surface true})]
+      (point-scatter-base earth [mie] 10 sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction2)
+      => (matrix [0 0 0]))))
 
 (facts "In-scattered light from a direction (S) depending on point scatter function (J)"
   (let [radius           6378000.0

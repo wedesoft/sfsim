@@ -95,7 +95,9 @@
   (let [height-of-x  (height planet x)
         scatter-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction sun-direction)))
         sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
-    (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps sun-ray))))
+    (if (::surface (ray-extremity planet sun-ray))
+      (matrix [0 0 0])
+      (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps sun-ray)))))
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"

@@ -692,7 +692,9 @@ void main()
 
 (def S dS)
 
-(def w2 50)
+(def S ray-scatter-base-earth)
+
+(def w2 150)
 (def -w2 (- w2))
 (def w (inc (* 2 w2)))
 
@@ -706,14 +708,21 @@ void main()
                         (let [r (Math/hypot y x)]
                           (if (<= r w2)
                             (let [z (Math/sqrt (- (sqr w2) (* r r)))
-                                  v (S (matrix [(+ radius 1000) 0 0]) (normalize (matrix [z x y])) (normalize (matrix [-1 0 0])))]
+                                  v (S (matrix [(+ radius 1000) 0 0]) (normalize (matrix [z x y])) (normalize (matrix [0 1 0])))]
                               v)
                             (matrix [0 0 0]))))
                     (range -w2 (inc w2)))))
          (range -w2 (inc w2)))))
 
 (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
+(def m 0.062)
 
 (doseq [y (range w) x (range w)] (set-pixel! img y x (apply ->RGB (mul (/ 255 m) (nth (nth data y) x)))))
 
 (show-image img)
+
+(ray-scatter-base-earth (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [-1 0 0]))
+
+(def h 10000)
+(point-scatter-base earth [rayleigh] 10 (matrix [1 1 1]) (matrix [(+ radius h) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]))
+(point-scatter-base earth [rayleigh] 10 (matrix [1 1 1]) (matrix [(+ radius h) 0 0]) (matrix [1 0 0]) (matrix [-1 0 0]))
