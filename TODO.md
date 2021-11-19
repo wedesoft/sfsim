@@ -1,6 +1,6 @@
 # TODO
 
-* visualise sky luminance S using ImageJ?
+* scattering at night should be zero
 * put dE, dS, ... into atoms
 * iteratively sum E and S function using dE and dS
 * add non-linear mapping to make sampling more even
