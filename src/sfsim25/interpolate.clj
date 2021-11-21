@@ -22,23 +22,23 @@
 (defn- sample-function
   "Recursively take samples from a function"
   [sample-fun shape args]
-  (if (empty? shape)
-    (sample-fun args)
-    (vec (map #(sample-function sample-fun (rest shape) (conj args %)) (range (first shape))))))
+  (if (seq shape)
+    (vec (map #(sample-function sample-fun (rest shape) (conj args %)) (range (first shape))))
+    (sample-fun args)))
 
 (defn make-lookup-table
   "Create n-dimensional lookup table using given function to sample and inverse mapping"
-  [fun space]
+  ^clojure.lang.PersistentVector [fun space]
   (sample-function (fn [args] (apply fun (apply (::backward space) args))) (::shape space) []))
 
 (defn clip
   "Clip a value to [0, size - 1]"
-  [value size]
+  ^double [^double value ^long size]
   (min (max value 0) (dec size)))
 
 (defn mix
   "Linear mixing of values"
-  [a b scalar]
+  [a b ^double scalar]
   (add (mul (- 1 scalar) a) (mul scalar b)))
 
 (defn dimensions
@@ -50,20 +50,20 @@
 
 (defn- interpolate-value
   "Linear interpolation for point in table"
-  [lut point]
-  (if (empty? point)
-    lut
+  [lut ^clojure.lang.PersistentVector point]
+  (if (seq point)
     (let [size       (count lut)
           [c & args] point
           i          (clip c size)
           u          (Math/floor i)
           v          (clip (inc u) size)
           s          (- i u)]
-      (mix (interpolate-value (nth lut u) args) (interpolate-value (nth lut v) args) s))))
+      (mix (interpolate-value (nth lut u) args) (interpolate-value (nth lut v) args) s))
+    lut))
 
 (defn interpolation-table
   "Linear interpolation using lookup table and mapping function"
-  [lut mapping]
+  [^clojure.lang.PersistentVector lut mapping]
   (fn [& coords] (interpolate-value lut (apply mapping coords))))
 
 (defn interpolate-function

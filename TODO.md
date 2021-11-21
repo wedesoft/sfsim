@@ -1,7 +1,5 @@
 # TODO
 
-* put dE, dS, ... into atoms
-* iteratively sum E and S function using dE and dS
 * add non-linear mapping to make sampling more even
 * have atmosphere functions accept transmittance function and use sampling
 * replace RGB with Vector?

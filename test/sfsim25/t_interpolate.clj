@@ -30,24 +30,26 @@
        (:sfsim25.interpolate/shape (linear-space [-2 -1] [4 1] [16 5])) => [16 5])
 
 (fact "Create linear table of function"
-      (make-lookup-table sqr (linear-space [-3] [2] [6])) => [9.0 4.0 1.0 0.0 1.0 4.0])
+      (make-lookup-table sqr (linear-space [-3] [2] [6])) => [9.0 4.0 1.0 0.0 1.0 4.0]
+      (make-lookup-table sqr (linear-space [-3] [2] [6])) => vector?)
 
 (fact "Create 2D table of function"
-      (make-lookup-table * (linear-space [1 3] [2 5] [2 3])) => [[3 4 5] [6 8 10]])
+      (make-lookup-table * (linear-space [1 3] [2 5] [2 3])) => [[3 4 5] [6 8 10]]
+      (make-lookup-table * (linear-space [1 3] [2 5] [2 3])) => vector?)
 
 (tabular "Clip value to given range"
          (fact (clip ?i 16) => ?result)
          ?i ?result
-          0  0
-         15 15
-         -2  0
-         16 15)
+          0.0  0.0
+         15.0 15.0
+         -2.0  0.0
+         16.0 15.0)
 
 (tabular "Mix between values"
-         (fact (mix -2 4 ?s) => ?result)
+         (fact (mix -2.0 4.0 ?s) => ?result)
          ?s  ?result
-         0   -2
-         1    4
+         0.0 -2.0
+         1.0  4.0
          0.5  1.0)
 
 (facts "Shape of nested vector"

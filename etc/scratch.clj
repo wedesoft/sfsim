@@ -640,6 +640,8 @@ void main()
 
 (def dE (atom (time (interpolate-function surface-radiance-base-earth surface-radiance-space))))
 
+(def E (atom (fn [point sun-direction] (matrix [0 0 0]))))
+
 (defn clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
 
 (defn ray-scatter-forward
@@ -674,6 +676,8 @@ void main()
 
 (def dS (atom (time (interpolate-function ray-scatter-base-earth ray-scatter-space))))
 
+(def S (atom @dS))
+
 (def point-scatter-forward ray-scatter-forward)
 (def point-scatter-backward ray-scatter-backward)
 
@@ -695,6 +699,9 @@ void main()
 (defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 @dJ point direction sun-direction))
 (reset! dS (time (interpolate-function ray-scatter-earth ray-scatter-space)))
 
+(reset! E (let [E @E dE @dE] (interpolate-function (fn [point sun-direction] (add (E point sun-direction) (dE point sun-direction))) surface-radiance-space)))
+
+(reset! S (let [S @S dS @dS] (interpolate-function (fn [point direction sun-direction] (add (S point direction sun-direction) (dS point direction sun-direction))) ray-scatter-space)))
 
 ; ---
 (def w2 150)
@@ -703,8 +710,8 @@ void main()
 
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def sun-direction (normalize (matrix [0.1 1 0])))
-(def point (matrix [(+ radius 1000) 0 0]))
+(def sun-direction (normalize (matrix [0 1 0])))
+(def point (matrix [(+ radius 20000) 0 0]))
 (def data
   (vec
     (map (fn [y]
@@ -714,7 +721,7 @@ void main()
                           (if (<= r w2)
                             (let [z (Math/sqrt (- (sqr w2) (* r r)))
                                   d (normalize (matrix [z x y]))
-                                  v (S point d sun-direction)
+                                  v (@S point d sun-direction)
                                   s (Math/pow (max 0 (dot d sun-direction)) 100)
                                   R {:sfsim25.ray/origin point :sfsim25.ray/direction sun-direction}
                                   t (transmittance earth [mie rayleigh] 10 R)]
