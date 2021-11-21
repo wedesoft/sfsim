@@ -700,6 +700,8 @@ void main()
 
 (def img {:width w :height w :data (int-array (sqr w))})
 
+(def sun-direction (normalize (matrix [0.1 1 0])))
+(def point (matrix [(+ radius 1000) 0 0]))
 (def data
   (vec
     (map (fn [y]
@@ -708,16 +710,20 @@ void main()
                         (let [r (Math/hypot y x)]
                           (if (<= r w2)
                             (let [z (Math/sqrt (- (sqr w2) (* r r)))
-                                  v (S (matrix [(+ radius 1000) 0 0]) (normalize (matrix [z x y])) (normalize (matrix [0 1 0])))]
-                              v)
+                                  d (normalize (matrix [z x y]))
+                                  v (S point d sun-direction)
+                                  s (Math/pow (max 0 (dot d sun-direction)) 100)
+                                  R {:sfsim25.ray/origin point :sfsim25.ray/direction sun-direction}
+                                  t (transmittance earth [mie rayleigh] 10 R)]
+                              (add v (mul s t)))
                             (matrix [0 0 0]))))
                     (range -w2 (inc w2)))))
          (range -w2 (inc w2)))))
 
 (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
-(def m 0.062)
+(def m 0.1)
 
-(doseq [y (range w) x (range w)] (set-pixel! img y x (apply ->RGB (mul (/ 255 m) (nth (nth data y) x)))))
+(doseq [y (range w) x (range w)] (set-pixel! img y x (apply ->RGB (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x))))))
 
 (show-image img)
 
@@ -726,3 +732,16 @@ void main()
 (def h 10000)
 (point-scatter-base earth [rayleigh] 10 (matrix [1 1 1]) (matrix [(+ radius h) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]))
 (point-scatter-base earth [rayleigh] 10 (matrix [1 1 1]) (matrix [(+ radius h) 0 0]) (matrix [1 0 0]) (matrix [-1 0 0]))
+
+
+(def point-scatter-base-earth (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])))
+(defn ray-scatter-base-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
+
+(point-scatter-base-earth (matrix [(+ radius 1000) 0 0]) (normalize (matrix [0.1 1 0])) (normalize (matrix [0.1 1 0])))
+(point-scatter-base-earth (matrix [(+ radius 1000) 0 0]) (normalize (matrix [0.5 1 0])) (normalize (matrix [0.5 1 0])))
+
+(apply max (ray-scatter-base-earth (matrix [radius 0 0]) (normalize (matrix [0.0 1 0])) (normalize (matrix [0.0 1 0]))))
+(apply max (ray-scatter-base-earth (matrix [radius 0 0]) (normalize (matrix [0.1 1 0])) (normalize (matrix [0.1 1 0]))))
+(apply max (ray-scatter-base-earth (matrix [radius 0 0]) (normalize (matrix [0.5 1 0])) (normalize (matrix [0.5 1 0]))))
+
+(integral-ray #:sfsim25.ray{:origin (matrix [radi])})
