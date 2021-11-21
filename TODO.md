@@ -1,6 +1,5 @@
 # TODO
 
-* problem with transmittance and surface detection (large values at sunset)
 * put dE, dS, ... into atoms
 * iteratively sum E and S function using dE and dS
 * add non-linear mapping to make sampling more even

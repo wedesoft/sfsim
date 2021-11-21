@@ -602,6 +602,8 @@ void main()
 (require '[sfsim25.rgb :refer (->RGB)])
 (require '[sfsim25.util :refer :all])
 
+(set! *unchecked-math* true)
+
 (def radius 6378000.0)
 (def height 100000.0)
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
@@ -636,7 +638,7 @@ void main()
 
 (defn surface-radiance-base-earth [point sun-direction] (surface-radiance-base earth [mie rayleigh] 10 (matrix [1 1 1]) point sun-direction))
 
-(def dE (interpolate-function surface-radiance-base-earth surface-radiance-space))
+(def dE (atom (time (interpolate-function surface-radiance-base-earth surface-radiance-space))))
 
 (defn clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
 
@@ -670,30 +672,31 @@ void main()
 
 (defn ray-scatter-base-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
 
-(def dS (interpolate-function ray-scatter-base-earth ray-scatter-space))
+(def dS (atom (time (interpolate-function ray-scatter-base-earth ray-scatter-space))))
 
 (def point-scatter-forward ray-scatter-forward)
 (def point-scatter-backward ray-scatter-backward)
 
-(def shp2 [8 8 8 8])
+(def shp3 [8 8 8 8])
 
-(def point-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2) point-scatter-forward) :backward (comp* point-scatter-backward (linear-backward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp2)) :shape shp2})
+(def point-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp3) point-scatter-forward) :backward (comp* point-scatter-backward (linear-backward [0 -1 -1 (- Math/PI)] [height 1 1 Math/PI] shp3)) :shape shp3})
+
+(def dJ (atom nil))
 
 ; loop
 
-(defn point-scatter-earth [point direction sun-direction] (point-scatter earth [mie rayleigh] dS dE (matrix [1 1 1]) 16 10 point direction sun-direction))
-(def dJ (interpolate-function point-scatter-earth point-scatter-space))
+(defn point-scatter-earth [point direction sun-direction] (point-scatter earth [mie rayleigh] @dS @dE (matrix [1 1 1]) 16 10 point direction sun-direction))
 
-(defn surface-radiance-earth [point sun-direction] (surface-radiance earth dS 10 point sun-direction))
-(def dE (interpolate-function surface-radiance-earth surface-radiance-space))
+(reset! dJ (time (interpolate-function point-scatter-earth point-scatter-space)))
 
-(defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 dJ point direction sun-direction))
-(def dS (interpolate-function ray-scatter-earth ray-scatter-space))
+(defn surface-radiance-earth [point sun-direction] (surface-radiance earth @dS 10 point sun-direction))
+(reset! dE (time (interpolate-function surface-radiance-earth surface-radiance-space)))
 
-(def S dS)
+(defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 @dJ point direction sun-direction))
+(reset! dS (time (interpolate-function ray-scatter-earth ray-scatter-space)))
 
-(def S ray-scatter-base-earth)
 
+; ---
 (def w2 150)
 (def -w2 (- w2))
 (def w (inc (* 2 w2)))
@@ -727,21 +730,4 @@ void main()
 
 (show-image img)
 
-(ray-scatter-base-earth (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [-1 0 0]))
-
-(def h 10000)
-(point-scatter-base earth [rayleigh] 10 (matrix [1 1 1]) (matrix [(+ radius h) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]))
-(point-scatter-base earth [rayleigh] 10 (matrix [1 1 1]) (matrix [(+ radius h) 0 0]) (matrix [1 0 0]) (matrix [-1 0 0]))
-
-
-(def point-scatter-base-earth (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])))
-(defn ray-scatter-base-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
-
-(point-scatter-base-earth (matrix [(+ radius 1000) 0 0]) (normalize (matrix [0.1 1 0])) (normalize (matrix [0.1 1 0])))
-(point-scatter-base-earth (matrix [(+ radius 1000) 0 0]) (normalize (matrix [0.5 1 0])) (normalize (matrix [0.5 1 0])))
-
-(apply max (ray-scatter-base-earth (matrix [radius 0 0]) (normalize (matrix [0.0 1 0])) (normalize (matrix [0.0 1 0]))))
-(apply max (ray-scatter-base-earth (matrix [radius 0 0]) (normalize (matrix [0.1 1 0])) (normalize (matrix [0.1 1 0]))))
-(apply max (ray-scatter-base-earth (matrix [radius 0 0]) (normalize (matrix [0.5 1 0])) (normalize (matrix [0.5 1 0]))))
-
-(integral-ray #:sfsim25.ray{:origin (matrix [radi])})
+(set! *unchecked-math* false)
