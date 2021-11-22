@@ -1,7 +1,6 @@
 (ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
             [clojure.core.matrix :refer :all]
-            [sfsim25.rgb :refer (->RGB)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 
@@ -74,12 +73,12 @@
 
 (facts "Reading and writing image pixels"
   (let [img {:width 4 :height 2 :data (int-array [0 0 0 0 0 0 0 (bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
-    (get-pixel img 1 3) => (->RGB 1 2 3))
+    (get-pixel img 1 3) => (matrix [1 2 3]))
   (let [img {:width 1 :height 1 :data (int-array [(bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
-    (get-pixel img 0 0) => (->RGB 1 2 3))
+    (get-pixel img 0 0) => (matrix [1 2 3]))
   (let [img {:width 4 :height 2 :data (int-array (repeat 8 0))}]
-    (set-pixel! img 1 2 (->RGB 253 254 255)) => anything
-    (get-pixel img 1 2) => (->RGB 253 254 255)))
+    (set-pixel! img 1 2 (matrix [253 254 255])) => anything
+    (get-pixel img 1 2) => (matrix [253 254 255])))
 
 (facts "Reading and writing of elevation pixels"
   (let [elevation {:width 4 :height 2 :data (short-array (range 8))}]

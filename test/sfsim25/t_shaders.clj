@@ -1,10 +1,10 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
             [comb.template :as template]
+            [clojure.core.matrix :refer :all]
             [sfsim25.shaders :refer :all]
             [sfsim25.render :refer :all]
-            [sfsim25.util :refer :all]
-            [sfsim25.rgb :refer (->RGB)]))
+            [sfsim25.util :refer :all]))
 
 ; Compare RGB components of image and ignore alpha values.
 (defn is-image [filename]
@@ -45,7 +45,7 @@ void main()
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-sphere-test)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)

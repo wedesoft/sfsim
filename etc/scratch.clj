@@ -5,7 +5,6 @@
          '[sfsim25.render :refer :all]
          '[sfsim25.shaders :as shaders]
          '[sfsim25.matrix :refer (transformation-matrix quaternion->matrix projection-matrix)]
-         '[sfsim25.rgb :refer (->RGB)]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.cubemap :refer :all]
          '[sfsim25.quadtree :refer :all]
@@ -553,7 +552,7 @@ void main()
     (swap! rayleigh-scatter-strength + (* s dt))
     (swap! mie-scatter-strength + (* m dt))
     (onscreen-render  (.getWidth desktop) (.getHeight desktop)
-      (clear (->RGB 0.0 0.5 0.0))
+      (clear (matrix [0.0 0.5 0.0]))
       (use-program program-planet)
       (uniform-matrix4 program-planet :projection
                        (projection-matrix (.getWidth desktop) (.getHeight desktop) (* 1e-5 di) di (/ (* 60 Math/PI) 180)))
@@ -599,7 +598,6 @@ void main()
 (require '[sfsim25.interpolate :refer :all])
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.matrix :refer :all])
-(require '[sfsim25.rgb :refer (->RGB)])
 (require '[sfsim25.util :refer :all])
 
 (set! *unchecked-math* true)
@@ -733,7 +731,7 @@ void main()
 (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
 (def m 0.1)
 
-(doseq [y (range w) x (range w)] (set-pixel! img y x (apply ->RGB (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x))))))
+(doseq [y (range w) x (range w)] (set-pixel! img y x (apply matrix (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x))))))
 
 (show-image img)
 

@@ -1,15 +1,13 @@
 (ns sfsim25.util
   "Various utility functions."
   (:require [clojure.java.io :as io]
-            [clojure.core.matrix :refer :all]
-            [sfsim25.rgb :refer (->RGB)])
+            [clojure.core.matrix :refer :all])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [ij ImagePlus]
            [ij.io Opener FileSaver]
            [ij.process ImageConverter ColorProcessor]
-           [mikera.vectorz Vector]
-           [sfsim25.rgb RGB]))
+           [mikera.vectorz Vector]))
 
 (defn slurp-bytes
   "Read bytes from a file"
@@ -126,19 +124,19 @@
 
 (defn get-pixel
   "Read color value from a pixel of an image"
-  ^RGB [{:keys [width height data]} ^long y ^long x]
+  ^Vector [{:keys [width height data]} ^long y ^long x]
   (let [offset (+ (* width y) x)
         value  (aget data offset)]
-    (->RGB (bit-shift-right (bit-and 0xff0000 value) 16) (bit-shift-right (bit-and 0xff00 value) 8) (bit-and 0xff value))))
+    (matrix [(bit-shift-right (bit-and 0xff0000 value) 16) (bit-shift-right (bit-and 0xff00 value) 8) (bit-and 0xff value)])))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
-  [{:keys [width height data]} ^long y ^long x ^RGB c]
+  [{:keys [width height data]} ^long y ^long x ^Vector c]
   (let [offset (+ (* width y) x)]
     (aset-int data offset (bit-or (bit-shift-left -1 24)
-                                  (bit-shift-left (Math/round (:r c)) 16)
-                                  (bit-shift-left (Math/round (:g c)) 8)
-                                  (Math/round (:b c))))))
+                                  (bit-shift-left (Math/round (mget c 0)) 16)
+                                  (bit-shift-left (Math/round (mget c 1)) 8)
+                                  (Math/round (mget c 2))))))
 
 (defn get-elevation
   "Read elevation value from an elevation tile"

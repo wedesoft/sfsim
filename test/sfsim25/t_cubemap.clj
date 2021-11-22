@@ -2,7 +2,6 @@
   (:require [midje.sweet :refer :all]
             [clojure.core.matrix :refer :all]
             [clojure.core.matrix.linear :refer (norm)]
-            [sfsim25.rgb :refer (->RGB) :as r]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [mikera.vectorz Vector]))
@@ -205,9 +204,9 @@
     (tile-center 2 3 7 1 6378000.0 6357000.0) => (matrix [1000 -625 -875])))
 
 (fact "Getting world map color for given longitude and latitude"
-  (color-geodetic 5 675 135.0 45.0) => (->RGB 3 5 7)
-    (provided
-      (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel r/+ r/*) => (->RGB 3 5 7)))
+      (color-geodetic 5 675 135.0 45.0) => (matrix [3 5 7])
+      (provided
+        (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel add mul) => (matrix [3 5 7])))
 
 (fact "Getting elevation value for given longitude and latitude"
   (elevation-geodetic 5 675 135.0 45.0) => 42.0

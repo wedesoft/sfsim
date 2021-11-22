@@ -5,7 +5,6 @@
             [clojure.core.matrix :refer :all]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.cubemap :refer :all]
-            [sfsim25.rgb :refer (->RGB)]
             [sfsim25.util :refer :all])
   (:import [java.io File])
   (:gen-class))

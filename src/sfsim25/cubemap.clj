@@ -4,7 +4,6 @@
             [clojure.core.matrix :refer :all]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.matrix :refer :all]
-            [sfsim25.rgb :as r]
             [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation sqr)])
   (:import [mikera.vectorz Vector]))
 
@@ -238,7 +237,7 @@
 (defn color-geodetic
   "Compute interpolated RGB value for a point on the world"
   [^long in-level ^long width ^double lon ^double lat]
-  (map-interpolation in-level width lon lat world-map-pixel r/+ r/*))
+  (map-interpolation in-level width lon lat world-map-pixel add mul))
 
 (defn elevation-geodetic
   "Compute interpolated elevation value for a point on the world (-500 for water)"

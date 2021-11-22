@@ -1,7 +1,6 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
             [clojure.core.matrix :refer (matrix identity-matrix)]
-            [sfsim25.rgb :refer (->RGB)]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode]))
@@ -20,7 +19,7 @@
     (spit-image filename other)))
 
 (fact "Render background color"
-  (offscreen-render 160 120 (clear (->RGB 1.0 0.0 0.0))) => (is-image "test/sfsim25/fixtures/red.png"))
+  (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/red.png"))
 
 (def vertex-passthrough "#version 410 core
 in highp vec3 point;
@@ -42,7 +41,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
@@ -72,7 +71,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex vertex-color :fragment fragment-color)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
@@ -85,7 +84,7 @@ void main()
                     -0.5 -0.5 0.1 0.0 1.0, 1.0 -0.5 0.1 0.0 1.0, -0.5 1.0 0.1 0.0 1.0, 1.0 1.0 0.1 0.0 1.0]
           program  (make-program :vertex vertex-color :fragment fragment-color)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
@@ -107,7 +106,7 @@ void main()
           program2  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
           vao2      (make-vertex-array-object program2 indices vertices2 [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program1)
       (render-quads vao1)
       (use-program program2)
@@ -123,7 +122,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (raster-lines (render-quads vao))
       (destroy-vertex-array-object vao)
@@ -145,7 +144,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-floats)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-float program :red 1.0)
       (uniform-float program :green 0.5)
@@ -170,7 +169,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-ints)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-int program :red 255)
       (uniform-int program :green 128)
@@ -193,7 +192,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-passthrough :fragment fragment-uniform-vector3)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-vector3 program :color (matrix [1.0 0.5 0.0]))
       (render-quads vao)
@@ -214,7 +213,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex vertex-transform :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-matrix4 program :transform (identity-matrix 4))
       (render-quads vao)
@@ -248,7 +247,7 @@ void main()
           program  (make-program :vertex vertex-texture :fragment fragment-texture-1d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-float-texture-1d (float-array [0.0 1.0]))]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
       (use-textures tex)
@@ -273,7 +272,7 @@ void main()
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-rgb-texture (slurp-image "test/sfsim25/pattern.png"))]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
       (use-textures tex)
@@ -289,7 +288,7 @@ void main()
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-float-texture-2d {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
       (use-textures tex)
@@ -305,7 +304,7 @@ void main()
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-ubyte-texture-2d {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
       (use-textures tex)
@@ -321,7 +320,7 @@ void main()
           program  (make-program :vertex vertex-texture :fragment fragment-texture-2d)
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-vector-texture-2d {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
       (use-textures tex)
@@ -375,7 +374,7 @@ void main(void)
           program  (make-program :vertex vertex-passthrough :tess-control control-uniform :tess-evaluation evaluation-mix
                                  :geometry geometry-triangle :fragment fragment-blue)
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (->RGB 0.0 0.0 0.0))
+      (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (raster-lines (render-patches vao))
       (destroy-vertex-array-object vao)

@@ -46,7 +46,7 @@
 (defn clear
   "Set clear color and clear color buffer as well as depth buffer"
   [color]
-  (GL11/glClearColor (:r color) (:g color) (:b color) 1.0)
+  (GL11/glClearColor (mget color 0) (mget color 1) (mget color 2) 1.0)
   (GL11/glClearDepth 0.0); Reversed-z rendering requires initial depth to be zero.
   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
 
