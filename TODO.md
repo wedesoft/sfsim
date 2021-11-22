@@ -1,8 +1,8 @@
 # TODO
 
-* add non-linear mapping to make sampling more even
-* have atmosphere functions accept transmittance function and use sampling
 * replace RGB with Vector?
+* add non-linear mapping to make sampling more even
+* separate single Mie scattering
 * represent ray using hash
 * add ozone layer
 * absorption
