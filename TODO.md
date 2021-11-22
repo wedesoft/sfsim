@@ -1,6 +1,6 @@
 # TODO
 
-* replace RGB with Vector?
+* visualise resolution of interpolation table
 * add non-linear mapping to make sampling more even
 * separate single Mie scattering
 * represent ray using hash

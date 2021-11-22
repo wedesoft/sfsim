@@ -708,8 +708,8 @@ void main()
 
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def sun-direction (normalize (matrix [0 1 0])))
-(def point (matrix [(+ radius 20000) 0 0]))
+(def sun-direction (normalize (matrix [1 0 0])))
+(def point (matrix [(+ radius 8000) 0 0]))
 (def data
   (vec
     (map (fn [y]
@@ -731,8 +731,12 @@ void main()
 (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
 (def m 0.1)
 
-(doseq [y (range w) x (range w)] (set-pixel! img y x (apply matrix (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x))))))
+(doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
 
 (show-image img)
+
+(def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
+
+(reset! S (interpolation-table table (:sfsim25.interpolate/forward ray-scatter-space)))
 
 (set! *unchecked-math* false)
