@@ -66,7 +66,7 @@
           3   4.0)
 
 (fact "Linear interpolation using a table of vectors"
-      ((interpolation-table [(matrix [2 3 5]) (matrix [3 5 9])] (linear-forward [-1] [1] [2])) 0) => (matrix [2.5 4 7]))
+      ((interpolation-table [(matrix [2 3 5]) (matrix [3 5 9])] (linear-forward [-1] [1] [2])) 0) => (matrix [2.5 4.0 7.0]))
 
 (tabular "Linear interpolation using a 2D table"
          (fact ((interpolation-table [[2 3 5] [7 11 13]] (linear-forward [?y0 ?x0] [?y1 ?x1] [2 3])) ?y ?x) => ?result)
