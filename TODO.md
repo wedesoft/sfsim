@@ -1,7 +1,6 @@
 # TODO
 
-* visualise resolution of interpolation table
-* add non-linear mapping to make sampling more even
+* use lookup table for acos?
 * separate single Mie scattering
 * represent ray using hash
 * add ozone layer
