@@ -703,41 +703,47 @@ void main()
 (defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 @dJ point direction sun-direction))
 (reset! dS (time (interpolate-function ray-scatter-earth ray-scatter-space)))
 
-(reset! E (let [E @E dE @dE] (interpolate-function (fn [point sun-direction] (add (E point sun-direction) (dE point sun-direction))) surface-radiance-space)))
+(reset! E (let [E @E dE @dE] (time (interpolate-function (fn [point sun-direction] (add (E point sun-direction) (dE point sun-direction))) surface-radiance-space))))
 
-(reset! S (let [S @S dS @dS] (interpolate-function (fn [point direction sun-direction] (add (S point direction sun-direction) (dS point direction sun-direction))) ray-scatter-space)))
+(reset! S (let [S @S dS @dS] (time (interpolate-function (fn [point direction sun-direction] (add (S point direction sun-direction) (dS point direction sun-direction))) ray-scatter-space))))
 
 ; ---
-(def w2 150)
+; Youtube video size: 426 x 240
+
+
+(def w2 119)
 (def -w2 (- w2))
 (def w (inc (* 2 w2)))
 
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def sun-direction (normalize (matrix [-0.05 1 0])))
-(def point (matrix [(+ radius 2) 0 0]))
-(def data
-  (vec
-    (map (fn [y]
-             (vec
-               (map (fn [x]
-                        (let [r (Math/hypot y x)]
-                          (if (<= r w2)
-                            (let [z (Math/sqrt (- (sqr w2) (* r r)))
-                                  d (normalize (matrix [z x y]))
-                                  v (@S point d sun-direction)
-                                  s (Math/pow (max 0 (dot d sun-direction)) 5000)
-                                  R {:sfsim25.ray/origin point :sfsim25.ray/direction sun-direction}
-                                  t (transmittance earth [mie rayleigh] 10 R)]
-                              (add v (mul s t)))
-                            (matrix [0 0 0]))))
-                    (range -w2 (inc w2)))))
-         (range -w2 (inc w2)))))
-
-(def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
+(def n (atom 0))
 (def m 0.1)
+(doseq [angle (range (- 0 (/ Math/PI 2) 0.3) (+ (/ Math/PI 2) 0.3) 0.01)]
+       (let [sun-direction (normalize (matrix [(Math/cos angle) (Math/sin angle) 0]))
+             point         (matrix [(+ radius 2) 0 0])
+             data          (vec
+                             (map (fn [y]
+                                      (vec
+                                        (map (fn [x]
+                                                 (let [r (Math/hypot y x)]
+                                                   (if (<= r w2)
+                                                     (let [z (Math/sqrt (- (sqr w2) (* r r)))
+                                                           d (normalize (matrix [z x y]))
+                                                           v (@S point d sun-direction)
+                                                           s (Math/pow (max 0 (dot d sun-direction)) 5000)
+                                                           R {:sfsim25.ray/origin point :sfsim25.ray/direction sun-direction}
+                                                           t (transmittance earth [mie rayleigh] 10 R)]
+                                                       (add v (mul s t)))
+                                                     (matrix [0 0 0]))))
+                                             (range -w2 (inc w2)))))
+                                  (range -w2 (inc w2))))]
+         (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
+         (spit-image (format "sun%04d.png" @n) img)
+         (println (swap! n inc))))
 
-(doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
+; (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
+
 
 (show-image img)
 
