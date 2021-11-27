@@ -1,8 +1,6 @@
 # TODO
 
-* use lookup table for acos?
 * separate single Mie scattering
-* represent ray using hash
 * add ozone layer
 * absorption
 * compute atmosphere colour in vertex shader
