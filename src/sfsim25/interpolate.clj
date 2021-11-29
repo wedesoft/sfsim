@@ -21,15 +21,15 @@
 
 (defn- sample-function
   "Recursively take samples from a function"
-  [sample-fun shape args]
+  [sample-fun shape args map-fun]
   (if (seq shape)
-    (vec (map #(sample-function sample-fun (rest shape) (conj args %)) (range (first shape))))
+    (vec (map-fun #(sample-function sample-fun (rest shape) (conj args %) map) (range (first shape))))
     (sample-fun args)))
 
 (defn make-lookup-table
   "Create n-dimensional lookup table using given function to sample and inverse mapping"
   ^clojure.lang.PersistentVector [fun space]
-  (sample-function (fn [args] (apply fun (apply (::backward space) args))) (::shape space) []))
+  (sample-function (fn [args] (apply fun (apply (::backward space) args))) (::shape space) [] pmap))
 
 (defn clip
   "Clip a value to [0, size - 1]"
