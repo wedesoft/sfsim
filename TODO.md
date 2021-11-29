@@ -1,6 +1,7 @@
 # TODO
 
-* separate single Mie scattering
+* main program for computing lookup tables
+* separate single Mie scattering?
 * add ozone layer
 * absorption
 * compute atmosphere colour in vertex shader

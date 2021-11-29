@@ -1,5 +1,5 @@
 (ns sfsim25.globe
-  "Convert Mercator image and elevation data into cube map tiles."
+  "Use Mercator color and elevation map tiles to generate cube map tiles for color, water, elevation, and normals."
   (:require [clojure.core.memoize :as m]
             [com.climate.claypoole :as cp]
             [clojure.core.matrix :refer :all]

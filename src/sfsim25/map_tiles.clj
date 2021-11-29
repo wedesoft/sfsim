@@ -1,5 +1,5 @@
 (ns sfsim25.map-tiles
-  "Split up large Mercator image into smaller ones."
+  "Split up part of Mercator map into map tiles of specified size and save them in computed file names."
   (:import [java.io File]
            [ij ImagePlus]
            [ij.io Opener FileSaver])

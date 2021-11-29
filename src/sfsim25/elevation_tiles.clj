@@ -1,5 +1,5 @@
 (ns sfsim25.elevation-tiles
-  "Split large Mercator elevation image into smaller images."
+  "Split part of Mercator elevation map into small map tiles of specified size and save them in computed file names."
   (:import [java.io File])
   (:require [sfsim25.util :refer (slurp-shorts spit-shorts tile-dir tile-path)])
   (:gen-class))
