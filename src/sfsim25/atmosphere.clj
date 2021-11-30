@@ -137,24 +137,20 @@
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
-  [planet]
-  (let [radius (:sfsim25.sphere/radius planet)
-        centre (:sfsim25.sphere/centre planet)]
-    (fn [^Vector point ^Vector direction]
-        (let [height        (- (norm (sub point centre)) radius)
-              cos-elevation (/ (dot point direction) (norm point))
-              elevation     (Math/acos cos-elevation)]
-          [height elevation]))))
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^Vector point ^Vector direction]
+      (let [height        (- (norm (sub point centre)) radius)
+            cos-elevation (/ (dot point direction) (norm point))
+            elevation     (Math/acos cos-elevation)]
+        [height elevation])))
 
 (defn- transmittance-backward
   "Backward transformation for looking up transmittance values"
-  [planet]
-  (let [radius (:sfsim25.sphere/radius planet)
-        centre (:sfsim25.sphere/centre planet)]
-    (fn [^double height ^double elevation]
-        (let [point     (matrix [(+ radius height) 0 0])
-              direction (matrix [(Math/cos elevation) (Math/sin elevation) 0])]
-          [point direction]))))
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^double height ^double elevation]
+      (let [point     (add centre (matrix [(+ radius height) 0 0]))
+            direction (matrix [(Math/cos elevation) (Math/sin elevation) 0])]
+        [point direction])))
 
 (defn transmittance-space
   "Create transformations for interpolating transmittance function"
