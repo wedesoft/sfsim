@@ -1,5 +1,6 @@
 # TODO
 
+* put transformations under test
 * main program for computing lookup tables
 * separate single Mie scattering?
 * add ozone layer

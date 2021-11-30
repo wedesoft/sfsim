@@ -1,6 +1,8 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
     (:require [clojure.core.matrix :refer :all]
+              [clojure.core.matrix.linear :refer (norm)]
+              [sfsim25.interpolate :refer :all]
               [sfsim25.ray :refer :all]
               [sfsim25.sphere :refer :all]
               [sfsim25.util :refer :all])
@@ -132,5 +134,37 @@
   [planet ray-scatter steps x sun-direction]
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (integral-half-sphere steps normal (fn [omega] (mul (ray-scatter x omega sun-direction) (dot omega normal))))))
+
+(defn- transmittance-forward
+  "Forward transformation for interpolating transmittance function"
+  [planet]
+  (let [radius (:sfsim25.sphere/radius planet)
+        centre (:sfsim25.sphere/centre planet)]
+    (fn [^Vector point ^Vector direction]
+        (let [height        (- (norm (sub point centre)) radius)
+              cos-elevation (/ (dot point direction) (norm point))
+              elevation     (Math/acos cos-elevation)]
+          [height elevation]))))
+
+(defn- transmittance-backward
+  "Backward transformation for looking up transmittance values"
+  [planet]
+  (let [radius (:sfsim25.sphere/radius planet)
+        centre (:sfsim25.sphere/centre planet)]
+    (fn [^double height ^double elevation]
+        (let [point     (matrix [(+ radius height) 0 0])
+              direction (matrix [(Math/cos elevation) (Math/sin elevation) 0])]
+          [point direction]))))
+
+(defn transmittance-space
+  "Create transformations for interpolating transmittance function"
+  [planet size]
+  (let [shape  [size size]
+        height (:sfsim25.atmosphere/height planet)]
+    #:sfsim25.interpolate{:shape    shape
+                          :forward  (comp* (linear-forward [0 0] [height Math/PI] shape) (transmittance-forward planet))
+                          :backward (comp* (transmittance-backward planet) (linear-backward [0 0] [height Math/PI] shape))}))
+
+(def surface-radiance-space transmittance-space)
 
 (set! *unchecked-math* false)

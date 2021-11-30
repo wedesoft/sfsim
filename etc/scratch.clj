@@ -610,35 +610,19 @@ void main()
 (def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 
-(def shp [17 17])
-
-(defn transmittance-forward
-  [^Vector point ^Vector direction]
-  (let [height        (- (norm point) radius)
-        cos-elevation (/ (dot point direction) (* (norm point) (norm direction)))
-        elevation     (Math/acos cos-elevation)]
-    [height elevation]))
-
-(defn transmittance-backward
-  [^double height ^double elevation]
-  (let [point         (matrix [(+ radius height) 0 0])
-        direction     (matrix [(Math/cos elevation) (Math/sin elevation) 0])]
-    [point direction]))
-
-(def transmittance-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 0] [height Math/PI] shp) transmittance-forward) :backward (comp* transmittance-backward (linear-backward [0 0] [height Math/PI] shp)) :shape shp})
+(def size 17)
 
 (defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] 10 #:sfsim25.ray{:origin x :direction v}))
 
-(def T (interpolate-function transmittance-earth transmittance-space))
+(def transmittance-space-earth (transmittance-space earth size))
 
-(defn surface-radiance-forward [^Vector point ^Vector sun-direction] (transmittance-forward point sun-direction))
-(defn surface-radiance-backward [^double height ^double cos-sun-direction] (transmittance-backward height cos-sun-direction))
-
-(def surface-radiance-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 0] [height Math/PI] shp) surface-radiance-forward) :backward (comp* surface-radiance-backward (linear-backward [0 0] [height Math/PI] shp)) :shape shp})
+(def T (interpolate-function transmittance-earth transmittance-space-earth))
 
 (defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth [mie rayleigh] 10 (matrix [1 1 1]) point sun-direction))
 
-(def dE (atom (time (interpolate-function surface-radiance-base-earth surface-radiance-space))))
+(def surface-radiance-space-earth (surface-radiance-space earth size))
+
+(def dE (atom (time (interpolate-function surface-radiance-base-earth surface-radiance-space-earth))))
 
 (def E (atom (fn [point sun-direction] (matrix [0 0 0]))))
 
@@ -670,7 +654,7 @@ void main()
         sun-direction     (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
     [point direction sun-direction]))
 
-(def shp2 [17 17 17 17])
+(def shp2 [size size size size])
 
 (def ray-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 0 0 (- Math/PI)] [height Math/PI Math/PI Math/PI] shp2) ray-scatter-forward) :backward (comp* ray-scatter-backward (linear-backward [0 0 0 (- Math/PI)] [height Math/PI Math/PI Math/PI] shp2)) :shape shp2})
 
@@ -696,12 +680,12 @@ void main()
 (reset! dJ (time (interpolate-function point-scatter-earth point-scatter-space)))
 
 (defn surface-radiance-earth [point sun-direction] (surface-radiance earth @dS 10 point sun-direction))
-(reset! dE (time (interpolate-function surface-radiance-earth surface-radiance-space)))
+(reset! dE (time (interpolate-function surface-radiance-earth surface-radiance-space-earth)))
 
 (defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 @dJ point direction sun-direction))
 (reset! dS (time (interpolate-function ray-scatter-earth ray-scatter-space)))
 
-(reset! E (let [E @E dE @dE] (time (interpolate-function (fn [point sun-direction] (add (E point sun-direction) (dE point sun-direction))) surface-radiance-space))))
+(reset! E (let [E @E dE @dE] (time (interpolate-function (fn [point sun-direction] (add (E point sun-direction) (dE point sun-direction))) surface-radiance-space-earth))))
 
 (reset! S (let [S @S dS @dS] (time (interpolate-function (fn [point direction sun-direction] (add (S point direction sun-direction) (dS point direction sun-direction))) ray-scatter-space))))
 
