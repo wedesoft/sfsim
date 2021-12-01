@@ -631,7 +631,7 @@ void main()
 (defn ray-scatter-forward
   [^Vector point ^Vector direction ^Vector sun-direction]
   (let [height                  (- (norm point) radius)
-        horizon                 (oriented-matrix (normalise point))
+        horizon                 (transpose (oriented-matrix (normalise point)))
         direction-rotated       (mmul horizon (normalise direction))
         sun-direction-rotated   (mmul horizon (normalise sun-direction))
         cos-elevation           (mget direction-rotated 0)

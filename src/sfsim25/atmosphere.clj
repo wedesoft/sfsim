@@ -170,7 +170,7 @@
   (fn [^Vector point ^Vector direction ^Vector sun-direction]
       (let [radius-vector     (sub point centre)
             height            (- (norm radius-vector) radius)
-            horizon           (inverse (oriented-matrix (normalise radius-vector)))
+            horizon           (transpose (oriented-matrix (normalise radius-vector)))
             direction-rotated (mmul horizon direction)
             cos-elevation     (mget direction-rotated 0)
             elevation         (Math/acos cos-elevation)]
