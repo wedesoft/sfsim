@@ -264,14 +264,28 @@
              space    (transmittance-space earth 17)
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
-         (:sfsim25.interpolate/shape space) => [17 17]
-         (forward (matrix [radius 0 0]) (matrix [1 0 0])) => [0.0 0.0]
+         (:sfsim25.interpolate/shape space)                          => [17 17]
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]))            => [0.0 0.0]
          (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0])) => [16.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 1 0])) => [0.0 8.0]
-         (first (backward 0.0 0.0)) => (matrix [radius 0 0])
-         (first (backward 16.0 0.0)) => (matrix [(+ radius height) 0 0])
-         (second (backward 0.0 0.0)) => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (second (backward 0.0 8.0)) => (roughly-matrix (matrix [0 1 0]) 1e-6)))
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]))            => [0.0 8.0]
+         (first (backward 0.0 0.0))                                  => (matrix [radius 0 0])
+         (first (backward 16.0 0.0))                                 => (matrix [(+ radius height) 0 0])
+         (second (backward 0.0 0.0))                                 => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (second (backward 0.0 8.0))                                 => (roughly-matrix (matrix [0 1 0]) 1e-6)))
 
 (fact "Transformation for surface radiance interpolation is the same as the one for transmittance"
       surface-radiance-space => (exactly transmittance-space))
+
+(facts "Create transformation for interpolating ray scatter and point scatter"
+       (let [radius   6378000.0
+             height   100000.0
+             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+             space    (ray-scatter-space earth 17)
+             forward  (:sfsim25.interpolate/forward space)
+             backward (:sfsim25.interpolate/backward space)]
+         (:sfsim25.interpolate/shape space) => [17 17 17 17]
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]))            => [0.0 0.0 0.0 0.0]
+         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0])) => [16.0 0.0 0.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]))           => [0.0 16.0 0.0 0.0]
+         (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [1 0 0]))           => [0.0 16.0 0.0 0.0]
+         ))

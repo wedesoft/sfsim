@@ -3,6 +3,7 @@
     (:require [clojure.core.matrix :refer :all]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.interpolate :refer :all]
+              [sfsim25.matrix :refer :all]
               [sfsim25.ray :refer :all]
               [sfsim25.sphere :refer :all]
               [sfsim25.util :refer :all])
@@ -162,5 +163,26 @@
                           :backward (comp* (transmittance-backward planet) (linear-backward [0 0] [height Math/PI] shape))}))
 
 (def surface-radiance-space transmittance-space)
+
+(defn- ray-scatter-forward
+  "Forward transformation for interpolating ray scatter function"
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^Vector point ^Vector direction ^Vector sun-direction]
+      (let [radius-vector     (sub point centre)
+            height            (- (norm radius-vector) radius)
+            horizon           (inverse (oriented-matrix (normalise radius-vector)))
+            direction-rotated (mmul horizon direction)
+            cos-elevation     (mget direction-rotated 0)
+            elevation         (Math/acos cos-elevation)]
+        [height elevation 0.0 0.0])))
+
+(defn ray-scatter-space
+  "Create transformations for interpolating ray scatter function"
+  [planet size]
+  (let [shape  [size size size size]
+        height (:sfsim25.atmosphere/height planet)]
+    #:sfsim25.interpolate{:shape   shape
+                          :forward (comp* (linear-forward [0 0 0 0] [height Math/PI Math/PI 1] shape) (ray-scatter-forward planet))
+                          }))
 
 (set! *unchecked-math* false)
