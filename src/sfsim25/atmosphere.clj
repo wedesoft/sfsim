@@ -164,17 +164,25 @@
 
 (def surface-radiance-space transmittance-space)
 
+(defn- clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
+
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
   [{:sfsim25.sphere/keys [centre radius]}]
   (fn [^Vector point ^Vector direction ^Vector sun-direction]
-      (let [radius-vector     (sub point centre)
-            height            (- (norm radius-vector) radius)
-            horizon           (transpose (oriented-matrix (normalise radius-vector)))
-            direction-rotated (mmul horizon direction)
-            cos-elevation     (mget direction-rotated 0)
-            elevation         (Math/acos cos-elevation)]
-        [height elevation 0.0 0.0])))
+      (let [radius-vector         (sub point centre)
+            height                (- (norm radius-vector) radius)
+            horizon               (transpose (oriented-matrix (normalise radius-vector)))
+            direction-rotated     (mmul horizon direction)
+            sun-direction-rotated (mmul horizon sun-direction)
+            cos-elevation         (mget direction-rotated 0)
+            cos-sun-elevation     (mget sun-direction-rotated 0)
+            elevation             (Math/acos cos-elevation)
+            sun-elevation         (Math/acos cos-sun-elevation)
+            direction-azimuth     (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
+            sun-direction-azimuth (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
+            sun-heading           (Math/abs (clip-angle (- sun-direction-azimuth direction-azimuth)))]
+        [height elevation sun-elevation sun-heading])))
 
 (defn ray-scatter-space
   "Create transformations for interpolating ray scatter function"
@@ -182,7 +190,8 @@
   (let [shape  [size size size size]
         height (:sfsim25.atmosphere/height planet)]
     #:sfsim25.interpolate{:shape   shape
-                          :forward (comp* (linear-forward [0 0 0 0] [height Math/PI Math/PI 1] shape) (ray-scatter-forward planet))
+                          :forward (comp* (linear-forward [0 0 0 0] [height Math/PI Math/PI Math/PI] shape)
+                                          (ray-scatter-forward planet))
                           }))
 
 (set! *unchecked-math* false)
