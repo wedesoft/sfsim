@@ -184,6 +184,19 @@
             sun-heading           (Math/abs (clip-angle (- sun-direction-azimuth direction-azimuth)))]
         [height elevation sun-elevation sun-heading])))
 
+(defn- ray-scatter-backward
+  "Backward transformation for interpolating ray scatter function"
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^double height ^double elevation ^double sun-elevation ^double sun-heading]
+      (let [point             (matrix [(+ radius height) 0 0])
+            direction         (matrix [(Math/cos elevation) (Math/sin elevation) 0])
+            cos-sun-elevation (Math/cos sun-elevation)
+            sin-sun-elevation (Math/sin sun-elevation)
+            cos-sun-heading   (Math/cos sun-heading)
+            sin-sun-heading   (Math/sin sun-heading)
+            sun-direction (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
+        [point direction sun-direction])))
+
 (defn ray-scatter-space
   "Create transformations for interpolating ray scatter function"
   [planet size]
@@ -192,6 +205,9 @@
     #:sfsim25.interpolate{:shape   shape
                           :forward (comp* (linear-forward [0 0 0 0] [height Math/PI Math/PI Math/PI] shape)
                                           (ray-scatter-forward planet))
-                          }))
+                          :backward (comp* (ray-scatter-backward planet)
+                                           (linear-backward [0 0 0 0] [height Math/PI Math/PI Math/PI] shape))}))
+
+(def point-scatter-space ray-scatter-space)
 
 (set! *unchecked-math* false)

@@ -1,5 +1,6 @@
 # TODO
 
+* create and use linear-space function
 * put transformations under test
 * main program for computing lookup tables
 * separate single Mie scattering?

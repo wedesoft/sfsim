@@ -626,50 +626,15 @@ void main()
 
 (def E (atom (fn [point sun-direction] (matrix [0 0 0]))))
 
-(defn clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
-
-(defn ray-scatter-forward
-  [^Vector point ^Vector direction ^Vector sun-direction]
-  (let [height                  (- (norm point) radius)
-        horizon                 (transpose (oriented-matrix (normalise point)))
-        direction-rotated       (mmul horizon (normalise direction))
-        sun-direction-rotated   (mmul horizon (normalise sun-direction))
-        cos-elevation           (mget direction-rotated 0)
-        cos-sun-elevation       (mget sun-direction-rotated 0)
-        elevation               (Math/acos cos-elevation)
-        sun-elevation           (Math/acos cos-sun-elevation)
-        direction-azimuth       (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
-        sun-direction-azimuth   (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
-        sun-heading             (clip-angle (- sun-direction-azimuth direction-azimuth))]
-    [height elevation sun-elevation sun-heading]))
-
-(defn ray-scatter-backward
-  [^double height ^double elevation ^double sun-elevation ^double sun-heading]
-  (let [point             (matrix [(+ radius height) 0 0])
-        direction         (matrix [(Math/cos elevation) (Math/sin elevation) 0])
-        cos-sun-elevation (Math/cos sun-elevation)
-        sin-sun-elevation (Math/sin sun-elevation)
-        cos-sun-heading   (Math/cos sun-heading)
-        sin-sun-heading   (Math/sin sun-heading)
-        sun-direction     (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
-    [point direction sun-direction]))
-
-(def shp2 [size size size size])
-
-(def ray-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 0 0 (- Math/PI)] [height Math/PI Math/PI Math/PI] shp2) ray-scatter-forward) :backward (comp* ray-scatter-backward (linear-backward [0 0 0 (- Math/PI)] [height Math/PI Math/PI Math/PI] shp2)) :shape shp2})
+(def ray-scatter-space-earth (ray-scatter-space earth size))
 
 (defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
 
-(def dS (atom (time (interpolate-function ray-scatter-base-earth ray-scatter-space))))
+(def dS (atom (time (interpolate-function ray-scatter-base-earth ray-scatter-space-earth))))
 
 (def S (atom @dS))
 
-(def point-scatter-forward ray-scatter-forward)
-(def point-scatter-backward ray-scatter-backward)
-
-(def shp3 [9 9 9 9])
-
-(def point-scatter-space #:sfsim25.interpolate{:forward (comp* (linear-forward [0 0 0 (- Math/PI)] [height Math/PI Math/PI Math/PI] shp3) point-scatter-forward) :backward (comp* point-scatter-backward (linear-backward [0 0 0 (- Math/PI)] [height Math/PI Math/PI Math/PI] shp3)) :shape shp3})
+(def point-scatter-space-earth (point-scatter-space earth 9))
 
 (def dJ (atom nil))
 
@@ -677,17 +642,17 @@ void main()
 
 (defn point-scatter-earth [point direction sun-direction] (point-scatter earth [mie rayleigh] @dS @dE (matrix [1 1 1]) 16 10 point direction sun-direction))
 
-(reset! dJ (time (interpolate-function point-scatter-earth point-scatter-space)))
+(reset! dJ (time (interpolate-function point-scatter-earth point-scatter-space-earth)))
 
 (defn surface-radiance-earth [point sun-direction] (surface-radiance earth @dS 10 point sun-direction))
 (reset! dE (time (interpolate-function surface-radiance-earth surface-radiance-space-earth)))
 
 (defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 @dJ point direction sun-direction))
-(reset! dS (time (interpolate-function ray-scatter-earth ray-scatter-space)))
+(reset! dS (time (interpolate-function ray-scatter-earth ray-scatter-space-earth)))
 
 (reset! E (let [E @E dE @dE] (time (interpolate-function (fn [point sun-direction] (add (E point sun-direction) (dE point sun-direction))) surface-radiance-space-earth))))
 
-(reset! S (let [S @S dS @dS] (time (interpolate-function (fn [point direction sun-direction] (add (S point direction sun-direction) (dS point direction sun-direction))) ray-scatter-space))))
+(reset! S (let [S @S dS @dS] (time (interpolate-function (fn [point direction sun-direction] (add (S point direction sun-direction) (dS point direction sun-direction))) ray-scatter-space-earth))))
 
 ; ---
 ; Youtube video size: 426 x 240
@@ -701,7 +666,8 @@ void main()
 
 (def n (atom 0))
 (def m 0.1)
-(doseq [angle (range (- 0 (/ Math/PI 2) 0.3) (+ (/ Math/PI 2) 0.3) 0.01)]
+(;doseq [angle (range (- 0 (/ Math/PI 2) 0.3) (+ (/ Math/PI 2) 0.3) 0.01)]
+ let [angle (* 0.3 Math/PI)]
        (let [sun-direction (normalize (matrix [(Math/cos angle) (Math/sin angle) 0]))
              point         (matrix [(+ radius 2) 0 0])
              data          (vec
@@ -721,7 +687,8 @@ void main()
                                              (range -w2 (inc w2)))))
                                   (range -w2 (inc w2))))]
          (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-         (spit-image (format "sun%04d.png" @n) img)
+         ; (spit-image (format "sun%04d.png" @n) img)
+         (show-image img)
          (println (swap! n inc))))
 
 ; (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
@@ -731,6 +698,6 @@ void main()
 
 (def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
 
-(reset! S (interpolation-table table (:sfsim25.interpolate/forward ray-scatter-space)))
+(reset! S (interpolation-table table (:sfsim25.interpolate/forward ray-scatter-space-earth)))
 
 (set! *unchecked-math* false)

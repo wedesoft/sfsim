@@ -293,4 +293,15 @@
          (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]))           => [0.0 8.0 8.0 8.0]
          (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]))            => [0.0 8.0 8.0 8.0]
          (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]))            => [0.0 8.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]))           => [0.0 8.0 8.0 16.0]))
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]))           => [0.0 8.0 8.0 16.0]
+         (nth (backward 0.0 0.0 0.0 0.0) 0)                                           => (matrix [radius 0 0])
+         (nth (backward 16.0 0.0 0.0 0.0) 0)                                          => (matrix [(+ radius height) 0 0])
+         (nth (backward 0.0 0.0 0.0 0.0) 1)                                           => (matrix [1 0 0])
+         (nth (backward 0.0 8.0 0.0 0.0) 1)                                           => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (nth (backward 0.0 0.0 0.0 0.0) 2)                                           => (matrix [1 0 0])
+         (nth (backward 0.0 0.0 8.0 0.0) 2)                                           => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (nth (backward 0.0 0.0 8.0 8.0) 2)                                           => (roughly-matrix (matrix [0 0 1]) 1e-6)
+         (nth (backward 0.0 0.0 0.0 8.0) 2)                                           => (matrix [1 0 0])))
+
+(fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
+      point-scatter-space => (exactly ray-scatter-space))
