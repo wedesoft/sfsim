@@ -1,13 +1,8 @@
 # TODO
 
-* create and use linear-space function
-* put transformations under test
 * main program for computing lookup tables
-* separate single Mie scattering?
-* add ozone layer
-* absorption
+* create and use linear-space function
 * compute atmosphere colour in vertex shader
-* implement multiple scattering
 * rendering of sunlight and moonlight
 * use interface blocks in shaders
 * compute shadow in atmosphere
