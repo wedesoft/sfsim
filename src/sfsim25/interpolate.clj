@@ -64,9 +64,8 @@
 
 (defn interpolation-table
   "Linear interpolation using lookup table and mapping function"
-  [^clojure.lang.PersistentVector lut space]
-  (let [forward (::forward space)]
-    (fn [& coords] (interpolate-value lut (apply forward coords)))))
+  [^clojure.lang.PersistentVector lut {:sfsim25.interpolate/keys [forward]}]
+  (fn [& coords] (interpolate-value lut (apply forward coords))))
 
 (defn interpolate-function
   "Linear interpolation of function"

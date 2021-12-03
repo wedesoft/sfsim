@@ -1,6 +1,5 @@
 # TODO
 
-* use destructuring in interpolation-table
 * main program for computing lookup tables
 * compute atmosphere colour in vertex shader
 * rendering of sunlight and moonlight
