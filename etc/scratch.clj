@@ -626,9 +626,9 @@ void main()
 
 (def E (atom (fn [point sun-direction] (matrix [0 0 0]))))
 
-(def ray-scatter-space-earth (ray-scatter-space earth size))
-
 (defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
+
+(def ray-scatter-space-earth (ray-scatter-space earth size))
 
 (def dS (atom (time (interpolate-function ray-scatter-base-earth ray-scatter-space-earth))))
 
