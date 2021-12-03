@@ -1,6 +1,7 @@
 (ns sfsim25.interpolate
     "N-dimensional interpolation"
-    (:require [clojure.core.matrix :refer :all]))
+    (:require [clojure.core.matrix :refer :all]
+              [sfsim25.util :refer (comp*)]))
 
 (set! *unchecked-math* true)
 
@@ -71,5 +72,12 @@
   "Linear interpolation of function"
   [fun space]
   (interpolation-table (make-lookup-table fun space) space))
+
+(defn compose-space
+  "Chain forward and backward transformation functions"
+  [f g]
+  {::shape (::shape f)
+   ::forward (comp* (::forward f) (::forward g))
+   ::backward (comp* (::backward g) (::backward f))})
 
 (set! *unchecked-math* false)

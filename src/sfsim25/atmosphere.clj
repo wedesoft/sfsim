@@ -159,9 +159,8 @@
   (let [shape   [size size]
         height  (:sfsim25.atmosphere/height planet)
         scaling (linear-space [0 0] [height Math/PI] shape)]
-    #:sfsim25.interpolate{:shape    shape
-                          :forward  (comp* (:sfsim25.interpolate/forward scaling) (transmittance-forward planet))
-                          :backward (comp* (transmittance-backward planet) (:sfsim25.interpolate/backward scaling))}))
+    (compose-space scaling #:sfsim25.interpolate{:forward (transmittance-forward planet)
+                                                 :backward (transmittance-backward planet)})))
 
 (def surface-radiance-space transmittance-space)
 
@@ -204,9 +203,8 @@
   (let [shape   [size size size size]
         height  (:sfsim25.atmosphere/height planet)
         scaling (linear-space [0 0 0 0] [height Math/PI Math/PI Math/PI] shape)]
-    #:sfsim25.interpolate{:shape   shape
-                          :forward (comp* (:sfsim25.interpolate/forward scaling) (ray-scatter-forward planet))
-                          :backward (comp* (ray-scatter-backward planet) (:sfsim25.interpolate/backward scaling))}))
+    (compose-space scaling #:sfsim25.interpolate{:forward (ray-scatter-forward planet)
+                                                 :backward (ray-scatter-backward planet)})))
 
 (def point-scatter-space ray-scatter-space)
 

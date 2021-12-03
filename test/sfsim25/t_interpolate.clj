@@ -84,3 +84,10 @@
           1.5 2.5
          -5   9.0
           3   4.0)
+
+(facts "Combine transformations to create non-linear space"
+       (let [radius-space {:sfsim25.interpolate/forward #(vector (Math/hypot %1 %2)) :sfsim25.interpolate/backward #(vector %1 0)}
+             combined     (compose-space (linear-space [0] [1] [101]) radius-space)]
+         (:sfsim25.interpolate/shape combined) => [101]
+         ((:sfsim25.interpolate/forward combined) 3 4) => [500.0]
+         ((:sfsim25.interpolate/backward combined) 500) => [5.0 0]))
