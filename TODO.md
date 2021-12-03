@@ -1,7 +1,8 @@
 # TODO
 
+* function to combine spaces
+* use destructuring in interpolation-table
 * main program for computing lookup tables
-* create and use linear-space function
 * compute atmosphere colour in vertex shader
 * rendering of sunlight and moonlight
 * use interface blocks in shaders

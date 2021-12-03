@@ -4,12 +4,12 @@
 
 (set! *unchecked-math* true)
 
-(defn linear-forward
+(defn- linear-forward
   "Linear mapping onto interpolation table of given shape"
   [minima maxima shape]
   (fn [& point] (map (fn [^double x ^double a ^double b ^long n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
 
-(defn linear-backward
+(defn- linear-backward
   "Inverse linear mapping to get sample values for lookup table"
   [minima maxima shape]
   (fn [& indices] (map (fn [^long i ^double a ^double b ^long n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
@@ -63,12 +63,13 @@
 
 (defn interpolation-table
   "Linear interpolation using lookup table and mapping function"
-  [^clojure.lang.PersistentVector lut mapping]
-  (fn [& coords] (interpolate-value lut (apply mapping coords))))
+  [^clojure.lang.PersistentVector lut space]
+  (let [forward (::forward space)]
+    (fn [& coords] (interpolate-value lut (apply forward coords)))))
 
 (defn interpolate-function
   "Linear interpolation of function"
   [fun space]
-  (interpolation-table (make-lookup-table fun space) (::forward space)))
+  (interpolation-table (make-lookup-table fun space) space))
 
 (set! *unchecked-math* false)

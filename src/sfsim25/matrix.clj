@@ -2,6 +2,7 @@
   "Matrix and vector operations"
   (:require [clojure.core.matrix :refer :all]
             [clojure.core.matrix.linear :refer (norm)]
+            [sfsim25.util :refer :all]
             [sfsim25.quaternion :refer (rotate-vector)])
   (:import [mikera.vectorz Vector]
            [mikera.matrixx Matrix]
@@ -9,8 +10,6 @@
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
-
-(set-current-implementation :vectorz)
 
 (defn normalize
   "Normalize the vector"

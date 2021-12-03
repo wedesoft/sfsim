@@ -698,6 +698,6 @@ void main()
 
 (def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
 
-(reset! S (interpolation-table table (:sfsim25.interpolate/forward ray-scatter-space-earth)))
+(reset! S (interpolation-table table ray-scatter-space-earth))
 
 (set! *unchecked-math* false)

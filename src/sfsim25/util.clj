@@ -9,6 +9,10 @@
            [ij.process ImageConverter ColorProcessor]
            [mikera.vectorz Vector]))
 
+(set! *unchecked-math* true)
+
+(set-current-implementation :vectorz)
+
 (defn slurp-bytes
   "Read bytes from a file"
   ^bytes [^String file-name]
@@ -218,3 +222,5 @@
   "Combine multiple-argument functions"
   [f g]
   (fn [& args] (apply f (apply g args))))
+
+(set! *unchecked-math* false)
