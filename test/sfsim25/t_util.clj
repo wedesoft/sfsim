@@ -131,5 +131,14 @@
   (align-address 6 4) => 8
   (align-address 6 2) => 6)
 
+(facts "Shape of nested vector"
+       (dimensions [1 2 3]) => [3]
+       (dimensions [[1 2 3] [4 5 6]]) => [2 3]
+       (dimensions [(matrix [1 2 3]) (matrix [4 5 6])]) => [2])
+
 (facts "Combine multiple-argument functions"
        ((comp* + vector) 1 2 3) => 6)
+
+(facts "Pack nested floating-point vector into float array"
+       (seq (pack-floats [2 3 5 7])) => [2.0 3.0 5.0 7.0]
+       (seq (pack-floats [[2 3 5] [7 11 13]])) => [2.0 3.0 5.0 7.0 11.0 13.0])

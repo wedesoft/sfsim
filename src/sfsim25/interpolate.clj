@@ -1,7 +1,7 @@
 (ns sfsim25.interpolate
     "N-dimensional interpolation"
     (:require [clojure.core.matrix :refer :all]
-              [sfsim25.util :refer (comp*)]))
+              [sfsim25.util :refer (comp* dimensions)]))
 
 (set! *unchecked-math* true)
 
@@ -42,30 +42,23 @@
   [a b ^double scalar]
   (add (mul (- 1 scalar) a) (mul scalar b)))
 
-(defn dimensions
-  "Return shape of lookup table"
-  [lut]
-  (if (vector? lut)
-    (into [(count lut)] (dimensions (nth lut 0)))
-    []))
-
 (defn- interpolate-value
   "Linear interpolation for point in table"
-  [lut ^clojure.lang.PersistentVector point]
+  [lookup-table ^clojure.lang.PersistentVector point]
   (if (seq point)
-    (let [size       (count lut)
+    (let [size       (count lookup-table)
           [c & args] point
           i          (clip c size)
           u          (Math/floor i)
           v          (clip (inc u) size)
           s          (- i u)]
-      (mix (interpolate-value (nth lut u) args) (interpolate-value (nth lut v) args) s))
-    lut))
+      (mix (interpolate-value (nth lookup-table u) args) (interpolate-value (nth lookup-table v) args) s))
+    lookup-table))
 
 (defn interpolation-table
   "Linear interpolation using lookup table and mapping function"
-  [^clojure.lang.PersistentVector lut {:sfsim25.interpolate/keys [forward]}]
-  (fn [& coords] (interpolate-value lut (apply forward coords))))
+  [^clojure.lang.PersistentVector lookup-table {:sfsim25.interpolate/keys [forward]}]
+  (fn [& coords] (interpolate-value lookup-table (apply forward coords))))
 
 (defn interpolate-function
   "Linear interpolation of function"

@@ -1,7 +1,8 @@
 # TODO
 
-* main program for computing lookup tables: safe lookup tables
-* compute atmosphere colour in vertex shader
+* pack 4D lookup table into 3D texture
+* main program for computing lookup tables: save lookup tables in 2D textures
+* lookup atmosphere colour in vertex shader
 * rendering of sunlight and moonlight
 * use interface blocks in shaders
 * compute shadow in atmosphere
@@ -32,7 +33,6 @@
 * joint constraints
 * Runge-Kutta integration
 * convex hull extraction or definition
-* OpenGL visualisation
 * collision of gear
 * estimate friction impulse
 * display body with gears

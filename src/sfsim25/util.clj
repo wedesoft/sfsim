@@ -218,9 +218,21 @@
   (let [mask (dec alignment)]
     (bit-and (+ address mask) (bit-not mask))))
 
+(defn dimensions
+  "Return shape of nested vector"
+  [lookup-table]
+  (if (vector? lookup-table)
+    (into [(count lookup-table)] (dimensions (nth lookup-table 0)))
+    []))
+
 (defn comp*
   "Combine multiple-argument functions"
   [f g]
   (fn [& args] (apply f (apply g args))))
+
+(defn pack-floats
+  "Pack nested floating-point vector into float array"
+  [values]
+  (float-array (flatten values)))
 
 (set! *unchecked-math* false)

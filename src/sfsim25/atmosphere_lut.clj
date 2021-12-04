@@ -53,4 +53,6 @@
              (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
              (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s] (add (E x s) (dE x s))) surface-radiance-space-planet)))
              (reset! S (let [S @S dS @dS] (interpolate-function (fn [x v s] (add (S x v s) (dS x v s))) ray-scatter-space-planet)))))
+    (let [lookup-table-surface-radiance (make-lookup-table @E surface-radiance-space-planet)
+          lookup-table-ray-scatter      (make-lookup-table @S ray-scatter-space-planet)])
     (System/exit 0)))

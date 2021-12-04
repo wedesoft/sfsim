@@ -51,11 +51,6 @@
          1.0  4.0
          0.5  1.0)
 
-(facts "Shape of nested vector"
-       (dimensions [1 2 3]) => [3]
-       (dimensions [[1 2 3] [4 5 6]]) => [2 3]
-       (dimensions [(matrix [1 2 3]) (matrix [4 5 6])]) => [2])
-
 (tabular "Linear interpolation using a table of scalar values"
          (fact ((interpolation-table [9 4 1 0 1 4] (linear-space [-3] [2] [6])) ?x) => ?result)
          ?x   ?result
