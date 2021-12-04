@@ -2,7 +2,8 @@
     "Compute lookup tables for atmospheric scattering"
     (:require [clojure.core.matrix :refer :all]
               [sfsim25.atmosphere :refer :all]
-              [sfsim25.interpolate :refer :all])
+              [sfsim25.interpolate :refer :all]
+              [sfsim25.util :refer :all])
     (:import [mikera.vectorz Vector]))
 
 (def radius 6378000.0)
@@ -53,6 +54,10 @@
              (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
              (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s] (add (E x s) (dE x s))) surface-radiance-space-planet)))
              (reset! S (let [S @S dS @dS] (interpolate-function (fn [x v s] (add (S x v s) (dS x v s))) ray-scatter-space-planet)))))
-    (let [lookup-table-surface-radiance (make-lookup-table @E surface-radiance-space-planet)
-          lookup-table-ray-scatter      (make-lookup-table @S ray-scatter-space-planet)])
+    (let [lookup-table-transmittance    (make-lookup-table T transmittance-space-planet)
+          lookup-table-surface-radiance (make-lookup-table @E surface-radiance-space-planet)
+          lookup-table-ray-scatter      (make-lookup-table @S ray-scatter-space-planet)]
+      (spit-floats "data/atmosphere/transmittance.scatter"    (pack-floats lookup-table-transmittance))
+      (spit-floats "data/atmosphere/surface-radiance.scatter" (pack-floats lookup-table-surface-radiance))
+      (spit-floats "data/atmosphere/ray-scatter.scatter"      (pack-floats (convert-4d-to-2d lookup-table-ray-scatter))))
     (System/exit 0)))

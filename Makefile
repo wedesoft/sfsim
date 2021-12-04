@@ -1,4 +1,4 @@
-all: bluemarble heightfield
+all: bluemarble heightfield atmosphere
 
 check:
 	lein test
@@ -117,3 +117,8 @@ heightfield: elevation/0/0/0.raw elevation/0/0/1.raw elevation/0/1/0.raw elevati
 # See https://www.ngdc.noaa.gov/mgg/topo/gltiles.html
 all10g.tgz:
 	$(WGET) https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/all10g.tgz
+
+atmosphere: data/atmosphere/transmittance.scatter
+
+data/atmosphere/transmittance.scatter:
+	lein run-atmosphere-lut 17 20 32 5

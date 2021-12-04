@@ -220,9 +220,9 @@
 
 (defn dimensions
   "Return shape of nested vector"
-  [lookup-table]
-  (if (vector? lookup-table)
-    (into [(count lookup-table)] (dimensions (nth lookup-table 0)))
+  [array]
+  (if (vector? array)
+    (into [(count array)] (dimensions (first array)))
     []))
 
 (defn comp*
@@ -234,5 +234,13 @@
   "Pack nested floating-point vector into float array"
   [values]
   (float-array (flatten values)))
+
+(defn convert-4d-to-2d
+  "Take tiles from 4D array and arrange in a 2D array"
+  [array]
+  (let [[d c b a] (dimensions array)
+        h         (* d b)
+        w         (* c a)]
+    (mapv (fn [y] (mapv (fn [x] (get-in array [(quot y b) (quot x a) (mod y b) (mod x a)])) (range w))) (range h))))
 
 (set! *unchecked-math* false)

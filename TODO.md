@@ -1,7 +1,6 @@
 # TODO
 
-* pack 4D lookup table into 3D texture
-* main program for computing lookup tables: save lookup tables in 2D textures
+* pack 4D lookup table into 2D texture
 * lookup atmosphere colour in vertex shader
 * rendering of sunlight and moonlight
 * use interface blocks in shaders

@@ -121,15 +121,15 @@
 (def-context-create-macro create-test-ctx (fn [] 123) 'with-test-ctx)
 
 (facts "Definition of context creating macro"
-  (create-test-ctx ctx (+ ctx @context-test)) => (+ 123 42)
-  @context-test => nil)
+       (create-test-ctx ctx (+ ctx @context-test)) => (+ 123 42)
+       @context-test => nil)
 
 (facts "Alignment function"
-  (align-address 0 4) => 0
-  (align-address 8 4) => 8
-  (align-address 7 4) => 8
-  (align-address 6 4) => 8
-  (align-address 6 2) => 6)
+       (align-address 0 4) => 0
+       (align-address 8 4) => 8
+       (align-address 7 4) => 8
+       (align-address 6 4) => 8
+       (align-address 6 2) => 6)
 
 (facts "Shape of nested vector"
        (dimensions [1 2 3]) => [3]
@@ -142,3 +142,7 @@
 (facts "Pack nested floating-point vector into float array"
        (seq (pack-floats [2 3 5 7])) => [2.0 3.0 5.0 7.0]
        (seq (pack-floats [[2 3 5] [7 11 13]])) => [2.0 3.0 5.0 7.0 11.0 13.0])
+
+(facts "Convert 4D to 2D texture by tiling"
+       (convert-4d-to-2d [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]])
+       => [[1 2 5 6] [3 4 7 8] [9 10 13 14] [11 12 15 16]])
