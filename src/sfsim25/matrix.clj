@@ -80,5 +80,10 @@
         o2 (cross n o1)]
     (transpose (matrix [n o1 o2]))))
 
+(defn pack-matrices
+  "Pack nested vector of matrices into float array"
+  [array]
+  (float-array (flatten (map eseq (flatten array)))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -232,8 +232,8 @@
 
 (defn pack-floats
   "Pack nested floating-point vector into float array"
-  [values]
-  (float-array (flatten values)))
+  [array]
+  (float-array (flatten array)))
 
 (defn convert-4d-to-2d
   "Take tiles from 4D array and arrange in a 2D array"

@@ -3,6 +3,7 @@
     (:require [clojure.core.matrix :refer :all]
               [sfsim25.atmosphere :refer :all]
               [sfsim25.interpolate :refer :all]
+              [sfsim25.matrix :refer :all]
               [sfsim25.util :refer :all])
     (:import [mikera.vectorz Vector]))
 
@@ -57,7 +58,7 @@
     (let [lookup-table-transmittance    (make-lookup-table T transmittance-space-planet)
           lookup-table-surface-radiance (make-lookup-table @E surface-radiance-space-planet)
           lookup-table-ray-scatter      (make-lookup-table @S ray-scatter-space-planet)]
-      (spit-floats "data/atmosphere/transmittance.scatter"    (pack-floats lookup-table-transmittance))
-      (spit-floats "data/atmosphere/surface-radiance.scatter" (pack-floats lookup-table-surface-radiance))
-      (spit-floats "data/atmosphere/ray-scatter.scatter"      (pack-floats (convert-4d-to-2d lookup-table-ray-scatter))))
+      (spit-floats "data/atmosphere/transmittance.scatter"    (pack-matrices lookup-table-transmittance))
+      (spit-floats "data/atmosphere/surface-radiance.scatter" (pack-matrices lookup-table-surface-radiance))
+      (spit-floats "data/atmosphere/ray-scatter.scatter"      (pack-matrices (convert-4d-to-2d lookup-table-ray-scatter))))
     (System/exit 0)))

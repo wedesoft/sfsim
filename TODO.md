@@ -1,6 +1,5 @@
 # TODO
 
-* need to pack rgb floats in atmosphere-lut program
 * lookup atmosphere colour in vertex shader
 * rendering of sunlight and moonlight
 * use interface blocks in shaders
