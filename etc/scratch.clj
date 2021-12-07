@@ -693,11 +693,60 @@ void main()
 
 ; (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
 
+; (def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
+; (reset! S (interpolation-table table ray-scatter-space-earth))
 
-(show-image img)
+(set! *unchecked-math* false)
 
-(def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
+; --------------------------------------------------------------------------------
+(require '[clojure.core.matrix :refer :all]
+         '[sfsim25.render :refer :all]
+         '[sfsim25.matrix :refer :all])
+(import '[org.lwjgl.opengl Display DisplayMode PixelFormat])
 
-(reset! S (interpolation-table table ray-scatter-space-earth))
+(set! *unchecked-math* true)
+
+(def vertex-source-atmosphere "#version 130
+in highp vec3 point;
+uniform mat4 projection;
+void main()
+{
+  gl_Position = projection * vec4(point, 1);
+}")
+
+(def fragment-source-atmosphere "#version 130
+out lowp vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}
+")
+
+(Display/setTitle "scratch")
+(def desktop (DisplayMode. 640 480))
+(Display/setDisplayMode desktop)
+(Display/create)
+
+(def program-atmosphere
+  (make-program :vertex vertex-source-atmosphere
+                :fragment fragment-source-atmosphere))
+
+(def indices [0 1 3 2])
+(def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
+(def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
+
+(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
+
+(while (not (Display/isCloseRequested))
+       (onscreen-render (.getWidth desktop) (.getHeight desktop)
+                        (clear (matrix [0.0 0.5 0.0]))
+                        (use-program program-atmosphere)
+                        (uniform-matrix4 program-atmosphere :projection projection)
+                        (render-quads vao))
+       (Display/update))
+
+(destroy-vertex-array-object vao)
+(destroy-program program-atmosphere)
+(Display/destroy)
 
 (set! *unchecked-math* false)

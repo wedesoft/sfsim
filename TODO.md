@@ -1,10 +1,11 @@
 # TODO
 
 * lookup atmosphere colour in vertex shader
+* soft transition into planet's shadow
 * rendering of sunlight and moonlight
 * use interface blocks in shaders
+* link parts of shader
 * compute shadow in atmosphere
-* soft transition into planet's shadow
 * night-time textures
 * volumetric clouds or billboard clouds
 * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
