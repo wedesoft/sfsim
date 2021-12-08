@@ -704,7 +704,8 @@ void main()
          '[sfsim25.render :refer :all]
          '[sfsim25.shaders :as shaders]
          '[sfsim25.matrix :refer :all]
-         '[sfsim25.quaternion :as q])
+         '[sfsim25.quaternion :as q]
+         '[sfsim25.util :refer :all])
 (import '[org.lwjgl.opengl Display DisplayMode PixelFormat])
 
 (set! *unchecked-math* true)
@@ -726,15 +727,19 @@ void main()
   (template/eval "#version 130
 in highp vec3 pos;
 in highp vec3 orig;
+uniform vec3 light;
 out lowp vec3 fragColor;
 <%= shaders/ray-sphere %>
 void main()
 {
   vec3 direction = normalize(pos - orig);
   vec2 intersection = ray_sphere(vec3(0, 0, 0), 6378000, orig, direction);
-  if (intersection.y > 0)
-    fragColor = vec3(1, 1, 1);
-  else
+  vec3 point = orig + intersection.x * direction;
+  vec3 normal = normalize(point);
+  if (intersection.y > 0) {
+    float bright = max(dot(normal, light), 0);
+    fragColor = vec3(bright, bright, bright);
+  } else
     fragColor = vec3(0, 0, 0);
 }
 "))
@@ -756,18 +761,25 @@ void main()
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
+(def light (atom 0))
 (def position (atom (matrix [0 (* -3 radius) (* 0.5 6378000)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
+(def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
-       (onscreen-render (.getWidth desktop) (.getHeight desktop)
-                        (clear (matrix [0.0 0.5 0.0]))
-                        (use-program program-atmosphere)
-                        (uniform-matrix4 program-atmosphere :projection projection)
-                        (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation)
-                                                                                               @position))
-                        (render-quads vao))
-       (Display/update))
+       (let [t1 (System/currentTimeMillis)
+             dt (- t1 @t0)]
+         (onscreen-render (.getWidth desktop) (.getHeight desktop)
+                          (clear (matrix [0.0 0.5 0.0]))
+                          (use-program program-atmosphere)
+                          (uniform-matrix4 program-atmosphere :projection projection)
+                          (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation)
+                                                                                                 @position))
+                          (uniform-vector3 program-atmosphere :light (matrix [(Math/cos @light) (Math/sin @light) 0]))
+                          (render-quads vao))
+         (swap! t0 + dt)
+         (swap! light + (* 0.001 dt))
+         (Display/update)))
 
 (destroy-vertex-array-object vao)
 (destroy-program program-atmosphere)
