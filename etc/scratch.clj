@@ -729,6 +729,7 @@ in highp vec3 pos;
 in highp vec3 orig;
 uniform vec3 light;
 out lowp vec3 fragColor;
+uniform sampler2D surface_radiance;
 <%= shaders/ray-sphere %>
 void main()
 {
@@ -737,8 +738,11 @@ void main()
   vec3 point = orig + intersection.x * direction;
   vec3 normal = normalize(point);
   if (intersection.y > 0) {
-    float bright = max(dot(normal, light), 0);
-    fragColor = vec3(bright, bright, bright);
+    float cos_elevation = dot(normal, light);
+    float elevation = acos(cos_elevation);
+    float height = 0.0;
+    vec2 uv = vec2(height, elevation / radians(180));
+    fragColor = texture(surface_radiance, uv).rgb;
   } else
     fragColor = vec3(0, 0, 0);
 }
@@ -756,6 +760,11 @@ void main()
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
 (def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
+
+(def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def surface-radiance (make-vector-texture-2d {:width size :height size :data data}))
+(uniform-sampler program-atmosphere :surface_radiance 0)
 
 (def radius 6378000.0)
 
@@ -776,6 +785,7 @@ void main()
                           (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation)
                                                                                                  @position))
                           (uniform-vector3 program-atmosphere :light (matrix [0 (Math/cos @light) (Math/sin @light)]))
+                          (use-textures surface-radiance)
                           (render-quads vao))
          (swap! t0 + dt)
          (swap! light + (* 0.001 dt))
