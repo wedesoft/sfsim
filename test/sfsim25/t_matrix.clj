@@ -59,4 +59,4 @@
     (det m) => (roughly 1.0 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"
-      (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [1.0 2.0 3.0 4.0 5.0 6.0])
+      (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])

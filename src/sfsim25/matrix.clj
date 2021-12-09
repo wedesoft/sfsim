@@ -83,7 +83,7 @@
 (defn pack-matrices
   "Pack nested vector of matrices into float array"
   [array]
-  (float-array (flatten (map eseq (flatten array)))))
+  (float-array (flatten (map (comp reverse eseq) (flatten array)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
