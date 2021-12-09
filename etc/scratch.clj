@@ -731,6 +731,7 @@ in highp vec3 orig;
 uniform vec3 light;
 out lowp vec3 fragColor;
 uniform sampler2D surface_radiance;
+uniform sampler2D transmittance;
 <%= shaders/ray-sphere %>
 void main()
 {
@@ -743,7 +744,7 @@ void main()
     float elevation = acos(cos_elevation);
     float height = 0.0;
     vec2 uv = vec2(height, elevation / radians(180));
-    fragColor = texture(surface_radiance, uv).rgb;
+    fragColor = 5 * (texture(surface_radiance, uv).rgb + max(cos_elevation, 0) * texture(transmittance, uv).rgb);
   } else
     fragColor = vec3(0, 0, 0);
 }
@@ -767,6 +768,11 @@ void main()
 (def surface-radiance (make-vector-texture-2d {:width size :height size :data data}))
 (uniform-sampler program-atmosphere :surface_radiance 0)
 
+(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def transmittance (make-vector-texture-2d {:width size :height size :data data}))
+(uniform-sampler program-atmosphere :transmittance 1)
+
 (def radius 6378000.0)
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
@@ -786,7 +792,7 @@ void main()
                           (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation)
                                                                                                  @position))
                           (uniform-vector3 program-atmosphere :light (matrix [0 (Math/cos @light) (Math/sin @light)]))
-                          (use-textures surface-radiance)
+                          (use-textures surface-radiance transmittance)
                           (render-quads vao))
          (swap! t0 + dt)
          (swap! light + (* 0.001 dt))

@@ -1,5 +1,6 @@
 # TODO
 
+* check atmosphere-lut and interpolation spaces
 * lookup atmosphere colour in vertex shader
 * soft transition into planet's shadow
 * rendering of sunlight and moonlight
