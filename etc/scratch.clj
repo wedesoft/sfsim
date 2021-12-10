@@ -598,6 +598,7 @@ void main()
 (require '[sfsim25.interpolate :refer :all])
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.matrix :refer :all])
+(require '[sfsim25.sphere :refer :all])
 (require '[sfsim25.util :refer :all])
 
 (import '[mikera.vectorz Vector])
@@ -656,7 +657,7 @@ void main()
 
 ; ---
 ; Youtube video size: 426 x 240
-
+; render sky sphere
 
 (def w2 119)
 (def -w2 (- w2))
@@ -690,6 +691,42 @@ void main()
          ; (spit-image (format "sun%04d.png" @n) img)
          (show-image img)
          (println (swap! n inc))))
+
+; render planet
+(def m 0.5)
+
+(let [angle  (* 0 Math/PI)]
+  (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
+        point         (matrix [0 (* 0.8 radius) (* -1 radius)])
+        data          (mapv (fn [y]
+                                (mapv (fn [x]
+                                          (let [f   (/ w2 (Math/tan (Math/toRadians 20)))
+                                                dir (normalize (matrix [x (- y) f]))
+                                                ray {:sfsim25.ray/origin point :sfsim25.ray/direction dir}
+                                                hit (ray-sphere-intersection earth ray)
+                                                atm {:sfsim25.sphere/centre (matrix [0 0 0])
+                                                     :sfsim25.sphere/radius (+ radius (:sfsim25.atmosphere/height earth))}
+                                                h2  (ray-sphere-intersection atm ray)]
+                                            (if (> (:length hit) 0)
+                                              (let [p (add point (mul dir (:distance hit)))
+                                                    p2 (add point (mul dir (:distance h2)))
+                                                    n (normalize p)
+                                                    t (T p sun-direction)
+                                                    e (@E p sun-direction)
+                                                    s (@S p2 dir sun-direction)
+                                                    t2 (T p2 dir)
+                                                    b (add s (mul t2 (add e (mul t 0.3 (max 0 (dot n sun-direction))))))]
+                                                b)
+                                                (if (> (:length h2) 0)
+                                                  (let [p (add point (mul dir (:distance h2)))
+                                                        s (@S p dir sun-direction)]
+                                                    s)
+                                                  (matrix [0 0 0]))
+                                              )))
+                                      (range -w2 (inc w2))))
+                            (range -w2 (inc w2)))]
+    (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
+    (show-image img)))
 
 ; (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
 
@@ -744,7 +781,10 @@ void main()
     float elevation = acos(cos_elevation);
     float height = 0.0;
     vec2 uv = vec2(height, elevation / radians(180));
-    fragColor = 5 * (texture(surface_radiance, uv).rgb + max(cos_elevation, 0) * texture(transmittance, uv).rgb);
+    if (point.x > 0)
+      fragColor = 5 * (texture(surface_radiance, uv).rgb + max(cos_elevation, 0) * texture(transmittance, uv).rgb);
+    else
+      fragColor = max(cos_elevation, 0) * vec3(1, 1, 1);
   } else
     fragColor = vec3(0, 0, 0);
 }

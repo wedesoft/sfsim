@@ -1,5 +1,6 @@
 # TODO
 
+* create CPU rendering of sphere with atmosphere
 * check atmosphere-lut and interpolation spaces
 * lookup atmosphere colour in vertex shader
 * soft transition into planet's shadow
