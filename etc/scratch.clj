@@ -598,7 +598,7 @@ void main()
 (require '[sfsim25.interpolate :refer :all])
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.matrix :refer :all])
-(require '[sfsim25.sphere :refer :all])
+(require '[sfsim25.sphere :refer (ray-sphere-intersection)])
 (require '[sfsim25.util :refer :all])
 
 (import '[mikera.vectorz Vector])
@@ -693,6 +693,27 @@ void main()
          (println (swap! n inc))))
 
 ; render planet
+(def radius 6378000.0)
+(def height 100000.0)
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76 :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
+
+(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def transmittance-space-earth (transmittance-space earth size))
+(def T (interpolation-table (mapv vec (partition size (map (comp matrix vector) (partition 3 data)))) transmittance-space-earth))
+
+(def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def surface-radiance-space-earth (surface-radiance-space earth size))
+(def E (atom (interpolation-table (mapv vec (partition size (map (comp matrix vector) (partition 3 data)))) surface-radiance-space-earth)))
+
+(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(def size (int (Math/pow (/ (count data) 3) 0.25)))
+(def ray-scatter-space-earth (ray-scatter-space earth size))
+(def flat (mapv (comp matrix vector) (partition 3 data)))
+
 (def m 0.5)
 
 (let [angle  (* 0 Math/PI)]
