@@ -707,8 +707,6 @@ void main()
 (def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 
-; TODO: need to reverse order of components of each matrix
-
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
 (def transmittance-space-earth (transmittance-space earth size))
