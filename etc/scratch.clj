@@ -723,7 +723,7 @@ void main()
 (def arr (mapv vec (partition (* size size) (mapv (comp matrix reverse) (partition 3 data)))))
 (def S (atom (interpolation-table (convert-2d-to-4d arr) ray-scatter-space-earth)))
 
-(def m 0.5)
+(def m 0.2)
 
 (let [angle  (* 0 Math/PI)]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
@@ -745,7 +745,7 @@ void main()
                                                     e (@E p sun-direction)
                                                     s (@S p2 dir sun-direction)
                                                     t2 (T p2 dir)
-                                                    b (add s (mul t2 (add e (mul t 0.3 (max 0 (dot n sun-direction))))))]
+                                                    b (add s (mul t2 (add e (mul t (/ 0.3 Math/PI) (max 0 (dot n sun-direction))))))]
                                                 b)
                                                 (if (> (:length h2) 0)
                                                   (let [p (add point (mul dir (:distance h2)))
@@ -755,10 +755,10 @@ void main()
                                               )))
                                       (range -w2 (inc w2))))
                             (range -w2 (inc w2)))]
+    (println (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
     (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
     (show-image img)))
 
-; (def m (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
 
 ; (def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
 ; (reset! S (interpolation-table table ray-scatter-space-earth))
