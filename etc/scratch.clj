@@ -613,13 +613,16 @@ void main()
 
 (def size 17)
 
-(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] 10 #:sfsim25.ray{:origin x :direction v}))
+(def steps 50)
+(def angles 32)
+
+(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] steps #:sfsim25.ray{:origin x :direction v}))
 
 (def transmittance-space-earth (transmittance-space earth size))
 
 (def T (interpolate-function transmittance-earth transmittance-space-earth))
 
-(defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth [mie rayleigh] 10 (matrix [1 1 1]) point sun-direction))
+(defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth [mie rayleigh] steps (matrix [1 1 1]) point sun-direction))
 
 (def surface-radiance-space-earth (surface-radiance-space earth size))
 
@@ -627,7 +630,7 @@ void main()
 
 (def E (atom (fn [point sun-direction] (matrix [0 0 0]))))
 
-(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth [mie rayleigh] 10 (partial point-scatter-base earth [mie rayleigh] 10 (matrix [1 1 1])) point direction sun-direction))
+(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth [mie rayleigh] steps (partial point-scatter-base earth [mie rayleigh] steps (matrix [1 1 1])) point direction sun-direction))
 
 (def ray-scatter-space-earth (ray-scatter-space earth size))
 
@@ -641,14 +644,14 @@ void main()
 
 ; loop
 
-(defn point-scatter-earth [point direction sun-direction] (point-scatter earth [mie rayleigh] @dS @dE (matrix [1 1 1]) 16 10 point direction sun-direction))
+(defn point-scatter-earth [point direction sun-direction] (point-scatter earth [mie rayleigh] @dS @dE (matrix [1 1 1]) angles steps point direction sun-direction))
 
 (reset! dJ (time (interpolate-function point-scatter-earth point-scatter-space-earth)))
 
-(defn surface-radiance-earth [point sun-direction] (surface-radiance earth @dS 10 point sun-direction))
+(defn surface-radiance-earth [point sun-direction] (surface-radiance earth @dS steps point sun-direction))
 (reset! dE (time (interpolate-function surface-radiance-earth surface-radiance-space-earth)))
 
-(defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] 10 @dJ point direction sun-direction))
+(defn ray-scatter-earth [point direction sun-direction] (ray-scatter earth [mie rayleigh] steps @dJ point direction sun-direction))
 (reset! dS (time (interpolate-function ray-scatter-earth ray-scatter-space-earth)))
 
 (reset! E (let [E @E dE @dE] (time (interpolate-function (fn [point sun-direction] (add (E point sun-direction) (dE point sun-direction))) surface-radiance-space-earth))))
@@ -682,7 +685,7 @@ void main()
                                                            v (@S point d sun-direction)
                                                            s (Math/pow (max 0 (dot d sun-direction)) 5000)
                                                            R {:sfsim25.ray/origin point :sfsim25.ray/direction sun-direction}
-                                                           t (transmittance earth [mie rayleigh] 10 R)]
+                                                           t (transmittance earth [mie rayleigh] steps R)]
                                                        (add v (mul s t)))
                                                      (matrix [0 0 0]))))
                                              (range -w2 (inc w2)))))
@@ -724,40 +727,46 @@ void main()
 (def S (atom (interpolation-table (convert-2d-to-4d arr) ray-scatter-space-earth)))
 
 (def m 0.2)
-
-(let [angle  (* 0 Math/PI)]
+(def n (atom 0))
+(;doseq [angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
+ let [angle  (* -0.45 Math/PI)]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
-        point         (matrix [0 (* 0.8 radius) (* -1 radius)])
-        data          (mapv (fn [y]
+        point         (matrix [0 (* 1 (+ radius 2)) (* 0.0 radius)])
+        data          (vec (pmap (fn [y]
                                 (mapv (fn [x]
-                                          (let [f   (/ w2 (Math/tan (Math/toRadians 20)))
-                                                dir (normalize (matrix [x (- y) f]))
+                                          (let [f   (/ w2 (Math/tan (Math/toRadians 30)))
+                                                dir (normalize (matrix [x (- y) (- f)]))
                                                 ray {:sfsim25.ray/origin point :sfsim25.ray/direction dir}
                                                 hit (ray-sphere-intersection earth ray)
                                                 atm {:sfsim25.sphere/centre (matrix [0 0 0])
                                                      :sfsim25.sphere/radius (+ radius (:sfsim25.atmosphere/height earth))}
-                                                h2  (ray-sphere-intersection atm ray)]
+                                                h2  (ray-sphere-intersection atm ray)
+                                                l  (Math/pow (max 0 (dot dir sun-direction)) 5000)]
                                             (if (> (:length hit) 0)
-                                              (let [p (add point (mul dir (:distance hit)))
+                                              (let [p  (add point (mul dir (:distance hit)))
                                                     p2 (add point (mul dir (:distance h2)))
-                                                    n (normalize p)
-                                                    t (T p sun-direction)
-                                                    e (@E p sun-direction)
-                                                    s (@S p2 dir sun-direction)
+                                                    n  (normalize p)
+                                                    t  (T p dir)
+                                                    ;e  (@E p sun-direction)
+                                                    e  (surface-radiance-base-earth p sun-direction)
+                                                    ;s  (@S p2 dir sun-direction)
+                                                    s  (ray-scatter-base-earth p2 dir sun-direction)
                                                     t2 (T p2 dir)
-                                                    b (add s (mul t2 (add e (mul t (/ 0.3 Math/PI) (max 0 (dot n sun-direction))))))]
+                                                    b (add s (div (mul t2 e) Math/PI) (mul l t))]
                                                 b)
                                                 (if (> (:length h2) 0)
                                                   (let [p (add point (mul dir (:distance h2)))
-                                                        s (@S p dir sun-direction)]
-                                                    s)
-                                                  (matrix [0 0 0]))
-                                              )))
+                                                        s (@S p dir sun-direction)
+                                                        t (T p dir)]
+                                                    (add s (mul l t)))
+                                                  (mul l (matrix [1 1 1]))))))
                                       (range -w2 (inc w2))))
-                            (range -w2 (inc w2)))]
-    (println (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
+                            (range -w2 (inc w2))))]
+    ;(println (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
     (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    (show-image img)))
+    ;(spit-image (format "sun%04d.png" @n) img)
+    (show-image img)
+    (println (swap! n inc))))
 
 
 ; (def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
