@@ -595,6 +595,7 @@ void main()
 
 (require '[clojure.core.matrix :refer :all])
 (require '[clojure.core.matrix.linear :refer (norm)])
+(require '[com.climate.claypoole :as cp])
 (require '[sfsim25.interpolate :refer :all])
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.matrix :refer :all])
@@ -613,8 +614,8 @@ void main()
 
 (def size 17)
 
-(def steps 50)
-(def angles 32)
+(def steps 10)
+(def angles 16)
 
 (defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] steps #:sfsim25.ray{:origin x :direction v}))
 
@@ -691,7 +692,7 @@ void main()
                                              (range -w2 (inc w2)))))
                                   (range -w2 (inc w2))))]
          (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-         ; (spit-image (format "sun%04d.png" @n) img)
+         ;(spit-image (format "sun%04d.png" @n) img)
          (show-image img)
          (println (swap! n inc))))
 ;
@@ -728,8 +729,8 @@ void main()
 
 (def m 0.2)
 (def n (atom 0))
-(;doseq [angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
- let [angle  (* -0.45 Math/PI)]
+(doseq [angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
+ ;let [angle  (* -0.45 Math/PI)]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
         point         (matrix [0 (* 1 (+ radius 2)) (* 0.0 radius)])
         data          (vec (pmap (fn [y]
@@ -764,8 +765,8 @@ void main()
                             (range -w2 (inc w2))))]
     ;(println (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
     (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    ;(spit-image (format "sun%04d.png" @n) img)
-    (show-image img)
+    (spit-image (format "sun%04d.png" @n) img)
+    ;(show-image img)
     (println (swap! n inc))))
 
 
