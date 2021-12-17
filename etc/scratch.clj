@@ -729,10 +729,11 @@ void main()
 
 (def m 0.2)
 (def n (atom 0))
-(doseq [angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
- ;let [angle  (* -0.45 Math/PI)]
+(doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
+ ;doseq [hh [2] angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
+ ;let [angle  (* -0.45 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
-        point         (matrix [0 (* 1 (+ radius 2)) (* 0.0 radius)])
+        point         (matrix [0 (* 1 (+ radius hh)) (* 0.0 radius)])
         data          (vec (pmap (fn [y]
                                 (mapv (fn [x]
                                           (let [f   (/ w2 (Math/tan (Math/toRadians 30)))
@@ -747,26 +748,30 @@ void main()
                                               (let [p  (add point (mul dir (:distance hit)))
                                                     p2 (add point (mul dir (:distance h2)))
                                                     n  (normalize p)
-                                                    t  (T p dir)
+                                                    ;t  (T p dir)
+                                                    t   (transmittance-earth p dir)
                                                     ;e  (@E p sun-direction)
                                                     e  (surface-radiance-base-earth p sun-direction)
                                                     ;s  (@S p2 dir sun-direction)
                                                     s  (ray-scatter-base-earth p2 dir sun-direction)
-                                                    t2 (T p2 dir)
-                                                    b (add s (div (mul t2 e) Math/PI) (mul l t))]
+                                                    ;t2 (T p2 dir)
+                                                    t2 (transmittance-earth p2 dir)
+                                                    b (add s (div (mul t2 e) Math/PI))]
                                                 b)
                                                 (if (> (:length h2) 0)
                                                   (let [p (add point (mul dir (:distance h2)))
-                                                        s (@S p dir sun-direction)
-                                                        t (T p dir)]
+                                                        ;s (@S p dir sun-direction)
+                                                        s (ray-scatter-base-earth p dir sun-direction)
+                                                        ;t (T p dir)
+                                                        t (transmittance-earth p dir)]
                                                     (add s (mul l t)))
                                                   (mul l (matrix [1 1 1]))))))
                                       (range -w2 (inc w2))))
                             (range -w2 (inc w2))))]
     ;(println (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
-    (doseq [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    (spit-image (format "sun%04d.png" @n) img)
-    ;(show-image img)
+    (cp/pdoseq (+ (cp/ncpus) 2) [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
+    ;(spit-image (format "sun%04d.png" @n) img)
+    (show-image img)
     (println (swap! n inc))))
 
 
