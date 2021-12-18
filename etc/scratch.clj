@@ -697,6 +697,7 @@ void main()
          (println (swap! n inc))))
 ;
 ; ---
+; Youtube video size: 426 x 240
 ; render planet
 
 (def w2 119)
@@ -773,6 +774,7 @@ void main()
     ;(show-image img)
     (println (swap! n inc))))
 
+; convert sun0200.png -background black -gravity center -extent 426x240 test.png
 
 ; (def table (vec (for [l (range 16)] (vec (for [k (range 16)] (vec (for [j (range 16)] (vec (for [i (range 16)] (if (even? (+ i j k l)) (matrix [1 1 1]) (matrix [0 0 0])))))))))))
 ; (reset! S (interpolation-table table ray-scatter-space-earth))
