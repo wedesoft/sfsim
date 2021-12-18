@@ -33,16 +33,24 @@
     (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
     (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5))))))
 
-(facts "Get endpoint on imposed limit of atmosphere"
-       (let [radius 6378000.0
-             height 100000.0
+(facts "Get intersection with imposed limit of atmosphere"
+       (let [radius 6378000
+             height 100000
              earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
-         (atmosphere-endpoint earth #:sfsim25.ray{:origin (matrix [radius 0 0]) :direction (matrix [1 0 0])})
+         (atmosphere-intersection earth #:sfsim25.ray{:origin (matrix [radius 0 0]) :direction (matrix [1 0 0])})
          => (matrix [(+ radius height) 0 0])
-         (atmosphere-endpoint earth #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
+         (atmosphere-intersection earth #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
          => (matrix [0 (+ radius height) 0])
-         (atmosphere-endpoint earth #:sfsim25.ray{:origin (matrix [0 (* -2 radius) 0]) :direction (matrix [0 1 0])})
+         (atmosphere-intersection earth #:sfsim25.ray{:origin (matrix [0 (* -2 radius) 0]) :direction (matrix [0 1 0])})
          => (matrix [0 (+ radius height) 0])))
+
+(facts "Get intersection with surface of planet"
+       (let [radius 6378000
+             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}]
+         (surface-intersection earth #:sfsim25.ray{:origin (matrix [radius 0 0]) :direction (matrix [-1 0 0])})
+         => (matrix [radius 0 0])
+         (surface-intersection earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [-1 0 0])})
+         => (matrix [radius 0 0])))
 
 ; ---
 

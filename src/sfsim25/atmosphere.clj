@@ -27,13 +27,19 @@
   (/ (* 3 (- 1 (sqr scatter-g)) (+ 1 (sqr mu)))
      (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
 
-(defn atmosphere-endpoint
+(defn atmosphere-intersection
   "Get intersection of ray with artificial limit of atmosphere"
   [{:sfsim25.sphere/keys [centre radius] :as planet} ray]
   (let [height                    (:sfsim25.atmosphere/height planet)
-        sphere                    #:sfsim25.sphere {:centre centre :radius (+ radius height)}
-        {:keys [distance length]} (ray-sphere-intersection sphere ray)]
+        atmosphere                #:sfsim25.sphere {:centre centre :radius (+ radius height)}
+        {:keys [distance length]} (ray-sphere-intersection atmosphere ray)]
     (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) (+ distance length)))))
+
+(defn surface-intersection
+  "Get intersection of ray with surface of planet"
+  [planet ray]
+  (let [{:keys [distance length]} (ray-sphere-intersection planet ray)]
+    (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance))))
 
 ; ---
 
