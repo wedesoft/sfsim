@@ -727,10 +727,10 @@ void main()
 (def arr (mapv vec (partition (* size size) (mapv (comp matrix reverse) (partition 3 data)))))
 (def S (atom (interpolation-table (convert-2d-to-4d arr) ray-scatter-space-earth)))
 
-(def m 0.2)
+(def m 0.075)
 (def n (atom 0))
-(doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
- ;doseq [hh [2] angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
+(;doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
+ doseq [hh [2] angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
  ;let [angle  (* -0.45 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
         point         (matrix [0 (* 1 (+ radius hh)) (* 0.0 radius)])
@@ -756,7 +756,7 @@ void main()
                                                     s  (ray-scatter-base-earth p2 dir sun-direction)
                                                     ;t2 (T p2 dir)
                                                     t2 (transmittance-earth p2 dir)
-                                                    b (add s (div (mul t2 e) Math/PI))]
+                                                    b (add s (div (mul 0.3 t2 e) Math/PI))]
                                                 b)
                                                 (if (> (:length h2) 0)
                                                   (let [p (add point (mul dir (:distance h2)))
@@ -768,10 +768,9 @@ void main()
                                                   (mul l (matrix [1 1 1]))))))
                                       (range -w2 (inc w2))))
                             (range -w2 (inc w2))))]
-    ;(println (apply max (map (fn [row] (apply max (map (fn [cell] (max (mget cell 0) (mget cell 1) (mget cell 2))) row))) data)))
     (cp/pdoseq (+ (cp/ncpus) 2) [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    ;(spit-image (format "sun%04d.png" @n) img)
-    (show-image img)
+    (spit-image (format "sun%04d.png" @n) img)
+    ;(show-image img)
     (println (swap! n inc))))
 
 
