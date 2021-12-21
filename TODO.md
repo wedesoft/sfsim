@@ -1,6 +1,7 @@
 # TODO
 
-* create CPU rendering of sphere with atmosphere
+* create CPU rendering of sphere with atmosphere, create CPU rendering of ground level image with sunset
+* create single-scattering lut with increased resolution above and below horizon, compare with CPU images
 * check atmosphere-lut and interpolation spaces
 * lookup atmosphere colour in vertex shader
 * soft transition into planet's shadow
