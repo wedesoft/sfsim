@@ -56,20 +56,18 @@
         vector-length (length radial-vector)
         normal        (div radial-vector vector-length)]
     (mul (max 0 (dot normal sun-direction))
-         (transmittance planet scatter atmosphere-intersection steps #:sfsim25.ray{:origin x :direction sun-direction}) sun-light)))
+         (transmittance planet scatter atmosphere-intersection steps x sun-direction) sun-light)))
 
-; ---
+(defn point-scatter-base
+  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
+  [planet scatter steps sun-light x view-direction sun-direction]
+  (let [height-of-x  (height planet x)
+        scatter-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction sun-direction)))
+        sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
+    (if (surface-intersection planet sun-ray)
+      (matrix [0 0 0])
+      (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps x sun-direction)))))
 
-;(defn point-scatter-base
-;  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
-;  [planet scatter steps sun-light x view-direction sun-direction]
-;  (let [height-of-x  (height planet x)
-;        scatter-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction sun-direction)))
-;        sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
-;    (if (::surface (ray-extremity planet sun-ray))
-;      (matrix [0 0 0])
-;      (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps sun-ray)))))
-;
 ;(defn ray-scatter
 ;  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
 ;  [planet scatter steps point-scatter x view-direction sun-direction]
