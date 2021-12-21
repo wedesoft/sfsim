@@ -73,13 +73,13 @@
       (matrix [0 0 0])
       (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps x sun-direction)))))
 
-;(defn ray-scatter
-;  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
-;  [planet scatter steps point-scatter x view-direction sun-direction]
-;  (let [x0  (::point (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction}))
-;        ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]
-;    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
-;
+(defn ray-scatter
+  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
+  [planet scatter steps point-scatter x view-direction sun-direction]
+  (let [x0  (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction})
+        ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]
+    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
+
 ;(defn point-scatter
 ;  "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
 ;  [planet scatter ray-scatter surface-radiance sun-light sphere-steps ray-steps x view-direction sun-direction]

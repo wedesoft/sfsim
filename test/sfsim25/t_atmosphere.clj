@@ -156,25 +156,27 @@
       (point-scatter-base earth [mie] 10 sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction2)
       => (matrix [0 0 0]))))
 
-;(facts "In-scattered light from a direction (S) depending on point scatter function (J)"
-;  (let [radius           6378000.0
-;        height           100000.0
-;        earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-;        mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
-;        sun-direction    (matrix [0.36 0.48 0.8])
-;        constant-scatter (fn [y view-direction sun-direction]
-;                             (facts view-direction => (matrix [0 1 0])
-;                                    sun-direction => (matrix [0.36 0.48 0.8]))
-;                             (matrix [2e-5 2e-5 2e-5]))]
-;    (with-redefs [atmosphere/transmittance
-;                  (fn [planet scatter steps x x0]
-;                      (facts (:sfsim25.atmosphere/scatter-g (first scatter)) => 0.76
-;                             steps => 10
-;                             x => (matrix [0 radius 0]))
-;                      0.5)]
-;      (ray-scatter earth [mie] 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) sun-direction)
-;      => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6))))
-;
+(facts "In-scattered light from a direction (S) depending on point scatter function (J)"
+  (let [radius           6378000.0
+        height           100000.0
+        earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
+        sun-direction    (matrix [0.36 0.48 0.8])
+        constant-scatter (fn [y view-direction sun-direction]
+                             (facts "Check point-scatter function gets called with correct arguments"
+                                    view-direction => (matrix [0 1 0])
+                                    sun-direction => (matrix [0.36 0.48 0.8]))
+                             (matrix [2e-5 2e-5 2e-5]))]
+    (with-redefs [atmosphere/transmittance
+                  (fn [planet scatter steps x x0]
+                      (facts "Check transmittance function gets called with correct arguments"
+                             (:sfsim25.atmosphere/scatter-g (first scatter)) => 0.76
+                             steps => 10
+                             x => (matrix [0 radius 0]))
+                      0.5)]
+      (ray-scatter earth [mie] 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) sun-direction)
+      => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6))))
+
 ;(facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"
 ;  (let [radius           6378000.0
 ;        height           100000.0
