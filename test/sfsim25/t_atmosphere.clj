@@ -81,38 +81,24 @@
          => (roughly (Math/exp (- (* l 5.8e-6))) 1e-6)))
 ; ---
 
-
-;(facts "Transmittance function"
-;  (let [radius   6378000.0
-;        height   100000.0
-;        earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-;        rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
-;        mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
-;        both     [rayleigh mie]
-;        x        (matrix [0 radius 0])
-;        l        1000]
-;    (mget (transmittance earth [rayleigh] 10 x (matrix [0 radius 0])) 0) => (roughly 1.0 1e-6)
-;    (mget (transmittance earth [rayleigh] 10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l 5.8e-6))))
-;    (mget (transmittance earth both       10 x (matrix [l radius 0])) 0) => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))))
-;    (with-redefs [atmosphere/ray-extremity (fn [planet {:sfsim25.ray/keys [origin direction]}]
-;                                               {:sfsim25.atmosphere/point (add origin (mul direction l))})]
-;      (mget (transmittance earth [rayleigh] 10 #:sfsim25.ray{:origin x :direction (matrix [1 0 0])}) 0)
-;      => (roughly (Math/exp (- (* l 5.8e-6)))))))
-;
-;(facts "Scatter-free radiation emitted from surface of planet (E[L0])"
-;  (let [radius    6378000.0
-;        height    100000.0
-;        earth     #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-;        moved     #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}
-;        sun-light (matrix [1.0 1.0 1.0])]
-;    (with-redefs [atmosphere/transmittance
-;                  (fn [planet scatter steps {:sfsim25.ray/keys [origin direction]}]
-;                      (fact [scatter steps origin] => [[] 10 (matrix [0 radius 0])])
-;                      (matrix [0.5 0.5 0.5]))]
-;      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
-;      (surface-radiance-base moved [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (mul 0.5 sun-light)
-;      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 1 0]))             => (mul 0.5 sun-light)
-;      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0]))))
+(facts "Scatter-free radiation emitted from surface of planet (E[L0])"
+  (let [radius    6378000.0
+        height    100000.0
+        earth     #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        moved     #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}
+        sun-light (matrix [1.0 1.0 1.0])]
+    (with-redefs [atmosphere/transmittance
+                  (fn [planet scatter intersection steps {:sfsim25.ray/keys [origin direction]}]
+                      (facts "Transmittance function gets called with correct arguments"
+                             scatter => []
+                             intersection => (exactly atmosphere-intersection)
+                             steps   => 10
+                             origin  => (matrix [0 radius 0]))
+                      (matrix [0.5 0.5 0.5]))]
+      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
+      (surface-radiance-base moved [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (mul 0.5 sun-light)
+      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 1 0]))             => (mul 0.5 sun-light)
+      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0]))))
 ;
 ;(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 ;

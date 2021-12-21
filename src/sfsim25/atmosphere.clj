@@ -49,25 +49,17 @@
   ([planet scatter intersection steps x v]
    (transmittance planet scatter steps x (intersection planet #:sfsim25.ray{:origin x :direction v}))))
 
+(defn surface-radiance-base
+  "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
+  [planet scatter steps sun-light x sun-direction]
+  (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
+        vector-length (length radial-vector)
+        normal        (div radial-vector vector-length)]
+    (mul (max 0 (dot normal sun-direction))
+         (transmittance planet scatter atmosphere-intersection steps #:sfsim25.ray{:origin x :direction sun-direction}) sun-light)))
+
 ; ---
 
-;(defn transmittance
-;  "Compute transmission of light between two points x and x0 given extinction caused by different scattering effects"
-;  ([sphere scatter steps x x0]
-;   (let [fun (fn [point] (apply add (map #(extinction % (height sphere point)) scatter)))]
-;     (exp (sub (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 fun)))))
-;  ([planet scatter steps ray]
-;   (transmittance planet scatter steps (:sfsim25.ray/origin ray) (::point (ray-extremity planet ray)))))
-;
-;(defn surface-radiance-base
-;  "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
-;  [planet scatter steps sun-light x sun-direction]
-;  (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
-;        vector-length (length radial-vector)
-;        normal        (div radial-vector vector-length)]
-;    (mul (max 0 (dot normal sun-direction))
-;         (transmittance planet scatter steps #:sfsim25.ray{:origin x :direction sun-direction}) sun-light)))
-;
 ;(defn point-scatter-base
 ;  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
 ;  [planet scatter steps sun-light x view-direction sun-direction]
