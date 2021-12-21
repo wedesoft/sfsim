@@ -33,7 +33,7 @@
     (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
     (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5))))))
 
-(facts "Get intersection with imposed limit of atmosphere"
+(facts "Get intersection with artificial limit of atmosphere"
        (let [radius 6378000
              height 100000
              earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
@@ -53,6 +53,15 @@
          => (matrix [radius 0 0])
          (surface-intersection earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [1 0 0])})
          => nil))
+
+(facts "Get intersection with surface of planet or artificial limit of atmosphere"
+       (let [radius 6378000
+             height 100000
+             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
+         (ray-extremity earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [-1 0 0])})
+         => (matrix [radius 0 0])
+         (ray-extremity earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [1 0 0])})
+         => (matrix [(+ radius 100000) 0 0])))
 
 (facts "Determine transmittance of atmosphere for all color channels"
        (let [radius       6378000

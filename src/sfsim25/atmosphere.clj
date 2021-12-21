@@ -41,6 +41,11 @@
   (let [{:keys [distance length]} (ray-sphere-intersection planet ray)]
     (if (zero? length) nil (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance)))))
 
+(defn ray-extremity
+  "Get intersection with surface of planet or artificial limit of atmosphere"
+  [planet ray]
+  (or (surface-intersection planet ray) (atmosphere-intersection planet ray)))
+
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
   ([planet scatter steps x x0]
