@@ -44,7 +44,10 @@
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere"
   [planet ray]
-  (or (surface-intersection planet ray) (atmosphere-intersection planet ray)))
+  (let [surface-point (surface-intersection planet ray)]
+    (if surface-point
+      {:surface true :point surface-point}
+      {:surface false :point (atmosphere-intersection planet ray)})))
 
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
@@ -76,107 +79,105 @@
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
   [planet scatter steps point-scatter x view-direction sun-direction]
-  (let [x0  (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction})
-        ray #:sfsim25.ray{:origin x :direction (sub x0 x)}]
+  (let [point (:point (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction}))
+        ray   #:sfsim25.ray{:origin x :direction (sub point x)}]
     (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
 
-;(defn point-scatter
-;  "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
-;  [planet scatter ray-scatter surface-radiance sun-light sphere-steps ray-steps x view-direction sun-direction]
-;  (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))
-;        height-of-x   (height planet x)
-;        scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
-;    (integral-sphere sphere-steps
-;                     normal
-;                     (fn [omega]
-;                         (let [ray       #:sfsim25.ray{:origin x :direction omega}
-;                               extremity (ray-extremity planet ray)
-;                               x0        (::point extremity)
-;                               surface   (::surface extremity)]
-;                           (mul (apply add (map (partial scatter-at-x omega) scatter))
-;                                (add (ray-scatter x omega sun-direction)
-;                                     (if surface
-;                                       (mul (transmittance planet scatter ray-steps x x0)
-;                                            (div (::brightness planet) Math/PI)
-;                                            (surface-radiance x0 sun-direction))
-;                                       (matrix [0 0 0])))))))))
-;
-;(defn surface-radiance
-;  "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
-;  [planet ray-scatter steps x sun-direction]
-;  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-;    (integral-half-sphere steps normal (fn [omega] (mul (ray-scatter x omega sun-direction) (dot omega normal))))))
-;
-;(defn- transmittance-forward
-;  "Forward transformation for interpolating transmittance function"
-;  [{:sfsim25.sphere/keys [centre radius]}]
-;  (fn [^Vector point ^Vector direction]
-;      (let [height        (- (norm (sub point centre)) radius)
-;            cos-elevation (/ (dot point direction) (norm point))
-;            elevation     (Math/acos cos-elevation)]
-;        [height elevation])))
-;
-;(defn- transmittance-backward
-;  "Backward transformation for looking up transmittance values"
-;  [{:sfsim25.sphere/keys [centre radius]}]
-;  (fn [^double height ^double elevation]
-;      (let [point     (add centre (matrix [(+ radius height) 0 0]))
-;            direction (matrix [(Math/cos elevation) (Math/sin elevation) 0])]
-;        [point direction])))
-;
-;(defn transmittance-space
-;  "Create transformations for interpolating transmittance function"
-;  [planet size]
-;  (let [shape   [size size]
-;        height  (:sfsim25.atmosphere/height planet)
-;        scaling (linear-space [0 0] [height Math/PI] shape)]
-;    (compose-space scaling #:sfsim25.interpolate{:forward (transmittance-forward planet)
-;                                                 :backward (transmittance-backward planet)})))
-;
-;(def surface-radiance-space transmittance-space)
-;
-;(defn- clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
-;
-;(defn- ray-scatter-forward
-;  "Forward transformation for interpolating ray scatter function"
-;  [{:sfsim25.sphere/keys [centre radius]}]
-;  (fn [^Vector point ^Vector direction ^Vector sun-direction]
-;      (let [radius-vector         (sub point centre)
-;            height                (- (norm radius-vector) radius)
-;            horizon               (transpose (oriented-matrix (normalise radius-vector)))
-;            direction-rotated     (mmul horizon direction)
-;            sun-direction-rotated (mmul horizon sun-direction)
-;            cos-elevation         (mget direction-rotated 0)
-;            cos-sun-elevation     (mget sun-direction-rotated 0)
-;            elevation             (Math/acos cos-elevation)
-;            sun-elevation         (Math/acos cos-sun-elevation)
-;            direction-azimuth     (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
-;            sun-direction-azimuth (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
-;            sun-heading           (Math/abs (clip-angle (- sun-direction-azimuth direction-azimuth)))]
-;        [height elevation sun-elevation sun-heading])))
-;
-;(defn- ray-scatter-backward
-;  "Backward transformation for interpolating ray scatter function"
-;  [{:sfsim25.sphere/keys [centre radius]}]
-;  (fn [^double height ^double elevation ^double sun-elevation ^double sun-heading]
-;      (let [point             (matrix [(+ radius height) 0 0])
-;            direction         (matrix [(Math/cos elevation) (Math/sin elevation) 0])
-;            cos-sun-elevation (Math/cos sun-elevation)
-;            sin-sun-elevation (Math/sin sun-elevation)
-;            cos-sun-heading   (Math/cos sun-heading)
-;            sin-sun-heading   (Math/sin sun-heading)
-;            sun-direction (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
-;        [point direction sun-direction])))
-;
-;(defn ray-scatter-space
-;  "Create transformations for interpolating ray scatter function"
-;  [planet size]
-;  (let [shape   [size size size size]
-;        height  (:sfsim25.atmosphere/height planet)
-;        scaling (linear-space [0 0 0 0] [height Math/PI Math/PI Math/PI] shape)]
-;    (compose-space scaling #:sfsim25.interpolate{:forward (ray-scatter-forward planet)
-;                                                 :backward (ray-scatter-backward planet)})))
-;
-;(def point-scatter-space ray-scatter-space)
+(defn point-scatter
+  "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
+  [planet scatter ray-scatter surface-radiance sun-light sphere-steps ray-steps x view-direction sun-direction]
+  (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))
+        height-of-x   (height planet x)
+        scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
+    (integral-sphere sphere-steps
+                     normal
+                     (fn [omega]
+                         (let [ray                     #:sfsim25.ray{:origin x :direction omega}
+                               {:keys [point surface]} (ray-extremity planet ray)]
+                           (mul (apply add (map (partial scatter-at-x omega) scatter))
+                                (add (ray-scatter x omega sun-direction)
+                                     (if surface
+                                       (mul (transmittance planet scatter ray-steps x point)
+                                            (div (::brightness planet) Math/PI)
+                                            (surface-radiance point sun-direction))
+                                       (matrix [0 0 0])))))))))
+
+(defn surface-radiance
+  "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
+  [planet ray-scatter steps x sun-direction]
+  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
+    (integral-half-sphere steps normal (fn [omega] (mul (ray-scatter x omega sun-direction) (dot omega normal))))))
+
+(defn- transmittance-forward
+  "Forward transformation for interpolating transmittance function"
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^Vector point ^Vector direction]
+      (let [height        (- (norm (sub point centre)) radius)
+            cos-elevation (/ (dot point direction) (norm point))
+            elevation     (Math/acos cos-elevation)]
+        [height elevation])))
+
+(defn- transmittance-backward
+  "Backward transformation for looking up transmittance values"
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^double height ^double elevation]
+      (let [point     (add centre (matrix [(+ radius height) 0 0]))
+            direction (matrix [(Math/cos elevation) (Math/sin elevation) 0])]
+        [point direction])))
+
+(defn transmittance-space
+  "Create transformations for interpolating transmittance function"
+  [planet size]
+  (let [shape   [size size]
+        height  (:sfsim25.atmosphere/height planet)
+        scaling (linear-space [0 0] [height Math/PI] shape)]
+    (compose-space scaling #:sfsim25.interpolate{:forward (transmittance-forward planet)
+                                                 :backward (transmittance-backward planet)})))
+
+(def surface-radiance-space transmittance-space)
+
+(defn- clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
+
+(defn- ray-scatter-forward
+  "Forward transformation for interpolating ray scatter function"
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^Vector point ^Vector direction ^Vector sun-direction]
+      (let [radius-vector         (sub point centre)
+            height                (- (norm radius-vector) radius)
+            horizon               (transpose (oriented-matrix (normalise radius-vector)))
+            direction-rotated     (mmul horizon direction)
+            sun-direction-rotated (mmul horizon sun-direction)
+            cos-elevation         (mget direction-rotated 0)
+            cos-sun-elevation     (mget sun-direction-rotated 0)
+            elevation             (Math/acos cos-elevation)
+            sun-elevation         (Math/acos cos-sun-elevation)
+            direction-azimuth     (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
+            sun-direction-azimuth (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
+            sun-heading           (Math/abs (clip-angle (- sun-direction-azimuth direction-azimuth)))]
+        [height elevation sun-elevation sun-heading])))
+
+(defn- ray-scatter-backward
+  "Backward transformation for interpolating ray scatter function"
+  [{:sfsim25.sphere/keys [centre radius]}]
+  (fn [^double height ^double elevation ^double sun-elevation ^double sun-heading]
+      (let [point             (matrix [(+ radius height) 0 0])
+            direction         (matrix [(Math/cos elevation) (Math/sin elevation) 0])
+            cos-sun-elevation (Math/cos sun-elevation)
+            sin-sun-elevation (Math/sin sun-elevation)
+            cos-sun-heading   (Math/cos sun-heading)
+            sin-sun-heading   (Math/sin sun-heading)
+            sun-direction (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
+        [point direction sun-direction])))
+
+(defn ray-scatter-space
+  "Create transformations for interpolating ray scatter function"
+  [planet size]
+  (let [shape   [size size size size]
+        height  (:sfsim25.atmosphere/height planet)
+        scaling (linear-space [0 0 0 0] [height Math/PI Math/PI Math/PI] shape)]
+    (compose-space scaling #:sfsim25.interpolate{:forward (ray-scatter-forward planet)
+                                                 :backward (ray-scatter-backward planet)})))
+
+(def point-scatter-space ray-scatter-space)
 
 (set! *unchecked-math* false)
