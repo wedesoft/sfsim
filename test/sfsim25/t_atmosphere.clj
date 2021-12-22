@@ -138,9 +138,10 @@
                              mu => 0.36)
                       0.1)
                   atmosphere/transmittance
-                  (fn [planet scatter steps origin direction]
+                  (fn [planet scatter intersection steps origin direction]
                       (facts "Transmittance function gets called with correct arguments"
                              (:sfsim25.atmosphere/scatter-g (first scatter)) => 0.76
+                             intersection => (exactly atmosphere-intersection)
                              steps => 10
                              origin => (matrix [0 (+ radius 1000) 0])
                              direction => sun-direction)

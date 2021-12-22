@@ -74,7 +74,9 @@
         sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
     (if (surface-intersection planet sun-ray)
       (matrix [0 0 0])
-      (mul sun-light (apply add (map scatter-at-x scatter)) (transmittance planet scatter steps x sun-direction)))))
+      (mul sun-light
+           (apply add (map scatter-at-x scatter))
+           (transmittance planet scatter atmosphere-intersection steps x sun-direction)))))
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"

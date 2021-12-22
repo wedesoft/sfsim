@@ -617,7 +617,8 @@ void main()
 (def steps 10)
 (def angles 16)
 
-(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] steps #:sfsim25.ray{:origin x :direction v}))
+(defn transmittance-earth-ground [^Vector x ^Vector v] (transmittance earth [mie rayleigh] surface-intersection steps x v))
+(defn transmittance-earth-sky [^Vector x ^Vector v] (transmittance earth [mie rayleigh] atmosphere-intersection steps x v))
 
 (def transmittance-space-earth (transmittance-space earth size))
 
@@ -731,8 +732,8 @@ void main()
 (def m 0.075)
 (def n (atom 0))
 (;doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
- doseq [hh [2] angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
- ;let [angle  (* -0.45 Math/PI) hh 2]
+ ;doseq [hh [2] angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
+ let [angle  (* -0.45 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
         point         (matrix [0 (* 1 (+ radius hh)) (* 0.0 radius)])
         data          (vec (pmap (fn [y]
@@ -749,29 +750,27 @@ void main()
                                               (let [p  (add point (mul dir (:distance hit)))
                                                     p2 (add point (mul dir (:distance h2)))
                                                     n  (normalize p)
-                                                    ;t  (T p dir)
-                                                    t   (transmittance-earth p dir)
                                                     ;e  (@E p sun-direction)
                                                     e  (surface-radiance-base-earth p sun-direction)
                                                     ;s  (@S p2 dir sun-direction)
                                                     s  (ray-scatter-base-earth p2 dir sun-direction)
-                                                    ;t2 (T p2 dir)
-                                                    t2 (transmittance-earth p2 dir)
-                                                    b (add s (div (mul 0.3 t2 e) Math/PI))]
+                                                    ;t  (T p2 dir)
+                                                    t  (transmittance-earth-ground p2 dir)
+                                                    b (add s (div (mul 0.3 t e) Math/PI))]
                                                 b)
                                                 (if (> (:length h2) 0)
                                                   (let [p (add point (mul dir (:distance h2)))
                                                         ;s (@S p dir sun-direction)
                                                         s (ray-scatter-base-earth p dir sun-direction)
                                                         ;t (T p dir)
-                                                        t (transmittance-earth p dir)]
+                                                        t (transmittance-earth-sky p dir)]
                                                     (add s (mul l t)))
                                                   (mul l (matrix [1 1 1]))))))
                                       (range -w2 (inc w2))))
                             (range -w2 (inc w2))))]
     (cp/pdoseq (+ (cp/ncpus) 2) [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    (spit-image (format "sun%04d.png" @n) img)
-    ;(show-image img)
+    ;(spit-image (format "sun%04d.png" @n) img)
+    (show-image img)
     (println (swap! n inc))))
 
 ; convert sun0200.png -background black -gravity center -extent 426x240 test.png
@@ -889,3 +888,80 @@ void main()
 (Display/destroy)
 
 (set! *unchecked-math* false)
+
+; ---
+; Ground view of sunset
+
+(require '[clojure.core.matrix :refer :all])
+(require '[clojure.core.matrix.linear :refer (norm)])
+(require '[com.climate.claypoole :as cp])
+(require '[sfsim25.interpolate :refer :all])
+(require '[sfsim25.atmosphere :refer :all])
+(require '[sfsim25.matrix :refer :all])
+(require '[sfsim25.sphere :refer (ray-sphere-intersection)])
+(require '[sfsim25.util :refer :all])
+(import '[mikera.vectorz Vector])
+
+(def radius 6378000.0)
+(def height 100000.0)
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76 :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
+(def scatter [mie rayleigh])
+(def size 17)
+(def steps 10)
+(def angles 16)
+
+(defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth scatter steps (matrix [1 1 1]) point sun-direction))
+(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
+(defn transmittance-earth-ground [^Vector x ^Vector v] (transmittance earth scatter surface-intersection steps x v))
+(defn transmittance-earth-sky [^Vector x ^Vector v] (transmittance earth scatter atmosphere-intersection steps x v))
+
+(def w2 119)
+(def -w2 (- w2))
+(def w (inc (* 2 w2)))
+(def img {:width w :height w :data (int-array (sqr w))})
+
+(def m 0.2)
+(def n (atom 0))
+(;doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
+ ;doseq [hh [2] angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
+ let [angle  (* -0.40 Math/PI) hh 2]
+  (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
+        point         (matrix [0 (* 1 (+ radius hh)) (* 0.0 radius)])
+        data          (vec (pmap (fn [y]
+                                (mapv (fn [x]
+                                          (let [f   (/ w2 (Math/tan (Math/toRadians 30)))
+                                                dir (normalize (matrix [x (- y) (- f)]))
+                                                ray {:sfsim25.ray/origin point :sfsim25.ray/direction dir}
+                                                hit (ray-sphere-intersection earth ray)
+                                                atm {:sfsim25.sphere/centre (matrix [0 0 0])
+                                                     :sfsim25.sphere/radius (+ radius (:sfsim25.atmosphere/height earth))}
+                                                h2  (ray-sphere-intersection atm ray)
+                                                l  (Math/pow (max 0 (dot dir sun-direction)) 5000)]
+                                            (if (> (:length hit) 0)
+                                              (let [p  (add point (mul dir (:distance hit)))
+                                                    p2 (add point (mul dir (:distance h2)))
+                                                    n  (normalize p)
+                                                    ;e  (@E p sun-direction)
+                                                    e  (surface-radiance-base-earth p sun-direction)
+                                                    ;s  (@S p2 dir sun-direction)
+                                                    s  (ray-scatter-base-earth p2 dir sun-direction)
+                                                    ;t  (T p2 dir)
+                                                    t  (transmittance-earth-ground p2 dir)
+                                                    b (add s (div (mul 0.3 t e) Math/PI))]
+                                                b)
+                                                (if (> (:length h2) 0)
+                                                  (let [p (add point (mul dir (:distance h2)))
+                                                        ;s (@S p dir sun-direction)
+                                                        s (ray-scatter-base-earth p dir sun-direction)
+                                                        ;t (T p dir)
+                                                        t (transmittance-earth-sky p dir)]
+                                                    (add s (mul l t)))
+                                                  (mul l (matrix [1 1 1]))))))
+                                      (range -w2 (inc w2))))
+                            (range -w2 (inc w2))))]
+    (cp/pdoseq (+ (cp/ncpus) 2) [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
+    ;(spit-image (format "sun%04d.png" @n) img)
+    (show-image img)
+    (println (swap! n inc))))
