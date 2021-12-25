@@ -25,6 +25,11 @@
           {:distance (- middle length2) :length (* 2 length2)}))
       {:distance 0.0 :length 0.0})))
 
+(defn ray-pointing-downwards
+  "Check whether ray points towards centre of sphere"
+  [{:sfsim25.sphere/keys [centre]} {:sfsim25.ray/keys [origin direction]}]
+  (< (dot direction (sub origin centre)) 0))
+
 (defn integrate-circle
   "Numerically integrate function in the range from zero to two pi"
   [steps fun]

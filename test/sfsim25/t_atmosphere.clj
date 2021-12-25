@@ -61,6 +61,8 @@
          (ray-extremity earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [-1 0 0])})
          => {:surface true :point (matrix [radius 0 0])}
          (ray-extremity earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [1 0 0])})
+         => {:surface false :point (matrix [(+ radius 100000) 0 0])}
+         (ray-extremity earth #:sfsim25.ray{:origin (matrix [(- radius 0.1) 0 0]) :direction (matrix [1 0 0])})
          => {:surface false :point (matrix [(+ radius 100000) 0 0])}))
 
 (facts "Determine transmittance of atmosphere for all color channels"

@@ -10,17 +10,23 @@
   (height #:sfsim25.sphere{:centre (matrix [2 0 0]) :radius 10} (matrix [13 0 0])) => 1.0)
 
 (facts "Compute intersection of line with sphere"
-  (let [sphere #:sfsim25.sphere{:centre (matrix [0 0 3]) :radius 1}]
-    (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [0 1 0])})
-    => {:distance 0.0 :length 0.0}
-    (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [1 0 0])})
-    => {:distance 1.0 :length 2.0}
-    (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [ 0 0 3]) :direction (matrix [1 0 0])})
-    => {:distance 0.0 :length 1.0}
-    (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [ 2 0 3]) :direction (matrix [1 0 0])})
-    => {:distance 0.0 :length 0.0}
-    (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [2 0 0])})
-    => {:distance 0.5 :length 1.0}))
+       (let [sphere #:sfsim25.sphere{:centre (matrix [0 0 3]) :radius 1}]
+         (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [0 1 0])})
+         => {:distance 0.0 :length 0.0}
+         (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [1 0 0])})
+         => {:distance 1.0 :length 2.0}
+         (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [ 0 0 3]) :direction (matrix [1 0 0])})
+         => {:distance 0.0 :length 1.0}
+         (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [ 2 0 3]) :direction (matrix [1 0 0])})
+         => {:distance 0.0 :length 0.0}
+         (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [2 0 0])})
+         => {:distance 0.5 :length 1.0}))
+
+(facts "Check ray pointing downwards"
+       (let [sphere #:sfsim25.sphere{:centre (matrix [3 2 1])}]
+         (ray-pointing-downwards sphere #:sfsim25.ray {:origin (matrix [5 2 1]) :direction (matrix [-1 0 0])}) => true
+         (ray-pointing-downwards sphere #:sfsim25.ray {:origin (matrix [5 2 1]) :direction (matrix [ 1 0 0])}) => false
+         (ray-pointing-downwards sphere #:sfsim25.ray {:origin (matrix [2 2 1]) :direction (matrix [ 1 0 0])}) => true))
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 

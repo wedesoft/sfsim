@@ -44,7 +44,7 @@
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere"
   [planet ray]
-  (let [surface-point (surface-intersection planet ray)]
+  (let [surface-point (and (ray-pointing-downwards planet ray) (surface-intersection planet ray))]
     (if surface-point
       {:surface true :point surface-point}
       {:surface false :point (atmosphere-intersection planet ray)})))
