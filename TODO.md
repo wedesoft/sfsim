@@ -1,6 +1,5 @@
 # TODO
 
-* ray-scatter should take intersection function as argument
 * create discontinuity in table for S and T at horizon, lookup sky pixel at different position than ground pixel
 * create single-scattering lut with increased resolution above and below horizon, compare with computed images
 * compare renderings of sphere with atmosphere (seen from outside atmosphere)

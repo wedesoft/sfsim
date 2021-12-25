@@ -165,6 +165,13 @@
         earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
         mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
         sun-direction    (matrix [0.36 0.48 0.8])
+        intersection     (fn [planet ray]
+                             (facts "Intersection function is called with correct values"
+                                    planet                       => earth
+                                    (:sfsim25.ray/origin ray)    => (matrix [0 radius 0])
+                                    (:sfsim25.ray/direction ray) => (matrix [0 1 0]))
+                             (matrix [0 (+ radius height) 0])
+                             )
         constant-scatter (fn [y view-direction sun-direction]
                              (facts "Check point-scatter function gets called with correct arguments"
                                     view-direction => (matrix [0 1 0])
@@ -177,7 +184,7 @@
                              steps => 10
                              x => (matrix [0 radius 0]))
                       0.5)]
-      (ray-scatter earth [mie] 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) sun-direction)
+      (ray-scatter earth [mie] intersection 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) sun-direction)
       => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6))))
 
 (facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"

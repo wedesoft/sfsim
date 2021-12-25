@@ -80,8 +80,8 @@
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
-  [planet scatter steps point-scatter x view-direction sun-direction]
-  (let [point (:point (ray-extremity planet #:sfsim25.ray{:origin x :direction view-direction}))
+  [planet scatter intersection steps point-scatter x view-direction sun-direction]
+  (let [point (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
         ray   #:sfsim25.ray{:origin x :direction (sub point x)}]
     (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
 
