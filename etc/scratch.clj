@@ -617,7 +617,7 @@ void main()
 (def steps 10)
 (def angles 16)
 
-(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] (comp :point ray-extremity) steps x v))
+(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] ray-extremity steps x v))
 
 (def transmittance-space-earth (transmittance-space earth size))
 
@@ -810,9 +810,9 @@ void main()
 (def steps 10)
 (def angles 16)
 
-(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth scatter (comp :point ray-extremity) steps x v))
+(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth scatter ray-extremity steps x v))
 (defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth scatter steps (matrix [1 1 1]) point sun-direction))
-(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter (comp :point ray-extremity) steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
+(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter ray-extremity steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
 
 (def w2 119)
 (def -w2 (- w2))
@@ -889,9 +889,9 @@ void main()
 (def steps 10)
 (def angles 16)
 
-(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth scatter (comp :point ray-extremity) steps x v))
+(defn transmittance-earth [^Vector x ^Vector v] (transmittance earth scatter ray-extremity steps x v))
 (defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth scatter steps (matrix [1 1 1]) point sun-direction))
-(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter (comp :point ray-extremity) steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
+(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter ray-extremity steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
 
 (def transmittance-space-earth (transmittance-space earth size))
 (def surface-radiance-space-earth (surface-radiance-space earth size))

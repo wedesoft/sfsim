@@ -12,7 +12,7 @@
 
 (defn- ray-sphere-determinant
   "Get determinant for intersection of ray with sphere"
-  [centre radius origin direction]
+  ^double [^Vector centre ^Vector radius ^Vector origin ^Vector direction]
   (let [offset        (sub origin centre)
         direction-sqr (dot direction direction)]
     (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))))

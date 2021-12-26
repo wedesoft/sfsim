@@ -36,18 +36,22 @@
     (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) (+ distance length)))))
 
 (defn surface-intersection
-  "Get intersection of ray with surface of planet"
+  "Get intersection of ray with surface of planet or nil if there is no intersection"
   [planet ray]
   (let [{:keys [distance length]} (ray-sphere-intersection planet ray)]
     (if (zero? length) nil (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance)))))
 
+(defn surface-point?
+  "Check whether a point is near the surface or near the edge of the atmosphere"
+  [planet point]
+  (let [atmosphere-height (:sfsim25.atmosphere/height planet)]
+    (< (* 2 (height planet point)) atmosphere-height)))
+
 (defn ray-extremity
-  "Get intersection with surface of planet or artificial limit of atmosphere"
+  "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"
   [planet ray]
   (let [surface-point (and (ray-pointing-downwards planet ray) (surface-intersection planet ray))]
-    (if surface-point
-      {:surface true :point surface-point}
-      {:surface false :point (atmosphere-intersection planet ray)})))
+    (or surface-point (atmosphere-intersection planet ray))))
 
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
@@ -94,8 +98,9 @@
     (integral-sphere sphere-steps
                      normal
                      (fn [omega]
-                         (let [ray                     #:sfsim25.ray{:origin x :direction omega}
-                               {:keys [point surface]} (ray-extremity planet ray)]
+                         (let [ray     #:sfsim25.ray{:origin x :direction omega}
+                               point   (ray-extremity planet ray)
+                               surface (surface-point? planet point)]
                            (mul (apply add (map (partial scatter-at-x omega) scatter))
                                 (add (ray-scatter x omega sun-direction)
                                      (if surface

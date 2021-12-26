@@ -54,16 +54,23 @@
          (surface-intersection earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [1 0 0])})
          => nil))
 
+(facts "Check whether a point is near the surface or near the edge of the atmosphere"
+       (let [radius 6378000
+             height 100000
+             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
+         (surface-point? earth (matrix [radius 0 0])) => true
+         (surface-point? earth (matrix [(+ radius height) 0 0])) => false))
+
 (facts "Get intersection with surface of planet or artificial limit of atmosphere"
        (let [radius 6378000
              height 100000
              earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
          (ray-extremity earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [-1 0 0])})
-         => {:surface true :point (matrix [radius 0 0])}
+         => (matrix [radius 0 0])
          (ray-extremity earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [1 0 0])})
-         => {:surface false :point (matrix [(+ radius 100000) 0 0])}
+         => (matrix [(+ radius 100000) 0 0])
          (ray-extremity earth #:sfsim25.ray{:origin (matrix [(- radius 0.1) 0 0]) :direction (matrix [1 0 0])})
-         => {:surface false :point (matrix [(+ radius 100000) 0 0])}))
+         => (matrix [(+ radius 100000) 0 0])))
 
 (facts "Determine transmittance of atmosphere for all color channels"
        (let [radius       6378000
@@ -208,7 +215,7 @@
                              (matrix [3 4 5]))]
     (with-redefs [atmosphere/phase (fn [mie mu] 0.5)]
       (with-redefs [atmosphere/ray-extremity
-                    (fn [planet ray] {:point (matrix [0 0 0]) :surface false})
+                    (fn [planet ray] (matrix [0 (+ radius height) 0]))
                     sphere/integral-sphere
                     (fn [steps normal fun]
                         (facts steps => 64
@@ -221,7 +228,7 @@
                     (fn [planet ray]
                         (facts planet => earth
                                ray => #:sfsim25.ray{:origin x2 :direction (matrix [0 -1 0])})
-                        {:point (matrix [0 radius 0]) :surface true})
+                        (matrix [0 radius 0]))
                     atmosphere/transmittance
                     (fn [planet scatter steps x x0]
                         (facts planet => earth
