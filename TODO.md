@@ -1,7 +1,7 @@
 # TODO
 
 * compute surface or not separately?
-* make ray-scatter function and lookup table with planet on and planet off, compute closest point if no intersection,
+* make ray-scatter function and lookup table with planet on and planet off
   use correct ray-scatter function in point-scatter
 * create discontinuity in table for S and T at horizon, lookup sky pixel at different position than ground pixel
 * create single-scattering lut with increased resolution above and below horizon, compare with computed images

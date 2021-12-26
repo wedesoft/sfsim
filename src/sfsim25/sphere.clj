@@ -10,20 +10,32 @@
   ^double [{:sfsim25.sphere/keys [centre radius]} ^Vector point]
   (- (length (sub point centre)) radius))
 
+(defn- ray-sphere-determinant
+  "Get determinant for intersection of ray with sphere"
+  [centre radius origin direction]
+  (let [offset        (sub origin centre)
+        direction-sqr (dot direction direction)]
+    (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))))
+
+(defn ray-intersects-sphere?
+  "Check whether the ray intersects the sphere"
+  [{:sfsim25.sphere/keys [centre radius]} {:sfsim25.ray/keys [origin direction]}]
+  (> (ray-sphere-determinant centre radius origin direction) 0))
+
 (defn ray-sphere-intersection
-  "Compute intersection of line with sphere"
+  "Compute intersection of line with sphere or closest point with sphere"
   ^clojure.lang.PersistentArrayMap
   [{:sfsim25.sphere/keys [centre radius]} {:sfsim25.ray/keys [origin direction]}]
   (let [offset        (sub origin centre)
         direction-sqr (dot direction direction)
-        discriminant  (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))]
+        discriminant  (ray-sphere-determinant centre radius origin direction)
+        middle        (- (/ (dot direction offset) direction-sqr))]
     (if (> discriminant 0)
-      (let [length2 (/ (Math/sqrt discriminant) direction-sqr)
-            middle  (- (/ (dot direction offset) direction-sqr))]
+      (let [length2 (/ (Math/sqrt discriminant) direction-sqr)]
         (if (< middle length2)
           {:distance 0.0 :length (max 0.0 (+ middle length2))}
           {:distance (- middle length2) :length (* 2 length2)}))
-      {:distance 0.0 :length 0.0})))
+      {:distance (max 0.0 middle) :length 0.0})))
 
 (defn ray-pointing-downwards
   "Check whether ray points towards centre of sphere"
