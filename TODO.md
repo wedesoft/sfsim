@@ -1,11 +1,11 @@
 # TODO
 ## Ray scattering stuff
-* transmittance T depends on intersection type
+* transmittance T depends on *intersection type*
 * surface-radiance-base E0 only uses transmittance with atmosphere intersection
 * surface-radiance E uses half-sphere integral based on atmospheric part of S
 * point-scatter-base J0 uses surface-intersection and only uses transmittance with atmosphere intersection
-* point-scatter J uses sphere integral with ray intersection, uses S and E
-* ray-scatter S depends on intersection type, ray integral uses T and J
+* point-scatter J uses sphere integral with *ray intersection*, uses S and E
+* ray-scatter S depends on *intersection type*, ray integral using T and J
 
 ## Rest
 * make ray-scatter function and lookup table with planet on and planet off
