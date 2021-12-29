@@ -266,6 +266,13 @@
                       (matrix [0.2 0.3 0.5]))]
       (surface-radiance earth ray-scatter 64 x sun-direction) => (matrix [0.2 0.3 0.5]))))
 
+(facts "Get angle of planet's horizon below horizontal plane depending on the height of the observer"
+       (let [radius 6378000.0
+             earth  #:sfsim25.sphere {:centre (matrix [0 0 0]) :radius radius}]
+         (horizon-angle earth (matrix [radius 0 0])) => 0.0
+         (horizon-angle earth (matrix [(* (Math/sqrt 2) radius) 0 0])) => (roughly (/ Math/PI 4) 1e-12)
+         (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ Math/PI 3) 1e-12)))
+
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0
              height   100000.0

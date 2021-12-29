@@ -115,6 +115,12 @@
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (integral-half-sphere steps normal (fn [omega] (mul (ray-scatter x omega sun-direction) (dot omega normal))))))
 
+(defn horizon-angle
+  "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
+  [{:sfsim25.sphere/keys [centre radius]} point]
+  (let [distance (norm (sub point centre))]
+    (Math/acos (/ radius distance))))
+
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
   [{:sfsim25.sphere/keys [centre radius]}]

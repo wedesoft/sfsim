@@ -7,12 +7,14 @@
 * point-scatter J uses sphere integral with *ray intersection*, uses S and E
 * ray-scatter S depends on *intersection type*, ray integral using T and J
 
+* T and S need discontinuity at horizon and non-uniform sampling
+
 ## Rest
 * make ray-scatter function and lookup table with planet on and planet off
   use correct ray-scatter function in point-scatter
 * create discontinuity in table for S and T at horizon, lookup sky pixel at different position than ground pixel
 * create single-scattering lut with increased resolution above and below horizon, compare with computed images
-* compare renderings of sphere with atmosphere (seen from outside atmosphere)
+* compare renderings of sphere with atmosphere (seen from outside atmosphere) with and without lookup tables
 * refactor (split up) point-scatter
 * check atmosphere-lut and interpolation spaces
 * lookup atmosphere colour in vertex shader
