@@ -117,9 +117,23 @@
 
 (defn horizon-angle
   "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
-  [{:sfsim25.sphere/keys [centre radius]} point]
+  ^double [{:sfsim25.sphere/keys [^Vector centre ^double radius]} ^Vector point]
   (let [distance (norm (sub point centre))]
     (Math/acos (/ radius distance))))
+
+(defn elevation-forward
+  "Convert elevation value to lookup table index depending on position of horizon"
+  [{:sfsim25.sphere/keys [^Vector centre ^double radius]} size]
+  (let [sky-size    (inc (quot size 2))
+        ground-size (quot (dec size) 2)
+        pi2         (/ Math/PI 2)]
+    (fn [^Vector point ^Vector direction]
+        (let [distance      (norm (sub point centre))
+              cos-elevation (/ (dot point direction) (norm point))
+              elevation     (Math/acos cos-elevation)]
+          (if (<= elevation pi2)
+            (* elevation (/ (dec sky-size) pi2))
+            (+ sky-size (* (- elevation pi2) (/ (dec ground-size) pi2))))))))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"

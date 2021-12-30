@@ -273,6 +273,16 @@
          (horizon-angle earth (matrix [(* (Math/sqrt 2) radius) 0 0])) => (roughly (/ Math/PI 4) 1e-12)
          (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ Math/PI 3) 1e-12)))
 
+(facts "Map elevation value to lookup table index depending on position of horizon"
+       (let [radius  6378000.0
+             earth   #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
+             forward (elevation-forward earth 17)]
+         (forward (matrix [radius 0 0]) (matrix [1 0 0])) => (roughly 0.0 1e-6)
+         (forward (matrix [radius 0 0]) (matrix [1e-4 1 0])) => (roughly 8.0 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [-1e-4 1 0])) => (roughly 9.0 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)))
+; TODO: non-trivial horizon
+
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0
              height   100000.0
