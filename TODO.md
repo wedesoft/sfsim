@@ -1,4 +1,6 @@
 # TODO
+* add exponentiation to elevation transform
+* reverse transform for elevation
 * make ray-scatter function and lookup table with planet on and planet off
   use correct ray-scatter function in point-scatter
 * create discontinuity in table for S and T at horizon, lookup sky pixel at different position than ground pixel
