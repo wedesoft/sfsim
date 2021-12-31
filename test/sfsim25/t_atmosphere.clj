@@ -275,16 +275,21 @@
 
 (facts "Map elevation value to lookup table index depending on position of horizon"
        (let [radius   6378000.0
-             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
-             forward  (elevation-forward earth 17)
-             sqrthalf (Math/sqrt 0.5)]
+             earth       #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
+             forward     (elevation-forward earth 17 1.0)
+             forward-exp (elevation-forward earth 17 2.0)
+             sqrthalf    (Math/sqrt 0.5)]
          (forward (matrix [radius 0 0]) (matrix [1 0 0])) => (roughly 0.0 1e-6)
          (forward (matrix [radius 0 0]) (matrix [1e-5 1 0])) => (roughly 8.0 1e-3)
          (forward (matrix [radius 0 0]) (matrix [-1e-5 1 0])) => (roughly 9.0 1e-3)
          (forward (matrix [radius 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)
          (forward (matrix [(* (Math/sqrt 2) radius) 0 0]) (matrix [(- 1e-5 sqrthalf) sqrthalf 0])) => (roughly 8.0 1e-3)
          (forward (matrix [(* (Math/sqrt 2) radius) 0 0]) (matrix [(- -1e-5 sqrthalf) sqrthalf 0])) => (roughly 9.0 1e-3)
-         (forward (matrix [(* (Math/sqrt 2) radius) 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)))
+         (forward (matrix [(* (Math/sqrt 2) radius) 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)
+         (forward (matrix [radius 0 0]) (matrix [sqrthalf sqrthalf 0])) => (roughly 4.0 1e-6)
+         (forward-exp (matrix [radius 0 0]) (matrix [sqrthalf sqrthalf 0])) => (roughly 6.0 1e-6)
+         (forward (matrix [radius 0 0]) (matrix [(- sqrthalf) sqrthalf 0])) => (roughly 12.5 1e-6)
+         (forward-exp (matrix [radius 0 0]) (matrix [(- sqrthalf) sqrthalf 0])) => (roughly 10.75 1e-6)))
 
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0
