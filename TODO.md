@@ -1,5 +1,4 @@
 # TODO
-* map elevation values with non-trivial horizon position (see elevation-forward)
 * make ray-scatter function and lookup table with planet on and planet off
   use correct ray-scatter function in point-scatter
 * create discontinuity in table for S and T at horizon, lookup sky pixel at different position than ground pixel
