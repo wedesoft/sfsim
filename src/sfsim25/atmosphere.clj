@@ -121,13 +121,13 @@
   (let [distance (norm (sub point centre))]
     (Math/acos (/ radius distance))))
 
-(defn elevation-forward
+(defn elevation-to-index
   "Convert elevation value to lookup table index depending on position of horizon"
   [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power]
   (let [sky-size    (inc (quot size 2))
         ground-size (quot (dec size) 2)
         pi2         (/ Math/PI 2)]
-    (fn [^Vector point ^Vector direction]
+    (fn ^double [^Vector point ^Vector direction]
         (let [distance      (norm (sub point centre))
               cos-elevation (/ (dot point direction) (norm point))
               elevation     (Math/acos cos-elevation)
@@ -136,6 +136,15 @@
           (if (<= elevation (+ pi2 horizon))
             (-> elevation (/ (+ pi2 horizon)) invert (Math/pow (/ 1.0 power)) invert (* (dec sky-size)))
             (-> elevation (- pi2 horizon) (/ (- pi2 horizon)) (Math/pow (/ 1.0 power)) (* (dec ground-size)) (+ sky-size)))))))
+
+(defn index-to-elevation
+  "Convert elevation lookup index to directional vector depending on position of horizon"
+  [{:sfsim25.sphere/keys [^double radius] :as planet} size power]
+  (let [sky-size    (inc (quot size 2))
+        ground-size (quot (dec size) 2)
+        pi2         (/ Math/PI 2)]
+    (fn ^Vector [^double height ^double index]
+        (matrix [1 0 0]))))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
