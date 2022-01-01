@@ -134,8 +134,8 @@
               horizon       (horizon-angle planet point)
               invert        #(- 1 %)]
           (if (<= elevation (+ pi2 horizon))
-            (-> elevation (/ (+ pi2 horizon)) invert (Math/pow power) invert (* (dec sky-size)))
-            (-> elevation (- pi2 horizon) (/ (- pi2 horizon)) (Math/pow power) (* (dec ground-size)) (+ sky-size)))))))
+            (-> elevation (/ (+ pi2 horizon)) invert (Math/pow (/ 1.0 power)) invert (* (dec sky-size)))
+            (-> elevation (- pi2 horizon) (/ (- pi2 horizon)) (Math/pow (/ 1.0 power)) (* (dec ground-size)) (+ sky-size)))))))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
