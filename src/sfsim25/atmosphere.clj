@@ -144,7 +144,8 @@
         ground-size (quot (dec size) 2)
         pi2         (/ Math/PI 2)]
     (fn ^Vector [^double height ^double index]
-        (matrix [1 0 0]))))
+        (let [angle (* index (/ Math/PI 2 (dec sky-size)))]
+          (matrix [(Math/cos angle) (Math/sin angle) 0])))))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
