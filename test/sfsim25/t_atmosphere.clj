@@ -297,8 +297,10 @@
        (let [radius   6378000.0
              earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
              backward (index-to-elevation earth 17 1.0)]
-         (backward 0.0 0.0) => (matrix [1 0 0])
-         (backward 0.0 7.999) => (roughly-matrix (matrix [0 1 0]) 1e-3)))
+         (backward 0 0) => (matrix [1 0 0])
+         (backward 0 8) => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (backward 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (backward 0 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)))
 
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0
