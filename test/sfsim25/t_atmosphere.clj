@@ -294,13 +294,23 @@
          (forward-exp (matrix [radius 0 0]) (matrix [-1e-8 1 0])) => (roughly 9.0 1e-3)))
 
 (facts "Map elevation lookup index to directional vector depending on position of horizon"
-       (let [radius   6378000.0
-             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
-             backward (index-to-elevation earth 17 1.0)]
+       (let [radius       6378000.0
+             earth        #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
+             backward     (index-to-elevation earth 17 1.0)
+             backward-exp (index-to-elevation earth 17 2.0)
+             height       (* (- (Math/sqrt 2) 1) radius)
+             sqrthalf     (Math/sqrt 0.5)]
          (backward 0 0) => (matrix [1 0 0])
          (backward 0 8) => (roughly-matrix (matrix [0 1 0]) 1e-6)
          (backward 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (backward 0 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)))
+         (backward 0 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
+         (backward height 8) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
+         (backward height 9) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
+         (backward height 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
+         (backward-exp 0 2.343146) => (roughly-matrix (matrix [sqrthalf sqrthalf 0]) 1e-6)
+         (backward-exp 0 8) => (roughly-matrix [0 1 0] 1e-6)
+         (backward-exp 0 13.949747) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
+         (backward-exp 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)))
 
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0

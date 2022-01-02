@@ -142,13 +142,15 @@
   [{:sfsim25.sphere/keys [^double radius] :as planet} size power]
   (let [sky-size    (inc (quot size 2))
         ground-size (quot (dec size) 2)
-        pi2         (/ Math/PI 2)]
+        pi2         (/ Math/PI 2)
+        invert      #(- 1 %)]
     (fn ^Vector [^double height ^double index]
-        (if (<= index (+ (dec sky-size) 0.5))
-          (let [angle (* index (/ pi2(dec sky-size)))]
-            (matrix [(Math/cos angle) (Math/sin angle) 0]))
-          (let [angle (+ pi2 (* (- index sky-size) (/ pi2 (dec ground-size))))]
-            (matrix [(Math/cos angle) (Math/sin angle) 0]))))))
+        (let [horizon (horizon-angle planet (matrix [(+ radius height) 0 0]))]
+          (if (<= index (+ (dec sky-size) 0.5))
+            (let [angle (-> index (/ (dec sky-size)) invert (Math/pow power) invert (* (+ pi2 horizon)))]
+              (matrix [(Math/cos angle) (Math/sin angle) 0]))
+            (let [angle (-> index (- sky-size) (/ (dec ground-size)) (Math/pow power) (* (- pi2 horizon)) (+ pi2 horizon))]
+              (matrix [(Math/cos angle) (Math/sin angle) 0])))))))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
