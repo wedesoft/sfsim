@@ -316,7 +316,7 @@
        (let [radius   6378000.0
              height   100000.0
              earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-             space    (transmittance-space earth 17)
+             space    (transmittance-space earth 17 1.0)
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
          (:sfsim25.interpolate/shape space)                          => [17 17]

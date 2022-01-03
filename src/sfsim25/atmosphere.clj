@@ -154,29 +154,28 @@
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
-  [{:sfsim25.sphere/keys [centre radius]}]
+  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]
   (fn [^Vector point ^Vector direction]
-      (let [height        (- (norm (sub point centre)) radius)
-            cos-elevation (/ (dot point direction) (norm point))
-            elevation     (Math/acos cos-elevation)]
-        [height elevation])))
+      (let [height          (- (norm (sub point centre)) radius)
+            elevation-index ((elevation-to-index planet size power) point direction)]
+        [height elevation-index])))
 
 (defn- transmittance-backward
   "Backward transformation for looking up transmittance values"
-  [{:sfsim25.sphere/keys [centre radius]}]
-  (fn [^double height ^double elevation]
+  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]
+  (fn [^double height ^double elevation-index]
       (let [point     (add centre (matrix [(+ radius height) 0 0]))
-            direction (matrix [(Math/cos elevation) (Math/sin elevation) 0])]
+            direction ((index-to-elevation planet size power) height elevation-index)]
         [point direction])))
 
 (defn transmittance-space
   "Create transformations for interpolating transmittance function"
-  [planet size]
+  [planet size power]
   (let [shape   [size size]
         height  (:sfsim25.atmosphere/height planet)
-        scaling (linear-space [0 0] [height Math/PI] shape)]
-    (compose-space scaling #:sfsim25.interpolate{:forward (transmittance-forward planet)
-                                                 :backward (transmittance-backward planet)})))
+        scaling (linear-space [0 0] [height (dec size)] shape)]
+    (compose-space scaling #:sfsim25.interpolate{:forward (transmittance-forward planet size power)
+                                                 :backward (transmittance-backward planet size power)})))
 
 (def surface-radiance-space transmittance-space)
 
@@ -210,7 +209,7 @@
             sin-sun-elevation (Math/sin sun-elevation)
             cos-sun-heading   (Math/cos sun-heading)
             sin-sun-heading   (Math/sin sun-heading)
-            sun-direction (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
+            sun-direction     (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
         [point direction sun-direction])))
 
 (defn ray-scatter-space
