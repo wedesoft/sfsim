@@ -187,9 +187,9 @@
   (fn [^Vector point ^Vector direction ^Vector sun-direction]
       (let [radius-vector         (sub point centre)
             height                (- (norm radius-vector) radius)
-            horizon               (transpose (oriented-matrix (normalise radius-vector)))
-            direction-rotated     (mmul horizon direction)
-            sun-direction-rotated (mmul horizon sun-direction)
+            plane                 (transpose (oriented-matrix (normalise radius-vector)))
+            direction-rotated     (mmul plane direction)
+            sun-direction-rotated (mmul plane sun-direction)
             cos-elevation         (mget direction-rotated 0)
             cos-sun-elevation     (mget sun-direction-rotated 0)
             elevation             (Math/acos cos-elevation)
