@@ -1,5 +1,4 @@
 # TODO
-* integrate new elevation transform into ray-scatter space
 * create single-scattering lut with increased resolution above and below horizon, compare with computed images
 * compare renderings of sphere with atmosphere (seen from outside atmosphere) with and without lookup tables
 * refactor (split up) point-scatter

@@ -183,30 +183,29 @@
 
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
-  [{:sfsim25.sphere/keys [centre radius]}]
+  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]
   (fn [^Vector point ^Vector direction ^Vector sun-direction]
       (let [radius-vector         (sub point centre)
             height                (- (norm radius-vector) radius)
             plane                 (transpose (oriented-matrix (normalise radius-vector)))
             direction-rotated     (mmul plane direction)
             sun-direction-rotated (mmul plane sun-direction)
-            cos-elevation         (mget direction-rotated 0)
-            cos-sun-elevation     (mget sun-direction-rotated 0)
-            elevation             (Math/acos cos-elevation)
-            sun-elevation         (Math/acos cos-sun-elevation)
+            elevation-index       ((elevation-to-index planet size power) point direction)
+            sun-elevation-index   ((elevation-to-index planet size power) point sun-direction)
             direction-azimuth     (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
             sun-direction-azimuth (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
             sun-heading           (Math/abs (clip-angle (- sun-direction-azimuth direction-azimuth)))]
-        [height elevation sun-elevation sun-heading])))
+        [height elevation-index sun-elevation-index sun-heading])))
 
 (defn- ray-scatter-backward
   "Backward transformation for interpolating ray scatter function"
-  [{:sfsim25.sphere/keys [centre radius]}]
-  (fn [^double height ^double elevation ^double sun-elevation ^double sun-heading]
+  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]
+  (fn [^double height ^double elevation-index ^double sun-elevation-index ^double sun-heading]
       (let [point             (matrix [(+ radius height) 0 0])
-            direction         (matrix [(Math/cos elevation) (Math/sin elevation) 0])
-            cos-sun-elevation (Math/cos sun-elevation)
-            sin-sun-elevation (Math/sin sun-elevation)
+            direction         ((index-to-elevation planet size power) height elevation-index)
+            sun-direction     ((index-to-elevation planet size power) height sun-elevation-index)
+            cos-sun-elevation (mget sun-direction 0)
+            sin-sun-elevation (mget sun-direction 1)
             cos-sun-heading   (Math/cos sun-heading)
             sin-sun-heading   (Math/sin sun-heading)
             sun-direction     (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
@@ -214,12 +213,12 @@
 
 (defn ray-scatter-space
   "Create transformations for interpolating ray scatter function"
-  [planet size]
+  [planet size power]
   (let [shape   [size size size size]
         height  (:sfsim25.atmosphere/height planet)
-        scaling (linear-space [0 0 0 0] [height Math/PI Math/PI Math/PI] shape)]
-    (compose-space scaling #:sfsim25.interpolate{:forward (ray-scatter-forward planet)
-                                                 :backward (ray-scatter-backward planet)})))
+        scaling (linear-space [0 0 0 0] [height (dec size) (dec size) Math/PI] shape)]
+    (compose-space scaling #:sfsim25.interpolate{:forward (ray-scatter-forward planet size power)
+                                                 :backward (ray-scatter-backward planet size power)})))
 
 (def point-scatter-space ray-scatter-space)
 
