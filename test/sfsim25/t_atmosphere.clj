@@ -271,7 +271,8 @@
              earth  #:sfsim25.sphere {:centre (matrix [0 0 0]) :radius radius}]
          (horizon-angle earth (matrix [radius 0 0])) => 0.0
          (horizon-angle earth (matrix [(* (Math/sqrt 2) radius) 0 0])) => (roughly (/ Math/PI 4) 1e-12)
-         (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ Math/PI 3) 1e-12)))
+         (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ Math/PI 3) 1e-12)
+         (horizon-angle earth (matrix [(- radius 0.1) 0 0])) => 0.0))
 
 (facts "Map elevation value to lookup table index depending on position of horizon"
        (let [radius   6378000.0

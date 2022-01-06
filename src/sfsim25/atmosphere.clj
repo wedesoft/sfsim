@@ -118,7 +118,7 @@
 (defn horizon-angle
   "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
   ^double [{:sfsim25.sphere/keys [^Vector centre ^double radius]} ^Vector point]
-  (let [distance (norm (sub point centre))]
+  (let [distance (max radius (norm (sub point centre)))]
     (Math/acos (/ radius distance))))
 
 (defn elevation-to-index
