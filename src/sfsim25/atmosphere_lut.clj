@@ -33,9 +33,9 @@
         iterations                    (Integer/parseInt (nth args 3))
         power                         2.0
         scatter                       [mie rayleigh]
-        transmittance-planet          (fn [x v] (transmittance earth scatter ray-extremity ray-steps x v))
+        transmittance-planet          (partial transmittance earth scatter ray-extremity ray-steps)
         transmittance-space-planet    (transmittance-space earth size power)
-        surface-radiance-base-planet  (fn [^Vector x ^Vector s] (surface-radiance-base earth scatter ray-steps (matrix [1 1 1]) x s))
+        surface-radiance-base-planet  (partial surface-radiance-base earth scatter ray-steps (matrix [1 1 1]))
         surface-radiance-space-planet (surface-radiance-space earth size power)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
         point-scatter-space           (point-scatter-space earth size power)
