@@ -659,21 +659,6 @@ void main()
 
 (reset! S (let [S @S dS @dS] (time (interpolate-function (fn [point direction sun-direction] (add (S point direction sun-direction) (dS point direction sun-direction))) ray-scatter-space-earth))))
 
-;(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-;(def size (int (Math/sqrt (/ (count data) 3))))
-;(def transmittance-space-earth (transmittance-space earth size))
-;(def T (interpolation-table (mapv vec (partition size (map (comp matrix reverse) (partition 3 data)))) transmittance-space-earth))
-;
-;(def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-;(def size (int (Math/sqrt (/ (count data) 3))))
-;(def surface-radiance-space-earth (surface-radiance-space earth size))
-;(def E (atom (interpolation-table (mapv vec (partition size (map (comp matrix reverse) (partition 3 data)))) surface-radiance-space-earth)))
-;
-;(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-;(def size (int (Math/pow (/ (count data) 3) 0.25)))
-;(def ray-scatter-space-earth (ray-scatter-space earth size))
-;(def arr (mapv vec (partition (* size size) (mapv (comp matrix reverse) (partition 3 data)))))
-;(def S (atom (interpolation-table (convert-2d-to-4d arr) ray-scatter-space-earth)))
 
 ; --------------------------------------------------------------------------------
 
@@ -886,20 +871,39 @@ void main()
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 (def scatter [mie rayleigh])
 (def size 17)
-(def steps 100)
-(def angles 32)
+(def steps 10)
+(def angles 16)
+(def power 2.0)
 
 (defn transmittance-earth [^Vector x ^Vector v] (transmittance earth scatter ray-extremity steps x v))
 (defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth scatter steps (matrix [1 1 1]) point sun-direction))
 (defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter ray-extremity steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
 
-(def transmittance-space-earth (transmittance-space earth size 3.0))
-(def surface-radiance-space-earth (surface-radiance-space earth size 3.0))
-(def ray-scatter-space-earth (ray-scatter-space earth size 3.0))
+(def transmittance-space-earth (transmittance-space earth size power))
+(def surface-radiance-space-earth (surface-radiance-space earth size power))
+(def ray-scatter-space-earth (ray-scatter-space earth size power))
 
 (def T (interpolate-function transmittance-earth transmittance-space-earth))
 (def E (interpolate-function surface-radiance-base-earth surface-radiance-space-earth))
 (def S (interpolate-function ray-scatter-base-earth ray-scatter-space-earth))
+
+;---
+(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def transmittance-space-earth (transmittance-space earth size power))
+(def T (interpolation-table (mapv vec (partition size (map (comp matrix reverse) (partition 3 data)))) transmittance-space-earth))
+
+(def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def surface-radiance-space-earth (surface-radiance-space earth size power))
+(def E (atom (interpolation-table (mapv vec (partition size (map (comp matrix reverse) (partition 3 data)))) surface-radiance-space-earth)))
+
+(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(def size (int (Math/pow (/ (count data) 3) 0.25)))
+(def ray-scatter-space-earth (ray-scatter-space earth size power))
+(def arr (mapv vec (partition (* size size) (mapv (comp matrix reverse) (partition 3 data)))))
+(def S (atom (interpolation-table (convert-2d-to-4d arr) ray-scatter-space-earth)))
+;---
 
 (def w2 119)
 (def -w2 (- w2))

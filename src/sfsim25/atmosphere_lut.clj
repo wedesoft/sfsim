@@ -31,15 +31,16 @@
         ray-steps                     (Integer/parseInt (nth args 1))
         sphere-steps                  (Integer/parseInt (nth args 2))
         iterations                    (Integer/parseInt (nth args 3))
+        power                         2.0
         scatter                       [mie rayleigh]
-        transmittance-planet          (fn [x v] (transmittance earth scatter ray-steps #:sfsim25.ray{:origin x :direction v}))
-        transmittance-space-planet    (transmittance-space earth size)
+        transmittance-planet          (fn [x v] (transmittance earth scatter ray-extremity ray-steps x v))
+        transmittance-space-planet    (transmittance-space earth size power)
         surface-radiance-base-planet  (fn [^Vector x ^Vector s] (surface-radiance-base earth scatter ray-steps (matrix [1 1 1]) x s))
-        surface-radiance-space-planet (surface-radiance-space earth size)
+        surface-radiance-space-planet (surface-radiance-space earth size power)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
-        point-scatter-space           (point-scatter-space earth size)
-        ray-scatter-base-planet       (partial ray-scatter earth scatter ray-steps point-scatter-base-planet)
-        ray-scatter-space-planet      (ray-scatter-space earth size)
+        point-scatter-space           (point-scatter-space earth size power)
+        ray-scatter-base-planet       (partial ray-scatter earth scatter ray-extremity ray-steps point-scatter-base-planet)
+        ray-scatter-space-planet      (ray-scatter-space earth size power)
         T                             (interpolate-function transmittance-planet transmittance-space-planet)
         dE                            (atom (interpolate-function surface-radiance-base-planet surface-radiance-space-planet))
         E                             (atom (fn [^Vector x ^Vector s] (matrix [0 0 0])))
@@ -50,7 +51,7 @@
            (let [point-scatter-planet    (partial point-scatter earth scatter @dS @dE (matrix [1 1 1]) sphere-steps ray-steps)
                  surface-radiance-planet (partial surface-radiance earth @dS ray-steps)
                  dJ                      (interpolate-function point-scatter-planet point-scatter-space)
-                 ray-scatter-planet      (partial ray-scatter earth scatter ray-steps dJ)]
+                 ray-scatter-planet      (partial ray-scatter earth scatter ray-extremity ray-steps dJ)]
              (reset! dE (interpolate-function surface-radiance-planet surface-radiance-space-planet))
              (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
              (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s] (add (E x s) (dE x s))) surface-radiance-space-planet)))
