@@ -896,13 +896,13 @@ void main()
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
 (def surface-radiance-space-earth (surface-radiance-space earth size power))
-(def E (atom (interpolation-table (mapv vec (partition size (map (comp matrix reverse) (partition 3 data)))) surface-radiance-space-earth)))
+(def E (interpolation-table (mapv vec (partition size (map (comp matrix reverse) (partition 3 data)))) surface-radiance-space-earth))
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def size (int (Math/pow (/ (count data) 3) 0.25)))
 (def ray-scatter-space-earth (ray-scatter-space earth size power))
 (def arr (mapv vec (partition (* size size) (mapv (comp matrix reverse) (partition 3 data)))))
-(def S (atom (interpolation-table (convert-2d-to-4d arr) ray-scatter-space-earth)))
+(def S (interpolation-table (convert-2d-to-4d arr) ray-scatter-space-earth))
 ;---
 
 (def w2 119)

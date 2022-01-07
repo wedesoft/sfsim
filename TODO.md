@@ -1,4 +1,5 @@
 # TODO
+* use constantly in atmosphere lut for initial E
 * create single-scattering lut with increased resolution above and below horizon, compare with computed images
 * compare renderings of sphere with atmosphere (seen from outside atmosphere) with and without lookup tables
 * refactor (split up) point-scatter
