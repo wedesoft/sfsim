@@ -931,7 +931,7 @@ void main()
                                               (let [p  (add point (mul dir (:distance hit)))
                                                     p2 (add point (mul dir (:distance h2)))
                                                     n  (normalize p)
-                                                    e  (E p sun-direction)
+                                                    e  (E p sun-direction); TODO: add direct illumination
                                                     s  (S p2 dir sun-direction)
                                                     t  (T p2 dir)
                                                     b (add s (div (mul 0.3 t e) Math/PI))]

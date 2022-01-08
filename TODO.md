@@ -1,4 +1,5 @@
 # TODO
+* add direct illumination
 * use constantly in atmosphere lut for initial E
 * minimum maximum texture size 16384
 * create single-scattering lut with increased resolution above and below horizon, compare with computed images
