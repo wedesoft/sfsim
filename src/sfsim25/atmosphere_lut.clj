@@ -25,7 +25,7 @@
   [& args]
   (when-not (= (count args) 4)
             (.println *err* "Syntax: lein run-atmosphere-lut [size] [ray-steps] [sphere-steps] [iterations]")
-            (.println *err* "Example: lein run-atmosphere-lut 65 100 32 4")
+            (.println *err* "Example: lein run-atmosphere-lut 17 100 20 5")
             (System/exit 1))
   (.println *err* "Initialization")
   (let [size                          (Integer/parseInt (nth args 0))
@@ -44,7 +44,7 @@
         ray-scatter-space-planet      (ray-scatter-space earth size power)
         T                             (interpolate-function transmittance-planet transmittance-space-planet)
         dE                            (atom (interpolate-function surface-radiance-base-planet surface-radiance-space-planet))
-        E                             (atom (fn [^Vector x ^Vector s] (matrix [0 0 0])))
+        E                             (atom (constantly (matrix [0 0 0])))
         dS                            (atom (interpolate-function ray-scatter-base-planet ray-scatter-space-planet))
         S                             (atom @dS)]
     (doseq [iteration (range iterations)]
