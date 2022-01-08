@@ -1,9 +1,7 @@
 # TODO
-* add direct illumination
-* use constantly in atmosphere lut for initial E
-* minimum maximum texture size 16384
 * create single-scattering lut with increased resolution above and below horizon, compare with computed images
 * compare renderings of sphere with atmosphere (seen from outside atmosphere) with and without lookup tables
+* minimum maximum texture size 16384
 * refactor (split up) point-scatter
 * check atmosphere-lut and interpolation spaces
 * lookup atmosphere colour in vertex shader
