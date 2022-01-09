@@ -875,6 +875,7 @@ void main()
 (def angles 16)
 (def power 2.0)
 
+;---
 (defn transmittance-earth [^Vector x ^Vector v] (transmittance earth scatter ray-extremity steps x v))
 (defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth scatter steps (matrix [1 1 1]) point sun-direction))
 (defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter ray-extremity steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
@@ -913,8 +914,8 @@ void main()
 (def m 0.2)
 (def n (atom 0))
 (;doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
- ;doseq [hh [2] angle (range (* 0.6 Math/PI) (* -0.6 Math/PI) -0.01)]
- let [angle  (* -0.40 Math/PI) hh 2]
+ doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
+ ;let [angle  (* -0.40 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
         point         (matrix [0 (* 1 (+ radius hh)) (* 0.0 radius)])
         data          (vec (pmap (fn [y]
@@ -946,6 +947,6 @@ void main()
                                       (range -w2 (inc w2))))
                             (range -w2 (inc w2))))]
     (cp/pdoseq (+ (cp/ncpus) 2) [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    ;(spit-image (format "sun%04d.png" @n) img)
-    (show-image img)
-    (println (swap! n inc))))
+    (spit-image (format "sun%04d.png" @n) img)
+    ;(show-image img)
+    (println (swap! n inc) "/" 377)))
