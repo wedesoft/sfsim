@@ -1,10 +1,8 @@
 # TODO
-* create single-scattering lut with increased resolution above and below horizon, compare with computed images
-* compare renderings of sphere with atmosphere (seen from outside atmosphere) with and without lookup tables
-* minimum maximum texture size 16384
-* refactor (split up) point-scatter
-* check atmosphere-lut and interpolation spaces
+* refactor (split up) point-scatter and following functions
+* put distance and length keys into intersection namespace
 * lookup atmosphere colour in vertex shader
+* minimum maximum texture size 16384, lut computation 4.75 hours
 * soft transition into planet's shadow
 * rendering of sunlight and moonlight
 * use interface blocks in shaders

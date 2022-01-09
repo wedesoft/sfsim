@@ -24,14 +24,15 @@
 (defn phase
   "Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)"
   [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
-  (/ (* 3 (- 1 (sqr scatter-g)) (+ 1 (sqr mu)))
-     (* 8 Math/PI (+ 2 (sqr scatter-g)) (Math/pow (- (+ 1 (sqr scatter-g)) (* 2 scatter-g mu)) 1.5))))
+  (let [scatter-g-sqr (sqr scatter-g)]
+    (/ (* 3 (- 1 scatter-g-sqr) (+ 1 (sqr mu)))
+       (* 8 Math/PI (+ 2 scatter-g-sqr) (Math/pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
 
 (defn atmosphere-intersection
   "Get intersection of ray with artificial limit of atmosphere"
   [{:sfsim25.sphere/keys [centre radius] :as planet} ray]
   (let [height                    (:sfsim25.atmosphere/height planet)
-        atmosphere                #:sfsim25.sphere {:centre centre :radius (+ radius height)}
+        atmosphere                #:sfsim25.sphere{:centre centre :radius (+ radius height)}
         {:keys [distance length]} (ray-sphere-intersection atmosphere ray)]
     (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) (+ distance length)))))
 
@@ -39,13 +40,14 @@
   "Get intersection of ray with surface of planet or nil if there is no intersection"
   [planet ray]
   (let [{:keys [distance length]} (ray-sphere-intersection planet ray)]
-    (if (zero? length) nil (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance)))))
+    (if (zero? length)
+      nil
+      (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance)))))
 
 (defn surface-point?
   "Check whether a point is near the surface or near the edge of the atmosphere"
   [planet point]
-  (let [atmosphere-height (:sfsim25.atmosphere/height planet)]
-    (< (* 2 (height planet point)) atmosphere-height)))
+  (< (* 2 (height planet point)) (:sfsim25.atmosphere/height planet)))
 
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"
@@ -53,33 +55,36 @@
   (let [surface-point (and (ray-pointing-downwards planet ray) (surface-intersection planet ray))]
     (or surface-point (atmosphere-intersection planet ray))))
 
+(defn- exp-negative
+  "Negative exponentiation"
+  [x]
+  (exp (sub x)))
+
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
   ([planet scatter steps x x0]
-   (let [fun (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
-     (exp (sub (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 fun)))))
+   (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
+     (exp-negative (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction))))
   ([planet scatter intersection steps x v]
    (transmittance planet scatter steps x (intersection planet #:sfsim25.ray{:origin x :direction v}))))
 
 (defn surface-radiance-base
   "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
   [planet scatter steps sun-light x sun-direction]
-  (let [radial-vector (sub x (:sfsim25.sphere/centre planet))
-        vector-length (length radial-vector)
-        normal        (div radial-vector vector-length)]
+  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (mul (max 0 (dot normal sun-direction))
          (transmittance planet scatter atmosphere-intersection steps x sun-direction) sun-light)))
 
 (defn point-scatter-base
   "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
   [planet scatter steps sun-light x view-direction sun-direction]
-  (let [height-of-x  (height planet x)
-        scatter-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction sun-direction)))
-        sun-ray      #:sfsim25.ray{:origin x :direction sun-direction}]
+  (let [height-of-x     (height planet x)
+        scattering-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction sun-direction)))
+        sun-ray         #:sfsim25.ray{:origin x :direction sun-direction}]
     (if (surface-intersection planet sun-ray)
       (matrix [0 0 0])
       (mul sun-light
-           (apply add (map scatter-at-x scatter))
+           (apply add (map scattering-at-x scatter))
            (transmittance planet scatter atmosphere-intersection steps x sun-direction)))))
 
 (defn ray-scatter
