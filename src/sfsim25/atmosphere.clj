@@ -33,13 +33,13 @@
   [{:sfsim25.sphere/keys [centre radius] :as planet} ray]
   (let [height                    (:sfsim25.atmosphere/height planet)
         atmosphere                #:sfsim25.sphere{:centre centre :radius (+ radius height)}
-        {:keys [distance length]} (ray-sphere-intersection atmosphere ray)]
+        {:sfsim25.intersection/keys [distance length]} (ray-sphere-intersection atmosphere ray)]
     (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) (+ distance length)))))
 
 (defn surface-intersection
   "Get intersection of ray with surface of planet or nil if there is no intersection"
   [planet ray]
-  (let [{:keys [distance length]} (ray-sphere-intersection planet ray)]
+  (let [{:sfsim25.intersection/keys [distance length]} (ray-sphere-intersection planet ray)]
     (if (zero? length)
       nil
       (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance)))))

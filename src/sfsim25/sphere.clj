@@ -33,9 +33,9 @@
     (if (> discriminant 0)
       (let [length2 (/ (Math/sqrt discriminant) direction-sqr)]
         (if (< middle length2)
-          {:distance 0.0 :length (max 0.0 (+ middle length2))}
-          {:distance (- middle length2) :length (* 2 length2)}))
-      {:distance (max 0.0 middle) :length 0.0})))
+          {:sfsim25.intersection/distance 0.0 :sfsim25.intersection/length (max 0.0 (+ middle length2))}
+          {:sfsim25.intersection/distance (- middle length2) :sfsim25.intersection/length (* 2 length2)}))
+      {:sfsim25.intersection/distance (max 0.0 middle) :sfsim25.intersection/length 0.0})))
 
 (defn ray-pointing-downwards
   "Check whether ray points towards centre of sphere"

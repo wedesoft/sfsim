@@ -17,19 +17,19 @@
 (facts "Compute intersection of line with sphere or closest point with sphere"
        (let [sphere #:sfsim25.sphere{:centre (matrix [0 0 3]) :radius 1}]
          (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [0 1 0])})
-         => {:distance 0.0 :length 0.0}
+         => {:sfsim25.intersection/distance 0.0 :sfsim25.intersection/length 0.0}
          (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [1 0 0])})
-         => {:distance 1.0 :length 2.0}
+         => {:sfsim25.intersection/distance 1.0 :sfsim25.intersection/length 2.0}
          (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [ 0 0 3]) :direction (matrix [1 0 0])})
-         => {:distance 0.0 :length 1.0}
+         => {:sfsim25.intersection/distance 0.0 :sfsim25.intersection/length 1.0}
          (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [ 2 0 3]) :direction (matrix [1 0 0])})
-         => {:distance 0.0 :length 0.0}
+         => {:sfsim25.intersection/distance 0.0 :sfsim25.intersection/length 0.0}
          (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-2 0 3]) :direction (matrix [2 0 0])})
-         => {:distance 0.5 :length 1.0}
+         => {:sfsim25.intersection/distance 0.5 :sfsim25.intersection/length 1.0}
          (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [-5 0 0]) :direction (matrix [1 0 0])})
-         => {:distance 5.0 :length 0.0}
+         => {:sfsim25.intersection/distance 5.0 :sfsim25.intersection/length 0.0}
          (ray-sphere-intersection sphere #:sfsim25.ray{:origin (matrix [ 5 0 0]) :direction (matrix [1 0 0])})
-         => {:distance 0.0 :length 0.0}))
+         => {:sfsim25.intersection/distance 0.0 :sfsim25.intersection/length 0.0}))
 
 (facts "Check ray pointing downwards"
        (let [sphere #:sfsim25.sphere{:centre (matrix [3 2 1])}]

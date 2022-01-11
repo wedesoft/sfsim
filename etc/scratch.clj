@@ -822,17 +822,17 @@ void main()
                                                      :sfsim25.sphere/radius (+ radius (:sfsim25.atmosphere/height earth))}
                                                 h2  (ray-sphere-intersection atm ray)
                                                 l  (Math/pow (max 0 (dot dir sun-direction)) 5000)]
-                                            (if (> (:length hit) 0)
-                                              (let [p  (add point (mul dir (:distance hit)))
-                                                    p2 (add point (mul dir (:distance h2)))
+                                            (if (> (:sfsim25.intersection/length hit) 0)
+                                              (let [p  (add point (mul dir (:sfsim25.intersection/distance hit)))
+                                                    p2 (add point (mul dir (:sfsim25.intersection/distance h2)))
                                                     n  (normalize p)
                                                     e  (surface-radiance-base-earth p sun-direction)
                                                     s  (ray-scatter-base-earth p2 dir sun-direction)
                                                     t  (transmittance-earth p2 dir)
                                                     b (add s (div (mul 0.3 t e) Math/PI))]
                                                 b)
-                                                (if (> (:length h2) 0)
-                                                  (let [p (add point (mul dir (:distance h2)))
+                                                (if (> (:sfsim25.intersection/length h2) 0)
+                                                  (let [p (add point (mul dir (:sfsim25.intersection/distance h2)))
                                                         s (ray-scatter-base-earth p dir sun-direction)
                                                         t (transmittance-earth p dir)]
                                                     (add s (mul l t)))
@@ -912,7 +912,7 @@ void main()
 (def w (inc (* 2 w2)))
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def m 0.0028)
+(def m 0.000825)
 (def n (atom 0))
 (;doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
  ;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
@@ -929,9 +929,9 @@ void main()
                                                      :sfsim25.sphere/radius (+ radius (:sfsim25.atmosphere/height earth))}
                                                 h2  (ray-sphere-intersection atm ray)
                                                 l  (Math/pow (max 0 (dot dir sun-direction)) 5000)]
-                                            (if (> (:length hit) 0)
-                                              (let [p  (add point (mul dir (:distance hit)))
-                                                    p2 (add point (mul dir (:distance h2)))
+                                            (if (> (:sfsim25.intersection/length hit) 0)
+                                              (let [p  (add point (mul dir (:sfsim25.intersection/distance hit)))
+                                                    p2 (add point (mul dir (:sfsim25.intersection/distance h2)))
                                                     n  (normalize p)
                                                     l  (mul (T p sun-direction) (max (dot n sun-direction)) )
                                                     e  (add l (E p sun-direction))
@@ -939,8 +939,8 @@ void main()
                                                     t  (T p2 dir)
                                                     b (add s (div (mul 0.3 t e) Math/PI))]
                                                 b)
-                                                (if (> (:length h2) 0)
-                                                  (let [p (add point (mul dir (:distance h2)))
+                                                (if (> (:sfsim25.intersection/length h2) 0)
+                                                  (let [p (add point (mul dir (:sfsim25.intersection/distance h2)))
                                                         s (S p dir sun-direction)
                                                         t (T p dir)]
                                                     (add s (mul l t)))
