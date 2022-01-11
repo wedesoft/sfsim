@@ -613,33 +613,34 @@ void main()
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 
 (def size 17)
+(def power 2.0)
 
 (def steps 10)
 (def angles 16)
 
 (defn transmittance-earth [^Vector x ^Vector v] (transmittance earth [mie rayleigh] ray-extremity steps x v))
 
-(def transmittance-space-earth (transmittance-space earth size))
+(def transmittance-space-earth (transmittance-space earth size power))
 
 (def T (interpolate-function transmittance-earth transmittance-space-earth))
 
 (defn surface-radiance-base-earth [^Vector point ^Vector sun-direction] (surface-radiance-base earth [mie rayleigh] steps (matrix [1 1 1]) point sun-direction))
 
-(def surface-radiance-space-earth (surface-radiance-space earth size))
+(def surface-radiance-space-earth (surface-radiance-space earth size power))
 
 (def dE (atom (time (interpolate-function surface-radiance-base-earth surface-radiance-space-earth))))
 
 (def E (atom (fn [point sun-direction] (matrix [0 0 0]))))
 
-(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth [mie rayleigh] steps (partial point-scatter-base earth [mie rayleigh] steps (matrix [1 1 1])) point direction sun-direction))
+(defn ray-scatter-base-earth [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth [mie rayleigh] ray-extremity steps (partial point-scatter-base earth [mie rayleigh] steps (matrix [1 1 1])) point direction sun-direction))
 
-(def ray-scatter-space-earth (ray-scatter-space earth size))
+(def ray-scatter-space-earth (ray-scatter-space earth size power))
 
 (def dS (atom (time (interpolate-function ray-scatter-base-earth ray-scatter-space-earth))))
 
 (def S (atom @dS))
 
-(def point-scatter-space-earth (point-scatter-space earth 9))
+(def point-scatter-space-earth (point-scatter-space earth 9 power))
 
 (def dJ (atom nil))
 
@@ -911,11 +912,11 @@ void main()
 (def w (inc (* 2 w2)))
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def m 0.2)
+(def m 0.0028)
 (def n (atom 0))
 (;doseq [angle [(* -0.45 Math/PI)] hh (range 2 50 50)]
- doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
- ;let [angle  (* -0.40 Math/PI) hh 2]
+ ;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
+ let [angle  (* -0.55 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
         point         (matrix [0 (* 1 (+ radius hh)) (* 0.0 radius)])
         data          (vec (pmap (fn [y]
@@ -946,7 +947,8 @@ void main()
                                                   (mul l (matrix [1 1 1]))))))
                                       (range -w2 (inc w2))))
                             (range -w2 (inc w2))))]
+    (println (apply max (map #(mget % 1)  (flatten data))))
     (cp/pdoseq (+ (cp/ncpus) 2) [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    (spit-image (format "sun%04d.png" @n) img)
-    ;(show-image img)
+    ;(spit-image (format "sun%04d.png" @n) img)
+    (show-image img)
     (println (swap! n inc) "/" 377)))

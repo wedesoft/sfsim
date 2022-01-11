@@ -83,9 +83,8 @@
         sun-ray         #:sfsim25.ray{:origin x :direction sun-direction}]
     (if (surface-intersection planet sun-ray)
       (matrix [0 0 0])
-      (mul sun-light
-           (apply add (map scattering-at-x scatter))
-           (transmittance planet scatter atmosphere-intersection steps x sun-direction)))))
+      (let [overall-scatter (apply add (map scattering-at-x scatter))]
+        (mul sun-light overall-scatter (transmittance planet scatter atmosphere-intersection steps x sun-direction))))))
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
@@ -103,22 +102,22 @@
     (integral-sphere sphere-steps
                      normal
                      (fn [omega]
-                         (let [ray     #:sfsim25.ray{:origin x :direction omega}
-                               point   (ray-extremity planet ray)
-                               surface (surface-point? planet point)]
-                           (mul (apply add (map (partial scatter-at-x omega) scatter))
+                         (let [ray             #:sfsim25.ray{:origin x :direction omega}
+                               point           (ray-extremity planet ray)
+                               overall-scatter (apply add (map (partial scatter-at-x omega) scatter))]
+                           (mul overall-scatter
                                 (add (ray-scatter x omega sun-direction)
-                                     (if surface
-                                       (mul (transmittance planet scatter ray-steps x point)
-                                            (div (::brightness planet) Math/PI)
-                                            (surface-radiance point sun-direction))
+                                     (if (surface-point? planet point)
+                                       (let [surface-brightness (mul (div (::brightness planet) Math/PI)
+                                                                     (surface-radiance point sun-direction))]
+                                         (mul (transmittance planet scatter ray-steps x point) surface-brightness))
                                        (matrix [0 0 0])))))))))
 
 (defn surface-radiance
   "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
   [planet ray-scatter steps x sun-direction]
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-    (integral-half-sphere steps normal (fn [omega] (mul (ray-scatter x omega sun-direction) (dot omega normal))))))
+    (integral-half-sphere steps normal #(mul (ray-scatter x % sun-direction) (dot % normal)))))
 
 (defn horizon-angle
   "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
