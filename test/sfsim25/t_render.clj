@@ -329,6 +329,38 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/vectors.png"))
 
+(def fragment-two-textures "#version 410 core
+in mediump vec2 uv_fragment;
+out lowp vec3 fragColor;
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+void main()
+{
+  if (uv_fragment.x < 0.5)
+    fragColor = texture(tex1, uv_fragment).rgb;
+  else
+    fragColor = texture(tex2, uv_fragment).rgb;
+}")
+
+(fact "Test use of two textures"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+          program  (make-program :vertex vertex-texture :fragment fragment-two-textures)
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          tex1     (make-vector-texture-2d {:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
+          tex2     (make-vector-texture-2d {:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
+      (clear (matrix [0.0 0.0 0.0]))
+      (use-program program)
+      (uniform-sampler program :tex1 0)
+      (uniform-sampler program :tex2 1)
+      (use-textures tex1 tex2)
+      (render-quads vao)
+      (destroy-texture tex2)
+      (destroy-texture tex1)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/two-textures.png"))
+
 (def control-uniform "#version 410 core
 layout(vertices = 4) out;
 void main(void)

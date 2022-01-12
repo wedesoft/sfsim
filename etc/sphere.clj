@@ -52,7 +52,7 @@ void main()
     if (point.x > 0)
       fragColor = texture(surface_radiance, uv).bgr;
     else
-      fragColor = max(cos_elevation, 0) * texture(transmittance, uv).bgr;
+      fragColor = texture(transmittance, uv).bgr;
   } else
     fragColor = vec3(0, 0, 0);
 }
