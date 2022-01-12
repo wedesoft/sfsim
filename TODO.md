@@ -1,10 +1,9 @@
 # TODO
-* lookup atmosphere colour in vertex shader
-* minimum maximum texture size 16384, lut computation 4.75 hours
+* lookup atmosphere colour in vertex shader, minimum maximum texture size 16384, lut computation 4.75 hours
 * soft transition into planet's shadow
 * rendering of sunlight and moonlight
 * use interface blocks in shaders
-* link parts of shader
+* linking of multiple shader parts of same type
 * compute shadow in atmosphere
 * night-time textures
 * volumetric clouds or billboard clouds
