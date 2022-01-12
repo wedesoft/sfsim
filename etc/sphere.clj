@@ -28,16 +28,31 @@ in highp vec3 pos;
 in highp vec3 orig;
 uniform vec3 light;
 out lowp vec3 fragColor;
+uniform sampler2D surface_radiance;
+uniform sampler2D transmittance;
 <%= shaders/ray-sphere %>
 void main()
 {
+  float M_PI = 3.14159265358;
   vec3 direction = normalize(pos - orig);
   vec2 intersection = ray_sphere(vec3(0, 0, 0), 6378000, orig, direction);
   if (intersection.y > 0) {
     vec3 point = orig + intersection.x * direction;
     vec3 normal = normalize(point);
     float cos_elevation = dot(normal, light);
-    fragColor = max(cos_elevation, 0) * vec3(1, 1, 1);
+    float elevation = acos(cos_elevation);
+    float idx;
+    if (elevation <= 0.5 * M_PI) {
+      idx = (0.5 + (1 - pow(1.0 - elevation / (0.5 * M_PI), 0.5)) * 8.0) / 17.0;
+    } else {
+      idx = (0.5 + 9.0 + pow((elevation - (0.5 * M_PI)) / (0.5 * M_PI), 0.5) * 7.0) / 17.0;
+    };
+    float height = 0.0;
+    vec2 uv = vec2(height, idx);
+    if (point.x > 0)
+      fragColor = texture(surface_radiance, uv).bgr;
+    else
+      fragColor = max(cos_elevation, 0) * texture(transmittance, uv).bgr;
   } else
     fragColor = vec3(0, 0, 0);
 }
@@ -55,6 +70,16 @@ void main()
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
 (def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
+
+(def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def surface-radiance (make-vector-texture-2d {:width size :height size :data data}))
+(uniform-sampler program-atmosphere :surface_radiance 0)
+
+(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def size (int (Math/sqrt (/ (count data) 3))))
+(def transmittance (make-vector-texture-2d {:width size :height size :data data}))
+(uniform-sampler program-atmosphere :transmittance 1)
 
 (def radius 6378000.0)
 
@@ -75,6 +100,7 @@ void main()
                           (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation)
                                                                                                  @position))
                           (uniform-vector3 program-atmosphere :light (matrix [0 (Math/cos @light) (Math/sin @light)]))
+                          (use-textures surface-radiance transmittance)
                           (render-quads vao))
          (swap! t0 + dt)
          (swap! light + (* 0.001 dt))
