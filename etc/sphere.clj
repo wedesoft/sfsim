@@ -105,6 +105,8 @@ void main()
          (swap! light + (* 0.001 dt))
          (Display/update)))
 
+(destroy-texture surface-radiance)
+(destroy-texture transmittance)
 (destroy-vertex-array-object vao)
 (destroy-program program-atmosphere)
 (Display/destroy)
