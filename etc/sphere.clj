@@ -49,10 +49,7 @@ void main()
     };
     float height = 0.0;
     vec2 uv = vec2(height, idx);
-    if (point.x > 0)
-      fragColor = texture(surface_radiance, uv).bgr;
-    else
-      fragColor = texture(transmittance, uv).bgr;
+    fragColor = max(0, cos_elevation) * texture(transmittance, uv).bgr + texture(surface_radiance, uv).bgr / M_PI;
   } else
     fragColor = vec3(0, 0, 0);
 }
@@ -70,6 +67,8 @@ void main()
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
 (def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
+
+(use-program program-atmosphere)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
