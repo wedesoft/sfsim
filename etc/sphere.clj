@@ -30,28 +30,57 @@ uniform vec3 light;
 out lowp vec3 fragColor;
 uniform sampler2D surface_radiance;
 uniform sampler2D transmittance;
+uniform sampler2D ray_scatter;
+
 <%= shaders/ray-sphere %>
+
+float M_PI = 3.14159265358;
+
+float elevation_to_index(float elevation) {
+  float result;
+  if (elevation <= 0.5 * M_PI) {
+    result = (0.5 + (1 - pow(1.0 - elevation / (0.5 * M_PI), 0.5)) * 8.0) / 17.0;
+  } else {
+    result = (0.5 + 9.0 + pow((elevation - (0.5 * M_PI)) / (0.5 * M_PI), 0.5) * 7.0) / 17.0;
+  };
+  return result;
+}
+
+vec3 orthogonal(vec3 n) {
+  vec3 v;
+  if (abs(n.x) <= min(abs(n.y), abs(n.z))) v = vec3(1, 0, 0);
+  if (abs(n.y) <= min(abs(n.x), abs(n.z))) v = vec3(0, 1, 0);
+  if (abs(n.z) <= min(abs(n.x), abs(n.y))) v = vec3(0, 0, 1);
+  return normalize(cross(n, v));
+}
+
 void main()
 {
-  float M_PI = 3.14159265358;
   vec3 direction = normalize(pos - orig);
-  vec2 intersection = ray_sphere(vec3(0, 0, 0), 6378000, orig, direction);
-  if (intersection.y > 0) {
-    vec3 point = orig + intersection.x * direction;
+  vec2 surface = ray_sphere(vec3(0, 0, 0), 6378000, orig, direction);
+  vec2 air = ray_sphere(vec3(0, 0, 0), 6378000 + 100000, orig, direction);
+  if (surface.y > 0) {
+    vec3 point = orig + surface.x * direction;
     vec3 normal = normalize(point);
     float cos_elevation = dot(normal, light);
     float elevation = acos(cos_elevation);
-    float idx;
-    if (elevation <= 0.5 * M_PI) {
-      idx = (0.5 + (1 - pow(1.0 - elevation / (0.5 * M_PI), 0.5)) * 8.0) / 17.0;
-    } else {
-      idx = (0.5 + 9.0 + pow((elevation - (0.5 * M_PI)) / (0.5 * M_PI), 0.5) * 7.0) / 17.0;
-    };
+    float idx = elevation_to_index(elevation);
     float height = 0.0;
     vec2 uv = vec2(height, idx);
     fragColor = max(0, cos_elevation) * texture(transmittance, uv).bgr + texture(surface_radiance, uv).bgr / M_PI;
-  } else
-    fragColor = vec3(0, 0, 0);
+  } else {
+    if (air.y > 0) {
+      vec3 point = orig + air.x * direction;
+      vec3 normal = normalize(point);
+      float cos_elevation = dot(normal, light);
+      float elevation = acos(cos_elevation); // 3nd
+      float cos_direction = dot(normal, direction);
+      float direction = acos(cos_direction); // 2nd
+      float height = length(point) - 6378000; // 1st
+      fragColor = vec3(0.5, 0.5, 0.5);
+    } else
+      fragColor = vec3(0, 0, 0);
+  };
 }
 "))
 
@@ -80,6 +109,11 @@ void main()
 (def transmittance (make-vector-texture-2d {:width size :height size :data data}))
 (uniform-sampler program-atmosphere :transmittance 1)
 
+(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(def size (int (Math/pow (/ (count data) 3) 0.25)))
+(def ray-scatter (make-vector-texture-2d {:width (* size size) :height (* size size) :data data}))
+(uniform-sampler program-atmosphere :ray_scatter 2)
+
 (def radius 6378000.0)
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
@@ -99,7 +133,7 @@ void main()
                           (uniform-matrix4 program-atmosphere :itransform (transformation-matrix (quaternion->matrix @orientation)
                                                                                                  @position))
                           (uniform-vector3 program-atmosphere :light (matrix [0 (Math/cos @light) (Math/sin @light)]))
-                          (use-textures surface-radiance transmittance)
+                          (use-textures surface-radiance transmittance ray-scatter)
                           (render-quads vao))
          (swap! t0 + dt)
          (swap! light + (* 0.001 dt))
@@ -107,6 +141,7 @@ void main()
 
 (destroy-texture surface-radiance)
 (destroy-texture transmittance)
+(destroy-texture ray-scatter)
 (destroy-vertex-array-object vao)
 (destroy-program program-atmosphere)
 (Display/destroy)

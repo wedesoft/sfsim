@@ -1,4 +1,5 @@
 # TODO
+* ray scattering lookup
 * lookup atmosphere colour in vertex shader, minimum maximum texture size 16384, lut computation 4.75 hours
 * soft transition into planet's shadow
 * rendering of sunlight and moonlight
