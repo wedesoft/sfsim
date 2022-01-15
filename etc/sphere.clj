@@ -54,6 +54,21 @@ vec3 orthogonal(vec3 n) {
   return normalize(cross(n, v));
 }
 
+mat3 oriented_matrix(vec3 n) {
+  vec3 o1 = orthogonal(n);
+  vec3 o2 = cross(n, o1);
+  return mat3(n, o1, o2);
+}
+
+float clip_angle(float angle) {
+  if (angle < -M_PI)
+    return angle + 2 * M_PI;
+  else if (angle >= M_PI)
+    return angle - 2 * M_PI;
+  else
+    return angle;
+}
+
 void main()
 {
   vec3 direction = normalize(pos - orig);
@@ -72,11 +87,17 @@ void main()
     if (air.y > 0) {
       vec3 point = orig + air.x * direction;
       vec3 normal = normalize(point);
-      float cos_elevation = dot(normal, light);
-      float elevation = acos(cos_elevation); // 3nd
-      float cos_direction = dot(normal, direction);
-      float direction = acos(cos_direction); // 2nd
+      float cos_sun_elevation = dot(normal, light);
+      float sun_elevation = acos(cos_sun_elevation); // 3rd
+      float cos_elevation = dot(normal, direction);
+      float elevation = acos(cos_elevation); // 2nd
       float height = length(point) - 6378000; // 1st
+      mat3 oriented = oriented_matrix(normal);
+      vec3 direction_rotated = oriented * direction;
+      vec3 light_rotated = oriented * light;
+      float direction_azimuth = atan(direction_rotated.z, direction_rotated.y);
+      float sun_azimuth = atan(light_rotated.z, light_rotated.y);
+      float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth)); // 4th
       fragColor = vec3(0.5, 0.5, 0.5);
     } else
       fragColor = vec3(0, 0, 0);
