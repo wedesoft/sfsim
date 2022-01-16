@@ -88,16 +88,20 @@ void main()
       vec3 point = orig + air.x * direction;
       vec3 normal = normalize(point);
       float cos_sun_elevation = dot(normal, light);
-      float sun_elevation = acos(cos_sun_elevation); // 3rd
+      float sun_elevation = acos(cos_sun_elevation);
+      float sun_elevation_index = elevation_to_index(sun_elevation) - 0.5; // 3rd
       float cos_elevation = dot(normal, direction);
-      float elevation = acos(cos_elevation); // 2nd
-      float height = length(point) - 6378000; // 1st
+      float elevation = acos(cos_elevation);
+      float elevation_index = elevation_to_index(elevation); // 2nd
+      float height = length(point) - 6378000;
+      float height_index = 0.5 + 16 * height / 100000.0; // 1st
       mat3 oriented = oriented_matrix(normal);
       vec3 direction_rotated = oriented * direction;
       vec3 light_rotated = oriented * light;
       float direction_azimuth = atan(direction_rotated.z, direction_rotated.y);
       float sun_azimuth = atan(light_rotated.z, light_rotated.y);
-      float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth)); // 4th
+      float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
+      float sun_heading_index = sun_heading * 16 / M_PI; // 4th
       fragColor = vec3(0.5, 0.5, 0.5);
     } else
       fragColor = vec3(0, 0, 0);
