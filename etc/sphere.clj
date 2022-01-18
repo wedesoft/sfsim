@@ -89,12 +89,12 @@ void main()
       vec3 normal = normalize(point);
       float cos_sun_elevation = dot(normal, light);
       float sun_elevation = acos(cos_sun_elevation);
-      float sun_elevation_index = elevation_to_index(sun_elevation) - 0.5; // 3rd
+      float sun_elevation_index = elevation_to_index(sun_elevation) * 17 - 0.5; // 3rd
       float cos_elevation = dot(normal, direction);
       float elevation = acos(cos_elevation);
       float elevation_index = elevation_to_index(elevation); // 2nd
       float height = length(point) - 6378000;
-      float height_index = 0.5 + 16 * height / 100000.0; // 1st
+      float height_index = (0.5 + 16 * height / 100000.0) / 17.0; // 1st
       mat3 oriented = oriented_matrix(normal);
       vec3 direction_rotated = oriented * direction;
       vec3 light_rotated = oriented * light;
@@ -102,9 +102,22 @@ void main()
       float sun_azimuth = atan(light_rotated.z, light_rotated.y);
       float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
       float sun_heading_index = sun_heading * 16 / M_PI; // 4th
-      fragColor = vec3(0.5, 0.5, 0.5);
+
+      float sun_elevation_index_floor = floor(sun_elevation_index);
+      float sun_heading_index_floor = floor(sun_heading_index);
+
+      float u0 = height_index / 17 + sun_elevation_index_floor / 17;
+      float u1 = height_index / 17 + min(sun_elevation_index_floor + 1, 16) / 17;
+      float v0 = elevation_index / 17 + sun_heading_index_floor / 17;
+      float v1 = elevation_index / 17 + min(sun_heading_index_floor + 1, 16) / 17;
+      float uf = fract(sun_elevation_index);
+      float vf = fract(sun_heading_index);
+      fragColor = (texture(ray_scatter, vec2(u0, v0)) * (1 - uf) * (1 - vf) +
+                   texture(ray_scatter, vec2(u1, v0)) *       uf * (1 - vf) +
+                   texture(ray_scatter, vec2(u0, v1)) * (1 - uf) *       vf +
+                   texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).bgr * 1000;
     } else
-      fragColor = vec3(0, 0, 0);
+      fragColor = vec3(0.5, 0.5, 0.5);
   };
 }
 "))
@@ -144,7 +157,7 @@ void main()
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
 (def light (atom 0))
-(def position (atom (matrix [0 (* -3 radius) (* 0.7 6378000)])))
+(def position (atom (matrix [0 (* -0.5 radius) (* 1.0 6378000)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
 (def t0 (atom (System/currentTimeMillis)))
