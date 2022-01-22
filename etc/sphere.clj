@@ -111,8 +111,8 @@ void main()
       float v0 = sun_elevation_index / 17 + height_index_floor / 17;
       float v1 = sun_elevation_index / 17 + min(height_index_floor + 1, 16) / 17;
 
-      float uf = fract(sun_elevation_index);
-      float vf = fract(sun_heading_index);
+      float uf = fract(elevation_index);
+      float vf = fract(height_index);
       fragColor = (texture(ray_scatter, vec2(u0, v0)) * (1 - uf) * (1 - vf) +
                    texture(ray_scatter, vec2(u1, v0)) *       uf * (1 - vf) +
                    texture(ray_scatter, vec2(u0, v1)) * (1 - uf) *       vf +
