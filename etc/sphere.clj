@@ -89,35 +89,36 @@ void main()
       vec3 normal = normalize(point);
       float cos_sun_elevation = dot(normal, light);
       float sun_elevation = acos(cos_sun_elevation);
-      float sun_elevation_index = elevation_to_index(sun_elevation) * 17 - 0.5; // 3rd
+      float sun_elevation_index = elevation_to_index(sun_elevation); // 2nd
       float cos_elevation = dot(normal, direction);
       float elevation = acos(cos_elevation);
-      float elevation_index = elevation_to_index(elevation); // 2nd
+      float elevation_index = elevation_to_index(elevation) * 17 - 0.5; // 3rd
       float height = length(point) - 6378000;
-      float height_index = (0.5 + 16 * height / 100000.0) / 17.0; // 1st
+      float height_index = 16 * height / 100000.0; // 4th
       mat3 oriented = oriented_matrix(normal);
       vec3 direction_rotated = oriented * direction;
       vec3 light_rotated = oriented * light;
       float direction_azimuth = atan(direction_rotated.z, direction_rotated.y);
       float sun_azimuth = atan(light_rotated.z, light_rotated.y);
       float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
-      float sun_heading_index = sun_heading * 16 / M_PI; // 4th
+      float sun_heading_index = (sun_heading * 16 / M_PI + 0.5) / 17; // 1st
 
-      float sun_elevation_index_floor = floor(sun_elevation_index);
-      float sun_heading_index_floor = floor(sun_heading_index);
+      float elevation_index_floor = floor(elevation_index);
+      float height_index_floor = floor(height_index);
 
-      float u0 = height_index / 17 + sun_elevation_index_floor / 17;
-      float u1 = height_index / 17 + min(sun_elevation_index_floor + 1, 16) / 17;
-      float v0 = elevation_index / 17 + sun_heading_index_floor / 17;
-      float v1 = elevation_index / 17 + min(sun_heading_index_floor + 1, 16) / 17;
+      float u0 = sun_heading_index / 17 + elevation_index_floor / 17;
+      float u1 = sun_heading_index / 17 + min(elevation_index_floor + 1, 16) / 17;
+      float v0 = sun_elevation_index / 17 + height_index_floor / 17;
+      float v1 = sun_elevation_index / 17 + min(height_index_floor + 1, 16) / 17;
+
       float uf = fract(sun_elevation_index);
       float vf = fract(sun_heading_index);
       fragColor = (texture(ray_scatter, vec2(u0, v0)) * (1 - uf) * (1 - vf) +
                    texture(ray_scatter, vec2(u1, v0)) *       uf * (1 - vf) +
                    texture(ray_scatter, vec2(u0, v1)) * (1 - uf) *       vf +
-                   texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).bgr * 1000;
+                   texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).bgr;
     } else
-      fragColor = vec3(0.5, 0.5, 0.5);
+      fragColor = vec3(0.0, 0.0, 0.0);
   };
 }
 "))
@@ -174,7 +175,7 @@ void main()
                           (use-textures surface-radiance transmittance ray-scatter)
                           (render-quads vao))
          (swap! t0 + dt)
-         (swap! light + (* 0.001 dt))
+         (swap! light + (* 0.0002 dt))
          (Display/update)))
 
 (destroy-texture surface-radiance)
