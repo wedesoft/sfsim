@@ -36,12 +36,12 @@ uniform sampler2D ray_scatter;
 
 float M_PI = 3.14159265358;
 
-float elevation_to_index(float elevation) {
+float elevation_to_index(float elevation, float horizon_angle) {
   float result;
-  if (elevation <= 0.5 * M_PI) {
-    result = (0.5 + (1 - pow(1.0 - elevation / (0.5 * M_PI), 0.5)) * 8.0) / 17.0;
+  if (elevation <= 0.5 * M_PI + horizon_angle) {
+    result = (0.5 + (1 - pow(1.0 - elevation / (0.5 * M_PI + horizon_angle), 0.5)) * 8.0) / 17.0;
   } else {
-    result = (0.5 + 9.0 + pow((elevation - (0.5 * M_PI)) / (0.5 * M_PI), 0.5) * 7.0) / 17.0;
+    result = (0.5 + 9.0 + pow((elevation - (0.5 * M_PI + horizon_angle)) / (0.5 * M_PI - horizon_angle), 0.5) * 7.0) / 17.0;
   };
   return result;
 }
@@ -79,7 +79,7 @@ void main()
     vec3 normal = normalize(point);
     float cos_elevation = dot(normal, light);
     float elevation = acos(cos_elevation);
-    float idx = elevation_to_index(elevation);
+    float idx = elevation_to_index(elevation, 0);
     float height = 0.0;
     vec2 uv = vec2(height, idx);
     fragColor = max(0, cos_elevation) * texture(transmittance, uv).bgr + texture(surface_radiance, uv).bgr / M_PI;
@@ -87,13 +87,15 @@ void main()
     if (air.y > 0) {
       vec3 point = orig + air.x * direction;
       vec3 normal = normalize(point);
+      float distance = max(length(point), 6378000);
+      float horizon_angle = acos(6378000 / distance);
       float cos_sun_elevation = dot(normal, light);
       float sun_elevation = acos(cos_sun_elevation);
-      float sun_elevation_index = elevation_to_index(sun_elevation); // 2nd
+      float sun_elevation_index = elevation_to_index(sun_elevation, horizon_angle); // 2nd
       float cos_elevation = dot(normal, direction);
       float elevation = acos(cos_elevation);
-      float elevation_index = elevation_to_index(elevation) * 17 - 0.5; // 3rd
-      float height = length(point) - 6378000;
+      float elevation_index = elevation_to_index(elevation, horizon_angle) * 17 - 0.5; // 3rd
+      float height = distance - 6378000;
       float height_index = 16 * height / 100000.0; // 4th
       mat3 oriented = oriented_matrix(normal);
       vec3 direction_rotated = oriented * direction;
