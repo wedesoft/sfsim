@@ -60,10 +60,10 @@
 (def w (inc (* 2 w2)))
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def m 0.000825)
+(def m 0.0825)
 (def n (atom 0))
 (;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
- let [angle  (* -0.55 Math/PI) hh 2]
+ let [angle  (* -0.4 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
         point         (matrix [0 (* 1 (+ radius hh)) (* 0.5 radius)])
         data          (vec (pmap (fn [y]
