@@ -115,12 +115,16 @@ void main()
 
       float uf = fract(elevation_index);
       float vf = fract(height_index);
+      vec2 uv = vec2((height_index + 0.5) / 17, (elevation_index + 0.5) / 17);
+      vec3 l = max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
       fragColor = (texture(ray_scatter, vec2(u0, v0)) * (1 - uf) * (1 - vf) +
                    texture(ray_scatter, vec2(u1, v0)) *       uf * (1 - vf) +
                    texture(ray_scatter, vec2(u0, v1)) * (1 - uf) *       vf +
-                   texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).rgb;
-    } else
-      fragColor = vec3(0.0, 0.0, 0.0);
+                   texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).rgb + l;
+    } else {
+      float l = max(0, pow(dot(direction, light), 5000));
+      fragColor = vec3(l, l, l);
+    };
   };
 }
 "))
@@ -159,7 +163,7 @@ void main()
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
-(def light (atom 0.08188))
+(def light (atom 0))
 (def position (atom (matrix [0 (* -0.5 radius) (* 1.0 6378000)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
