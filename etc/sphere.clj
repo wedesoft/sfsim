@@ -82,7 +82,7 @@ void main()
     float idx = elevation_to_index(elevation, 0);
     float height = 0.0;
     vec2 uv = vec2(height, idx);
-    fragColor = max(0, cos_elevation) * texture(transmittance, uv).bgr + texture(surface_radiance, uv).bgr / M_PI;
+    fragColor = 0.3 * max(0, cos_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb / M_PI;
   } else {
     if (air.y > 0) {
       vec3 point = orig + air.x * direction;
@@ -118,7 +118,7 @@ void main()
       fragColor = (texture(ray_scatter, vec2(u0, v0)) * (1 - uf) * (1 - vf) +
                    texture(ray_scatter, vec2(u1, v0)) *       uf * (1 - vf) +
                    texture(ray_scatter, vec2(u0, v1)) * (1 - uf) *       vf +
-                   texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).bgr;
+                   texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).rgb;
     } else
       fragColor = vec3(0.0, 0.0, 0.0);
   };
@@ -159,7 +159,7 @@ void main()
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
-(def light (atom 0))
+(def light (atom 0.08188))
 (def position (atom (matrix [0 (* -0.5 radius) (* 1.0 6378000)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 
@@ -177,7 +177,8 @@ void main()
                           (use-textures surface-radiance transmittance ray-scatter)
                           (render-quads vao))
          (swap! t0 + dt)
-         (swap! light + (* 0.0002 dt))
+         (swap! light + (* 0.0002 0.1 dt))
+         (println @light)
          (Display/update)))
 
 (destroy-texture surface-radiance)

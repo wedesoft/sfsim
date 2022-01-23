@@ -62,10 +62,10 @@
 
 (def m 0.000825)
 (def n (atom 0))
-(doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
- ;let [angle  (* -0.55 Math/PI) hh 2]
+(;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
+ let [angle  (* -0.55 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
-        point         (matrix [0 (* 1 (+ radius hh)) (* 0.0 radius)])
+        point         (matrix [0 (* 1 (+ radius hh)) (* 0.5 radius)])
         data          (vec (pmap (fn [y]
                                 (mapv (fn [x]
                                           (let [f   (/ w2 (Math/tan (Math/toRadians 30)))
@@ -96,8 +96,8 @@
                             (range -w2 (inc w2))))]
     (println (apply max (map #(mget % 1)  (flatten data))))
     (cp/pdoseq (+ (cp/ncpus) 2) [y (range w) x (range w)] (set-pixel! img y x (matrix (vec (map #(clip % 255) (mul (/ 255 m) (nth (nth data y) x)))))))
-    (spit-image (format "sun%04d.png" @n) img)
-    ;(show-image img)
+    ;(spit-image (format "sun%04d.png" @n) img)
+    (show-image img)
     (println (swap! n inc) "/" 377)))
 
 ; convert sun0200.png -background black -gravity center -extent 426x240 test.png
