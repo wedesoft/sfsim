@@ -3,7 +3,7 @@
 This is a work in progress. Requires OpenGL 4.5.
 
 ```
-sudo aptitude install openjdk-11-jre liblwjgl-java libij-java leiningen
+sudo apt-get install openjdk-17-jre liblwjgl-java libij-java leiningen
 lein midje
 ```
 
