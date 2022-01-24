@@ -38,6 +38,11 @@
 (def S (interpolate-function ray-scatter-base-earth ray-scatter-space-earth))
 
 ;---
+(defn T [^Vector x ^Vector v] (transmittance earth scatter ray-extremity steps x v))
+(defn E [^Vector point ^Vector sun-direction] (surface-radiance-base earth scatter steps (matrix [1 1 1]) point sun-direction))
+(defn S [^Vector point ^Vector direction ^Vector sun-direction] (ray-scatter earth scatter ray-extremity steps (partial point-scatter-base earth scatter steps (matrix [1 1 1])) point direction sun-direction))
+
+;---
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
 (def transmittance-space-earth (transmittance-space earth size power))
@@ -60,7 +65,7 @@
 (def w (inc (* 2 w2)))
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def m 0.0825)
+(def m 1)
 (def n (atom 0))
 (;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
  let [angle  (* -0.4 Math/PI) hh 2]
