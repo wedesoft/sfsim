@@ -85,7 +85,7 @@
                                               (let [p  (add point (mul dir (:sfsim25.intersection/distance hit)))
                                                     p2 (add point (mul dir (:sfsim25.intersection/distance h2)))
                                                     n  (normalize p)
-                                                    l  (mul (T p sun-direction) (max (dot n sun-direction)) )
+                                                    l  (mul (T p sun-direction) (max 0 (dot n sun-direction)) )
                                                     e  (add l (E p sun-direction))
                                                     s  (S p2 dir sun-direction)
                                                     t  (T p2 dir)

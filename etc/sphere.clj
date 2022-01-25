@@ -82,7 +82,7 @@ void main()
     float sun_elevation_index = elevation_to_index(sun_elevation, 0);
     float height = 0.0;
     vec2 uv = vec2(height, sun_elevation_index);
-    vec3 surf_contrib = 0.3 * max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb / M_PI;
+    vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb) / M_PI;
     point = orig + air.x * direction;
     float distance = max(length(point), 6378000);
     float horizon_angle = acos(6378000 / distance);
