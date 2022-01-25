@@ -68,7 +68,7 @@
 (def m 0.2)
 (def n (atom 0))
 (;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
- let [angle  (* -0.3 Math/PI) hh 2]
+ let [angle  (* -0.45 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
         point         (matrix [0 (* 1 (+ radius hh)) (* 0.1 radius)])
         data          (vec (pmap (fn [y]
