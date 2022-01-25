@@ -20,7 +20,7 @@
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 (def scatter [mie rayleigh])
 (def size 17)
-(def steps 10)
+(def steps 100)
 (def angles 16)
 (def power 2.0)
 
@@ -65,12 +65,12 @@
 (def w (inc (* 2 w2)))
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def m 1)
+(def m 0.2)
 (def n (atom 0))
 (;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
- let [angle  (* -0.4 Math/PI) hh 2]
+ let [angle  (* -0.3 Math/PI) hh 2]
   (let [sun-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
-        point         (matrix [0 (* 1 (+ radius hh)) (* 0.5 radius)])
+        point         (matrix [0 (* 1 (+ radius hh)) (* 0.1 radius)])
         data          (vec (pmap (fn [y]
                                 (mapv (fn [x]
                                           (let [f   (/ w2 (Math/tan (Math/toRadians 30)))
@@ -80,7 +80,7 @@
                                                 atm {:sfsim25.sphere/centre (matrix [0 0 0])
                                                      :sfsim25.sphere/radius (+ radius (:sfsim25.atmosphere/height earth))}
                                                 h2  (ray-sphere-intersection atm ray)
-                                                l  (Math/pow (max 0 (dot dir sun-direction)) 5000)]
+                                                l   (Math/pow (max 0 (dot dir sun-direction)) 5000)]
                                             (if (> (:sfsim25.intersection/length hit) 0)
                                               (let [p  (add point (mul dir (:sfsim25.intersection/distance hit)))
                                                     p2 (add point (mul dir (:sfsim25.intersection/distance h2)))
