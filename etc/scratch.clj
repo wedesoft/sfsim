@@ -400,15 +400,15 @@ void main()
 (Keyboard/create)
 
 (def program-planet
-  (make-program :vertex vertex-source-planet
-                :tess-control tcs-source-planet
-                :tess-evaluation tes-source-planet
-                :geometry geo-source-planet
-                :fragment fragment-source-planet))
+  (make-program :vertex [vertex-source-planet]
+                :tess-control [tcs-source-planet]
+                :tess-evaluation [tes-source-planet]
+                :geometry [geo-source-planet]
+                :fragment [fragment-source-planet]))
 
 (def program-atmosphere
-  (make-program :vertex vertex-source-atmosphere
-                :fragment fragment-source-atmosphere))
+  (make-program :vertex [vertex-source-atmosphere]
+                :fragment [fragment-source-atmosphere]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
@@ -652,8 +652,8 @@ void main()
 (Display/create)
 
 (def program-atmosphere
-  (make-program :vertex vertex-source-atmosphere
-                :fragment fragment-source-atmosphere))
+  (make-program :vertex [vertex-source-atmosphere]
+                :fragment [fragment-source-atmosphere]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))

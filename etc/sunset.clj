@@ -89,7 +89,7 @@
                                                     e  (add l (E p sun-direction))
                                                     s  (S p2 dir sun-direction)
                                                     t  (T p2 dir)
-                                                    b (add s (div (mul 0.3 t e) Math/PI))]
+                                                    b (add s (div (mul 0.3 t e) (* 2 Math/PI)))]
                                                 b)
                                                 (if (> (:sfsim25.intersection/length h2) 0)
                                                   (let [p (add point (mul dir (:sfsim25.intersection/distance h2)))

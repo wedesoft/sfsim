@@ -67,15 +67,15 @@
 
 (defn make-program
   "Compile and link a shader program"
-  [& {:keys [vertex tess-control tess-evaluation geometry fragment]}]
-  (let [vertex-shader          (make-shader "vertex" vertex GL20/GL_VERTEX_SHADER)
-        tess-control-shader    (if tess-control (make-shader "tessellation control" tess-control GL40/GL_TESS_CONTROL_SHADER))
-        tess-evaluation-shader (if tess-evaluation
-                                 (make-shader "tessellation evaluation" tess-evaluation GL40/GL_TESS_EVALUATION_SHADER))
-        geometry-shader        (if geometry (make-shader "geometry" geometry GL32/GL_GEOMETRY_SHADER))
-        fragment-shader        (make-shader "fragment" fragment GL20/GL_FRAGMENT_SHADER)]
+  [& {:keys [vertex tess-control tess-evaluation geometry fragment]
+      :or {vertex [] tess-control [] tess-evaluation [] geometry [] fragment []}}]
+  (let [vertex-shaders          (map #(make-shader "vertex" % GL20/GL_VERTEX_SHADER) vertex)
+        tess-control-shaders    (map #(make-shader "tessellation control" % GL40/GL_TESS_CONTROL_SHADER) tess-control)
+        tess-evaluation-shaders (map #(make-shader "tessellation evaluation" % GL40/GL_TESS_EVALUATION_SHADER) tess-evaluation)
+        geometry-shaders        (map #(make-shader "geometry" % GL32/GL_GEOMETRY_SHADER) geometry)
+        fragment-shaders        (map #(make-shader "fragment" % GL20/GL_FRAGMENT_SHADER) fragment)]
     (let [program (GL20/glCreateProgram)
-          shaders (remove nil? [vertex-shader tess-control-shader tess-evaluation-shader geometry-shader fragment-shader])]
+          shaders (concat vertex-shaders tess-control-shaders tess-evaluation-shaders geometry-shaders fragment-shaders)]
       (doseq [shader shaders] (GL20/glAttachShader program shader))
       (GL20/glLinkProgram program)
       (if (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
