@@ -1,4 +1,5 @@
 # TODO
+* test ray\_sphere intersection shader
 * sun-direction -> light?
 * combine atmospheric shader with planetary surface rendering
 * rendering of sunlight and moonlight

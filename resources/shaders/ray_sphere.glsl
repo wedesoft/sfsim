@@ -1,3 +1,5 @@
+#version 410 core
+
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
   vec3 offset = origin - centre;
   float direction_sqr = dot(direction, direction);

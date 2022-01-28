@@ -28,22 +28,21 @@ void main()
   gl_Position = vec4(point, 1);
 }")
 
-(def fragment-sphere-test
-  (template/eval "#version 410 core
+(def fragment-sphere-test "#version 410 core
 in highp vec3 pos;
 out lowp vec3 fragColor;
-<%= ray-sphere %>
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
 {
   vec2 solution = 0.5 * ray_sphere(vec3(0, 0, 0), 1, vec3(pos.x, pos.y, -1), vec3(0, 0, 1));
   fragColor = vec3(solution.x, solution.y, 0);
-}"))
+}")
 
 (fact "Intersection with sphere"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-sphere-test])
+          program  (make-program :vertex [vertex-passthrough] :fragment [ray-sphere fragment-sphere-test])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
