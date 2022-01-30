@@ -4,7 +4,9 @@
             [clojure.core.matrix :refer :all]
             [sfsim25.shaders :refer :all]
             [sfsim25.render :refer :all]
-            [sfsim25.util :refer :all]))
+            [sfsim25.util :refer :all])
+  (:import [org.lwjgl BufferUtils]
+           [org.lwjgl.opengl Pbuffer PixelFormat]))
 
 ; Compare RGB components of image and ignore alpha values.
 (defn is-image [filename]

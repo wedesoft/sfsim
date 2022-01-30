@@ -3,8 +3,7 @@
 (require '[sfsim25.render :refer :all])
 (require '[sfsim25.util :refer :all])
 
-; TODO: storage type parameter
-; TODO: depth buffer attachment
+; TODO: depth buffer attachment; test rendering of quads with depth
 
 (defmacro texture-render
   "Macro to render to a texture"
@@ -25,6 +24,7 @@
          (GL30/glDeleteFramebuffers fbo#)))))
 
 (defn texture->vectors
+  "Extract floating-point vectors from texture"
   [texture width height]
   (with-2d-texture (:texture texture)
       (let [buf  (BufferUtils/createFloatBuffer (* width height 3))

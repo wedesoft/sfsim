@@ -438,3 +438,16 @@ void main()
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/quad.png"))
+
+(fact "Render to floating-point texture (needs active OpenGL context)"
+      (offscreen-render 32 32
+        (let [tex (texture-render 8 8 (clear (matrix [1.0 2.0 3.0])))]
+          (get-vector (texture->vectors tex 32 32) 0 0) => (matrix [1.0 2.0 3.0])
+          (destroy-texture tex))))
+
+(fact "Render to floating-point texture (needs active OpenGL context)"
+      (offscreen-render 32 32
+        (let [tex (texture-render 160 120 (clear (matrix [1.0 0.0 0.0])))
+              img (texture->image tex 160 120)]
+          img => (is-image "test/sfsim25/fixtures/red.png")
+          (destroy-texture tex))))

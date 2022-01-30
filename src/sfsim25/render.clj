@@ -2,7 +2,7 @@
   "Functions for doing OpenGL rendering"
   (:require [clojure.core.matrix :refer (mget eseq)]
             [sfsim25.util :refer (def-context-macro def-context-create-macro)])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
+  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [mikera.vectorz Vector]
            [mikera.matrixx Matrix]))
@@ -284,3 +284,41 @@
   (doseq [[i texture] (map list (range) textures)]
     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
     (GL11/glBindTexture (:target texture) (:texture texture))))
+
+(defmacro texture-render
+  "Macro to render to a texture"
+  [width height & body]
+  `(let [fbo# (GL45/glCreateFramebuffers)
+         tex# (GL11/glGenTextures)]
+     (try
+       (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
+       (GL11/glBindTexture GL11/GL_TEXTURE_2D tex#)
+       (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_RGB32F ~width ~height)
+       (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex# 0)
+       (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
+       (GL11/glViewport 0 0 ~width ~height)
+       ~@body
+       {:texture tex# :target GL11/GL_TEXTURE_2D}
+       (finally
+         (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
+         (GL30/glDeleteFramebuffers fbo#)))))
+
+(defn texture->vectors
+  "Extract floating-point vectors from texture"
+  [texture width height]
+  (with-2d-texture (:texture texture)
+    (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
+          data (float-array (* width height 3))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGR GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(defn texture->image
+  "Convert texture to RGB image"
+  [texture width height]
+  (with-2d-texture (:texture texture)
+    (let [buf  (BufferUtils/createIntBuffer (* width height))
+          data (int-array (* width height))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buf)
+      (.get buf data)
+      {:width width :height height :data data})))
