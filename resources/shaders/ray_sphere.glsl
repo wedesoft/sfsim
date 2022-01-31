@@ -13,7 +13,6 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction) {
       result.x = 0;
     };
     return result;
-  } else {
+  } else
     return vec2(0, 0);
-  }
 }
