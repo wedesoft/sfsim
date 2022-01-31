@@ -15,8 +15,8 @@ void main()
   gl_Position = vec4(point, 1);
 }")
 
-(defn fragment-probe [cx cy cz ox oy oz dx dy dz]
-  (template/eval "#version 410 core
+(def fragment-probe
+  (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
 out lowp vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
@@ -26,7 +26,7 @@ void main()
                            vec3(<%= ox %>, <%= oy %>, <%= oz %>),
                            vec3(<%= dx %>, <%= dy %>, <%= dz %>));
   fragColor = vec3(result.x, result.y, 0);
-}" {:cx cx :cy cy :cz cz :ox ox :oy oy :oz oz :dx dx :dy dy :dz dz}))
+}"))
 
 (defn shader-test [& args]
   (let [result (promise)]
