@@ -287,13 +287,13 @@
 
 (defmacro texture-render
   "Macro to render to a texture"
-  [width height internalformat & body]
+  [width height floating-point & body]
   `(let [fbo# (GL45/glCreateFramebuffers)
          tex# (GL11/glGenTextures)]
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
        (GL11/glBindTexture GL11/GL_TEXTURE_2D tex#)
-       (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 ~internalformat ~width ~height)
+       (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 (if ~floating-point GL30/GL_RGB32F GL11/GL_RGBA8) ~width ~height)
        (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex# 0)
        (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
        (GL11/glViewport 0 0 ~width ~height)
