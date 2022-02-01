@@ -3,7 +3,7 @@
             [clojure.core.matrix :refer (matrix identity-matrix)]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
-  (:import [org.lwjgl.opengl Display DisplayMode]))
+  (:import [org.lwjgl.opengl Display DisplayMode GL30]))
 
 ; Compare RGB components of image and ignore alpha values.
 (defn is-image [filename]
@@ -441,13 +441,13 @@ void main()
 
 (fact "Render to floating-point texture (needs active OpenGL context)"
       (offscreen-render 32 32
-        (let [tex (texture-render 8 8 (clear (matrix [1.0 2.0 3.0])))]
+        (let [tex (texture-render 8 8 GL30/GL_RGB32F (clear (matrix [1.0 2.0 3.0])))]
           (get-vector (texture->vectors tex 32 32) 0 0) => (matrix [1.0 2.0 3.0])
           (destroy-texture tex))))
 
-(fact "Render to floating-point texture (needs active OpenGL context)"
+(fact "Render to image texture (needs active OpenGL context)"
       (offscreen-render 32 32
-        (let [tex (texture-render 160 120 (clear (matrix [1.0 0.0 0.0])))
+        (let [tex (texture-render 160 120 GL30/GL_RGB32F (clear (matrix [1.0 0.0 0.0])))
               img (texture->image tex 160 120)]
           img => (is-image "test/sfsim25/fixtures/red.png")
           (destroy-texture tex))))

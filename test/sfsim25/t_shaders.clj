@@ -6,7 +6,7 @@
             [sfsim25.render :refer :all]
             [sfsim25.util :refer :all])
   (:import [org.lwjgl BufferUtils]
-           [org.lwjgl.opengl Pbuffer PixelFormat]))
+           [org.lwjgl.opengl Pbuffer PixelFormat GL30]))
 
 (def vertex-passthrough "#version 410 core
 in highp vec3 point;
@@ -35,7 +35,7 @@ void main()
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [vertex-passthrough] :fragment [ray-sphere (apply fragment-probe args)])
             vao      (make-vertex-array-object program indices vertices [:point 3])
-            tex      (texture-render 1 1 (use-program program) (render-quads vao))
+            tex      (texture-render 1 1 GL30/GL_RGB32F (use-program program) (render-quads vao))
             img      (texture->vectors tex 1 1)]
         (deliver result (get-vector img 0 0))
         (destroy-texture tex)
