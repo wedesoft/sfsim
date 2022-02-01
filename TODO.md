@@ -1,5 +1,6 @@
 # TODO
 * shader test for elevation to index
+* shader test for horizon\_angle
 * shader test for orthogonal vector
 * shader test for oriented\_matrix
 * shader test for clip\_angle

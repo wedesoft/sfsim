@@ -15,7 +15,7 @@ void main()
   gl_Position = vec4(point, 1);
 }")
 
-(def fragment-probe
+(def ray-sphere-probe
   (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
 out lowp vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
@@ -28,25 +28,44 @@ void main()
   fragColor = vec3(result.x, result.y, 0);
 }"))
 
-(defn shader-test [& args]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices  [0 1 3 2]
-            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program  (make-program :vertex [vertex-passthrough] :fragment [ray-sphere (apply fragment-probe args)])
-            vao      (make-vertex-array-object program indices vertices [:point 3])
-            tex      (texture-render 1 1 true (use-program program) (render-quads vao))
-            img      (texture->vectors tex 1 1)]
-        (deliver result (get-vector img 0 0))
-        (destroy-texture tex)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+(defn shader-test [shader probe]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices  [0 1 3 2]
+                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                program  (make-program :vertex [vertex-passthrough] :fragment [shader (apply probe args)])
+                vao      (make-vertex-array-object program indices vertices [:point 3])
+                tex      (texture-render 1 1 true (use-program program) (render-quads vao))
+                img      (texture->vectors tex 1 1)]
+            (deliver result (get-vector img 0 0))
+            (destroy-texture tex)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def ray-sphere-test (shader-test ray-sphere ray-sphere-probe))
 
 (facts "Shader for intersection of ray with sphere"
-       (shader-test 0 0 0 2 2 -1 0 0 1) => (matrix [0.0 0.0 0.0])
-       (shader-test 0 0 0 0 0 -2 0 0 1) => (matrix [1.0 2.0 0.0])
-       (shader-test 2 2 0 2 2 -2 0 0 1) => (matrix [1.0 2.0 0.0])
-       (shader-test 0 0 0 0 0 -2 0 0 2) => (matrix [0.5 1.0 0.0])
-       (shader-test 0 0 0 0 0  0 0 0 1) => (matrix [0.0 1.0 0.0])
-       (shader-test 0 0 0 0 0  2 0 0 1) => (matrix [0.0 0.0 0.0]))
+       (ray-sphere-test 0 0 0 2 2 -1 0 0 1) => (matrix [0.0 0.0 0.0])
+       (ray-sphere-test 0 0 0 0 0 -2 0 0 1) => (matrix [1.0 2.0 0.0])
+       (ray-sphere-test 2 2 0 2 2 -2 0 0 1) => (matrix [1.0 2.0 0.0])
+       (ray-sphere-test 0 0 0 0 0 -2 0 0 2) => (matrix [0.5 1.0 0.0])
+       (ray-sphere-test 0 0 0 0 0  0 0 0 1) => (matrix [0.0 1.0 0.0])
+       (ray-sphere-test 0 0 0 0 0  2 0 0 1) => (matrix [0.0 0.0 0.0]))
+
+(def elevation-to-index-probe
+  (template/fn [size elevation horizon-angle] "#version 410 core
+out lowp vec3 fragColor;
+float elevation_to_index(int size, float elevation, float horizon_angle);
+void main()
+{
+  float result = elevation_to_index(<%= size %>, <%= elevation %>, <%= horizon-angle %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def elevation-to-index-test (shader-test elevation-to-index elevation-to-index-probe))
+
+(facts "Shader for converting elevation to index"
+       (mget (elevation-to-index-test 17 0.0 0.0) 0) => (roughly (/ 0.5 17))
+       (mget (elevation-to-index-test 17 (* 0.5 3.141592) 0.0) 0) => (roughly (/ 8.5 17)))
