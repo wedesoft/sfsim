@@ -1,6 +1,11 @@
 # TODO
-* clear a texture and read it back
-* test ray\_sphere intersection shader
+* shader test for elevation to index
+* shader test for orthogonal vector
+* shader test for oriented\_matrix
+* shader test for clip\_angle
+* shader test for 4d lookup
+* shader test for transmittance/surface\_radiance forward transformation
+* shader test for ray-scatter forward transformation
 * sun-direction -> light?
 * combine atmospheric shader with planetary surface rendering
 * rendering of sunlight and moonlight
