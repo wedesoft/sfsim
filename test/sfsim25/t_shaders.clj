@@ -55,17 +55,24 @@ void main()
        (ray-sphere-test 0 0 0 0 0  2 0 0 1) => (matrix [0.0 0.0 0.0]))
 
 (def elevation-to-index-probe
-  (template/fn [size elevation horizon-angle] "#version 410 core
+  (template/fn [size elevation horizon-angle power] "#version 410 core
 out lowp vec3 fragColor;
-float elevation_to_index(int size, float elevation, float horizon_angle);
+float elevation_to_index(int size, float elevation, float horizon_angle, float power);
 void main()
 {
-  float result = elevation_to_index(<%= size %>, <%= elevation %>, <%= horizon-angle %>);
+  float result = elevation_to_index(<%= size %>, <%= elevation %>, <%= horizon-angle %>, <%= power %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
 (def elevation-to-index-test (shader-test elevation-to-index elevation-to-index-probe))
 
 (facts "Shader for converting elevation to index"
-       (mget (elevation-to-index-test 17 0.0 0.0) 0) => (roughly (/ 0.5 17))
-       (mget (elevation-to-index-test 17 (* 0.5 3.141592) 0.0) 0) => (roughly (/ 8.5 17)))
+       (mget (elevation-to-index-test 17 0.0 0.0 1.0) 0) => (roughly (/ 0.5 17))
+       (mget (elevation-to-index-test 17 (* 0.5 3.14159) 0.0 1.0) 0) => (roughly (/ 8.5 17))
+       (mget (elevation-to-index-test 17 (* 0.5 3.14160) 0.0 1.0) 0) => (roughly (/ 9.5 17))
+       (mget (elevation-to-index-test 17 3.14159 0.0 1.0) 0) => (roughly (/ 16.5 17))
+       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 1.0) 0) => (roughly (/ 6.5 17))
+       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 2.0) 0) => (roughly (/ 4.5 17))
+       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 1.0) 0) => (roughly (/ 11.25 17))
+       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 2.0) 0) => (roughly (/ 13.0 17))
+       )
