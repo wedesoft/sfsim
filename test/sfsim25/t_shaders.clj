@@ -2,6 +2,7 @@
   (:require [midje.sweet :refer :all]
             [comb.template :as template]
             [clojure.core.matrix :refer :all]
+            [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.shaders :refer :all]
             [sfsim25.render :refer :all]
             [sfsim25.util :refer :all])
@@ -94,3 +95,22 @@ void main()
        (mget (horizon-angle-test 6378000 0 0) 0)       => (roughly 0.0)
        (mget (horizon-angle-test (* 2 6378000) 0 0) 0) => (roughly (/ Math/PI 3))
        (mget (horizon-angle-test 6377999 0 0) 0)       => (roughly 0.0))
+
+(def orthogonal-vector-probe
+  (template/fn [x y z] "#version 410 core
+out lowp vec3 fragColor;
+vec3 orthogonal_vector(vec3 n);
+void main()
+{
+  fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(def orthogonal-vector-test (shader-test orthogonal-vector orthogonal-vector-probe))
+
+(facts "Create normal vector orthogonal to the specified one"
+  (dot (orthogonal-vector-test 1 0 0) (matrix [1 0 0])) => 0.0
+  (norm (orthogonal-vector-test 1 0 0)) => 1.0
+  (dot (orthogonal-vector-test 0 1 0) (matrix [0 1 0])) => 0.0
+  (norm (orthogonal-vector-test 0 1 0)) => 1.0
+  (dot (orthogonal-vector-test 0 0 1) (matrix [0 0 1])) => 0.0
+  (norm (orthogonal-vector-test 0 0 1)) => 1.0)
