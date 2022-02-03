@@ -8,3 +8,7 @@
 (def elevation-to-index
   "Shader function to convert elevation angle to an index for texture lookup"
   (slurp "resources/shaders/elevation_to_index.glsl"))
+
+(def horizon-angle
+  "Shader function to determine a sphere's horizon angle below horizontal plane depending on height"
+  (slurp "resources/shaders/horizon_angle.glsl"))

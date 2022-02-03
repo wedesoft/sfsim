@@ -67,13 +67,30 @@ void main()
 (def elevation-to-index-test (shader-test elevation-to-index elevation-to-index-probe))
 
 (facts "Shader for converting elevation to index"
-       (mget (elevation-to-index-test 17 0.0 0.0 1.0) 0) => (roughly (/ 0.5 17))
-       (mget (elevation-to-index-test 17 (* 0.5 3.14159) 0.0 1.0) 0) => (roughly (/ 8.5 17))
-       (mget (elevation-to-index-test 17 (* 0.5 3.14160) 0.0 1.0) 0) => (roughly (/ 9.5 17))
-       (mget (elevation-to-index-test 17 3.14159 0.0 1.0) 0) => (roughly (/ 16.5 17))
+       (mget (elevation-to-index-test 17 0.0 0.0 1.0) 0)               => (roughly (/ 0.5 17))
+       (mget (elevation-to-index-test 17 (* 0.5 3.14159) 0.0 1.0) 0)   => (roughly (/ 8.5 17))
+       (mget (elevation-to-index-test 17 (* 0.5 3.14160) 0.0 1.0) 0)   => (roughly (/ 9.5 17))
+       (mget (elevation-to-index-test 17 3.14159 0.0 1.0) 0)           => (roughly (/ 16.5 17))
        (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 1.0) 0) => (roughly (/ 6.5 17))
        (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 2.0) 0) => (roughly (/ 4.5 17))
        (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 1.0) 0) => (roughly (/ 11.25 17))
        (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 2.0) 0) => (roughly (/ 13.0 17))
-       (mget (elevation-to-index-test 17 (* 0.5 3.34159) 0.1 1.0) 0) => (roughly (/ 8.5 17))
-       (mget (elevation-to-index-test 17 (* 0.5 3.34160) 0.1 1.0) 0) => (roughly (/ 9.5 17)))
+       (mget (elevation-to-index-test 17 (* 0.5 3.34159) 0.1 1.0) 0)   => (roughly (/ 8.5 17))
+       (mget (elevation-to-index-test 17 (* 0.5 3.34160) 0.1 1.0) 0)   => (roughly (/ 9.5 17)))
+
+(def horizon-angle-probe
+  (template/fn [x y z] "#version 410 core
+out lowp vec3 fragColor;
+float horizon_angle(vec3 point, float radius);
+void main()
+{
+  float result = horizon_angle(vec3(<%= x %>, <%= y %>, <%= z %>), 6378000);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def horizon-angle-test (shader-test horizon-angle horizon-angle-probe))
+
+(facts "Angle of sphere's horizon angle below horizontal plane depending on height"
+       (mget (horizon-angle-test 6378000 0 0) 0)       => (roughly 0.0)
+       (mget (horizon-angle-test (* 2 6378000) 0 0) 0) => (roughly (/ Math/PI 3))
+       (mget (horizon-angle-test 6377999 0 0) 0)       => (roughly 0.0))
