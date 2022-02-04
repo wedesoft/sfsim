@@ -132,3 +132,20 @@ void main()
        (let [m (transpose (matrix [(oriented-matrix-test 1 0 0) (oriented-matrix-test 0 1 0) (oriented-matrix-test 0 0 1)])) ]
          (slice m 1 0) => (roughly-matrix (matrix [0.36 0.48 0.8]))
          (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3))))
+
+(def clip-angle-probe
+  (template/fn [angle] "#version 410 core
+out lowp vec3 fragColor;
+float clip_angle(float angle);
+void main()
+{
+  fragColor = vec3(clip_angle(<%= angle %>), 0, 0);
+}"))
+
+(def clip-angle-test (shader-test clip-angle-probe clip-angle))
+
+(facts "Convert angle to be between -pi and +pi"
+       (mget (clip-angle-test 0) 0) => (roughly 0 1e-6)
+       (mget (clip-angle-test 1) 0) => (roughly 1 1e-6)
+       (mget (clip-angle-test (- 0 Math/PI 0.01)) 0) => (roughly (- Math/PI 0.01) 1e-6)
+       (mget (clip-angle-test (+ Math/PI 0.01)) 0) => (roughly (- 0.01 Math/PI) 1e-6))

@@ -20,3 +20,7 @@
 (def oriented-matrix
   "Create normal vector orthogonal to the specified one"
   (slurp "resources/shaders/oriented_matrix.glsl"))
+
+(def clip-angle
+  "Convert angle to be between -pi and +pi"
+  (slurp "resources/shaders/clip_angle.glsl"))

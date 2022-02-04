@@ -1,5 +1,4 @@
 # TODO
-* shader test for clip\_angle
 * shader test for 4d lookup
 * shader test for transmittance/surface\_radiance forward transformation
 * shader test for ray-scatter forward transformation
