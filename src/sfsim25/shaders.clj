@@ -16,3 +16,7 @@
 (def orthogonal-vector
   "Create normal vector orthogonal to the specified one"
   (slurp "resources/shaders/orthogonal_vector.glsl"))
+
+(def oriented-matrix
+  "Create normal vector orthogonal to the specified one"
+  (slurp "resources/shaders/oriented_matrix.glsl"))

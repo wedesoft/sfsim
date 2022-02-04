@@ -29,13 +29,13 @@ void main()
   fragColor = vec3(result.x, result.y, 0);
 }"))
 
-(defn shader-test [shader probe]
+(defn shader-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
         (offscreen-render 1 1
           (let [indices  [0 1 3 2]
                 vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                program  (make-program :vertex [vertex-passthrough] :fragment [shader (apply probe args)])
+                program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao      (make-vertex-array-object program indices vertices [:point 3])
                 tex      (texture-render 1 1 true (use-program program) (render-quads vao))
                 img      (texture->vectors tex 1 1)]
@@ -45,7 +45,7 @@ void main()
             (destroy-program program)))
         @result)))
 
-(def ray-sphere-test (shader-test ray-sphere ray-sphere-probe))
+(def ray-sphere-test (shader-test ray-sphere-probe ray-sphere))
 
 (facts "Shader for intersection of ray with sphere"
        (ray-sphere-test 0 0 0 2 2 -1 0 0 1) => (matrix [0.0 0.0 0.0])
@@ -65,7 +65,7 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def elevation-to-index-test (shader-test elevation-to-index elevation-to-index-probe))
+(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
 
 (facts "Shader for converting elevation to index"
        (mget (elevation-to-index-test 17 0.0 0.0 1.0) 0)               => (roughly (/ 0.5 17))
@@ -89,7 +89,7 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def horizon-angle-test (shader-test horizon-angle horizon-angle-probe))
+(def horizon-angle-test (shader-test horizon-angle-probe horizon-angle))
 
 (facts "Angle of sphere's horizon angle below horizontal plane depending on height"
        (mget (horizon-angle-test 6378000 0 0) 0)       => (roughly 0.0)
@@ -105,7 +105,7 @@ void main()
   fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
-(def orthogonal-vector-test (shader-test orthogonal-vector orthogonal-vector-probe))
+(def orthogonal-vector-test (shader-test orthogonal-vector-probe orthogonal-vector))
 
 (facts "Create normal vector orthogonal to the specified one"
   (dot (orthogonal-vector-test 1 0 0) (matrix [1 0 0])) => 0.0
@@ -114,3 +114,21 @@ void main()
   (norm (orthogonal-vector-test 0 1 0)) => 1.0
   (dot (orthogonal-vector-test 0 0 1) (matrix [0 0 1])) => 0.0
   (norm (orthogonal-vector-test 0 0 1)) => 1.0)
+
+(defn roughly-matrix [m] (fn [x] (< (norm (sub m x)) 1e-6)))
+
+(def oriented-matrix-probe
+  (template/fn [x y z] "#version 410 core
+out lowp vec3 fragColor;
+mat3 oriented_matrix(vec3 n);
+void main()
+{
+  fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
+}"))
+
+(def oriented-matrix-test (shader-test oriented-matrix-probe orthogonal-vector oriented-matrix))
+
+(facts "Create oriented matrix given a normal vector"
+       (let [m (transpose (matrix [(oriented-matrix-test 1 0 0) (oriented-matrix-test 0 1 0) (oriented-matrix-test 0 0 1)])) ]
+         (slice m 1 0) => (roughly-matrix (matrix [0.36 0.48 0.8]))
+         (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3))))

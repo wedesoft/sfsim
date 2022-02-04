@@ -1,5 +1,4 @@
 # TODO
-* shader test for oriented\_matrix
 * shader test for clip\_angle
 * shader test for 4d lookup
 * shader test for transmittance/surface\_radiance forward transformation
@@ -16,6 +15,7 @@
 * text rendering using bitmap fonts
 * use data-centric APIs
 * use glTexSubImage2D?
+* use ZGC (short pause garbage collector for Java)
 * redesign floating point math of height maps
 * improve performance of quaternions (see clojure.core.matrix implementation)
 * Get scale-image to work on large images
