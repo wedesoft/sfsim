@@ -7,4 +7,3 @@ mat3 oriented_matrix(vec3 n) {
   vec3 o2 = cross(n, o1);
   return mat3(n, o1, o2);
 }
-
