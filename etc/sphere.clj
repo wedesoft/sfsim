@@ -22,8 +22,7 @@ void main()
   orig = (itransform * vec4(0, 0, 0, 1)).xyz;
 }")
 
-(def fragment-source-atmosphere
-  (template/eval "#version 130
+(def fragment-source-atmosphere "#version 130
 in highp vec3 pos;
 in highp vec3 orig;
 uniform vec3 light;
@@ -32,7 +31,7 @@ uniform sampler2D surface_radiance;
 uniform sampler2D transmittance;
 uniform sampler2D ray_scatter;
 
-<%= shaders/ray-sphere %>
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 
 float M_PI = 3.14159265358;
 
@@ -162,7 +161,7 @@ void main()
     };
   };
 }
-"))
+")
 
 (Display/setTitle "scratch")
 (def desktop (DisplayMode. 640 480))
@@ -171,7 +170,7 @@ void main()
 
 (def program-atmosphere
   (make-program :vertex [vertex-source-atmosphere]
-                :fragment [fragment-source-atmosphere]))
+                :fragment [shaders/ray-sphere fragment-source-atmosphere]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
