@@ -109,13 +109,11 @@ void main()
     float v0 = sun_elevation_index / 17 + height_index_floor / 17;
     float v1 = sun_elevation_index / 17 + min(height_index_floor + 1, 16) / 17;
 
-    float uf = fract(elevation_index);
-    float vf = fract(height_index);
-
-    vec3 atm_contrib = (texture(ray_scatter, vec2(u0, v0)) * (1 - uf) * (1 - vf) +
-                        texture(ray_scatter, vec2(u1, v0)) *       uf * (1 - vf) +
-                        texture(ray_scatter, vec2(u0, v1)) * (1 - uf) *       vf +
-                        texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).rgb;
+    vec2 frac = vec2(fract(elevation_index), fract(height_index));
+    vec3 atm_contrib = (texture(ray_scatter, vec2(u0, v0)) * (1 - frac.x) * (1 - frac.y) +
+                        texture(ray_scatter, vec2(u1, v0)) *       frac.x * (1 - frac.y) +
+                        texture(ray_scatter, vec2(u0, v1)) * (1 - frac.x) *       frac.y +
+                        texture(ray_scatter, vec2(u1, v1)) *       frac.x *       frac.y).rgb;
     fragColor = (surf_contrib + atm_contrib) * 10.0;
   } else {
     if (air.y > 0) {
@@ -147,14 +145,13 @@ void main()
       float v0 = sun_elevation_index / 17 + height_index_floor / 17;
       float v1 = sun_elevation_index / 17 + min(height_index_floor + 1, 16) / 17;
 
-      float uf = fract(elevation_index);
-      float vf = fract(height_index);
+      vec2 frac = vec2(fract(elevation_index), fract(height_index));
       vec2 uv = vec2((height_index + 0.5) / 17, (elevation_index + 0.5) / 17);
       vec3 l = max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
-      fragColor = ((texture(ray_scatter, vec2(u0, v0)) * (1 - uf) * (1 - vf) +
-                    texture(ray_scatter, vec2(u1, v0)) *       uf * (1 - vf) +
-                    texture(ray_scatter, vec2(u0, v1)) * (1 - uf) *       vf +
-                    texture(ray_scatter, vec2(u1, v1)) *       uf *       vf).rgb + l) * 10.0;
+      fragColor = ((texture(ray_scatter, vec2(u0, v0)) * (1 - frac.x) * (1 - frac.y) +
+                    texture(ray_scatter, vec2(u1, v0)) *       frac.x * (1 - frac.y) +
+                    texture(ray_scatter, vec2(u0, v1)) * (1 - frac.x) *       frac.y +
+                    texture(ray_scatter, vec2(u1, v1)) *       frac.x *       frac.y).rgb + l) * 10.0;
     } else {
       float l = max(0, pow(dot(direction, light), 5000));
       fragColor = vec3(l, l, l) * 10.0;
