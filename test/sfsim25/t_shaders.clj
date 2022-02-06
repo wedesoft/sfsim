@@ -149,3 +149,26 @@ void main()
        (mget (clip-angle-test 1) 0) => (roughly 1 1e-6)
        (mget (clip-angle-test (- 0 Math/PI 0.01)) 0) => (roughly (- Math/PI 0.01) 1e-6)
        (mget (clip-angle-test (+ Math/PI 0.01)) 0) => (roughly (- 0.01 Math/PI) 1e-6))
+
+(def convert-4d-index-probe
+  (template/fn [x y z w a b] "#version 410 core
+out lowp vec3 fragColor;
+vec4 convert_4d_index(vec4 idx, int size);
+void main()
+{
+  vec4 result = convert_4d_index(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 17);
+  fragColor.rg = <%= a %> * result.st + <%= b %> * result.pq;
+  fragColor.b = 0;
+}"))
+
+(def convert-4d-index-test (shader-test convert-4d-index-probe convert-4d-index))
+
+(facts "Convert 4D index to 2D indices for part-manual interpolation"
+       (convert-4d-index-test 0 0  0  0 1 0) => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
+       (convert-4d-index-test 1 0  0  0 1 0) => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
+       (convert-4d-index-test 0 0  1  0 1 0) => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
+       (convert-4d-index-test 0 0 16  0 1 0) => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17))
+       (convert-4d-index-test 0 0  0  0 0 1) => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
+       (convert-4d-index-test 0 1  0  0 0 1) => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
+       (convert-4d-index-test 0 0  0  1 0 1) => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
+       (convert-4d-index-test 0 0  0 16 0 1) => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17)))
