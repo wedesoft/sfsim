@@ -1,5 +1,5 @@
 # TODO
-* simplify tested version of elevation\_to\_index and use in prototype
+* prototype: use clip\_angle, oriented\_matrix
 * shader test for 4d->2d index conversion
 * shader test for transmittance/surface\_radiance forward transformation
 * shader test for ray-scatter forward transformation
