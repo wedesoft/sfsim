@@ -32,35 +32,12 @@ uniform sampler2D transmittance;
 uniform sampler2D ray_scatter;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-
 vec4 convert_4d_index(vec4 idx, int size);
+float elevation_to_index(int size, float elevation, float horizon_angle, float power);
+float clip_angle(float angle);
+mat3 oriented_matrix(vec3 n);
 
 float M_PI = 3.14159265358;
-
-float elevation_to_index(int size, float elevation, float horizon_angle, float power);
-
-vec3 orthogonal(vec3 n) {
-  vec3 v;
-  if (abs(n.x) <= min(abs(n.y), abs(n.z))) v = vec3(1, 0, 0);
-  if (abs(n.y) <= min(abs(n.x), abs(n.z))) v = vec3(0, 1, 0);
-  if (abs(n.z) <= min(abs(n.x), abs(n.y))) v = vec3(0, 0, 1);
-  return normalize(cross(n, v));
-}
-
-mat3 oriented_matrix(vec3 n) {
-  vec3 o1 = orthogonal(n);
-  vec3 o2 = cross(n, o1);
-  return mat3(n, o1, o2);
-}
-
-float clip_angle(float angle) {
-  if (angle < -M_PI)
-    return angle + 2 * M_PI;
-  else if (angle >= M_PI)
-    return angle - 2 * M_PI;
-  else
-    return angle;
-}
 
 void main()
 {
@@ -154,7 +131,8 @@ void main()
 
 (def program-atmosphere
   (make-program :vertex [vertex-source-atmosphere]
-                :fragment [shaders/ray-sphere shaders/elevation-to-index shaders/convert-4d-index fragment-source-atmosphere]))
+                :fragment [shaders/ray-sphere shaders/elevation-to-index shaders/convert-4d-index shaders/clip-angle
+                           shaders/oriented-matrix shaders/orthogonal-vector fragment-source-atmosphere]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
