@@ -1,8 +1,6 @@
 # TODO
-* shader test for 4d->2d index conversion
 * shader test for transmittance/surface\_radiance forward transformation
 * shader test for ray-scatter forward transformation
-* sun-direction -> light?
 * combine atmospheric shader with planetary surface rendering
 * rendering of sunlight and moonlight
 * use interface blocks in shaders

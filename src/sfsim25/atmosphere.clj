@@ -70,32 +70,32 @@
 
 (defn surface-radiance-base
   "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
-  [planet scatter steps sun-light x sun-direction]
+  [planet scatter steps intensity x light-direction]
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-    (mul (max 0 (dot normal sun-direction))
-         (transmittance planet scatter atmosphere-intersection steps x sun-direction) sun-light)))
+    (mul (max 0 (dot normal light-direction))
+         (transmittance planet scatter atmosphere-intersection steps x light-direction) intensity)))
 
 (defn point-scatter-base
   "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
-  [planet scatter steps sun-light x view-direction sun-direction]
+  [planet scatter steps intensity x view-direction light-direction]
   (let [height-of-x     (height planet x)
-        scattering-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction sun-direction)))
-        sun-ray         #:sfsim25.ray{:origin x :direction sun-direction}]
+        scattering-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction light-direction)))
+        sun-ray         #:sfsim25.ray{:origin x :direction light-direction}]
     (if (surface-intersection planet sun-ray)
       (matrix [0 0 0])
       (let [overall-scatter (apply add (map scattering-at-x scatter))]
-        (mul sun-light overall-scatter (transmittance planet scatter atmosphere-intersection steps x sun-direction))))))
+        (mul intensity overall-scatter (transmittance planet scatter atmosphere-intersection steps x light-direction))))))
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
-  [planet scatter intersection steps point-scatter x view-direction sun-direction]
+  [planet scatter intersection steps point-scatter x view-direction light-direction]
   (let [point (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
         ray   #:sfsim25.ray{:origin x :direction (sub point x)}]
-    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction sun-direction)))))
+    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction light-direction)))))
 
 (defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
-  [planet scatter ray-scatter surface-radiance sun-light sphere-steps ray-steps x view-direction sun-direction]
+  [planet scatter ray-scatter surface-radiance intensity sphere-steps ray-steps x view-direction light-direction]
   (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))
         height-of-x   (height planet x)
         scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
@@ -106,18 +106,18 @@
                                point           (ray-extremity planet ray)
                                overall-scatter (apply add (map (partial scatter-at-x omega) scatter))]
                            (mul overall-scatter
-                                (add (ray-scatter x omega sun-direction)
+                                (add (ray-scatter x omega light-direction)
                                      (if (surface-point? planet point)
                                        (let [surface-brightness (mul (div (::brightness planet) Math/PI)
-                                                                     (surface-radiance point sun-direction))]
+                                                                     (surface-radiance point light-direction))]
                                          (mul (transmittance planet scatter ray-steps x point) surface-brightness))
                                        (matrix [0 0 0])))))))))
 
 (defn surface-radiance
   "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
-  [planet ray-scatter steps x sun-direction]
+  [planet ray-scatter steps x light-direction]
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-    (integral-half-sphere steps normal #(mul (ray-scatter x % sun-direction) (dot % normal)))))
+    (integral-half-sphere steps normal #(mul (ray-scatter x % light-direction) (dot % normal)))))
 
 (defn horizon-angle
   "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
@@ -188,17 +188,17 @@
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
   [{:sfsim25.sphere/keys [centre radius] :as planet} size power]
-  (fn [^Vector point ^Vector direction ^Vector sun-direction]
-      (let [radius-vector         (sub point centre)
-            height                (- (norm radius-vector) radius)
-            plane                 (transpose (oriented-matrix (normalise radius-vector)))
-            direction-rotated     (mmul plane direction)
-            sun-direction-rotated (mmul plane sun-direction)
-            elevation-index       ((elevation-to-index planet size power) point direction)
-            sun-elevation-index   ((elevation-to-index planet size power) point sun-direction)
-            direction-azimuth     (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
-            sun-direction-azimuth (Math/atan2 (mget sun-direction-rotated 2) (mget sun-direction-rotated 1))
-            sun-heading           (Math/abs (clip-angle (- sun-direction-azimuth direction-azimuth)))]
+  (fn [^Vector point ^Vector direction ^Vector light-direction]
+      (let [radius-vector           (sub point centre)
+            height                  (- (norm radius-vector) radius)
+            plane                   (transpose (oriented-matrix (normalise radius-vector)))
+            direction-rotated       (mmul plane direction)
+            light-direction-rotated (mmul plane light-direction)
+            elevation-index         ((elevation-to-index planet size power) point direction)
+            sun-elevation-index     ((elevation-to-index planet size power) point light-direction)
+            direction-azimuth       (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
+            light-direction-azimuth (Math/atan2 (mget light-direction-rotated 2) (mget light-direction-rotated 1))
+            sun-heading             (Math/abs (clip-angle (- light-direction-azimuth direction-azimuth)))]
         [height elevation-index sun-elevation-index sun-heading])))
 
 (defn- ray-scatter-backward
@@ -207,13 +207,13 @@
   (fn [^double height ^double elevation-index ^double sun-elevation-index ^double sun-heading]
       (let [point             (matrix [(+ radius height) 0 0])
             direction         ((index-to-elevation planet size power) height elevation-index)
-            sun-direction     ((index-to-elevation planet size power) height sun-elevation-index)
-            cos-sun-elevation (mget sun-direction 0)
-            sin-sun-elevation (mget sun-direction 1)
+            light-elevation   ((index-to-elevation planet size power) height sun-elevation-index)
+            cos-sun-elevation (mget light-elevation 0)
+            sin-sun-elevation (mget light-elevation 1)
             cos-sun-heading   (Math/cos sun-heading)
             sin-sun-heading   (Math/sin sun-heading)
-            sun-direction     (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
-        [point direction sun-direction])))
+            light-direction   (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
+        [point direction light-direction])))
 
 (defn ray-scatter-space
   "Create transformations for interpolating ray scatter function"

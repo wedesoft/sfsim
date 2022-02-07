@@ -103,7 +103,7 @@
         height    100000.0
         earth     #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
         moved     #:sfsim25.sphere{:centre (matrix [0 (* 2 radius) 0]) :radius radius :sfsim25.atmosphere/height height}
-        sun-light (matrix [1.0 1.0 1.0])]
+        intensity (matrix [1.0 1.0 1.0])]
     (with-redefs [atmosphere/transmittance
                   (fn [planet scatter intersection steps origin direction]
                       (facts "Transmittance function gets called with correct arguments"
@@ -112,27 +112,27 @@
                              steps   => 10
                              origin  => (matrix [0 radius 0]))
                       (matrix [0.5 0.5 0.5]))]
-      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
-      (surface-radiance-base moved [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (mul 0.5 sun-light)
-      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 1 0]))             => (mul 0.5 sun-light)
-      (surface-radiance-base earth [] 10 sun-light (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0]))))
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
+      (surface-radiance-base moved [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]))            => (mul 0.5 intensity)
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]))             => (mul 0.5 intensity)
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0]))))
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (fact "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
-  (let [radius         6378000.0
-        height         100000.0
-        earth          #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-        mie            #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
-        sun-light      (matrix [1.0 1.0 1.0])
-        sun-direction  (matrix [1.0 0.0 0.0])
-        sun-direction2 (matrix [-1.0 0.0 0.0])]
+  (let [radius           6378000.0
+        height           100000.0
+        earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+        mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
+        intensity        (matrix [1.0 1.0 1.0])
+        light-direction  (matrix [1.0 0.0 0.0])
+        light-direction2 (matrix [-1.0 0.0 0.0])]
     (with-redefs [atmosphere/surface-intersection
                   (fn [planet ray]
                       (facts "surface-intersection gets called with correct arguments"
                              planet => earth
                              (:sfsim25.ray/origin ray) => (matrix [0 (+ radius 1000) 0])
-                             (:sfsim25.ray/direction ray) => sun-direction)
+                             (:sfsim25.ray/direction ray) => light-direction)
                       nil)
                   atmosphere/scattering
                   (fn ^Vector [mie ^double height]
@@ -153,17 +153,17 @@
                              intersection => (exactly atmosphere-intersection)
                              steps => 10
                              origin => (matrix [0 (+ radius 1000) 0])
-                             direction => sun-direction)
+                             direction => light-direction)
                       (matrix [0.5 0.5 0.5]))]
-      (point-scatter-base earth [mie] 10 sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction)
-      => (roughly-matrix (mul sun-light 2e-5 0.1 0.5) 1e-12))
+      (point-scatter-base earth [mie] 10 intensity (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) light-direction)
+      => (roughly-matrix (mul intensity 2e-5 0.1 0.5) 1e-12))
     (with-redefs [atmosphere/surface-intersection
                   (fn [planet ray]
                       (facts planet => earth
                              (:sfsim25.ray/origin ray) => (matrix [0 (+ radius 1000) 0])
-                             (:sfsim25.ray/direction ray) => sun-direction2)
+                             (:sfsim25.ray/direction ray) => light-direction2)
                       (matrix [0 radius 0]))]
-      (point-scatter-base earth [mie] 10 sun-light (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) sun-direction2)
+      (point-scatter-base earth [mie] 10 intensity (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) light-direction2)
       => (matrix [0 0 0]))))
 
 (facts "In-scattered light from a direction (S) depending on point scatter function (J)"
@@ -171,7 +171,7 @@
         height           100000.0
         earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
         mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
-        sun-direction    (matrix [0.36 0.48 0.8])
+        light-direction  (matrix [0.36 0.48 0.8])
         intersection     (fn [planet ray]
                              (facts "Intersection function is called with correct values"
                                     planet                       => earth
@@ -179,10 +179,10 @@
                                     (:sfsim25.ray/direction ray) => (matrix [0 1 0]))
                              (matrix [0 (+ radius height) 0])
                              )
-        constant-scatter (fn [y view-direction sun-direction]
+        constant-scatter (fn [y view-direction light-direction]
                              (facts "Check point-scatter function gets called with correct arguments"
                                     view-direction => (matrix [0 1 0])
-                                    sun-direction => (matrix [0.36 0.48 0.8]))
+                                    light-direction => (matrix [0.36 0.48 0.8]))
                              (matrix [2e-5 2e-5 2e-5]))]
     (with-redefs [atmosphere/transmittance
                   (fn [planet scatter steps x x0]
@@ -191,7 +191,7 @@
                              steps => 10
                              x => (matrix [0 radius 0]))
                       0.5)]
-      (ray-scatter earth [mie] intersection 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) sun-direction)
+      (ray-scatter earth [mie] intersection 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) light-direction)
       => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6))))
 
 (facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"
@@ -199,19 +199,19 @@
         height           100000.0
         x1               (matrix [0 radius 0])
         x2               (matrix [0 (+ radius 1200) 0])
-        sun-direction    (matrix [0.36 0.48 0.8])
-        sun-light        (matrix [1 1 1])
+        light-direction  (matrix [0.36 0.48 0.8])
+        intensity        (matrix [1 1 1])
         earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
                                           :sfsim25.atmosphere/brightness (mul Math/PI (matrix [0.3 0.3 0.3]))}
         mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
-        ray-scatter1     (fn [x view-direction sun-direction]
-                             (facts x => x1 view-direction => (matrix [0 1 0]) sun-direction => (matrix [0.36 0.48 0.8]))
+        ray-scatter1     (fn [x view-direction light-direction]
+                             (facts x => x1 view-direction => (matrix [0 1 0]) light-direction => (matrix [0.36 0.48 0.8]))
                              (matrix [1 2 3]))
-        ray-scatter2     (fn [x view-direction sun-direction]
-                             (facts x => x2 view-direction => (matrix [0 -1 0]) sun-direction => (matrix [0.36 0.48 0.8]))
+        ray-scatter2     (fn [x view-direction light-direction]
+                             (facts x => x2 view-direction => (matrix [0 -1 0]) light-direction => (matrix [0.36 0.48 0.8]))
                              (matrix [0 0 0]))
-        surface-radiance (fn [x sun-direction]
-                             (facts x => x1 sun-direction => (matrix [0.36 0.48 0.8]))
+        surface-radiance (fn [x light-direction]
+                             (facts x => x1 light-direction => (matrix [0.36 0.48 0.8]))
                              (matrix [3 4 5]))]
     (with-redefs [atmosphere/phase (fn [mie mu] 0.5)]
       (with-redefs [atmosphere/ray-extremity
@@ -222,7 +222,7 @@
                                normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
                                (fun (matrix [0 1 0])) => (roughly-matrix (mul 0.5 (matrix [1 2 3]) (matrix [2e-5 2e-5 2e-5])) 1e-10))
                       (matrix [2e-5 3e-5 5e-5]))]
-        (point-scatter earth [mie] ray-scatter1 surface-radiance sun-light 64 10 x1 (matrix [0 1 0]) sun-direction)
+        (point-scatter earth [mie] ray-scatter1 surface-radiance intensity 64 10 x1 (matrix [0 1 0]) light-direction)
         => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10))
       (with-redefs (atmosphere/ray-extremity
                     (fn [planet ray]
@@ -243,28 +243,28 @@
                                (fun (matrix [0 -1 0])) =>
                                (roughly-matrix (mul 0.5 (/ 2e-5 Math/E) (matrix [0.9 0.8 0.7]) 0.3 (matrix [3 4 5])) 1e-10))
                       (matrix [2e-5 3e-5 5e-5])))
-        (point-scatter earth [mie] ray-scatter2 surface-radiance sun-light 64 10 x2 (matrix [0 1 0]) sun-direction)
+        (point-scatter earth [mie] ray-scatter2 surface-radiance intensity 64 10 x2 (matrix [0 1 0]) light-direction)
         => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10)))))
 
 (facts "Scattered light emitted from surface of planet depending on ray scatter (E(S))"
-  (let [radius        6378000.0
-        height        100000.0
-        x             (matrix [0 radius 0])
-        sun-direction (matrix [0.6 0.8 0])
-        earth         #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
-                                       :sfsim25.atmosphere/brightness (mul Math/PI (matrix [0.3 0.3 0.3]))}
-        ray-scatter   (fn [x view-direction sun-direction]
-                          (facts x => (matrix [0 radius 0])
-                                 view-direction => (matrix [0.36 0.48 0.8])
-                                 sun-direction => (matrix [0.6 0.8 0]))
-                          (matrix [1 2 3]))]
+  (let [radius          6378000.0
+        height          100000.0
+        x               (matrix [0 radius 0])
+        light-direction (matrix [0.6 0.8 0])
+        earth           #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
+                                         :sfsim25.atmosphere/brightness (mul Math/PI (matrix [0.3 0.3 0.3]))}
+        ray-scatter     (fn [x view-direction light-direction]
+                            (facts x => (matrix [0 radius 0])
+                                   view-direction => (matrix [0.36 0.48 0.8])
+                                   light-direction => (matrix [0.6 0.8 0]))
+                            (matrix [1 2 3]))]
     (with-redefs [sphere/integral-half-sphere
                   (fn [steps normal fun]
                       (facts steps => 64
                              normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
                              (fun (matrix [0.36 0.48 0.8])) => (mul 0.48 (matrix [1 2 3])))
                       (matrix [0.2 0.3 0.5]))]
-      (surface-radiance earth ray-scatter 64 x sun-direction) => (matrix [0.2 0.3 0.5]))))
+      (surface-radiance earth ray-scatter 64 x light-direction) => (matrix [0.2 0.3 0.5]))))
 
 (facts "Get angle of planet's horizon below horizontal plane depending on the height of the observer"
        (let [radius 6378000.0
