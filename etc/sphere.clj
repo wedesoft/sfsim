@@ -36,6 +36,7 @@ vec4 convert_4d_index(vec4 idx, int size);
 float elevation_to_index(int size, float elevation, float horizon_angle, float power);
 float clip_angle(float angle);
 mat3 oriented_matrix(vec3 n);
+float horizon_angle(vec3 point, float radius);
 
 float M_PI = 3.14159265358;
 
@@ -54,16 +55,15 @@ void main()
     vec2 uv = vec2(height, (sun_elevation_index + 0.5) / 17);
     vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb) / (2 * M_PI);
     point = orig + air.x * direction;
-    float distance = max(length(point), 6378000);
-    float horizon_angle = acos(6378000 / distance);
+    float horizon = horizon_angle(point, 6378000);
     normal = normalize(point);
     cos_sun_elevation = dot(normal, light);
     sun_elevation = acos(cos_sun_elevation);
-    sun_elevation_index = elevation_to_index(17, sun_elevation, horizon_angle, 2); // 2nd
+    sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
     float cos_elevation = dot(normal, direction);
     float elevation = acos(cos_elevation);
-    float elevation_index = elevation_to_index(17, elevation, horizon_angle, 2) ; // 3rd
-    height = distance - 6378000;
+    float elevation_index = elevation_to_index(17, elevation, horizon, 2) ; // 3rd
+    height = length(point) - 6378000;
     float height_index = 16 * height / 100000.0; // 4th
     mat3 oriented = oriented_matrix(normal);
     vec3 direction_rotated = oriented * direction;
@@ -86,15 +86,14 @@ void main()
     if (air.y > 0) {
       vec3 point = orig + air.x * direction;
       vec3 normal = normalize(point);
-      float distance = max(length(point), 6378000);
-      float horizon_angle = acos(6378000 / distance);
+      float horizon = horizon_angle(point, 6378000);
       float cos_sun_elevation = dot(normal, light);
       float sun_elevation = acos(cos_sun_elevation);
-      float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon_angle, 2); // 2nd
+      float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
       float cos_elevation = dot(normal, direction);
       float elevation = acos(cos_elevation);
-      float elevation_index = elevation_to_index(17, elevation, horizon_angle, 2) ; // 3rd
-      float height = distance - 6378000;
+      float elevation_index = elevation_to_index(17, elevation, horizon, 2) ; // 3rd
+      float height = length(point) - 6378000;
       float height_index = 16 * height / 100000.0; // 4th
       mat3 oriented = oriented_matrix(normal);
       vec3 direction_rotated = oriented * direction;
@@ -132,7 +131,7 @@ void main()
 (def program-atmosphere
   (make-program :vertex [vertex-source-atmosphere]
                 :fragment [shaders/ray-sphere shaders/elevation-to-index shaders/convert-4d-index shaders/clip-angle
-                           shaders/oriented-matrix shaders/orthogonal-vector fragment-source-atmosphere]))
+                           shaders/oriented-matrix shaders/orthogonal-vector shaders/horizon-angle fragment-source-atmosphere]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
