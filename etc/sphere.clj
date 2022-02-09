@@ -52,7 +52,7 @@ void main()
     float sun_elevation = acos(cos_sun_elevation);
     float sun_elevation_index = elevation_to_index(17, sun_elevation, 0, 2);
     float height = 0.0;
-    vec2 uv = vec2(height, (sun_elevation_index + 0.5) / 17);
+    vec2 uv = vec2((sun_elevation_index + 0.5) / 17, height);
     vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb) / (2 * M_PI);
     point = orig + air.x * direction;
     float horizon = horizon_angle(point, 6378000);
@@ -109,14 +109,14 @@ void main()
       vec4 indices = convert_4d_index(vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index), 17);
 
       vec2 frac = vec2(fract(elevation_index), fract(height_index));
-      vec2 uv = vec2((height_index + 0.5) / 17, (elevation_index + 0.5) / 17);
-      vec3 l = max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
+      vec2 uv = vec2((elevation_index + 0.5) / 17, (height_index + 0.5) / 17);
+      vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
       fragColor = ((texture(ray_scatter, indices.sp) * (1 - frac.s) * (1 - frac.t) +
                     texture(ray_scatter, indices.tp) *       frac.s * (1 - frac.t) +
                     texture(ray_scatter, indices.sq) * (1 - frac.s) *       frac.t +
                     texture(ray_scatter, indices.tq) *       frac.s *       frac.t).rgb + l) * 10.0;
     } else {
-      float l = max(0, pow(dot(direction, light), 5000));
+      float l = 0.1 * max(0, pow(dot(direction, light), 5000));
       fragColor = vec3(l, l, l) * 10.0;
     };
   };
