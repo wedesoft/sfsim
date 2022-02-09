@@ -1,6 +1,7 @@
 # TODO
 * shader test for transmittance/surface\_radiance forward transformation
 * shader test for ray-scatter forward transformation
+* test shader interpolation against Clojure interpolation
 * combine atmospheric shader with planetary surface rendering
 * rendering of sunlight and moonlight
 * use interface blocks in shaders

@@ -28,3 +28,7 @@
 (def convert-4d-index
   "Convert 4D index to 2D indices for part-manual interpolation"
   (slurp "resources/shaders/convert_4d_index.glsl"))
+
+(def transmittance-forward
+  "Convert point and direction to 2D lookup index in transmittance table"
+  (slurp "resources/shaders/transmittance_forward.glsl"))

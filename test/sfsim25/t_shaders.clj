@@ -172,3 +172,19 @@ void main()
        (convert-4d-index-test 0 1  0.123  0.123 0 1) => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
        (convert-4d-index-test 0 0  0.123  1.123 0 1) => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
        (convert-4d-index-test 0 0  0.123 16.123 0 1) => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17)))
+
+(def transmittance-forward-probe
+  (template/fn [x y z dx dy dz] "#version 410 core
+out lowp vec3 fragColor;
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, int size, float power);
+void main()
+{
+  fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
+                                       6378000.0, 17, 2.0);
+  fragColor.b = 0;
+}"))
+
+(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward))
+
+(facts "Convert point and direction to 2D lookup index in transmittance table"
+       (transmittance-forward-test 6378000 0 0 1 0 0) = (roughly-matrix (div (matrix [0.5 0.5 0]) 17)))
