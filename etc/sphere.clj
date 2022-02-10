@@ -37,6 +37,7 @@ float elevation_to_index(int size, float elevation, float horizon_angle, float p
 float clip_angle(float angle);
 mat3 oriented_matrix(vec3 n);
 float horizon_angle(vec3 point, float radius);
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);
 
 float M_PI = 3.14159265358;
 
@@ -49,21 +50,18 @@ void main()
     vec3 point = orig + surface.x * direction;
     vec3 normal = normalize(point);
     float cos_sun_elevation = dot(normal, light);
-    float sun_elevation = acos(cos_sun_elevation);
-    float sun_elevation_index = elevation_to_index(17, sun_elevation, 0, 2);
-    float height = 0.0;
-    vec2 uv = vec2((sun_elevation_index + 0.5) / 17, height);
+    vec2 uv = transmittance_forward(point, light, 6378000, 100000, 17, 2.0);
     vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb) / (2 * M_PI);
     point = orig + air.x * direction;
     float horizon = horizon_angle(point, 6378000);
     normal = normalize(point);
     cos_sun_elevation = dot(normal, light);
-    sun_elevation = acos(cos_sun_elevation);
-    sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
+    float sun_elevation = acos(cos_sun_elevation);
+    float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
     float cos_elevation = dot(normal, direction);
     float elevation = acos(cos_elevation);
     float elevation_index = elevation_to_index(17, elevation, horizon, 2) ; // 3rd
-    height = length(point) - 6378000;
+    float height = length(point) - 6378000;
     float height_index = 16 * height / 100000.0; // 4th
     mat3 oriented = oriented_matrix(normal);
     vec3 direction_rotated = oriented * direction;
@@ -109,7 +107,7 @@ void main()
       vec4 indices = convert_4d_index(vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index), 17);
 
       vec2 frac = vec2(fract(elevation_index), fract(height_index));
-      vec2 uv = vec2((elevation_index + 0.5) / 17, (height_index + 0.5) / 17);
+      vec2 uv = transmittance_forward(point, direction, 6378000, 100000, 17, 2.0);
       vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
       fragColor = ((texture(ray_scatter, indices.sp) * (1 - frac.s) * (1 - frac.t) +
                     texture(ray_scatter, indices.tp) *       frac.s * (1 - frac.t) +
@@ -131,7 +129,8 @@ void main()
 (def program-atmosphere
   (make-program :vertex [vertex-source-atmosphere]
                 :fragment [shaders/ray-sphere shaders/elevation-to-index shaders/convert-4d-index shaders/clip-angle
-                           shaders/oriented-matrix shaders/orthogonal-vector shaders/horizon-angle fragment-source-atmosphere]))
+                           shaders/oriented-matrix shaders/orthogonal-vector shaders/horizon-angle fragment-source-atmosphere
+                           shaders/transmittance-forward]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))

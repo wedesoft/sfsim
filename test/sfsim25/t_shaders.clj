@@ -115,7 +115,7 @@ void main()
   (dot (orthogonal-vector-test 0 0 1) (matrix [0 0 1])) => 0.0
   (norm (orthogonal-vector-test 0 0 1)) => 1.0)
 
-(defn roughly-matrix [m] (fn [x] (< (norm (sub m x)) 1e-6)))
+(defn roughly-matrix [m] (fn [x] (< (norm (sub m x)) 1e-3)))
 
 (def oriented-matrix-probe
   (template/fn [x y z] "#version 410 core
@@ -174,17 +174,26 @@ void main()
        (convert-4d-index-test 0 0  0.123 16.123 0 1) => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17)))
 
 (def transmittance-forward-probe
-  (template/fn [x y z dx dy dz] "#version 410 core
+  (template/fn [x y z dx dy dz power] "#version 410 core
 out lowp vec3 fragColor;
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);
 void main()
 {
   fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                       6378000.0, 100000, 17, 2.0);
+                                       6378000.0, 100000, 17, <%= power %>);
   fragColor.b = 0;
 }"))
 
-(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward))
+(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
 
 (facts "Convert point and direction to 2D lookup index in transmittance table"
-       (transmittance-forward-test 6378000 0 0 1 0 0) = (roughly-matrix (div (matrix [0.5 0.5 0]) 17)))
+       (let [angle (* 0.375 Math/PI)
+             ca    (Math/cos angle)
+             sa    (Math/sin angle)]
+         (transmittance-forward-test 6378000 0 0  1     0 0 1) => (roughly-matrix (div (matrix [0.5  0.5 0]) 17))
+         (transmittance-forward-test 6478000 0 0  1     0 0 1) => (roughly-matrix (div (matrix [0.5 16.5 0]) 17))
+         (transmittance-forward-test 6378000 0 0  1e-6  1 0 1) => (roughly-matrix (div (matrix [8.5  0.5 0]) 17))
+         (transmittance-forward-test 6378000 0 0 -1e-6  1 0 1) => (roughly-matrix (div (matrix [9.5  0.5 0]) 17))
+         (transmittance-forward-test 6378025 0 0 -1e-6  1 0 1) => (roughly-matrix (div (matrix [8.5  0.5 0]) 17))
+         (transmittance-forward-test 6378000 0 0  ca   sa 0 1) => (roughly-matrix (div (matrix [6.5  0.5 0]) 17))
+         (transmittance-forward-test 6378000 0 0  ca   sa 0 2) => (roughly-matrix (div (matrix [4.5  0.5 0]) 17))))
