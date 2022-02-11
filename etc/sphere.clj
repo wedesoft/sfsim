@@ -52,7 +52,7 @@ void main()
     vec3 normal = normalize(point);
     float cos_sun_elevation = dot(normal, light);
     vec2 uv = transmittance_forward(point, light, 6378000, 100000, 17, 2.0);
-    vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv / 17).rgb + texture(surface_radiance, uv / 17).rgb) / (2 * M_PI);
+    vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb) / (2 * M_PI);
     point = orig + air.x * direction;
     float horizon = horizon_angle(point, 6378000);
     normal = normalize(point);
@@ -94,7 +94,7 @@ void main()
       float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
       float sun_heading_index = sun_heading / M_PI; // 1st
       vec2 uv = transmittance_forward(point, direction, 6378000, 100000, 17, 2.0);
-      vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv / 17).rgb;
+      vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
       fragColor = (interpolate_4d(ray_scatter, 17, vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index)).rgb + l) * 10;
     } else {
       float l = 0.1 * max(0, pow(dot(direction, light), 5000));
