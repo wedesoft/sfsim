@@ -68,16 +68,16 @@ void main()
 (def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
 
 (facts "Shader for converting elevation to index"
-       (mget (elevation-to-index-test 17 0.0 0.0 1.0) 0)               => (roughly  0)
-       (mget (elevation-to-index-test 17 (* 0.5 3.14159) 0.0 1.0) 0)   => (roughly  8)
-       (mget (elevation-to-index-test 17 (* 0.5 3.14160) 0.0 1.0) 0)   => (roughly  9)
-       (mget (elevation-to-index-test 17 3.14159 0.0 1.0) 0)           => (roughly 16)
-       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 1.0) 0) => (roughly  6)
-       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 2.0) 0) => (roughly  4)
-       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 1.0) 0) => (roughly 10.75)
-       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 2.0) 0) => (roughly 12.5)
-       (mget (elevation-to-index-test 17 (* 0.5 3.34159) 0.1 1.0) 0)   => (roughly  8)
-       (mget (elevation-to-index-test 17 (* 0.5 3.34160) 0.1 1.0) 0)   => (roughly  9))
+       (mget (elevation-to-index-test 17 0.0 0.0 1.0) 0)               => (roughly (/  0    16))
+       (mget (elevation-to-index-test 17 (* 0.5 3.14159) 0.0 1.0) 0)   => (roughly (/  8    16))
+       (mget (elevation-to-index-test 17 (* 0.5 3.14160) 0.0 1.0) 0)   => (roughly (/  9    16))
+       (mget (elevation-to-index-test 17 3.14159 0.0 1.0) 0)           => (roughly (/ 16    16))
+       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 1.0) 0) => (roughly (/  6    16))
+       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 2.0) 0) => (roughly (/  4    16))
+       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 1.0) 0) => (roughly (/ 10.75 16))
+       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 2.0) 0) => (roughly (/ 12.5  16))
+       (mget (elevation-to-index-test 17 (* 0.5 3.34159) 0.1 1.0) 0)   => (roughly (/  8    16))
+       (mget (elevation-to-index-test 17 (* 0.5 3.34160) 0.1 1.0) 0)   => (roughly (/  9    16)))
 
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core

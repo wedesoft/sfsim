@@ -58,10 +58,10 @@ void main()
     normal = normalize(point);
     cos_sun_elevation = dot(normal, light);
     float sun_elevation = acos(cos_sun_elevation);
-    float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2) / 16; // 2nd
+    float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
     float cos_elevation = dot(normal, direction);
     float elevation = acos(cos_elevation);
-    float elevation_index = elevation_to_index(17, elevation, horizon, 2) / 16; // 3rd
+    float elevation_index = elevation_to_index(17, elevation, horizon, 2); // 3rd
     float height = length(point) - 6378000;
     float height_index = height / 100000.0; // 4th
     mat3 oriented = oriented_matrix(normal);
@@ -80,10 +80,10 @@ void main()
       float horizon = horizon_angle(point, 6378000);
       float cos_sun_elevation = dot(normal, light);
       float sun_elevation = acos(cos_sun_elevation);
-      float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2) / 16; // 2nd
+      float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
       float cos_elevation = dot(normal, direction);
       float elevation = acos(cos_elevation);
-      float elevation_index = elevation_to_index(17, elevation, horizon, 2) / 16; // 3rd
+      float elevation_index = elevation_to_index(17, elevation, horizon, 2); // 3rd
       float height = length(point) - 6378000;
       float height_index = height / 100000.0; // 4th
       mat3 oriented = oriented_matrix(normal);

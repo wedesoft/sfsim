@@ -11,5 +11,5 @@ vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_h
   float elevation = acos(dot(normal, direction));
   float horizon = horizon_angle(point, radius);
   float elevation_index = elevation_to_index(size, elevation, horizon, power);
-  return vec2(0.5 + elevation_index, 0.5 + height * (size - 1) / max_height) / size;
+  return vec2(0.5 + elevation_index * (size - 1), 0.5 + height * (size - 1) / max_height) / size;
 }

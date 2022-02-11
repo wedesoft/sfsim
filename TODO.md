@@ -1,5 +1,4 @@
 # TODO
-* elevation\_index should divide by size!
 * shader test for ray-scatter forward transformation
 * test shader interpolation against Clojure interpolation
 * combine atmospheric shader with planetary surface rendering
