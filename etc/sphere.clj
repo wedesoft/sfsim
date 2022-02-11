@@ -41,6 +41,14 @@ vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_h
 
 float M_PI = 3.14159265358;
 
+vec3 interpolate(sampler2D table, vec4 indices, vec2 frac)
+{
+  return (texture(table, indices.sp) * (1 - frac.s) * (1 - frac.t) +
+          texture(table, indices.tp) *       frac.s * (1 - frac.t) +
+          texture(table, indices.sq) * (1 - frac.s) *       frac.t +
+          texture(table, indices.tq) *       frac.s *       frac.t).rgb;
+}
+
 void main()
 {
   vec3 direction = normalize(pos - orig);
@@ -75,10 +83,7 @@ void main()
 
     vec4 indices = convert_4d_index(vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index), 17);
     vec2 frac = vec2(fract(elevation_index), fract(height_index));
-    vec3 atm_contrib = (texture(ray_scatter, indices.sp) * (1 - frac.s) * (1 - frac.t) +
-                        texture(ray_scatter, indices.tp) *       frac.s * (1 - frac.t) +
-                        texture(ray_scatter, indices.sq) * (1 - frac.s) *       frac.t +
-                        texture(ray_scatter, indices.tq) *       frac.s *       frac.t).rgb;
+    vec3 atm_contrib = interpolate(ray_scatter, indices, frac);
     fragColor = (surf_contrib + atm_contrib) * 10.0;
   } else {
     if (air.y > 0) {
@@ -109,10 +114,7 @@ void main()
       vec2 frac = vec2(fract(elevation_index), fract(height_index));
       vec2 uv = transmittance_forward(point, direction, 6378000, 100000, 17, 2.0);
       vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
-      fragColor = ((texture(ray_scatter, indices.sp) * (1 - frac.s) * (1 - frac.t) +
-                    texture(ray_scatter, indices.tp) *       frac.s * (1 - frac.t) +
-                    texture(ray_scatter, indices.sq) * (1 - frac.s) *       frac.t +
-                    texture(ray_scatter, indices.tq) *       frac.s *       frac.t).rgb + l) * 10.0;
+      fragColor = (interpolate(ray_scatter, indices, frac) + l) * 10;
     } else {
       float l = 0.1 * max(0, pow(dot(direction, light), 5000));
       fragColor = vec3(l, l, l) * 10.0;

@@ -1,4 +1,5 @@
 # TODO
+* test 4D interpolation?
 * shader test for ray-scatter forward transformation
 * test shader interpolation against Clojure interpolation
 * combine atmospheric shader with planetary surface rendering
