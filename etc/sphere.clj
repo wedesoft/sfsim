@@ -58,20 +58,20 @@ void main()
     normal = normalize(point);
     cos_sun_elevation = dot(normal, light);
     float sun_elevation = acos(cos_sun_elevation);
-    float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
+    float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2) / 16; // 2nd
     float cos_elevation = dot(normal, direction);
     float elevation = acos(cos_elevation);
-    float elevation_index = elevation_to_index(17, elevation, horizon, 2) ; // 3rd
+    float elevation_index = elevation_to_index(17, elevation, horizon, 2) / 16; // 3rd
     float height = length(point) - 6378000;
-    float height_index = 16 * height / 100000.0; // 4th
+    float height_index = height / 100000.0; // 4th
     mat3 oriented = oriented_matrix(normal);
     vec3 direction_rotated = oriented * direction;
     vec3 light_rotated = oriented * light;
     float direction_azimuth = atan(direction_rotated.z, direction_rotated.y);
     float sun_azimuth = atan(light_rotated.z, light_rotated.y);
     float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
-    float sun_heading_index = sun_heading * 16 / M_PI; // 1st
-    vec3 atm_contrib = interpolate_4d(ray_scatter, 17, vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index) / 16).rgb;
+    float sun_heading_index = sun_heading / M_PI; // 1st
+    vec3 atm_contrib = interpolate_4d(ray_scatter, 17, vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index)).rgb;
     fragColor = (surf_contrib + atm_contrib) * 10.0;
   } else {
     if (air.y > 0) {
@@ -80,22 +80,22 @@ void main()
       float horizon = horizon_angle(point, 6378000);
       float cos_sun_elevation = dot(normal, light);
       float sun_elevation = acos(cos_sun_elevation);
-      float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2); // 2nd
+      float sun_elevation_index = elevation_to_index(17, sun_elevation, horizon, 2) / 16; // 2nd
       float cos_elevation = dot(normal, direction);
       float elevation = acos(cos_elevation);
-      float elevation_index = elevation_to_index(17, elevation, horizon, 2) ; // 3rd
+      float elevation_index = elevation_to_index(17, elevation, horizon, 2) / 16; // 3rd
       float height = length(point) - 6378000;
-      float height_index = 16 * height / 100000.0; // 4th
+      float height_index = height / 100000.0; // 4th
       mat3 oriented = oriented_matrix(normal);
       vec3 direction_rotated = oriented * direction;
       vec3 light_rotated = oriented * light;
       float direction_azimuth = atan(direction_rotated.z, direction_rotated.y);
       float sun_azimuth = atan(light_rotated.z, light_rotated.y);
       float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
-      float sun_heading_index = sun_heading * 16 / M_PI; // 1st
+      float sun_heading_index = sun_heading / M_PI; // 1st
       vec2 uv = transmittance_forward(point, direction, 6378000, 100000, 17, 2.0);
       vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv / 17).rgb;
-      fragColor = (interpolate_4d(ray_scatter, 17, vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index) / 16).rgb + l) * 10;
+      fragColor = (interpolate_4d(ray_scatter, 17, vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index)).rgb + l) * 10;
     } else {
       float l = 0.1 * max(0, pow(dot(direction, light), 5000));
       fragColor = vec3(l, l, l) * 10.0;
