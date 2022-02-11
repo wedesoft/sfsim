@@ -223,16 +223,21 @@ void main()
         @result)))
 
 (def interpolate-4d-probe
-  (template/fn [] "#version 410 core
+  (template/fn [x y z w] "#version 410 core
 out lowp vec3 fragColor;
 uniform sampler2D table;
+vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
 void main()
 {
-  vec2 uv = vec2(0.5, 0.5) / 4;
-  fragColor = texture(table, uv).rgb;
+  fragColor = interpolate_4d(table, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
 }"))
 
-(def interpolate-4d-test (lookup-test interpolate-4d-probe))
+(def interpolate-4d-test (lookup-test interpolate-4d-probe interpolate-4d convert-4d-index))
 
 (facts "Perform 4D interpolation"
-       (mget (interpolate-4d-test) 0) => 1.0)
+       (mget (interpolate-4d-test 0    0 0   0  ) 0) => 1.0
+       (mget (interpolate-4d-test 0.25 0 0   0  ) 0) => 1.25
+       (mget (interpolate-4d-test 0    1 0   0  ) 0) => 3.0
+       (mget (interpolate-4d-test 0    0 0.5 0  ) 0) => 3.0
+       (mget (interpolate-4d-test 0    0 0   0.5) 0) => 5.0
+       (mget (interpolate-4d-test 0    0 0.5 0.5) 0) => 7.0)

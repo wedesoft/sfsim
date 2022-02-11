@@ -33,6 +33,7 @@ uniform sampler2D ray_scatter;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 convert_4d_index(vec4 idx, int size);
+vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
 float elevation_to_index(int size, float elevation, float horizon_angle, float power);
 float clip_angle(float angle);
 mat3 oriented_matrix(vec3 n);
@@ -40,14 +41,6 @@ float horizon_angle(vec3 point, float radius);
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);
 
 float M_PI = 3.14159265358;
-
-vec3 interpolate(sampler2D table, vec4 indices, vec2 frac)
-{
-  return (texture(table, indices.sp) * (1 - frac.s) * (1 - frac.t) +
-          texture(table, indices.tp) *       frac.s * (1 - frac.t) +
-          texture(table, indices.sq) * (1 - frac.s) *       frac.t +
-          texture(table, indices.tq) *       frac.s *       frac.t).rgb;
-}
 
 void main()
 {
@@ -78,12 +71,7 @@ void main()
     float sun_azimuth = atan(light_rotated.z, light_rotated.y);
     float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
     float sun_heading_index = sun_heading * 16 / M_PI; // 1st
-    float elevation_index_floor = floor(elevation_index);
-    float height_index_floor = floor(height_index);
-
-    vec4 indices = convert_4d_index(vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index), 17);
-    vec2 frac = vec2(fract(elevation_index), fract(height_index));
-    vec3 atm_contrib = interpolate(ray_scatter, indices, frac);
+    vec3 atm_contrib = interpolate_4d(ray_scatter, 17, vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index) / 16).rgb;
     fragColor = (surf_contrib + atm_contrib) * 10.0;
   } else {
     if (air.y > 0) {
@@ -105,16 +93,9 @@ void main()
       float sun_azimuth = atan(light_rotated.z, light_rotated.y);
       float sun_heading = abs(clip_angle(sun_azimuth - direction_azimuth));
       float sun_heading_index = sun_heading * 16 / M_PI; // 1st
-
-      float elevation_index_floor = floor(elevation_index);
-      float height_index_floor = floor(height_index);
-
-      vec4 indices = convert_4d_index(vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index), 17);
-
-      vec2 frac = vec2(fract(elevation_index), fract(height_index));
       vec2 uv = transmittance_forward(point, direction, 6378000, 100000, 17, 2.0);
       vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv / 17).rgb;
-      fragColor = (interpolate(ray_scatter, indices, frac) + l) * 10;
+      fragColor = (interpolate_4d(ray_scatter, 17, vec4(sun_heading_index, sun_elevation_index, elevation_index, height_index) / 16).rgb + l) * 10;
     } else {
       float l = 0.1 * max(0, pow(dot(direction, light), 5000));
       fragColor = vec3(l, l, l) * 10.0;
@@ -132,7 +113,7 @@ void main()
   (make-program :vertex [vertex-source-atmosphere]
                 :fragment [shaders/ray-sphere shaders/elevation-to-index shaders/convert-4d-index shaders/clip-angle
                            shaders/oriented-matrix shaders/orthogonal-vector shaders/horizon-angle fragment-source-atmosphere
-                           shaders/transmittance-forward]))
+                           shaders/transmittance-forward shaders/interpolate-4d]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
