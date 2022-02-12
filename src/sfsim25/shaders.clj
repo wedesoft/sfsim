@@ -36,3 +36,7 @@
 (def interpolate-4d
   "Perform 4D interpolation"
   (slurp "resources/shaders/interpolate_4d.glsl"))
+
+(def ray-scatter-forward
+  "Get 4D lookup index for ray scattering"
+  (slurp "resources/shaders/ray_scatter_forward.glsl"))

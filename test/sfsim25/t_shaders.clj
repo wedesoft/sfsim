@@ -151,27 +151,27 @@ void main()
        (mget (clip-angle-test (+ Math/PI 0.01)) 0) => (roughly (- 0.01 Math/PI) 1e-6))
 
 (def convert-4d-index-probe
-  (template/fn [x y z w a b] "#version 410 core
+  (template/fn [x y z w selector] "#version 410 core
 out lowp vec3 fragColor;
 vec4 convert_4d_index(vec4 idx, int size);
 void main()
 {
   vec4 result = convert_4d_index(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 17);
-  fragColor.rg = <%= a %> * result.st + <%= b %> * result.pq;
+  fragColor.rg = result.<%= selector %>;
   fragColor.b = 0;
 }"))
 
 (def convert-4d-index-test (shader-test convert-4d-index-probe convert-4d-index))
 
 (facts "Convert 4D index to 2D indices for part-manual interpolation"
-       (convert-4d-index-test 0 0  0.123  0.123 1 0) => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
-       (convert-4d-index-test 1 0  0.123  0.123 1 0) => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
-       (convert-4d-index-test 0 0  1.123  0.123 1 0) => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
-       (convert-4d-index-test 0 0 16.123  0.123 1 0) => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17))
-       (convert-4d-index-test 0 0  0.123  0.123 0 1) => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
-       (convert-4d-index-test 0 1  0.123  0.123 0 1) => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
-       (convert-4d-index-test 0 0  0.123  1.123 0 1) => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
-       (convert-4d-index-test 0 0  0.123 16.123 0 1) => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17)))
+       (convert-4d-index-test 0 0  0.123  0.123 "st") => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
+       (convert-4d-index-test 1 0  0.123  0.123 "st") => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
+       (convert-4d-index-test 0 0  1.123  0.123 "st") => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
+       (convert-4d-index-test 0 0 16.123  0.123 "st") => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17))
+       (convert-4d-index-test 0 0  0.123  0.123 "pq") => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
+       (convert-4d-index-test 0 1  0.123  0.123 "pq") => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
+       (convert-4d-index-test 0 0  0.123  1.123 "pq") => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
+       (convert-4d-index-test 0 0  0.123 16.123 "pq") => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17)))
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz power] "#version 410 core
@@ -241,3 +241,34 @@ void main()
        (mget (interpolate-4d-test 0    0 0.5 0  ) 0) => 3.0
        (mget (interpolate-4d-test 0    0 0   0.5) 0) => 5.0
        (mget (interpolate-4d-test 0    0 0.5 0.5) 0) => 7.0)
+
+(def ray-scatter-forward-probe
+  (template/fn [x y z dx dy dz lx ly lz power selector] "#version 410 core
+out lowp vec3 fragColor;
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size, float power);
+void main()
+{
+  vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>),
+                                    vec3(<%= dx %>, <%= dy %>, <%= dz %>),
+                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>),
+                                    6378000.0, 100000.0, 17, <%= power %>);
+  fragColor.r = result.<%= selector %>;
+  fragColor.g = 0;
+  fragColor.b = 0;
+}"))
+
+(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle))
+
+(facts "Get 4D lookup index for ray scattering"
+       (let [angle (* 0.375 Math/PI)
+             ca    (Math/cos angle)
+             sa    (Math/sin angle)]
+         (mget (ray-scatter-forward-test 6378000 0 0  1    0  0 1 0 0 1.0 "w") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 6478000 0 0  1    0  0 1 0 0 1.0 "w") 0) => (roughly (/ 16.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 6378000 0 0  1    0  0 1 0 0 1.0 "z") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 6378000 0 0  1e-6 1  0 1 0 0 1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 6378000 0 0 -1e-6 1  0 1 0 0 1.0 "z") 0) => (roughly (/  9.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 6378025 0 0 -1e-6 1  0 1 0 0 1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 6378000 0 0  ca   sa 0 1 0 0 1.0 "z") 0) => (roughly (/  6.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 6378000 0 0  ca   sa 0 1 0 0 2.0 "z") 0) => (roughly (/  4.0 16) 1e-3)
+         ))
