@@ -32,10 +32,6 @@ uniform sampler2D transmittance;
 uniform sampler2D ray_scatter;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-float elevation_to_index(int size, float elevation, float horizon_angle, float power);
-float clip_angle(float angle);
-mat3 oriented_matrix(vec3 n);
-float horizon_angle(vec3 point, float radius);
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);
 vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size, float power);
