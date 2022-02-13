@@ -130,7 +130,7 @@ void main()
 
 (facts "Create oriented matrix given a normal vector"
        (let [m (transpose (matrix [(oriented-matrix-test 1 0 0) (oriented-matrix-test 0 1 0) (oriented-matrix-test 0 0 1)])) ]
-         (slice m 1 0) => (roughly-matrix (matrix [0.36 0.48 0.8]))
+         (mmul m (matrix [0.36 0.48 0.8])) => (roughly-matrix (matrix [1 0 0]))
          (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3))))
 
 (def clip-angle-probe
@@ -257,18 +257,32 @@ void main()
   fragColor.b = 0;
 }"))
 
-(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle))
+(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
+                                           clip-angle oriented-matrix orthogonal-vector))
 
 (facts "Get 4D lookup index for ray scattering"
        (let [angle (* 0.375 Math/PI)
              ca    (Math/cos angle)
-             sa    (Math/sin angle)]
-         (mget (ray-scatter-forward-test 6378000 0 0  1    0  0 1 0 0 1.0 "w") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 6478000 0 0  1    0  0 1 0 0 1.0 "w") 0) => (roughly (/ 16.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 6378000 0 0  1    0  0 1 0 0 1.0 "z") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 6378000 0 0  1e-6 1  0 1 0 0 1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 6378000 0 0 -1e-6 1  0 1 0 0 1.0 "z") 0) => (roughly (/  9.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 6378025 0 0 -1e-6 1  0 1 0 0 1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 6378000 0 0  ca   sa 0 1 0 0 1.0 "z") 0) => (roughly (/  6.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 6378000 0 0  ca   sa 0 1 0 0 2.0 "z") 0) => (roughly (/  4.0 16) 1e-3)
-         ))
+             sa    (Math/sin angle)
+             r     6378000
+             h     100000]
+         (mget (ray-scatter-forward-test r        0 0  1    0  0     1      0   0    1.0 "w") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test (+ r h)  0 0  1    0  0     1      0   0    1.0 "w") 0) => (roughly (/ 16.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  1    0  0     1      0   0    1.0 "z") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  1e-6 1  0     1      0   0    1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0 -1e-6 1  0     1      0   0    1.0 "z") 0) => (roughly (/  9.0 16) 1e-3)
+         (mget (ray-scatter-forward-test (+ r 25) 0 0 -1e-6 1  0     1      0   0    1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  ca   sa 0     1      0   0    1.0 "z") 0) => (roughly (/  6.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  ca   sa 0     1      0   0    2.0 "z") 0) => (roughly (/  4.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  1    0  0     1      0   0    1.0 "y") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  1    0  0     1e-6   1   0    1.0 "y") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  1    0  0    -1e-6   1   0    1.0 "y") 0) => (roughly (/  9.0 16) 1e-3)
+         (mget (ray-scatter-forward-test (+ r 25) 0 0  1    0  0    -1e-6   1   0    1.0 "y") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  1    0  0     ca     sa  0    1.0 "y") 0) => (roughly (/  6.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  1    0  0     ca     sa  0    2.0 "y") 0) => (roughly (/  4.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  0    1  0     0      1   0    1.0 "x") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  0    1  0     0      0   1    1.0 "x") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  0    1  0     0      0  -1    1.0 "x") 0) => (roughly (/  8.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  0    0  1     0      0   1    1.0 "x") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test r        0 0  0   -1  1e-6  0     -1  -1e-6 1.0 "x") 0) => (roughly (/  0.0 16) 1e-3)
+         (mget (ray-scatter-forward-test 0        r 0  ca   0  sa    (- sa) 0   ca   1.0 "x") 0) => (roughly (/  8.0 16) 1e-3)))

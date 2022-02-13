@@ -1,5 +1,5 @@
 # TODO
-* shader test for ray-scatter forward transformation
+* use tabular in shader test suite
 * convert\_2d\_index for adding 0.5 and dividing by size? transmittance\_forward should return values between 0 and 1.
   implement interpolate\_2d
 * test shader interpolation against Clojure interpolation
