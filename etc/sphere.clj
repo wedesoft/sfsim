@@ -108,9 +108,9 @@ void main()
 
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
 
-(def light (atom 0))
-(def position (atom (matrix [0 (* -0.6 radius) (* 1.0 6378000)])))
-(def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
+(def light (atom (* 1.3 Math/PI)))
+(def position (atom (matrix [0 radius (* 1.0 radius)])))
+(def orientation (atom (q/rotation (* 0 Math/PI) (matrix [0 0 1]))))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -126,7 +126,7 @@ void main()
                           (use-textures surface-radiance transmittance ray-scatter)
                           (render-quads vao))
          (swap! t0 + dt)
-         (swap! light + (* 0.0002 0.1 dt))
+         (swap! light + (* 0.002 0.1 dt))
          (Display/update)))
 
 (destroy-texture surface-radiance)
