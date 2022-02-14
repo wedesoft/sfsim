@@ -192,17 +192,19 @@ void main()
 
 (def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
 
-(facts "Convert point and direction to 2D lookup index in transmittance table"
-       (let [angle (* 0.375 Math/PI)
-             ca    (Math/cos angle)
-             sa    (Math/sin angle)]
-         (transmittance-forward-test 6378000 0 0  1     0 0 1) => (roughly-matrix (div (matrix [0.5  0.5 0]) 17))
-         (transmittance-forward-test 6478000 0 0  1     0 0 1) => (roughly-matrix (div (matrix [0.5 16.5 0]) 17))
-         (transmittance-forward-test 6378000 0 0  1e-6  1 0 1) => (roughly-matrix (div (matrix [8.5  0.5 0]) 17))
-         (transmittance-forward-test 6378000 0 0 -1e-6  1 0 1) => (roughly-matrix (div (matrix [9.5  0.5 0]) 17))
-         (transmittance-forward-test 6378025 0 0 -1e-6  1 0 1) => (roughly-matrix (div (matrix [8.5  0.5 0]) 17))
-         (transmittance-forward-test 6378000 0 0  ca   sa 0 1) => (roughly-matrix (div (matrix [6.5  0.5 0]) 17))
-         (transmittance-forward-test 6378000 0 0  ca   sa 0 2) => (roughly-matrix (div (matrix [4.5  0.5 0]) 17))))
+(let [angle (* 0.375 Math/PI)
+      ca    (Math/cos angle)
+      sa    (Math/sin angle)]
+  (tabular "Convert point and direction to 2D lookup index in transmittance table"
+           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power) => (roughly-matrix (div (matrix [?u ?v 0]) 17)))
+           ?x      ?y ?z ?dx  ?dy ?dz ?power ?u  ?v
+           6378000 0  0  1    0   0   1      0.5  0.5
+           6478000 0  0  1    0   0   1      0.5 16.5
+           6378000 0  0  1e-6 1   0   1      8.5  0.5
+           6378000 0  0 -1e-6 1   0   1      9.5  0.5
+           6378025 0  0 -1e-6 1   0   1      8.5  0.5
+           6378000 0  0  ca   sa  0   1      6.5  0.5
+           6378000 0  0  ca   sa  0   2      4.5  0.5))
 
 (defn lookup-test [probe & shaders]
   (fn [& args]
