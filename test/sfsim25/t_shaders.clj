@@ -112,11 +112,11 @@ void main()
 (def orthogonal-vector-test (shader-test orthogonal-vector-probe orthogonal-vector))
 
 (facts "Create normal vector orthogonal to the specified one"
-  (dot (orthogonal-vector-test 1 0 0) (matrix [1 0 0])) => 0.0
+  (dot  (orthogonal-vector-test 1 0 0) (matrix [1 0 0])) => 0.0
   (norm (orthogonal-vector-test 1 0 0)) => 1.0
-  (dot (orthogonal-vector-test 0 1 0) (matrix [0 1 0])) => 0.0
+  (dot  (orthogonal-vector-test 0 1 0) (matrix [0 1 0])) => 0.0
   (norm (orthogonal-vector-test 0 1 0)) => 1.0
-  (dot (orthogonal-vector-test 0 0 1) (matrix [0 0 1])) => 0.0
+  (dot  (orthogonal-vector-test 0 0 1) (matrix [0 0 1])) => 0.0
   (norm (orthogonal-vector-test 0 0 1)) => 1.0)
 
 (defn roughly-matrix [m] (fn [x] (< (norm (sub m x)) 1e-3)))
@@ -167,15 +167,17 @@ void main()
 
 (def convert-4d-index-test (shader-test convert-4d-index-probe convert-4d-index))
 
-(facts "Convert 4D index to 2D indices for part-manual interpolation"
-       (convert-4d-index-test 0 0  0.123  0.123 "st") => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
-       (convert-4d-index-test 1 0  0.123  0.123 "st") => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
-       (convert-4d-index-test 0 0  1.123  0.123 "st") => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
-       (convert-4d-index-test 0 0 16.123  0.123 "st") => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17))
-       (convert-4d-index-test 0 0  0.123  0.123 "pq") => (roughly-matrix (div (matrix [0.5 (+ 0.5 17) 0]) 17 17))
-       (convert-4d-index-test 0 1  0.123  0.123 "pq") => (roughly-matrix (div (matrix [1.5 (+ 1.5 17) 0]) 17 17))
-       (convert-4d-index-test 0 0  0.123  1.123 "pq") => (roughly-matrix (div (matrix [(+ 0.5 17) (+ 0.5 (* 2 17)) 0]) 17 17))
-       (convert-4d-index-test 0 0  0.123 16.123 "pq") => (roughly-matrix (div (matrix [(+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)) 0]) 17 17)))
+(tabular "Convert 4D index to 2D indices for part-manual interpolation"
+         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) 17 17)))
+         ?x ?y ?z     ?w     ?selector ?r                ?g
+         0  0   0.123  0.123 "st"      0.5               (+ 0.5 17)
+         1  0   0.123  0.123 "st"      1.5               (+ 1.5 17)
+         0  0   1.123  0.123 "st"      (+ 0.5 17)        (+ 0.5 (* 2 17))
+         0  0  16.123  0.123 "st"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17))
+         0  0   0.123  0.123 "pq"      0.5               (+ 0.5 17)
+         0  1   0.123  0.123 "pq"      1.5               (+ 1.5 17)
+         0  0   0.123  1.123 "pq"      (+ 0.5 17)        (+ 0.5 (* 2 17))
+         0  0   0.123 16.123 "pq"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)))
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz power] "#version 410 core
