@@ -54,7 +54,7 @@
   [theta-steps phi-steps theta-range normal fun]
   (let [samples (map #(* theta-range (/ (+ 0.5 %) theta-steps)) (range theta-steps))
         delta2  (/ theta-range theta-steps 2)
-        mat     (oriented-matrix normal)]
+        mat     (transpose (oriented-matrix normal))]
     (reduce add
       (map (fn [theta]
         (let [factor    (- (Math/cos (- theta delta2)) (Math/cos (+ theta delta2)))

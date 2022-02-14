@@ -191,7 +191,7 @@
   (fn [^Vector point ^Vector direction ^Vector light-direction]
       (let [radius-vector           (sub point centre)
             height                  (- (norm radius-vector) radius)
-            plane                   (transpose (oriented-matrix (normalise radius-vector)))
+            plane                   (oriented-matrix (normalise radius-vector))
             direction-rotated       (mmul plane direction)
             light-direction-rotated (mmul plane light-direction)
             elevation-index         ((elevation-to-index planet size power) point direction)
