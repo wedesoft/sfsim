@@ -47,13 +47,15 @@ void main()
 
 (def ray-sphere-test (shader-test ray-sphere-probe ray-sphere))
 
-(facts "Shader for intersection of ray with sphere"
-       (ray-sphere-test 0 0 0 2 2 -1 0 0 1) => (matrix [0.0 0.0 0.0])
-       (ray-sphere-test 0 0 0 0 0 -2 0 0 1) => (matrix [1.0 2.0 0.0])
-       (ray-sphere-test 2 2 0 2 2 -2 0 0 1) => (matrix [1.0 2.0 0.0])
-       (ray-sphere-test 0 0 0 0 0 -2 0 0 2) => (matrix [0.5 1.0 0.0])
-       (ray-sphere-test 0 0 0 0 0  0 0 0 1) => (matrix [0.0 1.0 0.0])
-       (ray-sphere-test 0 0 0 0 0  2 0 0 1) => (matrix [0.0 0.0 0.0]))
+(tabular "Shader for intersection of ray with sphere"
+         (fact (ray-sphere-test ?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz) => (matrix [?ix ?iy ?iz]))
+         ?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz ?ix ?iy ?iz
+         0   0   0   2   2  -1   0   0   1   0.0 0.0 0.0
+         0   0   0   0   0  -2   0   0   1   1.0 2.0 0.0
+         2   2   0   2   2  -2   0   0   1   1.0 2.0 0.0
+         0   0   0   0   0  -2   0   0   2   0.5 1.0 0.0
+         0   0   0   0   0   0   0   0   1   0.0 1.0 0.0
+         0   0   0   0   0   2   0   0   1   0.0 0.0 0.0)
 
 (def elevation-to-index-probe
   (template/fn [size elevation horizon-angle power] "#version 410 core
