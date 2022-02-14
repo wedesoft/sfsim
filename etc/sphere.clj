@@ -18,7 +18,7 @@ uniform mat4 itransform;
 void main()
 {
   gl_Position = projection * vec4(point, 1);
-  pos = (itransform * vec4(point, 0)).xyz;
+  pos = (itransform * vec4(point, 1)).xyz;
   orig = (itransform * vec4(0, 0, 0, 1)).xyz;
 }")
 
@@ -105,8 +105,8 @@ void main()
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 120 Math/PI) 180)))
 
 (def light (atom (* 1.4 Math/PI)))
-(def position (atom (matrix [0 (* 1.0 radius) (* 0.001 radius)])))
-(def orientation (atom (q/rotation (* 0 Math/PI) (matrix [1 0 0]))))
+(def position (atom (matrix [0 (* 1.0 radius) (* 0.03 radius)])))
+(def orientation (atom (q/rotation (* 0 (/ Math/PI 180)) (matrix [1 0 0]))))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
