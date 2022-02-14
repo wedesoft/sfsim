@@ -58,28 +58,30 @@ void main()
          0   0   0   0   0   2   0   0   1   0.0 0.0 0.0)
 
 (def elevation-to-index-probe
-  (template/fn [size elevation horizon-angle power] "#version 410 core
+  (template/fn [elevation horizon-angle power] "#version 410 core
 out lowp vec3 fragColor;
 float elevation_to_index(int size, float elevation, float horizon_angle, float power);
 void main()
 {
-  float result = elevation_to_index(<%= size %>, <%= elevation %>, <%= horizon-angle %>, <%= power %>);
+  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
 (def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
 
-(facts "Shader for converting elevation to index"
-       (mget (elevation-to-index-test 17 0.0 0.0 1.0) 0)               => (roughly (/  0    16))
-       (mget (elevation-to-index-test 17 (* 0.5 3.14159) 0.0 1.0) 0)   => (roughly (/  8    16))
-       (mget (elevation-to-index-test 17 (* 0.5 3.14160) 0.0 1.0) 0)   => (roughly (/  9    16))
-       (mget (elevation-to-index-test 17 3.14159 0.0 1.0) 0)           => (roughly (/ 16    16))
-       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 1.0) 0) => (roughly (/  6    16))
-       (mget (elevation-to-index-test 17 (* 0.375 3.14159) 0.0 2.0) 0) => (roughly (/  4    16))
-       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 1.0) 0) => (roughly (/ 10.75 16))
-       (mget (elevation-to-index-test 17 (* 0.625 3.14159) 0.0 2.0) 0) => (roughly (/ 12.5  16))
-       (mget (elevation-to-index-test 17 (* 0.5 3.34159) 0.1 1.0) 0)   => (roughly (/  8    16))
-       (mget (elevation-to-index-test 17 (* 0.5 3.34160) 0.1 1.0) 0)   => (roughly (/  9    16)))
+(tabular "Shader for converting elevation to index"
+         (fact (mget (elevation-to-index-test ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
+         ?elevation        ?horizon-angle ?power ?result
+         0.0               0.0            1.0     0
+         (* 0.5 3.14159)   0.0            1.0     8
+         (* 0.5 3.14160)   0.0            1.0     9
+         3.14159           0.0            1.0    16
+         (* 0.375 3.14159) 0.0            1.0     6
+         (* 0.375 3.14159) 0.0            2.0     4
+         (* 0.625 3.14159) 0.0            1.0    10.75
+         (* 0.625 3.14159) 0.0            2.0    12.5
+         (* 0.5 3.34159)   0.1            1.0     8
+         (* 0.5 3.34160)   0.1            1.0     9)
 
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core
