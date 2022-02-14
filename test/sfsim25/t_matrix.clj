@@ -54,7 +54,7 @@
 (facts "Generate isometry with given normal vector as first column"
   (let [n (matrix [0.36 0.48 0.8])
         m (oriented-matrix n)]
-    (slice m 1 0) => (roughly-matrix n 1e-6)
+    (mmul m n) => (roughly-matrix (matrix [1 0 0]) 1e-6)
     (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3) 1e-6)
     (det m) => (roughly 1.0 1e-6)))
 

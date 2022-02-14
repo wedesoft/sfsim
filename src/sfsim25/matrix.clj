@@ -78,7 +78,7 @@
   [n]
   (let [o1 (orthogonal n)
         o2 (cross n o1)]
-    (transpose (matrix [n o1 o2]))))
+    (matrix [n o1 o2])))
 
 (defn pack-matrices
   "Pack nested vector of matrices into float array"
