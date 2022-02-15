@@ -35,7 +35,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);
 vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size, float power);
-vec2 convert_2d_index(vec2 idx, int size);
+vec4 interpolate_2d(sampler2D table, int size, vec2 idx);
 
 float M_PI = 3.14159265358;
 
@@ -48,8 +48,8 @@ void main()
     vec3 point = orig + surface.x * direction;
     vec3 normal = normalize(point);
     float cos_sun_elevation = dot(normal, light);
-    vec2 uv = convert_2d_index(transmittance_forward(point, light, 6378000, 100000, 17, 2.0), 17);
-    vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb) / (2 * M_PI);
+    vec2 uv = transmittance_forward(point, light, 6378000, 100000, 17, 2.0);
+    vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * interpolate_2d(transmittance, 17, uv).rgb + interpolate_2d(surface_radiance, 17, uv).rgb) / (2 * M_PI);
     point = orig + air.x * direction;
     vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, 6378000, 100000, 17, 2);
     vec3 atm_contrib = interpolate_4d(ray_scatter, 17, ray_scatter_index).rgb;
@@ -58,7 +58,7 @@ void main()
     if (air.y > 0) {
       vec3 point = orig + air.x * direction;
       vec2 uv = transmittance_forward(point, direction, 6378000, 100000, 17, 2.0);
-      vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * texture(transmittance, uv).rgb;
+      vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * interpolate_2d(transmittance, 17, uv).rgb;
       vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, 6378000, 100000, 17, 2);
       fragColor = (interpolate_4d(ray_scatter, 17, ray_scatter_index).rgb + l) * 10;
     } else {
@@ -79,7 +79,7 @@ void main()
                 :fragment [shaders/ray-sphere shaders/elevation-to-index shaders/convert-4d-index shaders/clip-angle
                            shaders/oriented-matrix shaders/orthogonal-vector shaders/horizon-angle fragment-source-atmosphere
                            shaders/transmittance-forward shaders/interpolate-4d shaders/ray-scatter-forward
-                           shaders/convert-2d-index]))
+                           shaders/convert-2d-index shaders/interpolate-2d]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))

@@ -37,6 +37,10 @@
   "Convert point and direction to 2D lookup index in transmittance table"
   (slurp "resources/shaders/transmittance_forward.glsl"))
 
+(def interpolate-2d
+  "Perform 2D interpolation"
+  (slurp "resources/shaders/interpolate_2d.glsl"))
+
 (def interpolate-4d
   "Perform 4D interpolation"
   (slurp "resources/shaders/interpolate_4d.glsl"))

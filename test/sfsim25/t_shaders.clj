@@ -168,10 +168,10 @@ void main()
 
 (tabular "Convert 2D index to 2D texture lookup index"
          (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) 17)))
-         ?x ?y ?r   ?g
-         0  0   0.5  0.5
-         1  0  16.5  0.5
-         0  1   0.5 16.5)
+         ?x  ?y  ?r   ?g
+          0   0   0.5  0.5
+         16   0  16.5  0.5
+          0  16   0.5 16.5)
 
 (def convert-4d-index-probe
   (template/fn [x y z w selector] "#version 410 core
@@ -225,7 +225,7 @@ void main()
            6378000 0  0  ca   sa  0   1      6.0  0.0
            6378000 0  0  ca   sa  0   2      4.0  0.0))
 
-(defn lookup-test [probe & shaders]
+(defn lookup-4d-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
         (offscreen-render 1 1
@@ -259,7 +259,7 @@ void main()
   fragColor = interpolate_4d(table, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
 }"))
 
-(def interpolate-4d-test (lookup-test interpolate-4d-probe interpolate-4d convert-4d-index))
+(def interpolate-4d-test (lookup-4d-test interpolate-4d-probe interpolate-4d convert-4d-index))
 
 (tabular "Perform 4D interpolation"
          (fact (mget (interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
