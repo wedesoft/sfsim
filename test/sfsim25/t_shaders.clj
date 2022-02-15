@@ -225,6 +225,95 @@ void main()
            6378000 0  0  ca   sa  0   1      6.0  0.0
            6378000 0  0  ca   sa  0   2      4.0  0.0))
 
+(defn lookup-2d-test [probe & shaders]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices   [0 1 3 2]
+                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                data-2d   [[1 2] [3 4]]
+                data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
+                table     (make-vector-texture-2d {:width 2 :height 2 :data (float-array data-flat)})
+                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao       (make-vertex-array-object program indices vertices [:point 3])
+                tex       (texture-render 1 1 true
+                                          (use-program program)
+                                          (uniform-sampler program :table 0)
+                                          (use-textures table)
+                                          (render-quads vao))
+                img       (texture->vectors tex 1 1)]
+            (deliver result (get-vector img 0 0))
+            (destroy-texture tex)
+            (destroy-texture table)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def interpolate-2d-probe
+  (template/fn [x y] "#version 410 core
+out lowp vec3 fragColor;
+uniform sampler2D table;
+vec4 interpolate_2d(sampler2D table, int size, vec2 idx);
+void main()
+{
+  fragColor = interpolate_2d(table, 2, vec2(<%= x %>, <%= y %>)).rgb;
+}"))
+
+(def interpolate-2d-test (lookup-2d-test interpolate-2d-probe interpolate-2d convert-2d-index))
+
+(tabular "Perform 2d interpolation"
+         (fact (mget (interpolate-2d-test ?x ?y) 0) => ?result)
+         ?x   ?y ?result
+         0    0  1.0
+         0.25 0  1.25
+         0    1  3.0
+         1    1  4.0)
+
+(defn lookup-4d-test [probe & shaders]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices   [0 1 3 2]
+                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
+                data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
+                table     (make-vector-texture-2d {:width 4 :height 4 :data (float-array data-flat)})
+                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao       (make-vertex-array-object program indices vertices [:point 3])
+                tex       (texture-render 1 1 true
+                                          (use-program program)
+                                          (uniform-sampler program :table 0)
+                                          (use-textures table)
+                                          (render-quads vao))
+                img       (texture->vectors tex 1 1)]
+            (deliver result (get-vector img 0 0))
+            (destroy-texture tex)
+            (destroy-texture table)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def interpolate-4d-probe
+  (template/fn [x y z w] "#version 410 core
+out lowp vec3 fragColor;
+uniform sampler2D table;
+vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
+void main()
+{
+  fragColor = interpolate_4d(table, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
+}"))
+
+(def interpolate-4d-test (lookup-4d-test interpolate-4d-probe interpolate-4d convert-4d-index))
+
+(tabular "Perform 4D interpolation"
+         (fact (mget (interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
+         ?x   ?y ?z  ?w  ?result
+         0    0  0   0   1.0
+         0.25 0  0   0   1.25
+         0    1  0   0   3.0
+         0    0  0.5 0   3.0
+         0    0  0   0.5 5.0
+         0    0  0.5 0.5 7.0)
 (defn lookup-4d-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
