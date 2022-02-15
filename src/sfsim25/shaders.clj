@@ -25,6 +25,10 @@
   "Convert angle to be between -pi and +pi"
   (slurp "resources/shaders/clip_angle.glsl"))
 
+(def convert-2d-index
+  "Convert 2D index to 2D texture lookup index"
+  (slurp "resources/shaders/convert_2d_index.glsl"))
+
 (def convert-4d-index
   "Convert 4D index to 2D indices for part-manual interpolation"
   (slurp "resources/shaders/convert_4d_index.glsl"))

@@ -154,6 +154,25 @@ void main()
        (mget (clip-angle-test (- 0 Math/PI 0.01)) 0) => (roughly (- Math/PI 0.01) 1e-6)
        (mget (clip-angle-test (+ Math/PI 0.01)) 0) => (roughly (- 0.01 Math/PI) 1e-6))
 
+(def convert-2d-index-probe
+  (template/fn [x y] "#version 410 core
+out lowp vec3 fragColor;
+vec2 convert_2d_index(vec2 idx, int size);
+void main()
+{
+  fragColor.rg = convert_2d_index(vec2(<%= x %>, <%= y %>), 17);
+  fragColor.b = 0;
+}"))
+
+(def convert-2d-index-test (shader-test convert-2d-index-probe convert-2d-index))
+
+(tabular "Convert 2D index to 2D texture lookup index"
+         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) 17)))
+         ?x ?y ?r   ?g
+         0  0   0.5  0.5
+         1  0  16.5  0.5
+         0  1   0.5 16.5)
+
 (def convert-4d-index-probe
   (template/fn [x y z w selector] "#version 410 core
 out lowp vec3 fragColor;
@@ -196,15 +215,15 @@ void main()
       ca    (Math/cos angle)
       sa    (Math/sin angle)]
   (tabular "Convert point and direction to 2D lookup index in transmittance table"
-           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power) => (roughly-matrix (div (matrix [?u ?v 0]) 17)))
+           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power) => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
            ?x      ?y ?z ?dx  ?dy ?dz ?power ?u  ?v
-           6378000 0  0  1    0   0   1      0.5  0.5
-           6478000 0  0  1    0   0   1      0.5 16.5
-           6378000 0  0  1e-6 1   0   1      8.5  0.5
-           6378000 0  0 -1e-6 1   0   1      9.5  0.5
-           6378025 0  0 -1e-6 1   0   1      8.5  0.5
-           6378000 0  0  ca   sa  0   1      6.5  0.5
-           6378000 0  0  ca   sa  0   2      4.5  0.5))
+           6378000 0  0  1    0   0   1      0.0  0.0
+           6478000 0  0  1    0   0   1      0.0 16.0
+           6378000 0  0  1e-6 1   0   1      8.0  0.0
+           6378000 0  0 -1e-6 1   0   1      9.0  0.0
+           6378025 0  0 -1e-6 1   0   1      8.0  0.0
+           6378000 0  0  ca   sa  0   1      6.0  0.0
+           6378000 0  0  ca   sa  0   2      4.0  0.0))
 
 (defn lookup-test [probe & shaders]
   (fn [& args]

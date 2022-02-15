@@ -35,6 +35,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);
 vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size, float power);
+vec2 convert_2d_index(vec2 idx, int size);
 
 float M_PI = 3.14159265358;
 
@@ -47,7 +48,7 @@ void main()
     vec3 point = orig + surface.x * direction;
     vec3 normal = normalize(point);
     float cos_sun_elevation = dot(normal, light);
-    vec2 uv = transmittance_forward(point, light, 6378000, 100000, 17, 2.0);
+    vec2 uv = convert_2d_index(transmittance_forward(point, light, 6378000, 100000, 17, 2.0), 17);
     vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * texture(transmittance, uv).rgb + texture(surface_radiance, uv).rgb) / (2 * M_PI);
     point = orig + air.x * direction;
     vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, 6378000, 100000, 17, 2);
@@ -77,7 +78,8 @@ void main()
   (make-program :vertex [vertex-source-atmosphere]
                 :fragment [shaders/ray-sphere shaders/elevation-to-index shaders/convert-4d-index shaders/clip-angle
                            shaders/oriented-matrix shaders/orthogonal-vector shaders/horizon-angle fragment-source-atmosphere
-                           shaders/transmittance-forward shaders/interpolate-4d shaders/ray-scatter-forward]))
+                           shaders/transmittance-forward shaders/interpolate-4d shaders/ray-scatter-forward
+                           shaders/convert-2d-index]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % 4 6378000) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -102,11 +104,11 @@ void main()
 
 (def radius 6378000.0)
 
-(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 60 Math/PI) 180)))
+(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 120 Math/PI) 180)))
 
 (def light (atom (* 1.4 Math/PI)))
 (def position (atom (matrix [0 (* 1.0 radius) (* 0.01 radius)])))
-(def orientation (atom (q/rotation (* 0 (/ Math/PI 180)) (matrix [1 0 0]))))
+(def orientation (atom (q/rotation (* 40 (/ Math/PI 180)) (matrix [1 0 0]))))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
