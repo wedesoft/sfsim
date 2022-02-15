@@ -80,7 +80,7 @@ void main()
                            shaders/transmittance-forward shaders/interpolate-4d shaders/ray-scatter-forward]))
 
 (def indices [0 1 3 2])
-(def vertices (map #(* % 4 6378000) [-1 -1 -1, 1 -1 -1, -1  1 -1, 1  1 -1]))
+(def vertices (map #(* % 4 6378000) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
 
 (use-program program-atmosphere)

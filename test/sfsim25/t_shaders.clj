@@ -242,13 +242,15 @@ void main()
 
 (def interpolate-4d-test (lookup-test interpolate-4d-probe interpolate-4d convert-4d-index))
 
-(facts "Perform 4D interpolation"
-       (mget (interpolate-4d-test 0    0 0   0  ) 0) => 1.0
-       (mget (interpolate-4d-test 0.25 0 0   0  ) 0) => 1.25
-       (mget (interpolate-4d-test 0    1 0   0  ) 0) => 3.0
-       (mget (interpolate-4d-test 0    0 0.5 0  ) 0) => 3.0
-       (mget (interpolate-4d-test 0    0 0   0.5) 0) => 5.0
-       (mget (interpolate-4d-test 0    0 0.5 0.5) 0) => 7.0)
+(tabular "Perform 4D interpolation"
+         (fact (mget (interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
+         ?x   ?y ?z  ?w  ?result
+         0    0  0   0   1.0
+         0.25 0  0   0   1.25
+         0    1  0   0   3.0
+         0    0  0.5 0   3.0
+         0    0  0   0.5 5.0
+         0    0  0.5 0.5 7.0)
 
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz power selector] "#version 410 core
@@ -268,29 +270,31 @@ void main()
 (def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
                                            clip-angle oriented-matrix orthogonal-vector))
 
-(facts "Get 4D lookup index for ray scattering"
-       (let [angle (* 0.375 Math/PI)
-             ca    (Math/cos angle)
-             sa    (Math/sin angle)
-             r     6378000
-             h     100000]
-         (mget (ray-scatter-forward-test r        0 0  1    0  0     1      0   0    1.0 "w") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test (+ r h)  0 0  1    0  0     1      0   0    1.0 "w") 0) => (roughly (/ 16.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  1    0  0     1      0   0    1.0 "z") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  1e-6 1  0     1      0   0    1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0 -1e-6 1  0     1      0   0    1.0 "z") 0) => (roughly (/  9.0 16) 1e-3)
-         (mget (ray-scatter-forward-test (+ r 25) 0 0 -1e-6 1  0     1      0   0    1.0 "z") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  ca   sa 0     1      0   0    1.0 "z") 0) => (roughly (/  6.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  ca   sa 0     1      0   0    2.0 "z") 0) => (roughly (/  4.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  1    0  0     1      0   0    1.0 "y") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  1    0  0     1e-6   1   0    1.0 "y") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  1    0  0    -1e-6   1   0    1.0 "y") 0) => (roughly (/  9.0 16) 1e-3)
-         (mget (ray-scatter-forward-test (+ r 25) 0 0  1    0  0    -1e-6   1   0    1.0 "y") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  1    0  0     ca     sa  0    1.0 "y") 0) => (roughly (/  6.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  1    0  0     ca     sa  0    2.0 "y") 0) => (roughly (/  4.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  0    1  0     0      1   0    1.0 "x") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  0    1  0     0      0   1    1.0 "x") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  0    1  0     0      0  -1    1.0 "x") 0) => (roughly (/  8.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  0    0  1     0      0   1    1.0 "x") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test r        0 0  0   -1  1e-6  0     -1  -1e-6 1.0 "x") 0) => (roughly (/  0.0 16) 1e-3)
-         (mget (ray-scatter-forward-test 0        r 0  ca   0  sa    (- sa) 0   ca   1.0 "x") 0) => (roughly (/  8.0 16) 1e-3)))
+(let [angle (* 0.375 Math/PI)
+      ca    (Math/cos angle)
+      sa    (Math/sin angle)
+      r     6378000
+      h     100000]
+  (tabular "Get 4D lookup index for ray scattering"
+           (fact (mget (ray-scatter-forward-test ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?power ?sel) 0) => (roughly (/ ?result 16) 1e-3))
+           ?x       ?y ?z ?dx  ?dy ?dz  ?lx    ?ly ?lz  ?power ?sel ?result
+           r        0  0  1    0   0    1      0   0    1.0    "w"   0.0
+           (+ r h)  0  0  1    0   0    1      0   0    1.0    "w"  16.0
+           r        0  0  1    0   0    1      0   0    1.0    "z"   0.0
+           r        0  0  1e-6 1   0    1      0   0    1.0    "z"   8.0
+           r        0  0 -1e-6 1   0    1      0   0    1.0    "z"   9.0
+           (+ r 25) 0  0 -1e-6 1   0    1      0   0    1.0    "z"   8.0
+           r        0  0  ca   sa  0    1      0   0    1.0    "z"   6.0
+           r        0  0  ca   sa  0    1      0   0    2.0    "z"   4.0
+           r        0  0  1    0   0    1      0   0    1.0    "y"   0.0
+           r        0  0  1    0   0    1e-6   1   0    1.0    "y"   8.0
+           r        0  0  1    0   0   -1e-6   1   0    1.0    "y"   9.0
+           (+ r 25) 0  0  1    0   0   -1e-6   1   0    1.0    "y"   8.0
+           r        0  0  1    0   0    ca     sa  0    1.0    "y"   6.0
+           r        0  0  1    0   0    ca     sa  0    2.0    "y"   4.0
+           r        0  0  0    1   0    0      1   0    1.0    "x"   0.0
+           r        0  0  0    1   0    0      0   1    1.0    "x"   8.0
+           r        0  0  0    1   0    0      0  -1    1.0    "x"   8.0
+           r        0  0  0    0   1    0      0   1    1.0    "x"   0.0
+           r        0  0  0   -1   1e-6 0     -1  -1e-6 1.0    "x"   0.0
+           0        r  0  ca   0   sa   (- sa) 0   ca   1.0    "x"   8.0))
