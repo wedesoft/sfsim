@@ -110,7 +110,7 @@ void main()
 (def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (/ (* 120 Math/PI) 180)))
 
 (def light (atom (* 1.4 Math/PI)))
-(def position (atom (matrix [0 (* 1.0 (+ 35000 radius)) (* 0.01 radius)])))
+(def position (atom (matrix [0 (* 1.0 (+ 400 radius)) (* 0.01 radius)])))
 (def orientation (atom (q/rotation (* 0 (/ Math/PI 180)) (matrix [1 0 0]))))
 
 (def t0 (atom (System/currentTimeMillis)))
