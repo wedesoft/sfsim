@@ -8,7 +8,7 @@
     (:import [mikera.vectorz Vector]))
 
 (def radius 6378000.0)
-(def height 100000.0)
+(def height 35000.0)
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
                             :radius radius
                             :sfsim25.atmosphere/height height
@@ -25,7 +25,7 @@
   [& args]
   (when-not (= (count args) 4)
             (.println *err* "Syntax: lein run-atmosphere-lut [size] [ray-steps] [sphere-steps] [iterations]")
-            (.println *err* "Example: lein run-atmosphere-lut 17 100 20 5")
+            (.println *err* "Example: lein run-atmosphere-lut 35 10 5 5")
             (System/exit 1))
   (.println *err* "Initialization")
   (let [size                          (Integer/parseInt (nth args 0))

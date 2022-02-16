@@ -14,14 +14,13 @@
 (set! *unchecked-math* true)
 
 (def radius 6378000.0)
-(def height 100000.0)
+(def height 35000.0)
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
 (def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 (def scatter [mie rayleigh])
 (def size 17)
 (def steps 100)
-(def angles 16)
 (def power 2.0)
 
 ;---
@@ -65,16 +64,17 @@
 (def w (inc (* 2 w2)))
 (def img {:width w :height w :data (int-array (sqr w))})
 
-(def m 0.05)
+
+(def m 0.1)
 (def n (atom 0))
 (;doseq [hh [2] angle (range (* -0.6 Math/PI) (* 0.6 Math/PI) 0.01)]
-  let [angle  (* -0.49 Math/PI) hh 2]
+  let [angle  (* -0.20 Math/PI) hh 2]
   (let [light-direction (matrix [0 (Math/cos angle) (Math/sin angle)])
-        point (matrix [0 (* 1 (+ radius hh)) (* 0.6 radius)])
+        point (matrix [0 (* 1 (+ radius hh)) (* 0.01 radius)])
         data  (vec (pmap (fn [y]
                              (mapv (fn [x]
-                                       (let [f   (/ w2 (Math/tan (Math/toRadians 30)))
-                                             dir (normalize (matrix [x (- y) (- f)]))
+                                       (let [f   (/ w2 (Math/tan (Math/toRadians 60)))
+                                             dir (mmul (rotation-x (Math/toRadians 45)) (normalize (matrix [x (- y) (- f)])))
                                              ray {:sfsim25.ray/origin point :sfsim25.ray/direction dir}
                                              hit (ray-sphere-intersection earth ray)
                                              atm {:sfsim25.sphere/centre (matrix [0 0 0])
@@ -104,6 +104,21 @@
     ;(spit-image (format "sun%04d.png" @n) img)
     (show-image img)
     (println (swap! n inc) "/" 377)))
+
+(def h (* 2 360))
+(def w 200)
+(def img {:width w :height h :data (int-array (* w h))})
+(def m (apply max (S (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]))))
+(cp/pdoseq (+ (cp/ncpus) 2) [y (range h)]
+           (let [point (matrix [radius 0 0])
+                 angle (Math/toRadians (* 360 (/ y h)))
+                 dir   (matrix [(Math/cos angle) (Math/sin angle) 0])
+                 light (matrix [1 0 0])
+                 c     (S point dir light)
+                 v     (matrix (vec (map #(clip % 255) (mul (/ 255 m) c))))]
+             (doseq [x (range w)]
+                    (set-pixel! img y x v))))
+(show-image img)
 
 ; convert sun0200.png -background black -gravity center -extent 426x240 test.png
 

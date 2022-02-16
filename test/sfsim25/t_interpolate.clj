@@ -46,10 +46,11 @@
 
 (tabular "Mix between values"
          (fact (mix -2.0 4.0 ?s) => ?result)
-         ?s  ?result
-         0.0 -2.0
-         1.0  4.0
-         0.5  1.0)
+         ?s   ?result
+         0.0  -2.0
+         1.0   4.0
+         0.5   1.0
+         0.25 -0.5)
 
 (tabular "Linear interpolation using a table of scalar values"
          (fact ((interpolation-table [9 4 1 0 1 4] (linear-space [-3] [2] [6])) ?x) => ?result)
