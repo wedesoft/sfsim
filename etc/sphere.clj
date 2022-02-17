@@ -9,22 +9,28 @@
 
 (set! *unchecked-math* true)
 
-(def vertex-source-atmosphere "#version 130
+(def vertex-source-atmosphere "#version 410 core
 in highp vec3 point;
-out highp vec3 pos;
-out highp vec3 orig;
+out VS_OUT
+{
+  highp vec3 pos;
+  highp vec3 orig;
+} vs_out;
 uniform mat4 projection;
 uniform mat4 itransform;
 void main()
 {
   gl_Position = projection * vec4(point, 1);
-  pos = (itransform * vec4(point, 1)).xyz;
-  orig = (itransform * vec4(0, 0, 0, 1)).xyz;
+  vs_out.pos = (itransform * vec4(point, 1)).xyz;
+  vs_out.orig = (itransform * vec4(0, 0, 0, 1)).xyz;
 }")
 
-(def fragment-source-atmosphere "#version 130
-in highp vec3 pos;
-in highp vec3 orig;
+(def fragment-source-atmosphere "#version 410 core
+in VS_OUT
+{
+  highp vec3 pos;
+  highp vec3 orig;
+} fs_in;
 uniform vec3 light;
 out lowp vec3 fragColor;
 uniform sampler2D surface_radiance;
@@ -44,22 +50,22 @@ float max_height = 35000;
 
 void main()
 {
-  vec3 direction = normalize(pos - orig);
-  vec2 surface = ray_sphere(vec3(0, 0, 0), 6378000, orig, direction);
-  vec2 air = ray_sphere(vec3(0, 0, 0), 6378000 + max_height, orig, direction);
+  vec3 direction = normalize(fs_in.pos - fs_in.orig);
+  vec2 surface = ray_sphere(vec3(0, 0, 0), 6378000, fs_in.orig, direction);
+  vec2 air = ray_sphere(vec3(0, 0, 0), 6378000 + max_height, fs_in.orig, direction);
   if (surface.y > 0) {
-    vec3 point = orig + surface.x * direction;
+    vec3 point = fs_in.orig + surface.x * direction;
     vec3 normal = normalize(point);
     float cos_sun_elevation = dot(normal, light);
     vec2 uv = transmittance_forward(point, light, 6378000, max_height, size, power);
     vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * interpolate_2d(transmittance, size, uv).rgb + interpolate_2d(surface_radiance, size, uv).rgb) / (2 * M_PI);
-    point = orig + air.x * direction;
+    point = fs_in.orig + air.x * direction;
     vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, 6378000, max_height, size, power);
     vec3 atm_contrib = interpolate_4d(ray_scatter, size, ray_scatter_index).rgb;
     fragColor = (surf_contrib + atm_contrib) * 10.0;
   } else {
     if (air.y > 0) {
-      vec3 point = orig + air.x * direction;
+      vec3 point = fs_in.orig + air.x * direction;
       vec2 uv = transmittance_forward(point, direction, 6378000, max_height, size, power);
       vec3 l = 0.1 * max(0, pow(dot(direction, light), 5000)) * interpolate_2d(transmittance, size, uv).rgb;
       vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, 6378000, max_height, size, power);
@@ -111,7 +117,7 @@ void main()
 
 (def light (atom (* 1.4 Math/PI)))
 (def position (atom (matrix [0 (* 1.0 (+ 400 radius)) (* 0.01 radius)])))
-(def orientation (atom (q/rotation (* 0 (/ Math/PI 180)) (matrix [1 0 0]))))
+(def orientation (atom (q/rotation (* 90 (/ Math/PI 180)) (matrix [1 0 0]))))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))

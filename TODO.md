@@ -1,8 +1,7 @@
 # TODO
+* combine atmospheric shader with planetary surface rendering, use interface blocks
 * do not use precomputed first order scattering
-* combine atmospheric shader with planetary surface rendering
 * rendering of sunlight and moonlight
-* use interface blocks in shaders
 * compute shadow in atmosphere
 * night-time textures
 * volumetric clouds or billboard clouds
@@ -40,7 +39,6 @@
 * XBox controller
 * 3D cockpit
 * 3D moon rendering
-* Ultima Underwold like AIs
 * elevators, trains
 * cables, pipes
 * garbage
