@@ -1,5 +1,4 @@
 (require '[clojure.core.matrix :refer :all]
-         '[comb.template :as template]
          '[sfsim25.render :refer :all]
          '[sfsim25.shaders :as shaders]
          '[sfsim25.matrix :refer :all]
