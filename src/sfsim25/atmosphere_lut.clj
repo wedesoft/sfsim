@@ -25,7 +25,7 @@
   [& args]
   (when-not (= (count args) 4)
             (.println *err* "Syntax: lein run-atmosphere-lut [size] [ray-steps] [sphere-steps] [iterations]")
-            (.println *err* "Example: lein run-atmosphere-lut 35 10 5 5")
+            (.println *err* "Example: lein run-atmosphere-lut 35 35 10 5")
             (System/exit 1))
   (.println *err* "Initialization")
   (let [size                          (Integer/parseInt (nth args 0))
