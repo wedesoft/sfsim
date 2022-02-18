@@ -1,5 +1,6 @@
 # TODO
 * combine atmospheric shader with planetary surface rendering, use interface blocks
+* is all planet rendering represented as a quad-tree?
 * do not use precomputed first order scattering, refer to Bruneton's paper for a solution, subtract/add radial component?
 * rendering of sunlight and moonlight
 * compute shadow in atmosphere
