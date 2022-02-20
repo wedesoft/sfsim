@@ -1,5 +1,5 @@
 # TODO
-* make tested planetary shader, use interface blocks
+* make tested planetary shader, test textures, test height fields, use interface blocks
 * combine atmospheric shader with planetary surface rendering, use interface blocks
 * decompose atmospheric lookup table into background and glare around sun
 * is all planet rendering represented as a quad-tree?
