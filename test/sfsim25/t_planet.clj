@@ -63,3 +63,22 @@ void main()
                           (raster-lines (render-quads vao))
                           (destroy-vertex-array-object vao)
                           (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-quad.png"))
+
+(fact "Control tessellation of quad using a uniform integer"
+      (offscreen-render 256 256
+                        (let [indices  [0 1 3 2]
+                              vertices [-0.5 -0.5 0.5 0 0 0 0
+                                         0.5 -0.5 0.5 0 0 0 0
+                                        -0.5  0.5 0.5 0 0 0 0
+                                         0.5  0.5 0.5 0 0 0 0]
+                              program  (make-program :vertex [vertex-planet]
+                                                     :tess-control [tess-control-planet]
+                                                     :tess-evaluation [tess-evaluation-planet]
+                                                     :geometry [geometry-planet]
+                                                     :fragment [fragment-white])
+                              vao      (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])]
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (raster-lines (render-patches vao))
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program))) => (record-image "test/sfsim25/fixtures/planet-tessellation.png"))
