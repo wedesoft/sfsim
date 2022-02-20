@@ -2,7 +2,22 @@
     (:require [midje.sweet :refer :all]
               [clojure.core.matrix :refer :all]
               [sfsim25.cubemap :as cubemap]
+              [sfsim25.render :refer :all]
+              [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all]))
+
+; Compare RGB components of image and ignore alpha values.
+(defn is-image [filename]
+  (fn [other]
+      (let [img (slurp-image filename)]
+        (and (= (:width img) (:width other))
+             (= (:height img) (:height other))
+             (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
+
+; Use this test function to record the image the first time.
+(defn record-image [filename]
+  (fn [other]
+      (spit-image filename other)))
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (matrix [-0.75 -0.5  -1.0])
@@ -25,3 +40,29 @@
              (subvec arr 12 14) => [0.995 0.005]
              (subvec arr 19 21) => [0.005 0.995]
              (subvec arr 26 28) => [0.995 0.995]))))
+
+(def fragment-white "#version 410 core
+out lowp vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}")
+
+(fact "Control tessellation of quad using a uniform integer"
+      (offscreen-render 256 256
+                        (let [indices  [0 1 3 2]
+                              vertices [-0.5 -0.5 0.5 0 0 0 0
+                                         0.5 -0.5 0.5 0 0 0 0
+                                        -0.5  0.5 0.5 0 0 0 0
+                                         0.5  0.5 0.5 0 0 0 0]
+                              program  (make-program :vertex [vertex-planet]
+                                                     ; :tess-control [tess-control-planet]
+                                                     ; :tess-evaluation [tess-evaluation-planet]
+                                                     ; :geometry [geometry-planet]
+                                                     :fragment [fragment-white])
+                              vao      (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])]
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (raster-lines (render-quads vao))
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-tesselation.png"))

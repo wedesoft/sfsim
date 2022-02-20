@@ -16,3 +16,19 @@
      (mget b 0) (mget b 1) (mget b 2) h1 h0 c1 c0
      (mget c 0) (mget c 1) (mget c 2) h0 h1 c0 c1
      (mget d 0) (mget d 1) (mget d 2) h1 h1 c1 c1]))
+
+(def vertex-planet
+  "Pass through vertices, height field coordinates, and color texture coordinates"
+  (slurp "resources/shaders/vertex-planet.glsl"))
+
+(def tess-control-planet
+  "Tessellation control shader to control outer tessellation of quad using a uniform integer"
+  (slurp "resources/shaders/tess-control-planet.glsl"))
+
+(def tess-evaluation-planet
+  "Tessellation evaluation shader to generate output points of tessellated quad"
+  (slurp "resources/shaders/tess-evaluation-planet.glsl"))
+
+(def geometry-planet
+  "Geometry shader outputting triangles with color texture coordinates and 3D points"
+  (slurp "resources/shaders/geometry-planet.glsl"))
