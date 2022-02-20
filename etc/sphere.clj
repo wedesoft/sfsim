@@ -47,6 +47,7 @@ int size = 35;
 float power = 2.0;
 float max_height = 35000;
 float amplification = 5.0;
+float sun = 10.0;
 
 void main()
 {
@@ -67,11 +68,11 @@ void main()
     if (air.y > 0) {
       vec3 point = fs_in.orig + air.x * direction;
       vec2 uv = transmittance_forward(point, direction, 6378000, max_height, size, power);
-      vec3 l = 0.1 * max(0, pow(dot(direction, light), 1000)) * interpolate_2d(transmittance, size, uv).rgb;
+      vec3 l = 0.1 * max(0, sun * pow(dot(direction, light), 5000)) * interpolate_2d(transmittance, size, uv).rgb;
       vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, 6378000, max_height, size, power);
       fragColor = (interpolate_4d(ray_scatter, size, ray_scatter_index).rgb + l) * amplification;
     } else {
-      float l = 0.1 * max(0, pow(dot(direction, light), 1000));
+      float l = 0.1 * max(0, sun * pow(dot(direction, light), 5000));
       fragColor = vec3(l, l, l) * amplification;
     };
   };
@@ -79,7 +80,7 @@ void main()
 ")
 
 (Display/setTitle "scratch")
-(def desktop (DisplayMode. 640 480))
+(def desktop (DisplayMode. 1280 960))
 (Display/setDisplayMode desktop)
 (Display/create)
 
