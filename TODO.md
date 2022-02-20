@@ -1,7 +1,7 @@
 # TODO
 * make tested planetary shader, test textures, test height fields, use interface blocks
 * combine atmospheric shader with planetary surface rendering, use interface blocks
-* decompose atmospheric lookup table into background and glare around sun
+* decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)
 * is all planet rendering represented as a quad-tree?
 * do not use precomputed first order scattering, refer to Bruneton's paper for a solution, subtract/add radial component?
 * rendering of sunlight and moonlight
