@@ -69,9 +69,9 @@ void main()
            (offscreen-render 256 256
                              (let [indices  [0 1 3 2]
                                    vertices [-0.5 -0.5 0.5 0 0 0 0
-                                             0.5 -0.5 0.5 0 0 0 0
+                                              0.5 -0.5 0.5 0 0 0 0
                                              -0.5  0.5 0.5 0 0 0 0
-                                             0.5  0.5 0.5 0 0 0 0]
+                                              0.5  0.5 0.5 0 0 0 0]
                                    program  (make-program :vertex [vertex-planet]
                                                           :tess-control [tess-control-planet]
                                                           :tess-evaluation [tess-evaluation-planet]
@@ -92,3 +92,30 @@ void main()
           2          "test/sfsim25/fixtures/planet-tessellation-1.png"
           4          "test/sfsim25/fixtures/planet-tessellation-2.png"
           8          "test/sfsim25/fixtures/planet-tessellation-3.png")
+
+(fact "Render texturized tessellated quad"
+      (offscreen-render 256 256
+                        (let [indices   [0 1 3 2]
+                              vertices  [-0.5 -0.5 0.5 0 0 0.25 0.25
+                                          0.5 -0.5 0.5 0 0 0.75 0.25
+                                         -0.5  0.5 0.5 0 0 0.25 0.75
+                                          0.5  0.5 0.5 0 0 0.75 0.75]
+                              program   (make-program :vertex [vertex-planet]
+                                                      :tess-control [tess-control-planet]
+                                                      :tess-evaluation [tess-evaluation-planet]
+                                                      :geometry [geometry-planet]
+                                                      :fragment [fragment-planet])
+                              vao       (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+                              colors    (slurp-image "test/sfsim25/fixtures/pattern.png")
+                              color-tex (make-rgb-texture colors)]
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (uniform-sampler program :colors 0)
+                          (uniform-int program :high_detail 4)
+                          (uniform-int program :low_detail 2)
+                          (uniform-int program :neighbours 15)
+                          (use-textures color-tex)
+                          (render-patches vao)
+                          (destroy-texture color-tex)
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-color.png"))

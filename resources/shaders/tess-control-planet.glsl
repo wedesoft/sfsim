@@ -3,6 +3,8 @@ layout(vertices = 4) out;
 uniform int high_detail;
 uniform int low_detail;
 uniform int neighbours;
+in mediump vec2 colorcoord_tcs[];
+out mediump vec2 colorcoord_tes[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
@@ -30,4 +32,5 @@ void main(void)
     gl_TessLevelInner[1] = high_detail;
   };
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+  colorcoord_tes[gl_InvocationID] = colorcoord_tcs[gl_InvocationID];
 }

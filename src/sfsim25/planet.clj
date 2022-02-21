@@ -10,8 +10,7 @@
         h0        (/ 0.5 height-tile-size)
         h1        (- 1.0 h0)
         c0        (/ 0.5 color-tile-size)
-        c1        (- 1.0 c0)
-        ]
+        c1        (- 1.0 c0)]
     [(mget a 0) (mget a 1) (mget a 2) h0 h0 c0 c0
      (mget b 0) (mget b 1) (mget b 2) h1 h0 c1 c0
      (mget c 0) (mget c 1) (mget c 2) h0 h1 c0 c1
@@ -32,3 +31,7 @@
 (def geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
   (slurp "resources/shaders/geometry-planet.glsl"))
+
+(def fragment-planet
+  "Fragment shader for coloring surface of planet"
+  (slurp "resources/shaders/fragment-planet.glsl"))
