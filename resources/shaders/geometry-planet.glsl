@@ -1,23 +1,29 @@
 #version 410 core
 layout(triangles) in;
-in mediump vec2 heightcoord_geo[3];
-in mediump vec2 colorcoord_geo[3];
+in TES_OUT
+{
+  mediump vec2 heightcoord;
+  mediump vec2 colorcoord;
+} geo_in[3];
 layout(triangle_strip, max_vertices = 3) out;
-out mediump vec2 heightcoord_frag;
-out mediump vec2 colorcoord_frag;
+out GEO_OUT
+{
+  mediump vec2 heightcoord;
+  mediump vec2 colorcoord;
+} geo_out;
 void main(void)
 {
   gl_Position = gl_in[0].gl_Position;
-  heightcoord_frag = heightcoord_geo[0];
-  colorcoord_frag = colorcoord_geo[0];
+  geo_out.heightcoord = geo_in[0].heightcoord;
+  geo_out.colorcoord = geo_in[0].colorcoord;
   EmitVertex();
   gl_Position = gl_in[1].gl_Position;
-  heightcoord_frag = heightcoord_geo[1];
-  colorcoord_frag = colorcoord_geo[1];
+  geo_out.heightcoord = geo_in[1].heightcoord;
+  geo_out.colorcoord = geo_in[1].colorcoord;
   EmitVertex();
   gl_Position = gl_in[2].gl_Position;
-  heightcoord_frag = heightcoord_geo[2];
-  colorcoord_frag = colorcoord_geo[2];
+  geo_out.heightcoord = geo_in[2].heightcoord;
+  geo_out.colorcoord = geo_in[2].colorcoord;
   EmitVertex();
   EndPrimitive();
 }

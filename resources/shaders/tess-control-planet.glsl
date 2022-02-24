@@ -3,10 +3,16 @@ layout(vertices = 4) out;
 uniform int high_detail;
 uniform int low_detail;
 uniform int neighbours;
-in mediump vec2 heightcoord_tcs[];
-in mediump vec2 colorcoord_tcs[];
-out mediump vec2 heightcoord_tes[];
-out mediump vec2 colorcoord_tes[];
+in VS_OUT
+{
+  mediump vec2 heightcoord;
+  mediump vec2 colorcoord;
+} tcs_in[];
+out TCS_OUT
+{
+  mediump vec2 heightcoord;
+  mediump vec2 colorcoord;
+} tcs_out[];
 void main(void)
 {
   if (gl_InvocationID == 0) {
@@ -34,6 +40,6 @@ void main(void)
     gl_TessLevelInner[1] = high_detail;
   };
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-  heightcoord_tes[gl_InvocationID] = heightcoord_tcs[gl_InvocationID];
-  colorcoord_tes[gl_InvocationID] = colorcoord_tcs[gl_InvocationID];
+  tcs_out[gl_InvocationID].heightcoord = tcs_in[gl_InvocationID].heightcoord;
+  tcs_out[gl_InvocationID].colorcoord = tcs_in[gl_InvocationID].colorcoord;
 }

@@ -96,8 +96,11 @@ void main()
 
 (def texture-coordinates-probe
   (template/fn [selector] "#version 410 core
-in mediump vec2 heightcoord_frag;
-in mediump vec2 colorcoord_frag;
+in GEO_OUT
+{
+  mediump vec2 heightcoord;
+  mediump vec2 colorcoord;
+} frag_in;
 out lowp vec3 fragColor;
 void main()
 {
@@ -129,5 +132,5 @@ void main()
                                    (destroy-vertex-array-object vao)
                                    (destroy-program program))) => (is-image ?result))
          ?selector         ?result
-         "colorcoord_frag"  "test/sfsim25/fixtures/planet-color-coords.png"
-         "heightcoord_frag" "test/sfsim25/fixtures/planet-height-coords.png")
+         "frag_in.colorcoord"  "test/sfsim25/fixtures/planet-color-coords.png"
+         "frag_in.heightcoord" "test/sfsim25/fixtures/planet-height-coords.png")
