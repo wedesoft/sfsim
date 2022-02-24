@@ -1,5 +1,6 @@
 # TODO
-* make tested planetary shader: test textures, test height fields
+* make tested planetary shader: use probe shader to test ground color (radiance, water, sun elevation, test/mock transmittance)
+* test height fields
 * combine atmospheric shader with planetary surface rendering, use interface blocks
 * organize fixtures using subdirectories
 * decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)
