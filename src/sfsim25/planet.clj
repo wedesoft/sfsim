@@ -31,7 +31,3 @@
 (def geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
   (slurp "resources/shaders/geometry-planet.glsl"))
-
-(def fragment-planet
-  "Fragment shader for coloring surface of planet"
-  (slurp "resources/shaders/fragment-planet.glsl"))

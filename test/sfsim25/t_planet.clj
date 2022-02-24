@@ -93,7 +93,16 @@ void main()
           4          "test/sfsim25/fixtures/planet-tessellation-2.png"
           8          "test/sfsim25/fixtures/planet-tessellation-3.png")
 
-(fact "Render texturized tessellated quad"
+(def test-color-texture-coordinates "#version 410 core
+in mediump vec2 colorcoord_frag;
+out lowp vec3 fragColor;
+void main()
+{
+  fragColor.rg = colorcoord_frag;
+  fragColor.b = 0;
+}")
+
+(fact "Test color texture coordinates"
       (offscreen-render 256 256
                         (let [indices   [0 1 3 2]
                               vertices  [-0.5 -0.5 0.5 0 0 0.25 0.25
@@ -104,18 +113,14 @@ void main()
                                                       :tess-control [tess-control-planet]
                                                       :tess-evaluation [tess-evaluation-planet]
                                                       :geometry [geometry-planet]
-                                                      :fragment [fragment-planet])
-                              vao       (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
-                              colors    (slurp-image "test/sfsim25/fixtures/pattern.png")
-                              color-tex (make-rgb-texture colors)]
+                                                      :fragment [test-color-texture-coordinates])
+                              vao       (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])]
                           (clear (matrix [0 0 0]))
                           (use-program program)
                           (uniform-sampler program :colors 0)
                           (uniform-int program :high_detail 4)
                           (uniform-int program :low_detail 2)
                           (uniform-int program :neighbours 15)
-                          (use-textures color-tex)
                           (render-patches vao)
-                          (destroy-texture color-tex)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-color.png"))
+                          (destroy-program program))) => (record-image "test/sfsim25/fixtures/planet-color-coords.png"))
