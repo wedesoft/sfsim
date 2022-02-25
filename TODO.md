@@ -1,5 +1,5 @@
 # TODO
-* make tested planetary shader: use probe shader to test ground color (radiance, water, sun elevation, test/mock transmittance)
+* make tested planetary shader: use probe shader to test ground color (radiance, water, sun dot surface normal, test/mock transmittance)
 * test height fields
 * combine atmospheric shader with planetary surface rendering, use interface blocks
 * organize fixtures using subdirectories
