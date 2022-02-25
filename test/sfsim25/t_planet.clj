@@ -161,15 +161,18 @@ void main()
         @result)))
 
 (def ground-radiance-probe
-  (template/fn [] "#version 410 core
+  (template/fn [r g b] "#version 410 core
 out lowp vec3 fragColor;
-vec3 ground_radiance();
+vec3 ground_radiance(vec3 color);
 void main()
 {
-  fragColor = ground_radiance();
+  fragColor = ground_radiance(vec3(<%= r %>, <%= g %>, <%= b %>));
 }"))
 
 (def ground-radiance-test (shader-test ground-radiance-probe ground-radiance))
 
-(fact "Radiance of ground"
-      (ground-radiance-test) => (matrix [0 0 0]))
+(tabular "Radiance of ground"
+         (fact (ground-radiance-test ?cr ?cg ?cb) => (matrix [?r ?g ?b]))
+         ?cr  ?cg ?cb  ?r   ?g  ?b
+         0    0   0    0    0   0
+         0.25 0.5 0.75 0.25 0.5 0.75)

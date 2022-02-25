@@ -1,6 +1,6 @@
 #version 410 core
 
-vec3 ground_radiance()
+vec3 ground_radiance(vec3 color)
 {
-  return vec3(0, 0, 0);
+  return color;
 }
