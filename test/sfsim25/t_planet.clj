@@ -2,6 +2,7 @@
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
               [clojure.core.matrix :refer :all]
+              [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.render :refer :all]
               [sfsim25.util :refer :all]
@@ -137,6 +138,10 @@ void main()
          "frag_in.colorcoord"  "test/sfsim25/fixtures/planet-color-coords.png"
          "frag_in.heightcoord" "test/sfsim25/fixtures/planet-height-coords.png")
 
+(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
+
+(def pi Math/PI)
+
 (def vertex-passthrough "#version 410 core
 in highp vec3 point;
 void main()
@@ -161,18 +166,19 @@ void main()
         @result)))
 
 (def ground-radiance-probe
-  (template/fn [r g b] "#version 410 core
+  (template/fn [albedo r g b] "#version 410 core
 out lowp vec3 fragColor;
-vec3 ground_radiance(vec3 color);
+vec3 ground_radiance(float albedo, vec3 color);
 void main()
 {
-  fragColor = ground_radiance(vec3(<%= r %>, <%= g %>, <%= b %>));
+  fragColor = ground_radiance(<%= albedo %>, vec3(<%= r %>, <%= g %>, <%= b %>));
 }"))
 
 (def ground-radiance-test (shader-test ground-radiance-probe ground-radiance))
 
 (tabular "Radiance of ground"
-         (fact (ground-radiance-test ?cr ?cg ?cb) => (matrix [?r ?g ?b]))
-         ?cr  ?cg ?cb  ?r   ?g  ?b
-         0    0   0    0    0   0
-         0.25 0.5 0.75 0.25 0.5 0.75)
+         (fact (ground-radiance-test ?albedo ?cr ?cg ?cb) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+         ?albedo ?cr  ?cg ?cb  ?r          ?g         ?b
+         1       0    0   0    0           0          0
+         1       0.25 0.5 0.75 (/ 0.25 pi) (/ 0.5 pi) (/ 0.75 pi)
+         0.3     1    1   1    (/ 0.3 pi)  (/ 0.3 pi) (/ 0.3 pi))

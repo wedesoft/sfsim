@@ -1,6 +1,8 @@
 #version 410 core
 
-vec3 ground_radiance(vec3 color)
+float M_PI = 3.14159265358;
+
+vec3 ground_radiance(float albedo, vec3 color)
 {
-  return color;
+  return (albedo / M_PI) * color;
 }

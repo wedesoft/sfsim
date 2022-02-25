@@ -59,7 +59,7 @@ void main()
     vec3 normal = normalize(point);
     float cos_sun_elevation = dot(normal, light);
     vec2 uv = transmittance_forward(point, light, 6378000, max_height, size, power);
-    vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * interpolate_2d(transmittance, size, uv).rgb + interpolate_2d(surface_radiance, size, uv).rgb) / (2 * M_PI);
+    vec3 surf_contrib = 0.3 * (max(0, cos_sun_elevation) * interpolate_2d(transmittance, size, uv).rgb + interpolate_2d(surface_radiance, size, uv).rgb) / M_PI;
     point = fs_in.orig + air.x * direction;
     vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, 6378000, max_height, size, power);
     vec3 atm_contrib = interpolate_4d(ray_scatter, size, ray_scatter_index).rgb;
