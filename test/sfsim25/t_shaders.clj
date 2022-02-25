@@ -16,19 +16,6 @@ void main()
   gl_Position = vec4(point, 1);
 }")
 
-(def ray-sphere-probe
-  (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
-out lowp vec3 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-void main()
-{
-  vec2 result = ray_sphere(vec3(<%= cx %>, <%= cy %>, <%= cz %>),
-                           1,
-                           vec3(<%= ox %>, <%= oy %>, <%= oz %>),
-                           vec3(<%= dx %>, <%= dy %>, <%= dz %>));
-  fragColor = vec3(result.x, result.y, 0);
-}"))
-
 (defn shader-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
@@ -44,6 +31,19 @@ void main()
             (destroy-vertex-array-object vao)
             (destroy-program program)))
         @result)))
+
+(def ray-sphere-probe
+  (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
+out lowp vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+void main()
+{
+  vec2 result = ray_sphere(vec3(<%= cx %>, <%= cy %>, <%= cz %>),
+                           1,
+                           vec3(<%= ox %>, <%= oy %>, <%= oz %>),
+                           vec3(<%= dx %>, <%= dy %>, <%= dz %>));
+  fragColor = vec3(result.x, result.y, 0);
+}"))
 
 (def ray-sphere-test (shader-test ray-sphere-probe ray-sphere))
 

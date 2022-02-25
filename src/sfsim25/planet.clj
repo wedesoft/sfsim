@@ -31,3 +31,7 @@
 (def geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
   (slurp "resources/shaders/geometry-planet.glsl"))
+
+(def ground-radiance
+  "Shader function to compute ground radiance contribution"
+  (slurp "resources/shaders/ground-radiance.glsl"))

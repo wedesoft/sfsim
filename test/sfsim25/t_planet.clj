@@ -51,14 +51,15 @@ void main()
 
 (fact "Use vertex data to draw a quad"
       (offscreen-render 256 256
-                        (let [indices  [0 1 3 2]
-                              vertices [-0.5 -0.5 0.5 0 0 0 0
-                                         0.5 -0.5 0.5 0 0 0 0
-                                        -0.5  0.5 0.5 0 0 0 0
-                                         0.5  0.5 0.5 0 0 0 0]
-                              program  (make-program :vertex [vertex-planet]
-                                                     :fragment [fragment-white])
-                              vao      (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])]
+                        (let [indices   [0 1 3 2]
+                              vertices  [-0.5 -0.5 0.5 0 0 0 0
+                                          0.5 -0.5 0.5 0 0 0 0
+                                         -0.5  0.5 0.5 0 0 0 0
+                                          0.5  0.5 0.5 0 0 0 0]
+                              program   (make-program :vertex [vertex-planet]
+                                                      :fragment [fragment-white])
+                              variables [:point 3 :heightcoord 2 :colorcoord 2]
+                              vao       (make-vertex-array-object program indices vertices variables)]
                           (clear (matrix [0 0 0]))
                           (use-program program)
                           (raster-lines (render-quads vao))
@@ -68,17 +69,18 @@ void main()
 (tabular "Tessellation control shader to control outer tessellation of quad using a uniform integer"
          (fact
            (offscreen-render 256 256
-                             (let [indices  [0 1 3 2]
-                                   vertices [-0.5 -0.5 0.5 0 0 0 0
-                                              0.5 -0.5 0.5 0 0 0 0
-                                             -0.5  0.5 0.5 0 0 0 0
-                                              0.5  0.5 0.5 0 0 0 0]
-                                   program  (make-program :vertex [vertex-planet]
-                                                          :tess-control [tess-control-planet]
-                                                          :tess-evaluation [tess-evaluation-planet]
-                                                          :geometry [geometry-planet]
-                                                          :fragment [fragment-white])
-                                   vao      (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])]
+                             (let [indices   [0 1 3 2]
+                                   vertices  [-0.5 -0.5 0.5 0 0 0 0
+                                               0.5 -0.5 0.5 0 0 0 0
+                                              -0.5  0.5 0.5 0 0 0 0
+                                               0.5  0.5 0.5 0 0 0 0]
+                                   program   (make-program :vertex [vertex-planet]
+                                                           :tess-control [tess-control-planet]
+                                                           :tess-evaluation [tess-evaluation-planet]
+                                                           :geometry [geometry-planet]
+                                                           :fragment [fragment-white])
+                                   variables [:point 3 :heightcoord 2 :colorcoord 2]
+                                   vao       (make-vertex-array-object program indices vertices variables)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-int program :high_detail 4)
@@ -134,3 +136,40 @@ void main()
          ?selector         ?result
          "frag_in.colorcoord"  "test/sfsim25/fixtures/planet-color-coords.png"
          "frag_in.heightcoord" "test/sfsim25/fixtures/planet-height-coords.png")
+
+(def vertex-passthrough "#version 410 core
+in highp vec3 point;
+void main()
+{
+  gl_Position = vec4(point, 1);
+}")
+
+(defn shader-test [probe & shaders]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices  [0 1 3 2]
+                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao      (make-vertex-array-object program indices vertices [:point 3])
+                tex      (texture-render 1 1 true (use-program program) (render-quads vao))
+                img      (texture->vectors tex 1 1)]
+            (deliver result (get-vector img 0 0))
+            (destroy-texture tex)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def ground-radiance-probe
+  (template/fn [] "#version 410 core
+out lowp vec3 fragColor;
+vec3 ground_radiance();
+void main()
+{
+  fragColor = ground_radiance();
+}"))
+
+(def ground-radiance-test (shader-test ground-radiance-probe ground-radiance))
+
+(fact "Radiance of ground"
+      (ground-radiance-test) => (matrix [0 0 0]))
