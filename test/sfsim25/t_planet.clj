@@ -194,7 +194,7 @@ void main()
 (def ground-radiance-test (shader-test ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/horizon-angle
                                        shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index))
 
-(tabular "Radiance of ground"
+(tabular "Shader function to compute light emitted from ground"
          (fact (ground-radiance-test ?albedo ?x ?y ?z ?nx ?ny ?nz ?lx ?ly ?lz ?cr ?cg ?cb)
                => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
          ?albedo ?x ?y ?z      ?nx ?ny ?nz ?lx ?ly ?lz ?cr ?cg ?cb ?r         ?g ?b

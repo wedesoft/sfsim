@@ -33,5 +33,5 @@
   (slurp "resources/shaders/geometry-planet.glsl"))
 
 (def ground-radiance
-  "Shader function to compute ground radiance contribution"
+  "Shader function to compute light emitted from ground"
   (slurp "resources/shaders/ground-radiance.glsl"))
