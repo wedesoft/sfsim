@@ -5,6 +5,7 @@
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.render :refer :all]
+              [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all]))
 
@@ -153,12 +154,21 @@ void main()
   (fn [& args]
       (let [result (promise)]
         (offscreen-render 1 1
-          (let [indices  [0 1 3 2]
-                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao      (make-vertex-array-object program indices vertices [:point 3])
-                tex      (texture-render 1 1 true (use-program program) (render-quads vao))
-                img      (texture->vectors tex 1 1)]
+          (let [indices   [0 1 3 2]
+                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                red-data  (flatten (repeat (* 17 17) [0 0 1]))
+                red       (make-vector-texture-2d {:width 17 :height 17 :data (float-array red-data)})
+                blue-data (flatten (repeat (* 17 17) [1 0 0]))
+                blue      (make-vector-texture-2d {:width 17 :height 17 :data (float-array blue-data)})
+                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao       (make-vertex-array-object program indices vertices [:point 3])
+                tex       (texture-render 1 1 true
+                                          (use-program program)
+                                          (uniform-sampler program :red 0)
+                                          (uniform-sampler program :blue 1)
+                                          (use-textures red blue)
+                                          (render-quads vao))
+                img       (texture->vectors tex 1 1)]
             (deliver result (get-vector img 0 0))
             (destroy-texture tex)
             (destroy-vertex-array-object vao)
@@ -166,19 +176,30 @@ void main()
         @result)))
 
 (def ground-radiance-probe
-  (template/fn [albedo r g b] "#version 410 core
+  (template/fn [albedo x y z nx ny nz lx ly lz r g b] "#version 410 core
+uniform sampler2D red;
+uniform sampler2D blue;
 out lowp vec3 fragColor;
-vec3 ground_radiance(float albedo, vec3 color);
+vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_radiance, float radius, float max_height, int size,
+                     float power, vec3 point, vec3 normal, vec3 light, vec3 color);
 void main()
 {
-  fragColor = ground_radiance(<%= albedo %>, vec3(<%= r %>, <%= g %>, <%= b %>));
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 normal = vec3(<%= nx %>, <%= ny %>, <%= nz %>);
+  vec3 light = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  vec3 color = vec3(<%= r %>, <%= g %>, <%= b %>);
+  fragColor = ground_radiance(<%= albedo %>, red, blue, 6378000, 100000, 17, 2.0, point, normal, light, color);
 }"))
 
-(def ground-radiance-test (shader-test ground-radiance-probe ground-radiance))
+(def ground-radiance-test (shader-test ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/horizon-angle
+                                       shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index))
 
 (tabular "Radiance of ground"
-         (fact (ground-radiance-test ?albedo ?cr ?cg ?cb) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
-         ?albedo ?cr  ?cg ?cb  ?r          ?g         ?b
-         1       0    0   0    0           0          0
-         1       0.25 0.5 0.75 (/ 0.25 pi) (/ 0.5 pi) (/ 0.75 pi)
-         0.3     1    1   1    (/ 0.3 pi)  (/ 0.3 pi) (/ 0.3 pi))
+         (fact (ground-radiance-test ?albedo ?x ?y ?z ?nx ?ny ?nz ?lx ?ly ?lz ?cr ?cg ?cb)
+               => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+         ?albedo ?x ?y ?z      ?nx ?ny ?nz ?lx ?ly ?lz ?cr ?cg ?cb ?r         ?g ?b
+         1       0  0  6378000 0   0   1   0   0   1   0   0   0   0          0  0
+         1       0  0  6378000 0   0   1   0   0   1   0.2 0.5 0.8 (/ 0.2 pi) 0  (/ 0.8 pi)
+         0.3     0  0  6378000 0   0   1   0   0   1   1   1   1   (/ 0.3 pi) 0  (/ 0.3 pi)
+         1       0  0  6378000 0   0   1   1   0   0   1   1   1   0          0  (/ 1.0 pi)
+         1       0  0  6378000 0   0   1   0   0  -1   1   1   1   0          0  (/ 1.0 pi))
