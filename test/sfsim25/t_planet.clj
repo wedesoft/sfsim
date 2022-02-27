@@ -141,8 +141,6 @@ void main()
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
-(def pi Math/PI)
-
 (def vertex-passthrough "#version 410 core
 in highp vec3 point;
 void main()
@@ -176,30 +174,34 @@ void main()
         @result)))
 
 (def ground-radiance-probe
-  (template/fn [albedo x y z nx ny nz lx ly lz r g b] "#version 410 core
+  (template/fn [albedo x y z diffuse specular lx ly lz water cr cg cb] "#version 410 core
 uniform sampler2D red;
 uniform sampler2D blue;
 out lowp vec3 fragColor;
 vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_radiance, float radius, float max_height, int size,
-                     float power, vec3 point, vec3 normal, vec3 light, vec3 color);
+                     float power, vec3 point, vec3 light, float water, float diffuse, float specular, vec3 land_color,
+                     vec3 water_color);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 normal = vec3(<%= nx %>, <%= ny %>, <%= nz %>);
   vec3 light = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  vec3 color = vec3(<%= r %>, <%= g %>, <%= b %>);
-  fragColor = ground_radiance(<%= albedo %>, red, blue, 6378000, 100000, 17, 2.0, point, normal, light, color);
+  vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
+  vec3 water_color = vec3(0.1, 0.2, 0.4);
+  fragColor = ground_radiance(<%= albedo %>, red, blue, 6378000, 100000, 17, 2.0, point, light, <%= water %>, <%= diffuse %>,
+                              <%= specular %>, land_color, water_color);
 }"))
 
 (def ground-radiance-test (shader-test ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/horizon-angle
                                        shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (ground-radiance-test ?albedo ?x ?y ?z ?nx ?ny ?nz ?lx ?ly ?lz ?cr ?cg ?cb)
+         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?diffuse ?specular ?lx ?ly ?lz ?water ?cr ?cg ?cb) Math/PI)
                => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
-         ?albedo ?x ?y ?z      ?nx ?ny ?nz ?lx ?ly ?lz ?cr ?cg ?cb ?r         ?g ?b
-         1       0  0  6378000 0   0   1   0   0   1   0   0   0   0          0  0
-         1       0  0  6378000 0   0   1   0   0   1   0.2 0.5 0.8 (/ 0.2 pi) 0  (/ 0.8 pi)
-         0.3     0  0  6378000 0   0   1   0   0   1   1   1   1   (/ 0.3 pi) 0  (/ 0.3 pi)
-         1       0  0  6378000 0   0   1   1   0   0   1   1   1   0          0  (/ 1.0 pi)
-         1       0  0  6378000 0   0   1   0   0  -1   1   1   1   0          0  (/ 1.0 pi))
+         ?albedo ?x ?y ?z       ?diffuse ?specular ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r              ?g ?b
+         1       0  0  6378000  1        0         0   0   1   0      0   0   0   0               0  0
+         1       0  0  6378000  1        0         0   0   1   0      0.2 0.5 0.8 0.2             0  0.8
+         0.9     0  0  6378000  1        0         0   0   1   0      1   1   1   0.9             0  0.9
+         1       0  0  6378000  0        0         1   0   0   0      1   1   1   0               0  1.0
+         1       0  0  6378000  1        0         0   0   1   1      0.2 0.5 0.8 0.1             0  0.4
+         1       0  0  6378000  0        0.5       0   0   1   1      0.2 0.5 0.8 (* 0.5 Math/PI) 0  0.4
+         1       0  0  6378000  1        0.5       0   0   1   0      0.2 0.5 0.8 0.2             0  0.8)

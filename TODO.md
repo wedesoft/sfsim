@@ -1,14 +1,14 @@
 # TODO
-* make tested planetary shader: use probe shader to test ground color (water)
-* albedo should be 0.9 (snow)
 * test height fields
-* combine atmospheric shader with planetary surface rendering, use interface blocks
+* combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow)
 * organize fixtures using subdirectories
 * decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)
 * is all planet rendering represented as a quad-tree?
 * do not use precomputed first order scattering, refer to Bruneton's paper for a solution, subtract/add radial component?
 * rendering of sunlight and moonlight
 * compute shadow in atmosphere
+* use Earth explorer data: https://earthexplorer.usgs.gov/
+* find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
 * volumetric clouds or billboard clouds
 * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
