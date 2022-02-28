@@ -101,48 +101,43 @@ void main()
           4          "test/sfsim25/fixtures/planet-tessellation-2.png"
           8          "test/sfsim25/fixtures/planet-tessellation-3.png")
 
-(def texture-coordinates-probe
-  (template/fn [selector] "#version 410 core
+(def texture-coordinates-probe "#version 410 core
 in GEO_OUT
 {
-  mediump vec2 heightcoord;
   mediump vec2 colorcoord;
 } frag_in;
 out lowp vec3 fragColor;
 void main()
 {
-  fragColor.rg = <%= selector %>;
+  fragColor.rg = frag_in.colorcoord;
   fragColor.b = 0;
-}"))
+}")
 
-(tabular "Test color texture coordinates"
-         (fact (offscreen-render 256 256
-                                 (let [indices   [0 1 3 2]
-                                       vertices  [-0.5 -0.5 0.5 0.125 0.125 0.25 0.25
-                                                   0.5 -0.5 0.5 0.875 0.125 0.75 0.25
-                                                  -0.5  0.5 0.5 0.125 0.875 0.25 0.75
-                                                   0.5  0.5 0.5 0.875 0.875 0.75 0.75]
-                                       program   (make-program :vertex [vertex-planet]
-                                                               :tess-control [tess-control-planet]
-                                                               :tess-evaluation [tess-evaluation-planet]
-                                                               :geometry [geometry-planet]
-                                                               :fragment [(texture-coordinates-probe ?selector)])
-                                       variables [:point 3 :heightcoord 2 :colorcoord 2]
-                                       vao       (make-vertex-array-object program indices vertices variables)]
-                                   (clear (matrix [0 0 0]))
-                                   (use-program program)
-                                   (uniform-sampler program :colors 0)
-                                   (uniform-int program :high_detail 4)
-                                   (uniform-int program :low_detail 2)
-                                   (uniform-int program :neighbours 15)
-                                   (uniform-matrix4 program :transform (identity-matrix 4))
-                                   (uniform-matrix4 program :projection (identity-matrix 4))
-                                   (render-patches vao)
-                                   (destroy-vertex-array-object vao)
-                                   (destroy-program program))) => (is-image ?result))
-         ?selector         ?result
-         "frag_in.colorcoord"  "test/sfsim25/fixtures/planet-color-coords.png"
-         "frag_in.heightcoord" "test/sfsim25/fixtures/planet-height-coords.png")
+(fact "Test color texture coordinates"
+      (offscreen-render 256 256
+                        (let [indices   [0 1 3 2]
+                              vertices  [-0.5 -0.5 0.5 0.125 0.125 0.25 0.25
+                                          0.5 -0.5 0.5 0.875 0.125 0.75 0.25
+                                         -0.5  0.5 0.5 0.125 0.875 0.25 0.75
+                                          0.5  0.5 0.5 0.875 0.875 0.75 0.75]
+                              program   (make-program :vertex [vertex-planet]
+                                                      :tess-control [tess-control-planet]
+                                                      :tess-evaluation [tess-evaluation-planet]
+                                                      :geometry [geometry-planet]
+                                                      :fragment [texture-coordinates-probe])
+                              variables [:point 3 :heightcoord 2 :colorcoord 2]
+                              vao       (make-vertex-array-object program indices vertices variables)]
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (uniform-sampler program :colors 0)
+                          (uniform-int program :high_detail 4)
+                          (uniform-int program :low_detail 2)
+                          (uniform-int program :neighbours 15)
+                          (uniform-matrix4 program :transform (identity-matrix 4))
+                          (uniform-matrix4 program :projection (identity-matrix 4))
+                          (render-patches vao)
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-color-coords.png"))
 
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
