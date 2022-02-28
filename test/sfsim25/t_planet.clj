@@ -6,6 +6,7 @@
               [sfsim25.cubemap :as cubemap]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
+              [sfsim25.matrix :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all]))
 
@@ -88,6 +89,7 @@ void main()
                                (uniform-int program :high_detail 4)
                                (uniform-int program :low_detail 2)
                                (uniform-int program :neighbours ?neighbours)
+                               (uniform-matrix4 program :transform (identity-matrix 4))
                                (raster-lines (render-patches vao))
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result))
@@ -132,12 +134,40 @@ void main()
                                    (uniform-int program :high_detail 4)
                                    (uniform-int program :low_detail 2)
                                    (uniform-int program :neighbours 15)
+                                   (uniform-matrix4 program :transform (identity-matrix 4))
                                    (render-patches vao)
                                    (destroy-vertex-array-object vao)
                                    (destroy-program program))) => (is-image ?result))
          ?selector         ?result
          "frag_in.colorcoord"  "test/sfsim25/fixtures/planet-color-coords.png"
          "frag_in.heightcoord" "test/sfsim25/fixtures/planet-height-coords.png")
+
+
+
+
+(fact "Apply transformation to points in tessellation evaluation shader"
+      (offscreen-render 256 256
+                        (let [indices   [0 1 3 2]
+                              vertices  [-0.6 -0.5 0.5 0 0 0 0
+                                          0.4 -0.5 0.5 0 0 0 0
+                                         -0.6  0.5 0.5 0 0 0 0
+                                          0.4  0.5 0.5 0 0 0 0]
+                              program   (make-program :vertex [vertex-planet]
+                                                      :tess-control [tess-control-planet]
+                                                      :tess-evaluation [tess-evaluation-planet]
+                                                      :geometry [geometry-planet]
+                                                      :fragment [fragment-white])
+                              variables [:point 3 :heightcoord 2 :colorcoord 2]
+                              vao       (make-vertex-array-object program indices vertices variables)]
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (uniform-int program :high_detail 4)
+                          (uniform-int program :low_detail 2)
+                          (uniform-int program :neighbours 15)
+                          (uniform-matrix4 program :transform (transformation-matrix (identity-matrix 3) (matrix [0.1 0 0])))
+                          (raster-lines (render-patches vao))
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-tessellation.png"))
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
