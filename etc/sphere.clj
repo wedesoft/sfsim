@@ -134,7 +134,7 @@ void main()
                           (use-textures surface-radiance transmittance ray-scatter)
                           (render-quads vao))
          (swap! t0 + dt)
-         (swap! light + (* 0.002 0.1 dt))
+         (swap! light + (* 0.001 0.1 dt))
          (Display/update)))
 
 (destroy-texture surface-radiance)

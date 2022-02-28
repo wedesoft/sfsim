@@ -1,11 +1,12 @@
 # TODO
-* test transform, projection, and height fields
+* test height fields (scaling of points)
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow)
 * organize fixtures using subdirectories
 * decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)
 * is all planet rendering represented as a quad-tree?
 * do not use precomputed first order scattering, refer to Bruneton's paper for a solution, subtract/add radial component?
 * rendering of sunlight and moonlight
+* separate atmospheric lookup into elevation/heading-dependent part and radial symmetric part around the sun?
 * compute shadow in atmosphere
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
