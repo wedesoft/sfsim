@@ -1,5 +1,5 @@
 # TODO
-* test height fields (scaling of points)
+* create and use a test height fields (scaling of points, also test values greater than one)
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow)
 * organize fixtures using subdirectories
 * decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)
