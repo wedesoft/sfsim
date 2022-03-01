@@ -1,5 +1,8 @@
 # TODO
-* create and use a test height fields (scaling of points, also test values greater than one)
+* test transmittance between two points
+* test spherical atmosphere rendering and space
+* test planet appearance using transmittance and in-scattering
+* how to render sun in atmosphere, space, and on top of planet
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow)
 * organize fixtures using subdirectories
 * decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)
