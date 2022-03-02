@@ -1,5 +1,4 @@
 # TODO
-* test transmittance between two points in the atmosphere
 * test spherical atmosphere rendering and space
 * test planet appearance using transmittance and in-scattering
 * how to render sun in atmosphere, space, and on top of planet

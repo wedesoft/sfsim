@@ -346,4 +346,7 @@ void main()
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact (mget (transmittance-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => (roughly ?result 1e-6))
          ?px ?py ?pz     ?qx ?qy ?qz     ?result
-         0   0   6378000 0   0   6378000 1)
+         0   0   6478000 0   0   6478000 1
+         0   0   6428000 0   0   6478000 0.5
+         0   0   6453000 0   0   6478000 0.75
+         0   0   6428000 0   0   6453000 (/ 0.5 0.75))
