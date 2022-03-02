@@ -34,4 +34,8 @@
 
 (def ground-radiance
   "Shader function to compute light emitted from ground"
-  (slurp "resources/shaders/ground-radiance.glsl"))
+  (slurp "resources/shaders/ground_radiance.glsl"))
+
+(def transmittance-track
+  "Shader function to compute transmittance between two points in the atmosphere"
+  (slurp "resources/shaders/transmittance_track.glsl"))
