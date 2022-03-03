@@ -2,6 +2,7 @@
 * test spherical atmosphere rendering and space
 * test planet appearance using transmittance and in-scattering
 * how to render sun in atmosphere, space, and on top of planet
+* how to render stars
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow)
 * organize fixtures using subdirectories
 * decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)

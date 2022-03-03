@@ -226,4 +226,8 @@
 
 (def point-scatter-space ray-scatter-space)
 
+(def transmittance-track
+  "Shader function to compute transmittance between two points in the atmosphere"
+  (slurp "resources/shaders/transmittance_track.glsl"))
+
 (set! *unchecked-math* false)
