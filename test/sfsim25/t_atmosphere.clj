@@ -435,27 +435,39 @@ void main()
          0   0   6453000 0   0   6478000 0.75
          0   0   6428000 0   0   6453000 (/ 0.5 0.75))
 
-(def fragment-white "#version 410 core
+(def vertex-atmosphere-probe
+  (template/fn [selector] "#version 410 core
+in VS_OUT
+{
+  highp vec3 direction;
+  highp vec3 origin;
+} fs_in;
 out lowp vec3 fragColor;
 void main()
 {
-  fragColor = vec3(1, 1, 1);
-}")
+  fragColor = <%= selector %>;
+}"))
 
-(fact "Draw projected quad for rendering atmosphere"
-      (offscreen-render 256 256
-                        (let [indices   [0 1 3 2]
-                              vertices  [-0.5 -0.5 -1
-                                          0.5 -0.5 -1
-                                         -0.5  0.5 -1
-                                          0.5  0.5 -1]
-                              program   (make-program :vertex [vertex-atmosphere]
-                                                      :fragment [fragment-white])
-                              variables [:point 3]
-                              vao       (make-vertex-array-object program indices vertices variables)]
-                          (clear (matrix [0 0 0]))
-                          (use-program program)
-                          (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
-                          (raster-lines (render-quads vao))
-                          (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (record-image "test/sfsim25/fixtures/atmosphere-quad.png"))
+(tabular "Draw quad for rendering atmosphere and determine viewing direction and camera origin"
+         (fact
+           (offscreen-render 256 256
+                             (let [indices   [0 1 3 2]
+                                   vertices  [-0.5 -0.5 -1
+                                               0.5 -0.5 -1
+                                              -0.5  0.5 -1
+                                               0.5  0.5 -1]
+                                   program   (make-program :vertex [vertex-atmosphere]
+                                                           :fragment [(vertex-atmosphere-probe ?selector)])
+                                   variables [:point 3]
+                                   vao       (make-vertex-array-object program indices vertices variables)]
+                               (clear (matrix [0 0 0]))
+                               (use-program program)
+                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
+                               (uniform-matrix4 program :inverse_transform (identity-matrix 4))
+                               (render-quads vao)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program))) => (is-image ?result))
+         ?selector                               ?result
+         "vec3(1, 1, 1)"                         "test/sfsim25/fixtures/atmosphere-quad.png"
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" "test/sfsim25/fixtures/atmosphere-direction.png"
+         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    "test/sfsim25/fixtures/atmosphere-origin.png")

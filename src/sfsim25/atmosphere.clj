@@ -231,7 +231,7 @@
   (slurp "resources/shaders/transmittance_track.glsl"))
 
 (def vertex-atmosphere
-  "Vertex shader for atmosphere rendering"
+  "Draw quad for rendering atmosphere and determine viewing direction and camera origin"
   (slurp "resources/shaders/vertex-atmosphere.glsl"))
 
 (set! *unchecked-math* false)

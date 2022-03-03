@@ -1,5 +1,5 @@
 # TODO
-* test spherical atmosphere rendering and space
+* test spherical atmosphere rendering and space: test direction and origin with non-trivial inverse transformation
 * test planet appearance using transmittance and in-scattering
 * how to render sun in atmosphere, space, and on top of planet
 * how to render stars
