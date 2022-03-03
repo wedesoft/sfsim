@@ -230,4 +230,8 @@
   "Shader function to compute transmittance between two points in the atmosphere"
   (slurp "resources/shaders/transmittance_track.glsl"))
 
+(def vertex-atmosphere
+  "Vertex shader for atmosphere rendering"
+  (slurp "resources/shaders/vertex-atmosphere.glsl"))
+
 (set! *unchecked-math* false)

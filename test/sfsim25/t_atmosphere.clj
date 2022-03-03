@@ -3,12 +3,26 @@
               [comb.template :as template]
               [clojure.core.matrix :refer :all]
               [clojure.core.matrix.linear :refer (norm)]
+              [sfsim25.matrix :refer :all]
               [sfsim25.sphere :as sphere]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
               [sfsim25.atmosphere :refer :all :as atmosphere])
     (:import [mikera.vectorz Vector]))
+
+; Compare RGB components of image and ignore alpha values.
+(defn is-image [filename]
+  (fn [other]
+      (let [img (slurp-image filename)]
+        (and (= (:width img) (:width other))
+             (= (:height img) (:height other))
+             (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
+
+; Use this test function to record the image the first time.
+(defn record-image [filename]
+  (fn [other]
+      (spit-image filename other)))
 
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
   (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6]) :scatter-scale 8000}]
@@ -420,3 +434,28 @@ void main()
          0   0   6428000 0   0   6478000 0.5
          0   0   6453000 0   0   6478000 0.75
          0   0   6428000 0   0   6453000 (/ 0.5 0.75))
+
+(def fragment-white "#version 410 core
+out lowp vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}")
+
+(fact "Draw projected quad for rendering atmosphere"
+      (offscreen-render 256 256
+                        (let [indices   [0 1 3 2]
+                              vertices  [-0.5 -0.5 -1
+                                          0.5 -0.5 -1
+                                         -0.5  0.5 -1
+                                          0.5  0.5 -1]
+                              program   (make-program :vertex [vertex-atmosphere]
+                                                      :fragment [fragment-white])
+                              variables [:point 3]
+                              vao       (make-vertex-array-object program indices vertices variables)]
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
+                          (raster-lines (render-quads vao))
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program))) => (record-image "test/sfsim25/fixtures/atmosphere-quad.png"))
