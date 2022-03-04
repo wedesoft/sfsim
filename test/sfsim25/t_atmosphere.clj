@@ -452,7 +452,7 @@ void main()
 (def shifted (transformation-matrix (identity-matrix 3) (matrix [0.2 0.4 0.5])))
 (def rotated (transformation-matrix (rotation-x (Math/toRadians 90)) (matrix [0 0 0])))
 
-(tabular "Draw quad for rendering atmosphere and determine viewing direction and camera origin"
+(tabular "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
          (fact
            (offscreen-render 256 256
                              (let [indices   [0 1 3 2]
@@ -479,3 +479,30 @@ void main()
          "fs_in.origin + vec3(0.5, 0.5, 0.5)"    shifted "test/sfsim25/fixtures/atmosphere-shifted.png"
          "fs_in.origin + vec3(0.5, 0.5, 0.5)"    rotated "test/sfsim25/fixtures/atmosphere-origin.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere-rotated.png")
+
+(def radius 6378000)
+(def max_height 100000)
+
+(tabular "Fragment shader for rendering atmosphere and sun"
+         (fact
+           (offscreen-render 256 256
+                             (let [indices   [0 1 3 2]
+                                   vertices  [-0.5 -0.5 -1
+                                               0.5 -0.5 -1
+                                              -0.5  0.5 -1
+                                               0.5  0.5 -1]
+                                   inverse   (transformation-matrix (rotation-x ?angle) (matrix [?x ?y ?z]))
+                                   program   (make-program :vertex [vertex-atmosphere]
+                                                           :fragment [fragment-atmosphere])
+                                   variables [:point 3]
+                                   vao       (make-vertex-array-object program indices vertices variables)]
+                               (clear (matrix [0 0 0]))
+                               (use-program program)
+                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
+                               (uniform-matrix4 program :inverse_transform inverse)
+                               (render-quads vao)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program)))   => (record-image ?result))
+         ?x ?y ?z                      ?angle  ?result
+         0  0  (- 0 radius max_height) 0       "test/sfsim25/fixtures/atmosphere-sun.png"
+         0  0  (+ radius max_height)   Math/PI "test/sfsim25/fixtures/atmosphere-space.png")

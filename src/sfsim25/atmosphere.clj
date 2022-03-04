@@ -231,7 +231,11 @@
   (slurp "resources/shaders/transmittance_track.glsl"))
 
 (def vertex-atmosphere
-  "Draw quad for rendering atmosphere and determine viewing direction and camera origin"
+  "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
   (slurp "resources/shaders/vertex-atmosphere.glsl"))
+
+(def fragment-atmosphere
+  "Fragment shader for rendering atmosphere and sun"
+  (slurp "resources/shaders/fragment-atmosphere.glsl"))
 
 (set! *unchecked-math* false)
