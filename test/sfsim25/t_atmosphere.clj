@@ -450,6 +450,7 @@ void main()
 
 (def initial (identity-matrix 4))
 (def shifted (transformation-matrix (identity-matrix 3) (matrix [0.2 0.4 0.5])))
+(def rotated (transformation-matrix (rotation-x (Math/toRadians 90)) (matrix [0 0 0])))
 
 (tabular "Draw quad for rendering atmosphere and determine viewing direction and camera origin"
          (fact
@@ -473,5 +474,8 @@ void main()
          ?selector                               ?matrix ?result
          "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere-quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere-direction.png"
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere-direction.png"
          "fs_in.origin + vec3(0.5, 0.5, 0.5)"    initial "test/sfsim25/fixtures/atmosphere-origin.png"
-         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    shifted "test/sfsim25/fixtures/atmosphere-shifted.png")
+         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    shifted "test/sfsim25/fixtures/atmosphere-shifted.png"
+         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    rotated "test/sfsim25/fixtures/atmosphere-origin.png"
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere-rotated.png")
