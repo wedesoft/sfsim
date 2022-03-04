@@ -448,6 +448,9 @@ void main()
   fragColor = <%= selector %>;
 }"))
 
+(def initial (identity-matrix 4))
+(def shifted (transformation-matrix (identity-matrix 3) (matrix [0.2 0.4 0.5])))
+
 (tabular "Draw quad for rendering atmosphere and determine viewing direction and camera origin"
          (fact
            (offscreen-render 256 256
@@ -463,11 +466,12 @@ void main()
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
-                               (uniform-matrix4 program :inverse_transform (identity-matrix 4))
+                               (uniform-matrix4 program :inverse_transform ?matrix)
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result))
-         ?selector                               ?result
-         "vec3(1, 1, 1)"                         "test/sfsim25/fixtures/atmosphere-quad.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" "test/sfsim25/fixtures/atmosphere-direction.png"
-         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    "test/sfsim25/fixtures/atmosphere-origin.png")
+         ?selector                               ?matrix ?result
+         "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere-quad.png"
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere-direction.png"
+         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    initial "test/sfsim25/fixtures/atmosphere-origin.png"
+         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    shifted "test/sfsim25/fixtures/atmosphere-shifted.png")

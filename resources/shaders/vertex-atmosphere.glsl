@@ -10,6 +10,6 @@ out VS_OUT
 void main()
 {
   vs_out.direction = point;
-  vs_out.origin = vec3(0, 0, 0);
+  vs_out.origin = (inverse_transform * vec4(0, 0, 0, 1)).xyz;
   gl_Position = projection * vec4(point, 1);
 }
