@@ -5,6 +5,7 @@
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.matrix :refer :all]
               [sfsim25.sphere :as sphere]
+              [sfsim25.interpolate :refer :all]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
@@ -481,29 +482,73 @@ void main()
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere-rotated.png")
 
 (def radius 6378000)
-(def max_height 100000)
+(def max-height 100000)
+(def ray-steps 10)
+(def size 7)
+(def power 2.0)
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
+                            :radius radius
+                            :sfsim25.atmosphere/height max-height
+                            :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5])
+                              :scatter-scale 1200
+                              :scatter-g 0.76
+                              :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
+                                   :scatter-scale 8000})
+(def scatter [mie rayleigh])
+(def transmittance-earth (partial transmittance earth scatter ray-extremity ray-steps))
+(def transmittance-space-earth (transmittance-space earth size power))
+(def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
+(def ray-scatter-earth (partial ray-scatter earth scatter ray-extremity ray-steps point-scatter-earth))
+(def ray-scatter-space-earth (ray-scatter-space earth size power))
+(def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
+                                         transmittance-space-earth)))
+(def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)
+                                                           ray-scatter-space-earth))))
 
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
            (offscreen-render 256 256
-                             (let [indices   [0 1 3 2]
-                                   vertices  [-0.5 -0.5 -1
-                                               0.5 -0.5 -1
-                                              -0.5  0.5 -1
-                                               0.5  0.5 -1]
-                                   inverse   (transformation-matrix (identity-matrix 3) (matrix [?x ?y ?z]))
-                                   program   (make-program :vertex [vertex-atmosphere]
-                                                           :fragment [fragment-atmosphere])
-                                   variables [:point 3]
-                                   vao       (make-vertex-array-object program indices vertices variables)]
+                             (let [indices       [0 1 3 2]
+                                   vertices      [-0.5 -0.5 -1
+                                                   0.5 -0.5 -1
+                                                  -0.5  0.5 -1
+                                                   0.5  0.5 -1]
+                                   inverse       (transformation-matrix (identity-matrix 3) (matrix [?x ?y ?z]))
+                                   program       (make-program :vertex [vertex-atmosphere]
+                                                               :fragment [fragment-atmosphere shaders/ray-sphere
+                                                                          shaders/transmittance-forward shaders/horizon-angle
+                                                                          shaders/elevation-to-index shaders/ray-scatter-forward
+                                                                          shaders/oriented-matrix shaders/orthogonal-vector
+                                                                          shaders/clip-angle shaders/interpolate-2d
+                                                                          shaders/convert-2d-index shaders/interpolate-4d
+                                                                          shaders/convert-4d-index])
+                                   variables     [:point 3]
+                                   transmittance (make-vector-texture-2d {:width size :height size :data T})
+                                   ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
+                                   vao           (make-vertex-array-object program indices vertices variables)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
+                               (uniform-sampler program :transmittance 0)
+                               (uniform-sampler program :ray_scatter 1)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
                                (uniform-matrix4 program :inverse_transform inverse)
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
+                               (uniform-float program :radius radius)
+                               (uniform-float program :max_height max-height)
+                               (uniform-float program :specular 500)
+                               (uniform-int program :size size)
+                               (uniform-float program :power power)
+                               (uniform-float program :amplification 10)
+                               (use-textures transmittance ray-scatter)
                                (render-quads vao)
+                               (destroy-texture ray-scatter)
+                               (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))   => (is-image ?result))
-         ?x ?y ?z                      ?lx ?ly ?lz  ?result
-         0  0  (- 0 radius max_height) 0   0   -1   "test/sfsim25/fixtures/atmosphere-sun.png"
-         0  0  (- 0 radius max_height) 0   0    1   "test/sfsim25/fixtures/atmosphere-space.png")
+         ?x ?y     ?z                      ?lx ?ly ?lz  ?result
+         0  0      (- 0 radius max-height) 0   0   -1   "test/sfsim25/fixtures/atmosphere-sun.png"
+         0  0      (- 0 radius max-height) 0   0    1   "test/sfsim25/fixtures/atmosphere-space.png"
+         0  0      (* 2.5 radius)          0   1    0   "test/sfsim25/fixtures/atmosphere-haze.png"
+         0  radius (* 0.5 radius)          0   0   -1   "test/sfsim25/fixtures/atmosphere-sunset.png")
