@@ -1,6 +1,4 @@
 # TODO
-* test that dot product for glare computation is clipped with zero
-* test spherical atmosphere rendering and space
 * test planet appearance using transmittance and in-scattering
 * how to render sun in atmosphere, space, and on top of planet
 * how to render stars
