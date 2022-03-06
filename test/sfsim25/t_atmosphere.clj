@@ -441,7 +441,6 @@ void main()
 in VS_OUT
 {
   highp vec3 direction;
-  highp vec3 origin;
 } fs_in;
 out lowp vec3 fragColor;
 void main()
@@ -476,9 +475,6 @@ void main()
          "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere-quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere-direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere-direction.png"
-         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    initial "test/sfsim25/fixtures/atmosphere-origin.png"
-         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    shifted "test/sfsim25/fixtures/atmosphere-shifted.png"
-         "fs_in.origin + vec3(0.5, 0.5, 0.5)"    rotated "test/sfsim25/fixtures/atmosphere-origin.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere-rotated.png")
 
 (def radius 6378000)
@@ -515,7 +511,8 @@ void main()
                                                    0.5 -0.5 -1
                                                   -0.5  0.5 -1
                                                    0.5  0.5 -1]
-                                   transform     (transformation-matrix (identity-matrix 3) (matrix [?x ?y ?z]))
+                                   origin        (matrix [?x ?y ?z])
+                                   transform     (transformation-matrix (identity-matrix 3) origin)
                                    program       (make-program :vertex [vertex-atmosphere]
                                                                :fragment [fragment-atmosphere shaders/ray-sphere
                                                                           shaders/transmittance-forward shaders/horizon-angle
@@ -533,6 +530,7 @@ void main()
                                (uniform-sampler program :transmittance 0)
                                (uniform-sampler program :ray_scatter 1)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
+                               (uniform-vector3 program :origin origin)
                                (uniform-matrix4 program :transform transform)
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
                                (uniform-float program :radius radius)

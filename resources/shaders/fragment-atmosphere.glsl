@@ -8,10 +8,10 @@ uniform float specular;
 uniform float power;
 uniform int size;
 uniform float amplification;
+uniform vec3 origin;
 in VS_OUT
 {
   highp vec3 direction;
-  highp vec3 origin;
 } fs_in;
 out lowp vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
@@ -23,9 +23,9 @@ void main()
 {
   vec3 direction = normalize(fs_in.direction);
   float glare = pow(max(0, dot(direction, light)), specular);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   if (atmosphere_intersection.y > 0) {
-    vec3 point = fs_in.origin + atmosphere_intersection.x * direction;
+    vec3 point = origin + atmosphere_intersection.x * direction;
     vec2 transmittance_index = transmittance_forward(point, direction, radius, max_height, size, power);
     vec4 ray_scatter_index = ray_scatter_forward(point, direction, light, radius, max_height, size, power);
     vec3 atmospheric_contribution = interpolate_4d(ray_scatter, size, ray_scatter_index).rgb;
