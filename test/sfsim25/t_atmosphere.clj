@@ -547,8 +547,9 @@ void main()
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))   => (is-image ?result))
-         ?x ?y     ?z                      ?lx ?ly ?lz  ?result
-         0  0      (- 0 radius max-height) 0   0   -1   "test/sfsim25/fixtures/atmosphere-sun.png"
-         0  0      (- 0 radius max-height) 0   0    1   "test/sfsim25/fixtures/atmosphere-space.png"
-         0  0      (* 2.5 radius)          0   1    0   "test/sfsim25/fixtures/atmosphere-haze.png"
-         0  radius (* 0.5 radius)          0   0   -1   "test/sfsim25/fixtures/atmosphere-sunset.png")
+         ?x ?y           ?z                      ?lx ?ly ?lz  ?result
+         0  0            (- 0 radius max-height) 0   0   -1   "test/sfsim25/fixtures/atmosphere-sun.png"
+         0  0            (- 0 radius max-height) 0   0    1   "test/sfsim25/fixtures/atmosphere-space.png"
+         0  0            (* 2.5 radius)          0   1    0   "test/sfsim25/fixtures/atmosphere-haze.png"
+         0  radius       (* 0.5 radius)          0   0   -1   "test/sfsim25/fixtures/atmosphere-sunset.png"
+         0  0            (- 0 radius 2)          0   0   -1   "test/sfsim25/fixtures/atmosphere-inside.png")
