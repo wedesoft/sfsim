@@ -468,7 +468,7 @@ void main()
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
-                               (uniform-matrix4 program :inverse_transform ?matrix)
+                               (uniform-matrix4 program :transform ?matrix)
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result))
@@ -515,7 +515,7 @@ void main()
                                                    0.5 -0.5 -1
                                                   -0.5  0.5 -1
                                                    0.5  0.5 -1]
-                                   inverse       (transformation-matrix (identity-matrix 3) (matrix [?x ?y ?z]))
+                                   transform     (transformation-matrix (identity-matrix 3) (matrix [?x ?y ?z]))
                                    program       (make-program :vertex [vertex-atmosphere]
                                                                :fragment [fragment-atmosphere shaders/ray-sphere
                                                                           shaders/transmittance-forward shaders/horizon-angle
@@ -533,7 +533,7 @@ void main()
                                (uniform-sampler program :transmittance 0)
                                (uniform-sampler program :ray_scatter 1)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
-                               (uniform-matrix4 program :inverse_transform inverse)
+                               (uniform-matrix4 program :transform transform)
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
                                (uniform-float program :radius radius)
                                (uniform-float program :max_height max-height)

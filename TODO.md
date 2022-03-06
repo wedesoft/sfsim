@@ -1,5 +1,6 @@
 # TODO
 * test planet appearance using transmittance and in-scattering
+* use uniform position instead of calculating it from the transformation matrix
 * how to render sun in atmosphere, space, and on top of planet
 * how to render stars
 * planet is an ellipsoid (not a sphere)
