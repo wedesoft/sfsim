@@ -302,3 +302,36 @@ void main()
          1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1              0  0.4
          1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 Math/PI) 0  0.4
          1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2              0  0.8)
+
+(def vertex-planet-probe "#version 410 core
+in highp vec3 point;
+in mediump vec2 colorcoord;
+out TES_OUT
+{
+  mediump vec2 colorcoord;
+} tes_out;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  tes_out.colorcoord = colorcoord;
+}")
+
+(tabular "Fragment shader to render planetary surface"
+         (fact
+           (offscreen-render 256 256
+                             (let [indices   [0 1 3 2]
+                                   vertices  [-0.5 -0.5 0.5 0.25 0.25
+                                               0.5 -0.5 0.5 0.75 0.25
+                                              -0.5  0.5 0.5 0.25 0.75
+                                               0.5  0.5 0.5 0.75 0.75]
+                                   program   (make-program :vertex [vertex-planet-probe]
+                                                           :fragment [fragment-planet])
+                                   variables [:point 3 :colorcoord 2]
+                                   vao       (make-vertex-array-object program indices vertices variables)]
+                               (clear (matrix [0 0 0]))
+                               (use-program program)
+                               (render-quads vao)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program))) => (is-image ?result))
+         ?result
+         "test/sfsim25/fixtures/planet-fragment.png")
