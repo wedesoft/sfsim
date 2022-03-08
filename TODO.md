@@ -1,5 +1,5 @@
 # TODO
-* test planet quad appearance using transmittance and in-scattering, is heightcoord needed for normal vector texture?
+* test planet quad appearance using transmittance and in-scattering, position is needed for shading
 * how to render sun in atmosphere, space, and on top of planet
 * how to render stars
 * planet is an ellipsoid (not a sphere)

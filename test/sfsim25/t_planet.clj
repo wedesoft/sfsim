@@ -105,46 +105,52 @@ void main()
           4          "test/sfsim25/fixtures/planet-tessellation-2.png"
           8          "test/sfsim25/fixtures/planet-tessellation-3.png")
 
-(def texture-coordinates-probe "#version 410 core
+(def texture-coordinates-probe
+  (template/fn [selector] "#version 410 core
 in GEO_OUT
 {
   mediump vec2 colorcoord;
+  mediump vec2 heightcoord;
 } frag_in;
 out lowp vec3 fragColor;
 void main()
 {
-  fragColor.rg = frag_in.colorcoord;
+  fragColor.rg = frag_in.<%= selector %>;
   fragColor.b = 0;
-}")
+}"))
 
-(fact "Test color texture coordinates"
-      (offscreen-render 256 256
-                        (let [indices     [0 1 3 2]
-                              vertices    [-0.5 -0.5 0.5 0.125 0.125 0.25 0.25
-                                            0.5 -0.5 0.5 0.875 0.125 0.75 0.25
-                                           -0.5  0.5 0.5 0.125 0.875 0.25 0.75
-                                            0.5  0.5 0.5 0.875 0.875 0.75 0.75]
-                              program     (make-program :vertex [vertex-planet]
-                                                        :tess-control [tess-control-planet]
-                                                        :tess-evaluation [tess-evaluation-planet]
-                                                        :geometry [geometry-planet]
-                                                        :fragment [texture-coordinates-probe])
-                              variables   [:point 3 :heightcoord 2 :colorcoord 2]
-                              vao         (make-vertex-array-object program indices vertices variables)
-                              heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [1.0])})]
-                          (clear (matrix [0 0 0]))
-                          (use-program program)
-                          (uniform-sampler program :heightfield 0)
-                          (uniform-int program :high_detail 4)
-                          (uniform-int program :low_detail 2)
-                          (uniform-int program :neighbours 15)
-                          (uniform-matrix4 program :transform (identity-matrix 4))
-                          (uniform-matrix4 program :projection (identity-matrix 4))
-                          (use-textures heightfield)
-                          (render-patches vao)
-                          (destroy-texture heightfield)
-                          (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-color-coords.png"))
+(tabular "Test color texture coordinates"
+         (fact
+           (offscreen-render 256 256
+                             (let [indices     [0 1 3 2]
+                                   vertices    [-0.5 -0.5 0.5 0.125 0.125 0.25 0.25
+                                                0.5 -0.5 0.5 0.875 0.125 0.75 0.25
+                                                -0.5  0.5 0.5 0.125 0.875 0.25 0.75
+                                                0.5  0.5 0.5 0.875 0.875 0.75 0.75]
+                                   program     (make-program :vertex [vertex-planet]
+                                                             :tess-control [tess-control-planet]
+                                                             :tess-evaluation [tess-evaluation-planet]
+                                                             :geometry [geometry-planet]
+                                                             :fragment [(texture-coordinates-probe ?selector)])
+                                   variables   [:point 3 :heightcoord 2 :colorcoord 2]
+                                   vao         (make-vertex-array-object program indices vertices variables)
+                                   heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [1.0])})]
+                               (clear (matrix [0 0 0]))
+                               (use-program program)
+                               (uniform-sampler program :heightfield 0)
+                               (uniform-int program :high_detail 4)
+                               (uniform-int program :low_detail 2)
+                               (uniform-int program :neighbours 15)
+                               (uniform-matrix4 program :transform (identity-matrix 4))
+                               (uniform-matrix4 program :projection (identity-matrix 4))
+                               (use-textures heightfield)
+                               (render-patches vao)
+                               (destroy-texture heightfield)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program))) => (is-image ?result))
+         ?selector     ?result
+         "colorcoord"  "test/sfsim25/fixtures/planet-color-coords.png"
+         "heightcoord" "test/sfsim25/fixtures/planet-height-coords.png")
 
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -306,32 +312,46 @@ void main()
 (def vertex-planet-probe "#version 410 core
 in highp vec3 point;
 in mediump vec2 colorcoord;
-out TES_OUT
+in mediump vec2 heightcoord;
+out GEO_OUT
 {
   mediump vec2 colorcoord;
-} tes_out;
+  mediump vec2 heightcoord;
+} vs_out;
 void main()
 {
   gl_Position = vec4(point, 1);
-  tes_out.colorcoord = colorcoord;
+  vs_out.colorcoord = colorcoord;
+  vs_out.heightcoord = heightcoord;
 }")
 
 (tabular "Fragment shader to render planetary surface"
          (fact
            (offscreen-render 256 256
                              (let [indices   [0 1 3 2]
-                                   vertices  [-0.5 -0.5 0.5 0.25 0.25
-                                               0.5 -0.5 0.5 0.75 0.25
-                                              -0.5  0.5 0.5 0.25 0.75
-                                               0.5  0.5 0.5 0.75 0.75]
+                                   vertices  [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5
+                                               0.5 -0.5 0.5 0.75 0.25 0.5 0.5
+                                              -0.5  0.5 0.5 0.25 0.75 0.5 0.5
+                                               0.5  0.5 0.5 0.75 0.75 0.5 0.5]
                                    program   (make-program :vertex [vertex-planet-probe]
                                                            :fragment [fragment-planet])
-                                   variables [:point 3 :colorcoord 2]
-                                   vao       (make-vertex-array-object program indices vertices variables)]
+                                   variables [:point 3 :colorcoord 2 :heightcoord 2]
+                                   vao       (make-vertex-array-object program indices vertices variables)
+                                   colors    (make-rgb-texture (slurp-image (str "test/sfsim25/fixtures/" ?colors ".png")))
+                                   normals   (make-vector-texture-2d {:width 2 :height 2
+                                                                      :data (float-array (flatten (repeat 4 [?nz ?ny ?nx])))})]
                                (clear (matrix [0 0 0]))
                                (use-program program)
+                               (uniform-sampler program :colors 0)
+                               (uniform-sampler program :normals 1)
+                               (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
+                               (use-textures colors normals)
                                (render-quads vao)
+                               (destroy-texture normals)
+                               (destroy-texture colors)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result))
-         ?result
-         "test/sfsim25/fixtures/planet-fragment.png")
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/" ?result ".png")))
+         ?colors   ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   0   0   1   0   0   1   "planet-fragment"
+         "pattern" 0   0   1   0   0   1   "planet-colors"
+         "white"   0   0   1   0.8 0   0.6 "planet-normal")
