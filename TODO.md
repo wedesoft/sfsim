@@ -1,5 +1,6 @@
 # TODO
 * test planet quad appearance using transmittance and in-scattering, position is needed for shading
+* remove heightcoord from tail of shader chain?
 * how to render sun in atmosphere, space, and on top of planet
 * how to render stars
 * planet is an ellipsoid (not a sphere)

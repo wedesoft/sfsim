@@ -12,6 +12,7 @@ out TES_OUT
 {
   mediump vec2 colorcoord;
   mediump vec2 heightcoord;
+  highp vec3 point;
 } tes_out;
 void main()
 {
@@ -26,5 +27,6 @@ void main()
   vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec3 point = mix(a, b, gl_TessCoord.y).xyz;
+  tes_out.point = point;
   gl_Position = projection * transform * vec4(scale * point, 1);
 }
