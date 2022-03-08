@@ -344,14 +344,16 @@ void main()
                                (use-program program)
                                (uniform-sampler program :colors 0)
                                (uniform-sampler program :normals 1)
+                               (uniform-float program :albedo ?albedo)
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
                                (use-textures colors normals)
                                (render-quads vao)
                                (destroy-texture normals)
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/" ?result ".png")))
-         ?colors   ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   0   0   1   0   0   1   "planet-fragment"
-         "pattern" 0   0   1   0   0   1   "planet-colors"
-         "white"   0   0   1   0.8 0   0.6 "planet-normal")
+                               (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/" ?result ".png")))
+         ?colors   ?albedo ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   Math/PI 0   0   1   0   0   1   "planet-fragment"
+         "pattern" Math/PI 0   0   1   0   0   1   "planet-colors"
+         "white"   Math/PI 0   0   1   0.8 0   0.6 "planet-normal"
+         "white"   0.9     0   0   1   0   0   1   "planet-albedo")

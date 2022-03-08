@@ -13,5 +13,5 @@ vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_ra
   vec3 direct_light = interpolate_2d(transmittance, size, uv).rgb;
   vec3 ambient_light = interpolate_2d(surface_radiance, size, uv).rgb;
   vec3 color = land_color * (1 - water) + water_color * water;
-  return (albedo * color / M_PI) * (cos_incidence * direct_light + ambient_light) + water * reflectivity * highlight * direct_light;
+  return (albedo / M_PI) * color * (cos_incidence * direct_light + ambient_light) + (water * reflectivity * highlight) * direct_light;
 }
