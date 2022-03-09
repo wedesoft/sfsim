@@ -1,18 +1,23 @@
 #version 410 core
+
 layout(vertices = 4) out;
+
 uniform int high_detail;
 uniform int low_detail;
 uniform int neighbours;
+
 in VS_OUT
 {
   mediump vec2 heightcoord;
   mediump vec2 colorcoord;
 } tcs_in[];
+
 out TCS_OUT
 {
   mediump vec2 heightcoord;
   mediump vec2 colorcoord;
 } tcs_out[];
+
 void main(void)
 {
   if (gl_InvocationID == 0) {
