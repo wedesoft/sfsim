@@ -351,28 +351,34 @@ void main()
                                                    {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nz ?ny ?nx])))})
                                    transmittance (make-vector-texture-2d
                                                    {:width size :height size
-                                                    :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})]
+                                                    :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})
+                                   radiance      (make-vector-texture-2d
+                                                   {:width size :height size
+                                                    :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-sampler program :colors 0)
                                (uniform-sampler program :normals 1)
                                (uniform-sampler program :transmittance 2)
+                               (uniform-sampler program :surface_radiance 3)
                                (uniform-int program :size size)
                                (uniform-float program :albedo ?albedo)
                                (uniform-float program :radius 6378000)
                                (uniform-float program :max_height 100000)
                                (uniform-float program :power 2.0)
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
-                               (use-textures colors normals transmittance)
+                               (use-textures colors normals transmittance radiance)
                                (render-quads vao)
+                               (destroy-texture radiance)
                                (destroy-texture transmittance)
                                (destroy-texture normals)
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/" ?result ".png")))
-         ?colors   ?albedo ?tr ?tg ?tb ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI 1   1   1   0   0   1   0   0   1   "planet-fragment"
-         "pattern" Math/PI 1   1   1   0   0   1   0   0   1   "planet-colors"
-         "white"   Math/PI 1   1   1   0   0   1   0.8 0   0.6 "planet-normal"
-         "white"   0.9     1   1   1   0   0   1   0   0   1   "planet-albedo"
-         "white"   Math/PI 1   0   0   0   0   1   0   0   1   "planet-transmittance")
+         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   Math/PI 1   1   1   0   0   0   0   0   1   0   0   1   "planet-fragment"
+         "pattern" Math/PI 1   1   1   0   0   0   0   0   1   0   0   1   "planet-colors"
+         "white"   Math/PI 1   1   1   0   0   0   0   0   1   0.8 0   0.6 "planet-normal"
+         "white"   0.9     1   1   1   0   0   0   0   0   1   0   0   1   "planet-albedo"
+         "white"   Math/PI 1   0   0   0   0   0   0   0   1   0   0   1   "planet-transmittance"
+         "white"   Math/PI 1   1   1   0.4 0.6 0.8 0   1   0   0   0   1   "planet-ambient")

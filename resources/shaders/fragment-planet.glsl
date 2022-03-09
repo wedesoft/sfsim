@@ -2,6 +2,7 @@
 uniform sampler2D colors;
 uniform sampler2D normals;
 uniform sampler2D transmittance;
+uniform sampler2D surface_radiance;
 uniform int size;
 uniform float power;
 uniform float albedo;
@@ -25,5 +26,6 @@ void main()
   float cos_incidence = max(dot(light, normal), 0);
   vec2 idx = transmittance_forward(fs_in.point, light, radius, max_height, size, power);
   vec3 direct_light = interpolate_2d(transmittance, size, idx).rgb;
-  fragColor = (albedo / M_PI) * color * (cos_incidence * direct_light);
+  vec3 ambient_light = interpolate_2d(surface_radiance, size, idx).rgb;
+  fragColor = (albedo / M_PI) * color * (cos_incidence * direct_light + ambient_light);
 }
