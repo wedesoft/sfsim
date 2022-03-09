@@ -1,7 +1,7 @@
 # TODO
 * don't use position but use intersection point with atmosphere when computing atmospheric transmittance
 * handle camera outside atmosphere (ray-sphere intersection)
-* in-scattering on a track
+* in-scattering on a track inside the atmosphere
 * test planet quad appearance using transmittance\_track and in-scattering
 * remove heightcoord from tail of shader chain?
 * how to render sun in atmosphere, space, and on top of planet
