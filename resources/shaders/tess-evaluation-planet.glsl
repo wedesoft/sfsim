@@ -1,19 +1,24 @@
 #version 410 core
+
 layout(quads, equal_spacing, ccw) in;
+
 uniform sampler2D heightfield;
 uniform mat4 projection;
 uniform mat4 transform;
+
 in TCS_OUT
 {
   mediump vec2 heightcoord;
   mediump vec2 colorcoord;
 } tes_in[];
+
 out TES_OUT
 {
   mediump vec2 colorcoord;
   mediump vec2 heightcoord;
   highp vec3 point;
 } tes_out;
+
 void main()
 {
   vec2 colorcoord_a = mix(tes_in[0].colorcoord, tes_in[1].colorcoord, gl_TessCoord.x);
