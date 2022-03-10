@@ -333,7 +333,7 @@ void main()
 (def fake-transmittance "#version 410 core
 vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int size, float power, vec3 p, vec3 q)
 {
-  float dist = distance(p , q);
+  float dist = distance(p, q);
   if (dist < 150) return vec3(1, 1, 1);
   if (dist < 150000) return vec3(0.5, 0.5, 0.5);
   return vec3(0, 0, 0);
@@ -351,7 +351,7 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
                                                                :fragment [fragment-planet fake-transmittance
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/horizon-angle shaders/transmittance-forward
-                                                                          shaders/elevation-to-index])
+                                                                          shaders/elevation-to-index shaders/ray-sphere])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000
@@ -391,12 +391,13 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/" ?result ".png")))
-         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI 1   1   1   0   0   0   0      100   0   0   1   0   0   1   "planet-fragment"
-         "pattern" Math/PI 1   1   1   0   0   0   0      100   0   0   1   0   0   1   "planet-colors"
-         "white"   Math/PI 1   1   1   0   0   0   0      100   0   0   1   0.8 0   0.6 "planet-normal"
-         "white"   0.9     1   1   1   0   0   0   0      100   0   0   1   0   0   1   "planet-albedo"
-         "white"   Math/PI 1   0   0   0   0   0   0      100   0   0   1   0   0   1   "planet-transmittance"
-         "white"   Math/PI 1   1   1   0.4 0.6 0.8 0      100   0   1   0   0   0   1   "planet-ambient"
-         "white"   Math/PI 1   1   1   0   0   0   255    100   0   0   1   0   0   1   "planet-water"
-         "white"   Math/PI 1   1   1   0   0   0   0      10000 0   0   1   0   0   1   "planet-absorption")
+         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0   1   0   0   1   "planet-fragment"
+         "pattern" Math/PI 1   1   1   0   0   0     0       100 0   0   1   0   0   1   "planet-colors"
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0   1   0.8 0   0.6 "planet-normal"
+         "white"   0.9     1   1   1   0   0   0     0       100 0   0   1   0   0   1   "planet-albedo"
+         "white"   Math/PI 1   0   0   0   0   0     0       100 0   0   1   0   0   1   "planet-transmittance"
+         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0   1   0   0   0   1   "planet-ambient"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0   1   0   0   1   "planet-water"
+         "white"   Math/PI 1   1   1   0   0   0     0     10000 0   0   1   0   0   1   "planet-absorption"
+         "white"   Math/PI 1   1   1   0   0   0     0    200000 0   0   1   0   0   1   "planet-absorption")
