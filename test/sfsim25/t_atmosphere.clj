@@ -436,6 +436,59 @@ void main()
          0   0   6453000 0   0   6478000 0.75
          0   0   6428000 0   0   6453000 (/ 0.5 0.75))
 
+(defn ray-scatter-shader-test [probe & shaders]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices       [0 1 3 2]
+                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                data-trans    (flatten (map #(repeat 5 (repeat 3 (/ % 4))) (range 5)))
+                transmittance (make-vector-texture-2d {:width 5 :height 5 :data (float-array data-trans)})
+                data-ray      (flatten (repeat (* 5 5 5 5) (repeat 3 1)))
+                ray-scatter   (make-vector-texture-2d {:width 25 :height 25 :data (float-array data-ray)})
+                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao           (make-vertex-array-object program indices vertices [:point 3])
+                tex           (texture-render 1 1 true
+                                              (use-program program)
+                                              (uniform-sampler program :transmittance 0)
+                                              (uniform-sampler program :ray_scatter 1)
+                                              (use-textures transmittance ray-scatter)
+                                              (render-quads vao))
+                img           (texture->vectors tex 1 1)]
+            (deliver result (get-vector img 0 0))
+            (destroy-texture tex)
+            (destroy-texture ray-scatter)
+            (destroy-texture transmittance)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def ray-scatter-track-probe
+  (template/fn [px py pz qx qy qz] "#version 410 core
+uniform sampler2D transmittance;
+uniform sampler2D ray_scatter;
+out lowp vec3 fragColor;
+vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int size, float power,
+                       vec3 light_direction, vec3 p, vec3 q);
+void main()
+{
+  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
+  fragColor = ray_scatter_track(ray_scatter, transmittance, 6378000, 100000, 5, 1, vec3(0, 0, 1), p, q);
+}"))
+
+(def ray-scatter-track-test (ray-scatter-shader-test ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward
+                                                     shaders/horizon-angle shaders/oriented-matrix shaders/orthogonal-vector
+                                                     shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d
+                                                     shaders/convert-4d-index transmittance-track shaders/transmittance-forward
+                                                     shaders/interpolate-2d shaders/convert-2d-index))
+
+(tabular "Shader function to determine in-scattered light between two points in the atmosphere"
+         (fact (mget (ray-scatter-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => ?result)
+         ?px ?py ?pz     ?qx ?qy ?qz     ?result
+         0   0   6478000 0   0   6478000 0.0
+         0   0   6428000 0   0   6478000 (- 1.0 (* 0.5 1.0)))
+
 (def vertex-atmosphere-probe
   (template/fn [selector] "#version 410 core
 in VS_OUT

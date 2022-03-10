@@ -230,6 +230,10 @@
   "Shader function to compute transmittance between two points in the atmosphere"
   (slurp "resources/shaders/transmittance_track.glsl"))
 
+(def ray-scatter-track
+  "Shader function to determine in-scattered light between two points in the atmosphere"
+  (slurp "resources/shaders/ray_scatter_track.glsl"))
+
 (def vertex-atmosphere
   "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
   (slurp "resources/shaders/vertex-atmosphere.glsl"))
