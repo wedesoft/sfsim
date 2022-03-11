@@ -360,7 +360,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/horizon-angle shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-sphere
-                                                                          fake-ray-scatter])
+                                                                          fake-ray-scatter ground-radiance])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000
@@ -396,7 +396,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (uniform-float program :max_height 100000)
                                (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34]))
                                (uniform-vector3 program :position (matrix [0 0 (+ radius ?dist)]))
-                               (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
+                               (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
                                (uniform-vector3 program :scatter (matrix [?s ?s ?s]))
                                (use-textures colors normals transmittance ray-scatter radiance water)
                                (render-quads vao)
