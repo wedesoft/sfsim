@@ -339,6 +339,14 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
   return vec3(0, 0, 0);
 }")
 
+(def fake-ray-scatter "#version 410 core
+uniform vec3 scatter;
+vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int size, float power,
+                       vec3 light_direction, vec3 p, vec3 q)
+{
+  return scatter;
+}")
+
 (tabular "Fragment shader to render planetary surface"
          (fact
            (offscreen-render 256 256
@@ -351,7 +359,8 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
                                                                :fragment [fragment-planet fake-transmittance
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/horizon-angle shaders/transmittance-forward
-                                                                          shaders/elevation-to-index shaders/ray-sphere])
+                                                                          shaders/elevation-to-index shaders/ray-sphere
+                                                                          fake-ray-scatter])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000
@@ -362,6 +371,9 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
                                    transmittance (make-vector-texture-2d
                                                    {:width size :height size
                                                     :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})
+                                   ray-scatter   (make-vector-texture-2d
+                                                   {:width (* size size) :height (* size size)
+                                                    :data (float-array (repeat (* size size size size 3) 0.5))})
                                    radiance      (make-vector-texture-2d
                                                    {:width size :height size
                                                     :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
@@ -372,8 +384,9 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
                                (uniform-sampler program :colors 0)
                                (uniform-sampler program :normals 1)
                                (uniform-sampler program :transmittance 2)
-                               (uniform-sampler program :surface_radiance 3)
-                               (uniform-sampler program :water 4)
+                               (uniform-sampler program :ray_scatter 3)
+                               (uniform-sampler program :surface_radiance 4)
+                               (uniform-sampler program :water 5)
                                (uniform-int program :size size)
                                (uniform-float program :power 2.0)
                                (uniform-float program :albedo ?albedo)
@@ -382,22 +395,25 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
                                (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34]))
                                (uniform-vector3 program :position (matrix [0 0 (+ radius ?dist)]))
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
-                               (use-textures colors normals transmittance radiance water)
+                               (uniform-vector3 program :scatter (matrix [?scatter ?scatter ?scatter]))
+                               (use-textures colors normals transmittance ray-scatter radiance water)
                                (render-quads vao)
                                (destroy-texture water)
                                (destroy-texture radiance)
+                               (destroy-texture ray-scatter)
                                (destroy-texture transmittance)
                                (destroy-texture normals)
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/" ?result ".png")))
-         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0   1   0   0   1   "planet-fragment"
-         "pattern" Math/PI 1   1   1   0   0   0     0       100 0   0   1   0   0   1   "planet-colors"
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0   1   0.8 0   0.6 "planet-normal"
-         "white"   0.9     1   1   1   0   0   0     0       100 0   0   1   0   0   1   "planet-albedo"
-         "white"   Math/PI 1   0   0   0   0   0     0       100 0   0   1   0   0   1   "planet-transmittance"
-         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0   1   0   0   0   1   "planet-ambient"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0   1   0   0   1   "planet-water"
-         "white"   Math/PI 1   1   1   0   0   0     0     10000 0   0   1   0   0   1   "planet-absorption"
-         "white"   Math/PI 1   1   1   0   0   0     0    200000 0   0   1   0   0   1   "planet-absorption")
+         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?scatter ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0        0   0   1   0   0   1   "planet-fragment"
+         "pattern" Math/PI 1   1   1   0   0   0     0       100 0        0   0   1   0   0   1   "planet-colors"
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0        0   0   1   0.8 0   0.6 "planet-normal"
+         "white"   0.9     1   1   1   0   0   0     0       100 0        0   0   1   0   0   1   "planet-albedo"
+         "white"   Math/PI 1   0   0   0   0   0     0       100 0        0   0   1   0   0   1   "planet-transmittance"
+         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0        0   1   0   0   0   1   "planet-ambient"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0        0   0   1   0   0   1   "planet-water"
+         "white"   Math/PI 1   1   1   0   0   0     0     10000 0        0   0   1   0   0   1   "planet-absorption"
+         "white"   Math/PI 1   1   1   0   0   0     0    200000 0        0   0   1   0   0   1   "planet-absorption"
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0.5      0   1   0   0   0   1   "planet-scatter")

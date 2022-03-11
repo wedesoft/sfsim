@@ -1,5 +1,4 @@
 # TODO
-* in-scattering on a track inside the atmosphere
 * water reflection
 * create sub directories for shaders and fixtures
 * test planet quad appearance using transmittance\_track and in-scattering

@@ -3,6 +3,7 @@
 uniform sampler2D colors;
 uniform sampler2D normals;
 uniform sampler2D transmittance;
+uniform sampler2D ray_scatter;
 uniform sampler2D surface_radiance;
 uniform sampler2D water;
 uniform int size;
@@ -29,6 +30,8 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);  // TODO: remove
 vec4 interpolate_2d(sampler2D table, int size, vec2 idx);  // TODO: remove this
 vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int size, float power, vec3 p, vec3 q);
+vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int size, float power,
+                       vec3 light_direction, vec3 p, vec3 q);
 
 void main()
 {
@@ -46,5 +49,7 @@ void main()
   vec3 surface_light = (albedo / M_PI) * color * (cos_incidence * direct_light + ambient_light);
   vec3 surface_transmittance = transmittance_track(transmittance, radius, max_height, size, power, atmosphere_start,
                                                    fs_in.point);
-  fragColor = surface_light * surface_transmittance;
+  vec3 in_scattering = ray_scatter_track(ray_scatter, transmittance, radius, max_height, size, power, light, atmosphere_start,
+                                         fs_in.point);
+  fragColor = surface_light * surface_transmittance + in_scattering;
 }
