@@ -390,12 +390,14 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (uniform-int program :size size)
                                (uniform-float program :power 2.0)
                                (uniform-float program :albedo ?albedo)
+                               (uniform-float program :reflectivity ?refl)
+                               (uniform-float program :specular 100)
                                (uniform-float program :radius radius)
                                (uniform-float program :max_height 100000)
                                (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34]))
                                (uniform-vector3 program :position (matrix [0 0 (+ radius ?dist)]))
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
-                               (uniform-vector3 program :scatter (matrix [?scatter ?scatter ?scatter]))
+                               (uniform-vector3 program :scatter (matrix [?s ?s ?s]))
                                (use-textures colors normals transmittance ray-scatter radiance water)
                                (render-quads vao)
                                (destroy-texture water)
@@ -406,14 +408,16 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/" ?result ".png")))
-         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?scatter ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0        0   0   1   0   0   1   "planet-fragment"
-         "pattern" Math/PI 1   1   1   0   0   0     0       100 0        0   0   1   0   0   1   "planet-colors"
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0        0   0   1   0.8 0   0.6 "planet-normal"
-         "white"   0.9     1   1   1   0   0   0     0       100 0        0   0   1   0   0   1   "planet-albedo"
-         "white"   Math/PI 1   0   0   0   0   0     0       100 0        0   0   1   0   0   1   "planet-transmittance"
-         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0        0   1   0   0   0   1   "planet-ambient"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0        0   0   1   0   0   1   "planet-water"
-         "white"   Math/PI 1   1   1   0   0   0     0     10000 0        0   0   1   0   0   1   "planet-absorption"
-         "white"   Math/PI 1   1   1   0   0   0     0    200000 0        0   0   1   0   0   1   "planet-absorption"
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0.5      0   1   0   0   0   1   "planet-scatter")
+         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-fragment"
+         "pattern" Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-colors"
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "planet-normal"
+         "white"   0.9     1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-albedo"
+         "white"   Math/PI 1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-transmittance"
+         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "planet-ambient"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "planet-water"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "planet-reflection1"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "planet-reflection2"
+         "white"   Math/PI 1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "planet-absorption"
+         "white"   Math/PI 1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "planet-absorption"
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0.5 0     0   1   0   0   0   1   "planet-scatter")
