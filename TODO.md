@@ -1,5 +1,4 @@
 # TODO
-* water reflection
 * create sub directories for shaders and fixtures
 * test planet quad appearance using transmittance\_track and in-scattering
 * remove heightcoord from tail of shader chain?
