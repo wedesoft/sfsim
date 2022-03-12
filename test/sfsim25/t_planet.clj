@@ -135,7 +135,7 @@ void main()
                                                              :fragment [(texture-coordinates-probe ?selector)])
                                    variables   [:point 3 :heightcoord 2 :colorcoord 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
-                                   heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [1.0])})]
+                                   heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [?scale])})]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-sampler program :heightfield 0)
@@ -149,10 +149,11 @@ void main()
                                (destroy-texture heightfield)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result))
-         ?selector                           ?result
-         "frag_in.colorcoord"                "test/sfsim25/fixtures/planet/color-coords.png"
-         "frag_in.heightcoord"               "test/sfsim25/fixtures/planet/height-coords.png"
-         "frag_in.point.xy + vec2(0.5, 0.5)" "test/sfsim25/fixtures/planet/point.png")
+         ?selector                           ?scale ?result
+         "frag_in.colorcoord"                1.0    "test/sfsim25/fixtures/planet/color-coords.png"
+         "frag_in.heightcoord"               1.0    "test/sfsim25/fixtures/planet/height-coords.png"
+         "frag_in.point.xy + vec2(0.5, 0.5)" 1.0    "test/sfsim25/fixtures/planet/point.png"
+         "frag_in.point.xy + vec2(0.5, 0.5)" 1.1    "test/sfsim25/fixtures/planet/scaled-point.png")
 
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
