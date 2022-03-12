@@ -1,20 +1,18 @@
 # TODO
-* test planet quad appearance using transmittance\_track and in-scattering
-* remove heightcoord from tail of shader chain?
-* how to render sun in atmosphere, space, and on top of planet
-* how to render stars
+* compute new scale factors for elevation map
+* combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
 * planet is an ellipsoid (not a sphere)
-* combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow)
-* organize fixtures using subdirectories
-* decompose atmospheric lookup table into background and glare around sun (or use higher-resolution lookup table?)
-* is all planet rendering represented as a quad-tree?
-* do not use precomputed first order scattering, refer to Bruneton's paper for a solution, subtract/add radial component?
-* rendering of sunlight and moonlight
-* separate atmospheric lookup into elevation/heading-dependent part and radial symmetric part around the sun?
-* compute shadow in atmosphere
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
+* improve rendering of sun
+* how to render clouds
+* how to render shadows on planet surface
+* how to render shadows in atmosphere
+* how to render stars
+* render moonlight and moon
+* organize fixtures using subdirectories
+* is all planet rendering represented as a quad-tree?
 * volumetric clouds or billboard clouds
 * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
 * normal maps
