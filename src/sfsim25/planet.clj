@@ -18,24 +18,24 @@
 
 (def vertex-planet
   "Pass through vertices, height field coordinates, and color texture coordinates"
-  (slurp "resources/shaders/vertex-planet.glsl"))
+  (slurp "resources/shaders/planet/vertex.glsl"))
 
 (def tess-control-planet
   "Tessellation control shader to control outer tessellation of quad using a uniform integer"
-  (slurp "resources/shaders/tess-control-planet.glsl"))
+  (slurp "resources/shaders/planet/tess-control.glsl"))
 
 (def tess-evaluation-planet
   "Tessellation evaluation shader to generate output points of tessellated quad"
-  (slurp "resources/shaders/tess-evaluation-planet.glsl"))
+  (slurp "resources/shaders/planet/tess-evaluation.glsl"))
 
 (def geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
-  (slurp "resources/shaders/geometry-planet.glsl"))
+  (slurp "resources/shaders/planet/geometry.glsl"))
 
 (def ground-radiance
   "Shader function to compute light emitted from ground"
-  (slurp "resources/shaders/ground_radiance.glsl"))
+  (slurp "resources/shaders/planet/ground_radiance.glsl"))
 
 (def fragment-planet
   "Fragment shader to render planetary surface"
-  (slurp "resources/shaders/fragment-planet.glsl"))
+  (slurp "resources/shaders/planet/fragment.glsl"))

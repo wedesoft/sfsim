@@ -1,5 +1,4 @@
 # TODO
-* create sub directories for shaders
 * test planet quad appearance using transmittance\_track and in-scattering
 * remove heightcoord from tail of shader chain?
 * how to render sun in atmosphere, space, and on top of planet
