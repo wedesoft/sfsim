@@ -525,10 +525,10 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result))
          ?selector                               ?matrix ?result
-         "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere-quad.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere-direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere-direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere-rotated.png")
+         "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere/quad.png"
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere/direction.png"
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
 
 (def radius 6378000)
 (def max-height 100000)
@@ -599,8 +599,8 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))   => (is-image ?result))
          ?x ?y           ?z                      ?lx ?ly ?lz  ?result
-         0  0            (- 0 radius max-height) 0   0   -1   "test/sfsim25/fixtures/atmosphere-sun.png"
-         0  0            (- 0 radius max-height) 0   0    1   "test/sfsim25/fixtures/atmosphere-space.png"
-         0  0            (* 2.5 radius)          0   1    0   "test/sfsim25/fixtures/atmosphere-haze.png"
-         0  radius       (* 0.5 radius)          0   0   -1   "test/sfsim25/fixtures/atmosphere-sunset.png"
-         0  0            (- 0 radius 2)          0   0   -1   "test/sfsim25/fixtures/atmosphere-inside.png")
+         0  0            (- 0 radius max-height) 0   0   -1   "test/sfsim25/fixtures/atmosphere/sun.png"
+         0  0            (- 0 radius max-height) 0   0    1   "test/sfsim25/fixtures/atmosphere/space.png"
+         0  0            (* 2.5 radius)          0   1    0   "test/sfsim25/fixtures/atmosphere/haze.png"
+         0  radius       (* 0.5 radius)          0   0   -1   "test/sfsim25/fixtures/atmosphere/sunset.png"
+         0  0            (- 0 radius 2)          0   0   -1   "test/sfsim25/fixtures/atmosphere/inside.png")

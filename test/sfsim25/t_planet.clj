@@ -67,7 +67,7 @@ void main()
                           (use-program program)
                           (raster-lines (render-quads vao))
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-quad.png"))
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/quad.png"))
 
 (tabular "Tessellation control shader to control outer tessellation of quad using a uniform integer"
          (fact
@@ -99,11 +99,11 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result))
          ?neighbours ?result
-         15          "test/sfsim25/fixtures/planet-tessellation.png"
-          1          "test/sfsim25/fixtures/planet-tessellation-0.png"
-          2          "test/sfsim25/fixtures/planet-tessellation-1.png"
-          4          "test/sfsim25/fixtures/planet-tessellation-2.png"
-          8          "test/sfsim25/fixtures/planet-tessellation-3.png")
+         15          "test/sfsim25/fixtures/planet/tessellation.png"
+          1          "test/sfsim25/fixtures/planet/tessellation-0.png"
+          2          "test/sfsim25/fixtures/planet/tessellation-1.png"
+          4          "test/sfsim25/fixtures/planet/tessellation-2.png"
+          8          "test/sfsim25/fixtures/planet/tessellation-3.png")
 
 (def texture-coordinates-probe
   (template/fn [selector] "#version 410 core
@@ -150,9 +150,9 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result))
          ?selector                           ?result
-         "frag_in.colorcoord"                "test/sfsim25/fixtures/planet-color-coords.png"
-         "frag_in.heightcoord"               "test/sfsim25/fixtures/planet-height-coords.png"
-         "frag_in.point.xy + vec2(0.5, 0.5)" "test/sfsim25/fixtures/planet-point.png")
+         "frag_in.colorcoord"                "test/sfsim25/fixtures/planet/color-coords.png"
+         "frag_in.heightcoord"               "test/sfsim25/fixtures/planet/height-coords.png"
+         "frag_in.point.xy + vec2(0.5, 0.5)" "test/sfsim25/fixtures/planet/point.png")
 
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -181,7 +181,7 @@ void main()
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-tessellation.png"))
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/tessellation.png"))
 
 (fact "Apply projection matrix to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -210,7 +210,7 @@ void main()
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-projection.png"))
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/projection.png"))
 
 (fact "Scale vertex coordinates using given height field"
       (offscreen-render 256 256
@@ -239,7 +239,7 @@ void main()
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet-heightfield.png"))
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/heightfield.png"))
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
@@ -365,7 +365,8 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000
                                    size          7
-                                   colors        (make-rgb-texture (slurp-image (str "test/sfsim25/fixtures/" ?colors ".png")))
+                                   colors        (make-rgb-texture
+                                                   (slurp-image (str "test/sfsim25/fixtures/planet/" ?colors ".png")))
                                    normals       (make-vector-texture-2d
                                                    {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nz ?ny ?nx])))})
                                    transmittance (make-vector-texture-2d
@@ -407,17 +408,17 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (destroy-texture normals)
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/" ?result ".png")))
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
          ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-fragment"
-         "pattern" Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-colors"
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "planet-normal"
-         "white"   0.9     1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-albedo"
-         "white"   Math/PI 1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "planet-transmittance"
-         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "planet-ambient"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "planet-water"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "planet-reflection1"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "planet-reflection2"
-         "white"   Math/PI 1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "planet-absorption"
-         "white"   Math/PI 1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "planet-absorption"
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0.5 0     0   1   0   0   0   1   "planet-scatter")
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
+         "pattern" Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9     1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
+         "white"   Math/PI 1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmittance"
+         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
+         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
+         "white"   Math/PI 1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   Math/PI 1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   Math/PI 1   1   1   0   0   0     0       100 0.5 0     0   1   0   0   0   1   "scatter")
