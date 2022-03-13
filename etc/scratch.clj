@@ -440,17 +440,10 @@ void main()
 (def d0 (/ 0.5 ctilesize))
 (def d1 (- 1.0 (/ 0.5 ctilesize)))
 
-(defn make-vertices
-  [face level y x]
-  (let [[a b c d] (cube-map-corners face level y x)]
-    [(mget a 0) (mget a 1) (mget a 2) c0 c0 d0 d0
-     (mget b 0) (mget b 1) (mget b 2) c1 c0 d1 d0
-     (mget c 0) (mget c 1) (mget c 2) c0 c1 d0 d1
-     (mget d 0) (mget d 1) (mget d 2) c1 c1 d1 d1]))
-
 (defn load-tile-into-opengl
   [tile]
-  (let [vao (make-vertex-array-object program-planet [0 2 3 1] (make-vertices (:face tile) (:level tile) (:y tile) (:x tile))
+  (let [vao (make-vertex-array-object program-planet [0 2 3 1] (make-cube-map-tile-vertices (:face tile) (:level tile)
+                                                                                            (:y tile) (:x tile))
                                       [:point 3 :texcoord 2 :ctexcoord 2])
         texture     (make-rgb-texture (:colors tile))
         heightfield (make-float-texture-2d {:width tilesize :height tilesize :data (:scales tile)})

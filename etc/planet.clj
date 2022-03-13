@@ -1,4 +1,6 @@
 (require '[clojure.core.matrix :refer :all]
+         '[sfsim25.matrix :refer :all]
+         '[sfsim25.quaternion :as q]
          '[sfsim25.render :refer :all]
          '[sfsim25.planet :refer :all])
 
