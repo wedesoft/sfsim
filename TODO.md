@@ -1,7 +1,7 @@
 # TODO
 * compute new scale factors for elevation map
-* combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
 * planet is an ellipsoid (not a sphere)
+* combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
