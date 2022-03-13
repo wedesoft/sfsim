@@ -1,6 +1,8 @@
 # TODO
-* compute new scale factors for elevation map
-* planet is an ellipsoid (not a sphere)
+* check ray\_sphere works with direction not being a unit vector
+* atmosphere is an ellipsoid (not a sphere); atmosphere/fragment: scale origin, direction for ray\_sphere intersection,
+  light for ray\_scatter\_forward
+* planet is an ellipsoid (not a sphere); position, direction for ray\_sphere intersection, light and point for ground\_radiance
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
