@@ -565,7 +565,7 @@ void main()
                                                   -0.5  0.5 -1
                                                    0.5  0.5 -1]
                                    origin        (matrix [?x ?y ?z])
-                                   transform     (transformation-matrix (identity-matrix 3) origin)
+                                   transform     (transformation-matrix (rotation-x ?rotation) origin)
                                    program       (make-program :vertex [vertex-atmosphere]
                                                                :fragment [fragment-atmosphere shaders/ray-sphere
                                                                           shaders/transmittance-forward shaders/horizon-angle
@@ -587,6 +587,7 @@ void main()
                                (uniform-matrix4 program :transform transform)
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
                                (uniform-float program :radius radius)
+                               (uniform-float program :polar_radius ?polar)
                                (uniform-float program :max_height max-height)
                                (uniform-float program :specular 500)
                                (uniform-int program :size size)
@@ -597,10 +598,12 @@ void main()
                                (destroy-texture ray-scatter)
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program)))   => (is-image ?result))
-         ?x ?y           ?z                      ?lx ?ly ?lz  ?result
-         0  0            (- 0 radius max-height) 0   0   -1   "test/sfsim25/fixtures/atmosphere/sun.png"
-         0  0            (- 0 radius max-height) 0   0    1   "test/sfsim25/fixtures/atmosphere/space.png"
-         0  0            (* 2.5 radius)          0   1    0   "test/sfsim25/fixtures/atmosphere/haze.png"
-         0  radius       (* 0.5 radius)          0   0   -1   "test/sfsim25/fixtures/atmosphere/sunset.png"
-         0  0            (- 0 radius 2)          0   0   -1   "test/sfsim25/fixtures/atmosphere/inside.png")
+                               (destroy-program program)))   => (is-image (str "test/sfsim25/fixtures/atmosphere/"?result)))
+         ?x ?y           ?z                      ?polar       ?rotation        ?lx ?ly ?lz  ?result
+         0  0            (- 0 radius max-height) radius       0                0   0   -1   "sun.png"
+         0  0            (- 0 radius max-height) radius       0                0   0    1   "space.png"
+         0  0            (* 2.5 radius)          radius       0                0   1    0   "haze.png"
+         0  radius       (* 0.5 radius)          radius       0                0   0   -1   "sunset.png"
+         0  0            (- 0 radius 2)          radius       0                0   0   -1   "inside.png"
+         0  (* 3 radius) 0                       radius       (* -0.5 Math/PI) 0   1    0   "yview.png"
+         0  (* 3 radius) 0                       (/ radius 2) (* -0.5 Math/PI) 0   1    0   "ellipsoid.png")
