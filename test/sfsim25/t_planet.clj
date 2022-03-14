@@ -317,6 +317,7 @@ in highp vec3 point;
 in mediump vec2 colorcoord;
 in mediump vec2 heightcoord;
 uniform float radius;
+uniform float polar_radius;
 out GEO_OUT
 {
   mediump vec2 colorcoord;
@@ -328,7 +329,7 @@ void main()
   gl_Position = vec4(point, 1);
   vs_out.colorcoord = colorcoord;
   vs_out.heightcoord = heightcoord;
-  vs_out.point = vec3(0, 0, radius);
+  vs_out.point = vec3(0, 0, polar_radius);
 }")
 
 (def fake-transmittance "#version 410 core
@@ -347,6 +348,18 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
 {
   return scatter;
 }")
+
+(defn setup-static-uniforms [program]; Moved this code out of the test below, otherwise method is too large
+  (uniform-sampler program :colors 0)
+  (uniform-sampler program :normals 1)
+  (uniform-sampler program :transmittance 2)
+  (uniform-sampler program :ray_scatter 3)
+  (uniform-sampler program :surface_radiance 4)
+  (uniform-sampler program :water 5)
+  (uniform-float program :power 2.0)
+  (uniform-float program :specular 100)
+  (uniform-float program :max_height 100000)
+  (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34])))
 
 (tabular "Fragment shader to render planetary surface"
          (fact
@@ -383,21 +396,13 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                                    {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})]
                                (clear (matrix [0 0 0]))
                                (use-program program)
-                               (uniform-sampler program :colors 0)
-                               (uniform-sampler program :normals 1)
-                               (uniform-sampler program :transmittance 2)
-                               (uniform-sampler program :ray_scatter 3)
-                               (uniform-sampler program :surface_radiance 4)
-                               (uniform-sampler program :water 5)
+                               (setup-static-uniforms program)
                                (uniform-int program :size size)
-                               (uniform-float program :power 2.0)
                                (uniform-float program :albedo ?albedo)
                                (uniform-float program :reflectivity ?refl)
-                               (uniform-float program :specular 100)
                                (uniform-float program :radius radius)
-                               (uniform-float program :max_height 100000)
-                               (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34]))
-                               (uniform-vector3 program :position (matrix [0 0 (+ radius ?dist)]))
+                               (uniform-float program :polar_radius ?polar)
+                               (uniform-vector3 program :position (matrix [0 0 (+ ?polar ?dist)]))
                                (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
                                (uniform-vector3 program :scatter (matrix [?s ?s ?s]))
                                (use-textures colors normals transmittance ray-scatter radiance water)
@@ -409,17 +414,18 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (destroy-texture normals)
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
-         ?colors   ?albedo ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
-         "pattern" Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
-         "white"   Math/PI 1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmittance"
-         "white"   Math/PI 1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
-         "white"   Math/PI 1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
-         "white"   Math/PI 1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   Math/PI 1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   Math/PI 1   1   1   0   0   0     0       100 0.5 0     0   1   0   0   0   1   "scatter")
+                               (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
+         ?colors   ?albedo ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   Math/PI radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
+         "pattern" Math/PI radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
+         "white"   Math/PI radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9     radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
+         "white"   Math/PI radius       1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmittance"
+         "white"   Math/PI radius       1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
+         "white"   Math/PI radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
+         "white"   Math/PI radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
+         "white"   Math/PI radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
+         "white"   Math/PI radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   Math/PI radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   Math/PI radius       1   1   1   0   0   0     0       100 0.5 0     0   1   0   0   0   1   "scatter"
+         "white"   Math/PI (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")
