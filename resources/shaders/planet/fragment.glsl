@@ -1,10 +1,10 @@
 #version 410 core
 
-uniform sampler2D colors;
-uniform sampler2D normals;
 uniform sampler2D transmittance;
 uniform sampler2D ray_scatter;
 uniform sampler2D surface_radiance;
+uniform sampler2D colors;
+uniform sampler2D normals;
 uniform sampler2D water;
 uniform int size;
 uniform float power;
