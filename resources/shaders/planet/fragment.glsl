@@ -44,17 +44,16 @@ void main()
 {
   vec3 normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 direction = normalize(fs_in.point - position);
-  vec3 scaled_direction = stretch(direction);
+  vec3 scaled_direction = normalize(stretch(direction));
   vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
   float wet = texture(water, fs_in.colorcoord).r;
   float cos_incidence = max(dot(light_direction, normal), 0);
   float highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular);
   vec3 scaled_position = stretch(position);
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, scaled_position, scaled_direction);
-  vec3 atmosphere_start = position + atmosphere_intersection.x * direction;
-  vec3 scaled_atmosphere_start = stretch(atmosphere_start);
+  vec3 scaled_atmosphere_start = scaled_position + atmosphere_intersection.x * scaled_direction;
   vec3 scaled_point = stretch(fs_in.point);
-  vec3 scaled_light_direction = stretch(light_direction);
+  vec3 scaled_light_direction = normalize(stretch(light_direction));
   vec3 surface_light = ground_radiance(albedo, transmittance, surface_radiance, radius, max_height, size, power, scaled_point,
                                        scaled_light_direction, wet, reflectivity, cos_incidence, highlight, land_color,
                                        water_color);
