@@ -35,15 +35,14 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   float glare = pow(max(0, dot(direction, light)), specular);
   vec3 scaled_origin = stretch(origin);
-  vec3 scaled_direction = stretch(direction);
+  vec3 scaled_direction = normalize(stretch(direction));
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, scaled_origin, scaled_direction);
   if (atmosphere_intersection.y > 0) {
-    vec3 point = origin + atmosphere_intersection.x * direction;
-    vec3 scaled_point = stretch(point);
-    vec3 scaled_light = stretch(light);
+    vec3 scaled_point = scaled_origin + atmosphere_intersection.x * scaled_direction;
+    vec3 scaled_light = normalize(stretch(light));
     vec2 transmittance_index = transmittance_forward(scaled_point, scaled_direction, radius, max_height, size, power);
     vec4 ray_scatter_index = ray_scatter_forward(scaled_point, scaled_direction, scaled_light, radius, max_height, size, power);
-    vec3 atmospheric_contribution = interpolate_4d(ray_scatter, size, ray_scatter_index).rgb;
+    vec3 atmospheric_contribution= interpolate_4d(ray_scatter, size, ray_scatter_index).rgb;
     vec3 remaining_glare = glare * interpolate_2d(transmittance, size, transmittance_index).rgb;
     fragColor = atmospheric_contribution * amplification + remaining_glare;
   } else {
