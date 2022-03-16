@@ -1,5 +1,7 @@
 # TODO
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
+* put parameters like max-height, power, specular, radius, polar-radius in a configuration file
+* \_ -> - in shader file names
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
