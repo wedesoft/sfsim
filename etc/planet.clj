@@ -25,9 +25,12 @@
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def light (atom (* 1.4 Math/PI)))
-(def position (atom (matrix [0 (* -3 radius) (* 0.5 radius)])))
+(def light1 (atom 0.1756884862652619))
+(def light2 (atom 0))
+(def position (atom nil))
+(reset! position (matrix [0 (* -0.5 radius) (+ polar-radius 2500)]))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
+(def limit (* 1 radius))
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
@@ -49,7 +52,7 @@
                            shaders/convert-2d-index]))
 
 (def indices [0 1 3 2])
-(def vertices (map #(* % 4 radius) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
+(def vertices (map #(* % limit) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def atmosphere-vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
 
 (use-program program-atmosphere)
@@ -62,7 +65,7 @@
 
 (go-loop []
          (if-let [tree (<! tree-state)]
-                 (let [increase? (partial increase-level? tilesize radius polar-radius (.getWidth desktop) 60 10 3 @position)]
+                 (let [increase? (partial increase-level? tilesize radius polar-radius (.getWidth desktop) 60 10 2 @position)]
                    (>! changes (update-level-of-detail tree increase? true))
                    (recur))))
 
@@ -135,7 +138,7 @@
 
 (>!! tree-state @tree)
 
-(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* 4 6378000) (Math/toRadians 120)))
+(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* limit) (Math/toRadians 60)))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -144,23 +147,43 @@
              transform (transformation-matrix (quaternion->matrix @orientation) @position)]
          (onscreen-render (.getWidth desktop) (.getHeight desktop)
                           (clear (matrix [1 0 0]))
-                          ; TODO: render planet
+                          ; Render planet
+                          (when-let [data (poll! changes)]
+                            (unload-tiles-from-opengl (:drop data))
+                            (>!! tree-state (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))))
+                          (use-program program-planet)
+                          (uniform-matrix4 program-planet :projection projection)
+                          (uniform-matrix4 program-planet :inverse_transform (inverse transform))
+                          (uniform-int program-planet :size size)
+                          (uniform-float program-planet :power 2.0)
+                          (uniform-float program-planet :albedo 0.9)
+                          (uniform-float program-planet :reflectivity 0.5)
+                          (uniform-float program-planet :specular 50)
+                          (uniform-float program-planet :radius radius)
+                          (uniform-float program-planet :polar_radius polar-radius)
+                          (uniform-float program-planet :max_height max-height)
+                          (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
+                          (uniform-vector3 program-planet :position @position)
+                          (uniform-vector3 program-planet :light_direction (mmul (rotation-z @light2) (matrix [0 (Math/cos @light1) (Math/sin @light1)])))
+                          (uniform-float program-planet :amplification 5)
+                          (render-tree @tree)
+                          ; Render atmosphere
                           (use-program program-atmosphere)
                           (uniform-matrix4 program-atmosphere :projection projection)
                           (uniform-matrix4 program-atmosphere :transform transform)
-                          (uniform-vector3 program-atmosphere :light (matrix [0 (Math/cos @light) (Math/sin @light)]))
+                          (uniform-vector3 program-atmosphere :light (mmul (rotation-z @light2) (matrix [0 (Math/cos @light1) (Math/sin @light1)])))
                           (uniform-float program-atmosphere :radius radius)
                           (uniform-float program-atmosphere :polar_radius polar-radius)
                           (uniform-float program-atmosphere :max_height max-height)
                           (uniform-float program-atmosphere :specular 50)
                           (uniform-float program-atmosphere :power 2.0)
                           (uniform-int program-atmosphere :size size)
-                          (uniform-float program-atmosphere :amplification 10)
+                          (uniform-float program-atmosphere :amplification 5)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (use-textures T S)
                           (render-quads atmosphere-vao))
          (swap! t0 + dt)
-         (swap! light + (* 0.001 0.1 dt))))
+         (swap! light2 + (* 0.001 0.1 dt))))
 
 (close! tree-state)
 (close! changes)

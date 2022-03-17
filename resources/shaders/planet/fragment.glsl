@@ -14,6 +14,7 @@ uniform float specular;
 uniform float radius;
 uniform float polar_radius;
 uniform float max_height;
+uniform float amplification;
 uniform vec3 water_color;
 uniform vec3 position;
 uniform vec3 light_direction;
@@ -61,5 +62,5 @@ void main()
                                                    scaled_point);
   vec3 in_scattering = ray_scatter_track(ray_scatter, transmittance, radius, max_height, size, power, scaled_light_direction,
                                          scaled_atmosphere_start, scaled_point);
-  fragColor = surface_light * surface_transmittance + in_scattering;
+  fragColor = amplification * (surface_light * surface_transmittance + in_scattering);
 }

@@ -91,7 +91,7 @@ void main()
                                (uniform-int program :high_detail 4)
                                (uniform-int program :low_detail 2)
                                (uniform-int program :neighbours ?neighbours)
-                               (uniform-matrix4 program :transform (identity-matrix 4))
+                               (uniform-matrix4 program :inverse_transform (identity-matrix 4))
                                (uniform-matrix4 program :projection (identity-matrix 4))
                                (use-textures heightfield)
                                (raster-lines (render-patches vao))
@@ -142,7 +142,7 @@ void main()
                                (uniform-int program :high_detail 4)
                                (uniform-int program :low_detail 2)
                                (uniform-int program :neighbours 15)
-                               (uniform-matrix4 program :transform (identity-matrix 4))
+                               (uniform-matrix4 program :inverse_transform (identity-matrix 4))
                                (uniform-matrix4 program :projection (identity-matrix 4))
                                (use-textures heightfield)
                                (render-patches vao)
@@ -176,7 +176,8 @@ void main()
                           (uniform-int program :high_detail 4)
                           (uniform-int program :low_detail 2)
                           (uniform-int program :neighbours 15)
-                          (uniform-matrix4 program :transform (transformation-matrix (identity-matrix 3) (matrix [0.1 0 0])))
+                          (uniform-matrix4 program :inverse_transform (transformation-matrix (identity-matrix 3)
+                                                                                             (matrix [0.1 0 0])))
                           (uniform-matrix4 program :projection (identity-matrix 4))
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
@@ -205,7 +206,8 @@ void main()
                           (uniform-int program :high_detail 4)
                           (uniform-int program :low_detail 2)
                           (uniform-int program :neighbours 15)
-                          (uniform-matrix4 program :transform (transformation-matrix (identity-matrix 3) (matrix [0 0 -2])))
+                          (uniform-matrix4 program :inverse_transform (transformation-matrix (identity-matrix 3)
+                                                                                             (matrix [0 0 -2])))
                           (uniform-matrix4 program :projection (projection-matrix 256 256 1 3 (/ Math/PI 3)))
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
@@ -234,7 +236,7 @@ void main()
                           (uniform-int program :high_detail 4)
                           (uniform-int program :low_detail 2)
                           (uniform-int program :neighbours 15)
-                          (uniform-matrix4 program :transform (identity-matrix 4))
+                          (uniform-matrix4 program :inverse_transform (identity-matrix 4))
                           (uniform-matrix4 program :projection (identity-matrix 4))
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
@@ -349,7 +351,8 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
   return scatter;
 }")
 
-(defn setup-static-uniforms [program]; Moved this code out of the test below, otherwise method is too large
+(defn setup-static-uniforms [program]
+  ; Moved this code out of the test below, otherwise method is too large
   (uniform-sampler program :colors 0)
   (uniform-sampler program :normals 1)
   (uniform-sampler program :transmittance 2)
@@ -360,6 +363,17 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
   (uniform-float program :specular 100)
   (uniform-float program :max_height 100000)
   (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34])))
+
+(defn setup-uniforms [program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a]
+  ; Moved this code out of the test below, otherwise method is too large
+  (uniform-int program :size size)
+  (uniform-float program :albedo ?albedo)
+  (uniform-float program :reflectivity ?refl)
+  (uniform-float program :radius radius)
+  (uniform-float program :polar_radius ?polar)
+  (uniform-vector3 program :position (matrix [0 0 (+ ?polar ?dist)]))
+  (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
+  (uniform-float program :amplification ?a))
 
 (tabular "Fragment shader to render planetary surface"
          (fact
@@ -388,7 +402,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                                     :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})
                                    ray-scatter   (make-vector-texture-2d
                                                    {:width (* size size) :height (* size size)
-                                                    :data (float-array (repeat (* size size size size 3) 0.5))})
+                                                    :data (float-array (repeat (* size size size size 3) ?s))})
                                    radiance      (make-vector-texture-2d
                                                    {:width size :height size
                                                     :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
@@ -397,14 +411,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (setup-static-uniforms program)
-                               (uniform-int program :size size)
-                               (uniform-float program :albedo ?albedo)
-                               (uniform-float program :reflectivity ?refl)
-                               (uniform-float program :radius radius)
-                               (uniform-float program :polar_radius ?polar)
-                               (uniform-vector3 program :position (matrix [0 0 (+ ?polar ?dist)]))
-                               (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
-                               (uniform-vector3 program :scatter (matrix [?s ?s ?s]))
+                               (setup-uniforms program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a)
                                (use-textures colors normals transmittance ray-scatter radiance water)
                                (render-quads vao)
                                (destroy-texture water)
@@ -414,18 +421,19 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (destroy-texture normals)
                                (destroy-texture colors)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
-         ?colors   ?albedo ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
-         "pattern" Math/PI radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
-         "white"   Math/PI radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
-         "white"   Math/PI radius       1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmittance"
-         "white"   Math/PI radius       1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
-         "white"   Math/PI radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
-         "white"   Math/PI radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
-         "white"   Math/PI radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
-         "white"   Math/PI radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   Math/PI radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   Math/PI radius       1   1   1   0   0   0     0       100 0.5 0     0   1   0   0   0   1   "scatter"
-         "white"   Math/PI (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
+         ?colors   ?albedo ?a ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   Math/PI 1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
+         "pattern" Math/PI 1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9     1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
+         "white"   0.9     2  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "amplify"
+         "white"   Math/PI 1  radius       1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
+         "white"   Math/PI 1  radius       1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter"
+         "white"   Math/PI 1  (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")

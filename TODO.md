@@ -1,5 +1,6 @@
 # TODO
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
+* remove update-tree-parents code
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius, polar-radius in a configuration file
 * \_ -> - in shader file names
