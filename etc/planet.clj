@@ -28,9 +28,10 @@
 (def light1 (atom 0.1756884862652619))
 (def light2 (atom 0))
 (def position (atom nil))
-(reset! position (matrix [0 (* -0.5 radius) (+ polar-radius 2500)]))
+(reset! position (matrix [0 (* -1.5 radius) (+ polar-radius 2500)]))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
-(def limit (* 1 radius))
+(def z-near 10000)
+(def z-far (* 2.0 radius))
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
@@ -52,7 +53,7 @@
                            shaders/convert-2d-index]))
 
 (def indices [0 1 3 2])
-(def vertices (map #(* % limit) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
+(def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def atmosphere-vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
 
 (use-program program-atmosphere)
@@ -138,7 +139,7 @@
 
 (>!! tree-state @tree)
 
-(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) 10000 (* limit) (Math/toRadians 60)))
+(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) z-near z-far (Math/toRadians 60)))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
