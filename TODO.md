@@ -1,4 +1,5 @@
 # TODO
+* problem with black or bright pixels at the horizon
 * combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
 * remove update-tree-parents code
 * indices for planet patches and atmosphere projection plane should be the same
