@@ -25,13 +25,13 @@
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def light1 (atom 0.1756884862652619))
+(def light1 (atom -0.1))
 (def light2 (atom 0))
 (def position (atom nil))
-(reset! position (matrix [0 (* -1.5 radius) (+ polar-radius 2500)]))
+(reset! position (matrix [0 (* -0 radius) (+ polar-radius 2500)]))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
-(def z-near 10000)
-(def z-far (* 2.0 radius))
+(def z-near 10)
+(def z-far (* 0.05 radius))
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
@@ -184,7 +184,7 @@
                           (use-textures T S)
                           (render-quads atmosphere-vao))
          (swap! t0 + dt)
-         (swap! light1 + (* 0.001 0.1 dt))))
+         (swap! light1 + (* 0.0001 0.1 dt))))
 
 (close! tree-state)
 (close! changes)
