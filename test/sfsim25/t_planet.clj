@@ -433,6 +433,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
          "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
          "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
          "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
+         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0  -1   "reflection3"
          "white"   Math/PI 1  radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
          "white"   Math/PI 1  radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
          "white"   Math/PI 1  radius       1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter"
