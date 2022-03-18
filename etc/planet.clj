@@ -189,10 +189,13 @@
 (close! tree-state)
 (close! changes)
 
+; unload all planet tiles (vaos and textures)
+
 (destroy-program program-planet)
 (destroy-program program-atmosphere)
 (destroy-texture S)
 (destroy-texture T)
+(destroy-texture E)
 (destroy-vertex-array-object atmosphere-vao)
 (Display/destroy)
 
