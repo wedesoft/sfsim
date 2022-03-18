@@ -1,12 +1,13 @@
 # TODO
 * problem with black or bright pixels at the horizon
-* combine atmospheric shader with planetary surface rendering, albedo should be 0.9 (snow), extract functions from prototype
+* add keyboard motion commands
+* extract functions from prototype
 * remove update-tree-parents code
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius, polar-radius in a configuration file
 * \_ -> - in shader file names
 * tile-size -> tilesize
-* light -> light<_direction
+* light -> light-direction
 * radius1, radius2 -> radius, polar-radius
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
