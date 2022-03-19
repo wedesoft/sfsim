@@ -1,5 +1,6 @@
 # TODO
-* problem with black or bright pixels at the horizon
+* problem with black or bright pixels at the horizon, clip elevation\_to\_index to be above horizon?
+* make sun smaller
 * add keyboard motion commands
 * extract functions from prototype
 * remove update-tree-parents code
@@ -16,6 +17,7 @@
 * how to render clouds
 * how to render shadows on planet surface
 * how to render shadows in atmosphere
+* how to render waves
 * how to render stars
 * render moonlight and moon
 * organize fixtures using subdirectories
