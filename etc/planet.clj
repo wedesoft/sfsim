@@ -25,10 +25,9 @@
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def light1 (atom -0.3))
+(def light1 (atom -0.08))
 (def light2 (atom 0))
-(def position (atom nil))
-(reset! position (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 10)]))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 10)])))
 (def orientation (atom (q/rotation (/ Math/PI 2) (matrix [1 0 0]))))
 (def z-near 5)
 (def z-far (* 0.1 radius))
@@ -184,7 +183,9 @@
                           (use-textures T S)
                           (render-quads atmosphere-vao))
          (swap! t0 + dt)
-         (swap! light1 + (* 0.0005 0.1 dt))))
+         ;(swap! position add (mul dt 0.001 (matrix [0 0 1000])))
+         (swap! light1 + (* 0.0001 0.1 dt))
+         ))
 
 (close! tree-state)
 (close! changes)
