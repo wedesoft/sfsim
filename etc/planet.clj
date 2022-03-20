@@ -178,6 +178,7 @@
                           (uniform-float program-atmosphere :specular 50)
                           (uniform-float program-atmosphere :power 2.0)
                           (uniform-int program-atmosphere :size size)
+                          (uniform-int program-atmosphere :sky 1)
                           (uniform-float program-atmosphere :amplification 5)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (use-textures T S)

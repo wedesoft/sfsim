@@ -67,21 +67,39 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
+(defn elevation-to-index-test [sky & args]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices  [0 1 3 2]
+                            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            shaders  [elevation-to-index (apply elevation-to-index-probe args)]
+                            program  (make-program :vertex [vertex-passthrough] :fragment shaders)
+                            vao      (make-vertex-array-object program indices vertices [:point 3])
+                            tex      (texture-render 1 1 true
+                                                     (use-program program)
+                                                     (uniform-int program :sky sky)
+                                                     (render-quads vao))
+                            img      (texture->vectors tex 1 1)]
+                        (deliver result (get-vector img 0 0))
+                        (destroy-texture tex)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
 
 (tabular "Shader for converting elevation to index"
-         (fact (mget (elevation-to-index-test ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
-         ?elevation        ?horizon-angle ?power ?result
-         0.0               0.0            1.0     0
-         (* 0.5 3.14159)   0.0            1.0     8
-         (* 0.5 3.14160)   0.0            1.0     9
-         3.14159           0.0            1.0    16
-         (* 0.375 3.14159) 0.0            1.0     6
-         (* 0.375 3.14159) 0.0            2.0     4
-         (* 0.625 3.14159) 0.0            1.0    10.75
-         (* 0.625 3.14159) 0.0            2.0    12.5
-         (* 0.5 3.34159)   0.1            1.0     8
-         (* 0.5 3.34160)   0.1            1.0     9)
+         (fact (mget (elevation-to-index-test ?sky ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
+         ?sky ?elevation        ?horizon-angle ?power ?result
+         0    0.0               0.0            1.0     0
+         0    (* 0.5 3.14159)   0.0            1.0     8
+         0    (* 0.5 3.14160)   0.0            1.0     9
+         1    (* 0.5 3.14160)   0.0            1.0     8
+         0    3.14159           0.0            1.0    16
+         0    (* 0.375 3.14159) 0.0            1.0     6
+         0    (* 0.375 3.14159) 0.0            2.0     4
+         0    (* 0.625 3.14159) 0.0            1.0    10.75
+         0    (* 0.625 3.14159) 0.0            2.0    12.5
+         0    (* 0.5 3.34159)   0.1            1.0     8
+         0    (* 0.5 3.34160)   0.1            1.0     9)
 
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core

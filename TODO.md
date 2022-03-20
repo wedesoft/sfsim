@@ -1,5 +1,4 @@
 # TODO
-* problem with black or bright pixels at the horizon, clip elevation\_to\_index to be above horizon?
 * make sun smaller
 * add keyboard motion commands
 * extract functions from prototype
