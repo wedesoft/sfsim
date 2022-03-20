@@ -1,5 +1,5 @@
 # TODO
-* make sun smaller
+* only render sun glare when sun is above horizon
 * add keyboard motion commands
 * extract functions from prototype
 * remove update-tree-parents code

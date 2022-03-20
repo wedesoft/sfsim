@@ -10,14 +10,17 @@
          '[sfsim25.planet :refer :all]
          '[sfsim25.util :refer :all])
 
-(import '[org.lwjgl.opengl Display DisplayMode PixelFormat])
+(import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
+        '[org.lwjgl.input Keyboard])
 
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-(def desktop (DisplayMode. 640 480))
-(Display/setDisplayMode desktop)
+(Display/setDisplayMode (DisplayMode. 640 480))
+;(Display/setFullscreen true)
 (Display/create)
+
+(Keyboard/create)
 
 (def radius 6378000.0)
 (def polar-radius 6357000.0)
@@ -30,7 +33,9 @@
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 10)])))
 (def orientation (atom (q/rotation (Math/toRadians 90) (matrix [1 0 0]))))
 (def z-near 5)
-(def z-far (* 0.1 radius))
+(def z-far (* 2.0 radius))
+
+(def keystates (atom {}))
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def size (int (Math/sqrt (/ (count data) 3))))
@@ -65,7 +70,7 @@
 
 (go-loop []
          (if-let [tree (<! tree-state)]
-                 (let [increase? (partial increase-level? tilesize radius polar-radius (.getWidth desktop) 60 10 3 @position)]
+                 (let [increase? (partial increase-level? tilesize radius polar-radius (Display/getWidth) 60 10 3 @position)]
                    (>! changes (update-level-of-detail tree increase? true))
                    (recur))))
 
@@ -138,14 +143,26 @@
 
 (>!! tree-state @tree)
 
-(def projection (projection-matrix (.getWidth desktop) (.getHeight desktop) z-near z-far (Math/toRadians 60)))
+(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (Math/toRadians 60)))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
-       (let [t1 (System/currentTimeMillis)
-             dt (- t1 @t0)
-             transform (transformation-matrix (quaternion->matrix @orientation) @position)]
-         (onscreen-render (.getWidth desktop) (.getHeight desktop)
+       (while (Keyboard/next)
+              (let [state     (Keyboard/getEventKeyState)
+                    event-key (Keyboard/getEventKey)]
+                (swap! keystates assoc event-key state)))
+       (let [t1        (System/currentTimeMillis)
+             dt        (- t1 @t0)
+             transform (transformation-matrix (quaternion->matrix @orientation) @position)
+             ra        (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
+             rb        (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
+             rc        (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
+             v         (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))]
+         (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
+         (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
+         (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
+         (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           ; Render planet
                           (when-let [data (poll! changes)]
