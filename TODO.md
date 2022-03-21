@@ -1,4 +1,5 @@
 # TODO
+* shader to check whether point-direction is in the sky or on the ground
 * only render sun glare when sun is above horizon
 * add keyboard motion commands
 * extract functions from prototype
