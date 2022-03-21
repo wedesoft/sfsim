@@ -23,7 +23,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky,
                            bool ground);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
-                         float power, bool sky);
+                         float power, bool sky, bool ground);
 vec4 interpolate_2d(sampler2D table, int size, vec2 idx);
 vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
 
@@ -45,7 +45,7 @@ void main()
     vec2 transmittance_index = transmittance_forward(scaled_point, scaled_direction, radius, max_height, size, power, true,
                                                      false);
     vec4 ray_scatter_index = ray_scatter_forward(scaled_point, scaled_direction, scaled_light, radius, max_height, size, power,
-                                                 true);
+                                                 true, false);
     vec3 atmospheric_contribution = interpolate_4d(ray_scatter, size, ray_scatter_index).rgb;
     vec3 remaining_glare = glare * interpolate_2d(transmittance, size, transmittance_index).rgb;
     fragColor = atmospheric_contribution * amplification + remaining_glare;
