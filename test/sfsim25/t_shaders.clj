@@ -203,11 +203,12 @@ void main()
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz power] "#version 410 core
 out lowp vec3 fragColor;
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky);
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky,
+                           bool ground);
 void main()
 {
   fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                       6378000.0, 100000, 17, <%= power %>, false);
+                                       6378000.0, 100000, 17, <%= power %>, false, false);
   fragColor.b = 0;
 }"))
 

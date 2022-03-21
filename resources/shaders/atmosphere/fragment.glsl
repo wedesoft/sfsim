@@ -20,7 +20,8 @@ in VS_OUT
 out lowp vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky);
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky,
+                           bool ground);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
                          float power, bool sky);
 vec4 interpolate_2d(sampler2D table, int size, vec2 idx);
@@ -41,7 +42,8 @@ void main()
   if (atmosphere_intersection.y > 0) {
     vec3 scaled_point = scaled_origin + atmosphere_intersection.x * scaled_direction;
     vec3 scaled_light = normalize(stretch(light));
-    vec2 transmittance_index = transmittance_forward(scaled_point, scaled_direction, radius, max_height, size, power, true);
+    vec2 transmittance_index = transmittance_forward(scaled_point, scaled_direction, radius, max_height, size, power, true,
+                                                     false);
     vec4 ray_scatter_index = ray_scatter_forward(scaled_point, scaled_direction, scaled_light, radius, max_height, size, power,
                                                  true);
     vec3 atmospheric_contribution = interpolate_4d(ray_scatter, size, ray_scatter_index).rgb;
