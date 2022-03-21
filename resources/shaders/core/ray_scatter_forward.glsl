@@ -4,11 +4,11 @@ float M_PI = 3.14159265358;
 
 float clip_angle(float angle);
 float horizon_angle(vec3 point, float radius);
-float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool sky);
+float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool sky, bool ground);
 mat3 oriented_matrix(vec3 n);
 
-vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size, float power,
-                         bool sky)
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
+                         float power, bool sky)
 {
   float dist = length(point);
   vec3 normal = point / dist;
@@ -22,10 +22,10 @@ vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float
   float light_heading_index = light_heading / M_PI;
   float cos_light_elevation = dot(normal, light_direction);
   float light_elevation = acos(cos_light_elevation);
-  float light_elevation_index = elevation_to_index(size, light_elevation, horizon, power, false);
+  float light_elevation_index = elevation_to_index(size, light_elevation, horizon, power, false, false);
   float cos_elevation = dot(normal, direction);
   float elevation = acos(cos_elevation);
-  float elevation_index = elevation_to_index(size, elevation, horizon, power, sky);
+  float elevation_index = elevation_to_index(size, elevation, horizon, power, sky, false);
   float height = dist - radius;
   float height_index = height / max_height;
   return vec4(light_heading_index, light_elevation_index, elevation_index, height_index);
