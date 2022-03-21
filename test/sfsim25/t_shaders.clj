@@ -58,48 +58,31 @@ void main()
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
 (def elevation-to-index-probe
-  (template/fn [elevation horizon-angle power] "#version 410 core
+  (template/fn [sky elevation horizon-angle power] "#version 410 core
 out lowp vec3 fragColor;
-float elevation_to_index(int size, float elevation, float horizon_angle, float power);
+float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool sky);
 void main()
 {
-  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>);
+  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>, <%= sky %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn elevation-to-index-test [sky & args]
-  (let [result (promise)]
-    (offscreen-render 1 1
-                      (let [indices  [0 1 3 2]
-                            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                            shaders  [elevation-to-index (apply elevation-to-index-probe args)]
-                            program  (make-program :vertex [vertex-passthrough] :fragment shaders)
-                            vao      (make-vertex-array-object program indices vertices [:point 3])
-                            tex      (texture-render 1 1 true
-                                                     (use-program program)
-                                                     (uniform-int program :sky sky)
-                                                     (render-quads vao))
-                            img      (texture->vectors tex 1 1)]
-                        (deliver result (get-vector img 0 0))
-                        (destroy-texture tex)
-                        (destroy-vertex-array-object vao)
-                        (destroy-program program)))
-    @result))
+(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
 
 (tabular "Shader for converting elevation to index"
          (fact (mget (elevation-to-index-test ?sky ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
-         ?sky ?elevation        ?horizon-angle ?power ?result
-         0    0.0               0.0            1.0     0
-         0    (* 0.5 3.14159)   0.0            1.0     8
-         0    (* 0.5 3.14160)   0.0            1.0     9
-         1    (* 0.5 3.14160)   0.0            1.0     8
-         0    3.14159           0.0            1.0    16
-         0    (* 0.375 3.14159) 0.0            1.0     6
-         0    (* 0.375 3.14159) 0.0            2.0     4
-         0    (* 0.625 3.14159) 0.0            1.0    10.75
-         0    (* 0.625 3.14159) 0.0            2.0    12.5
-         0    (* 0.5 3.34159)   0.1            1.0     8
-         0    (* 0.5 3.34160)   0.1            1.0     9)
+         ?sky  ?elevation        ?horizon-angle ?power ?result
+         false 0.0               0.0            1.0     0
+         false (* 0.5 3.14159)   0.0            1.0     8
+         false (* 0.5 3.14160)   0.0            1.0     9
+         true  (* 0.5 3.14160)   0.0            1.0     8
+         false 3.14159           0.0            1.0    16
+         false (* 0.375 3.14159) 0.0            1.0     6
+         false (* 0.375 3.14159) 0.0            2.0     4
+         false (* 0.625 3.14159) 0.0            1.0    10.75
+         false (* 0.625 3.14159) 0.0            2.0    12.5
+         false (* 0.5 3.34159)   0.1            1.0     8
+         false (* 0.5 3.34160)   0.1            1.0     9)
 
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core
@@ -219,11 +202,11 @@ void main()
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz power] "#version 410 core
 out lowp vec3 fragColor;
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power);
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky);
 void main()
 {
   fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                       6378000.0, 100000, 17, <%= power %>);
+                                       6378000.0, 100000, 17, <%= power %>, false);
   fragColor.b = 0;
 }"))
 

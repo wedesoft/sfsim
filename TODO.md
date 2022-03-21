@@ -1,4 +1,5 @@
 # TODO
+* pass boolean to ray\_scatter\_forward
 * only render sun glare when sun is above horizon
 * add keyboard motion commands
 * extract functions from prototype

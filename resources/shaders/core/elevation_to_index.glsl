@@ -2,9 +2,7 @@
 
 float M_PI = 3.14159265358;
 
-uniform bool sky = false;
-
-float elevation_to_index(int size, float elevation, float horizon_angle, float power) {
+float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool sky) {
   int ground_size = (size - 1) / 2;
   int sky_size = size / 2 + 1;
   float horizon = 0.5 * M_PI + horizon_angle;
