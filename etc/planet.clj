@@ -1,6 +1,6 @@
 (require '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
          '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
-         '[clojure.math :refer (cos sin sqrt pow)]
+         '[clojure.math :refer (cos sin sqrt pow to-radians)]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.quaternion :as q]
          '[sfsim25.render :refer :all]
@@ -32,7 +32,7 @@
 (def light1 (atom -0.08))
 (def light2 (atom 0))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 10)])))
-(def orientation (atom (q/rotation (Math/toRadians 90) (matrix [1 0 0]))))
+(def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def z-near 5)
 (def z-far (* 2.0 radius))
 
@@ -144,7 +144,7 @@
 
 (>!! tree-state @tree)
 
-(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (Math/toRadians 60)))
+(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))

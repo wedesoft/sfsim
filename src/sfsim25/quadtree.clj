@@ -2,7 +2,7 @@
   "Manage quad tree of map tiles."
   (:require [clojure.core.matrix :refer (sub)]
             [clojure.core.matrix.linear :refer (norm)]
-            [clojure.math :refer (tan)]
+            [clojure.math :refer (tan to-radians)]
             [sfsim25.cubemap :refer (tile-center)]
             [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes dissoc-in)]))
 
@@ -13,7 +13,7 @@
   [level tilesize radius1 width distance angle]
   (let [cnt         (bit-shift-left 1 level)
         real-size   (/ (* 2 radius1) cnt (dec tilesize))
-        f           (/ width 2 (-> angle (/ 2) Math/toRadians tan))
+        f           (/ width 2 (-> angle (/ 2) to-radians tan))
         screen-size (* (/ real-size (max 1 distance)) f)]
     screen-size))
 

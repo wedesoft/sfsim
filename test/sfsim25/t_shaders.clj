@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [comb.template :as template]
             [clojure.core.matrix :refer (matrix mget mmul dot sub div transpose identity-matrix)]
-            [clojure.math :refer (cos sin)]
+            [clojure.math :refer (cos sin PI)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.shaders :refer :all]
             [sfsim25.render :refer :all]
@@ -100,7 +100,7 @@ void main()
 
 (facts "Angle of sphere's horizon angle below horizontal plane depending on height"
        (mget (horizon-angle-test 6378000 0 0) 0)       => (roughly 0.0)
-       (mget (horizon-angle-test (* 2 6378000) 0 0) 0) => (roughly (/ Math/PI 3))
+       (mget (horizon-angle-test (* 2 6378000) 0 0) 0) => (roughly (/ PI 3))
        (mget (horizon-angle-test 6377999 0 0) 0)       => (roughly 0.0))
 
 (def orthogonal-vector-probe
@@ -154,8 +154,8 @@ void main()
 (facts "Convert angle to be between -pi and +pi"
        (mget (clip-angle-test 0) 0) => (roughly 0 1e-6)
        (mget (clip-angle-test 1) 0) => (roughly 1 1e-6)
-       (mget (clip-angle-test (- 0 Math/PI 0.01)) 0) => (roughly (- Math/PI 0.01) 1e-6)
-       (mget (clip-angle-test (+ Math/PI 0.01)) 0) => (roughly (- 0.01 Math/PI) 1e-6))
+       (mget (clip-angle-test (- 0 PI 0.01)) 0) => (roughly (- PI 0.01) 1e-6)
+       (mget (clip-angle-test (+ PI 0.01)) 0) => (roughly (- 0.01 PI) 1e-6))
 
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
@@ -215,7 +215,7 @@ void main()
 
 (def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
 
-(let [angle (* 0.375 Math/PI)
+(let [angle (* 0.375 PI)
       ca    (cos angle)
       sa    (sin angle)]
   (tabular "Convert point and direction to 2D lookup index in transmittance table"
@@ -381,7 +381,7 @@ void main()
 (def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
                                            clip-angle oriented-matrix orthogonal-vector))
 
-(let [angle (* 0.375 Math/PI)
+(let [angle (* 0.375 PI)
       ca    (cos angle)
       sa    (sin angle)
       r     6378000

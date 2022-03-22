@@ -2,7 +2,7 @@
     "Functions for computing the atmosphere"
     (:require [clojure.core.matrix :refer (matrix mget mmul add sub mul div normalise dot) :as m]
               [clojure.core.matrix.linear :refer (norm)]
-              [clojure.math :refer (cos sin exp pow atan2 acos)]
+              [clojure.math :refer (cos sin exp pow atan2 acos PI)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
               [sfsim25.ray :refer :all]
@@ -27,7 +27,7 @@
   [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
   (let [scatter-g-sqr (sqr scatter-g)]
     (/ (* 3 (- 1 scatter-g-sqr) (+ 1 (sqr mu)))
-       (* 8 Math/PI (+ 2 scatter-g-sqr) (pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
+       (* 8 PI (+ 2 scatter-g-sqr) (pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
 
 (defn atmosphere-intersection
   "Get intersection of ray with artificial limit of atmosphere"
@@ -109,7 +109,7 @@
                            (mul overall-scatter
                                 (add (ray-scatter x omega light-direction)
                                      (if (surface-point? planet point)
-                                       (let [surface-brightness (mul (div (::brightness planet) Math/PI)
+                                       (let [surface-brightness (mul (div (::brightness planet) PI)
                                                                      (surface-radiance point light-direction))]
                                          (mul (transmittance planet scatter ray-steps x point) surface-brightness))
                                        (matrix [0 0 0])))))))))
@@ -131,7 +131,7 @@
   [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power]
   (let [sky-size    (inc (quot size 2))
         ground-size (quot (dec size) 2)
-        pi2         (/ Math/PI 2)]
+        pi2         (/ PI 2)]
     (fn ^double [^Vector point ^Vector direction]
         (let [distance      (norm (sub point centre))
               cos-elevation (/ (dot point direction) (norm point))
@@ -147,7 +147,7 @@
   [{:sfsim25.sphere/keys [^double radius] :as planet} size power]
   (let [sky-size    (inc (quot size 2))
         ground-size (quot (dec size) 2)
-        pi2         (/ Math/PI 2)
+        pi2         (/ PI 2)
         invert      #(- 1 %)]
     (fn ^Vector [^double height ^double index]
         (let [horizon (horizon-angle planet (matrix [(+ radius height) 0 0]))]
@@ -184,7 +184,7 @@
 
 (def surface-radiance-space transmittance-space)
 
-(defn- clip-angle [angle] (if (< angle (- Math/PI)) (+ angle (* 2 Math/PI)) (if (>= angle Math/PI) (- angle (* 2 Math/PI)) angle)))
+(defn- clip-angle [angle] (if (< angle (- PI)) (+ angle (* 2 PI)) (if (>= angle PI) (- angle (* 2 PI)) angle)))
 
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
@@ -221,7 +221,7 @@
   [planet size power]
   (let [shape   [size size size size]
         height  (:sfsim25.atmosphere/height planet)
-        scaling (linear-space [0 0 0 0] [height (dec size) (dec size) Math/PI] shape)]
+        scaling (linear-space [0 0 0 0] [height (dec size) (dec size) PI] shape)]
     (compose-space scaling #:sfsim25.interpolate{:forward (ray-scatter-forward planet size power)
                                                  :backward (ray-scatter-backward planet size power)})))
 

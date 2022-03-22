@@ -1,7 +1,7 @@
 (ns sfsim25.sphere
   "Functions dealing with spheres"
   (:require [clojure.core.matrix :refer (matrix mmul mul add dot sub transpose length)]
-            [clojure.math :refer (cos sin ceil sqrt)]
+            [clojure.math :refer (cos sin ceil sqrt PI)]
             [sfsim25.matrix :refer :all]
             [sfsim25.util :refer :all])
   (:import [mikera.vectorz Vector]))
@@ -46,8 +46,8 @@
 (defn integrate-circle
   "Numerically integrate function in the range from zero to two pi"
   [steps fun]
-  (let [samples (map #(* 2 Math/PI (/ (+ 0.5 %) steps)) (range steps))
-        weight  (/ (* 2 Math/PI) steps)]
+  (let [samples (map #(* 2 PI (/ (+ 0.5 %) steps)) (range steps))
+        weight  (/ (* 2 PI) steps)]
     (mul (reduce add (map fun samples)) weight)))
 
 (defn- spherical-integral
@@ -75,9 +75,9 @@
 (defn integral-half-sphere
   "Integrate over half unit sphere oriented along normal"
   [steps normal fun]
-  (spherical-integral (bit-shift-right steps 2) steps (/ Math/PI 2) normal fun))
+  (spherical-integral (bit-shift-right steps 2) steps (/ PI 2) normal fun))
 
 (defn integral-sphere
   "Integrate over a full unit sphere"
   [steps normal fun]
-  (spherical-integral (bit-shift-right steps 1) steps Math/PI normal fun))
+  (spherical-integral (bit-shift-right steps 1) steps PI normal fun))

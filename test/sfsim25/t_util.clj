@@ -1,5 +1,6 @@
 (ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
+            [clojure.math :refer (PI)]
             [clojure.core.matrix :refer (matrix)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
@@ -40,13 +41,11 @@
 (fact "Determine directory name of cube tile"
   (cube-dir "globe" 5 2 1) => "globe/5/2/1")
 
-(def pi Math/PI)
-
 (tabular "Sinc function"
   (fact (sinc ?x) => (roughly ?result 1e-6))
   ?x       ?result
-  pi       0.0
-  (/ pi 2) (/ 2 pi)
+  PI       0.0
+  (/ PI 2) (/ 2 PI)
   0.0      1.0)
 
 (facts "Square values"

@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [+ - *])
   (:require [midje.sweet :refer :all]
             [clojure.core :as c]
-            [clojure.math :refer (E)]
+            [clojure.math :refer (PI E)]
             [clojure.core.matrix :refer (matrix sub)]
             [clojure.core.matrix.linear :as l]
             [sfsim25.quaternion :refer :all]))
@@ -65,34 +65,33 @@
   (vector->quaternion (matrix [2 3 5]))      => (->Quaternion 0 2 3 5)
   (quaternion->vector (->Quaternion 0 2 3 5)) => (matrix [2.0 3.0 5.0]))
 
-(def pi Math/PI)
 (def -E (c/- E))
 
 (tabular "Exponentation of quaternions"
   (fact (?component (exp ?q)) => (roughly ?result 1e-6))
   ?q                                           ?component ?result
-  (->Quaternion 0 0 pi 0)                      :a         -1.0
-  (->Quaternion 0 0 pi 0)                      :c          0.0
-  (->Quaternion 0 0 (/ pi 2) 0)                :a          0.0
-  (->Quaternion 0 0 (/ pi 2) 0)                :c          1.0
-  (->Quaternion 1 0 pi 0)                      :a         -E
-  (->Quaternion 1 0 (/ pi 2) 0)                :c          E
-  (->Quaternion 0 0 0 pi)                      :d          0.0
-  (->Quaternion 0 0 0 (/ pi 2))                :d          1.0
-  (->Quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0) :b          0.8
-  (->Quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0) :c          0.6)
+  (->Quaternion 0 0 PI 0)                      :a         -1.0
+  (->Quaternion 0 0 PI 0)                      :c          0.0
+  (->Quaternion 0 0 (/ PI 2) 0)                :a          0.0
+  (->Quaternion 0 0 (/ PI 2) 0)                :c          1.0
+  (->Quaternion 1 0 PI 0)                      :a         -E
+  (->Quaternion 1 0 (/ PI 2) 0)                :c          E
+  (->Quaternion 0 0 0 PI)                      :d          0.0
+  (->Quaternion 0 0 0 (/ PI 2))                :d          1.0
+  (->Quaternion 0 (c/* 0.4 PI) (c/* 0.3 PI) 0) :b          0.8
+  (->Quaternion 0 (c/* 0.4 PI) (c/* 0.3 PI) 0) :c          0.6)
 
 (tabular "Represent rotation using quaternion"
   (fact (?component (rotation ?angle ?axis)) => (roughly ?result 1e-6))
   ?axis                     ?angle     ?component ?result
   (matrix [0 0 1])         0          :a         1.0
-  (matrix [0 0 1])         (c/* 2 pi) :a        -1.0
-  (matrix [0.36 0.48 0.8]) pi         :b         0.36
-  (matrix [0.36 0.48 0.8]) pi         :d         0.8
-  (matrix [0.36 0.48 0.8]) (/ pi 3)   :b         0.18)
+  (matrix [0 0 1])         (c/* 2 PI) :a        -1.0
+  (matrix [0.36 0.48 0.8]) PI         :b         0.36
+  (matrix [0.36 0.48 0.8]) PI         :d         0.8
+  (matrix [0.36 0.48 0.8]) (/ PI 3)   :b         0.18)
 
 (defn roughly-matrix [y error] (fn [x] (<= (l/norm (sub y x)) error)))
 
 (facts "Rotate a vector using a rotation quaternion"
   (rotate-vector (rotation 0 (matrix [1 0 0])) (matrix [2 4 8]))        => (roughly-matrix (matrix [2  4 8]) 1e-6)
-  (rotate-vector (rotation (/ pi 2) (matrix [1 0 0])) (matrix [2 4 8])) => (roughly-matrix (matrix [2 -8 4]) 1e-6))
+  (rotate-vector (rotation (/ PI 2) (matrix [1 0 0])) (matrix [2 4 8])) => (roughly-matrix (matrix [2 -8 4]) 1e-6))

@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [clojure.core.matrix :refer (matrix sub add mul)]
             [clojure.core.matrix.linear :refer (norm)]
-            [clojure.math :refer (sqrt)]
+            [clojure.math :refer (sqrt PI)]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [mikera.vectorz Vector]))
@@ -81,15 +81,13 @@
   5 2 3 1 2 -0.5  1.0 -1.0
   5 2 3 1 3  0.0  1.0 -1.0)
 
-(def pi Math/PI)
-
 (facts "Longitude of 3D point"
   (longitude (matrix [1 0 0])) => (roughly 0        1e-6)
-  (longitude (matrix [0 1 0])) => (roughly (/ pi 2) 1e-6))
+  (longitude (matrix [0 1 0])) => (roughly (/ PI 2) 1e-6))
 
 (facts "Latitude of 3D point"
   (latitude (matrix [0 6378000 0]) 6378000 6357000) => (roughly 0        1e-6)
-  (latitude (matrix [0 0 6357000]) 6378000 6357000) => (roughly (/ pi 2) 1e-6)
+  (latitude (matrix [0 0 6357000]) 6378000 6357000) => (roughly (/ PI 2) 1e-6)
   (latitude (matrix [6378000 0 0]) 6378000 6357000) => (roughly 0        1e-6))
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
@@ -99,10 +97,10 @@
     (geodetic->cartesian ?lon ?lat ?h 6378000.0 6357000.0) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
       ?lon     ?lat   ?h        ?x        ?y        ?z
          0        0    0 6378000.0       0.0       0.0
-  (/ pi 2)        0    0       0.0 6378000.0       0.0
-         0 (/ pi 2)    0       0.0       0.0 6357000.0
+  (/ PI 2)        0    0       0.0 6378000.0       0.0
+         0 (/ PI 2)    0       0.0       0.0 6357000.0
          0        0 1000 6379000.0       0.0       0.0
-  (/ pi 2)        0 1000       0.0 6379000.0       0.0)
+  (/ PI 2)        0 1000       0.0 6379000.0       0.0)
 
 (tabular "Conversion from cartesian (surface) coordinates to latitude and longitude"
   (fact
@@ -110,12 +108,12 @@
       (just (roughly ?lon 1e-6) (roughly ?lat 1e-6) (roughly ?height 1e-6)))
          ?x        ?y         ?z           ?lon         ?lat ?height
   6378000.0       0.0        0.0              0            0       0
-        0.0 6378000.0        0.0       (/ pi 2)            0       0
-        0.0       0.0  6357000.0              0     (/ pi 2)       0
-        0.0       0.0  6358000.0              0     (/ pi 2)    1000
-        0.0       0.0 -6358000.0              0 (/ (- pi) 2)    1000
+        0.0 6378000.0        0.0       (/ PI 2)            0       0
+        0.0       0.0  6357000.0              0     (/ PI 2)       0
+        0.0       0.0  6358000.0              0     (/ PI 2)    1000
+        0.0       0.0 -6358000.0              0 (/ (- PI) 2)    1000
   6378000.0       0.0        0.0              0            0       0
-        0.0 6378000.0        0.0       (/ pi 2)            0       0
+        0.0 6378000.0        0.0       (/ PI 2)            0       0
   6379000.0       0.0        0.0              0            0    1000
   6377900.0       0.0        0.0              0            0    -100)
 
@@ -128,36 +126,36 @@
    0  0  1        0.0       0.0 6357000.0)
 
 (facts "x-coordinate on raster map"
-  (map-x (- pi) 675 3) => 0.0
+  (map-x (- PI) 675 3) => 0.0
   (map-x 0 675 3) => (* 675 2.0 8))
 
 (facts "y-coordinate on raster map"
-  (map-y (/ pi 2) 675 3) => 0.0
+  (map-y (/ PI 2) 675 3) => 0.0
   (map-y 0 675 3) => (* 675 8.0))
 
 (facts "determine x-coordinates and fractions for interpolation"
   (map-pixels-x 0                       675 3) => [(* 675 2 8)     (inc (* 675 2 8)) 1.0 0.0]
-  (map-pixels-x (- pi)                  675 3) => [0               1                 1.0 0.0]
-  (map-pixels-x (- pi (/ pi (* 256 4))) 256 0) => [(dec (* 256 4)) 0                 0.5 0.5])
+  (map-pixels-x (- PI)                  675 3) => [0               1                 1.0 0.0]
+  (map-pixels-x (- PI (/ PI (* 256 4))) 256 0) => [(dec (* 256 4)) 0                 0.5 0.5])
 
 (facts "determine y-coordinates and fractions for interpolation"
   (map-pixels-y 0                675 3) => [(* 675 8)         (inc (* 675 8))   1.0 0.0]
-  (map-pixels-y (- (/ pi 2))     675 3) => [(dec (* 675 2 8)) (dec (* 675 2 8)) 1.0 0.0]
-  (map-pixels-y (/ pi (* 4 256)) 256 0) => [(dec 256)         256               0.5 0.5])
+  (map-pixels-y (- (/ PI 2))     675 3) => [(dec (* 675 2 8)) (dec (* 675 2 8)) 1.0 0.0]
+  (map-pixels-y (/ PI (* 4 256)) 256 0) => [(dec 256)         256               0.5 0.5])
 
 (facts "Offset in longitudinal direction"
-  (offset-longitude (matrix [1  0 0]) 0 675) => (roughly-matrix (matrix [0 (/ (* 2 pi) (* 4 675)) 0]) 1e-6)
-  (offset-longitude (matrix [0 -1 0]) 0 675) => (roughly-matrix (matrix [(/ (* 2 pi) (* 4 675)) 0 0]) 1e-6)
-  (offset-longitude (matrix [0 -2 0]) 0 675) => (roughly-matrix (matrix [(/ (* 4 pi) (* 4 675)) 0 0]) 1e-6)
-  (offset-longitude (matrix [0 -2 0]) 1 675) => (roughly-matrix (matrix [(/ (* 2 pi) (* 4 675)) 0 0]) 1e-6))
+  (offset-longitude (matrix [1  0 0]) 0 675) => (roughly-matrix (matrix [0 (/ (* 2 PI) (* 4 675)) 0]) 1e-6)
+  (offset-longitude (matrix [0 -1 0]) 0 675) => (roughly-matrix (matrix [(/ (* 2 PI) (* 4 675)) 0 0]) 1e-6)
+  (offset-longitude (matrix [0 -2 0]) 0 675) => (roughly-matrix (matrix [(/ (* 4 PI) (* 4 675)) 0 0]) 1e-6)
+  (offset-longitude (matrix [0 -2 0]) 1 675) => (roughly-matrix (matrix [(/ (* 2 PI) (* 4 675)) 0 0]) 1e-6))
 
 (facts "Offset in latitudinal direction"
-  (offset-latitude (matrix [1 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 pi) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [0 0 1]) 0 675 1 1)     => (roughly-matrix (matrix [(/ (* -2 pi) (* 4 675)) 0 0]) 1e-6)
-  (offset-latitude (matrix [2 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 4 pi) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [2 0 0]) 1 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 pi) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [0 -1e-8 1]) 0 675 1 1) => (roughly-matrix (matrix [0 (/ (* 2 pi) (* 4 675)) 0]) 1e-6)
-  (offset-latitude (matrix [1 0 0]) 0 675 1 0.5)   => (roughly-matrix (matrix [0 0 (/ pi (* 4 675))]) 1e-6))
+  (offset-latitude (matrix [1 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 PI) (* 4 675))]) 1e-6)
+  (offset-latitude (matrix [0 0 1]) 0 675 1 1)     => (roughly-matrix (matrix [(/ (* -2 PI) (* 4 675)) 0 0]) 1e-6)
+  (offset-latitude (matrix [2 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 4 PI) (* 4 675))]) 1e-6)
+  (offset-latitude (matrix [2 0 0]) 1 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 PI) (* 4 675))]) 1e-6)
+  (offset-latitude (matrix [0 -1e-8 1]) 0 675 1 1) => (roughly-matrix (matrix [0 (/ (* 2 PI) (* 4 675)) 0]) 1e-6)
+  (offset-latitude (matrix [1 0 0]) 0 675 1 0.5)   => (roughly-matrix (matrix [0 0 (/ PI (* 4 675))]) 1e-6))
 
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
@@ -230,7 +228,7 @@
 
 (fact "Project point onto globe"
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
-                                             (fact [in-level width lon lat] => [4 675 0.0 (/ (- pi) 2)])
+                                             (fact [in-level width lon lat] => [4 675 0.0 (/ (- PI) 2)])
                                              2777.0)]
     (project-onto-globe (matrix [0 0 -1]) 4 675 6378000 6357000) => (roughly-matrix (matrix [0 0 -6359777.0]) 1e-6)))
 

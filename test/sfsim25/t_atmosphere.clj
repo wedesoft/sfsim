@@ -1,7 +1,7 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
-              [clojure.math :refer (sqrt exp pow E)]
+              [clojure.math :refer (sqrt exp pow E PI to-radians)]
               [clojure.core.matrix :refer (matrix mget mul sub identity-matrix)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.matrix :refer :all]
@@ -41,17 +41,17 @@
     (mget (extinction rayleigh 8000) 0) => (roughly (/ 2e-5 E) 1e-12)))
 
 (facts "Rayleigh phase function"
-  (phase {}  0) => (roughly (/ 3 (* 16 Math/PI)))
-  (phase {}  1) => (roughly (/ 6 (* 16 Math/PI)))
-  (phase {} -1) => (roughly (/ 6 (* 16 Math/PI))))
+  (phase {}  0) => (roughly (/ 3 (* 16 PI)))
+  (phase {}  1) => (roughly (/ 6 (* 16 PI)))
+  (phase {} -1) => (roughly (/ 6 (* 16 PI))))
 
 (facts "Mie phase function"
   (let [g (fn [value] {:sfsim25.atmosphere/scatter-g value})]
-    (phase (g 0  )  0) => (roughly (/ 3 (* 16 Math/PI)))
-    (phase (g 0  )  1) => (roughly (/ 6 (* 16 Math/PI)))
-    (phase (g 0  ) -1) => (roughly (/ 6 (* 16 Math/PI)))
-    (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (pow 1.25 1.5))))
-    (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (pow 0.25 1.5))))))
+    (phase (g 0  )  0) => (roughly (/ 3 (* 16 PI)))
+    (phase (g 0  )  1) => (roughly (/ 6 (* 16 PI)))
+    (phase (g 0  ) -1) => (roughly (/ 6 (* 16 PI)))
+    (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5))))
+    (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))))
 
 (facts "Get intersection with artificial limit of atmosphere"
        (let [radius 6378000
@@ -222,7 +222,7 @@
         light-direction  (matrix [0.36 0.48 0.8])
         intensity        (matrix [1 1 1])
         earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
-                                          :sfsim25.atmosphere/brightness (mul Math/PI (matrix [0.3 0.3 0.3]))}
+                                          :sfsim25.atmosphere/brightness (mul PI (matrix [0.3 0.3 0.3]))}
         mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
         ray-scatter1     (fn [x view-direction light-direction]
                              (facts x => x1 view-direction => (matrix [0 1 0]) light-direction => (matrix [0.36 0.48 0.8]))
@@ -272,7 +272,7 @@
         x               (matrix [0 radius 0])
         light-direction (matrix [0.6 0.8 0])
         earth           #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
-                                         :sfsim25.atmosphere/brightness (mul Math/PI (matrix [0.3 0.3 0.3]))}
+                                         :sfsim25.atmosphere/brightness (mul PI (matrix [0.3 0.3 0.3]))}
         ray-scatter     (fn [x view-direction light-direction]
                             (facts x => (matrix [0 radius 0])
                                    view-direction => (matrix [0.36 0.48 0.8])
@@ -290,8 +290,8 @@
        (let [radius 6378000.0
              earth  #:sfsim25.sphere {:centre (matrix [0 0 0]) :radius radius}]
          (horizon-angle earth (matrix [radius 0 0])) => 0.0
-         (horizon-angle earth (matrix [(* (sqrt 2) radius) 0 0])) => (roughly (/ Math/PI 4) 1e-12)
-         (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ Math/PI 3) 1e-12)
+         (horizon-angle earth (matrix [(* (sqrt 2) radius) 0 0])) => (roughly (/ PI 4) 1e-12)
+         (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ PI 3) 1e-12)
          (horizon-angle earth (matrix [(- radius 0.1) 0 0])) => 0.0))
 
 (facts "Map elevation value to lookup table index depending on position of horizon"
@@ -504,7 +504,7 @@ void main()
 
 (def initial (identity-matrix 4))
 (def shifted (transformation-matrix (identity-matrix 3) (matrix [0.2 0.4 0.5])))
-(def rotated (transformation-matrix (rotation-x (Math/toRadians 90)) (matrix [0 0 0])))
+(def rotated (transformation-matrix (rotation-x (to-radians 90)) (matrix [0 0 0])))
 
 (tabular "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
          (fact
@@ -520,7 +520,7 @@ void main()
                                    vao       (make-vertex-array-object program indices vertices variables)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
-                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
+                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-matrix4 program :transform ?matrix)
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
@@ -583,7 +583,7 @@ void main()
                                (use-program program)
                                (uniform-sampler program :transmittance 0)
                                (uniform-sampler program :ray_scatter 1)
-                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ Math/PI 3)))
+                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-vector3 program :origin origin)
                                (uniform-matrix4 program :transform transform)
                                (uniform-vector3 program :light (matrix [?lx ?ly ?lz]))
@@ -600,11 +600,11 @@ void main()
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))   => (is-image (str "test/sfsim25/fixtures/atmosphere/"?result)))
-         ?x ?y           ?z                      ?polar       ?rotation        ?lx ?ly ?lz  ?result
-         0  0            (- 0 radius max-height) radius       0                0   0   -1   "sun.png"
-         0  0            (- 0 radius max-height) radius       0                0   0    1   "space.png"
-         0  0            (* 2.5 radius)          radius       0                0   1    0   "haze.png"
-         0  radius       (* 0.5 radius)          radius       0                0   0   -1   "sunset.png"
-         0  0            (- 0 radius 2)          radius       0                0   0   -1   "inside.png"
-         0  (* 3 radius) 0                       radius       (* -0.5 Math/PI) 0   1    0   "yview.png"
-         0  (* 3 radius) 0                       (/ radius 2) (* -0.5 Math/PI) 0   1    0   "ellipsoid.png")
+         ?x ?y           ?z                      ?polar       ?rotation   ?lx ?ly ?lz  ?result
+         0  0            (- 0 radius max-height) radius       0           0   0   -1   "sun.png"
+         0  0            (- 0 radius max-height) radius       0           0   0    1   "space.png"
+         0  0            (* 2.5 radius)          radius       0           0   1    0   "haze.png"
+         0  radius       (* 0.5 radius)          radius       0           0   0   -1   "sunset.png"
+         0  0            (- 0 radius 2)          radius       0           0   0   -1   "inside.png"
+         0  (* 3 radius) 0                       radius       (* -0.5 PI) 0   1    0   "yview.png"
+         0  (* 3 radius) 0                       (/ radius 2) (* -0.5 PI) 0   1    0   "ellipsoid.png")

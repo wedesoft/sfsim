@@ -3,7 +3,7 @@
   (:require [clojure.core.memoize :as z]
             [clojure.core.matrix :refer (matrix mget mmul add sub mul dot cross)]
             [clojure.core.matrix.linear :refer (norm)]
-            [clojure.math :refer (cos sin sqrt floor atan2 round)]
+            [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
             [sfsim25.matrix :refer :all]
             [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation sqr)])
   (:import [mikera.vectorz Vector]))
@@ -132,13 +132,13 @@
   "Compute x-coordinate on raster map"
   ^double [^double longitude ^long tilesize ^long level]
   (let [n (bit-shift-left 1 level)]
-    (* (+ Math/PI longitude) (/ (* 4 n tilesize) (* 2 Math/PI)))))
+    (* (+ PI longitude) (/ (* 4 n tilesize) (* 2 PI)))))
 
 (defn map-y
   "Compute y-coordinate on raster map"
   ^double [^double latitude ^long tilesize ^long level]
   (let [n (bit-shift-left 1 level)]
-    (* (- (/ Math/PI 2) latitude) (/ (* 2 n tilesize) Math/PI))))
+    (* (- (/ PI 2) latitude) (/ (* 2 n tilesize) PI))))
 
 (defn map-pixels-x
   "Determine x-coordinates and fractions for interpolation"
@@ -169,7 +169,7 @@
   ^Vector [^Vector p ^long level ^long tilesize]
   (let [lon  (longitude p)
         norm (norm p)]
-    (mmul (rotation-z lon) (matrix [0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level))) 0]))))
+    (mmul (rotation-z lon) (matrix [0 (/ (* norm PI) (* 2 tilesize (bit-shift-left 1 level))) 0]))))
 
 (defn offset-latitude
   "Determine latitudinal offset for computing normal vector"
@@ -177,7 +177,7 @@
   (let [lon  (longitude p)
         lat  (latitude p radius1 radius2)
         norm (norm p)
-        v    (matrix [0 0 (/ (* norm Math/PI) (* 2 tilesize (bit-shift-left 1 level)))])
+        v    (matrix [0 0 (/ (* norm PI) (* 2 tilesize (bit-shift-left 1 level)))])
         vs   (mmul (rotation-z lon) (mmul (rotation-y (- lat)) v))]
     (matrix [(mget vs 0) (mget vs 1) (/ (* (mget vs 2) radius2) radius1)])))
 

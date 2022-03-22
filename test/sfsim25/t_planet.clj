@@ -1,6 +1,7 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
+              [clojure.math :refer (PI)]
               [clojure.core.matrix :refer (matrix sub mul identity-matrix)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.cubemap :as cubemap]
@@ -208,7 +209,7 @@ void main()
                           (uniform-int program :neighbours 15)
                           (uniform-matrix4 program :inverse_transform (transformation-matrix (identity-matrix 3)
                                                                                              (matrix [0 0 -2])))
-                          (uniform-matrix4 program :projection (projection-matrix 256 256 1 3 (/ Math/PI 3)))
+                          (uniform-matrix4 program :projection (projection-matrix 256 256 1 3 (/ PI 3)))
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
@@ -303,16 +304,16 @@ void main()
                                                 shaders/convert-2d-index))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) Math/PI)
+         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) PI)
                => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
-         ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r               ?g ?b
-         1       0  0  6378000  1              0          0   0   1   0      0   0   0   0                0  0
-         1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2              0  0.8
-         0.9     0  0  6378000  1              0          0   0   1   0      1   1   1   0.9              0  0.9
-         1       0  0  6378000  0              0          1   0   0   0      1   1   1   0                0  1.0
-         1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1              0  0.4
-         1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 Math/PI) 0  0.4
-         1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2              0  0.8)
+         ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
+         1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
+         1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
+         0.9     0  0  6378000  1              0          0   0   1   0      1   1   1   0.9         0  0.9
+         1       0  0  6378000  0              0          1   0   0   0      1   1   1   0           0  1.0
+         1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
+         1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
+         1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8)
 
 (def vertex-planet-probe "#version 410 core
 in highp vec3 point;
@@ -423,18 +424,18 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
          ?colors   ?albedo ?a ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   Math/PI 1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
-         "pattern" Math/PI 1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
+         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
+         "pattern" PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
+         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
          "white"   0.9     1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
          "white"   0.9     2  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "amplify"
-         "white"   Math/PI 1  radius       1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
-         "white"   Math/PI 1  radius       1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0  -1   "reflection3"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   Math/PI 1  radius       1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter"
-         "white"   Math/PI 1  (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")
+         "white"   PI      1  radius       1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
+         "white"   PI      1  radius       1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
+         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
+         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
+         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
+         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0  -1   "reflection3"
+         "white"   PI      1  radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   PI      1  radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
+         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter"
+         "white"   PI      1  (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")
