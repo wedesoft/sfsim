@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [+ - *])
   (:require [midje.sweet :refer :all]
             [clojure.core :as c]
+            [clojure.math :refer (E)]
             [clojure.core.matrix :refer (matrix sub)]
             [clojure.core.matrix.linear :as l]
             [sfsim25.quaternion :refer :all]))
@@ -65,8 +66,7 @@
   (quaternion->vector (->Quaternion 0 2 3 5)) => (matrix [2.0 3.0 5.0]))
 
 (def pi Math/PI)
-(def e Math/E)
-(def -e (c/- e))
+(def -E (c/- E))
 
 (tabular "Exponentation of quaternions"
   (fact (?component (exp ?q)) => (roughly ?result 1e-6))
@@ -75,8 +75,8 @@
   (->Quaternion 0 0 pi 0)                      :c          0.0
   (->Quaternion 0 0 (/ pi 2) 0)                :a          0.0
   (->Quaternion 0 0 (/ pi 2) 0)                :c          1.0
-  (->Quaternion 1 0 pi 0)                      :a         -e
-  (->Quaternion 1 0 (/ pi 2) 0)                :c          e
+  (->Quaternion 1 0 pi 0)                      :a         -E
+  (->Quaternion 1 0 (/ pi 2) 0)                :c          E
   (->Quaternion 0 0 0 pi)                      :d          0.0
   (->Quaternion 0 0 0 (/ pi 2))                :d          1.0
   (->Quaternion 0 (c/* 0.4 pi) (c/* 0.3 pi) 0) :b          0.8

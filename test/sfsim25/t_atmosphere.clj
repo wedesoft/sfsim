@@ -1,7 +1,7 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
-              [clojure.math :refer (sqrt exp pow)]
+              [clojure.math :refer (sqrt exp pow E)]
               [clojure.core.matrix :refer (matrix mget mul sub identity-matrix)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.matrix :refer :all]
@@ -29,16 +29,16 @@
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
   (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6]) :scatter-scale 8000}]
     (mget (scattering rayleigh          0) 0) => 5.8e-6
-    (mget (scattering rayleigh       8000) 0) => (roughly (/ 5.8e-6 Math/E) 1e-12)
-    (mget (scattering rayleigh (* 2 8000)) 0) => (roughly (/ 5.8e-6 Math/E Math/E) 1e-12))
+    (mget (scattering rayleigh       8000) 0) => (roughly (/ 5.8e-6 E) 1e-12)
+    (mget (scattering rayleigh (* 2 8000)) 0) => (roughly (/ 5.8e-6 E E) 1e-12))
   (let [mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5]) :scatter-scale 1200}]
-    (mget (scattering mie 1200) 0) => (roughly (/ 2e-5 Math/E) 1e-12)))
+    (mget (scattering mie 1200) 0) => (roughly (/ 2e-5 E) 1e-12)))
 
 (fact "Compute sum of scattering and absorption (i.e. Mie extinction)"
   (let [mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}]
-    (mget (extinction mie 1200) 0) => (roughly (/ 2e-5 0.9 Math/E) 1e-12))
+    (mget (extinction mie 1200) 0) => (roughly (/ 2e-5 0.9 E) 1e-12))
   (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [2e-5]) :scatter-scale 8000}]
-    (mget (extinction rayleigh 8000) 0) => (roughly (/ 2e-5 Math/E) 1e-12)))
+    (mget (extinction rayleigh 8000) 0) => (roughly (/ 2e-5 E) 1e-12)))
 
 (facts "Rayleigh phase function"
   (phase {}  0) => (roughly (/ 3 (* 16 Math/PI)))
@@ -112,7 +112,7 @@
          (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0])          (matrix [l radius 0])         ) 0)
          => (roughly (exp (- (* l 5.8e-6))) 1e-6)
          (mget (transmittance earth [rayleigh] 50 (matrix [0 (+ radius 8000) 0]) (matrix [l (+ radius 8000) 0])) 0)
-         => (roughly (exp (- (/ (* l 5.8e-6) Math/E))) 1e-6)
+         => (roughly (exp (- (/ (* l 5.8e-6) E))) 1e-6)
          (mget (transmittance earth both       50 (matrix [0 radius 0])          (matrix [l radius 0])         ) 0)
          => (roughly (exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))) 1e-6)
          (mget (transmittance earth [rayleigh] intersection 50 (matrix [0 radius 0]) (matrix [1 0 0])) 0)
@@ -261,7 +261,7 @@
                         (facts steps => 64
                                normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
                                (fun (matrix [0 -1 0])) =>
-                               (roughly-matrix (mul 0.5 (/ 2e-5 Math/E) (matrix [0.9 0.8 0.7]) 0.3 (matrix [3 4 5])) 1e-10))
+                               (roughly-matrix (mul 0.5 (/ 2e-5 E) (matrix [0.9 0.8 0.7]) 0.3 (matrix [3 4 5])) 1e-10))
                       (matrix [2e-5 3e-5 5e-5])))
         (point-scatter earth [mie] ray-scatter2 surface-radiance intensity 64 10 x2 (matrix [0 1 0]) light-direction)
         => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10)))))
