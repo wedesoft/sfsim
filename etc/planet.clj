@@ -1,5 +1,6 @@
-(require '[clojure.core.matrix :refer :all]
+(require '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
          '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
+         '[clojure.math :refer (cos sin sqrt pow)]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.quaternion :as q]
          '[sfsim25.render :refer :all]
@@ -38,15 +39,15 @@
 (def keystates (atom {}))
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def size (int (Math/sqrt (/ (count data) 3))))
+(def size (int (sqrt (/ (count data) 3))))
 (def E (make-vector-texture-2d {:width size :height size :data data}))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def size (int (Math/sqrt (/ (count data) 3))))
+(def size (int (sqrt (/ (count data) 3))))
 (def T (make-vector-texture-2d {:width size :height size :data data}))
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def size (int (Math/pow (/ (count data) 3) 0.25)))
+(def size (int (pow (/ (count data) 3) 0.25)))
 (def S (make-vector-texture-2d {:width (* size size) :height (* size size) :data data}))
 
 (def program-atmosphere
@@ -181,14 +182,14 @@
                           (uniform-float program-planet :max_height max-height)
                           (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
                           (uniform-vector3 program-planet :position @position)
-                          (uniform-vector3 program-planet :light_direction (mmul (rotation-z @light2) (matrix [0 (Math/cos @light1) (Math/sin @light1)])))
+                          (uniform-vector3 program-planet :light_direction (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
                           (uniform-float program-planet :amplification 5)
                           (render-tree @tree)
                           ; Render atmosphere
                           (use-program program-atmosphere)
                           (uniform-matrix4 program-atmosphere :projection projection)
                           (uniform-matrix4 program-atmosphere :transform transform)
-                          (uniform-vector3 program-atmosphere :light (mmul (rotation-z @light2) (matrix [0 (Math/cos @light1) (Math/sin @light1)])))
+                          (uniform-vector3 program-atmosphere :light (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
                           (uniform-float program-atmosphere :radius radius)
                           (uniform-float program-atmosphere :polar_radius polar-radius)
                           (uniform-float program-atmosphere :max_height max-height)

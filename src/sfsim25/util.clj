@@ -1,7 +1,8 @@
 (ns sfsim25.util
   "Various utility functions."
   (:require [clojure.java.io :as io]
-            [clojure.core.matrix :refer :all])
+            [clojure.math :refer (sin sqrt round)]
+            [clojure.core.matrix :refer (matrix mget set-current-implementation)])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [ij ImagePlus]
@@ -86,7 +87,7 @@
 (defn sinc
   "sin(x) / x function"
   ^double [^double x]
-  (if (zero? x) 1.0 (/ (Math/sin x) x)))
+  (if (zero? x) 1.0 (/ (sin x) x)))
 
 (defn sqr
   "Square of x"
@@ -138,9 +139,9 @@
   [{:keys [width height data]} ^long y ^long x ^Vector c]
   (let [offset (+ (* width y) x)]
     (aset-int data offset (bit-or (bit-shift-left -1 24)
-                                  (bit-shift-left (Math/round (mget c 0)) 16)
-                                  (bit-shift-left (Math/round (mget c 1)) 8)
-                                  (Math/round (mget c 2))))))
+                                  (bit-shift-left (round (mget c 0)) 16)
+                                  (bit-shift-left (round (mget c 1)) 8)
+                                  (round (mget c 2))))))
 
 (defn get-elevation
   "Read elevation value from an elevation tile"
@@ -247,8 +248,8 @@
   "Convert 2D array with tiles to 4D array (assuming that each two dimensions are the same)"
   [array]
   (let [[h w] (dimensions array)
-        b     (int (Math/sqrt h))
-        a     (int (Math/sqrt w))]
+        b     (int (sqrt h))
+        a     (int (sqrt w))]
     (mapv (fn [y]
               (mapv (fn [x]
                         (mapv (fn [v]

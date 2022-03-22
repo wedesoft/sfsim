@@ -1,7 +1,8 @@
 (ns sfsim25.t-matrix
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix mmul sub det dot identity-matrix transpose)]
             [clojure.core.matrix.linear :refer (norm)]
+            [clojure.math :refer (sqrt)]
             [sfsim25.matrix :refer :all]
             [sfsim25.quaternion :refer (->Quaternion rotation)]))
 
@@ -9,7 +10,7 @@
   (normalize (matrix [3 0 0])) => (matrix [1 0 0]))
 
 (def pi Math/PI)
-(def ca (/ (Math/sqrt 3) 2))
+(def ca (/ (sqrt 3) 2))
 (def sa 0.5)
 (def -sa -0.5)
 

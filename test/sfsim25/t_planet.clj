@@ -1,7 +1,7 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
-              [clojure.core.matrix :refer :all]
+              [clojure.core.matrix :refer (matrix sub mul identity-matrix)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.render :refer :all]

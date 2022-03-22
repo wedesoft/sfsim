@@ -1,6 +1,6 @@
 (ns sfsim25.t-sphere
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix mget sub)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.sphere :refer :all]))
 

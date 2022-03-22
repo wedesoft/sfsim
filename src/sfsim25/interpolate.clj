@@ -1,6 +1,7 @@
 (ns sfsim25.interpolate
     "N-dimensional interpolation"
-    (:require [clojure.core.matrix :refer :all]
+    (:require [clojure.core.matrix :refer (add mul)]
+              [clojure.math :refer (floor)]
               [sfsim25.util :refer (comp* dimensions)]))
 
 (set! *unchecked-math* true)
@@ -49,7 +50,7 @@
     (let [size       (count lookup-table)
           [c & args] point
           i          (clip c size)
-          u          (Math/floor i)
+          u          (floor i)
           v          (clip (inc u) size)
           s          (- i u)]
       (mix (interpolate-value (nth lookup-table u) args) (interpolate-value (nth lookup-table v) args) s))

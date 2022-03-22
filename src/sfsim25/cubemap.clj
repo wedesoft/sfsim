@@ -1,8 +1,9 @@
 (ns sfsim25.cubemap
   "Conversions from cube coordinates (face, j, i) to geodetic coordinates (longitude, latitude)."
   (:require [clojure.core.memoize :as z]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix mget mmul add sub mul dot cross)]
             [clojure.core.matrix.linear :refer (norm)]
+            [clojure.math :refer (cos sin sqrt floor atan2 round)]
             [sfsim25.matrix :refer :all]
             [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation sqr)])
   (:import [mikera.vectorz Vector]))
@@ -64,14 +65,14 @@
 (defn longitude
   "Longitude of 3D point (East is positive)"
   ^double [^Vector p]
-  (Math/atan2 (mget p 1) (mget p 0)))
+  (atan2 (mget p 1) (mget p 0)))
 
 (defn latitude
   "Latitude of 3D point"
   ^double [^Vector point ^double radius1 ^double radius2]
-  (let [e (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        p (Math/sqrt (+ (sqr (mget point 0)) (sqr (mget point 1))))]
-    (Math/atan2 (mget point 2) (* p (- 1.0 (* e e))))))
+  (let [e (/ (sqrt (- (sqr radius1) (sqr radius2))) radius1)
+        p (sqrt (+ (sqr (mget point 0)) (sqr (mget point 1))))]
+    (atan2 (mget point 2) (* p (- 1.0 (* e e))))))
 
 ; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
@@ -79,24 +80,24 @@
   [longitude latitude height radius1 radius2]
   (let [radius1-sqr     (sqr radius1)
         radius2-sqr     (sqr radius2)
-        cos-lat         (Math/cos latitude)
-        sin-lat         (Math/sin latitude)
-        vertical-radius (/ radius1-sqr (Math/sqrt (+ (* radius1-sqr cos-lat cos-lat) (* radius2-sqr sin-lat sin-lat))))]
-    (matrix [(* (+ vertical-radius height) cos-lat (Math/cos longitude))
-             (* (+ vertical-radius height) cos-lat (Math/sin longitude))
+        cos-lat         (cos latitude)
+        sin-lat         (sin latitude)
+        vertical-radius (/ radius1-sqr (sqrt (+ (* radius1-sqr cos-lat cos-lat) (* radius2-sqr sin-lat sin-lat))))]
+    (matrix [(* (+ vertical-radius height) cos-lat (cos longitude))
+             (* (+ vertical-radius height) cos-lat (sin longitude))
              (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-lat)])))
 
 (defn project-onto-ellipsoid
   "Project a 3D vector onto an ellipsoid"
   ^Vector [^Vector point ^double radius1 ^double radius2]
   (let [radius           (norm point)
-        xy-radius        (Math/sqrt (+ (sqr (mget point 0)) (sqr (mget point 1))))
+        xy-radius        (sqrt (+ (sqr (mget point 0)) (sqr (mget point 1))))
         cos-latitude     (/ xy-radius radius)
         sin-latitude     (/ (mget point 2) radius)
         cos-longitude    (if (zero? xy-radius) 1.0 (/ (mget point 0) xy-radius))
         sin-longitude    (if (zero? xy-radius) 0.0 (/ (mget point 1) xy-radius))
-        projected-radius (/ (* radius1 radius2) (Math/sqrt (+ (* radius1 radius1 sin-latitude sin-latitude)
-                                                              (* radius2 radius2 cos-latitude cos-latitude))))]
+        projected-radius (/ (* radius1 radius2) (sqrt (+ (* radius1 radius1 sin-latitude sin-latitude)
+                                                         (* radius2 radius2 cos-latitude cos-latitude))))]
   (matrix [(* cos-latitude cos-longitude projected-radius)
            (* cos-latitude sin-longitude projected-radius)
            (* sin-latitude projected-radius)])))
@@ -114,14 +115,14 @@
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height"
   [^Vector point ^double radius1 ^double radius2]
-  (let [e         (/ (Math/sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        lon       (Math/atan2 (mget point 1) (mget point 0))
+  (let [e         (/ (sqrt (- (sqr radius1) (sqr radius2))) radius1)
+        lon       (atan2 (mget point 1) (mget point 0))
         iteration (fn [^Vector reference-point iter]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
                           normal        (ellipsoid-normal surface-point radius1 radius2)
                           height        (dot normal (sub point surface-point))
-                          p             (Math/sqrt (+ (sqr (mget surface-point 0)) (sqr (mget surface-point 1))))
-                          lat           (Math/atan2 (mget surface-point 2) (* p (- 1.0 (* e e))))
+                          p             (sqrt (+ (sqr (mget surface-point 0)) (sqr (mget surface-point 1))))
+                          lat           (atan2 (mget surface-point 2) (* p (- 1.0 (* e e))))
                           result        (add surface-point (mul height normal))
                           error         (sub result point)]
                       (if (or (< (norm error) 1e-6) (>= iter 10)) [lon lat height] (recur (sub surface-point error) (inc iter)))))]
@@ -145,7 +146,7 @@
   (let [n     (bit-shift-left 1 level)
         size  (* 4 n tilesize)
         x     (map-x longitude tilesize level)
-        x0    (int (Math/floor x))
+        x0    (int (floor x))
         x1    (inc x0)
         frac1 (- x x0)
         frac0 (- 1 frac1)]
@@ -157,7 +158,7 @@
   (let [n    (bit-shift-left 1 level)
         size (* 2 n tilesize)
         y    (map-y latitude tilesize level)
-        y0   (int (Math/floor y))
+        y0   (int (floor y))
         y1   (inc y0)
         frac1 (- y y0)
         frac0 (- 1 frac1)]
@@ -192,7 +193,7 @@
   (z/lru
     (fn [in-level ty tx]
       (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
-            size (int (Math/round (Math/sqrt (alength data))))]
+            size (int (round (sqrt (alength data))))]
         {:width size :height size :data data}))
     :lru/threshold 128))
 

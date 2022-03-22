@@ -1,6 +1,6 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
-    (:require [clojure.core.matrix :refer :all]
+    (:require [clojure.core.matrix :refer (mget)]
               [sfsim25.cubemap :refer :all]))
 
 (defn make-cube-map-tile-vertices

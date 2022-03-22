@@ -1,7 +1,8 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
-    (:require [clojure.core.matrix :refer :all]
+    (:require [clojure.core.matrix :refer (matrix mget mmul add sub mul div normalise dot) :as m]
               [clojure.core.matrix.linear :refer (norm)]
+              [clojure.math :refer (cos sin exp pow atan2 acos)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
               [sfsim25.ray :refer :all]
@@ -14,7 +15,7 @@
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
   ^Vector [{:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
-  (mul scatter-base (Math/exp (- (/ height scatter-scale)))))
+  (mul scatter-base (exp (- (/ height scatter-scale)))))
 
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
@@ -26,7 +27,7 @@
   [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
   (let [scatter-g-sqr (sqr scatter-g)]
     (/ (* 3 (- 1 scatter-g-sqr) (+ 1 (sqr mu)))
-       (* 8 Math/PI (+ 2 scatter-g-sqr) (Math/pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
+       (* 8 Math/PI (+ 2 scatter-g-sqr) (pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
 
 (defn atmosphere-intersection
   "Get intersection of ray with artificial limit of atmosphere"
@@ -58,7 +59,7 @@
 (defn- exp-negative
   "Negative exponentiation"
   [x]
-  (exp (sub x)))
+  (m/exp (sub x)))
 
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
@@ -123,7 +124,7 @@
   "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
   ^double [{:sfsim25.sphere/keys [^Vector centre ^double radius]} ^Vector point]
   (let [distance (max radius (norm (sub point centre)))]
-    (Math/acos (/ radius distance))))
+    (acos (/ radius distance))))
 
 (defn elevation-to-index
   "Convert elevation value to lookup table index depending on position of horizon"
@@ -134,12 +135,12 @@
     (fn ^double [^Vector point ^Vector direction]
         (let [distance      (norm (sub point centre))
               cos-elevation (/ (dot point direction) (norm point))
-              elevation     (Math/acos cos-elevation)
+              elevation     (acos cos-elevation)
               horizon       (horizon-angle planet point)
               invert        #(- 1 %)]
           (if (<= elevation (+ pi2 horizon))
-            (-> elevation (/ (+ pi2 horizon)) invert (Math/pow (/ 1.0 power)) invert (* (dec sky-size)))
-            (-> elevation (- pi2 horizon) (/ (- pi2 horizon)) (Math/pow (/ 1.0 power)) (* (dec ground-size)) (+ sky-size)))))))
+            (-> elevation (/ (+ pi2 horizon)) invert (pow (/ 1.0 power)) invert (* (dec sky-size)))
+            (-> elevation (- pi2 horizon) (/ (- pi2 horizon)) (pow (/ 1.0 power)) (* (dec ground-size)) (+ sky-size)))))))
 
 (defn index-to-elevation
   "Convert elevation lookup index to directional vector depending on position of horizon"
@@ -151,10 +152,10 @@
     (fn ^Vector [^double height ^double index]
         (let [horizon (horizon-angle planet (matrix [(+ radius height) 0 0]))]
           (if (<= index (+ (dec sky-size) 0.5))
-            (let [angle (-> index (/ (dec sky-size)) invert (Math/pow power) invert (* (+ pi2 horizon)))]
-              (matrix [(Math/cos angle) (Math/sin angle) 0]))
-            (let [angle (-> index (- sky-size) (/ (dec ground-size)) (Math/pow power) (* (- pi2 horizon)) (+ pi2 horizon))]
-              (matrix [(Math/cos angle) (Math/sin angle) 0])))))))
+            (let [angle (-> index (/ (dec sky-size)) invert (pow power) invert (* (+ pi2 horizon)))]
+              (matrix [(cos angle) (sin angle) 0]))
+            (let [angle (-> index (- sky-size) (/ (dec ground-size)) (pow power) (* (- pi2 horizon)) (+ pi2 horizon))]
+              (matrix [(cos angle) (sin angle) 0])))))))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
@@ -196,9 +197,9 @@
             light-direction-rotated (mmul plane light-direction)
             elevation-index         ((elevation-to-index planet size power) point direction)
             sun-elevation-index     ((elevation-to-index planet size power) point light-direction)
-            direction-azimuth       (Math/atan2 (mget direction-rotated 2) (mget direction-rotated 1))
-            light-direction-azimuth (Math/atan2 (mget light-direction-rotated 2) (mget light-direction-rotated 1))
-            sun-heading             (Math/abs (clip-angle (- light-direction-azimuth direction-azimuth)))]
+            direction-azimuth       (atan2 (mget direction-rotated 2) (mget direction-rotated 1))
+            light-direction-azimuth (atan2 (mget light-direction-rotated 2) (mget light-direction-rotated 1))
+            sun-heading             (abs (clip-angle (- light-direction-azimuth direction-azimuth)))]
         [height elevation-index sun-elevation-index sun-heading])))
 
 (defn- ray-scatter-backward
@@ -210,8 +211,8 @@
             light-elevation   ((index-to-elevation planet size power) height sun-elevation-index)
             cos-sun-elevation (mget light-elevation 0)
             sin-sun-elevation (mget light-elevation 1)
-            cos-sun-heading   (Math/cos sun-heading)
-            sin-sun-heading   (Math/sin sun-heading)
+            cos-sun-heading   (cos sun-heading)
+            sin-sun-heading   (sin sun-heading)
             light-direction   (matrix [cos-sun-elevation (* sin-sun-elevation cos-sun-heading) (* sin-sun-elevation sin-sun-heading)])]
         [point direction light-direction])))
 

@@ -2,7 +2,6 @@
   "Use Mercator color and elevation map tiles to generate cube map tiles for color, water, elevation, and normals."
   (:require [clojure.core.memoize :as m]
             [com.climate.claypoole :as cp]
-            [clojure.core.matrix :refer :all]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.cubemap :refer :all]
             [sfsim25.util :refer :all])

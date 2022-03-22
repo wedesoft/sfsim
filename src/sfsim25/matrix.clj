@@ -1,6 +1,7 @@
 (ns sfsim25.matrix
   "Matrix and vector operations"
-  (:require [clojure.core.matrix :refer :all]
+  (:require [clojure.core.matrix :refer (matrix mget eseq transpose div dot identity-matrix normalise cross)]
+            [clojure.math :refer (cos sin tan)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.util :refer :all]
             [sfsim25.quaternion :refer (rotate-vector)])
@@ -19,19 +20,19 @@
 (defn rotation-x
   "Rotation matrix around x-axis"
   ^Matrix [^double angle]
-  (let [ca (Math/cos angle) sa (Math/sin angle)]
+  (let [ca (cos angle) sa (sin angle)]
     (matrix [[1 0 0] [0 ca (- sa)] [0 sa ca]])))
 
 (defn rotation-y
   "Rotation matrix around y-axis"
   ^Matrix [^double angle]
-  (let [ca (Math/cos angle) sa (Math/sin angle)]
+  (let [ca (cos angle) sa (sin angle)]
     (matrix [[ca 0 sa] [0 1 0] [(- sa) 0 ca]])))
 
 (defn rotation-z
   "Rotation matrix around z-axis"
   ^Matrix [^double angle]
-  (let [ca (Math/cos angle) sa (Math/sin angle)]
+  (let [ca (cos angle) sa (sin angle)]
     (matrix [[ca (- sa) 0] [sa ca 0] [0 0 1]])))
 
 (defn quaternion->matrix
@@ -58,7 +59,7 @@
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"
   [width height near far field-of-view]
-  (let [dx (/ 1.0 (Math/tan (/ field-of-view 2.0)))
+  (let [dx (/ 1.0 (tan (/ field-of-view 2.0)))
         dy (-> dx (* width) (/ height))
         a  (/ (* far near) (- far near))
         b  (/ near (- far near))]

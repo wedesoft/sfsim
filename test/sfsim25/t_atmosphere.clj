@@ -1,7 +1,8 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
-              [clojure.core.matrix :refer :all]
+              [clojure.math :refer (sqrt exp pow)]
+              [clojure.core.matrix :refer (matrix mget mul sub identity-matrix)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.matrix :refer :all]
               [sfsim25.sphere :as sphere]
@@ -49,8 +50,8 @@
     (phase (g 0  )  0) => (roughly (/ 3 (* 16 Math/PI)))
     (phase (g 0  )  1) => (roughly (/ 6 (* 16 Math/PI)))
     (phase (g 0  ) -1) => (roughly (/ 6 (* 16 Math/PI)))
-    (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (Math/pow 1.25 1.5))))
-    (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (Math/pow 0.25 1.5))))))
+    (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 Math/PI 2.25 (pow 1.25 1.5))))
+    (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 Math/PI 2.25 (pow 0.25 1.5))))))
 
 (facts "Get intersection with artificial limit of atmosphere"
        (let [radius 6378000
@@ -109,13 +110,13 @@
          (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0])          (matrix [0 radius 0])         ) 0)
          => (roughly 1.0 1e-6)
          (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0])          (matrix [l radius 0])         ) 0)
-         => (roughly (Math/exp (- (* l 5.8e-6))) 1e-6)
+         => (roughly (exp (- (* l 5.8e-6))) 1e-6)
          (mget (transmittance earth [rayleigh] 50 (matrix [0 (+ radius 8000) 0]) (matrix [l (+ radius 8000) 0])) 0)
-         => (roughly (Math/exp (- (/ (* l 5.8e-6) Math/E))) 1e-6)
+         => (roughly (exp (- (/ (* l 5.8e-6) Math/E))) 1e-6)
          (mget (transmittance earth both       50 (matrix [0 radius 0])          (matrix [l radius 0])         ) 0)
-         => (roughly (Math/exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))) 1e-6)
+         => (roughly (exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))) 1e-6)
          (mget (transmittance earth [rayleigh] intersection 50 (matrix [0 radius 0]) (matrix [1 0 0])) 0)
-         => (roughly (Math/exp (- (* l 5.8e-6))) 1e-6)))
+         => (roughly (exp (- (* l 5.8e-6))) 1e-6)))
 
 (facts "Scatter-free radiation emitted from surface of planet (E[L0])"
   (let [radius    6378000.0
@@ -289,7 +290,7 @@
        (let [radius 6378000.0
              earth  #:sfsim25.sphere {:centre (matrix [0 0 0]) :radius radius}]
          (horizon-angle earth (matrix [radius 0 0])) => 0.0
-         (horizon-angle earth (matrix [(* (Math/sqrt 2) radius) 0 0])) => (roughly (/ Math/PI 4) 1e-12)
+         (horizon-angle earth (matrix [(* (sqrt 2) radius) 0 0])) => (roughly (/ Math/PI 4) 1e-12)
          (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ Math/PI 3) 1e-12)
          (horizon-angle earth (matrix [(- radius 0.1) 0 0])) => 0.0))
 
@@ -298,14 +299,14 @@
              earth       #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
              forward     (elevation-to-index earth 17 1.0)
              forward-exp (elevation-to-index earth 17 2.0)
-             sqrthalf    (Math/sqrt 0.5)]
+             sqrthalf    (sqrt 0.5)]
          (forward (matrix [radius 0 0]) (matrix [1 0 0])) => (roughly 0.0 1e-6)
          (forward (matrix [radius 0 0]) (matrix [1e-5 1 0])) => (roughly 8.0 1e-3)
          (forward (matrix [radius 0 0]) (matrix [-1e-5 1 0])) => (roughly 9.0 1e-3)
          (forward (matrix [radius 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)
-         (forward (matrix [(* (Math/sqrt 2) radius) 0 0]) (matrix [(- 1e-5 sqrthalf) sqrthalf 0])) => (roughly 8.0 1e-3)
-         (forward (matrix [(* (Math/sqrt 2) radius) 0 0]) (matrix [(- -1e-5 sqrthalf) sqrthalf 0])) => (roughly 9.0 1e-3)
-         (forward (matrix [(* (Math/sqrt 2) radius) 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)
+         (forward (matrix [(* (sqrt 2) radius) 0 0]) (matrix [(- 1e-5 sqrthalf) sqrthalf 0])) => (roughly 8.0 1e-3)
+         (forward (matrix [(* (sqrt 2) radius) 0 0]) (matrix [(- -1e-5 sqrthalf) sqrthalf 0])) => (roughly 9.0 1e-3)
+         (forward (matrix [(* (sqrt 2) radius) 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)
          (forward (matrix [radius 0 0]) (matrix [sqrthalf sqrthalf 0])) => (roughly 4.0 1e-6)
          (forward-exp (matrix [radius 0 0]) (matrix [sqrthalf sqrthalf 0])) => (roughly 2.343146 1e-6)
          (forward-exp (matrix [radius 0 0]) (matrix [1e-8 1 0])) => (roughly 8.0 1e-3)
@@ -318,8 +319,8 @@
              earth        #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
              backward     (index-to-elevation earth 17 1.0)
              backward-exp (index-to-elevation earth 17 2.0)
-             height       (* (- (Math/sqrt 2) 1) radius)
-             sqrthalf     (Math/sqrt 0.5)]
+             height       (* (- (sqrt 2) 1) radius)
+             sqrthalf     (sqrt 0.5)]
          (backward 0 0) => (matrix [1 0 0])
          (backward 0 8) => (roughly-matrix (matrix [0 1 0]) 1e-6)
          (backward 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)

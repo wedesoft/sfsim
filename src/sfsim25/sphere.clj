@@ -1,6 +1,7 @@
 (ns sfsim25.sphere
   "Functions dealing with spheres"
-  (:require [clojure.core.matrix :refer :all]
+  (:require [clojure.core.matrix :refer (matrix mmul mul add dot sub transpose length)]
+            [clojure.math :refer (cos sin ceil sqrt)]
             [sfsim25.matrix :refer :all]
             [sfsim25.util :refer :all])
   (:import [mikera.vectorz Vector]))
@@ -31,7 +32,7 @@
         discriminant  (ray-sphere-determinant centre radius origin direction)
         middle        (- (/ (dot direction offset) direction-sqr))]
     (if (> discriminant 0)
-      (let [length2 (/ (Math/sqrt discriminant) direction-sqr)]
+      (let [length2 (/ (sqrt discriminant) direction-sqr)]
         (if (< middle length2)
           {:sfsim25.intersection/distance 0.0 :sfsim25.intersection/length (max 0.0 (+ middle length2))}
           {:sfsim25.intersection/distance (- middle length2) :sfsim25.intersection/length (* 2 length2)}))
@@ -57,16 +58,16 @@
         mat     (transpose (oriented-matrix normal))]
     (reduce add
       (map (fn [theta]
-        (let [factor    (- (Math/cos (- theta delta2)) (Math/cos (+ theta delta2)))
-              ringsteps (int (ceil (* (Math/sin theta) phi-steps)))
-              cos-theta (Math/cos theta)
-              sin-theta (Math/sin theta)]
+        (let [factor    (- (cos (- theta delta2)) (cos (+ theta delta2)))
+              ringsteps (int (ceil (* (sin theta) phi-steps)))
+              cos-theta (cos theta)
+              sin-theta (sin theta)]
           (mul (integrate-circle
                  ringsteps
                  (fn [phi]
                    (let [x cos-theta
-                         y (* sin-theta (Math/cos phi))
-                         z (* sin-theta (Math/sin phi))]
+                         y (* sin-theta (cos phi))
+                         z (* sin-theta (sin phi))]
                      (fun (mmul mat (matrix [x y z]))))))
                factor)))
         samples))))

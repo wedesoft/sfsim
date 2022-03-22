@@ -1,6 +1,6 @@
 (ns sfsim25.t-ellipsoid
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix)]
             [sfsim25.ellipsoid :refer :all]))
 
 (facts "Compute intersection of line with ellipsoid"

@@ -1,6 +1,6 @@
 (ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 

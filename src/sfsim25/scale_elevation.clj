@@ -1,6 +1,7 @@
 (ns sfsim25.scale-elevation
   "Convert large elevation image into lower resolution image with half the width and height."
-  (:require [sfsim25.util :refer (slurp-shorts spit-shorts)])
+  (:require [clojure.math :refer (sqrt round)]
+            [sfsim25.util :refer (slurp-shorts spit-shorts)])
   (:gen-class))
 
 (defn -main
@@ -13,7 +14,7 @@
          output-data] args
         data          (slurp-shorts input-data)
         n             (alength data)
-        w             (int (Math/round (Math/sqrt n)))
+        w             (int (round (sqrt n)))
         size          (/ w 2)
         result        (short-array (* size size))]
     (doseq [^int j (range size) ^int i (range size)]

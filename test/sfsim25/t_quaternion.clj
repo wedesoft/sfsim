@@ -65,7 +65,7 @@
   (quaternion->vector (->Quaternion 0 2 3 5)) => (matrix [2.0 3.0 5.0]))
 
 (def pi Math/PI)
-(def e (Math/exp 1))
+(def e Math/E)
 (def -e (c/- e))
 
 (tabular "Exponentation of quaternions"

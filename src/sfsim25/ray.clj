@@ -1,6 +1,6 @@
 (ns sfsim25.ray
   "Functions dealing with rays"
-  (:require [clojure.core.matrix :refer :all]))
+  (:require [clojure.core.matrix :refer (add mul length)]))
 
 (defn integral-ray
   "Integrate given function over a ray in 3D space"

@@ -2,6 +2,7 @@
   "Complex algebra implementation."
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
+            [clojure.math :refer (cos sin sqrt) :as m]
             [clojure.core.matrix :refer (matrix mul)]
             [clojure.core.matrix.linear :as l]
             [sfsim25.util :refer (sinc sqr)])
@@ -40,7 +41,7 @@
 (defn norm
   "Compute norm of quaternion"
   ^double [^Quaternion q]
-  (Math/sqrt (norm2 q)))
+  (sqrt (norm2 q)))
 
 (defn normalize
   "Normalize quaternion to create unit quaternion"
@@ -72,9 +73,9 @@
 (defn exp
   "Exponentiation of quaternion"
   ^Quaternion [^Quaternion q]
-  (let [scale      (Math/exp (:a q))
+  (let [scale      (m/exp (:a q))
         rotation   (l/norm (quaternion->vector q))
-        cos-scale  (c/* scale (Math/cos rotation))
+        cos-scale  (c/* scale (cos rotation))
         sinc-scale (c/* scale (sinc rotation))]
     (->Quaternion cos-scale (c/* sinc-scale (:b q)) (c/* sinc-scale (:c q)) (c/* sinc-scale (:d q)))))
 

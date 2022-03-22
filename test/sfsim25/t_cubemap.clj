@@ -1,7 +1,8 @@
 (ns sfsim25.t-cubemap
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix sub add mul)]
             [clojure.core.matrix.linear :refer (norm)]
+            [clojure.math :refer (sqrt)]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [mikera.vectorz Vector]))
@@ -264,9 +265,9 @@
 (fact "Get normal vector for point on elevation map sloped in longitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (matrix [(+ 6378000 i) j (- i)])))]
     (normal-for-point (matrix [1 0 0]) 5 7 675 33 6378000 6357000) =>
-    (roughly-matrix (matrix [(Math/sqrt 0.5) 0 (Math/sqrt 0.5)]) 1e-6)))
+    (roughly-matrix (matrix [(sqrt 0.5) 0 (sqrt 0.5)]) 1e-6)))
 
 (fact "Get normal vector for point on elevation map sloped in latitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (matrix [(+ 6378000 j) j (- i)])))]
     (normal-for-point (matrix [1 0 0]) 5 7 675 33 6378000 6357000) =>
-    (roughly-matrix (matrix [(Math/sqrt 0.5) (- (Math/sqrt 0.5)) 0]) 1e-6)))
+    (roughly-matrix (matrix [(sqrt 0.5) (- (sqrt 0.5)) 0]) 1e-6)))

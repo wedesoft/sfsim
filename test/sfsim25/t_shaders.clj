@@ -1,7 +1,8 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
             [comb.template :as template]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix mget mmul dot sub div transpose identity-matrix)]
+            [clojure.math :refer (cos sin)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.shaders :refer :all]
             [sfsim25.render :refer :all]
@@ -215,8 +216,8 @@ void main()
 (def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
 
 (let [angle (* 0.375 Math/PI)
-      ca    (Math/cos angle)
-      sa    (Math/sin angle)]
+      ca    (cos angle)
+      sa    (sin angle)]
   (tabular "Convert point and direction to 2D lookup index in transmittance table"
            (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power) => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
            ?x      ?y ?z ?dx  ?dy ?dz ?power ?u  ?v
@@ -381,8 +382,8 @@ void main()
                                            clip-angle oriented-matrix orthogonal-vector))
 
 (let [angle (* 0.375 Math/PI)
-      ca    (Math/cos angle)
-      sa    (Math/sin angle)
+      ca    (cos angle)
+      sa    (sin angle)
       r     6378000
       h     100000]
   (tabular "Get 4D lookup index for ray scattering"

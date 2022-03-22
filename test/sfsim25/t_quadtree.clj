@@ -1,13 +1,14 @@
 (ns sfsim25.t-quadtree
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer :all]
+            [clojure.core.matrix :refer (matrix add)]
+            [clojure.math :refer (tan)]
             [sfsim25.quadtree :refer :all :as quadtree]
             [sfsim25.cubemap :refer (cube-map) :as cubemap]
             [sfsim25.util :as util]))
 
 (fact "Determine the size of a quad on the screen"
-  (quad-size 2 33 6378000.0 1024 1000000.0 60.0) => (/ (* 512 (/ (/ 6378000.0 2 32) 1000000.0)) (Math/tan (Math/toRadians 30.0)))
-  (quad-size 2 33 6378000.0 1024 0.0 60.0) => (/ (* 512 (/ 6378000.0 2 32)) (Math/tan (Math/toRadians 30.0))))
+  (quad-size 2 33 6378000.0 1024 1000000.0 60.0) => (/ (* 512 (/ (/ 6378000.0 2 32) 1000000.0)) (tan (Math/toRadians 30.0)))
+  (quad-size 2 33 6378000.0 1024 0.0 60.0) => (/ (* 512 (/ 6378000.0 2 32)) (tan (Math/toRadians 30.0))))
 
 (facts "Decide whether to increase quadtree level or not"
   (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 3 (matrix [200000 0 0]) 5 2 0 1) => truthy

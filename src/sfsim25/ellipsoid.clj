@@ -1,6 +1,6 @@
 (ns sfsim25.ellipsoid
   "Functions dealing with ellipsoids"
-  (:require [clojure.core.matrix :refer :all]
+  (:require [clojure.core.matrix :refer (matrix mget)]
             [sfsim25.sphere :refer :all]))
 
 (defn ray-ellipsoid-intersection

@@ -1,6 +1,7 @@
 (ns sfsim25.t-interpolate
     (:require [midje.sweet :refer :all]
-              [clojure.core.matrix :refer :all]
+              [clojure.core.matrix :refer (matrix)]
+              [clojure.math :refer (hypot)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.util :refer (sqr)]))
 
@@ -82,7 +83,7 @@
           3   4.0)
 
 (facts "Combine transformations to create non-linear space"
-       (let [radius-space {:sfsim25.interpolate/forward #(vector (Math/hypot %1 %2)) :sfsim25.interpolate/backward #(vector %1 0)}
+       (let [radius-space {:sfsim25.interpolate/forward #(vector (hypot %1 %2)) :sfsim25.interpolate/backward #(vector %1 0)}
              combined     (compose-space (linear-space [0] [1] [101]) radius-space)]
          (:sfsim25.interpolate/shape combined) => [101]
          ((:sfsim25.interpolate/forward combined) 3 4) => [500.0]
