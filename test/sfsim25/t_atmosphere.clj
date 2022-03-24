@@ -427,7 +427,7 @@ void main()
 (def transmittance-track-test (transmittance-shader-test transmittance-track-probe transmittance-track
                                                          shaders/transmittance-forward shaders/horizon-angle
                                                          shaders/elevation-to-index shaders/interpolate-2d
-                                                         shaders/convert-2d-index))
+                                                         shaders/convert-2d-index shaders/sky-or-ground))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact (mget (transmittance-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => (roughly ?result 1e-6))
@@ -482,7 +482,7 @@ void main()
                                                      shaders/horizon-angle shaders/oriented-matrix shaders/orthogonal-vector
                                                      shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d
                                                      shaders/convert-4d-index transmittance-track shaders/transmittance-forward
-                                                     shaders/interpolate-2d shaders/convert-2d-index))
+                                                     shaders/interpolate-2d shaders/convert-2d-index shaders/sky-or-ground))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact (mget (ray-scatter-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => ?result)

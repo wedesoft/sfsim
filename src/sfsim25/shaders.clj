@@ -48,3 +48,7 @@
 (def ray-scatter-forward
   "Get 4D lookup index for ray scattering"
   (slurp "resources/shaders/core/ray_scatter_forward.glsl"))
+
+(def sky-or-ground
+  "Check whether a ray hits the ground or stays in the sky"
+  (slurp "resources/shaders/core/sky_or_ground.glsl"))

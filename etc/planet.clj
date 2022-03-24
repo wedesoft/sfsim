@@ -83,7 +83,8 @@
                 :fragment [fragment-planet shaders/ray-sphere ground-radiance shaders/transmittance-forward
                            transmittance-track shaders/horizon-angle shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
-                           shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle]))
+                           shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
+                           shaders/sky-or-ground]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
@@ -158,11 +159,14 @@
              ra        (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb        (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc        (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-             v         (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))]
+             v         (if (@keystates Keyboard/KEY_PRIOR) 1000 (if (@keystates Keyboard/KEY_NEXT) -1000 0))
+             l         (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         ;(swap! position add (mul dt 0.001 (matrix [0 0 1000])))
+         (swap! light1 + (* l 0.1 dt))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           ; Render planet
@@ -199,12 +203,8 @@
                           (uniform-float program-atmosphere :amplification 5)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (use-textures T S)
-                          (render-quads atmosphere-vao)
-                          )
-         (swap! t0 + dt)
-         ;(swap! position add (mul dt 0.001 (matrix [0 0 1000])))
-         (swap! light1 + (* 0.0005 0.1 dt))
-         ))
+                          (render-quads atmosphere-vao))
+         (swap! t0 + dt)))
 
 (close! tree-state)
 (close! changes)
