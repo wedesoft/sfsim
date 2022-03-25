@@ -302,44 +302,46 @@
          (is-sky? earth (matrix [radius 0 0]) (matrix [-1e-4 1 0])) => false
          (is-sky? earth (matrix [(+ radius 100000) 0 0]) (matrix [-1e-4 1 0])) => true))
 
-(facts "Map elevation value to lookup table index depending on position of horizon"
-       (let [radius   6378000.0
-             earth       #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
-             forward     (elevation-to-index earth 17 1.0)
-             forward-exp (elevation-to-index earth 17 2.0)
-             sqrthalf    (sqrt 0.5)]
-         (forward (matrix [radius 0 0]) (matrix [1 0 0])) => (roughly 0.0 1e-6)
-         (forward (matrix [radius 0 0]) (matrix [1e-5 1 0])) => (roughly 8.0 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [-1e-5 1 0])) => (roughly 9.0 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)
-         (forward (matrix [(* (sqrt 2) radius) 0 0]) (matrix [(- 1e-5 sqrthalf) sqrthalf 0])) => (roughly 8.0 1e-3)
-         (forward (matrix [(* (sqrt 2) radius) 0 0]) (matrix [(- -1e-5 sqrthalf) sqrthalf 0])) => (roughly 9.0 1e-3)
-         (forward (matrix [(* (sqrt 2) radius) 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)
-         (forward (matrix [radius 0 0]) (matrix [sqrthalf sqrthalf 0])) => (roughly 4.0 1e-6)
-         (forward-exp (matrix [radius 0 0]) (matrix [sqrthalf sqrthalf 0])) => (roughly 2.343146 1e-6)
-         (forward-exp (matrix [radius 0 0]) (matrix [1e-8 1 0])) => (roughly 8.0 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [(- sqrthalf) sqrthalf 0])) => (roughly 12.5 1e-6)
-         (forward-exp (matrix [radius 0 0]) (matrix [(- sqrthalf) sqrthalf 0])) => (roughly 13.949747 1e-6)
-         (forward-exp (matrix [radius 0 0]) (matrix [-1e-8 1 0])) => (roughly 9.0 1e-3)))
+(tabular "Map elevation value to lookup table index depending on position of horizon"
+         (let [radius  6378000.0
+               earth   #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}]
+           (fact (elevation-to-index earth 17 ?pow (matrix [?x ?y ?z]) (matrix [?dx ?dy ?dz]) ?sky) => (roughly ?result 1e-6)))
+           ?pow ?x                  ?y     ?z ?dx            ?dy        ?dz ?sky ?result
+           1.0  radius              0      0  1              0          0   true   0.0
+           1.0  radius              0      0  0              1          0   true   8.0
+           1.0  0                   radius 0  0              1          0   true   0.0
+           1.0  radius              0      0  (sqrt 0.5)     (sqrt 0.5) 0   true   4.0
+           2.0  radius              0      0  (sqrt 0.5)     (sqrt 0.5) 0   true  (- 8 (sqrt 32))
+           2.0  radius              0      0  0              1          0   true   8.0
+           1.0  radius              0      0  0              1          0   false  9.0
+           1.0  radius              0      0 -1              0          0   false 16.0
+           1.0  radius              0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   false 12.5
+           1.0  (* (sqrt 2) radius) 0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   true   8.0
+           1.0  (* (sqrt 2) radius) 0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   false  9.0
+           1.0  (* (sqrt 2) radius) 0      0 -1              0          0   false 16.0
+           2.0  radius              0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   false 13.949747
+           2.0  radius              0      0  0              1          0   false  9.0
+           1.0  radius              0      0 -1              0          0   true   8.0
+           1.0  radius              0      0  1              0          0   false  9.0)
 
-(facts "Map elevation lookup index to directional vector depending on position of horizon"
-       (let [radius       6378000.0
-             earth        #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
-             backward     (index-to-elevation earth 17 1.0)
-             backward-exp (index-to-elevation earth 17 2.0)
-             height       (* (- (sqrt 2) 1) radius)
-             sqrthalf     (sqrt 0.5)]
-         (backward 0 0) => (matrix [1 0 0])
-         (backward 0 8) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (backward 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (backward 0 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
-         (backward height 8) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
-         (backward height 9) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
-         (backward height 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
-         (backward-exp 0 2.343146) => (roughly-matrix (matrix [sqrthalf sqrthalf 0]) 1e-6)
-         (backward-exp 0 8) => (roughly-matrix [0 1 0] 1e-6)
-         (backward-exp 0 13.949747) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
-         (backward-exp 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)))
+;(facts "Map elevation lookup index to directional vector depending on position of horizon"
+;       (let [radius       6378000.0
+;             earth        #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
+;             backward     (index-to-elevation earth 17 1.0)
+;             backward-exp (index-to-elevation earth 17 2.0)
+;             height       (* (- (sqrt 2) 1) radius)
+;             sqrthalf     (sqrt 0.5)]
+;         (backward 0 0) => (matrix [1 0 0])
+;         (backward 0 8) => (roughly-matrix (matrix [0 1 0]) 1e-6)
+;         (backward 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)
+;         (backward 0 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
+;         (backward height 8) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
+;         (backward height 9) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
+;         (backward height 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
+;         (backward-exp 0 2.343146) => (roughly-matrix (matrix [sqrthalf sqrthalf 0]) 1e-6)
+;         (backward-exp 0 8) => (roughly-matrix [0 1 0] 1e-6)
+;         (backward-exp 0 13.949747) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
+;         (backward-exp 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)))
 
 ;(facts "Create transformations for interpolating transmittance function"
 ;       (let [radius   6378000.0

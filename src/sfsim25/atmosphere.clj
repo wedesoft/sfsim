@@ -135,34 +135,34 @@
 
 (defn elevation-to-index
   "Convert elevation value to lookup table index depending on position of horizon"
-  [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power]
-  (let [sky-size    (inc (quot size 2))
-        ground-size (quot (dec size) 2)
-        pi2         (/ PI 2)]
-    (fn ^double [^Vector point ^Vector direction]
-        (let [distance      (norm (sub point centre))
-              cos-elevation (/ (dot point direction) (norm point))
-              elevation     (acos cos-elevation)
-              horizon       (horizon-angle planet point)
-              invert        #(- 1 %)]
-          (if (<= elevation (+ pi2 horizon))
-            (-> elevation (/ (+ pi2 horizon)) invert (pow (/ 1.0 power)) invert (* (dec sky-size)))
-            (-> elevation (- pi2 horizon) (/ (- pi2 horizon)) (pow (/ 1.0 power)) (* (dec ground-size)) (+ sky-size)))))))
+  [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power point direction above-horizon]
+  (let [sky-size      (inc (quot size 2))
+        ground-size   (quot (dec size) 2)
+        horizon       (horizon-angle planet point)
+        normal        (normalise point)
+        cos-elevation (dot normal direction)
+        elevation     (acos cos-elevation)
+        pi2           (/ PI 2)
+        invert        #(- 1 %)
+        distort       #(pow % (/ 1.0 power))]
+    (if above-horizon
+      (-> elevation (min (+ pi2 horizon)) (/ (+ pi2 horizon)) invert distort invert (* (dec sky-size)))
+      (-> elevation (max (- pi2 horizon)) (- pi2 horizon) (/ (- pi2 horizon)) distort (* (dec ground-size)) (+ sky-size)))))
 
-(defn index-to-elevation
-  "Convert elevation lookup index to directional vector depending on position of horizon"
-  [{:sfsim25.sphere/keys [^double radius] :as planet} size power]
-  (let [sky-size    (inc (quot size 2))
-        ground-size (quot (dec size) 2)
-        pi2         (/ PI 2)
-        invert      #(- 1 %)]
-    (fn ^Vector [^double height ^double index]
-        (let [horizon (horizon-angle planet (matrix [(+ radius height) 0 0]))]
-          (if (<= index (+ (dec sky-size) 0.5))
-            (let [angle (-> index (/ (dec sky-size)) invert (pow power) invert (* (+ pi2 horizon)))]
-              (matrix [(cos angle) (sin angle) 0]))
-            (let [angle (-> index (- sky-size) (/ (dec ground-size)) (pow power) (* (- pi2 horizon)) (+ pi2 horizon))]
-              (matrix [(cos angle) (sin angle) 0])))))))
+;(defn index-to-elevation
+;  "Convert elevation lookup index to directional vector depending on position of horizon"
+;  [{:sfsim25.sphere/keys [^double radius] :as planet} size power]
+;  (let [sky-size    (inc (quot size 2))
+;        ground-size (quot (dec size) 2)
+;        pi2         (/ PI 2)
+;        invert      #(- 1 %)]
+;    (fn ^Vector [^double height ^double index]
+;        (let [horizon (horizon-angle planet (matrix [(+ radius height) 0 0]))]
+;          (if (<= index (+ (dec sky-size) 0.5))
+;            (let [angle (-> index (/ (dec sky-size)) invert (pow power) invert (* (+ pi2 horizon)))]
+;              (matrix [(cos angle) (sin angle) 0]))
+;            (let [angle (-> index (- sky-size) (/ (dec ground-size)) (pow power) (* (- pi2 horizon)) (+ pi2 horizon))]
+;              (matrix [(cos angle) (sin angle) 0])))))))
 
 ;(defn- transmittance-forward
 ;  "Forward transformation for interpolating transmittance function"
