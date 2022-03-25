@@ -2,7 +2,7 @@
     "Functions for computing the atmosphere"
     (:require [clojure.core.matrix :refer (matrix mget mmul add sub mul div normalise dot) :as m]
               [clojure.core.matrix.linear :refer (norm)]
-              [clojure.math :refer (cos sin exp pow atan2 acos PI)]
+              [clojure.math :refer (cos sin exp pow atan2 acos asin PI)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
               [sfsim25.ray :refer :all]
@@ -140,14 +140,14 @@
         ground-size   (quot (dec size) 2)
         horizon       (horizon-angle planet point)
         normal        (normalise point)
-        cos-elevation (dot normal direction)
-        elevation     (acos cos-elevation)
+        sin-elevation (dot normal direction)
+        elevation     (asin sin-elevation)
         pi2           (/ PI 2)
         invert        #(- 1 %)
         distort       #(pow % (/ 1.0 power))]
     (if above-horizon
-      (-> elevation (min (+ pi2 horizon)) (/ (+ pi2 horizon)) invert distort invert (* (dec sky-size)))
-      (-> elevation (max (- pi2 horizon)) (- pi2 horizon) (/ (- pi2 horizon)) distort (* (dec ground-size)) (+ sky-size)))))
+      (-> elevation (- (- horizon)) (max 0) (/ (+ pi2 horizon)) distort invert (* (dec sky-size)))
+      (-> (- (- horizon) elevation) (max 0) (/ (- pi2 horizon)) distort (* (dec ground-size)) (+ sky-size)))))
 
 ;(defn index-to-elevation
 ;  "Convert elevation lookup index to directional vector depending on position of horizon"
