@@ -126,6 +126,13 @@
   (let [distance (max radius (norm (sub point centre)))]
     (acos (/ radius distance))))
 
+(defn is-sky?
+  "Check whether there is sky or ground in a certain direction"
+  [planet point direction]
+  (let [angle  (horizon-angle planet point)
+        normal (normalise point)]
+    (>= (dot normal direction) (- (sin angle)))))
+
 (defn elevation-to-index
   "Convert elevation value to lookup table index depending on position of horizon"
   [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power]
