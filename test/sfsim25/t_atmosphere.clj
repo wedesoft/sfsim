@@ -324,24 +324,24 @@
            1.0  radius              0      0 -1              0          0   true   8.0
            1.0  radius              0      0  1              0          0   false  9.0)
 
-;(facts "Map elevation lookup index to directional vector depending on position of horizon"
-;       (let [radius       6378000.0
-;             earth        #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
-;             backward     (index-to-elevation earth 17 1.0)
-;             backward-exp (index-to-elevation earth 17 2.0)
-;             height       (* (- (sqrt 2) 1) radius)
-;             sqrthalf     (sqrt 0.5)]
-;         (backward 0 0) => (matrix [1 0 0])
-;         (backward 0 8) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-;         (backward 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-;         (backward 0 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
-;         (backward height 8) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
-;         (backward height 9) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
-;         (backward height 16) => (roughly-matrix (matrix [-1 0 0]) 1e-6)
-;         (backward-exp 0 2.343146) => (roughly-matrix (matrix [sqrthalf sqrthalf 0]) 1e-6)
-;         (backward-exp 0 8) => (roughly-matrix [0 1 0] 1e-6)
-;         (backward-exp 0 13.949747) => (roughly-matrix (matrix [(- sqrthalf) sqrthalf 0]) 1e-6)
-;         (backward-exp 0 9) => (roughly-matrix (matrix [0 1 0]) 1e-6)))
+(tabular "Map elevation lookup index to directional vector depending on position of horizon"
+         (let [radius            6378000.0
+               earth             #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
+               [direction above] (index-to-elevation earth 17 ?pow ?height ?index) ]
+           (facts direction => (roughly-matrix (matrix [?dx ?dy 0]) 1e-6)
+                  above     => ?sky))
+           ?pow ?height                   ?index     ?dx            ?dy        ?sky
+           1.0  0                          0         1              0          true
+           1.0  0                          8         0              1          true
+           1.0  0                          9         0              1          false
+           1.0  0                         16        -1              0          false
+           1.0  (* (- (sqrt 2) 1) radius)  8         (- (sqrt 0.5)) (sqrt 0.5) true
+           1.0  (* (- (sqrt 2) 1) radius)  9         (- (sqrt 0.5)) (sqrt 0.5) false
+           1.0  (* (- (sqrt 2) 1) radius) 16        -1              0          false
+           2.0  0                          2.343146  (sqrt 0.5)     (sqrt 0.5) true
+           2.0  0                          8         0              1          true
+           2.0  0                         13.949747  (- (sqrt 0.5)) (sqrt 0.5) false
+           2.0  0                          9         0              1          false)
 
 ;(facts "Create transformations for interpolating transmittance function"
 ;       (let [radius   6378000.0
