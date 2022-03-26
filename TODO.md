@@ -1,11 +1,11 @@
 # TODO
-* elevation-to-index should accept above\_horizon boolean among other things
-* index-to-elevation should return above\_horizon boolean among other things
 * transmittance should accept sky boolean
+* transmittance-forward should accept sky boolean
+* transmittance-backward should return sky boolean
+* define transmittance-space without composing with linear space
 * ray-scatter should accept sky boolean
 * test is\_above\_horizon shader method (rename sky\_or\_ground)
 * change shader functions to use sky boolean
-* force ray-sphere to return closest point?
 * use different normal for ground\_radiance?
 * shader to check whether point-direction is in the sky or on the ground
 * only render sun glare when sun is above horizon
