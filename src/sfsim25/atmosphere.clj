@@ -81,7 +81,7 @@
 ;  (let [height-of-x     (height planet x)
 ;        scattering-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction light-direction)))
 ;        sun-ray         #:sfsim25.ray{:origin x :direction light-direction}]
-;    (if (surface-intersection planet sun-ray)
+;    (if (surface-intersection planet sun-ray); use is-above-horizon?
 ;      (matrix [0 0 0])
 ;      (let [overall-scatter (apply add (map scattering-at-x scatter))]
 ;        (mul intensity overall-scatter (transmittance planet scatter atmosphere-intersection steps x light-direction))))))
@@ -125,7 +125,7 @@
   (let [distance (max radius (norm (sub point centre)))]
     (acos (/ radius distance))))
 
-(defn is-sky?
+(defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
   [planet point direction]
   (let [angle  (horizon-angle planet point)

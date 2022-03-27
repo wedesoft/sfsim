@@ -1,5 +1,4 @@
 # TODO
-* transmittance should accept sky boolean
 * transmittance-forward should accept sky boolean
 * transmittance-backward should return sky boolean
 * define transmittance-space without composing with linear space

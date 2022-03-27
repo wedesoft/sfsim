@@ -303,10 +303,10 @@
 (facts "Check whether there is sky or ground in a certain direction"
        (let [radius 6378000.0
              earth #:sfsim25.sphere {:centre (matrix [0 0 0]) :radius radius}]
-         (is-sky? earth (matrix [radius 0 0]) (matrix [1 0 0])) => true
-         (is-sky? earth (matrix [radius 0 0]) (matrix [-1 0 0])) => false
-         (is-sky? earth (matrix [radius 0 0]) (matrix [-1e-4 1 0])) => false
-         (is-sky? earth (matrix [(+ radius 100000) 0 0]) (matrix [-1e-4 1 0])) => true))
+         (is-above-horizon? earth (matrix [radius 0 0]) (matrix [1 0 0])) => true
+         (is-above-horizon? earth (matrix [radius 0 0]) (matrix [-1 0 0])) => false
+         (is-above-horizon? earth (matrix [radius 0 0]) (matrix [-1e-4 1 0])) => false
+         (is-above-horizon? earth (matrix [(+ radius 100000) 0 0]) (matrix [-1e-4 1 0])) => true))
 
 (tabular "Map elevation value to lookup table index depending on position of horizon"
          (let [radius  6378000.0
