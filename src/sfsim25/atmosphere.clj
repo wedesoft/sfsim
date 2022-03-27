@@ -68,12 +68,12 @@
    (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
      (transmittance planet scatter steps x (intersection planet #:sfsim25.ray{:origin x :direction v})))))
 
-;(defn surface-radiance-base
-;  "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
-;  [planet scatter steps intensity x light-direction]
-;  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-;    (mul (max 0 (dot normal light-direction))
-;         (transmittance planet scatter atmosphere-intersection steps x light-direction) intensity)))
+(defn surface-radiance-base
+  "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
+  [planet scatter steps intensity x light-direction]
+  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
+    (mul (max 0 (dot normal light-direction))
+         (transmittance planet scatter steps x light-direction true) intensity)))
 
 ;(defn point-scatter-base
 ;  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
