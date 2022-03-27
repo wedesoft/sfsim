@@ -38,12 +38,10 @@
     (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) (+ distance length)))))
 
 (defn surface-intersection
-  "Get intersection of ray with surface of planet or nil if there is no intersection"
+  "Get intersection of ray with surface of planet or nearest point if there is no intersection"
   [planet ray]
   (let [{:sfsim25.intersection/keys [distance length]} (ray-sphere-intersection planet ray)]
-    (if (zero? length)
-      nil
-      (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance)))))
+    (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance))))
 
 (defn surface-point?
   "Check whether a point is near the surface or near the edge of the atmosphere"
@@ -61,13 +59,14 @@
   [x]
   (m/exp (sub x)))
 
-;(defn transmittance
-;  "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
-;  ([planet scatter steps x x0]
-;   (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
-;     (exp-negative (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction))))
-;  ([planet scatter intersection steps x v]
-;   (transmittance planet scatter steps x (intersection planet #:sfsim25.ray{:origin x :direction v}))))
+(defn transmittance
+  "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
+  ([planet scatter steps x x0]
+   (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
+     (exp-negative (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction))))
+  ([planet scatter steps x v above-horizon]
+   (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
+     (transmittance planet scatter steps x (intersection planet #:sfsim25.ray{:origin x :direction v})))))
 
 ;(defn surface-radiance-base
 ;  "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"

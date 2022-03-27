@@ -64,15 +64,15 @@
          (atmosphere-intersection earth #:sfsim25.ray{:origin (matrix [0 (* -2 radius) 0]) :direction (matrix [0 1 0])})
          => (matrix [0 (+ radius height) 0])))
 
-(facts "Get intersection with surface of planet"
+(facts "Get intersection with surface of planet or nearest point if there is no intersection"
        (let [radius 6378000
              earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}]
          (surface-intersection earth #:sfsim25.ray{:origin (matrix [radius 0 0]) :direction (matrix [-1 0 0])})
          => (matrix [radius 0 0])
          (surface-intersection earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [-1 0 0])})
          => (matrix [radius 0 0])
-         (surface-intersection earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [1 0 0])})
-         => nil))
+         (surface-intersection earth #:sfsim25.ray{:origin (matrix [(+ radius 100) -1000 0]) :direction (matrix [0 1 0])})
+         => (matrix [(+ radius 100) 0 0])))
 
 (facts "Check whether a point is near the surface or near the edge of the atmosphere"
        (let [radius 6378000
@@ -92,31 +92,37 @@
          (ray-extremity earth #:sfsim25.ray{:origin (matrix [(- radius 0.1) 0 0]) :direction (matrix [1 0 0])})
          => (matrix [(+ radius 100000) 0 0])))
 
-;(facts "Determine transmittance of atmosphere for all color channels"
-;       (let [radius       6378000
-;             height       100000
-;             earth        #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-;             rayleigh     #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
-;             mie          #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
-;             both         [rayleigh mie]
-;             x            (matrix [0 radius 0])
-;             l            1000
-;             intersection (fn [planet ray]
-;                              (facts "Intersection function called with correct values"
-;                                     planet                       => earth
-;                                     (:sfsim25.ray/origin ray)    => (matrix [0 radius 0])
-;                                     (:sfsim25.ray/direction ray) => (matrix [1 0 0]))
-;                              (matrix [l radius 0]))]
-;         (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0])          (matrix [0 radius 0])         ) 0)
-;         => (roughly 1.0 1e-6)
-;         (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0])          (matrix [l radius 0])         ) 0)
-;         => (roughly (exp (- (* l 5.8e-6))) 1e-6)
-;         (mget (transmittance earth [rayleigh] 50 (matrix [0 (+ radius 8000) 0]) (matrix [l (+ radius 8000) 0])) 0)
-;         => (roughly (exp (- (/ (* l 5.8e-6) E))) 1e-6)
-;         (mget (transmittance earth both       50 (matrix [0 radius 0])          (matrix [l radius 0])         ) 0)
-;         => (roughly (exp (- (* l (+ 5.8e-6 (/ 2e-5 0.9))))) 1e-6)
-;         (mget (transmittance earth [rayleigh] intersection 50 (matrix [0 radius 0]) (matrix [1 0 0])) 0)
-;         => (roughly (exp (- (* l 5.8e-6))) 1e-6)))
+(facts "Determine transmittance of atmosphere for all color channels"
+       (let [radius   6378000
+             height   100000
+             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+             rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000}
+             mie      #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}
+             both     [rayleigh mie]]
+         (with-redefs [atmosphere/surface-intersection
+                       (fn [planet ray]
+                           (facts planet => earth
+                                  ray => #:sfsim25.ray{:origin (matrix [-1000 radius 0]) :direction (matrix [1 0 0])})
+                           (matrix [0 radius 0]))
+                       atmosphere/atmosphere-intersection
+                       (fn [planet ray]
+                           (facts planet => earth
+                                  ray => #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
+                           (matrix [0 (+ radius height) 0])
+                           )
+                       ]
+           (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0]) (matrix [0 radius 0])) 0)
+           => (roughly 1.0 1e-6)
+           (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0]) (matrix [1000 radius 0])) 0)
+           => (roughly (exp (- (* 1000 5.8e-6))) 1e-6)
+           (mget (transmittance earth [rayleigh] 50 (matrix [0 (+ radius 8000) 0]) (matrix [1000 (+ radius 8000) 0])) 0)
+           => (roughly (exp (- (/ (* 1000 5.8e-6) E))) 1e-6)
+           (mget (transmittance earth both 50 (matrix [0 radius 0]) (matrix [1000 radius 0])) 0)
+           => (roughly (exp (- (* 1000 (+ 5.8e-6 (/ 2e-5 0.9))))) 1e-6)
+           (mget (transmittance earth [rayleigh] 50 (matrix [-1000 radius 0]) (matrix [1 0 0]) false) 0)
+           => (roughly (exp (- (* 1000 5.8e-6))) 1e-6)
+           (mget (transmittance earth both 50 (matrix [0 radius 0]) (matrix [0 1 0]) true) 0)
+           => (roughly 0.932307 1e-6))))
 
 ;(facts "Scatter-free radiation emitted from surface of planet (E[L0])"
 ;  (let [radius    6378000.0
