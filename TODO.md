@@ -1,11 +1,12 @@
 # TODO
+* implement height-to-index
+* implement heading-to-index
 * transmittance-forward should accept sky boolean
 * transmittance-backward should return sky boolean
 * define transmittance-space without composing with linear space
 * ray-scatter should accept sky boolean
 * ray-scatter-forward should accept sky boolean
 * ray-scatter-backward should return sky boolean
-* test is\_above\_horizon shader method (rename sky\_or\_ground)
 * change elevation\_to\_index shader to accept one boolean
 * change shader functions to use sky boolean
 * use different normal for ground\_radiance?
