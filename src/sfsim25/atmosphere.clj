@@ -75,23 +75,23 @@
     (mul (max 0 (dot normal light-direction))
          (transmittance planet scatter steps x light-direction true) intensity)))
 
-;(defn point-scatter-base
-;  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
-;  [planet scatter steps intensity x view-direction light-direction]
-;  (let [height-of-x     (height planet x)
-;        scattering-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction light-direction)))
-;        sun-ray         #:sfsim25.ray{:origin x :direction light-direction}]
-;    (if (surface-intersection planet sun-ray); use is-above-horizon?
-;      (matrix [0 0 0])
-;      (let [overall-scatter (apply add (map scattering-at-x scatter))]
-;        (mul intensity overall-scatter (transmittance planet scatter atmosphere-intersection steps x light-direction))))))
+(defn point-scatter-base
+  "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
+  [planet scatter steps intensity x view-direction light-direction]
+  (let [height-of-x     (height planet x)
+        scattering-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction light-direction)))]
+    (if (is-above-horizon? planet x light-direction)
+      (let [overall-scatter (apply add (map scattering-at-x scatter))]
+        (mul intensity overall-scatter (transmittance planet scatter atmosphere-intersection steps x light-direction true)))
+      (matrix [0 0 0]))))
 
-;(defn ray-scatter
-;  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
-;  [planet scatter intersection steps point-scatter x view-direction light-direction]
-;  (let [point (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
-;        ray   #:sfsim25.ray{:origin x :direction (sub point x)}]
-;    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction light-direction)))))
+(defn ray-scatter
+  "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
+  [planet scatter intersection steps point-scatter x view-direction light-direction above-horizon]
+  (let [intersection (if above-horizon atmosphere-intersection surface-intersection)
+        point        (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
+        ray          #:sfsim25.ray{:origin x :direction (sub point x)}]
+    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction light-direction)))))
 
 ;(defn point-scatter
 ;  "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
