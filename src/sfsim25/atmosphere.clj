@@ -51,8 +51,9 @@
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"
   [planet ray]
-  (let [surface-point (and (ray-pointing-downwards planet ray) (surface-intersection planet ray))]
-    (or surface-point (atmosphere-intersection planet ray))))
+  (if (is-above-horizon? planet (:sfsim25.ray/origin ray) (:sfsim25.ray/direction ray))
+    (atmosphere-intersection planet ray)
+    (surface-intersection planet ray)))
 
 (defn- exp-negative
   "Negative exponentiation"
