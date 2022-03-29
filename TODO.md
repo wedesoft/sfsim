@@ -1,6 +1,5 @@
 # TODO
-* implement height-to-index
-* implement heading-to-index
+* implement heading-to-index and index-to-heading
 * transmittance-forward should accept sky boolean
 * transmittance-backward should return sky boolean
 * define transmittance-space without composing with linear space

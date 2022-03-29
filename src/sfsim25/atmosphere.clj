@@ -48,6 +48,19 @@
   [planet point]
   (< (* 2 (height planet point)) (:sfsim25.atmosphere/height planet)))
 
+(defn horizon-angle
+  "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
+  ^double [{:sfsim25.sphere/keys [^Vector centre ^double radius]} ^Vector point]
+  (let [distance (max radius (norm (sub point centre)))]
+    (acos (/ radius distance))))
+
+(defn is-above-horizon?
+  "Check whether there is sky or ground in a certain direction"
+  [planet point direction]
+  (let [angle  (horizon-angle planet point)
+        normal (normalise point)]
+    (>= (dot normal direction) (- (sin angle)))))
+
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"
   [planet ray]
@@ -120,19 +133,6 @@
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (integral-half-sphere steps normal #(mul (ray-scatter x % light-direction) (dot % normal)))))
 
-(defn horizon-angle
-  "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
-  ^double [{:sfsim25.sphere/keys [^Vector centre ^double radius]} ^Vector point]
-  (let [distance (max radius (norm (sub point centre)))]
-    (acos (/ radius distance))))
-
-(defn is-above-horizon?
-  "Check whether there is sky or ground in a certain direction"
-  [planet point direction]
-  (let [angle  (horizon-angle planet point)
-        normal (normalise point)]
-    (>= (dot normal direction) (- (sin angle)))))
-
 (defn elevation-to-index
   "Convert elevation value to lookup table index depending on position of horizon"
   [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power point direction above-horizon]
@@ -162,6 +162,21 @@
         [(matrix [(sin angle) (cos angle) 0]) true])
       (let [angle (-> index (- sky-size) (/ (dec ground-size)) (pow power) invert (* (- pi2 horizon)) (- pi2))]
         [(matrix [(sin angle) (cos angle) 0]) false]))))
+
+(defn height-to-index
+  "Convert height to index"
+  [planet size point]
+  (let [radius     (:sfsim25.sphere/radius planet)
+        max-height (:sfsim25.atmosphere/height planet)]
+    (-> point norm (- radius) (/ max-height) (* (dec size)))))
+
+(defn index-to-height
+  "Convert index to point at certain height"
+  [planet size index]
+  (let [radius     (:sfsim25.sphere/radius planet)
+        max-height (:sfsim25.atmosphere/height planet)
+        height     (-> index (/ (dec size)) (* max-height))]
+    (matrix [(+ radius height) 0 0])))
 
 ;(defn- transmittance-forward
 ;  "Forward transformation for interpolating transmittance function"

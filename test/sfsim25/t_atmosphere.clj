@@ -364,6 +364,20 @@
            2.0  0                         13.949747  (- (sqrt 0.5)) (sqrt 0.5) false
            2.0  0                          9         0              1          false)
 
+(facts "Convert height to index"
+       (let [radius 6378000.0
+             height 35000.0
+             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
+         (height-to-index earth 17 (matrix [radius 0 0])) => 0.0
+         (height-to-index earth 17 (matrix [(+ radius height) 0 0])) => 16.0))
+
+(facts "Convert index to point at certain height"
+       (let [radius 6378000.0
+             height 35000.0
+             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
+         (index-to-height earth 17 0) => (matrix [radius 0 0])
+         (index-to-height earth 17 16) => (matrix [(+ radius height) 0 0])))
+
 ;(facts "Create transformations for interpolating transmittance function"
 ;       (let [radius   6378000.0
 ;             height   100000.0
