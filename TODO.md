@@ -1,8 +1,5 @@
 # TODO
 * implement heading-to-index and index-to-heading
-* transmittance-forward should accept sky boolean
-* transmittance-backward should return sky boolean
-* define transmittance-space without composing with linear space
 * ray-scatter should accept sky boolean
 * ray-scatter-forward should accept sky boolean
 * ray-scatter-backward should return sky boolean
