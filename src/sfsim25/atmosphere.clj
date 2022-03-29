@@ -178,32 +178,30 @@
         height     (-> index (/ (dec size)) (* max-height))]
     (matrix [(+ radius height) 0 0])))
 
-;(defn- transmittance-forward
-;  "Forward transformation for interpolating transmittance function"
-;  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]
-;  (fn [^Vector point ^Vector direction]
-;      (let [height          (- (norm (sub point centre)) radius)
-;            elevation-index ((elevation-to-index planet size power) point direction)]
-;        [height elevation-index])))
-;
-;(defn- transmittance-backward
-;  "Backward transformation for looking up transmittance values"
-;  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]
-;  (fn [^double height ^double elevation-index]
-;      (let [point     (add centre (matrix [(+ radius height) 0 0]))
-;            direction ((index-to-elevation planet size power) height elevation-index)]
-;        [point direction])))
-;
-;(defn transmittance-space
-;  "Create transformations for interpolating transmittance function"
-;  [planet size power]
-;  (let [shape   [size size]
-;        height  (:sfsim25.atmosphere/height planet)
-;        scaling (linear-space [0 0] [height (dec size)] shape)]
-;    (compose-space scaling #:sfsim25.interpolate{:forward (transmittance-forward planet size power)
-;                                                 :backward (transmittance-backward planet size power)})))
-;
-;(def surface-radiance-space transmittance-space)
+(defn- transmittance-forward
+  "Forward transformation for interpolating transmittance function"
+  [planet size power]
+  (fn [point direction above-horizon]
+      [(height-to-index planet size point) (elevation-to-index planet size power point direction above-horizon)]))
+
+(defn- transmittance-backward
+  "Backward transformation for looking up transmittance values"
+  [planet size power]
+  (fn [height-index elevation-index]
+      (let [point                     (index-to-height planet size height-index)
+            [direction above-horizon] (index-to-elevation planet size power (height planet point) elevation-index)]
+        [point direction above-horizon])))
+
+(defn transmittance-space
+  "Create transformations for interpolating transmittance function"
+  [planet size power]
+  (let [shape   [size size]
+        height  (:sfsim25.atmosphere/height planet)]
+    #:sfsim25.interpolate{:shape    shape
+                          :forward  (transmittance-forward planet size power)
+                          :backward (transmittance-backward planet size power)}))
+
+(def surface-radiance-space transmittance-space)
 
 (defn- clip-angle [angle] (if (< angle (- PI)) (+ angle (* 2 PI)) (if (>= angle PI) (- angle (* 2 PI)) angle)))
 
