@@ -1,5 +1,5 @@
 # TODO
-* implement heading-to-index and index-to-heading
+* implement index-to-heading
 * ray-scatter should accept sky boolean
 * ray-scatter-forward should accept sky boolean
 * ray-scatter-backward should return sky boolean

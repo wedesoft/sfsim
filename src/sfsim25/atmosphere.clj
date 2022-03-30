@@ -205,6 +205,18 @@
 
 (defn- clip-angle [angle] (if (< angle (- PI)) (+ angle (* 2 PI)) (if (>= angle PI) (- angle (* 2 PI)) angle)))
 
+(defn heading-to-index
+  "Convert absolute sun heading to lookup index"
+  [size point direction light-direction]
+  (let [normal                  (normalise point)
+        plane                   (oriented-matrix normal)
+        direction-rotated       (mmul plane direction)
+        light-direction-rotated (mmul plane light-direction)
+        direction-azimuth       (atan2 (mget direction-rotated 2) (mget direction-rotated 1))
+        light-direction-azimuth (atan2 (mget light-direction-rotated 2) (mget light-direction-rotated 1))
+        sun-abs-heading         (abs (clip-angle (- light-direction-azimuth direction-azimuth)))]
+    (-> sun-abs-heading (/ PI) (* (dec size)))))
+
 ;(defn- ray-scatter-forward
 ;  "Forward transformation for interpolating ray scatter function"
 ;  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]

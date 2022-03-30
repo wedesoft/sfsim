@@ -401,6 +401,16 @@
 (fact "Transformation for surface radiance interpolation is the same as the one for transmittance"
       surface-radiance-space => (exactly transmittance-space))
 
+(facts "Convert absolute sun heading to lookup index"
+       (let [radius 6378000.0
+             size 17]
+         (heading-to-index size (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0])) => 0.0
+         (heading-to-index size (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 0 1])) => (roughly 8.0 1e-6)
+         (heading-to-index size (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1])) => 0.0
+         (heading-to-index size (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0])) => (roughly 8.0 1e-6)
+         (heading-to-index size (matrix [radius 0 0]) (matrix [0 -1 -1e-8]) (matrix [0 -1 1e-8])) => (roughly 0.0 1e-6)
+         (heading-to-index size (matrix [0 radius 0]) (matrix [1 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)))
+
 ;(facts "Create transformation for interpolating ray scatter and point scatter"
 ;       (let [radius   6378000.0
 ;             height   100000.0
