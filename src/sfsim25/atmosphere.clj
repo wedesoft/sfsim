@@ -217,6 +217,11 @@
         sun-abs-heading         (abs (clip-angle (- light-direction-azimuth direction-azimuth)))]
     (-> sun-abs-heading (/ PI) (* (dec size)))))
 
+(defn index-to-heading
+  "Convert index to absolute sun heading"
+  [size index]
+  (-> index (/ (dec size)) (* PI)))
+
 ;(defn- ray-scatter-forward
 ;  "Forward transformation for interpolating ray scatter function"
 ;  [{:sfsim25.sphere/keys [centre radius] :as planet} size power]

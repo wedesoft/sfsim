@@ -411,6 +411,11 @@
          (heading-to-index size (matrix [radius 0 0]) (matrix [0 -1 -1e-8]) (matrix [0 -1 1e-8])) => (roughly 0.0 1e-6)
          (heading-to-index size (matrix [0 radius 0]) (matrix [1 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)))
 
+(facts "Convert index to absolute sun heading"
+       (let [size 17]
+         (index-to-heading size 0) => 0.0
+         (index-to-heading size 16) => PI))
+
 ;(facts "Create transformation for interpolating ray scatter and point scatter"
 ;       (let [radius   6378000.0
 ;             height   100000.0
