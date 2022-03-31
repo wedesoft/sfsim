@@ -1,11 +1,10 @@
 # TODO
-* ray-scatter-forward should accept sky boolean
-* ray-scatter-backward should return sky boolean
 * update and try atmosphere-lut program
 * change elevation\_to\_index shader to accept one boolean
 * change shader functions to use sky boolean
 * use different normal for ground\_radiance?
 * shader to check whether point-direction is in the sky or on the ground
+* is an above-horizon boolean needed for the light-direction when computing ray-scatter?
 * only render sun glare when sun is above horizon
 * add keyboard motion commands
 * extract functions from prototype

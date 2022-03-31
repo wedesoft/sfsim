@@ -416,35 +416,38 @@
          (index-to-heading size 0) => 0.0
          (index-to-heading size 16) => PI))
 
-;(facts "Create transformation for interpolating ray scatter and point scatter"
-;       (let [radius   6378000.0
-;             height   100000.0
-;             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-;             space    (ray-scatter-space earth 17 1.0)
-;             forward  (:sfsim25.interpolate/forward space)
-;             backward (:sfsim25.interpolate/backward space)]
-;         (:sfsim25.interpolate/shape space) => [17 17 17 17]
-;         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]))            => [0.0 0.0 0.0 0.0]
-;         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0])) => [16.0 0.0 0.0 0.0]
-;         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]))           => [0.0 16.0 0.0 0.0]
-;         (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [0 1 0]))           => [0.0 16.0 0.0 0.0]
-;         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [0 0 1]))            => [0.0 0.0 8.0 0.0]
-;         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]))            => [0.0 8.0 8.0 0.0]
-;         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]))           => [0.0 8.0 8.0 8.0]
-;         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]))            => [0.0 8.0 8.0 8.0]
-;         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]))            => [0.0 8.0 8.0 0.0]
-;         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]))           => [0.0 8.0 8.0 16.0]
-;         (nth (backward 0.0 0.0 0.0 0.0) 0)                                           => (matrix [radius 0 0])
-;         (nth (backward 16.0 0.0 0.0 0.0) 0)                                          => (matrix [(+ radius height) 0 0])
-;         (nth (backward 0.0 0.0 0.0 0.0) 1)                                           => (matrix [1 0 0])
-;         (nth (backward 0.0 8.0 0.0 0.0) 1)                                           => (roughly-matrix (matrix [0 1 0]) 1e-6)
-;         (nth (backward 0.0 0.0 0.0 0.0) 2)                                           => (matrix [1 0 0])
-;         (nth (backward 0.0 0.0 8.0 0.0) 2)                                           => (roughly-matrix (matrix [0 1 0]) 1e-6)
-;         (nth (backward 0.0 0.0 8.0 8.0) 2)                                           => (roughly-matrix (matrix [0 0 1]) 1e-6)
-;         (nth (backward 0.0 0.0 0.0 8.0) 2)                                           => (matrix [1 0 0])))
-;
-;(fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
-;      point-scatter-space => (exactly ray-scatter-space))
+(facts "Create transformation for interpolating ray scatter and point scatter"
+       (let [radius   6378000.0
+             height   100000.0
+             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
+             space    (ray-scatter-space earth 17 1.0)
+             forward  (:sfsim25.interpolate/forward space)
+             backward (:sfsim25.interpolate/backward space)]
+         (:sfsim25.interpolate/shape space) => [17 17 17 17]
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true)            => [0.0 0.0 0.0 0.0]
+         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => [16.0 0.0 0.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]) false)          => [0.0 16.0 0.0 0.0]
+         (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [0 1 0]) false)          => [0.0 16.0 0.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [0 0 1]) true)            => [0.0 0.0 8.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) true)            => [0.0 8.0 8.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) false)           => [0.0 9.0 8.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]) true)           => [0.0 8.0 8.0 8.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]) true)            => [0.0 8.0 8.0 8.0]
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]) true)            => [0.0 8.0 8.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]) true)           => [0.0 8.0 8.0 16.0]
+         (nth (backward 0.0 0.0 0.0 0.0) 0)   => (matrix [radius 0 0])
+         (nth (backward 16.0 0.0 0.0 0.0) 0)  => (matrix [(+ radius height) 0 0])
+         (nth (backward 0.0 0.0 0.0 0.0) 1)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (nth (backward 0.0 8.0 0.0 0.0) 1)   => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (nth (backward 0.0 0.0 0.0 0.0) 2)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (nth (backward 0.0 0.0 8.0 0.0) 2)   => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (nth (backward 0.0 0.0 8.0 8.0) 2)   => (roughly-matrix (matrix [0 0 1]) 1e-6)
+         (nth (backward 0.0 0.0 0.0 8.0) 2)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (nth (backward 0.0 8.0 0.0 0.0) 3)   => true
+         (nth (backward 0.0 9.0 0.0 0.0) 3)   => false))
+
+(fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
+      point-scatter-space => (exactly ray-scatter-space))
 
 (def vertex-passthrough "#version 410 core
 in highp vec3 point;
