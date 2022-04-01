@@ -1,5 +1,4 @@
 # TODO
-* update and try atmosphere-lut program
 * change elevation\_to\_index shader to accept one boolean
 * change shader functions to use sky boolean
 * use different normal for ground\_radiance?

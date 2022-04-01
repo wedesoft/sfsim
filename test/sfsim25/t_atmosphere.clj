@@ -138,10 +138,12 @@
                              steps         => 10
                              origin        => (matrix [0 radius 0]))
                       (matrix [0.5 0.5 0.5]))]
-      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [1 0 0]))             => (matrix [0.0 0.0 0.0])
-      (surface-radiance-base moved [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]))            => (mul 0.5 intensity)
-      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]))             => (mul 0.5 intensity)
-      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]))            => (matrix [0.0 0.0 0.0]))))
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [1 0 0]) true)   => (matrix [0.0 0.0 0.0])
+      (surface-radiance-base moved [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]) true)  => (mul 0.5 intensity)
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]) true)   => (mul 0.5 intensity)
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]) false) => (matrix [0.0 0.0 0.0])
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]) false) => (matrix [0.0 0.0 0.0])
+      )))
 
 (defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
@@ -173,16 +175,15 @@
                              mu => 0.36)
                       0.1)
                   atmosphere/transmittance
-                  (fn [planet scatter intersection steps origin direction above-horizon]
+                  (fn [planet scatter steps origin direction above-horizon]
                       (facts "Transmittance function gets called with correct arguments"
                              (:sfsim25.atmosphere/scatter-g (first scatter)) => 0.76
-                             intersection => (exactly atmosphere-intersection)
                              steps => 10
                              origin => (matrix [0 (+ radius 1000) 0])
                              direction => light-direction
                              above-horizon => true)
                       (matrix [0.5 0.5 0.5]))]
-      (point-scatter-base earth [mie] 10 intensity (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) light-direction)
+      (point-scatter-base earth [mie] 10 intensity (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) light-direction true)
       => (roughly-matrix (mul intensity 2e-5 0.1 0.5) 1e-12))
     (with-redefs [atmosphere/is-above-horizon?
                   (fn [planet point direction]
@@ -190,7 +191,7 @@
                              point => (matrix [0 (+ radius 1000) 0])
                              direction => light-direction2)
                       false)]
-      (point-scatter-base earth [mie] 10 intensity (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) light-direction2)
+      (point-scatter-base earth [mie] 10 intensity (matrix [0 (+ radius 1000) 0]) (matrix [0.36 0.48 0.8]) light-direction2 true)
       => (matrix [0 0 0]))))
 
 (facts "In-scattered light from a direction (S) depending on point scatter function (J)"
@@ -206,7 +207,7 @@
                                     (:sfsim25.ray/direction ray) => (matrix [0 1 0]))
                              (matrix [0 (+ radius height) 0])
                              )
-        constant-scatter (fn [y view-direction light-direction]
+        constant-scatter (fn [y view-direction light-direction above-horizon]
                              (facts "Check point-scatter function gets called with correct arguments"
                                     view-direction => (matrix [0 1 0])
                                     light-direction => (matrix [0.36 0.48 0.8]))
@@ -245,14 +246,22 @@
         earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
                                           :sfsim25.atmosphere/brightness (mul PI (matrix [0.3 0.3 0.3]))}
         mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
-        ray-scatter1     (fn [x view-direction light-direction]
-                             (facts x => x1 view-direction => (matrix [0 1 0]) light-direction => (matrix [0.36 0.48 0.8]))
+        ray-scatter1     (fn [x view-direction light-direction above-horizon]
+                             (facts x => x1
+                                    view-direction => (matrix [0 1 0])
+                                    light-direction => (matrix [0.36 0.48 0.8])
+                                    above-horizon => true)
                              (matrix [1 2 3]))
-        ray-scatter2     (fn [x view-direction light-direction]
-                             (facts x => x2 view-direction => (matrix [0 -1 0]) light-direction => (matrix [0.36 0.48 0.8]))
+        ray-scatter2     (fn [x view-direction light-direction above-horizon]
+                             (facts x => x2
+                                    view-direction => (matrix [0 -1 0])
+                                    light-direction => (matrix [0.36 0.48 0.8])
+                                    above-horizon => false)
                              (matrix [0 0 0]))
-        surface-radiance (fn [x light-direction]
-                             (facts x => x1 light-direction => (matrix [0.36 0.48 0.8]))
+        surface-radiance (fn [x light-direction light-above]
+                             (facts x => x1
+                                    light-direction => (matrix [0.36 0.48 0.8])
+                                    light-above => true)
                              (matrix [3 4 5]))]
     (with-redefs [atmosphere/phase (fn [mie mu] 0.5)]
       (with-redefs [atmosphere/ray-extremity
@@ -263,7 +272,7 @@
                                normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
                                (fun (matrix [0 1 0])) => (roughly-matrix (mul 0.5 (matrix [1 2 3]) (matrix [2e-5 2e-5 2e-5])) 1e-10))
                       (matrix [2e-5 3e-5 5e-5]))]
-        (point-scatter earth [mie] ray-scatter1 surface-radiance intensity 64 10 x1 (matrix [0 1 0]) light-direction)
+        (point-scatter earth [mie] ray-scatter1 surface-radiance intensity 64 10 x1 (matrix [0 1 0]) light-direction true)
         => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10))
       (with-redefs (atmosphere/ray-extremity
                     (fn [planet ray]
@@ -284,7 +293,7 @@
                                (fun (matrix [0 -1 0])) =>
                                (roughly-matrix (mul 0.5 (/ 2e-5 E) (matrix [0.9 0.8 0.7]) 0.3 (matrix [3 4 5])) 1e-10))
                       (matrix [2e-5 3e-5 5e-5])))
-        (point-scatter earth [mie] ray-scatter2 surface-radiance intensity 64 10 x2 (matrix [0 1 0]) light-direction)
+        (point-scatter earth [mie] ray-scatter2 surface-radiance intensity 64 10 x2 (matrix [0 1 0]) light-direction true)
         => (roughly-matrix (matrix [2e-5 3e-5 5e-5]) 1e-10)))))
 
 (facts "Scattered light emitted from surface of planet depending on ray scatter (E(S))"
@@ -294,10 +303,11 @@
         light-direction (matrix [0.6 0.8 0])
         earth           #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height
                                          :sfsim25.atmosphere/brightness (mul PI (matrix [0.3 0.3 0.3]))}
-        ray-scatter     (fn [x view-direction light-direction]
+        ray-scatter     (fn [x view-direction light-direction above-horizon]
                             (facts x => (matrix [0 radius 0])
                                    view-direction => (matrix [0.36 0.48 0.8])
-                                   light-direction => (matrix [0.6 0.8 0]))
+                                   light-direction => (matrix [0.6 0.8 0])
+                                   above-horizon => true)
                             (matrix [1 2 3]))]
     (with-redefs [sphere/integral-half-sphere
                   (fn [steps normal fun]
@@ -305,7 +315,7 @@
                              normal => (roughly-matrix (matrix [0 1 0]) 1e-6)
                              (fun (matrix [0.36 0.48 0.8])) => (mul 0.48 (matrix [1 2 3])))
                       (matrix [0.2 0.3 0.5]))]
-      (surface-radiance earth ray-scatter 64 x light-direction) => (matrix [0.2 0.3 0.5]))))
+      (surface-radiance earth ray-scatter 64 x light-direction true) => (matrix [0.2 0.3 0.5]))))
 
 (facts "Get angle of planet's horizon below horizontal plane depending on the height of the observer"
        (let [radius 6378000.0
