@@ -58,33 +58,33 @@ void main()
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
-(def elevation-to-index-probe
-  (template/fn [sky ground elevation horizon-angle power] "#version 410 core
-out lowp vec3 fragColor;
-float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool sky, bool ground);
-void main()
-{
-  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>, <%= sky %>, <%= ground %>);
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
-
-(tabular "Shader for converting elevation to index"
-         (fact (mget (elevation-to-index-test ?sky ?ground ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
-         ?sky  ?ground ?elevation        ?horizon-angle ?power ?result
-         false false   0.0               0.0            1.0     0
-         false false   (* 0.5 3.14159)   0.0            1.0     8
-         false false   (* 0.5 3.14160)   0.0            1.0     9
-         false true    (* 0.5 3.14159)   0.0            1.0     9
-         true  false   (* 0.5 3.14160)   0.0            1.0     8
-         false false   3.14159           0.0            1.0    16
-         false false   (* 0.375 3.14159) 0.0            1.0     6
-         false false   (* 0.375 3.14159) 0.0            2.0     4
-         false false   (* 0.625 3.14159) 0.0            1.0    10.75
-         false false   (* 0.625 3.14159) 0.0            2.0    12.5
-         false false   (* 0.5 3.34159)   0.1            1.0     8
-         false false   (* 0.5 3.34160)   0.1            1.0     9)
+;(def elevation-to-index-probe
+;  (template/fn [sky ground elevation horizon-angle power] "#version 410 core
+;out lowp vec3 fragColor;
+;float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool sky, bool ground);
+;void main()
+;{
+;  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>, <%= sky %>, <%= ground %>);
+;  fragColor = vec3(result, 0, 0);
+;}"))
+;
+;(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
+;
+;(tabular "Shader for converting elevation to index"
+;         (fact (mget (elevation-to-index-test ?sky ?ground ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
+;         ?sky  ?ground ?elevation        ?horizon-angle ?power ?result
+;         false false   0.0               0.0            1.0     0
+;         false false   (* 0.5 3.14159)   0.0            1.0     8
+;         false false   (* 0.5 3.14160)   0.0            1.0     9
+;         false true    (* 0.5 3.14159)   0.0            1.0     9
+;         true  false   (* 0.5 3.14160)   0.0            1.0     8
+;         false false   3.14159           0.0            1.0    16
+;         false false   (* 0.375 3.14159) 0.0            1.0     6
+;         false false   (* 0.375 3.14159) 0.0            2.0     4
+;         false false   (* 0.625 3.14159) 0.0            1.0    10.75
+;         false false   (* 0.625 3.14159) 0.0            2.0    12.5
+;         false false   (* 0.5 3.34159)   0.1            1.0     8
+;         false false   (* 0.5 3.34160)   0.1            1.0     9)
 
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core
@@ -201,33 +201,33 @@ void main()
          0  0   0.123  1.123 "pq"      (+ 0.5 17)        (+ 0.5 (* 2 17))
          0  0   0.123 16.123 "pq"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)))
 
-(def transmittance-forward-probe
-  (template/fn [x y z dx dy dz power] "#version 410 core
-out lowp vec3 fragColor;
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky,
-                           bool ground);
-void main()
-{
-  fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                       6378000.0, 100000, 17, <%= power %>, false, false);
-  fragColor.b = 0;
-}"))
-
-(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
-
-(let [angle (* 0.375 PI)
-      ca    (cos angle)
-      sa    (sin angle)]
-  (tabular "Convert point and direction to 2D lookup index in transmittance table"
-           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power) => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
-           ?x      ?y ?z ?dx  ?dy ?dz ?power ?u  ?v
-           6378000 0  0  1    0   0   1      0.0  0.0
-           6478000 0  0  1    0   0   1      0.0 16.0
-           6378000 0  0  1e-6 1   0   1      8.0  0.0
-           6378000 0  0 -1e-6 1   0   1      9.0  0.0
-           6378025 0  0 -1e-6 1   0   1      8.0  0.0
-           6378000 0  0  ca   sa  0   1      6.0  0.0
-           6378000 0  0  ca   sa  0   2      4.0  0.0))
+;(def transmittance-forward-probe
+;  (template/fn [x y z dx dy dz power] "#version 410 core
+;out lowp vec3 fragColor;
+;vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky,
+;                           bool ground);
+;void main()
+;{
+;  fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
+;                                       6378000.0, 100000, 17, <%= power %>, false, false);
+;  fragColor.b = 0;
+;}"))
+;
+;(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
+;
+;(let [angle (* 0.375 PI)
+;      ca    (cos angle)
+;      sa    (sin angle)]
+;  (tabular "Convert point and direction to 2D lookup index in transmittance table"
+;           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power) => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
+;           ?x      ?y ?z ?dx  ?dy ?dz ?power ?u  ?v
+;           6378000 0  0  1    0   0   1      0.0  0.0
+;           6478000 0  0  1    0   0   1      0.0 16.0
+;           6378000 0  0  1e-6 1   0   1      8.0  0.0
+;           6378000 0  0 -1e-6 1   0   1      9.0  0.0
+;           6378025 0  0 -1e-6 1   0   1      8.0  0.0
+;           6378000 0  0  ca   sa  0   1      6.0  0.0
+;           6378000 0  0  ca   sa  0   2      4.0  0.0))
 
 (defn lookup-2d-test [probe & shaders]
   (fn [& args]
@@ -364,48 +364,48 @@ void main()
          0    0  0   0.5 5.0
          0    0  0.5 0.5 7.0)
 
-(def ray-scatter-forward-probe
-  (template/fn [x y z dx dy dz lx ly lz power selector] "#version 410 core
-out lowp vec3 fragColor;
-vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
-                         float power, bool sky, bool ground);
-void main()
-{
-  vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, <%= power %>, false, false);
-  fragColor.r = result.<%= selector %>;
-  fragColor.g = 0;
-  fragColor.b = 0;
-}"))
-
-(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
-                                           clip-angle oriented-matrix orthogonal-vector))
-
-(let [angle (* 0.375 PI)
-      ca    (cos angle)
-      sa    (sin angle)
-      r     6378000
-      h     100000]
-  (tabular "Get 4D lookup index for ray scattering"
-           (fact (mget (ray-scatter-forward-test ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?power ?sel) 0) => (roughly (/ ?result 16) 1e-3))
-           ?x       ?y ?z ?dx  ?dy ?dz  ?lx    ?ly ?lz  ?power ?sel ?result
-           r        0  0  1    0   0    1      0   0    1.0    "w"   0.0
-           (+ r h)  0  0  1    0   0    1      0   0    1.0    "w"  16.0
-           r        0  0  1    0   0    1      0   0    1.0    "z"   0.0
-           r        0  0  1e-6 1   0    1      0   0    1.0    "z"   8.0
-           r        0  0 -1e-6 1   0    1      0   0    1.0    "z"   9.0
-           (+ r 25) 0  0 -1e-6 1   0    1      0   0    1.0    "z"   8.0
-           r        0  0  ca   sa  0    1      0   0    1.0    "z"   6.0
-           r        0  0  ca   sa  0    1      0   0    2.0    "z"   4.0
-           r        0  0  1    0   0    1      0   0    1.0    "y"   0.0
-           r        0  0  1    0   0    1e-6   1   0    1.0    "y"   8.0
-           r        0  0  1    0   0   -1e-6   1   0    1.0    "y"   9.0
-           (+ r 25) 0  0  1    0   0   -1e-6   1   0    1.0    "y"   8.0
-           r        0  0  1    0   0    ca     sa  0    1.0    "y"   6.0
-           r        0  0  1    0   0    ca     sa  0    2.0    "y"   4.0
-           r        0  0  0    1   0    0      1   0    1.0    "x"   0.0
-           r        0  0  0    1   0    0      0   1    1.0    "x"   8.0
-           r        0  0  0    1   0    0      0  -1    1.0    "x"   8.0
-           r        0  0  0    0   1    0      0   1    1.0    "x"   0.0
-           r        0  0  0   -1   1e-6 0     -1  -1e-6 1.0    "x"   0.0
-           0        r  0  ca   0   sa   (- sa) 0   ca   1.0    "x"   8.0))
+;(def ray-scatter-forward-probe
+;  (template/fn [x y z dx dy dz lx ly lz power selector] "#version 410 core
+;out lowp vec3 fragColor;
+;vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
+;                         float power, bool sky, bool ground);
+;void main()
+;{
+;  vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
+;                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, <%= power %>, false, false);
+;  fragColor.r = result.<%= selector %>;
+;  fragColor.g = 0;
+;  fragColor.b = 0;
+;}"))
+;
+;(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
+;                                           clip-angle oriented-matrix orthogonal-vector))
+;
+;(let [angle (* 0.375 PI)
+;      ca    (cos angle)
+;      sa    (sin angle)
+;      r     6378000
+;      h     100000]
+;  (tabular "Get 4D lookup index for ray scattering"
+;           (fact (mget (ray-scatter-forward-test ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?power ?sel) 0) => (roughly (/ ?result 16) 1e-3))
+;           ?x       ?y ?z ?dx  ?dy ?dz  ?lx    ?ly ?lz  ?power ?sel ?result
+;           r        0  0  1    0   0    1      0   0    1.0    "w"   0.0
+;           (+ r h)  0  0  1    0   0    1      0   0    1.0    "w"  16.0
+;           r        0  0  1    0   0    1      0   0    1.0    "z"   0.0
+;           r        0  0  1e-6 1   0    1      0   0    1.0    "z"   8.0
+;           r        0  0 -1e-6 1   0    1      0   0    1.0    "z"   9.0
+;           (+ r 25) 0  0 -1e-6 1   0    1      0   0    1.0    "z"   8.0
+;           r        0  0  ca   sa  0    1      0   0    1.0    "z"   6.0
+;           r        0  0  ca   sa  0    1      0   0    2.0    "z"   4.0
+;           r        0  0  1    0   0    1      0   0    1.0    "y"   0.0
+;           r        0  0  1    0   0    1e-6   1   0    1.0    "y"   8.0
+;           r        0  0  1    0   0   -1e-6   1   0    1.0    "y"   9.0
+;           (+ r 25) 0  0  1    0   0   -1e-6   1   0    1.0    "y"   8.0
+;           r        0  0  1    0   0    ca     sa  0    1.0    "y"   6.0
+;           r        0  0  1    0   0    ca     sa  0    2.0    "y"   4.0
+;           r        0  0  0    1   0    0      1   0    1.0    "x"   0.0
+;           r        0  0  0    1   0    0      0   1    1.0    "x"   8.0
+;           r        0  0  0    1   0    0      0  -1    1.0    "x"   8.0
+;           r        0  0  0    0   1    0      0   1    1.0    "x"   0.0
+;           r        0  0  0   -1   1e-6 0     -1  -1e-6 1.0    "x"   0.0
+;           0        r  0  ca   0   sa   (- sa) 0   ca   1.0    "x"   8.0))
