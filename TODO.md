@@ -4,6 +4,7 @@
 * use different normal for ground\_radiance?
 * shader to check whether point-direction is in the sky or on the ground
 * is an above-horizon boolean needed for the light-direction when computing ray-scatter?
+* elevation\_to\_index should use elevation value between -pi/2 and pi/2
 * only render sun glare when sun is above horizon
 * add keyboard motion commands
 * extract functions from prototype

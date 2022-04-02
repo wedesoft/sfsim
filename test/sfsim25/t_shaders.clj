@@ -58,33 +58,33 @@ void main()
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
-;(def elevation-to-index-probe
-;  (template/fn [sky ground elevation horizon-angle power] "#version 410 core
-;out lowp vec3 fragColor;
-;float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool sky, bool ground);
-;void main()
-;{
-;  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>, <%= sky %>, <%= ground %>);
-;  fragColor = vec3(result, 0, 0);
-;}"))
-;
-;(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
-;
-;(tabular "Shader for converting elevation to index"
-;         (fact (mget (elevation-to-index-test ?sky ?ground ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
-;         ?sky  ?ground ?elevation        ?horizon-angle ?power ?result
-;         false false   0.0               0.0            1.0     0
-;         false false   (* 0.5 3.14159)   0.0            1.0     8
-;         false false   (* 0.5 3.14160)   0.0            1.0     9
-;         false true    (* 0.5 3.14159)   0.0            1.0     9
-;         true  false   (* 0.5 3.14160)   0.0            1.0     8
-;         false false   3.14159           0.0            1.0    16
-;         false false   (* 0.375 3.14159) 0.0            1.0     6
-;         false false   (* 0.375 3.14159) 0.0            2.0     4
-;         false false   (* 0.625 3.14159) 0.0            1.0    10.75
-;         false false   (* 0.625 3.14159) 0.0            2.0    12.5
-;         false false   (* 0.5 3.34159)   0.1            1.0     8
-;         false false   (* 0.5 3.34160)   0.1            1.0     9)
+(def elevation-to-index-probe
+  (template/fn [above-horizon elevation horizon-angle power] "#version 410 core
+out lowp vec3 fragColor;
+float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool above_horizon);
+void main()
+{
+  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>, <%= above-horizon %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
+
+(tabular "Shader for converting elevation to index"
+         (fact (mget (elevation-to-index-test ?above-horizon ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
+         ?above-horizon ?elevation        ?horizon-angle ?power ?result
+         true           0.0               0.0            1.0     0
+         true           (* 0.5 3.14159)   0.0            1.0     8
+         false          (* 0.5 3.14160)   0.0            1.0     9
+         false          (* 0.5 3.14159)   0.0            1.0     9
+         true           (* 0.5 3.14160)   0.0            1.0     8
+         false          3.14159           0.0            1.0    16
+         true           (* 0.375 3.14159) 0.0            1.0     6
+         true           (* 0.375 3.14159) 0.0            2.0     4
+         false          (* 0.625 3.14159) 0.0            1.0    10.75
+         false          (* 0.625 3.14159) 0.0            2.0    12.5
+         true           (* 0.5 3.34159)   0.1            1.0     8
+         false          (* 0.5 3.34160)   0.1            1.0     9)
 
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core
