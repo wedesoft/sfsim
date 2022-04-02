@@ -200,13 +200,6 @@
         earth            #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
         mie              #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76}
         light-direction  (matrix [0.36 0.48 0.8])
-        intersection     (fn [planet ray]
-                             (facts "Intersection function is called with correct values"
-                                    planet                       => earth
-                                    (:sfsim25.ray/origin ray)    => (matrix [0 radius 0])
-                                    (:sfsim25.ray/direction ray) => (matrix [0 1 0]))
-                             (matrix [0 (+ radius height) 0])
-                             )
         constant-scatter (fn [y view-direction light-direction above-horizon]
                              (facts "Check point-scatter function gets called with correct arguments"
                                     view-direction => (matrix [0 1 0])
@@ -225,7 +218,7 @@
                                (:sfsim25.ray/origin ray) => (matrix [0 radius 0])
                                (:sfsim25.ray/direction ray) => (matrix [0 1 0]))
                         (matrix [0 (+ radius height) 0]))]
-        (ray-scatter earth [mie] intersection 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) light-direction false)
+        (ray-scatter earth [mie] 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) light-direction false)
         => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6))
       (with-redefs [atmosphere/atmosphere-intersection
                     (fn [planet ray]
@@ -233,7 +226,7 @@
                                (:sfsim25.ray/origin ray) => (matrix [0 radius 0])
                                (:sfsim25.ray/direction ray) => (matrix [0 1 0]))
                         (matrix [0 (+ radius height) 0]))]
-        (ray-scatter earth [mie] intersection 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) light-direction true)
+        (ray-scatter earth [mie] 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) light-direction true)
         => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6)))))
 
 (facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"
@@ -624,15 +617,15 @@ void main()
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
                                    :scatter-scale 8000})
 (def scatter [mie rayleigh])
-;(def transmittance-earth (partial transmittance earth scatter ray-extremity ray-steps))
-;(def transmittance-space-earth (transmittance-space earth size power))
-;(def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
-;(def ray-scatter-earth (partial ray-scatter earth scatter ray-extremity ray-steps point-scatter-earth))
-;(def ray-scatter-space-earth (ray-scatter-space earth size power))
-;(def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
-;                                         transmittance-space-earth)))
-;(def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)
-;                                                           ray-scatter-space-earth))))
+(def transmittance-earth (partial transmittance earth scatter ray-steps))
+(def transmittance-space-earth (transmittance-space earth size power))
+(def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
+(def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
+(def ray-scatter-space-earth (ray-scatter-space earth size power))
+(def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
+                                         transmittance-space-earth)))
+(def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)
+                                                           ray-scatter-space-earth))))
 
 ;(tabular "Fragment shader for rendering atmosphere and sun"
 ;         (fact

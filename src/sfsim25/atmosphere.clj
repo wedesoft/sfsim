@@ -103,7 +103,7 @@
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
-  [planet scatter intersection steps point-scatter x view-direction light-direction above-horizon]
+  [planet scatter steps point-scatter x view-direction light-direction above-horizon]
   (let [intersection (if above-horizon atmosphere-intersection surface-intersection)
         point        (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
         ray          #:sfsim25.ray{:origin x :direction (sub point x)}]

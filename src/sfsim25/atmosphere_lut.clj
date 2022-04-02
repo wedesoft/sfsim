@@ -40,7 +40,7 @@
         surface-radiance-space-planet (surface-radiance-space earth size power)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
         point-scatter-space-planet    (point-scatter-space earth size power)
-        ray-scatter-base-planet       (partial ray-scatter earth scatter ray-extremity ray-steps point-scatter-base-planet)
+        ray-scatter-base-planet       (partial ray-scatter earth scatter ray-steps point-scatter-base-planet)
         ray-scatter-space-planet      (ray-scatter-space earth size power)
         T                             (interpolate-function transmittance-planet transmittance-space-planet)
         dE                            (atom (interpolate-function surface-radiance-base-planet surface-radiance-space-planet))
@@ -52,7 +52,7 @@
            (let [point-scatter-planet    (partial point-scatter earth scatter @dS @dE (matrix [1 1 1]) sphere-steps ray-steps)
                  surface-radiance-planet (partial surface-radiance earth @dS ray-steps)
                  dJ                      (interpolate-function point-scatter-planet point-scatter-space-planet)
-                 ray-scatter-planet      (partial ray-scatter earth scatter ray-extremity ray-steps dJ)]
+                 ray-scatter-planet      (partial ray-scatter earth scatter ray-steps dJ)]
              (reset! dE (interpolate-function surface-radiance-planet surface-radiance-space-planet))
              (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
              (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s a] (add (E x s a) (dE x s a))) surface-radiance-space-planet)))
