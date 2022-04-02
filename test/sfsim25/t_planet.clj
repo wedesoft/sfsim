@@ -303,17 +303,17 @@ void main()
                                                 shaders/horizon-angle shaders/elevation-to-index shaders/interpolate-2d
                                                 shaders/convert-2d-index))
 
-(tabular "Shader function to compute light emitted from ground"
-         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) PI)
-               => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
-         ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
-         1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
-         1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         0.9     0  0  6378000  1              0          0   0   1   0      1   1   1   0.9         0  0.9
-         1       0  0  6378000  0              0          1   0   0   0      1   1   1   0           0  1.0
-         1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
-         1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
-         1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8)
+;(tabular "Shader function to compute light emitted from ground"
+;         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) PI)
+;               => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+;         ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
+;         1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
+;         1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
+;         0.9     0  0  6378000  1              0          0   0   1   0      1   1   1   0.9         0  0.9
+;         1       0  0  6378000  0              0          1   0   0   0      1   1   1   0           0  1.0
+;         1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
+;         1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
+;         1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8)
 
 (def vertex-planet-probe "#version 410 core
 in highp vec3 point;
@@ -376,66 +376,66 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
   (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
   (uniform-float program :amplification ?a))
 
-(tabular "Fragment shader to render planetary surface"
-         (fact
-           (offscreen-render 256 256
-                             (let [indices       [0 1 3 2]
-                                   vertices      [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5
-                                                   0.5 -0.5 0.5 0.75 0.25 0.5 0.5
-                                                  -0.5  0.5 0.5 0.25 0.75 0.5 0.5
-                                                   0.5  0.5 0.5 0.75 0.75 0.5 0.5]
-                                   program       (make-program :vertex [vertex-planet-probe]
-                                                               :fragment [fragment-planet fake-transmittance
-                                                                          shaders/interpolate-2d shaders/convert-2d-index
-                                                                          shaders/horizon-angle shaders/transmittance-forward
-                                                                          shaders/elevation-to-index shaders/ray-sphere
-                                                                          fake-ray-scatter ground-radiance])
-                                   variables     [:point 3 :colorcoord 2 :heightcoord 2]
-                                   vao           (make-vertex-array-object program indices vertices variables)
-                                   radius        6378000
-                                   size          7
-                                   colors        (make-rgb-texture
-                                                   (slurp-image (str "test/sfsim25/fixtures/planet/" ?colors ".png")))
-                                   normals       (make-vector-texture-2d
-                                                   {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nz ?ny ?nx])))})
-                                   transmittance (make-vector-texture-2d
-                                                   {:width size :height size
-                                                    :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})
-                                   ray-scatter   (make-vector-texture-2d
-                                                   {:width (* size size) :height (* size size)
-                                                    :data (float-array (repeat (* size size size size 3) ?s))})
-                                   radiance      (make-vector-texture-2d
-                                                   {:width size :height size
-                                                    :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
-                                   water         (make-ubyte-texture-2d
-                                                   {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})]
-                               (clear (matrix [0 0 0]))
-                               (use-program program)
-                               (setup-static-uniforms program)
-                               (setup-uniforms program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a)
-                               (use-textures colors normals transmittance ray-scatter radiance water)
-                               (render-quads vao)
-                               (destroy-texture water)
-                               (destroy-texture radiance)
-                               (destroy-texture ray-scatter)
-                               (destroy-texture transmittance)
-                               (destroy-texture normals)
-                               (destroy-texture colors)
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
-         ?colors   ?albedo ?a ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
-         "pattern" PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
-         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
-         "white"   0.9     2  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "amplify"
-         "white"   PI      1  radius       1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
-         "white"   PI      1  radius       1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
-         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
-         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
-         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
-         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0  -1   "reflection3"
-         "white"   PI      1  radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   PI      1  radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter"
-         "white"   PI      1  (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")
+;(tabular "Fragment shader to render planetary surface"
+;         (fact
+;           (offscreen-render 256 256
+;                             (let [indices       [0 1 3 2]
+;                                   vertices      [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5
+;                                                   0.5 -0.5 0.5 0.75 0.25 0.5 0.5
+;                                                  -0.5  0.5 0.5 0.25 0.75 0.5 0.5
+;                                                   0.5  0.5 0.5 0.75 0.75 0.5 0.5]
+;                                   program       (make-program :vertex [vertex-planet-probe]
+;                                                               :fragment [fragment-planet fake-transmittance
+;                                                                          shaders/interpolate-2d shaders/convert-2d-index
+;                                                                          shaders/horizon-angle shaders/transmittance-forward
+;                                                                          shaders/elevation-to-index shaders/ray-sphere
+;                                                                          fake-ray-scatter ground-radiance])
+;                                   variables     [:point 3 :colorcoord 2 :heightcoord 2]
+;                                   vao           (make-vertex-array-object program indices vertices variables)
+;                                   radius        6378000
+;                                   size          7
+;                                   colors        (make-rgb-texture
+;                                                   (slurp-image (str "test/sfsim25/fixtures/planet/" ?colors ".png")))
+;                                   normals       (make-vector-texture-2d
+;                                                   {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nz ?ny ?nx])))})
+;                                   transmittance (make-vector-texture-2d
+;                                                   {:width size :height size
+;                                                    :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})
+;                                   ray-scatter   (make-vector-texture-2d
+;                                                   {:width (* size size) :height (* size size)
+;                                                    :data (float-array (repeat (* size size size size 3) ?s))})
+;                                   radiance      (make-vector-texture-2d
+;                                                   {:width size :height size
+;                                                    :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
+;                                   water         (make-ubyte-texture-2d
+;                                                   {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})]
+;                               (clear (matrix [0 0 0]))
+;                               (use-program program)
+;                               (setup-static-uniforms program)
+;                               (setup-uniforms program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a)
+;                               (use-textures colors normals transmittance ray-scatter radiance water)
+;                               (render-quads vao)
+;                               (destroy-texture water)
+;                               (destroy-texture radiance)
+;                               (destroy-texture ray-scatter)
+;                               (destroy-texture transmittance)
+;                               (destroy-texture normals)
+;                               (destroy-texture colors)
+;                               (destroy-vertex-array-object vao)
+;                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
+;         ?colors   ?albedo ?a ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
+;         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
+;         "pattern" PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
+;         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
+;         "white"   0.9     1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
+;         "white"   0.9     2  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "amplify"
+;         "white"   PI      1  radius       1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
+;         "white"   PI      1  radius       1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
+;         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
+;         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
+;         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
+;         "white"   PI      1  radius       1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0  -1   "reflection3"
+;         "white"   PI      1  radius       1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
+;         "white"   PI      1  radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
+;         "white"   PI      1  radius       1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter"
+;         "white"   PI      1  (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")
