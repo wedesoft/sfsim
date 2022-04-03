@@ -364,48 +364,49 @@ void main()
          0    0  0   0.5 5.0
          0    0  0.5 0.5 7.0)
 
-;(def ray-scatter-forward-probe
-;  (template/fn [x y z dx dy dz lx ly lz power selector] "#version 410 core
-;out lowp vec3 fragColor;
-;vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
-;                         float power, bool sky, bool ground);
-;void main()
-;{
-;  vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-;                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, <%= power %>, false, false);
-;  fragColor.r = result.<%= selector %>;
-;  fragColor.g = 0;
-;  fragColor.b = 0;
-;}"))
-;
-;(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
-;                                           clip-angle oriented-matrix orthogonal-vector))
-;
-;(let [angle (* 0.375 PI)
-;      ca    (cos angle)
-;      sa    (sin angle)
-;      r     6378000
-;      h     100000]
-;  (tabular "Get 4D lookup index for ray scattering"
-;           (fact (mget (ray-scatter-forward-test ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?power ?sel) 0) => (roughly (/ ?result 16) 1e-3))
-;           ?x       ?y ?z ?dx  ?dy ?dz  ?lx    ?ly ?lz  ?power ?sel ?result
-;           r        0  0  1    0   0    1      0   0    1.0    "w"   0.0
-;           (+ r h)  0  0  1    0   0    1      0   0    1.0    "w"  16.0
-;           r        0  0  1    0   0    1      0   0    1.0    "z"   0.0
-;           r        0  0  1e-6 1   0    1      0   0    1.0    "z"   8.0
-;           r        0  0 -1e-6 1   0    1      0   0    1.0    "z"   9.0
-;           (+ r 25) 0  0 -1e-6 1   0    1      0   0    1.0    "z"   8.0
-;           r        0  0  ca   sa  0    1      0   0    1.0    "z"   6.0
-;           r        0  0  ca   sa  0    1      0   0    2.0    "z"   4.0
-;           r        0  0  1    0   0    1      0   0    1.0    "y"   0.0
-;           r        0  0  1    0   0    1e-6   1   0    1.0    "y"   8.0
-;           r        0  0  1    0   0   -1e-6   1   0    1.0    "y"   9.0
-;           (+ r 25) 0  0  1    0   0   -1e-6   1   0    1.0    "y"   8.0
-;           r        0  0  1    0   0    ca     sa  0    1.0    "y"   6.0
-;           r        0  0  1    0   0    ca     sa  0    2.0    "y"   4.0
-;           r        0  0  0    1   0    0      1   0    1.0    "x"   0.0
-;           r        0  0  0    1   0    0      0   1    1.0    "x"   8.0
-;           r        0  0  0    1   0    0      0  -1    1.0    "x"   8.0
-;           r        0  0  0    0   1    0      0   1    1.0    "x"   0.0
-;           r        0  0  0   -1   1e-6 0     -1  -1e-6 1.0    "x"   0.0
-;           0        r  0  ca   0   sa   (- sa) 0   ca   1.0    "x"   8.0))
+(def ray-scatter-forward-probe
+  (template/fn [x y z dx dy dz lx ly lz power above selector] "#version 410 core
+out lowp vec3 fragColor;
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
+                         float power, bool above_horizon);
+void main()
+{
+  vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
+                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, <%= power %>,
+                                    <%= above %>);
+  fragColor.r = result.<%= selector %>;
+  fragColor.g = 0;
+  fragColor.b = 0;
+}"))
+
+(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
+                                           clip-angle oriented-matrix orthogonal-vector sky-or-ground))
+
+(let [angle (* 0.375 PI)
+      ca    (cos angle)
+      sa    (sin angle)
+      r     6378000
+      h     100000]
+  (tabular "Get 4D lookup index for ray scattering"
+           (fact (mget (ray-scatter-forward-test ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?power ?above ?sel) 0)
+                 => (roughly (/ ?result 16) 1e-3))
+           ?x       ?y ?z ?dx  ?dy ?dz  ?lx    ?ly ?lz  ?power ?above ?sel ?result
+           r        0  0  1    0   0    1      0   0    1.0    true   "w"   0.0
+           (+ r h)  0  0  1    0   0    1      0   0    1.0    true   "w"  16.0
+           r        0  0  1    0   0    1      0   0    1.0    true   "z"   0.0
+           r        0  0  0    1   0    1      0   0    1.0    true   "z"   8.0
+           r        0  0  0    1   0    1      0   0    1.0    false  "z"   9.0
+           r        0  0  ca   sa  0    1      0   0    1.0    true   "z"   6.0
+           r        0  0  ca   sa  0    1      0   0    2.0    true   "z"   4.0
+           r        0  0  1    0   0    1      0   0    1.0    true   "y"   0.0
+           r        0  0  1    0   0    1e-3   1   0    1.0    true   "y"   8.0
+           r        0  0  1    0   0   -1e-3   1   0    1.0    true   "y"   9.0
+           (+ r 25) 0  0  1    0   0   -1e-3   1   0    1.0    true   "y"   8.0
+           r        0  0  1    0   0    ca     sa  0    1.0    true   "y"   6.0
+           r        0  0  1    0   0    ca     sa  0    2.0    true   "y"   4.0
+           r        0  0  0    1   0    0      1   0    1.0    true   "x"   0.0
+           r        0  0  0    1   0    0      0   1    1.0    true   "x"   8.0
+           r        0  0  0    1   0    0      0  -1    1.0    true   "x"   8.0
+           r        0  0  0    0   1    0      0   1    1.0    true   "x"   0.0
+           r        0  0  0   -1   1e-6 0     -1  -1e-6 1.0    true   "x"   0.0
+           0        r  0  ca   0   sa   (- sa) 0   ca   1.0    true   "x"   8.0))
