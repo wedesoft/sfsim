@@ -201,33 +201,34 @@ void main()
          0  0   0.123  1.123 "pq"      (+ 0.5 17)        (+ 0.5 (* 2 17))
          0  0   0.123 16.123 "pq"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)))
 
-;(def transmittance-forward-probe
-;  (template/fn [x y z dx dy dz power] "#version 410 core
-;out lowp vec3 fragColor;
-;vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power, bool sky,
-;                           bool ground);
-;void main()
-;{
-;  fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-;                                       6378000.0, 100000, 17, <%= power %>, false, false);
-;  fragColor.b = 0;
-;}"))
-;
-;(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
-;
-;(let [angle (* 0.375 PI)
-;      ca    (cos angle)
-;      sa    (sin angle)]
-;  (tabular "Convert point and direction to 2D lookup index in transmittance table"
-;           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power) => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
-;           ?x      ?y ?z ?dx  ?dy ?dz ?power ?u  ?v
-;           6378000 0  0  1    0   0   1      0.0  0.0
-;           6478000 0  0  1    0   0   1      0.0 16.0
-;           6378000 0  0  1e-6 1   0   1      8.0  0.0
-;           6378000 0  0 -1e-6 1   0   1      9.0  0.0
-;           6378025 0  0 -1e-6 1   0   1      8.0  0.0
-;           6378000 0  0  ca   sa  0   1      6.0  0.0
-;           6378000 0  0  ca   sa  0   2      4.0  0.0))
+(def transmittance-forward-probe
+  (template/fn [x y z dx dy dz power above] "#version 410 core
+out lowp vec3 fragColor;
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power,
+                           bool above_horizon);
+void main()
+{
+  fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
+                                       6378000.0, 100000, 17, <%= power %>, <%= above %>);
+  fragColor.b = 0;
+}"))
+
+(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
+
+(let [angle (* 0.375 PI)
+      ca    (cos angle)
+      sa    (sin angle)]
+  (tabular "Convert point and direction to 2D lookup index in transmittance table"
+           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power ?above)
+                 => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
+           ?x      ?y ?z ?dx  ?dy ?dz ?power ?above ?u  ?v
+           6378000 0  0  1    0   0   1      true   0.0  0.0
+           6478000 0  0  1    0   0   1      true   0.0 16.0
+           6378000 0  0  1e-6 1   0   1      true   8.0  0.0
+           6378000 0  0 -1e-6 1   0   1      false  9.0  0.0
+           6378025 0  0 -1e-6 1   0   1      true   8.0  0.0
+           6378000 0  0  ca   sa  0   1      true   6.0  0.0
+           6378000 0  0  ca   sa  0   2      true   4.0  0.0))
 
 (defn lookup-2d-test [probe & shaders]
   (fn [& args]
