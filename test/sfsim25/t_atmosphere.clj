@@ -482,30 +482,30 @@ void main()
             (destroy-program program)))
         @result)))
 
-;(def transmittance-track-probe
-;  (template/fn [px py pz qx qy qz] "#version 410 core
-;uniform sampler2D transmittance;
-;out lowp vec3 fragColor;
-;vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int size, float power, vec3 p, vec3 q);
-;void main()
-;{
-;  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
-;  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-;  fragColor = transmittance_track(transmittance, 6378000, 100000, 17, 1, p, q);
-;}"))
-;
-;(def transmittance-track-test (transmittance-shader-test transmittance-track-probe transmittance-track
-;                                                         shaders/transmittance-forward shaders/horizon-angle
-;                                                         shaders/elevation-to-index shaders/interpolate-2d
-;                                                         shaders/convert-2d-index shaders/sky-or-ground))
-;
-;(tabular "Shader function to compute transmittance between two points in the atmosphere"
-;         (fact (mget (transmittance-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => (roughly ?result 1e-6))
-;         ?px ?py ?pz     ?qx ?qy ?qz     ?result
-;         0   0   6478000 0   0   6478000 1
-;         0   0   6428000 0   0   6478000 0.5
-;         0   0   6453000 0   0   6478000 0.75
-;         0   0   6428000 0   0   6453000 (/ 0.5 0.75))
+(def transmittance-track-probe
+  (template/fn [px py pz qx qy qz] "#version 410 core
+uniform sampler2D transmittance;
+out lowp vec3 fragColor;
+vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int size, float power, vec3 p, vec3 q);
+void main()
+{
+  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
+  fragColor = transmittance_track(transmittance, 6378000, 100000, 17, 1, p, q);
+}"))
+
+(def transmittance-track-test (transmittance-shader-test transmittance-track-probe transmittance-track
+                                                         shaders/transmittance-forward shaders/horizon-angle
+                                                         shaders/elevation-to-index shaders/interpolate-2d
+                                                         shaders/convert-2d-index shaders/sky-or-ground))
+
+(tabular "Shader function to compute transmittance between two points in the atmosphere"
+         (fact (mget (transmittance-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => (roughly ?result 1e-6))
+         ?px ?py ?pz     ?qx ?qy ?qz     ?result
+         0   0   6478000 0   0   6478000 1
+         0   0   6428000 0   0   6478000 0.5
+         0   0   6453000 0   0   6478000 0.75
+         0   0   6428000 0   0   6453000 (/ 0.5 0.75))
 
 (defn ray-scatter-shader-test [probe & shaders]
   (fn [& args]
