@@ -1,5 +1,4 @@
 # TODO
-* reenable fragment shader tests for planet
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * rename sky\_or\_ground to is\_above\_horizon
 * change shader functions to use sky boolean
