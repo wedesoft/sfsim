@@ -301,19 +301,19 @@ void main()
 
 (def ground-radiance-test (radiance-shader-test ground-radiance-probe ground-radiance shaders/transmittance-forward
                                                 shaders/horizon-angle shaders/elevation-to-index shaders/interpolate-2d
-                                                shaders/convert-2d-index))
+                                                shaders/convert-2d-index shaders/sky-or-ground))
 
-;(tabular "Shader function to compute light emitted from ground"
-;         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) PI)
-;               => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
-;         ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
-;         1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
-;         1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-;         0.9     0  0  6378000  1              0          0   0   1   0      1   1   1   0.9         0  0.9
-;         1       0  0  6378000  0              0          1   0   0   0      1   1   1   0           0  1.0
-;         1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
-;         1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
-;         1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8)
+(tabular "Shader function to compute light emitted from ground"
+         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) PI)
+               => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+         ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
+         1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
+         1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
+         0.9     0  0  6378000  1              0          0   0   1   0      1   1   1   0.9         0  0.9
+         1       0  0  6378000  0              0          1   0   0   0      1   1   1   0           0  1.0
+         1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
+         1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
+         1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8)
 
 (def vertex-planet-probe "#version 410 core
 in highp vec3 point;
