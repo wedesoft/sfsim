@@ -25,7 +25,7 @@
 
 (def radius 6378000.0)
 (def polar-radius 6357000.0)
-(def max-height 35000.0)
+(def max-height (* 50 35000.0))
 (def tilesize 33)
 (def color-tilesize 129)
 

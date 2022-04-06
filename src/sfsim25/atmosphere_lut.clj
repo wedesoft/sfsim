@@ -1,6 +1,6 @@
 (ns sfsim25.atmosphere-lut
     "Compute lookup tables for atmospheric scattering"
-    (:require [clojure.core.matrix :refer (matrix add)]
+    (:require [clojure.core.matrix :refer (matrix add div)]
               [sfsim25.atmosphere :refer :all]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
@@ -8,17 +8,17 @@
     (:import [mikera.vectorz Vector]))
 
 (def radius 6378000.0)
-(def height 35000.0)
+(def height (* 50 35000.0))
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
                             :radius radius
                             :sfsim25.atmosphere/height height
                             :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5])
-                              :scatter-scale 1200
+(def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) 50)
+                              :scatter-scale (* 50 1200)
                               :scatter-g 0.76
                               :scatter-quotient 0.9})
-(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
-                                   :scatter-scale 8000})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) 50)
+                                   :scatter-scale (* 50 8000)})
 
 (defn -main
   "Program to generate lookup tables for atmospheric scattering"

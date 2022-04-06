@@ -256,7 +256,7 @@
   [point in-level width radius1 radius2]
   (let [iteration (fn [scaled iter]
                     (let [[lon lat] (cartesian->geodetic scaled radius1 radius2)
-                          height    (max (elevation-geodetic in-level width lon lat) 0)
+                          height    (* 100 (max (elevation-geodetic in-level width lon lat) 0))
                           elevated  (geodetic->cartesian lon lat height radius1 radius2)]
                       (if (or (< (norm (sub scaled elevated)) 1e-6) (>= iter 10))
                         scaled
