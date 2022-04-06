@@ -13,7 +13,11 @@ vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_ra
 {
   bool above = sky_or_ground(radius, point, light_direction);
   vec2 uv = transmittance_forward(point, light_direction, radius, max_height, size, power, above);
-  vec3 direct_light = interpolate_2d(transmittance, size, uv).rgb;
+  vec3 direct_light;
+  if (above)
+    direct_light = interpolate_2d(transmittance, size, uv).rgb;
+  else
+    direct_light = vec3(0, 0, 0);
   vec3 ambient_light = interpolate_2d(surface_radiance, size, uv).rgb;
   vec3 color = land_color * (1 - water) + water_color * water;
   return (albedo / M_PI) * color * (cos_incidence * direct_light + ambient_light) + (water * reflectivity * highlight) * direct_light;

@@ -31,9 +31,9 @@
 
 (def light1 (atom -0.08))
 (def light2 (atom 0))
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 10)])))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 1000)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
-(def z-near 5)
+(def z-near 1000)
 (def z-far (* 2.0 radius))
 
 (def keystates (atom {}))
@@ -55,7 +55,7 @@
                 :fragment [fragment-atmosphere shaders/ray-sphere shaders/transmittance-forward shaders/horizon-angle
                            shaders/ray-scatter-forward shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d
                            shaders/orthogonal-vector shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d
-                           shaders/convert-2d-index]))
+                           shaders/convert-2d-index shaders/sky-or-ground]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
