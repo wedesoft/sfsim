@@ -21,24 +21,19 @@
 
 (def d (sqrt (- (pow (+ radius height) 2) (pow radius 2))))
 
-(def p (matrix [(* -1 d) 0 (+ radius 1000)]))
-(def q (matrix [0 0 (+ radius 1000)]))
-(def dist (norm (sub q p)))
-(def direction (div (sub q p) dist))
+(def v 10000)
+(def p (matrix [(* -1 d) 0 (- radius v)]))
+(def q (matrix [(* -0.5 d) 0 (- radius v)]))
 
-(def t1 (transmittance-planet p direction))
-(def t2 (transmittance-planet q direction))
-(div t1 t2)
+(defn Tt [p q above]
+  (let [direction (normalize (sub q p))]
+    (div (T p direction above) (T q direction above))))
+(defn St [p q l above]
+  (let [direction (normalize (sub q p))]
+    (sub (S p direction l above) (mul (Tt p q above) (S q direction l above)))))
 
-(def t1 (T p direction))
-(def t2 (T q direction))
-(div t1 t2)
+(Tt p q true)
+(Tt p q false)
 
-((elevation-to-index earth size power) p direction)
-((elevation-to-index earth size power) q direction)
-
-(horizon-angle earth p)
-(horizon-angle earth q)
-
-((index-to-elevation earth size power) 0 7)
-((index-to-elevation earth size power) 0 8)
+(St p q l true)
+(St p q l false)
