@@ -1,50 +1,39 @@
-(require '[clojure.core.matrix :refer (matrix add mul div sub mmul inverse)]
+(require '[clojure.core.matrix :refer (matrix div sub)]
          '[clojure.core.matrix.linear :refer (norm)]
-         '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
-         '[clojure.math :refer (PI cos sin sqrt pow to-radians)]
-         '[sfsim25.matrix :refer :all]
-         '[sfsim25.quaternion :as q]
-         '[sfsim25.render :refer :all]
-         '[sfsim25.shaders :as shaders]
-         '[sfsim25.planet :refer :all]
-         '[sfsim25.quadtree :refer :all]
+         '[clojure.math :refer (sqrt pow)]
          '[sfsim25.atmosphere :refer :all]
-         '[sfsim25.interpolate :refer :all]
-         '[sfsim25.planet :refer :all]
-         '[sfsim25.util :refer :all])
+         '[sfsim25.interpolate :refer :all])
 
 (def radius 6378000.0)
-(def height (* 50 35000.0))
+(def height 2000000)
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) 50) :scatter-scale (* 50 1200) :scatter-g 0.76 :scatter-quotient 0.9})
-(def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) 50) :scatter-scale (* 50 8000)})
+(def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) 50) :scatter-scale 70000 :scatter-g 0.76 :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) 50) :scatter-scale 450000})
+
 (def scatter [mie rayleigh])
+(def ray-steps 1000)
+(def transmittance-planet (partial transmittance earth scatter ray-extremity ray-steps))
+
+(def size 15)
 (def power 2)
-
-(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def size (int (sqrt (/ (count data) 3))))
 (def transmittance-space-planet (transmittance-space earth size power))
-(def T (interpolation-table (partition size (map matrix (partition 3 data))) transmittance-space-planet))
-
-(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def size (int (pow (/ (count data) 3) 0.25)))
-(def ray-scatter-space-planet (ray-scatter-space earth size power))
-(def S (interpolation-table (convert-2d-to-4d (mapv vec (partition (* size size) (map matrix (partition 3 data))))) ray-scatter-space-planet))
+(def T (interpolate-function transmittance-planet transmittance-space-planet))
 
 (def d (sqrt (- (pow (+ radius height) 2) (pow radius 2))))
 
-(def p (matrix [(* -1 d) 0 radius]))
-(def q (matrix [0 0 radius]))
-(def dist (norm (sub q p)))
-(def direction (div (sub q p) dist))
+(def v 10000)
+(def p (matrix [(* -1 d) 0 (- radius v)]))
+(def q (matrix [(* -0.5 d) 0 (- radius v)]))
 
-(def t1 (T p direction true))
-(def t2 (T q direction true))
-(div t1 t2)
-(T p direction false)
+(defn Tt [p q above]
+  (let [direction (normalize (sub q p))]
+    (div (T p direction above) (T q direction above))))
+(defn St [p q l above]
+  (let [direction (normalize (sub q p))]
+    (sub (S p direction l above) (mul (Tt p q above) (S q direction l above)))))
 
-(def l (matrix [(cos (/ PI 6)) 0 (sin (/ PI 6))]))
-(def s1 (S p direction l true))
-(def s2 (S q direction l true))
-(sub s1 (mul (div t1 t2) s2))
-(S p direction l false)
+(Tt p q true)
+(Tt p q false)
+
+(St p q l true)
+(St p q l false)
