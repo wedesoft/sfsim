@@ -1,6 +1,6 @@
 (require '[clojure.core.matrix :refer (matrix div sub mul add)]
          '[clojure.core.matrix.linear :refer (norm)]
-         '[clojure.math :refer (sqrt pow)]
+         '[clojure.math :refer (PI sqrt pow cos sin)]
          '[com.climate.claypoole :as cp]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.sphere :refer (ray-sphere-intersection)]
@@ -60,9 +60,11 @@
                             (* (+ radius height) (/ (- y (/ h 2)) (/ h 2))) (* -2 radius)])
                  d (matrix [0 0 1])
                  a {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius (+ radius height)}
+                 e {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius radius}
                  r {:sfsim25.ray/origin o :sfsim25.ray/direction d}
                  i (ray-sphere-intersection a r)
+                 b (> (:sfsim25.intersection/length (ray-sphere-intersection e r)) 0)
                  p (add o (mul (:sfsim25.intersection/distance i) d))
-                 s (S p d l false)]
+                 s (if (> (:sfsim25.intersection/length i) 0) (S p d l b) (matrix [0 0 0]))]
              (set-pixel! img y x (mul 255 s))))
 (show-image img)
