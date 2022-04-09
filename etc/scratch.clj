@@ -11,11 +11,11 @@
 (def radius 6378000.0)
 (def height (* 50 35000.0))
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) 50) :scatter-scale 70000 :scatter-g 0.76 :scatter-quotient 0.9})
-(def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) 50) :scatter-scale 450000})
+(def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) 50) :scatter-scale (* 50 1200) :scatter-g 0.76 :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) 50) :scatter-scale (* 50 8000)})
 
 (def scatter [mie rayleigh])
-(def ray-steps 1000)
+(def ray-steps 100)
 (def transmittance-planet (partial transmittance earth scatter ray-extremity ray-steps))
 
 (def size 15)
@@ -23,12 +23,14 @@
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def size (int (sqrt (/ (count data) 3))))
 (def transmittance-space-planet (transmittance-space earth size power))
-(def T (interpolation-table (partition size (map matrix (partition 3 data))) transmittance-space-planet))
-
+(def T (interpolation-table (partition size (map (comp matrix reverse) (partition 3 data))) transmittance-space-planet))
+(def TT (partial transmittance earth scatter ray-steps))
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def size (int (pow (/ (count data) 3) 0.25)))
 (def ray-scatter-space-planet (ray-scatter-space earth size power))
-(def S (interpolation-table (convert-2d-to-4d (mapv vec (partition (* size size) (map matrix (partition 3 data))))) ray-scatter-space-planet))
+(def S (interpolation-table (convert-2d-to-4d (mapv vec (partition (* size size) (map (comp matrix reverse) (partition 3 data))))) ray-scatter-space-planet))
+(def point-scatter-base-planet (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
+(def SS (partial ray-scatter earth scatter ray-steps point-scatter-base-planet))
 
 (def d (sqrt (- (pow (+ radius height) 2) (pow radius 2))))
 
@@ -52,8 +54,8 @@
 (St p q l true)
 (St p q l false)
 
-(def w 640)
-(def h 480)
+(def w 320)
+(def h 240)
 (def img {:width w :height h :data (int-array (* w h))})
 
 (defn swap-rgb [c] (matrix [(mget c 2) (mget c 1) (mget c 0)]))
@@ -71,8 +73,8 @@
                           i (ray-sphere-intersection a r)
                           b (> (:sfsim25.intersection/length (ray-sphere-intersection e r)) 0)
                           p (add o (mul (:sfsim25.intersection/distance i) d))
-                          s (if (> (:sfsim25.intersection/length i) 0) (S p d l b) (matrix [0 0 0]))]
-                      (set-pixel! img y x (swap-rgb (mul 255 s))))))
+                          s (if (> (:sfsim25.intersection/length i) 0) (if (>= y (/ h 2)) (SS p d l b) (S p d l b)) (matrix [0 0 0]))]
+                      (set-pixel! img y x (mul 255 s)))))
        (spit-image (format "test%02d.png" @n) img)
        (swap! n + 1))
 ;(show-image img)
