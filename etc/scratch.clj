@@ -1,4 +1,4 @@
-(require '[clojure.core.matrix :refer (matrix div sub mul add)]
+(require '[clojure.core.matrix :refer (matrix div sub mul add mget)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[clojure.math :refer (PI sqrt pow cos sin)]
          '[com.climate.claypoole :as cp]
@@ -9,7 +9,7 @@
          '[sfsim25.util :refer :all])
 
 (def radius 6378000.0)
-(def height 2000000)
+(def height (* 50 35000.0))
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
 (def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) 50) :scatter-scale 70000 :scatter-g 0.76 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) 50) :scatter-scale 450000})
@@ -43,7 +43,8 @@
   (let [direction (normalize (sub q p))]
     (sub (S p direction l above) (mul (Tt p q above) (S q direction l above)))))
 
-(def l (matrix [(cos (/ PI 6)) 0 (sin (/ PI 6))]))
+(def angle (* 0.7 PI))
+(def l (matrix [(sin angle) 0 (- (cos angle))]))
 
 (Tt p q true)
 (Tt p q false)
@@ -55,16 +56,23 @@
 (def h 480)
 (def img {:width w :height h :data (int-array (* w h))})
 
-(cp/pdoseq (+ (cp/ncpus) 2) [y (range h) x (range w)]
-           (let [o (matrix [(* (+ radius height) (/ (- x (/ w 2)) (/ h 2)))
-                            (* (+ radius height) (/ (- y (/ h 2)) (/ h 2))) (* -2 radius)])
-                 d (matrix [0 0 1])
-                 a {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius (+ radius height)}
-                 e {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius radius}
-                 r {:sfsim25.ray/origin o :sfsim25.ray/direction d}
-                 i (ray-sphere-intersection a r)
-                 b (> (:sfsim25.intersection/length (ray-sphere-intersection e r)) 0)
-                 p (add o (mul (:sfsim25.intersection/distance i) d))
-                 s (if (> (:sfsim25.intersection/length i) 0) (S p d l b) (matrix [0 0 0]))]
-             (set-pixel! img y x (mul 255 s))))
-(show-image img)
+(defn swap-rgb [c] (matrix [(mget c 2) (mget c 1) (mget c 0)]))
+
+(def n (atom 0))
+(doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
+       (let [l (matrix [(sin angle) 0 (- (cos angle))])]
+         (cp/pdoseq (+ (cp/ncpus) 2) [y (range h) x (range w)]
+                    (let [o (matrix [(* (+ radius height) (/ (- x (/ w 2)) (/ h 2)))
+                                     (* (+ radius height) (/ (- y (/ h 2)) (/ h 2))) (* -2 radius)])
+                          d (matrix [0 0 1])
+                          a {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius (+ radius height)}
+                          e {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius radius}
+                          r {:sfsim25.ray/origin o :sfsim25.ray/direction d}
+                          i (ray-sphere-intersection a r)
+                          b (> (:sfsim25.intersection/length (ray-sphere-intersection e r)) 0)
+                          p (add o (mul (:sfsim25.intersection/distance i) d))
+                          s (if (> (:sfsim25.intersection/length i) 0) (S p d l b) (matrix [0 0 0]))]
+                      (set-pixel! img y x (swap-rgb (mul 255 s))))))
+       (spit-image (format "test%02d.png" @n) img)
+       (swap! n + 1))
+;(show-image img)
