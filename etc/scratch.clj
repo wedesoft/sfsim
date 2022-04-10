@@ -61,8 +61,8 @@
 
 (def n (atom 0))
 (
-; doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
-let [angle (* 0.7 PI)]
+doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
+;let [angle (* 0.7 PI)]
        (let [l (matrix [(sin angle) 0 (- (cos angle))])]
          (cp/pdoseq (+ (cp/ncpus) 2) [y (range h) x (range w)]
                     (let [o (matrix [(* (+ radius height) (/ (- x (/ w 2)) (/ h 2)))
@@ -72,10 +72,10 @@ let [angle (* 0.7 PI)]
                           e {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius radius}
                           r {:sfsim25.ray/origin o :sfsim25.ray/direction d}
                           i (ray-sphere-intersection a r)
-                          b (> (:sfsim25.intersection/length (ray-sphere-intersection e r)) 0)
+                          b (zero? (:sfsim25.intersection/length (ray-sphere-intersection e r)))
                           p (add o (mul (:sfsim25.intersection/distance i) d))
-                          s (if (> (:sfsim25.intersection/length i) 0) (if (> y (/ h 2)) (SS p d l b) (S p d l b)) (matrix [0 0 0]))]
-                      (set-pixel! img y x (mul 255 s)))))
-       ;(spit-image (format "test%02d.png" @n) img)
-       (show-image img)
+                          s (if (> (:sfsim25.intersection/length i) 0) (if (> y (/ h 2)) (S p d l b) (S p d l b)) (matrix [0 0 0]))]
+                      (set-pixel! img y x (mul 6 255 s)))))
+       (spit-image (format "test%02d.png" @n) img)
+       ;(show-image img)
        (swap! n + 1))
