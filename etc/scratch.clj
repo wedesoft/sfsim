@@ -55,27 +55,36 @@
 (St p q l true)
 (St p q l false)
 
-(def w 320)
-(def h 240)
+(def w 1024)
+(def h 768)
 (def img {:width w :height h :data (int-array (* w h))})
 
 (def n (atom 0))
 (
-doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
-;let [angle (* 0.7 PI)]
+;doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
+let [angle (* 0.7 PI)]
        (let [l (matrix [(sin angle) 0 (- (cos angle))])]
          (cp/pdoseq (+ (cp/ncpus) 2) [y (range h) x (range w)]
-                    (let [o (matrix [(* (+ radius height) (/ (- x (/ w 2)) (/ h 2)))
-                                     (* (+ radius height) (/ (- y (/ h 2)) (/ h 2))) (* -2 radius)])
+                    (let [xx (* (+ radius height) (/ (- x (/ w 2)) (/ h 2)))
+                          yy (* (+ radius height) (/ (- y (/ h 2)) (/ h 2)))
+                          o (matrix [xx yy (* -2 radius)])
                           d (matrix [0 0 1])
+                          z (* yy 0.3)
                           a {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius (+ radius height)}
                           e {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius radius}
                           r {:sfsim25.ray/origin o :sfsim25.ray/direction d}
                           i (ray-sphere-intersection a r)
-                          b (zero? (:sfsim25.intersection/length (ray-sphere-intersection e r)))
+                          j (ray-sphere-intersection e r)
+                          b (zero? (:sfsim25.intersection/length j))
                           p (add o (mul (:sfsim25.intersection/distance i) d))
-                          s (if (> (:sfsim25.intersection/length i) 0) (if (> y (/ h 2)) (S p d l b) (S p d l b)) (matrix [0 0 0]))]
+                          q (if b
+                              (add o (mul (+ (:sfsim25.intersection/distance i) (:sfsim25.intersection/length i)) d))
+                              (add o (mul (:sfsim25.intersection/distance j) d)))
+                          qq (if (< z (mget q 2)) (matrix [xx yy z]) q)
+                          s (if (and (> (:sfsim25.intersection/length i) 0) (> (mget qq 2) (mget p 2)))
+                              (St p qq l b)
+                              (matrix [0 0 0]))]
                       (set-pixel! img y x (mul 6 255 s)))))
-       (spit-image (format "test%02d.png" @n) img)
-       ;(show-image img)
+       ;(spit-image (format "test%02d.png" @n) img)
+       (show-image img)
        (swap! n + 1))
