@@ -31,6 +31,7 @@
 (def S (interpolation-table (convert-2d-to-4d (mapv vec (partition (* size size) (map (comp matrix reverse) (partition 3 data))))) ray-scatter-space-planet))
 (def point-scatter-base-planet (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
 (def SS (partial ray-scatter earth scatter ray-steps point-scatter-base-planet))
+;(def S (interpolate-function SS ray-scatter-space-planet))
 
 (def d (sqrt (- (pow (+ radius height) 2) (pow radius 2))))
 
@@ -58,10 +59,10 @@
 (def h 240)
 (def img {:width w :height h :data (int-array (* w h))})
 
-(defn swap-rgb [c] (matrix [(mget c 2) (mget c 1) (mget c 0)]))
-
 (def n (atom 0))
-(doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
+(
+; doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
+let [angle (* 0.7 PI)]
        (let [l (matrix [(sin angle) 0 (- (cos angle))])]
          (cp/pdoseq (+ (cp/ncpus) 2) [y (range h) x (range w)]
                     (let [o (matrix [(* (+ radius height) (/ (- x (/ w 2)) (/ h 2)))
@@ -73,8 +74,8 @@
                           i (ray-sphere-intersection a r)
                           b (> (:sfsim25.intersection/length (ray-sphere-intersection e r)) 0)
                           p (add o (mul (:sfsim25.intersection/distance i) d))
-                          s (if (> (:sfsim25.intersection/length i) 0) (if (>= y (/ h 2)) (SS p d l b) (S p d l b)) (matrix [0 0 0]))]
+                          s (if (> (:sfsim25.intersection/length i) 0) (if (> y (/ h 2)) (SS p d l b) (S p d l b)) (matrix [0 0 0]))]
                       (set-pixel! img y x (mul 255 s)))))
-       (spit-image (format "test%02d.png" @n) img)
+       ;(spit-image (format "test%02d.png" @n) img)
+       (show-image img)
        (swap! n + 1))
-;(show-image img)
