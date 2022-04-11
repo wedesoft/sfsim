@@ -1,8 +1,9 @@
-(require '[clojure.core.matrix :refer (matrix div sub mul add mget)]
+(require '[clojure.core.matrix :refer (matrix div sub mul add mget) :as m]
          '[clojure.core.matrix.linear :refer (norm)]
          '[clojure.math :refer (PI sqrt pow cos sin)]
          '[com.climate.claypoole :as cp]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.ray :refer :all]
          '[sfsim25.sphere :refer (ray-sphere-intersection)]
          '[sfsim25.interpolate :refer :all]
          '[sfsim25.matrix :refer :all]
@@ -46,6 +47,12 @@
   (let [direction (normalize (sub q p))]
     (sub (S p direction l above) (mul (Tt p q above) (S q direction l above)))))
 
+(defn SSt
+  [x q light-direction above-horizon]
+  (let [ray            {:sfsim25.ray/origin x :sfsim25.ray/direction (sub q x)}
+        view-direction (normalize (sub q x))]
+    (integral-ray ray ray-steps 1.0 #(mul (transmittance earth scatter ray-steps x %) (point-scatter-base-planet % view-direction light-direction above-horizon)))))
+
 (def angle (* 0.7 PI))
 (def l (matrix [(sin angle) 0 (- (cos angle))]))
 
@@ -60,6 +67,9 @@
 (def img {:width w :height h :data (int-array (* w h))})
 
 (def n (atom 0))
+
+(defn clipmatrix [m] (matrix [(min 255 (max 0 (mget m 0))) (min 255 (max 0 (mget m 1))) (min 255 (max 0 (mget m 2)))]))
+
 (
 ;doseq [angle (range (* 0 PI) (* 2.0 PI) (* 0.05 PI))]
 let [angle (* 0.7 PI)]
@@ -69,7 +79,7 @@ let [angle (* 0.7 PI)]
                           yy (* (+ radius height) (/ (- y (/ h 2)) (/ h 2)))
                           o (matrix [xx yy (* -2 radius)])
                           d (matrix [0 0 1])
-                          z (* yy 0.3)
+                          z (if (> yy 0) radius (* (- xx) 0.4))
                           a {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius (+ radius height)}
                           e {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius radius}
                           r {:sfsim25.ray/origin o :sfsim25.ray/direction d}
@@ -82,9 +92,22 @@ let [angle (* 0.7 PI)]
                               (add o (mul (:sfsim25.intersection/distance j) d)))
                           qq (if (< z (mget q 2)) (matrix [xx yy z]) q)
                           s (if (and (> (:sfsim25.intersection/length i) 0) (> (mget qq 2) (mget p 2)))
-                              (St p qq l b)
+                              (if (or (> yy 0) (< yy (* -0.2 radius))) (St p qq l b) (SSt p qq l b))
                               (matrix [0 0 0]))]
-                      (set-pixel! img y x (mul 6 255 s)))))
+                      (set-pixel! img y x (clipmatrix (mul 20 255 s))))))
        ;(spit-image (format "test%02d.png" @n) img)
        (show-image img)
        (swap! n + 1))
+
+(def xx (+ radius 20000))
+(def o (matrix [xx 0 (* -2 radius)]))
+(def a {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius (+ radius height)})
+(def d (matrix [0 0 1]))
+(def r {:sfsim25.ray/origin o :sfsim25.ray/direction d})
+(def i (ray-sphere-intersection a r))
+(def p (add o (mul (:sfsim25.intersection/distance i) d)))
+(def z (* (- (mget o 0)) 0.4))
+(def qq (matrix [xx 0 z]))
+(def b true)
+(St p qq l b)
+(SSt p qq l b)

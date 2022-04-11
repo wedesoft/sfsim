@@ -17,8 +17,8 @@
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 640 480))
-;(Display/setFullscreen true)
+;(Display/setDisplayMode (DisplayMode. 640 480))
+(Display/setFullscreen true)
 (Display/create)
 
 (Keyboard/create)
