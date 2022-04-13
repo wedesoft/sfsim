@@ -71,7 +71,7 @@
 
 (go-loop []
          (if-let [tree (<! tree-state)]
-                 (let [increase? (partial increase-level? tilesize radius polar-radius (Display/getWidth) 60 10 3 @position)]
+                 (let [increase? (partial increase-level? tilesize radius polar-radius (Display/getWidth) 60 10 4 @position)]
                    (>! changes (update-level-of-detail tree increase? true))
                    (recur))))
 

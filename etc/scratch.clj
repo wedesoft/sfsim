@@ -2,6 +2,7 @@
          '[clojure.core.matrix.linear :refer (norm)]
          '[clojure.math :refer (PI sqrt pow cos sin)]
          '[com.climate.claypoole :as cp]
+         '[gnuplot.core :as g]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.ray :refer :all]
          '[sfsim25.sphere :refer (ray-sphere-intersection)]
@@ -9,17 +10,18 @@
          '[sfsim25.matrix :refer :all]
          '[sfsim25.util :refer :all])
 
+(def factor 1)
 (def radius 6378000.0)
-(def height (* 50 35000.0))
+(def height (* factor 35000.0))
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) 50) :scatter-scale (* 50 1200) :scatter-g 0.76 :scatter-quotient 0.9})
-(def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) 50) :scatter-scale (* 50 8000)})
+(def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) factor) :scatter-scale (* factor 1200) :scatter-g 0.76 :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) factor) :scatter-scale (* factor 8000)})
 
 (def scatter [mie rayleigh])
 (def ray-steps 100)
 (def transmittance-planet (partial transmittance earth scatter ray-extremity ray-steps))
 
-(def size 15)
+(def size 17)
 (def power 2)
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def size (int (sqrt (/ (count data) 3))))
@@ -47,8 +49,10 @@
   (let [direction (normalize (sub q p))]
     (sub (S p direction l above) (mul (Tt p q above) (S q direction l above)))))
 
-(defn SSt
-  [x q light-direction above-horizon]
+(defn TTt [p q above]
+  (transmittance earth scatter ray-steps p q))
+
+(defn SSt [x q light-direction above-horizon]
   (let [ray            {:sfsim25.ray/origin x :sfsim25.ray/direction (sub q x)}
         view-direction (normalize (sub q x))]
     (integral-ray ray ray-steps 1.0 #(mul (transmittance earth scatter ray-steps x %) (point-scatter-base-planet % view-direction light-direction above-horizon)))))
@@ -99,7 +103,8 @@ let [angle (* 0.7 PI)]
        (show-image img)
        (swap! n + 1))
 
-(def xx (+ radius 20000))
+(def delta 20000)
+(def xx (+ radius delta))
 (def o (matrix [xx 0 (* -2 radius)]))
 (def a {:sfsim25.sphere/centre (matrix [0 0 0]) :sfsim25.sphere/radius (+ radius height)})
 (def d (matrix [0 0 1]))
@@ -109,5 +114,59 @@ let [angle (* 0.7 PI)]
 (def z (* (- (mget o 0)) 0.4))
 (def qq (matrix [xx 0 z]))
 (def b true)
+(def direction (normalize (sub qq p)))
+
+(S p direction l b)
+(sub (S p direction l b) (mul (Tt p qq b) (S qq direction l b)))
+(sub (SS p direction l b) (mul (TTt p qq b) (SS qq direction l b)))
+(S p direction l b)
+(SS p direction l b)
+(S qq direction l b)
+(SS qq direction l b)
 (St p qq l b)
 (SSt p qq l b)
+(Tt p qq b)
+(TTt p qq b)
+
+(def angle (* 0.3 PI))
+(def l (matrix [(sin angle) (cos angle) 0]))
+
+(g/raw-plot! [[:set :title "compare S and SS for different angles"]
+              [:plot (g/list ["-" :title "S" :with :lines]
+                             ["-" :title "SS" :with :lines])]]
+             [(for [angle (range 0 (/ PI 2) 0.01)]
+                   [angle
+                    (mget (S (matrix [radius 0 0]) (matrix [(sin angle) (cos angle) 0]) l true) 0)])
+              (for [angle (range 0 (/ PI 2) 0.01)]
+                   [angle
+                    (mget (SS (matrix [radius 0 0]) (matrix [(sin angle) (cos angle) 0]) l true) 0)])])
+
+(g/raw-plot! [[:set :title "compare T and TT for different angles"]
+              [:plot (g/list ["-" :title "T" :with :lines]
+                             ["-" :title "TT" :with :lines])]]
+             [(for [angle (range 0 (/ PI 2) 0.01)]
+                   [angle
+                    (mget (T (matrix [radius 0 0]) (matrix [(sin angle) (cos angle) 0]) true) 0)])
+              (for [angle (range 0 (/ PI 2) 0.01)]
+                   [angle
+                    (mget (TT (matrix [radius 0 0]) (matrix [(sin angle) (cos angle) 0]) true) 0)])])
+
+(g/raw-plot! [[:set :title "compare S and SS for different heights"]
+              [:plot (g/list ["-" :title "S" :with :lines]
+                             ["-" :title "SS" :with :lines])]]
+             [(for [h (range 0 height (/ height 200))]
+                   [h
+                    (mget (S (matrix [(+ radius h) 0 0]) (matrix [0 1 0]) l true) 0)])
+              (for [h (range 0 height (/ height 200))]
+                   [h
+                    (mget (SS (matrix [(+ radius h) 0 0]) (matrix [0 1 0]) l true) 0)])])
+
+(g/raw-plot! [[:set :title "compare T and TT for different heights"]
+              [:plot (g/list ["-" :title "T" :with :lines]
+                             ["-" :title "TT" :with :lines])]]
+             [(for [h (range 0 height (/ height 200))]
+                   [h
+                    (mget (T (matrix [(+ radius h) 0 0]) (matrix [0 1 0]) true) 0)])
+              (for [h (range 0 height (/ height 200))]
+                   [h
+                    (mget (TT (matrix [(+ radius h) 0 0]) (matrix [0 1 0]) true) 0)])])
