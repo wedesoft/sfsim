@@ -385,7 +385,7 @@
        (let [radius   6378000.0
              height   100000.0
              earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-             space    (transmittance-space earth 17 1.0)
+             space    (transmittance-space earth [17 17] 1.0)
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
          (:sfsim25.interpolate/shape space)                               => [17 17]
@@ -618,7 +618,7 @@ void main()
                                    :scatter-scale 8000})
 (def scatter [mie rayleigh])
 (def transmittance-earth (partial transmittance earth scatter ray-steps))
-(def transmittance-space-earth (transmittance-space earth size power))
+(def transmittance-space-earth (transmittance-space earth [size size] power))
 (def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
 (def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
 (def ray-scatter-space-earth (ray-scatter-space earth size power))

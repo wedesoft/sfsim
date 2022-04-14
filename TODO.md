@@ -1,4 +1,6 @@
 # TODO
+* compute 129x33 table of transmittance
+* compute 33x129x65x33 table of ray scatter
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * rename sky\_or\_ground to is\_above\_horizon
 * change shader functions to use sky boolean

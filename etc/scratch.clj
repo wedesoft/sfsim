@@ -16,16 +16,15 @@
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
 (def mie #:sfsim25.atmosphere{:scatter-base (div (matrix [2e-5 2e-5 2e-5]) factor) :scatter-scale (* factor 1200) :scatter-g 0.76 :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (div (matrix [5.8e-6 13.5e-6 33.1e-6]) factor) :scatter-scale (* factor 8000)})
-
 (def scatter [mie rayleigh])
 (def ray-steps 100)
 (def transmittance-planet (partial transmittance earth scatter ray-extremity ray-steps))
 
-(def size 17)
+(def size 129)
 (def power 2)
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def size (int (sqrt (/ (count data) 3))))
-(def transmittance-space-planet (transmittance-space earth size power))
+(def transmittance-space-planet (transmittance-space earth [size size] power))
 (def T (interpolation-table (partition size (map (comp matrix reverse) (partition 3 data))) transmittance-space-planet))
 (def TT (partial transmittance earth scatter ray-steps))
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
@@ -35,6 +34,7 @@
 (def point-scatter-base-planet (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
 (def SS (partial ray-scatter earth scatter ray-steps point-scatter-base-planet))
 ;(def S (interpolate-function SS ray-scatter-space-planet))
+;(def T (interpolate-function TT transmittance-space-planet))
 
 (def d (sqrt (- (pow (+ radius height) 2) (pow radius 2))))
 
@@ -128,7 +128,7 @@ let [angle (* 0.7 PI)]
 (Tt p qq b)
 (TTt p qq b)
 
-(def angle (* 0.3 PI))
+(def angle (* 0.5 (/ 3 8) PI))
 (def l (matrix [(sin angle) (cos angle) 0]))
 
 (g/raw-plot! [[:set :title "compare S and SS for different angles"]

@@ -35,7 +35,7 @@
         power                         2.0
         scatter                       [mie rayleigh]
         transmittance-planet          (partial transmittance earth scatter ray-steps)
-        transmittance-space-planet    (transmittance-space earth size power)
+        transmittance-space-planet    (transmittance-space earth [size size] power)
         surface-radiance-base-planet  (partial surface-radiance-base earth scatter ray-steps (matrix [1 1 1]))
         surface-radiance-space-planet (surface-radiance-space earth size power)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
