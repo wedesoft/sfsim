@@ -23,25 +23,25 @@
 (defn -main
   "Program to generate lookup tables for atmospheric scattering"
   [& args]
-  (when-not (= (count args) 4)
-            (.println *err* "Syntax: lein run-atmosphere-lut [size] [ray-steps] [sphere-steps] [iterations]")
-            (.println *err* "Example: lein run-atmosphere-lut 35 100 15 5")
-            (System/exit 1))
   (.println *err* "Initialization")
-  (let [size                          (Integer/parseInt (nth args 0))
-        ray-steps                     (Integer/parseInt (nth args 1))
-        sphere-steps                  (Integer/parseInt (nth args 2))
-        iterations                    (Integer/parseInt (nth args 3))
+  (let [height-size                   9; 33
+        heading-size                  17; 65
+        elevation-size                35; 129
+        transmittance-shape           [height-size elevation-size]
+        ray-scatter-shape             [height-size elevation-size elevation-size heading-size]
+        ray-steps                     20; 100
+        sphere-steps                  7; 15
+        iterations                    1; 5
         power                         2.0
         scatter                       [mie rayleigh]
         transmittance-planet          (partial transmittance earth scatter ray-steps)
-        transmittance-space-planet    (transmittance-space earth [size size] power)
+        transmittance-space-planet    (transmittance-space earth transmittance-shape power)
         surface-radiance-base-planet  (partial surface-radiance-base earth scatter ray-steps (matrix [1 1 1]))
-        surface-radiance-space-planet (surface-radiance-space earth size power)
+        surface-radiance-space-planet (surface-radiance-space earth transmittance-shape power)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
-        point-scatter-space-planet    (point-scatter-space earth [size size size size] power)
+        point-scatter-space-planet    (point-scatter-space earth ray-scatter-shape power)
         ray-scatter-base-planet       (partial ray-scatter earth scatter ray-steps point-scatter-base-planet)
-        ray-scatter-space-planet      (ray-scatter-space earth [size size size size] power)
+        ray-scatter-space-planet      (ray-scatter-space earth ray-scatter-shape power)
         T                             (interpolate-function transmittance-planet transmittance-space-planet)
         dE                            (atom (interpolate-function surface-radiance-base-planet surface-radiance-space-planet))
         E                             (atom (constantly (matrix [0 0 0])))
