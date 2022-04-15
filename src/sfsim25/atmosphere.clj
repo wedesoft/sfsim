@@ -229,23 +229,23 @@
 
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
-  [{:sfsim25.sphere/keys [radius] :as planet} size power]
+  [{:sfsim25.sphere/keys [radius] :as planet} shape power]
   (fn [point direction light-direction above-horizon]
       (let []
-        [(height-to-index planet size point)
-         (elevation-to-index planet size power point direction above-horizon)
-         (elevation-to-index planet size power point light-direction (is-above-horizon? planet point light-direction))
-         (heading-to-index size point direction light-direction)])))
+        [(height-to-index planet (first shape) point)
+         (elevation-to-index planet (second shape) power point direction above-horizon)
+         (elevation-to-index planet (third shape) power point light-direction (is-above-horizon? planet point light-direction))
+         (heading-to-index (fourth shape) point direction light-direction)])))
 
 (defn- ray-scatter-backward
   "Backward transformation for interpolating ray scatter function"
-  [{:sfsim25.sphere/keys [radius] :as planet} size power]
+  [{:sfsim25.sphere/keys [radius] :as planet} shape power]
   (fn [height-index elevation-index sun-elevation-index sun-heading-index]
-      (let [point                     (index-to-height planet size height-index)
+      (let [point                     (index-to-height planet (first shape) height-index)
             height                    (height planet point)
-            [direction above-horizon] (index-to-elevation planet size power height elevation-index)
-            [light-elevation _]       (index-to-elevation planet size power height sun-elevation-index)
-            sun-heading               (index-to-heading size sun-heading-index)
+            [direction above-horizon] (index-to-elevation planet (second shape) power height elevation-index)
+            [light-elevation _]       (index-to-elevation planet (third shape) power height sun-elevation-index)
+            sun-heading               (index-to-heading (fourth shape) sun-heading-index)
             cos-sun-elevation         (mget light-elevation 0)
             sin-sun-elevation         (mget light-elevation 1)
             cos-sun-heading           (cos sun-heading)
@@ -257,11 +257,10 @@
 
 (defn ray-scatter-space
   "Create transformations for interpolating ray scatter function"
-  [planet size power]
-  (let [shape [size size size size]]
-    #:sfsim25.interpolate{:shape shape
-                          :forward (ray-scatter-forward planet size power)
-                          :backward (ray-scatter-backward planet size power)}))
+  [planet shape power]
+  #:sfsim25.interpolate{:shape shape
+                        :forward (ray-scatter-forward planet shape power)
+                        :backward (ray-scatter-backward planet shape power)})
 
 (def point-scatter-space ray-scatter-space)
 

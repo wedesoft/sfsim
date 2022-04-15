@@ -423,31 +423,31 @@
        (let [radius   6378000.0
              height   100000.0
              earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-             space    (ray-scatter-space earth 17 1.0)
+             space    (ray-scatter-space earth [21 19 17 15] 1.0)
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
-         (:sfsim25.interpolate/shape space) => [17 17 17 17]
+         (:sfsim25.interpolate/shape space) => [21 19 17 15]
          (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true)            => [0.0 0.0 0.0 0.0]
-         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => [16.0 0.0 0.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]) false)          => [0.0 16.0 0.0 0.0]
-         (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [0 1 0]) false)          => [0.0 16.0 0.0 0.0]
+         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => [20.0 0.0 0.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]) false)          => [0.0 18.0 0.0 0.0]
+         (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [0 1 0]) false)          => [0.0 18.0 0.0 0.0]
          (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [0 0 1]) true)            => [0.0 0.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) true)            => [0.0 8.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) false)           => [0.0 9.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]) true)           => [0.0 8.0 8.0 8.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]) true)            => [0.0 8.0 8.0 8.0]
-         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]) true)            => [0.0 8.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]) true)           => [0.0 8.0 8.0 16.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) true)            => [0.0 9.0 8.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) false)           => [0.0 10.0 8.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]) true)           => [0.0 9.0 8.0 7.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]) true)            => [0.0 9.0 8.0 7.0]
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]) true)            => [0.0 9.0 8.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]) true)           => [0.0 9.0 8.0 14.0]
          (nth (backward 0.0 0.0 0.0 0.0) 0)   => (matrix [radius 0 0])
-         (nth (backward 16.0 0.0 0.0 0.0) 0)  => (matrix [(+ radius height) 0 0])
+         (nth (backward 20.0 0.0 0.0 0.0) 0)  => (matrix [(+ radius height) 0 0])
          (nth (backward 0.0 0.0 0.0 0.0) 1)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (nth (backward 0.0 8.0 0.0 0.0) 1)   => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (nth (backward 0.0 9.0 0.0 0.0) 1)   => (roughly-matrix (matrix [0 1 0]) 1e-6)
          (nth (backward 0.0 0.0 0.0 0.0) 2)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
          (nth (backward 0.0 0.0 8.0 0.0) 2)   => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (nth (backward 0.0 0.0 8.0 8.0) 2)   => (roughly-matrix (matrix [0 0 1]) 1e-6)
-         (nth (backward 0.0 0.0 0.0 8.0) 2)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (nth (backward 0.0 8.0 0.0 0.0) 3)   => true
-         (nth (backward 0.0 9.0 0.0 0.0) 3)   => false))
+         (nth (backward 0.0 0.0 8.0 7.0) 2)   => (roughly-matrix (matrix [0 0 1]) 1e-6)
+         (nth (backward 0.0 0.0 0.0 7.0) 2)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (nth (backward 0.0 9.0 0.0 0.0) 3)   => true
+         (nth (backward 0.0 10.0 0.0 0.0) 3)   => false))
 
 (fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
       point-scatter-space => (exactly ray-scatter-space))
@@ -621,7 +621,7 @@ void main()
 (def transmittance-space-earth (transmittance-space earth [size size] power))
 (def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
 (def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
-(def ray-scatter-space-earth (ray-scatter-space earth size power))
+(def ray-scatter-space-earth (ray-scatter-space earth [size size size size] power))
 (def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
                                          transmittance-space-earth)))
 (def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)

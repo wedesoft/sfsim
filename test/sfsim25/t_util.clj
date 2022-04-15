@@ -5,6 +5,12 @@
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 
+(facts "Get elements of a small list"
+       (first  '(2 3 5 7)) => 2
+       (second '(2 3 5 7)) => 3
+       (third  '(2 3 5 7)) => 5
+       (fourth '(2 3 5 7)) => 7)
+
 (fact "Load a set of bytes"
   (seq (slurp-bytes "test/sfsim25/fixtures/util/bytes.raw")) => [2 3 5 7])
 
