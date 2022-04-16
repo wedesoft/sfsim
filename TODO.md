@@ -1,7 +1,7 @@
 # TODO
-* consider testing non-square lookup tables for transmittance and surface scatter
+* update shaders to accept ray-scatter lookup table with differing dimensions
 * check TODOs in code
-* update shaders to accept arrays with differing dimensions
+* consider testing non-square lookup tables for transmittance and surface scatter
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * rename sky\_or\_ground to is\_above\_horizon
 * change shader functions to use sky boolean
