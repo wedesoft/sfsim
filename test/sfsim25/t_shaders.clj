@@ -160,20 +160,20 @@ void main()
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
 out lowp vec3 fragColor;
-vec2 convert_2d_index(vec2 idx, int size);
+vec2 convert_2d_index(vec2 idx, int size_y, int size_x);
 void main()
 {
-  fragColor.rg = convert_2d_index(vec2(<%= x %>, <%= y %>), 17);
+  fragColor.rg = convert_2d_index(vec2(<%= x %>, <%= y %>), 17, 15);
   fragColor.b = 0;
 }"))
 
 (def convert-2d-index-test (shader-test convert-2d-index-probe convert-2d-index))
 
 (tabular "Convert 2D index to 2D texture lookup index"
-         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) 17)))
+         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1]))))
          ?x  ?y  ?r   ?g
           0   0   0.5  0.5
-         16   0  16.5  0.5
+         14   0  14.5  0.5
           0  16   0.5 16.5)
 
 (def convert-4d-index-probe
@@ -204,12 +204,12 @@ void main()
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz power above] "#version 410 core
 out lowp vec3 fragColor;
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power,
-                           bool above_horizon);
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int height_size, int elevation_size,
+                           float power, bool above_horizon);
 void main()
 {
   fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                       6378000.0, 100000, 17, <%= power %>, <%= above %>);
+                                       6378000.0, 100000, 9, 17, <%= power %>, <%= above %>);
   fragColor.b = 0;
 }"))
 
@@ -220,10 +220,10 @@ void main()
       sa    (sin angle)]
   (tabular "Convert point and direction to 2D lookup index in transmittance table"
            (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power ?above)
-                 => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
+                 => (roughly-matrix (div (matrix [?u ?v 0]) (matrix [16 8 1]))))
            ?x      ?y ?z ?dx  ?dy ?dz ?power ?above ?u  ?v
            6378000 0  0  1    0   0   1      true   0.0  0.0
-           6478000 0  0  1    0   0   1      true   0.0 16.0
+           6478000 0  0  1    0   0   1      true   0.0  8.0
            6378000 0  0  1e-6 1   0   1      true   8.0  0.0
            6378000 0  0 -1e-6 1   0   1      false  9.0  0.0
            6378025 0  0 -1e-6 1   0   1      true   8.0  0.0
@@ -258,10 +258,10 @@ void main()
   (template/fn [x y] "#version 410 core
 out lowp vec3 fragColor;
 uniform sampler2D table;
-vec4 interpolate_2d(sampler2D table, int size, vec2 idx);
+vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 void main()
 {
-  fragColor = interpolate_2d(table, 2, vec2(<%= x %>, <%= y %>)).rgb;
+  fragColor = interpolate_2d(table, 2, 2, vec2(<%= x %>, <%= y %>)).rgb;
 }"))
 
 (def interpolate-2d-test (lookup-2d-test interpolate-2d-probe interpolate-2d convert-2d-index))

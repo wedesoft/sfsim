@@ -486,12 +486,13 @@ void main()
   (template/fn [px py pz qx qy qz] "#version 410 core
 uniform sampler2D transmittance;
 out lowp vec3 fragColor;
-vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int size, float power, vec3 p, vec3 q);
+vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
+                         float power, vec3 p, vec3 q);
 void main()
 {
   vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
   vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-  fragColor = transmittance_track(transmittance, 6378000, 100000, 17, 1, p, q);
+  fragColor = transmittance_track(transmittance, 6378000, 100000, 17, 17, 1, p, q);
 }"))
 
 (def transmittance-track-test (transmittance-shader-test transmittance-track-probe transmittance-track
@@ -661,6 +662,8 @@ void main()
                                (uniform-float program :polar_radius ?polar)
                                (uniform-float program :max_height max-height)
                                (uniform-float program :specular 500)
+                               (uniform-int program :height_size size)
+                               (uniform-int program :elevation_size size)
                                (uniform-int program :size size)
                                (uniform-float program :power power)
                                (uniform-float program :amplification 5)
