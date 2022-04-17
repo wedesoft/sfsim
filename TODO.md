@@ -1,4 +1,8 @@
 # TODO
+* ray-scatter-shape [height-size elevation-size elevation-size heading-size]
+*                   [size\_w     size\_z        size\_y        size\_x]
+*                   [outer y     outer x        inner y        inner x]
+* make convert-2d-to-4d more generic (support differing dimensions)
 * update shaders to accept ray-scatter lookup table with differing dimensions
 * check TODOs in code
 * consider testing non-square lookup tables for transmittance and surface scatter

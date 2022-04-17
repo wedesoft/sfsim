@@ -179,10 +179,10 @@ void main()
 (def convert-4d-index-probe
   (template/fn [x y z w selector] "#version 410 core
 out lowp vec3 fragColor;
-vec4 convert_4d_index(vec4 idx, int size);
+vec4 convert_4d_index(vec4 idx, int size_w, int size_z, int size_y, int size_x);
 void main()
 {
-  vec4 result = convert_4d_index(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 17);
+  vec4 result = convert_4d_index(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 3, 5, 7, 11);
   fragColor.rg = result.<%= selector %>;
   fragColor.b = 0;
 }"))
@@ -190,16 +190,16 @@ void main()
 (def convert-4d-index-test (shader-test convert-4d-index-probe convert-4d-index))
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
-         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) 17 17)))
-         ?x ?y ?z     ?w     ?selector ?r                ?g
-         0  0   0.123  0.123 "st"      0.5               (+ 0.5 17)
-         1  0   0.123  0.123 "st"      1.5               (+ 1.5 17)
-         0  0   1.123  0.123 "st"      (+ 0.5 17)        (+ 0.5 (* 2 17))
-         0  0  16.123  0.123 "st"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17))
-         0  0   0.123  0.123 "pq"      0.5               (+ 0.5 17)
-         0  1   0.123  0.123 "pq"      1.5               (+ 1.5 17)
-         0  0   0.123  1.123 "pq"      (+ 0.5 17)        (+ 0.5 (* 2 17))
-         0  0   0.123 16.123 "pq"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)))
+         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1)))
+         ?x ?y ?z     ?w     ?s2 ?s1 ?selector ?r               ?g
+         0  0   0.123  0.123 11  5   "st"      0.5              (+ 0.5 11)
+         1  0   0.123  0.123 11  5   "st"      1.5              (+ 1.5 11)
+         0  0   1.123  0.123 11  5   "st"      (+ 0.5 11)       (+ 0.5 (* 2 11))
+         0  0   4.123  0.123 11  5   "st"      (+ 0.5 (* 4 11)) (+ 0.5 (* 4 11))
+         0  0   0.123  0.123  7  3   "pq"      0.5              (+ 0.5 7)
+         0  1   0.123  0.123  7  3   "pq"      1.5              (+ 1.5 7)
+         0  0   0.123  1.123  7  3   "pq"      (+ 0.5 7)        (+ 0.5 (* 2 7))
+         0  0   0.123  2.123  7  3   "pq"      (+ 0.5 (* 2 7))  (+ 0.5 (* 2 7)))
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz power above] "#version 410 core
