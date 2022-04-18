@@ -38,17 +38,19 @@
 
 (def keystates (atom {}))
 
+(def height-size 9)
+(def heading-size 17)
+(def elevation-size 35)
+(def light-elevation-size 35)
+
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def size (int (sqrt (/ (count data) 3))))
-(def E (make-vector-texture-2d {:width size :height size :data data}))
+(def E (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def size (int (sqrt (/ (count data) 3))))
-(def T (make-vector-texture-2d {:width size :height size :data data}))
+(def T (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def size (int (pow (/ (count data) 3) 0.25)))
-(def S (make-vector-texture-2d {:width (* size size) :height (* size size) :data data}))
+(def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
@@ -176,7 +178,10 @@
                           (use-program program-planet)
                           (uniform-matrix4 program-planet :projection projection)
                           (uniform-matrix4 program-planet :inverse_transform (inverse transform))
-                          (uniform-int program-planet :size size)
+                          (uniform-int program-planet :height_size height-size)
+                          (uniform-int program-planet :elevation_size elevation-size)
+                          (uniform-int program-planet :light_elevation_size light-elevation-size)
+                          (uniform-int program-planet :heading_size heading-size)
                           (uniform-float program-planet :power 2.0)
                           (uniform-float program-planet :albedo 0.9)
                           (uniform-float program-planet :reflectivity 0.1)
@@ -199,7 +204,10 @@
                           (uniform-float program-atmosphere :max_height max-height)
                           (uniform-float program-atmosphere :specular 100)
                           (uniform-float program-atmosphere :power 2.0)
-                          (uniform-int program-atmosphere :size size)
+                          (uniform-int program-planet :height_size height-size)
+                          (uniform-int program-planet :elevation_size elevation-size)
+                          (uniform-int program-planet :light_elevation_size light-elevation-size)
+                          (uniform-int program-planet :heading_size heading-size)
                           (uniform-float program-atmosphere :amplification 5)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (use-textures T S)
