@@ -540,13 +540,14 @@ void main()
 uniform sampler2D transmittance;
 uniform sampler2D ray_scatter;
 out lowp vec3 fragColor;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int size, float power,
-                       vec3 light_direction, vec3 p, vec3 q);
+vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size,
+                       int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
+                       vec3 p, vec3 q);
 void main()
 {
   vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
   vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-  fragColor = ray_scatter_track(ray_scatter, transmittance, 6378000, 100000, 5, 1, vec3(0, 0, 1), p, q);
+  fragColor = ray_scatter_track(ray_scatter, transmittance, 6378000, 100000, 5, 5, 5, 5, 1, vec3(0, 0, 1), p, q);
 }"))
 
 (def ray-scatter-track-test (ray-scatter-shader-test ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward
@@ -664,7 +665,8 @@ void main()
                                (uniform-float program :specular 500)
                                (uniform-int program :height_size size)
                                (uniform-int program :elevation_size size)
-                               (uniform-int program :size size)
+                               (uniform-int program :light_elevation_size size)
+                               (uniform-int program :heading_size size)
                                (uniform-float program :power power)
                                (uniform-float program :amplification 5)
                                (use-textures transmittance ray-scatter)

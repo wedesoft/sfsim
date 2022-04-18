@@ -1,9 +1,9 @@
 # TODO
 * update shaders to accept ray-scatter lookup table with differing dimensions
 * check TODOs in code
-* ray-scatter-shape [height-size elevation-size elevation-size heading-size]
-*                   [size\_w     size\_z        size\_y        size\_x]
-*                   [outer y     outer x        inner y        inner x]
+* ray-scatter-shape [height-size elevation-size light-elevation-size heading-size]
+*                   [size\_w     size\_z        size\_y              size\_x]
+*                   [outer y     outer x        inner y              inner x]
 * consider testing non-square lookup tables for transmittance and surface scatter
 * make convert-2d-to-4d more generic (support differing dimensions)
 * ground\_radiance assumes sun brightness of one -> use one everywhere?

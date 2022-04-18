@@ -323,12 +323,12 @@ void main()
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz power above selector] "#version 410 core
 out lowp vec3 fragColor;
-vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
-                         float power, bool above_horizon);
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int height_size,
+                         int elevation_size, int light_elevation_size, int heading_size, float power, bool above_horizon);
 void main()
 {
   vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, <%= power %>,
+                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, 17, 17, 17, <%= power %>,
                                     <%= above %>);
   fragColor.r = result.<%= selector %>;
   fragColor.g = 0;

@@ -348,8 +348,9 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
 
 (def fake-ray-scatter "#version 410 core
 uniform vec3 scatter;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int size, float power,
-                       vec3 light_direction, vec3 p, vec3 q)
+vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size, 
+                       int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
+                       vec3 p, vec3 q)
 {
   return scatter;
 }")
@@ -371,7 +372,8 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
   ; Moved this code out of the test below, otherwise method is too large
   (uniform-int program :height_size size)
   (uniform-int program :elevation_size size)
-  (uniform-int program :size size)
+  (uniform-int program :light_elevation_size size)
+  (uniform-int program :heading_size size)
   (uniform-float program :albedo ?albedo)
   (uniform-float program :reflectivity ?refl)
   (uniform-float program :radius radius)
