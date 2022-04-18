@@ -39,7 +39,7 @@
 (def keystates (atom {}))
 
 (def height-size 17)
-(def heading-size 17)
+(def heading-size 15)
 (def elevation-size 17)
 (def light-elevation-size 17)
 

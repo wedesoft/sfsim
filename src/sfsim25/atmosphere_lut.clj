@@ -25,7 +25,7 @@
   [& args]
   (.println *err* "Initialization")
   (let [height-size                   17; 33
-        heading-size                  17; 65
+        heading-size                  15; 65
         elevation-size                17; 129
         transmittance-shape           [height-size elevation-size]
         ray-scatter-shape             [height-size elevation-size elevation-size heading-size]
