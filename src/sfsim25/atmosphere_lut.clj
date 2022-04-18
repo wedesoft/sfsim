@@ -24,9 +24,9 @@
   "Program to generate lookup tables for atmospheric scattering"
   [& args]
   (.println *err* "Initialization")
-  (let [height-size                   9; 33
+  (let [height-size                   17; 33
         heading-size                  17; 65
-        elevation-size                35; 129
+        elevation-size                17; 129
         transmittance-shape           [height-size elevation-size]
         ray-scatter-shape             [height-size elevation-size elevation-size heading-size]
         ray-steps                     20; 100

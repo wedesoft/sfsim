@@ -38,10 +38,10 @@
 
 (def keystates (atom {}))
 
-(def height-size 9)
+(def height-size 17)
 (def heading-size 17)
-(def elevation-size 35)
-(def light-elevation-size 35)
+(def elevation-size 17)
+(def light-elevation-size 17)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
@@ -204,10 +204,10 @@
                           (uniform-float program-atmosphere :max_height max-height)
                           (uniform-float program-atmosphere :specular 100)
                           (uniform-float program-atmosphere :power 2.0)
-                          (uniform-int program-planet :height_size height-size)
-                          (uniform-int program-planet :elevation_size elevation-size)
-                          (uniform-int program-planet :light_elevation_size light-elevation-size)
-                          (uniform-int program-planet :heading_size heading-size)
+                          (uniform-int program-atmosphere :height_size height-size)
+                          (uniform-int program-atmosphere :elevation_size elevation-size)
+                          (uniform-int program-atmosphere :light_elevation_size light-elevation-size)
+                          (uniform-int program-atmosphere :heading_size heading-size)
                           (uniform-float program-atmosphere :amplification 5)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (use-textures T S)
