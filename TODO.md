@@ -1,4 +1,5 @@
 # TODO
+* test interpolate\_4d with differing dimensions
 * update shaders to accept ray-scatter lookup table with differing dimensions
 * check TODOs in code
 * ray-scatter-shape [height-size elevation-size light-elevation-size heading-size]
