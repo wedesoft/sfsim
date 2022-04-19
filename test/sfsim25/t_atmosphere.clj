@@ -1,7 +1,7 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
-              [clojure.math :refer (sqrt exp pow E PI to-radians)]
+              [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul sub identity-matrix)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.matrix :refer :all]
@@ -683,3 +683,64 @@ void main()
          0  0            (- 0 radius 2)          radius       0           0   0   -1   "inside.png"
          0  (* 3 radius) 0                       radius       (* -0.5 PI) 0   1    0   "yview.png"
          0  (* 3 radius) 0                       (/ radius 2) (* -0.5 PI) 0   1    0   "ellipsoid.png")
+
+(fact "Test transmittance with non-square lookup table"
+      (let [transmittance-space-earth (transmittance-space earth [(+ 2 size) size] power)
+            T                         (interpolate-function transmittance-earth transmittance-space-earth)
+            width                     64
+            height                    64
+            data                      (int-array (* width height))
+            img                       {:width width :height height :data data}]
+        (doseq [j (range height) i (range width)]
+               (let [point     (matrix [(+ radius (* max-height (/ j (dec height)))) 0 0])
+                     angle     (* i (/ PI 2 (dec width)))
+                     direction (matrix [(sin angle) (cos angle) 0])]
+                 (set-pixel! img j i (mul 255 (T point direction true)))))
+        img => (is-image "test/sfsim25/fixtures/atmosphere/transmittance-non-square.png")))
+
+(def transmittance-probe "#version 410 core
+uniform float radius;
+uniform float max_height;
+uniform float power;
+uniform int size;
+uniform sampler2D transmittance;
+out lowp vec3 fragColor;
+
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int heigh_size, int elevation_size,
+                           float power, bool above_horizon);
+vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
+
+void main()
+{
+  vec3 point = vec3(radius + gl_FragCoord.y * max_height / 63.0, 0, 0);
+  float angle = radians(gl_FragCoord.x * 90 / 63);
+  vec3 direction = vec3(sin(angle), cos(angle), 0);
+  vec2 uv = transmittance_forward(point, direction, radius, max_height, size + 2, size, power, true);
+  fragColor = interpolate_2d(transmittance, size + 2, size, uv).rgb;
+}")
+
+(fact "Test transmittance shader with non-square lookup table"
+      (offscreen-render 64 64
+                        (let [indices  [0 1 3 2]
+                              vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                              program  (make-program :vertex [vertex-passthrough]
+                                                     :fragment [transmittance-probe shaders/transmittance-forward
+                                                                shaders/horizon-angle shaders/elevation-to-index
+                                                                shaders/interpolate-2d shaders/convert-2d-index])
+                              vao      (make-vertex-array-object program indices vertices [:point 3])
+                              space    (transmittance-space earth [(+ 2 size) size] power)
+                              data     (pack-matrices (make-lookup-table transmittance-earth space))
+                              tex      (make-vector-texture-2d {:width size :height (+ 0 size) :data data})]
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (uniform-float program :radius radius)
+                          (uniform-float program :max_height max-height)
+                          (uniform-float program :power power)
+                          (uniform-int program :size size)
+                          (uniform-sampler program :transmittance 0)
+                          (use-textures tex)
+                          (render-quads vao)
+                          (destroy-texture tex)
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program)))
+      => (record-image "test/sfsim25/fixtures/atmosphere/transmittance-shader.png"))
