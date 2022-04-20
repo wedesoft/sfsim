@@ -236,9 +236,9 @@ void main()
         (offscreen-render 1 1
           (let [indices   [0 1 3 2]
                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                data-2d   [[1 2] [3 4]]
+                data-2d   [[1 2] [3 4] [5 6]]
                 data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
-                table     (make-vector-texture-2d {:width 2 :height 2 :data (float-array data-flat)})
+                table     (make-vector-texture-2d {:width 2 :height 3 :data (float-array data-flat)})
                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao       (make-vertex-array-object program indices vertices [:point 3])
                 tex       (texture-render 1 1 true
@@ -261,7 +261,7 @@ uniform sampler2D table;
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 void main()
 {
-  fragColor = interpolate_2d(table, 2, 2, vec2(<%= x %>, <%= y %>)).rgb;
+  fragColor = interpolate_2d(table, 3, 2, vec2(<%= x %>, <%= y %>)).rgb;
 }"))
 
 (def interpolate-2d-test (lookup-2d-test interpolate-2d-probe interpolate-2d convert-2d-index))
@@ -271,8 +271,8 @@ void main()
          ?x   ?y ?result
          0    0  1.0
          0.25 0  1.25
-         0    1  3.0
-         1    1  4.0)
+         0    1  5.0
+         1    1  6.0)
 
 (defn lookup-4d-test [probe & shaders]
   (fn [& args]
