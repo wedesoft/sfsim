@@ -23,7 +23,7 @@
 (defn -main
   "Program to generate lookup tables for atmospheric scattering"
   [& args]
-  (.println *err* "Initialization")
+  (.println *err* (str "Initialization " (.toString (java.time.LocalDateTime/now))))
   (let [height-size                   33
         heading-size                  65
         elevation-size                129
@@ -49,7 +49,7 @@
         dS                            (atom (interpolate-function ray-scatter-base-planet ray-scatter-space-planet))
         S                             (atom @dS)]
     (doseq [iteration (range iterations)]
-           (.println *err* (str "Iteration " (inc iteration) "/" iterations))
+           (.println *err* (str "Iteration " (inc iteration) "/" iterations " " (.toString (java.time.LocalDateTime/now))))
            (let [point-scatter-planet    (partial point-scatter earth scatter @dS @dE (matrix [1 1 1]) sphere-steps ray-steps)
                  surface-radiance-planet (partial surface-radiance earth @dS ray-steps)
                  dJ                      (interpolate-function point-scatter-planet point-scatter-space-planet)
