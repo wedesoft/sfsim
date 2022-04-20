@@ -24,15 +24,15 @@
   "Program to generate lookup tables for atmospheric scattering"
   [& args]
   (.println *err* "Initialization")
-  (let [height-size                   17; 33
-        heading-size                  17; 65
-        elevation-size                17; 129
-        light-elevation-size          17; 129
+  (let [height-size                   33
+        heading-size                  65
+        elevation-size                129
+        light-elevation-size          129
         transmittance-shape           [height-size elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
-        ray-steps                     20; 100
-        sphere-steps                  7; 15
-        iterations                    1; 5
+        ray-steps                     100
+        sphere-steps                  15
+        iterations                    5
         power                         2.0
         scatter                       [mie rayleigh]
         transmittance-planet          (partial transmittance earth scatter ray-steps)
