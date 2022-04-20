@@ -160,29 +160,29 @@ void main()
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
 out lowp vec3 fragColor;
-vec2 convert_2d_index(vec2 idx, int size);
+vec2 convert_2d_index(vec2 idx, int size_y, int size_x);
 void main()
 {
-  fragColor.rg = convert_2d_index(vec2(<%= x %>, <%= y %>), 17);
+  fragColor.rg = convert_2d_index(vec2(<%= x %>, <%= y %>), 17, 15);
   fragColor.b = 0;
 }"))
 
 (def convert-2d-index-test (shader-test convert-2d-index-probe convert-2d-index))
 
 (tabular "Convert 2D index to 2D texture lookup index"
-         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) 17)))
+         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1]))))
          ?x  ?y  ?r   ?g
           0   0   0.5  0.5
-         16   0  16.5  0.5
+         14   0  14.5  0.5
           0  16   0.5 16.5)
 
 (def convert-4d-index-probe
   (template/fn [x y z w selector] "#version 410 core
 out lowp vec3 fragColor;
-vec4 convert_4d_index(vec4 idx, int size);
+vec4 convert_4d_index(vec4 idx, int size_w, int size_z, int size_y, int size_x);
 void main()
 {
-  vec4 result = convert_4d_index(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 17);
+  vec4 result = convert_4d_index(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 3, 5, 7, 11);
   fragColor.rg = result.<%= selector %>;
   fragColor.b = 0;
 }"))
@@ -190,26 +190,26 @@ void main()
 (def convert-4d-index-test (shader-test convert-4d-index-probe convert-4d-index))
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
-         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) 17 17)))
-         ?x ?y ?z     ?w     ?selector ?r                ?g
-         0  0   0.123  0.123 "st"      0.5               (+ 0.5 17)
-         1  0   0.123  0.123 "st"      1.5               (+ 1.5 17)
-         0  0   1.123  0.123 "st"      (+ 0.5 17)        (+ 0.5 (* 2 17))
-         0  0  16.123  0.123 "st"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17))
-         0  0   0.123  0.123 "pq"      0.5               (+ 0.5 17)
-         0  1   0.123  0.123 "pq"      1.5               (+ 1.5 17)
-         0  0   0.123  1.123 "pq"      (+ 0.5 17)        (+ 0.5 (* 2 17))
-         0  0   0.123 16.123 "pq"      (+ 0.5 (* 16 17)) (+ 0.5 (* 16 17)))
+         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1)))
+         ?x ?y ?z     ?w     ?s2 ?s1 ?selector ?r               ?g
+         0  0   0.123  0.123 11  5   "st"      0.5              (+ 0.5 11)
+         1  0   0.123  0.123 11  5   "st"      1.5              (+ 1.5 11)
+         0  0   1.123  0.123 11  5   "st"      (+ 0.5 11)       (+ 0.5 (* 2 11))
+         0  0   4.123  0.123 11  5   "st"      (+ 0.5 (* 4 11)) (+ 0.5 (* 4 11))
+         0  0   0.123  0.123  7  3   "pq"      0.5              (+ 0.5 7)
+         0  1   0.123  0.123  7  3   "pq"      1.5              (+ 1.5 7)
+         0  0   0.123  1.123  7  3   "pq"      (+ 0.5 7)        (+ 0.5 (* 2 7))
+         0  0   0.123  2.123  7  3   "pq"      (+ 0.5 (* 2 7))  (+ 0.5 (* 2 7)))
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz power above] "#version 410 core
 out lowp vec3 fragColor;
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int size, float power,
-                           bool above_horizon);
+vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int height_size, int elevation_size,
+                           float power, bool above_horizon);
 void main()
 {
   fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                       6378000.0, 100000, 17, <%= power %>, <%= above %>);
+                                       6378000.0, 100000, 9, 17, <%= power %>, <%= above %>);
   fragColor.b = 0;
 }"))
 
@@ -220,10 +220,10 @@ void main()
       sa    (sin angle)]
   (tabular "Convert point and direction to 2D lookup index in transmittance table"
            (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power ?above)
-                 => (roughly-matrix (div (matrix [?u ?v 0]) 16)))
+                 => (roughly-matrix (div (matrix [?u ?v 0]) (matrix [16 8 1]))))
            ?x      ?y ?z ?dx  ?dy ?dz ?power ?above ?u  ?v
            6378000 0  0  1    0   0   1      true   0.0  0.0
-           6478000 0  0  1    0   0   1      true   0.0 16.0
+           6478000 0  0  1    0   0   1      true   0.0  8.0
            6378000 0  0  1e-6 1   0   1      true   8.0  0.0
            6378000 0  0 -1e-6 1   0   1      false  9.0  0.0
            6378025 0  0 -1e-6 1   0   1      true   8.0  0.0
@@ -236,9 +236,9 @@ void main()
         (offscreen-render 1 1
           (let [indices   [0 1 3 2]
                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                data-2d   [[1 2] [3 4]]
+                data-2d   [[1 2] [3 4] [5 6]]
                 data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
-                table     (make-vector-texture-2d {:width 2 :height 2 :data (float-array data-flat)})
+                table     (make-vector-texture-2d {:width 2 :height 3 :data (float-array data-flat)})
                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao       (make-vertex-array-object program indices vertices [:point 3])
                 tex       (texture-render 1 1 true
@@ -258,10 +258,10 @@ void main()
   (template/fn [x y] "#version 410 core
 out lowp vec3 fragColor;
 uniform sampler2D table;
-vec4 interpolate_2d(sampler2D table, int size, vec2 idx);
+vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 void main()
 {
-  fragColor = interpolate_2d(table, 2, vec2(<%= x %>, <%= y %>)).rgb;
+  fragColor = interpolate_2d(table, 3, 2, vec2(<%= x %>, <%= y %>)).rgb;
 }"))
 
 (def interpolate-2d-test (lookup-2d-test interpolate-2d-probe interpolate-2d convert-2d-index))
@@ -271,8 +271,8 @@ void main()
          ?x   ?y ?result
          0    0  1.0
          0.25 0  1.25
-         0    1  3.0
-         1    1  4.0)
+         0    1  5.0
+         1    1  6.0)
 
 (defn lookup-4d-test [probe & shaders]
   (fn [& args]
@@ -302,55 +302,10 @@ void main()
   (template/fn [x y z w] "#version 410 core
 out lowp vec3 fragColor;
 uniform sampler2D table;
-vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
+vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
 void main()
 {
-  fragColor = interpolate_4d(table, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
-}"))
-
-(def interpolate-4d-test (lookup-4d-test interpolate-4d-probe interpolate-4d convert-4d-index))
-
-(tabular "Perform 4D interpolation"
-         (fact (mget (interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
-         ?x   ?y ?z  ?w  ?result
-         0    0  0   0   1.0
-         0.25 0  0   0   1.25
-         0    1  0   0   3.0
-         0    0  0.5 0   3.0
-         0    0  0   0.5 5.0
-         0    0  0.5 0.5 7.0)
-(defn lookup-4d-test [probe & shaders]
-  (fn [& args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices   [0 1 3 2]
-                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
-                data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
-                table     (make-vector-texture-2d {:width 4 :height 4 :data (float-array data-flat)})
-                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao       (make-vertex-array-object program indices vertices [:point 3])
-                tex       (texture-render 1 1 true
-                                          (use-program program)
-                                          (uniform-sampler program :table 0)
-                                          (use-textures table)
-                                          (render-quads vao))
-                img       (texture->vectors tex 1 1)]
-            (deliver result (get-vector img 0 0))
-            (destroy-texture tex)
-            (destroy-texture table)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
-
-(def interpolate-4d-probe
-  (template/fn [x y z w] "#version 410 core
-out lowp vec3 fragColor;
-uniform sampler2D table;
-vec4 interpolate_4d(sampler2D table, int size, vec4 idx);
-void main()
-{
-  fragColor = interpolate_4d(table, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
+  fragColor = interpolate_4d(table, 2, 2, 2, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
 }"))
 
 (def interpolate-4d-test (lookup-4d-test interpolate-4d-probe interpolate-4d convert-4d-index))
@@ -368,12 +323,12 @@ void main()
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz power above selector] "#version 410 core
 out lowp vec3 fragColor;
-vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int size,
-                         float power, bool above_horizon);
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int height_size,
+                         int elevation_size, int light_elevation_size, int heading_size, float power, bool above_horizon);
 void main()
 {
   vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, <%= power %>,
+                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, 17, 17, 17, <%= power %>,
                                     <%= above %>);
   fragColor.r = result.<%= selector %>;
   fragColor.g = 0;

@@ -14,6 +14,16 @@
 
 (set-current-implementation :vectorz)
 
+(defn third
+  "Get third element of a list"
+  [lst]
+  (nth lst 2))
+
+(defn fourth
+  "Get fourth element of a list"
+  [lst]
+  (nth lst 3))
+
 (defn slurp-bytes
   "Read bytes from a file"
   ^bytes [^String file-name]

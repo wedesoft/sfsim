@@ -286,16 +286,16 @@ void main()
 uniform sampler2D red;
 uniform sampler2D blue;
 out lowp vec3 fragColor;
-vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_radiance, float radius, float max_height, int size,
-                     float power, vec3 point, vec3 light, float water, float reflectivity, float cos_incidence, float highlight,
-                     vec3 land_color, vec3 water_color);
+vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_radiance, float radius, float max_height,
+                     int height_size, int elevation_size, float power, vec3 point, vec3 light_direction, float water,
+                     float reflectivity, float cos_incidence, float highlight, vec3 land_color, vec3 water_color);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
   vec3 light = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
   vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
   vec3 water_color = vec3(0.1, 0.2, 0.4);
-  fragColor = ground_radiance(<%= albedo %>, red, blue, 6378000, 100000, 17, 2.0, point, light, <%= water %>, 0.5,
+  fragColor = ground_radiance(<%= albedo %>, red, blue, 6378000, 100000, 17, 17, 2.0, point, light, <%= water %>, 0.5,
                               <%= cos-incidence %>, <%= highlight %>, land_color, water_color);
 }"))
 
@@ -337,7 +337,8 @@ void main()
 }")
 
 (def fake-transmittance "#version 410 core
-vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int size, float power, vec3 p, vec3 q)
+vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
+                         float power, vec3 p, vec3 q)
 {
   float dist = distance(p, q);
   if (dist < 150) return vec3(1, 1, 1);
@@ -347,8 +348,9 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
 
 (def fake-ray-scatter "#version 410 core
 uniform vec3 scatter;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int size, float power,
-                       vec3 light_direction, vec3 p, vec3 q)
+vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size, 
+                       int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
+                       vec3 p, vec3 q)
 {
   return scatter;
 }")
@@ -368,7 +370,10 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
 
 (defn setup-uniforms [program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a]
   ; Moved this code out of the test below, otherwise method is too large
-  (uniform-int program :size size)
+  (uniform-int program :height_size size)
+  (uniform-int program :elevation_size size)
+  (uniform-int program :light_elevation_size size)
+  (uniform-int program :heading_size size)
   (uniform-float program :albedo ?albedo)
   (uniform-float program :reflectivity ?refl)
   (uniform-float program :radius radius)
