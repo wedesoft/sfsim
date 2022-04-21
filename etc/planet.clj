@@ -38,10 +38,10 @@
 
 (def keystates (atom {}))
 
-(def height-size 33)
-(def heading-size 65)
+(def height-size 9)
+(def heading-size 33)
 (def elevation-size 129)
-(def light-elevation-size 129)
+(def light-elevation-size 33)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d {:width elevation-size :height height-size :data data}))

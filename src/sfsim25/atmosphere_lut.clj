@@ -24,16 +24,16 @@
   "Program to generate lookup tables for atmospheric scattering"
   [& args]
   (.println *err* (str "Initialization " (.toString (java.time.LocalDateTime/now))))
-  (let [height-size                   33
-        heading-size                  65
+  (let [height-size                   9
+        heading-size                  33
         elevation-size                129
-        light-elevation-size          129
+        light-elevation-size          33
         transmittance-shape           [height-size elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
         bar                           (fn [f] (progress f (size-of-shape ray-scatter-shape) height-size))
         ray-steps                     100
         sphere-steps                  15
-        iterations                    5
+        iterations                    1
         power                         2.0
         scatter                       [mie rayleigh]
         transmittance-planet          (partial transmittance earth scatter ray-steps)

@@ -2,9 +2,7 @@
 * make convert-2d-to-4d more generic (support differing dimensions)
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * rename sky\_or\_ground to is\_above\_horizon
-* change shader functions to use sky boolean
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
-* shader to check whether point-direction is in the sky or on the ground
 * is an above-horizon boolean needed for the light-direction when computing ray-scatter and ray-scatter-forward?
 * elevation\_to\_index should use elevation value between -pi/2 and pi/2
 * only render sun glare when sun is above horizon
