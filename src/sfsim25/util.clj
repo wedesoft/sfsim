@@ -2,7 +2,8 @@
   "Various utility functions."
   (:require [clojure.java.io :as io]
             [clojure.math :refer (sin sqrt round)]
-            [clojure.core.matrix :refer (matrix mget set-current-implementation)])
+            [clojure.core.matrix :refer (matrix mget set-current-implementation)]
+            [progrock.core :as p])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [ij ImagePlus]
@@ -268,5 +269,25 @@
                               (range b)))
                     (range a)))
           (range b))))
+
+(defn size-of-shape
+  "Determine size of given shape"
+  [shape]
+  (apply * shape))
+
+(defn progress
+  "Update progress bar when calling a function"
+  [fun size step]
+  (let [bar       (agent (p/progress-bar size))
+        increase  (fn [bar]
+                      (let [result (assoc (p/tick bar 1)
+                                          :done? (= (inc (:progress bar)) (:total bar)))]
+                           (when (zero? (mod (:progress result) step))
+                                 (p/print result))
+                           result))]
+    (p/print @bar)
+    (fn [& args]
+        (send bar increase)
+        (apply fun args))))
 
 (set! *unchecked-math* false)
