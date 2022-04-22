@@ -30,10 +30,10 @@
         light-elevation-size          33
         transmittance-shape           [height-size elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
-        bar                           (fn [f] (progress f (size-of-shape ray-scatter-shape) height-size))
+        bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) height-size)
         ray-steps                     100
         sphere-steps                  15
-        iterations                    1
+        iterations                    5
         power                         2.0
         scatter                       [mie rayleigh]
         transmittance-planet          (partial transmittance earth scatter ray-steps)

@@ -275,19 +275,26 @@
   [shape]
   (apply * shape))
 
-(defn progress
+(defn make-progress-bar
+  "Create a progress bar"
+  [size step]
+  (assoc (p/progress-bar size) :step step))
+
+(defn tick-and-print
+  "Increase progress and occasionally update progress bar"
+  [bar]
+  (let [done   (= (inc (:progress bar)) (:total bar))
+        result (assoc (p/tick bar 1) :done? done)]
+    (when (or (zero? (mod (:progress result) (:step bar))) done) (p/print result))
+    result))
+
+(defn progress-wrap
   "Update progress bar when calling a function"
   [fun size step]
-  (let [bar       (agent (p/progress-bar size))
-        increase  (fn [bar]
-                      (let [result (assoc (p/tick bar 1)
-                                          :done? (= (inc (:progress bar)) (:total bar)))]
-                           (when (zero? (mod (:progress result) step))
-                                 (p/print result))
-                           result))]
+  (let [bar (agent (make-progress-bar size step))]
     (p/print @bar)
     (fn [& args]
-        (send bar increase)
+        (send bar tick-and-print)
         (apply fun args))))
 
 (set! *unchecked-math* false)
