@@ -35,18 +35,18 @@
           (let [j                (cube-coordinate out-level elevation-tilesize b v)
                 i                (cube-coordinate out-level elevation-tilesize a u)
                 p                (cube-map k j i)
-                point            (project-onto-globe p in-level width radius1 radius2)
+                point            (project-onto-globe p (min 4 in-level) width radius1 radius2)
                 [lon lat height] (cartesian->geodetic point radius1 radius2)]
             (set-scale! scale v u (/ (norm point) (norm p)))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
           (let [j                (cube-coordinate out-level color-tilesize b v)
                 i                (cube-coordinate out-level color-tilesize a u)
                 p                (cube-map k j i)
-                point            (project-onto-globe p in-level width radius1 radius2)
+                point            (project-onto-globe p (min 4 in-level) width radius1 radius2)
                 [lon lat height] (cartesian->geodetic point radius1 radius2)
-                normal           (normal-for-point point in-level out-level width color-tilesize radius1 radius2)
+                normal           (normal-for-point point (min 4 in-level) out-level width color-tilesize radius1 radius2)
                 color            (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)
-                wet              (water-geodetic (min 5 (+ in-level sublevel)) width lon lat)]
+                wet              (water-geodetic (min 4 (+ in-level sublevel)) width lon lat)]
             (set-vector! normals v u normal)
             (set-pixel! tile v u color)
             (set-water! water v u wet)))
