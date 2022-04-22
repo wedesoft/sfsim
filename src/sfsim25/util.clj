@@ -278,7 +278,9 @@
 (defn make-progress-bar
   "Create a progress bar"
   [size step]
-  (assoc (p/progress-bar size) :step step))
+  (let [result (assoc (p/progress-bar size) :step step)]
+    (p/print result)
+    result))
 
 (defn tick-and-print
   "Increase progress and occasionally update progress bar"
@@ -292,7 +294,6 @@
   "Update progress bar when calling a function"
   [fun size step]
   (let [bar (agent (make-progress-bar size step))]
-    (p/print @bar)
     (fn [& args]
         (send bar tick-and-print)
         (apply fun args))))

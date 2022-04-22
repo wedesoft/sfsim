@@ -25,7 +25,8 @@
         subsample          (bit-shift-left 1 sublevel)
         color-tilesize     (inc (* subsample (dec elevation-tilesize)))
         radius1            6378000.0
-        radius2            6357000.0]
+        radius2            6357000.0
+        bar                (agent (make-progress-bar (* 6 n n) 1))]
     (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
       (let [tile    {:width color-tilesize :height color-tilesize :data (int-array (sqr color-tilesize))}
             water   {:width (align-address color-tilesize 4) :height color-tilesize :data (byte-array (* color-tilesize (+ color-tilesize 3)))}
@@ -50,12 +51,12 @@
             (set-vector! normals v u normal)
             (set-pixel! tile v u color)
             (set-water! water v u wet)))
-        (locking *out* (println (cube-path "globe" k out-level b a ".*")))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tile)
         (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))
         (spit-floats (cube-path "globe" k out-level b a ".scale") (:data scale))
-        (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))))
+        (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))
+        (send bar tick-and-print)))
     (System/exit 0)))
 
 (set! *unchecked-math* false)
