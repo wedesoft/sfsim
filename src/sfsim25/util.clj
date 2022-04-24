@@ -257,18 +257,15 @@
 
 (defn convert-2d-to-4d
   "Convert 2D array with tiles to 4D array (assuming that each two dimensions are the same)"
-  [array]
-  (let [[h w] (dimensions array)
-        b     (int (sqrt h))
-        a     (int (sqrt w))]
-    (mapv (fn [y]
-              (mapv (fn [x]
-                        (mapv (fn [v]
-                                  (mapv (fn [u] (get-in array [(+ v (* y b)) (+ u (* x a))]))
-                                        (range a)))
-                              (range b)))
-                    (range a)))
-          (range b))))
+  [array d c b a]
+  (mapv (fn [y]
+            (mapv (fn [x]
+                      (mapv (fn [v]
+                                (mapv (fn [u] (get-in array [(+ v (* y b)) (+ u (* x a))]))
+                                      (range a)))
+                            (range b)))
+                  (range c)))
+        (range d)))
 
 (defn size-of-shape
   "Determine size of given shape"

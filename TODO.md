@@ -1,11 +1,10 @@
 # TODO
-* make convert-2d-to-4d more generic (support differing dimensions)
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * rename sky\_or\_ground to is\_above\_horizon
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
 * is an above-horizon boolean needed for the light-direction when computing ray-scatter and ray-scatter-forward?
 * elevation\_to\_index should use elevation value between -pi/2 and pi/2
-* only render sun glare when sun is above horizon
+* only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
 * add keyboard motion commands
 * extract functions from prototype
 * remove update-tree-parents code
