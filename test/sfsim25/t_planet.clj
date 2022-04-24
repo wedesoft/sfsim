@@ -301,7 +301,7 @@ void main()
 
 (def ground-radiance-test (radiance-shader-test ground-radiance-probe ground-radiance shaders/transmittance-forward
                                                 shaders/horizon-angle shaders/elevation-to-index shaders/interpolate-2d
-                                                shaders/convert-2d-index shaders/sky-or-ground))
+                                                shaders/convert-2d-index shaders/is-above-horizon))
 
 (tabular "Shader function to compute light emitted from ground"
          (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) PI)
@@ -348,7 +348,7 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
 
 (def fake-ray-scatter "#version 410 core
 uniform vec3 scatter;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size, 
+vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size,
                        int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
                        vec3 p, vec3 q)
 {
@@ -395,7 +395,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/horizon-angle shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-sphere
-                                                                          shaders/sky-or-ground fake-ray-scatter
+                                                                          shaders/is-above-horizon fake-ray-scatter
                                                                           ground-radiance])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)

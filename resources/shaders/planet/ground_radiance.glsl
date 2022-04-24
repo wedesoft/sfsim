@@ -2,7 +2,7 @@
 
 float M_PI = 3.14159265358;
 
-bool sky_or_ground(float radius, vec3 point, vec3 direction);
+bool is_above_horizon(float radius, vec3 point, vec3 direction);
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int height_size, int elevation_size,
                            float power, bool above_horizon);
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
@@ -11,7 +11,7 @@ vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_ra
                      int height_size, int elevation_size, float power, vec3 point, vec3 light_direction, float water,
                      float reflectivity, float cos_incidence, float highlight, vec3 land_color, vec3 water_color)
 {
-  bool above = sky_or_ground(radius, point, light_direction);
+  bool above = is_above_horizon(radius, point, light_direction);
   vec2 uv = transmittance_forward(point, light_direction, radius, max_height, height_size, elevation_size, power, above);
   vec3 direct_light;
   if (above)

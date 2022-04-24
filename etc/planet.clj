@@ -57,7 +57,7 @@
                 :fragment [fragment-atmosphere shaders/ray-sphere shaders/transmittance-forward shaders/horizon-angle
                            shaders/ray-scatter-forward shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d
                            shaders/orthogonal-vector shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d
-                           shaders/convert-2d-index shaders/sky-or-ground]))
+                           shaders/convert-2d-index shaders/is-above-horizon]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -86,7 +86,7 @@
                            transmittance-track shaders/horizon-angle shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
-                           shaders/sky-or-ground]))
+                           shaders/is-above-horizon]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)

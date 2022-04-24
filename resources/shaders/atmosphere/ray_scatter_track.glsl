@@ -5,7 +5,7 @@ vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
 vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
                          float power, vec3 p, vec3 q);
-bool sky_or_ground(float radius, vec3 point, vec3 direction);
+bool is_above_horizon(float radius, vec3 point, vec3 direction);
 
 vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size,
                        int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
@@ -15,7 +15,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
   float dist = distance(p, q);
   if (dist > 0) {
     vec3 direction = (q - p) / dist;
-    bool above_horizon = sky_or_ground(radius, p, direction);
+    bool above_horizon = is_above_horizon(radius, p, direction);
     vec4 ray_scatter_index_p = ray_scatter_forward(p, direction, light_direction, radius, max_height, height_size,
                                                    elevation_size, light_elevation_size, heading_size, power, above_horizon);
     vec3 ray_scatter_p = interpolate_4d(ray_scatter, height_size, elevation_size, light_elevation_size, heading_size,

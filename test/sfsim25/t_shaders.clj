@@ -336,7 +336,7 @@ void main()
 }"))
 
 (def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
-                                           clip-angle oriented-matrix orthogonal-vector sky-or-ground))
+                                           clip-angle oriented-matrix orthogonal-vector is-above-horizon))
 
 (let [angle (* 0.375 PI)
       ca    (cos angle)
