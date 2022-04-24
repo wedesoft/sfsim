@@ -4,9 +4,7 @@
 * is an above-horizon boolean needed for the light-direction when computing ray-scatter and ray-scatter-forward?
 * elevation\_to\_index should use elevation value between -pi/2 and pi/2
 * only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
-* add keyboard motion commands
 * extract functions from prototype
-* remove update-tree-parents code
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius, polar-radius in a configuration file
 * \_ -> - in shader file names

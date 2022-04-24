@@ -207,24 +207,3 @@
       (:load (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => [[:2 :0] [:2 :1] [:2 :2] [:2 :3]]
       (:tree (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => one-face
       (get-in (update-level-of-detail flat (constantly false) true) [:tree :2 :sfsim25.quadtree/up]) => true)))
-
-(fact "Get path of parent node"
-  (parent-path [:1 :2 :3]) => [:1 :2])
-
-(facts "Add parent information to a tile"
-  (add-parent-info {:level 3} {:level 2}) => {:level 3 :parent {:level 2}}
-  (add-parent-info {:level 3} {:level 2 :1 {:level 3}}) => {:level 3 :parent {:level 2}}
-  (tabular "Preserve specific keys"
-    (fact (add-parent-info {:level 3} {?k 42}) => {:level 3 :parent {?k 42}})
-    ?k
-    :level
-    :face
-    :x
-    :y
-    :heightfield
-    :colors
-    :normals))
-
-(facts "Add parent information to multiple locations in tree"
-  (update-tree-parents {:level 0} []) => {:level 0}
-  (update-tree-parents {:level 0 :2 {:level 1}} [[:2]]) => {:level 0 :2 {:level 1 :parent {:level 0}}})
