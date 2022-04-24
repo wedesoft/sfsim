@@ -12,6 +12,7 @@
 * light -> light-direction
 * radius1, radius2 -> radius, polar-radius
 * use Earth explorer data: https://earthexplorer.usgs.gov/
+* use GMTED2010 data: https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
 * improve rendering of sun
