@@ -1,4 +1,9 @@
 # TODO
+* how to render shadows on planet surface
+* how to render shadows in atmosphere
+* how to render clouds
+* how to render waves
+* how to render stars
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
 * is an above-horizon boolean needed for the light-direction when computing ray-scatter and ray-scatter-forward?
@@ -16,11 +21,6 @@
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
 * improve rendering of sun
-* how to render clouds
-* how to render shadows on planet surface
-* how to render shadows in atmosphere
-* how to render waves
-* how to render stars
 * render moonlight and moon
 * organize fixtures using subdirectories
 * is all planet rendering represented as a quad-tree?
