@@ -7,6 +7,7 @@ vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_h
                            float power, bool above_horizon);
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 
+// Compute radiance of point on ground depending on illumination and atmospheric transmittance and scattering.
 vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_radiance, float radius, float max_height,
                      int height_size, int elevation_size, float power, vec3 point, vec3 light_direction, float water,
                      float reflectivity, float cos_incidence, float highlight, vec3 land_color, vec3 water_color)

@@ -1,5 +1,6 @@
 #version 410 core
 
+// Convert 4D index to texture lookup coordinates with margin where texture is clamped.
 vec4 convert_4d_index(vec4 idx, int size_w, int size_z, int size_y, int size_x)
 {
   int size = 17;

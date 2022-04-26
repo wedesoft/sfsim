@@ -35,6 +35,7 @@ vec3 stretch(vec3 v)
   return vec3(v.x, v.y, v.z * radius / polar_radius);
 }
 
+// Fragment shader to render atmosphere on a background quad.
 void main()
 {
   vec3 direction = normalize(fs_in.direction);

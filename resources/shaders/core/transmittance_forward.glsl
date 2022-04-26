@@ -3,6 +3,7 @@
 float horizon_angle(vec3 point, float radius);
 float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool above_horizon);
 
+// Convert input parameters to 2D index for lookup in transmittance table.
 vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int height_size, int elevation_size,
                            float power, bool above_horizon)
 {

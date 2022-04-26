@@ -8,6 +8,7 @@ float elevation_to_index(int size, float elevation, float horizon_angle, float p
 bool is_above_horizon(float radius, vec3 point, vec3 direction);
 mat3 oriented_matrix(vec3 n);
 
+// Convert input parameters to 4D index for lookup in precomputed ray scatter table.
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int height_size,
                          int elevation_size, int light_elevation_size, int heading_size, float power, bool above_horizon)
 {

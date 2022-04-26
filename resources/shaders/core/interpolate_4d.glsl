@@ -2,6 +2,7 @@
 
 vec4 convert_4d_index(vec4 idx, int size_w, int size_z, int size_y, int size_x);
 
+// Perform 4D texture lookup using coordinates between 0 and 1 (2 dimensions explicitely interpolated).
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx)
 {
   vec4 pixel = idx * (vec4(size_x, size_y, size_z, size_w) - 1);

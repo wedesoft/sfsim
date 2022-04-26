@@ -46,6 +46,7 @@ vec3 stretch(vec3 v)
   return vec3(v.x, v.y, v.z * radius / polar_radius);
 }
 
+// Render planet surface as seen through the atmosphere.
 void main()
 {
   vec3 normal = texture(normals, fs_in.colorcoord).xyz;

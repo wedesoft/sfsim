@@ -9,6 +9,7 @@ out VS_OUT
   highp vec3 direction;
 } vs_out;
 
+// Simple vertex shader passing through coordinates of background quad for rendering the atmosphere.
 void main()
 {
   vs_out.direction = (transform * vec4(point, 0)).xyz;

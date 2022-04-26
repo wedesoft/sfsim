@@ -13,6 +13,8 @@ out GEO_OUT
   mediump vec2 heightcoord;
   highp vec3 point;
 } geo_out;
+
+// Shader to output triangles with texture and heightfield coordinates.
 void main(void)
 {
   gl_Position = gl_in[0].gl_Position;

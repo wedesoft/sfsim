@@ -7,6 +7,7 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
                          float power, vec3 p, vec3 q);
 bool is_above_horizon(float radius, vec3 point, vec3 direction);
 
+// Compute in-scattered light between two points inside the atmosphere.
 vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size,
                        int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
                        vec3 p, vec3 q)

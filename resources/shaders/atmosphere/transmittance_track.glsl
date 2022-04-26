@@ -5,6 +5,7 @@ vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_h
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 bool is_above_horizon(float radius, vec3 point, vec3 direction);
 
+// Compute transmittance between two points inside the atmosphere.
 vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
                          float power, vec3 p, vec3 q)
 {
