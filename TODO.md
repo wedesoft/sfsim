@@ -1,7 +1,7 @@
 # TODO
-* how to render shadows on planet surface
-* how to render shadows in atmosphere
-* how to render clouds
+* 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
+* how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
+* how to render clouds and cloud shadows?
 * how to render waves
 * how to render stars
 * ground\_radiance assumes sun brightness of one -> use one everywhere?

@@ -10,6 +10,9 @@
          '[sfsim25.matrix :refer :all]
          '[sfsim25.util :refer :all])
 
+(import '[ij ImagePlus]
+        '[ij.process FloatProcessor])
+
 (def factor 1)
 (def radius 6378000.0)
 (def height (* factor 35000.0))
@@ -170,3 +173,26 @@ let [angle (* 0.7 PI)]
               (for [h (range 0 height (/ height 200))]
                    [h
                     (mget (TT (matrix [(+ radius h) 0 0]) (matrix [0 1 0]) true) 0)])])
+
+
+(defn show-floats
+  "Open a window displaying the image"
+  [{:keys [width height data]}]
+  (let [processor (FloatProcessor. width height data)
+        img       (ImagePlus.)]
+    (.setProcessor img processor)
+    (.show img)))
+
+(def size 100)
+(def n 1000)
+
+(def points (doall (repeatedly n #(mul size (matrix (repeatedly 3 rand))))))
+
+(def values (doall (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
+                            (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
+
+(def largest (apply max values))
+
+(def data (float-array (take (* size size) (pmap #(/ (- largest %) largest) values))))
+
+(show-floats {:width size :height size :data data})
