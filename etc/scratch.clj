@@ -175,24 +175,19 @@ let [angle (* 0.7 PI)]
                     (mget (TT (matrix [(+ radius h) 0 0]) (matrix [0 1 0]) true) 0)])])
 
 
-(defn show-floats
-  "Open a window displaying the image"
-  [{:keys [width height data]}]
-  (let [processor (FloatProcessor. width height data)
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.show img)))
-
-(def size 1000)
+(def size 256)
 (def n 1000)
 
 (def points (doall (repeatedly n #(mul size (matrix (repeatedly 2 rand))))))
 
-(def values (doall (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size)]
-                            (apply min (map (fn [point] (norm (sub point (matrix [i j])))) points)))))
+(def values (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size)]
+                          (apply min (map (fn [point] (norm (sub point (matrix [i j])))) points)))))
 
 (def largest (apply max values))
 
-(def data (float-array (take (* size size) (pmap #(/ (- largest %) largest) values))))
+(def data (pmap #(/ (- largest %) largest) values))
 
-(show-floats {:width size :height size :data data})
+(def mixed (cp/pfor (+ 2 (cp/ncpus)) [i (range (* 2 size)) j (range (* 2 size))]
+                    (* (nth data (+ (mod i size) (* size (mod j size)))) (nth data (+ (quot i 2) (* (quot j 2) size))))))
+
+(show-floats {:width (* 2 size) :height (* 2 size) :data (float-array mixed)})
