@@ -176,18 +176,20 @@ let [angle (* 0.7 PI)]
 
 
 (def size 256)
-(def n 1000)
 
-(def points (doall (repeatedly n #(mul size (matrix (repeatedly 2 rand))))))
+(defn points [n] (vec (repeatedly n #(mul size (matrix (repeatedly 2 rand))))))
 
-(def values (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size)]
-                          (apply min (map (fn [point] (norm (sub point (matrix [i j])))) points)))))
+(def points1 (points 30))
+(def points2 (points 120))
 
-(def largest (apply max values))
+(defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size)]
+                           (apply min (map (fn [point] (norm (sub point (matrix [i j])))) points)))))
 
-(def data (pmap #(/ (- largest %) largest) values))
+(defn normed [values] (let [largest (apply max values)] (vec (pmap #(/ (- largest %) largest) values))))
 
-(def mixed (cp/pfor (+ 2 (cp/ncpus)) [i (range (* 2 size)) j (range (* 2 size))]
-                    (* (nth data (+ (mod i size) (* size (mod j size)))) (nth data (+ (quot i 2) (* (quot j 2) size))))))
+(def values1 (normed (values points1)))
+(def values2 (normed (values points2)))
 
-(show-floats {:width (* 2 size) :height (* 2 size) :data (float-array mixed)})
+(def mixed (normed (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
+
+(show-floats {:width size :height size :data (float-array mixed)})
