@@ -183,13 +183,13 @@ let [angle (* 0.7 PI)]
     (.setProcessor img processor)
     (.show img)))
 
-(def size 100)
+(def size 1000)
 (def n 1000)
 
-(def points (doall (repeatedly n #(mul size (matrix (repeatedly 3 rand))))))
+(def points (doall (repeatedly n #(mul size (matrix (repeatedly 2 rand))))))
 
-(def values (doall (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
-                            (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
+(def values (doall (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size)]
+                            (apply min (map (fn [point] (norm (sub point (matrix [i j])))) points)))))
 
 (def largest (apply max values))
 
