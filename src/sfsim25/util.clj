@@ -8,7 +8,7 @@
            [java.io ByteArrayOutputStream]
            [ij ImagePlus]
            [ij.io Opener FileSaver]
-           [ij.process ImageConverter ColorProcessor]
+           [ij.process ImageConverter ColorProcessor FloatProcessor]
            [mikera.vectorz Vector]))
 
 (set! *unchecked-math* true)
@@ -33,6 +33,12 @@
     (io/copy in out)
     (.toByteArray out)))
 
+(defn spit-bytes
+  "Write bytes to a file"
+  [^String file-name ^bytes byte-data]
+  (with-open [out (io/output-stream file-name)]
+    (.write out byte-data)))
+
 (defn slurp-shorts
   "Read short integers from a file"
   ^shorts [^String file-name]
@@ -42,6 +48,14 @@
         result       (short-array (/ n 2))]
     (.get short-buffer result)
     result))
+
+(defn spit-shorts
+  "Write short integers to a file"
+  [^String file-name ^shorts short-data]
+  (let [n           (count short-data)
+        byte-buffer (.order (ByteBuffer/allocate (* n 2)) ByteOrder/LITTLE_ENDIAN)]
+    (.put (.asShortBuffer byte-buffer) short-data)
+    (spit-bytes file-name (.array byte-buffer))))
 
 (defn slurp-floats
   "Read floating point numbers from a file"
@@ -53,20 +67,6 @@
     (.get float-buffer result)
     result))
 
-(defn spit-bytes
-  "Write bytes to a file"
-  [^String file-name ^bytes byte-data]
-  (with-open [out (io/output-stream file-name)]
-    (.write out byte-data)))
-
-(defn spit-shorts
-  "Write short integers to a file"
-  [^String file-name ^shorts short-data]
-  (let [n           (count short-data)
-        byte-buffer (.order (ByteBuffer/allocate (* n 2)) ByteOrder/LITTLE_ENDIAN)]
-    (.put (.asShortBuffer byte-buffer) short-data)
-    (spit-bytes file-name (.array byte-buffer))))
-
 (defn spit-floats
   "Write floating point numbers to a file"
   [^String file-name ^floats float-data]
@@ -74,6 +74,14 @@
         byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
     (.put (.asFloatBuffer byte-buffer) float-data)
     (spit-bytes file-name (.array byte-buffer))))
+
+(defn show-floats
+  "Open a window displaying the image"
+  [{:keys [width height data]}]
+  (let [processor (FloatProcessor. width height data)
+        img       (ImagePlus.)]
+    (.setProcessor img processor)
+    (.show img)))
 
 (defn tile-path
   "Determine file path of map tile"
@@ -105,6 +113,13 @@
   ^double [^double x]
   (* x x))
 
+(defn slurp-image
+  "Load an RGB image"
+  [^String file-name]
+  (let [img (.openImage (Opener.) file-name)]
+    (.convertToRGB (ImageConverter. img))
+    {:width (.getWidth img) :height (.getHeight img) :data (.getPixels (.getProcessor img))}))
+
 (defn spit-image
   "Save RGB image as PNG file"
   [^String file-name {:keys [width height data]}]
@@ -120,13 +135,6 @@
         img       (ImagePlus.)]
     (.setProcessor img processor)
     (.show img)))
-
-(defn slurp-image
-  "Load an RGB image"
-  [^String file-name]
-  (let [img (.openImage (Opener.) file-name)]
-    (.convertToRGB (ImageConverter. img))
-    {:width (.getWidth img) :height (.getHeight img) :data (.getPixels (.getProcessor img))}))
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
