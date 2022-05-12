@@ -24,11 +24,12 @@
 (defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
                            (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
 
-(defn normed [values] (let [largest (apply max values)] (vec (pmap #(/ (- largest %) largest) values))))
+(defn normed [values] (let [largest (apply max values)] (vec (pmap #(/ % largest) values))))
+(defn inverted [values] (vec (pmap #(- 1 %) values)))
 
 (def values1 (normed (values points1)))
 (def values2 (normed (values points2)))
 
-(def mixed (normed (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
+(def mixed (inverted (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
 
-(show-floats {:width size :height size :data (float-array mixed)})
+(show-floats {:width size :height size :data (float-array (take (* size size) mixed))})
