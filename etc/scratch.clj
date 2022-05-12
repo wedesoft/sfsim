@@ -3,6 +3,7 @@
          '[clojure.math :refer (PI sqrt pow cos sin to-radians)]
          '[com.climate.claypoole :as cp]
          '[gnuplot.core :as g]
+         '[sfsim25.quaternion :as q]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.ray :refer :all]
          '[sfsim25.render :refer :all]
@@ -16,6 +17,7 @@
 (import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
         '[org.lwjgl.input Keyboard])
 
+; ------------------------------------------------------------------------------
 (def d 3)
 (def size 64)
 
@@ -39,8 +41,7 @@
 
 (show-floats {:width size :height size :data (float-array (take (* size size) mixed))})
 
-
-
+; ------------------------------------------------------------------------------
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
@@ -48,6 +49,8 @@
 (def z-near 10)
 (def z-far 1000)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
+(def origin (matrix [0 0 -100]))
+(def transform (transformation-matrix (quaternion->matrix (q/rotation (to-radians 90) (matrix [1 0 0]))) origin))
 
 (onscreen-render (Display/getWidth) (Display/getHeight)
                  (clear (matrix [0.5 0.5 0.5])) )
