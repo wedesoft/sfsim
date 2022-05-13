@@ -366,3 +366,29 @@ void main()
            r        0  0  0    0   1    0      0   1    1.0    true   "x"   0.0
            r        0  0  0   -1   1e-6 0     -1  -1e-6 1.0    true   "x"   0.0
            0        r  0  ca   0   sa   (- sa) 0   ca   1.0    true   "x"   8.0))
+
+(def ray-box-probe
+  (template/fn [ax ay az bx by bz ox oy oz dx dy dz]
+"#version 410 core
+out lowp vec3 fragColor;
+vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
+void main()
+{
+  vec2 result = ray_box(vec3(<%= ax %>, <%= ay %>, <%= az %>), vec3(<%= bx %>, <%= by %>, <%= bz %>),
+                        vec3(<%= ox %>, <%= oy %>, <%= oz %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>));
+  fragColor = vec3(result, 0);
+}"))
+
+(def ray-box-test (shader-test ray-box-probe ray-box))
+
+(tabular "Shader for intersection of ray with axis-aligned box"
+         (fact (ray-box-test ?ax ?ay ?az ?bx ?by ?bz ?ox ?oy ?oz ?dx ?dy ?dz) => (matrix [?ix ?iy 0]))
+         ?ax ?ay ?az ?bx ?by ?bz ?ox  ?oy  ?oz ?dx ?dy ?dz ?ix ?iy
+         3   0   0   4   1   1  -2    0.5  0.5  1  0   0   5   1
+         3   0   0   4   1   1  -2    0.5  0.5  2  0   0   2.5 0.5
+         0   3   0   1   4   1   0.5 -2    0.5  0  1   0   5   1
+         0   0   3   1   1   4   0.5  0.5 -2    0  0   1   5   1
+         3   0   0   4   1   1   9    0.5  0.5 -1  0   0   5   1
+         0   0   0   1   1   1   0.5  0.5  0.5  1  0   0   0   0.5
+         0   0   0   1   1   1   1.5  0.5  0.5  1  0   0   0   0
+         0   0   0   1   1   1   0.5  1.5  0.5  1  0   0   0   0)

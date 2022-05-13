@@ -52,3 +52,7 @@
 (def is-above-horizon
   "Check whether a ray hits the ground or stays in the sky"
   (slurp "resources/shaders/core/is_above_horizon.glsl"))
+
+(def ray-box
+  "Shader function for computing intersection of ray with box"
+  (slurp "resources/shaders/core/ray_box.glsl"))
