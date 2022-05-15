@@ -5,6 +5,7 @@
          '[gnuplot.core :as g]
          '[sfsim25.quaternion :as q]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.shaders :as s]
          '[sfsim25.ray :refer :all]
          '[sfsim25.render :refer :all]
          '[sfsim25.sphere :refer (ray-sphere-intersection)]
@@ -49,8 +50,8 @@
 (def z-near 10)
 (def z-far 1000)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
-(def origin (matrix [0 0 -100]))
-(def transform (transformation-matrix (quaternion->matrix (q/rotation (to-radians 90) (matrix [1 0 0]))) origin))
+(def origin (matrix [0 0 100]))
+(def transform (transformation-matrix (quaternion->matrix (q/rotation (to-radians 0) (matrix [1 0 0]))) origin))
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -73,14 +74,21 @@ in VS_OUT
   highp vec3 direction;
 } fs_in;
 out vec3 fragColor;
+vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
 {
-  fragColor = vec3(1, 1, 1);
+  vec3 direction = normalize(fs_in.direction);
+  vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
+  if (intersection.y > 0) {
+    float t = 1.0 - exp(-intersection.y / 30);
+    fragColor = vec3(t, t, t);
+  } else
+    fragColor = vec3(0, 0, 0);
 }")
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader]))
+                :fragment [fragment-shader s/ray-box]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -89,7 +97,7 @@ void main()
 (use-program program)
 
 (onscreen-render (Display/getWidth) (Display/getHeight)
-                 (clear (matrix [0.5 0.5 0.5]))
+                 (clear (matrix [0 0 0]))
                  (use-program program)
                  (uniform-matrix4 program :projection projection)
                  (uniform-matrix4 program :transform transform)
@@ -98,5 +106,4 @@ void main()
 
 (destroy-vertex-array-object vao)
 (destroy-program program)
-
 (Display/destroy)
