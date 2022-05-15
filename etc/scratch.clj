@@ -1,4 +1,4 @@
-(require '[clojure.core.matrix :refer (matrix div sub mul add mget) :as m]
+(require '[clojure.core.matrix :refer (matrix div sub mul add mget mmul) :as m]
          '[clojure.core.matrix.linear :refer (norm)]
          '[clojure.math :refer (PI sqrt pow cos sin to-radians)]
          '[com.climate.claypoole :as cp]
@@ -46,12 +46,13 @@
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
+(Keyboard/create)
 
 (def z-near 10)
 (def z-far 1000)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
-(def origin (matrix [0 0 100]))
-(def transform (transformation-matrix (quaternion->matrix (q/rotation (to-radians 0) (matrix [1 0 0]))) origin))
+(def origin (atom (matrix [0 0 100])))
+(def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -96,13 +97,31 @@ void main()
 
 (use-program program)
 
-(onscreen-render (Display/getWidth) (Display/getHeight)
+(def keystates (atom {}))
+
+(def t0 (atom (System/currentTimeMillis)))
+(while (not (Display/isCloseRequested))
+       (while (Keyboard/next)
+              (let [state     (Keyboard/getEventKeyState)
+                    event-key (Keyboard/getEventKey)]
+                (swap! keystates assoc event-key state)))
+       (let [t1 (System/currentTimeMillis)
+             dt (- t1 @t0)
+             ra (if (@keystates Keyboard/KEY_NUMPAD8) 0.001 (if (@keystates Keyboard/KEY_NUMPAD2) -0.001 0))
+             rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
+             rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))]
+         (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
+         (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
+         (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
+         (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
+         (swap! t0 + dt))
+       (onscreen-render (Display/getWidth) (Display/getHeight)
                  (clear (matrix [0 0 0]))
                  (use-program program)
                  (uniform-matrix4 program :projection projection)
-                 (uniform-matrix4 program :transform transform)
-                 (uniform-vector3 program :origin origin)
-                 (render-quads vao))
+                 (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
+                 (uniform-vector3 program :origin @origin)
+                 (render-quads vao)))
 
 (destroy-vertex-array-object vao)
 (destroy-program program)
