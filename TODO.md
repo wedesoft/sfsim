@@ -1,4 +1,5 @@
 # TODO
+* remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
 * how to render clouds and cloud shadows?

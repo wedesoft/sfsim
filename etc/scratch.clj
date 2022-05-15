@@ -52,7 +52,51 @@
 (def origin (matrix [0 0 -100]))
 (def transform (transformation-matrix (quaternion->matrix (q/rotation (to-radians 90) (matrix [1 0 0]))) origin))
 
+(def vertex-shader "#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+in highp vec3 point;
+out VS_OUT
+{
+  highp vec3 direction;
+} vs_out;
+void main()
+{
+  vs_out.direction = (transform * vec4(point, 0)).xyz;
+  gl_Position = projection * vec4(point, 1);
+}")
+
+(def fragment-shader "#version 410 core
+uniform vec3 origin;
+in VS_OUT
+{
+  highp vec3 direction;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}")
+
+(def program
+  (make-program :vertex [vertex-shader]
+                :fragment [fragment-shader]))
+
+(def indices [0 1 3 2])
+(def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
+(def vao (make-vertex-array-object program indices vertices [:point 3]))
+
+(use-program program)
+
 (onscreen-render (Display/getWidth) (Display/getHeight)
-                 (clear (matrix [0.5 0.5 0.5])) )
+                 (clear (matrix [0.5 0.5 0.5]))
+                 (use-program program)
+                 (uniform-matrix4 program :projection projection)
+                 (uniform-matrix4 program :transform transform)
+                 (uniform-vector3 program :origin origin)
+                 (render-quads vao))
+
+(destroy-vertex-array-object vao)
+(destroy-program program)
 
 (Display/destroy)
