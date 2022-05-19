@@ -19,30 +19,6 @@
         '[org.lwjgl.input Keyboard])
 
 ; ------------------------------------------------------------------------------
-(def d 3)
-(def size 64)
-
-(defn points [n] (vec (repeatedly n #(mul size (matrix (repeatedly d rand))))))
-
-; TODO: repeat points in all directions
-
-(def points1 (points 30))
-(def points2 (points 120))
-
-(defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
-                           (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
-
-(defn normed [values] (let [largest (apply max values)] (vec (pmap #(/ % largest) values))))
-(defn inverted [values] (vec (pmap #(- 1 %) values)))
-
-(def values1 (normed (values points1)))
-(def values2 (normed (values points2)))
-
-(def mixed (inverted (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
-
-(show-floats {:width size :height size :data (float-array (take (* size size) mixed))})
-
-; ------------------------------------------------------------------------------
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
@@ -70,6 +46,7 @@ void main()
 
 (def fragment-shader "#version 410 core
 uniform vec3 origin;
+uniform sampler3D tex;
 in VS_OUT
 {
   highp vec3 direction;
@@ -95,7 +72,33 @@ void main()
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
+(def d 3)
+(def size 64)
+
+(defn points [n] (vec (repeatedly n #(mul size (matrix (repeatedly d rand))))))
+
+; TODO: repeat points in all directions
+
+(def points1 (points 30))
+(def points2 (points 120))
+
+(defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
+                           (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
+
+(defn normed [values] (let [largest (apply max values)] (vec (pmap #(/ % largest) values))))
+(defn inverted [values] (vec (pmap #(- 1 %) values)))
+
+(def values1 (normed (values points1)))
+(def values2 (normed (values points2)))
+
+(def mixed (inverted (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
+
+(def tex (make-float-texture-3d {:width size :height size :depth size :data (float-array mixed)}))
+
+;(show-floats {:width size :height size :data (float-array (take (* size size) mixed))})
+
 (use-program program)
+(uniform-sampler program :tex 0)
 
 (def keystates (atom {}))
 
@@ -118,11 +121,13 @@ void main()
        (onscreen-render (Display/getWidth) (Display/getHeight)
                  (clear (matrix [0 0 0]))
                  (use-program program)
+                 (use-textures tex)
                  (uniform-matrix4 program :projection projection)
                  (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
                  (uniform-vector3 program :origin @origin)
                  (render-quads vao)))
 
+(destroy-texture tex)
 (destroy-vertex-array-object vao)
 (destroy-program program)
 (Display/destroy)
