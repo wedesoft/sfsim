@@ -29,6 +29,7 @@
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
+(def threshold (atom 0.0))
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -47,6 +48,7 @@ void main()
 (def fragment-shader "#version 410 core
 uniform vec3 origin;
 uniform sampler3D tex;
+uniform float threshold;
 in VS_OUT
 {
   highp vec3 direction;
@@ -58,7 +60,13 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
-    float t = 1.0 - exp(-intersection.y / 30);
+    float acc = 0.0;
+    for (int i=0; i<64; i++) {
+      vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
+      float s = texture(tex, (point + vec3(30, 30, 30)) / 60).r;
+      if (s > threshold) acc += (s - threshold) * intersection.y / 64;
+    }
+    float t = 1.0 - exp(-acc / 30);
     fragColor = vec3(t, t, t);
   } else
     fragColor = vec3(0, 0, 0);
@@ -112,10 +120,12 @@ void main()
              dt (- t1 @t0)
              ra (if (@keystates Keyboard/KEY_NUMPAD8) 0.001 (if (@keystates Keyboard/KEY_NUMPAD2) -0.001 0))
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
-             rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))]
+             rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))
+             tr (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
+         (swap! threshold + (* dt tr))
          (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
          (swap! t0 + dt))
        (onscreen-render (Display/getWidth) (Display/getHeight)
@@ -125,6 +135,7 @@ void main()
                  (uniform-matrix4 program :projection projection)
                  (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
                  (uniform-vector3 program :origin @origin)
+                 (uniform-float program :threshold @threshold)
                  (render-quads vao)))
 
 (destroy-texture tex)
