@@ -30,6 +30,7 @@
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
 (def threshold (atom 0.0))
+(def light (atom 0.0))
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -47,6 +48,7 @@ void main()
 
 (def fragment-shader "#version 410 core
 uniform vec3 origin;
+uniform vec3 light;
 uniform sampler3D tex;
 uniform float threshold;
 in VS_OUT
@@ -58,6 +60,8 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
+  float cos_light = dot(light, direction);
+  float bg = pow(max(cos_light, 0), 1000);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
     float acc = 0.0;
@@ -67,9 +71,9 @@ void main()
       if (s > threshold) acc += (s - threshold) * intersection.y / 64;
     }
     float t = 1.0 - exp(-acc / 30);
-    fragColor = vec3(t, t, t);
+    fragColor = vec3(1, 1, 1) * t + bg * (1 - t);
   } else
-    fragColor = vec3(0, 0, 0);
+    fragColor = vec3(1, 1, 1) * bg;
 }")
 
 (def program
@@ -121,12 +125,14 @@ void main()
              ra (if (@keystates Keyboard/KEY_NUMPAD8) 0.001 (if (@keystates Keyboard/KEY_NUMPAD2) -0.001 0))
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))
-             tr (if (@keystates Keyboard/KEY_ADD) 0.001 (if (@keystates Keyboard/KEY_SUBTRACT) -0.001 0))]
+             tr (if (@keystates Keyboard/KEY_MULTIPLY) 0.001 (if (@keystates Keyboard/KEY_DIVIDE) -0.001 0))
+             l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! threshold + (* dt tr))
          (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
+         (swap! light + (* l dt))
          (swap! t0 + dt))
        (onscreen-render (Display/getWidth) (Display/getHeight)
                  (clear (matrix [0 0 0]))
@@ -136,6 +142,7 @@ void main()
                  (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
                  (uniform-vector3 program :origin @origin)
                  (uniform-float program :threshold @threshold)
+                 (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
                  (render-quads vao)))
 
 (destroy-texture tex)
