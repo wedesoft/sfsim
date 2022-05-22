@@ -61,7 +61,7 @@ void main()
 {
   vec3 direction = normalize(fs_in.direction);
   float cos_light = dot(light, direction);
-  float bg = pow(max(cos_light, 0), 1000);
+  vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3 (0.1, 0.1, 0.3);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
     float acc = 0.0;
@@ -71,9 +71,9 @@ void main()
       if (s > threshold) acc += (s - threshold) * intersection.y / 64;
     }
     float t = 1.0 - exp(-acc / 30);
-    fragColor = vec3(1, 1, 1) * t + bg * (1 - t);
+    fragColor = vec3(0.5, 0.5, 0.5) * t + bg * (1 - t);
   } else
-    fragColor = vec3(1, 1, 1) * bg;
+    fragColor = bg;
 }")
 
 (def program
