@@ -1,7 +1,6 @@
 # TODO
 * check illumination of cloud (sampling to determine shadows)
 * phase function for sun scattering in clouds
-* GL<_RGB32F -> GL<_RED
 * remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
