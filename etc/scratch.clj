@@ -65,13 +65,27 @@ void main()
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
     float acc = 0.0;
-    for (int i=0; i<64; i++) {
+    float cld = 0.5;
+    for (int i=63; i>=0; i--) {
       vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
       float s = texture(tex, (point + vec3(30, 30, 30)) / 60).r;
-      if (s > threshold) acc += (s - threshold) * intersection.y / 64;
+      if (s > threshold) {
+        float dacc = (s - threshold) * intersection.y / 64;
+        acc += dacc;
+        vec2 intersection2 = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light);
+        float acc2 = 0.0;
+        for (int j=0; j<6; j++) {
+          vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
+          float s2 = texture(tex, (point2 + vec3(30, 30, 30)) / 60).r;
+          if (s2 > threshold) {
+            acc2 += (s2 - threshold) * intersection2.y / 6;
+          }
+        }
+        cld = (exp(-acc2 / 30) * dacc + cld * (acc - dacc)) / acc;
+      }
     }
-    float t = 1.0 - exp(-acc / 30);
-    fragColor = vec3(0.5, 0.5, 0.5) * t + bg * (1 - t);
+    float t = exp(-acc / 30);
+    fragColor = vec3(cld, cld, cld) * (1 - t) + bg * t;
   } else
     fragColor = bg;
 }")
