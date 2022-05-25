@@ -28,8 +28,8 @@
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
-(def threshold (atom 0.7))
-(def shadowing (atom 1.0))
+(def threshold (atom 0.57))
+(def shadowing (atom 0.37))
 (def light (atom 0.0))
 
 (def vertex-shader "#version 410 core
@@ -63,7 +63,7 @@ void main()
 {
   vec3 direction = normalize(fs_in.direction);
   float cos_light = dot(light, direction);
-  vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3 (0.1, 0.1, 0.3);
+  vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3 (0.3, 0.3, 0.5);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
     float acc = 0.0;
@@ -86,7 +86,8 @@ void main()
         float mu = dot(direction, light);
         float g = 0.76;
         float scatt = 3 * (1 - g * g) * (1 + mu) / (8 * M_PI * (2 + g * g) * pow(1 + g * g - 2 * g * mu, 1.5));
-        float cld_bright = exp(-acc2 * shadowing / 30) * scatt;
+        scatt = shadowing * scatt + (1 - shadowing);
+        float cld_bright = exp(-acc2 / 30) * scatt;
         cld = (cld_bright * dacc + cld * (acc - dacc)) / acc;
       }
     }
