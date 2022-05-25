@@ -18,7 +18,6 @@
 (import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
         '[org.lwjgl.input Keyboard])
 
-; ------------------------------------------------------------------------------
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
@@ -30,7 +29,7 @@
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
 (def threshold (atom 0.7))
-(def shadowing (atom 3.5))
+(def shadowing (atom 1.0))
 (def light (atom 0.0))
 
 (def vertex-shader "#version 410 core
@@ -53,6 +52,7 @@ uniform vec3 light;
 uniform sampler3D tex;
 uniform float threshold;
 uniform float shadowing;
+float M_PI = 3.14159265358;
 in VS_OUT
 {
   highp vec3 direction;
@@ -83,7 +83,11 @@ void main()
             acc2 += (s2 - threshold) * intersection2.y / 6;
           }
         }
-        cld = (exp(-acc2 * shadowing / 30) * dacc + cld * (acc - dacc)) / acc;
+        float mu = dot(direction, light);
+        float g = 0.76;
+        float scatt = 3 * (1 - g * g) * (1 + mu) / (8 * M_PI * (2 + g * g) * pow(1 + g * g - 2 * g * mu, 1.5));
+        float cld_bright = exp(-acc2 * shadowing / 30) * scatt;
+        cld = (cld_bright * dacc + cld * (acc - dacc)) / acc;
       }
     }
     float t = exp(-acc / 30);
