@@ -52,7 +52,6 @@ uniform vec3 light;
 uniform sampler3D tex;
 uniform float threshold;
 uniform float shadowing;
-float M_PI = 3.14159265358;
 in VS_OUT
 {
   highp vec3 direction;
