@@ -683,3 +683,40 @@ void main()
          0  0            (- 0 radius 2)          radius       0           0   0   -1   "inside.png"
          0  (* 3 radius) 0                       radius       (* -0.5 PI) 0   1    0   "yview.png"
          0  (* 3 radius) 0                       (/ radius 2) (* -0.5 PI) 0   1    0   "ellipsoid.png")
+
+(defn shader-test [probe & shaders]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices  [0 1 3 2]
+                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao      (make-vertex-array-object program indices vertices [:point 3])
+                tex      (texture-render 1 1 true (use-program program) (render-quads vao))
+                img      (texture->vectors tex 1 1)]
+            (deliver result (get-vector img 0 0))
+            (destroy-texture tex)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def phase-probe
+  (template/fn [g mu] "#version 410 core
+out lowp vec3 fragColor;
+float phase(float g, float mu);
+void main()
+{
+  float result = phase(<%= g %>, <%= mu %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def phase-test (shader-test phase-probe phase-function))
+
+(tabular "Shader function for scattering phase function"
+         (fact (mget (phase-test ?g ?mu) 0) => (roughly ?result))
+         ?g  ?mu ?result
+         0   0   (/ 3 (* 16 PI))
+         0   1   (/ 6 (* 16 PI))
+         0  -1   (/ 6 (* 16 PI))
+         0.5 0   (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5)))
+         0.5 1   (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))

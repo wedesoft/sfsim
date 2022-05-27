@@ -280,4 +280,8 @@
   "Fragment shader for rendering atmosphere and sun"
   (slurp "resources/shaders/atmosphere/fragment.glsl"))
 
+(def phase-function
+  "Shader function for scattering phase function"
+  (slurp "resources/shaders/atmosphere/phase_function.glsl"))
+
 (set! *unchecked-math* false)

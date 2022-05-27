@@ -58,6 +58,7 @@ in VS_OUT
   highp vec3 direction;
 } fs_in;
 out vec3 fragColor;
+float phase(float g, float mu);
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
 {
@@ -85,7 +86,7 @@ void main()
         }
         float mu = dot(direction, light);
         float g = 0.76;
-        float scatt = 3 * (1 - g * g) * (1 + mu) / (8 * M_PI * (2 + g * g) * pow(1 + g * g - 2 * g * mu, 1.5));
+        float scatt = phase(g, mu);
         scatt = shadowing * scatt + (1 - shadowing);
         float cld_bright = exp(-acc2 / 30) * scatt;
         cld = (cld_bright * dacc + cld * (acc - dacc)) / acc;
@@ -99,7 +100,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box]))
+                :fragment [fragment-shader s/ray-box phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
