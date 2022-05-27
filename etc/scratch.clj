@@ -84,9 +84,7 @@ void main()
             acc2 += (s2 - threshold) * intersection2.y / 6;
           }
         }
-        float mu = dot(direction, light);
-        float g = 0.76;
-        float scatt = phase(g, mu);
+        float scatt = phase(0.76, dot(direction, light));
         scatt = shadowing * scatt + (1 - shadowing);
         float cld_bright = exp(-acc2 / 30) * scatt;
         cld = (cld_bright * dacc + cld * (acc - dacc)) / acc;
