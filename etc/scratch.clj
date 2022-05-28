@@ -59,9 +59,10 @@ in VS_OUT
 out vec3 fragColor;
 float phase(float g, float mu);
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
+vec3 convert_3d_index(vec3 point, vec3 box_min, vec3 box_max);
 float lookup_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max)
 {
-  return texture(tex, (point - box_min) / (box_max - box_min)).r;
+  return texture(tex, convert_3d_index(point, box_min, box_max)).r;
 }
 void main()
 {
@@ -101,7 +102,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box phase-function]))
+                :fragment [fragment-shader s/ray-box s/convert-3d-index phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))

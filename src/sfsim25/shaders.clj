@@ -56,3 +56,7 @@
 (def ray-box
   "Shader function for computing intersection of ray with box"
   (slurp "resources/shaders/core/ray_box.glsl"))
+
+(def convert-3d-index
+  "Convert 3D point to 3D texture lookup index"
+  (slurp "resources/shaders/core/convert_3d_index.glsl"))

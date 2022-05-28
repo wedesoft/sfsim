@@ -234,24 +234,24 @@ void main()
   (fn [& args]
       (let [result (promise)]
         (offscreen-render 1 1
-          (let [indices   [0 1 3 2]
-                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                data-2d   [[1 2] [3 4] [5 6]]
-                data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
-                table     (make-vector-texture-2d {:width 2 :height 3 :data (float-array data-flat)})
-                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao       (make-vertex-array-object program indices vertices [:point 3])
-                tex       (texture-render 1 1 true
-                                          (use-program program)
-                                          (uniform-sampler program :table 0)
-                                          (use-textures table)
-                                          (render-quads vao))
-                img       (texture->vectors tex 1 1)]
-            (deliver result (get-vector img 0 0))
-            (destroy-texture tex)
-            (destroy-texture table)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
+                          (let [indices   [0 1 3 2]
+                                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                                data-2d   [[1 2] [3 4] [5 6]]
+                                data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
+                                table     (make-vector-texture-2d {:width 2 :height 3 :data (float-array data-flat)})
+                                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                                vao       (make-vertex-array-object program indices vertices [:point 3])
+                                tex       (texture-render 1 1 true
+                                                          (use-program program)
+                                                          (uniform-sampler program :table 0)
+                                                          (use-textures table)
+                                                          (render-quads vao))
+                                img       (texture->vectors tex 1 1)]
+                            (deliver result (get-vector img 0 0))
+                            (destroy-texture tex)
+                            (destroy-texture table)
+                            (destroy-vertex-array-object vao)
+                            (destroy-program program)))
         @result)))
 
 (def interpolate-2d-probe
@@ -392,3 +392,23 @@ void main()
          0   0   0   1   1   1   0.5  0.5  0.5  1  0   0   0   0.5
          0   0   0   1   1   1   1.5  0.5  0.5  1  0   0   0   0
          0   0   0   1   1   1   0.5  1.5  0.5  1  0   0   0   0)
+
+(def convert-3d-index-probe
+  (template/fn [x y z]
+"#version 410 core
+out lowp vec3 fragColor;
+vec3 convert_3d_index(vec3 point, vec3 box_min, vec3 box_max);
+void main()
+{
+  fragColor = convert_3d_index(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(-30, -20, -10), vec3(10, 0, 5));
+}"))
+
+(def convert-3d-index-test (shader-test convert-3d-index-probe convert-3d-index))
+
+(tabular "Convert 3D point to 3D texture lookup index"
+         (fact (convert-3d-index-test ?x ?y ?z) => (roughly-matrix (matrix [?r ?g ?b])))
+         ?x  ?y  ?z ?r ?g ?b
+        -30 -20 -10 0  0  0
+         10 -20 -10 1  0  0
+        -30   0 -10 0  1  0
+        -30 -20   5 0  0  1)
