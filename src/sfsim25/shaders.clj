@@ -60,3 +60,7 @@
 (def convert-3d-index
   "Convert 3D point to 3D texture lookup index"
   (slurp "resources/shaders/core/convert_3d_index.glsl"))
+
+(def interpolate-3d
+  "Perform 3D interpolation"
+  (slurp "resources/shaders/core/interpolate_3d.glsl"))

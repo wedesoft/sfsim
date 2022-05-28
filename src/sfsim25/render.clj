@@ -286,7 +286,7 @@
   (let [buffer (make-float-buffer (:data image))]
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
     (create-3d-texture texture
-      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL11/GL_RED (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
+      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
       (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
       (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
       (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT)

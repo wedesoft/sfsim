@@ -59,11 +59,7 @@ in VS_OUT
 out vec3 fragColor;
 float phase(float g, float mu);
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-vec3 convert_3d_index(vec3 point, vec3 box_min, vec3 box_max);
-float lookup_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max)
-{
-  return texture(tex, convert_3d_index(point, box_min, box_max)).r;
-}
+float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -75,7 +71,7 @@ void main()
     float cld = 0.5;
     for (int i=63; i>=0; i--) {
       vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
-      float s = lookup_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
+      float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
       if (s > threshold) {
         float dacc = (s - threshold) * intersection.y / 64;
         acc += dacc;
@@ -83,7 +79,7 @@ void main()
         float acc2 = 0.0;
         for (int j=0; j<6; j++) {
           vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
-          float s2 = lookup_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
+          float s2 = interpolate_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
           if (s2 > threshold) {
             acc2 += (s2 - threshold) * intersection2.y / 6;
           }
@@ -102,7 +98,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box s/convert-3d-index phase-function]))
+                :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
