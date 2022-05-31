@@ -458,3 +458,32 @@ void main()
          0.75  0.25 0.25 2.0
          0.25  0.75 0.25 3.0
          0.25  0.25 0.75 5.0)
+
+(def ray-shell-probe
+  (template/fn [cx cy cz radius1 radius2 ox oy oz dx dy dz selector]
+"#version 410 core
+out lowp vec3 fragColor;
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
+void main()
+{
+  vec4 result = ray_shell(vec3(<%= cx %>, <%= cy %>, <%= cz %>),
+                          <%= radius1 %>,
+                          <%= radius2 %>,
+                          vec3(<%= ox %>, <%= oy %>, <%= oz %>),
+                          vec3(<%= dx %>, <%= dy %>, <%= dz %>));
+  fragColor.rg = result.<%= selector %>;
+  fragColor.b = 0;
+}"))
+
+(def ray-shell-test (shader-test ray-shell-probe ray-shell ray-sphere))
+
+(tabular "Shader for computing intersections of ray with a shell"
+         (fact (ray-shell-test ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector)
+               => (roughly-matrix (matrix [?ix ?iy 0])))
+         ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix ?iy
+         0   0   0   1        2        -10 0   0   0   1   0   "st"       0  0
+         0   0   0   1        2        -10 0   0   0   1   0   "pq"       0  0
+         0   0   0   1        5        -10 0   3   1   0   0   "st"       6  8
+         0   0   0   1        5        -10 0   3   1   0   0   "pq"       0  0
+         0   0   0   2        3        -10 0   0   1   0   0   "st"       7  1
+         0   0   0   2        3        -10 0   0   1   0   0   "pq"      12  1)

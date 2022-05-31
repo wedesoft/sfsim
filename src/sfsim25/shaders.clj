@@ -64,3 +64,7 @@
 (def interpolate-3d
   "Perform 3D interpolation"
   (slurp "resources/shaders/core/interpolate_3d.glsl"))
+
+(def ray-shell
+  "Shader function for computing intersections of ray with a shell"
+  (slurp "resources/shaders/core/ray_shell.glsl"))
