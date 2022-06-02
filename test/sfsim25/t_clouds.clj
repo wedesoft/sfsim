@@ -1,7 +1,7 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
               [clojure.core.matrix :refer (ecount mget matrix)]
-              [sfsim25.clouds :refer :all]))
+              [sfsim25.clouds :refer :all :as clouds]))
 
 (facts "Create a vector of random points"
        (random-points 0 64)                  => []
@@ -33,3 +33,11 @@
        (invert-vector [0.0]) => [1.0]
        (invert-vector [1.0]) => [0.0]
        (invert-vector [1.0]) => vector?)
+
+(facts "Create 3D Worley noise"
+       (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.5 0.5 0.5])])]
+         (nth (worley-noise 1 2) 0)     => 1.0
+         (count (worley-noise 1 2))     => 8
+         (apply min (worley-noise 1 2)) => 0.0)
+       (with-redefs [clouds/random-points (fn [n size] (facts n => 2 size => 2)[(matrix [0.5 0.5 0.5]) (matrix [1.5 1.5 1.5])])]
+         (nth (worley-noise 2 2) 7)     => 1.0))

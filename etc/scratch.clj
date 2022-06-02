@@ -107,18 +107,10 @@ void main()
 
 (def size 64)
 
-; TODO: repeat points in all directions
+(def values1 (worley-noise 30 size))
+(def values2 (worley-noise 120 size))
 
-(def points1 (repeat-points size (random-points 30 size)))
-(def points2 (repeat-points size (random-points 120 size)))
-
-(defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
-                           (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
-
-(def values1 (normalise-vector (values points1)))
-(def values2 (normalise-vector (values points2)))
-
-(def mixed (invert-vector (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
+(def mixed (vec (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
 
 (def tex (make-float-texture-3d {:width size :height size :depth size :data (float-array mixed)}))
 

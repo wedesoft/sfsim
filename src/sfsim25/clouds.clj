@@ -1,6 +1,8 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
-    (:require [clojure.core.matrix :refer (matrix add sub)]))
+    (:require [clojure.core.matrix :refer (matrix add sub)]
+              [clojure.core.matrix.linear :refer (norm)]
+              [com.climate.claypoole :refer (pfor ncpus)]))
 
 (defn random-points
   "Create a vector of random points"
@@ -29,3 +31,12 @@
   "Invert values of a vector"
   [values]
   (mapv #(- 1 %) values))
+
+(defn worley-noise
+  "Create 3D Worley noise"
+  [n size]
+  (let [points (repeat-points size (random-points n size))]
+    (invert-vector
+      (normalise-vector
+        (pfor (+ 2 (ncpus)) [i (range size) j (range size) k (range size)]
+              (apply min (map (fn [point] (norm (sub (add (matrix [i j k]) 0.5) point))) points)))))))
