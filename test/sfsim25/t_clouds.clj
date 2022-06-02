@@ -39,5 +39,7 @@
          (nth (worley-noise 1 2) 0)     => 1.0
          (count (worley-noise 1 2))     => 8
          (apply min (worley-noise 1 2)) => 0.0)
-       (with-redefs [clouds/random-points (fn [n size] (facts n => 2 size => 2)[(matrix [0.5 0.5 0.5]) (matrix [1.5 1.5 1.5])])]
-         (nth (worley-noise 2 2) 7)     => 1.0))
+       (with-redefs [clouds/random-points (fn [n size] (facts n => 2 size => 2) [(matrix [0.5 0.5 0.5]) (matrix [1.5 1.5 1.5])])]
+         (nth (worley-noise 2 2) 7)     => 1.0)
+      (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.0 0.0 0.0])])]
+         (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
