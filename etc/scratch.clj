@@ -115,13 +115,10 @@ void main()
 (defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
                            (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
 
-(defn normed [values] (let [largest (apply max values)] (vec (pmap #(/ % largest) values))))
-(defn inverted [values] (vec (pmap #(- 1 %) values)))
+(def values1 (normalise-vector (values points1)))
+(def values2 (normalise-vector (values points2)))
 
-(def values1 (normed (values points1)))
-(def values2 (normed (values points2)))
-
-(def mixed (inverted (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
+(def mixed (invert-vector (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
 
 (def tex (make-float-texture-3d {:width size :height size :depth size :data (float-array mixed)}))
 
