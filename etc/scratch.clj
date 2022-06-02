@@ -5,6 +5,7 @@
          '[gnuplot.core :as g]
          '[sfsim25.quaternion :as q]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.clouds :refer :all]
          '[sfsim25.shaders :as s]
          '[sfsim25.ray :refer :all]
          '[sfsim25.render :refer :all]
@@ -104,15 +105,12 @@ void main()
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-(def d 3)
 (def size 64)
-
-(defn points [n] (vec (repeatedly n #(mul size (matrix (repeatedly d rand))))))
 
 ; TODO: repeat points in all directions
 
-(def points1 (points 30))
-(def points2 (points 120))
+(def points1 (random-points 30 size))
+(def points2 (random-points 120 size))
 
 (defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
                            (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
