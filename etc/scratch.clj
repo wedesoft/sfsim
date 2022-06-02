@@ -107,8 +107,8 @@ void main()
 
 (def size 64)
 
-(def values1 (worley-noise 30 size))
-(def values2 (worley-noise 120 size))
+(def values1 (worley-noise 10 size))
+(def values2 (worley-noise 30 size))
 
 (def mixed (vec (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
 
