@@ -31,6 +31,7 @@
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
 (def threshold (atom 0.57))
 (def shadowing (atom 0.37))
+(def multiplier (atom 1.0))
 (def light (atom 0.0))
 
 (def vertex-shader "#version 410 core
@@ -53,6 +54,7 @@ uniform vec3 light;
 uniform sampler3D tex;
 uniform float threshold;
 uniform float shadowing;
+uniform float multiplier;
 in VS_OUT
 {
   highp vec3 direction;
@@ -74,7 +76,7 @@ void main()
       vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
       float s = interpolate_3d(tex, point, vec3(-15, -15, -15), vec3(15, 15, 15));
       if (s > threshold) {
-        float dacc = (s - threshold) * intersection.y / 64;
+        float dacc = multiplier * (s - threshold) * intersection.y / 64;
         acc += dacc;
         vec2 intersection2 = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light);
         float acc2 = 0.0;
@@ -82,7 +84,7 @@ void main()
           vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
           float s2 = interpolate_3d(tex, point2, vec3(-15, -15, -15), vec3(15, 15, 15));
           if (s2 > threshold) {
-            acc2 += (s2 - threshold) * intersection2.y / 6;
+            acc2 += multiplier * (s2 - threshold) * intersection2.y / 6;
           }
         }
         float scatt = phase(0.76, dot(direction, light));
@@ -134,12 +136,14 @@ void main()
              rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))
              tr (if (@keystates Keyboard/KEY_MULTIPLY) 0.001 (if (@keystates Keyboard/KEY_DIVIDE) -0.001 0))
              ts (if (@keystates Keyboard/KEY_NUMPAD7) 0.001 (if (@keystates Keyboard/KEY_NUMPAD0) -0.001 0))
+             tm (if (@keystates Keyboard/KEY_A) 0.001 (if (@keystates Keyboard/KEY_Q) -0.001 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! threshold + (* dt tr))
          (swap! shadowing + (* dt ts))
+         (swap! multiplier + (* dt tm))
          (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
          (swap! light + (* l dt))
          (swap! t0 + dt))
@@ -152,6 +156,7 @@ void main()
                  (uniform-vector3 program :origin @origin)
                  (uniform-float program :threshold @threshold)
                  (uniform-float program :shadowing @shadowing)
+                 (uniform-float program :multiplier @multiplier)
                  (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
                  (render-quads vao)))
 
