@@ -18,3 +18,9 @@
                                   (sub point (matrix [0 0 size]))
                                   (add point (matrix [0 0 size]))])
                      points))))
+
+(defn normalise-vector
+  "Normalise the values of an array"
+  [values]
+  (let [maximum (apply max values)]
+    (mapv #(/ % maximum) values)))

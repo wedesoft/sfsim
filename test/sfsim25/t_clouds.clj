@@ -22,3 +22,8 @@
        (nth (repeat-points 10 [(matrix [2 3 5])]) 4) => (matrix [ 2 13  5])
        (nth (repeat-points 10 [(matrix [2 3 5])]) 5) => (matrix [ 2  3 -5])
        (nth (repeat-points 10 [(matrix [2 3 5])]) 6) => (matrix [ 2  3 15]))
+
+(facts "Normalise values in an array"
+       (normalise-vector [0.0 1.0]) => [0.0 1.0]
+       (normalise-vector [0.0 1.0 2.0]) => [0.0 0.5 1.0]
+       (normalise-vector [0.0 1.0]) => vector?)

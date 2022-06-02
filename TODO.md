@@ -1,5 +1,5 @@
 # TODO
-* create 3D texture using point cloud
+* create 3D texture data using point cloud
 * combine atmospheric scattering with clouds in a numerically stable way
 * remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
