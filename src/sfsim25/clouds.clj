@@ -20,7 +20,12 @@
                      points))))
 
 (defn normalise-vector
-  "Normalise the values of an array"
+  "Normalise the values of a vector"
   [values]
   (let [maximum (apply max values)]
-    (mapv #(/ % maximum) values)))
+    (vec (pmap #(/ % maximum) values))))
+
+(defn invert-vector
+  "Invert values of a vector"
+  [values]
+  (mapv #(- 1 %) values))
