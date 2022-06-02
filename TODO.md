@@ -1,5 +1,4 @@
 # TODO
-* do all combinations for repeating points
 * combine atmospheric scattering with clouds in a numerically stable way
 * remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise

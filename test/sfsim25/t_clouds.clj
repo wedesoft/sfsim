@@ -13,15 +13,16 @@
 
 (facts "Repeat point cloud in each direction"
        (repeat-points 10 [])                         => []
-       (count (repeat-points 10 [(matrix [2 3 5])])) => 7
+       (count (repeat-points 10 [(matrix [2 3 5])])) => 27
        (repeat-points 10 [(matrix [2 3 5])])         => vector?
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 0) => (matrix [ 2  3  5])
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 1) => (matrix [-8  3  5])
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 2) => (matrix [12  3  5])
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 3) => (matrix [ 2 -7  5])
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 4) => (matrix [ 2 13  5])
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 5) => (matrix [ 2  3 -5])
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 6) => (matrix [ 2  3 15]))
+       (nth (repeat-points 10 [(matrix [2 3 5])]) 0) => (matrix [2 3 5])
+       (nth (repeat-points 1 [(matrix [0 0 0])])  0) => (matrix [ 0  0  0])
+       (nth (repeat-points 1 [(matrix [0 0 0])])  1) => (matrix [-1  0  0])
+       (nth (repeat-points 1 [(matrix [0 0 0])])  2) => (matrix [ 1  0  0])
+       (nth (repeat-points 1 [(matrix [0 0 0])])  3) => (matrix [ 0 -1  0])
+       (nth (repeat-points 1 [(matrix [0 0 0])])  6) => (matrix [ 0  1  0])
+       (nth (repeat-points 1 [(matrix [0 0 0])])  9) => (matrix [ 0  0 -1])
+       (nth (repeat-points 1 [(matrix [0 0 0])]) 18) => (matrix [ 0  0  1]))
 
 (facts "Normalise values of a vector"
        (normalise-vector [1.0])         => [1.0]

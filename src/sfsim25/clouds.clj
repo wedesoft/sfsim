@@ -12,14 +12,9 @@
 (defn repeat-points
   "Repeat point cloud in each direction"
   [size points]
-  (vec (flatten (map (fn [point] [point
-                                  (sub point (matrix [size 0 0]))
-                                  (add point (matrix [size 0 0]))
-                                  (sub point (matrix [0 size 0]))
-                                  (add point (matrix [0 size 0]))
-                                  (sub point (matrix [0 0 size]))
-                                  (add point (matrix [0 0 size]))])
-                     points))))
+  (let [offsets      [0 (- size) size]
+        combinations (for [k offsets j offsets i offsets] (matrix [i j k]))]
+    (vec (flatten (map (fn [point] (map #(add point %) combinations)) points)))))
 
 (defn normalise-vector
   "Normalise the values of a vector"
