@@ -74,7 +74,7 @@ void main()
     float cld = 0.5;
     for (int i=63; i>=0; i--) {
       vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
-      float s = interpolate_3d(tex, point, vec3(-15, -15, -15), vec3(15, 15, 15));
+      float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
       if (s > threshold) {
         float dacc = multiplier * (s - threshold) * intersection.y / 64;
         acc += dacc;
@@ -82,7 +82,7 @@ void main()
         float acc2 = 0.0;
         for (int j=0; j<6; j++) {
           vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
-          float s2 = interpolate_3d(tex, point2, vec3(-15, -15, -15), vec3(15, 15, 15));
+          float s2 = interpolate_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
           if (s2 > threshold) {
             acc2 += multiplier * (s2 - threshold) * intersection2.y / 6;
           }
