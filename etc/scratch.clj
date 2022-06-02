@@ -72,7 +72,7 @@ void main()
     float cld = 0.5;
     for (int i=63; i>=0; i--) {
       vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
-      float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
+      float s = interpolate_3d(tex, point, vec3(-15, -15, -15), vec3(15, 15, 15));
       if (s > threshold) {
         float dacc = (s - threshold) * intersection.y / 64;
         acc += dacc;
@@ -80,7 +80,7 @@ void main()
         float acc2 = 0.0;
         for (int j=0; j<6; j++) {
           vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
-          float s2 = interpolate_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
+          float s2 = interpolate_3d(tex, point2, vec3(-15, -15, -15), vec3(15, 15, 15));
           if (s2 > threshold) {
             acc2 += (s2 - threshold) * intersection2.y / 6;
           }
@@ -109,8 +109,8 @@ void main()
 
 ; TODO: repeat points in all directions
 
-(def points1 (random-points 30 size))
-(def points2 (random-points 120 size))
+(def points1 (repeat-points size (random-points 30 size)))
+(def points2 (repeat-points size (random-points 120 size)))
 
 (defn values [points] (vec (cp/pfor (+ 2 (cp/ncpus)) [i (range size) j (range size) k (range size)]
                            (apply min (map (fn [point] (norm (sub point (matrix [i j k])))) points)))))
