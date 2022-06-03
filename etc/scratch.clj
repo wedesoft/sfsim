@@ -70,31 +70,27 @@ void main()
   vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3 (0.3, 0.3, 0.5);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
-    float acc = 0.0;
-    float cld = 0.5;
     for (int i=63; i>=0; i--) {
       vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
       float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
       if (s > threshold) {
         float dacc = multiplier * (s - threshold) * intersection.y / 64;
-        acc += dacc;
         vec2 intersection2 = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light);
-        float acc2 = 0.0;
+        float bright = 4.0;
         for (int j=0; j<6; j++) {
           vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
           float s2 = interpolate_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
           if (s2 > threshold) {
-            acc2 += multiplier * (s2 - threshold) * intersection2.y / 6;
+            bright = bright * exp(-multiplier * (s2 - threshold) * intersection2.y / 6);
           }
         }
         float scatt = phase(0.76, dot(direction, light));
         scatt = shadowing * scatt + (1 - shadowing);
-        float cld_bright = exp(-acc2 / 30) * scatt;
-        cld = (cld_bright * dacc + cld * (acc - dacc)) / acc;
+        float m = exp(-dacc / 30);
+        bg = m * bg + bright * scatt * (1 - m);
       }
     }
-    float t = exp(-acc / 30);
-    fragColor = vec3(cld, cld, cld) * (1 - t) + bg * t;
+    fragColor = bg;
   } else
     fragColor = bg;
 }")
@@ -134,8 +130,8 @@ void main()
              ra (if (@keystates Keyboard/KEY_NUMPAD8) 0.001 (if (@keystates Keyboard/KEY_NUMPAD2) -0.001 0))
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))
-             tr (if (@keystates Keyboard/KEY_MULTIPLY) 0.001 (if (@keystates Keyboard/KEY_DIVIDE) -0.001 0))
-             ts (if (@keystates Keyboard/KEY_NUMPAD7) 0.001 (if (@keystates Keyboard/KEY_NUMPAD0) -0.001 0))
+             tr (if (@keystates Keyboard/KEY_D) 0.001 (if (@keystates Keyboard/KEY_E) -0.001 0))
+             ts (if (@keystates Keyboard/KEY_S) 0.001 (if (@keystates Keyboard/KEY_W) -0.001 0))
              tm (if (@keystates Keyboard/KEY_A) 0.001 (if (@keystates Keyboard/KEY_Q) -0.001 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
