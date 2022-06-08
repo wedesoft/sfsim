@@ -86,13 +86,14 @@ void main()
           float s2 = interpolate_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
           if (s2 > threshold) {
             float transparency = exp(-multiplier * (s2 - threshold) * intersection2.y / 6);
-            float forward_scatter = 1 - exp(-multiplier2 * (s2 - threshold) * intersection2.y / 6);
-            intensity = intensity * transparency + forward_scatter * intensity;
+            float density = 1 - exp(-multiplier2 * (s2 - threshold) * intersection2.y / 6);
+            float scatter = (shadowing * phase(0.76, -1) + 1 - shadowing) * density;
+            intensity = intensity * transparency + scatter * intensity;
           }
         }
         float transparency = exp(-multiplier * (s - threshold) * intersection.y / 64);
-        float forward_scatter = 1 - exp(-multiplier2 * (s - threshold) * intersection.y / 64);
-        float scatter = (shadowing * phase(0.76, dot(direction, light)) + 1 - shadowing) * forward_scatter;
+        float density = 1 - exp(-multiplier2 * (s - threshold) * intersection.y / 64);
+        float scatter = (shadowing * phase(0.76, dot(direction, light)) + 1 - shadowing) * density;
         bg = bg * transparency + scatter * intensity;
       }
     }
