@@ -30,10 +30,10 @@
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
 (def threshold (atom 0.1))
-(def shadowing (atom 0.265))
-(def multiplier (atom 1.0))
-(def multiplier2 (atom 0.137))
-(def initial (atom 1.5))
+(def shadowing (atom 0.4))
+(def multiplier (atom 0.8))
+(def multiplier2 (atom 0.6))
+(def initial (atom 1.0))
 (def light (atom 0.0))
 
 (def vertex-shader "#version 410 core
@@ -50,7 +50,8 @@ void main()
   gl_Position = projection * vec4(point, 1);
 }")
 
-(def fragment-shader "#version 410 core
+(def fragment-shader
+"#version 410 core
 uniform vec3 origin;
 uniform vec3 light;
 uniform sampler3D tex;
@@ -71,27 +72,28 @@ void main()
 {
   vec3 direction = normalize(fs_in.direction);
   float cos_light = dot(light, direction);
-  vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3 (0.3, 0.3, 0.5);
+  vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3(0.3, 0.3, 0.5);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
     for (int i=63; i>=0; i--) {
       vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
       float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
       if (s > threshold) {
-        float dacc = multiplier * (s - threshold) * intersection.y / 64;
         vec2 intersection2 = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light);
-        float bright = initial;
+        float intensity = initial;
         for (int j=0; j<6; j++) {
           vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
           float s2 = interpolate_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
           if (s2 > threshold) {
-            bright = bright * exp(-multiplier2 * (s2 - threshold) * intersection2.y / 6);
+            float transparency = exp(-multiplier * (s2 - threshold) * intersection2.y / 6);
+            float forward_scatter = 1 - exp(-multiplier2 * (s2 - threshold) * intersection2.y / 6);
+            intensity = intensity * transparency + forward_scatter * intensity;
           }
         }
-        float scatt = phase(0.76, dot(direction, light));
-        scatt = shadowing * scatt + (1 - shadowing);
-        float m = exp(-dacc / 30);
-        bg = m * bg + bright * scatt * (1 - m);
+        float transparency = exp(-multiplier * (s - threshold) * intersection.y / 64);
+        float forward_scatter = 1 - exp(-multiplier2 * (s - threshold) * intersection.y / 64);
+        float scatter = (shadowing * phase(0.76, dot(direction, light)) + 1 - shadowing) * forward_scatter;
+        bg = bg * transparency + scatter * intensity;
       }
     }
     fragColor = bg;
@@ -169,8 +171,8 @@ void main()
                  (uniform-vector3 program :origin @origin)
                  (uniform-float program :threshold @threshold)
                  (uniform-float program :shadowing @shadowing)
-                 (uniform-float program :multiplier @multiplier)
-                 (uniform-float program :multiplier2 @multiplier2)
+                 (uniform-float program :multiplier (* 0.1 @multiplier))
+                 (uniform-float program :multiplier2 (* 0.1 @multiplier2))
                  (uniform-float program :initial @initial)
                  (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
                  (render-quads vao)))
