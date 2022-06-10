@@ -1,5 +1,8 @@
 # TODO
 * combine atmospheric scattering with clouds in a numerically stable way
+  * (rayscatterp1 - transmittancep1p2 * rayscatterp2) + (transmittancep1p2 * rayscatterp2 - transmittancep1p3 * rayscatterp3)
+  * test stepwise ray scatter track without and with clouds
+  * cloud density function using 3D textures and vertical threshold curves
 * remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
