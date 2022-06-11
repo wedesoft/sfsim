@@ -35,3 +35,7 @@
       (normalise-vector
         (pfor (+ 2 (ncpus)) [i (range size) j (range size) k (range size)]
               (apply min (map (fn [point] (norm (sub (add (matrix [i j k]) 0.5) point))) points)))))))
+
+(def cloud-track
+  "Shader for putting volumetric clouds into the atmosphere"
+  (slurp "resources/shaders/clouds/cloud_track.glsl"))

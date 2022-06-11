@@ -1,6 +1,10 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [clojure.core.matrix :refer (ecount mget matrix)]
+              [comb.template :as template]
+              [clojure.core.matrix :refer (ecount mget matrix sub)]
+              [clojure.core.matrix.linear :refer (norm)]
+              [sfsim25.render :refer :all]
+              [sfsim25.util :refer :all]
               [sfsim25.clouds :refer :all :as clouds]))
 
 (facts "Create a vector of random points"
@@ -44,3 +48,50 @@
          (nth (worley-noise 2 2) 7)     => 1.0)
       (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.0 0.0 0.0])])]
          (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
+
+(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
+
+(def vertex-passthrough "#version 410 core
+in highp vec3 point;
+void main()
+{
+  gl_Position = vec4(point, 1);
+}")
+
+(defn shader-test [probe & shaders]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices       [0 1 3 2]
+                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao           (make-vertex-array-object program indices vertices [:point 3])
+                tex           (texture-render 1 1 true
+                                              (use-program program)
+                                              (render-quads vao))
+                img           (texture->vectors tex 1 1)]
+            (deliver result (get-vector img 0 0))
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def cloud-track-probe
+  (template/fn [ox px qx]
+"#version 410 core
+out lowp vec3 fragColor;
+vec3 cloud_track(vec3 origin, vec3 p, vec3 q);
+void main()
+{
+  vec3 o = vec3(<%= ox %>, 0, 0);
+  vec3 p = vec3(<%= px %>, 0, 0);
+  vec3 q = vec3(<%= qx %>, 0, 0);
+  fragColor = cloud_track(o, p, q);
+}
+"))
+
+(def cloud-track-test (shader-test cloud-track-probe cloud-track))
+
+(tabular "Shader for putting volumetric clouds into the atmosphere"
+         (fact (cloud-track-test ?ox ?px ?qx) => (roughly-matrix (matrix [?r ?g ?b]) 1e-3))
+         ?ox ?px ?qx ?r ?g ?b
+         0   0   0   0  0  0)
