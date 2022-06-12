@@ -101,5 +101,6 @@ void main()
          (fact (cloud-track-test ?px ?qx ?n ?factor ?ir ?ig ?ib) => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
          ?px ?qx ?n ?factor ?ir ?ig ?ib ?or      ?og ?ob
          0   1   1  0       0   0   0   0        0   0
+         0   0   1  0       1   1   1   1        1   1
          0   1   1  0       1   1   1   1        1   1
          0   1   1  1       1   0   0   (exp -1) 0   0)
