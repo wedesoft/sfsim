@@ -1,7 +1,8 @@
 # TODO
 * combine atmospheric scattering with clouds in a numerically stable way
-  * (rayscatterp1 - transmittancep1p2 * rayscatterp2) + (transmittancep1p2 * rayscatterp2 - transmittancep1p3 * rayscatterp3)
+  * (rayscatterp1 - transmittancep1p2 * rayscatterp2) + transmittancep1p2 * (rayscatterp2 - transmittancep2p3 * rayscatterp3)
   * transmittancep2p3 = transmittancep1p3 / transmittancep1p2
+
   * test stepwise ray scatter track without and with clouds
   * cloud density function using 3D textures and vertical threshold curves
 * remove lowp, mediump, highp

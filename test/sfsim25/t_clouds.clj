@@ -1,6 +1,7 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
+              [clojure.math :refer (exp)]
               [clojure.core.matrix :refer (ecount mget matrix sub)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.render :refer :all]
@@ -76,22 +77,29 @@ void main()
         @result)))
 
 (def cloud-track-probe
-  (template/fn [ox px qx]
+  (template/fn [px qx n factor ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 cloud_track(vec3 origin, vec3 p, vec3 q);
+float transmittance_forward(vec3 point, vec3 direction)
+{
+  float distance = 10 - point.x;
+  return exp(-<%= factor %> * distance);
+}
+vec3 cloud_track(vec3 p, vec3 q, int n, vec3 light);
 void main()
 {
-  vec3 o = vec3(<%= ox %>, 0, 0);
   vec3 p = vec3(<%= px %>, 0, 0);
   vec3 q = vec3(<%= qx %>, 0, 0);
-  fragColor = cloud_track(o, p, q);
+  vec3 light = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
+  fragColor = cloud_track(p, q, <%= n %>, light);
 }
 "))
 
 (def cloud-track-test (shader-test cloud-track-probe cloud-track))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test ?ox ?px ?qx) => (roughly-matrix (matrix [?r ?g ?b]) 1e-3))
-         ?ox ?px ?qx ?r ?g ?b
-         0   0   0   0  0  0)
+         (fact (cloud-track-test ?px ?qx ?n ?factor ?ir ?ig ?ib) => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
+         ?px ?qx ?n ?factor ?ir ?ig ?ib ?or      ?og ?ob
+         0   1   1  0       0   0   0   0        0   0
+         0   1   1  0       1   1   1   1        1   1
+         0   1   1  1       1   0   0   (exp -1) 0   0)
