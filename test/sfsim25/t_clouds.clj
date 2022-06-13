@@ -1,7 +1,7 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
               [comb.template :as template]
-              [clojure.math :refer (exp)]
+              [clojure.math :refer (exp log)]
               [clojure.core.matrix :refer (ecount mget matrix sub)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.render :refer :all]
@@ -77,13 +77,19 @@ void main()
         @result)))
 
 (def cloud-track-probe
-  (template/fn [px qx n factor ir ig ib]
+  (template/fn [px qx n decay scatter ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
 float transmittance_forward(vec3 point, vec3 direction)
 {
   float distance = 10 - point.x;
-  return exp(-<%= factor %> * distance);
+  return exp(-<%= decay %> * distance);
+}
+vec3 ray_scatter_forward(vec3 point, vec3 direction)
+{
+  float distance = 10 - point.x;
+  float amount = <%= scatter %> * (1 - pow(2, -distance));
+  return vec3(0, 0, amount);
 }
 vec3 cloud_track(vec3 p, vec3 q, int n, vec3 light);
 void main()
@@ -98,9 +104,12 @@ void main()
 (def cloud-track-test (shader-test cloud-track-probe cloud-track))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test ?px ?qx ?n ?factor ?ir ?ig ?ib) => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?px ?qx ?n ?factor ?ir ?ig ?ib ?or      ?og ?ob
-         0   1   1  0       0   0   0   0        0   0
-         0   0   1  0       1   1   1   1        1   1
-         0   1   1  0       1   1   1   1        1   1
-         0   1   1  1       1   0   0   (exp -1) 0   0)
+         (fact (cloud-track-test ?px ?qx ?n ?decay ?scatter ?ir ?ig ?ib) => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
+         ?px ?qx ?n ?decay  ?scatter ?ir ?ig ?ib ?or      ?og ?ob
+         0    1  1  0       0        0   0   0   0        0   0
+         0    0  1  0       0        1   1   1   1        1   1
+         0    1  1  0       0        1   1   1   1        1   1
+         0    1  1  1       0        1   0   0   (exp -1) 0   0
+         9   10  1  0       1        0   0   0   0        0   0.5
+         8    9  1  0       1        0   0   0   0        0   0.25
+         8    9  1  (log 2) 1        0   0   0   0        0   0.5)
