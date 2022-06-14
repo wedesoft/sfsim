@@ -1,9 +1,11 @@
 # TODO
 * combine atmospheric scattering with clouds in a numerically stable way
-  * use colors for transparency
+  * add light direction to ray\_scatter\_forward parameters
   * test stepwise ray scatter track without and with clouds
   * change constant parameters to uniforms (especially
   * cloud density function using 3D textures and vertical threshold curves
+  * article about clouds
+* article about TDD and OpenGL
 * remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
