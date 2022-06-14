@@ -8,13 +8,18 @@ vec3 cloud_track(vec3 p, vec3 q, int n, vec3 light)
   float dist = distance(p, q);
   if (dist > 0) {
     vec3 direction = (q - p) / dist;
-    float transmittance_p = transmittance_forward(p, direction);
-    float transmittance_q = transmittance_forward(q, direction);
-    float transmittance_p_q = transmittance_p / transmittance_q;
-    vec3 ray_scatter_p = ray_scatter_forward(p, direction);
-    vec3 ray_scatter_q = ray_scatter_forward(q, direction);
-    vec3 in_scattering = ray_scatter_p - ray_scatter_q * transmittance_p_q;
-    return light * transmittance_p_q + in_scattering;
-  } else
-    return light;
+    vec3 delta = (q - p) / n;
+    for (int i=0; i<n; i++) {
+      vec3 a = p + delta * i;
+      vec3 b = a + delta;
+      float transmittance_a = transmittance_forward(a, direction);
+      float transmittance_b = transmittance_forward(b, direction);
+      float transmittance_a_b = transmittance_a / transmittance_b;
+      vec3 ray_scatter_a = ray_scatter_forward(a, direction);
+      vec3 ray_scatter_b = ray_scatter_forward(b, direction);
+      vec3 in_scattering = ray_scatter_a - ray_scatter_b * transmittance_a_b;
+      light = light * transmittance_a_b + in_scattering;
+    };
+  };
+  return light;
 }
