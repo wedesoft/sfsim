@@ -30,7 +30,7 @@
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
 (def threshold (atom 0.1))
-(def shadowing (atom 0.4))
+(def anisotropic (atom 0.4))
 (def multiplier (atom 0.8))
 (def multiplier2 (atom 0.6))
 (def initial (atom 1.0))
@@ -56,7 +56,7 @@ uniform vec3 origin;
 uniform vec3 light;
 uniform sampler3D tex;
 uniform float threshold;
-uniform float shadowing;
+uniform float anisotropic;
 uniform float multiplier;
 uniform float multiplier2;
 uniform float initial;
@@ -87,13 +87,13 @@ void main()
           if (s2 > threshold) {
             float transparency = exp(-multiplier * (s2 - threshold) * intersection2.y / 6);
             float density = 1 - exp(-multiplier2 * (s2 - threshold) * intersection2.y / 6);
-            float scatter = (shadowing * phase(0.76, -1) + 1 - shadowing) * density;
+            float scatter = (anisotropic * phase(0.76, -1) + (1 - anisotropic) / (4 * 3.141)) * density;
             intensity = intensity * transparency + scatter * intensity;
           }
         }
         float transparency = exp(-multiplier * (s - threshold) * intersection.y / 64);
         float density = 1 - exp(-multiplier2 * (s - threshold) * intersection.y / 64);
-        float scatter = (shadowing * phase(0.76, dot(direction, light)) + 1 - shadowing) * density;
+        float scatter = (anisotropic * phase(0.76, dot(direction, light)) + (1 - anisotropic)) * density;
         bg = bg * transparency + scatter * intensity;
       }
     }
@@ -151,7 +151,7 @@ void main()
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! threshold + (* dt tr))
-         (swap! shadowing + (* dt ts))
+         (swap! anisotropic + (* dt ts))
          (swap! multiplier + (* dt tm))
          (swap! multiplier2 + (* dt t2))
          (swap! initial + (* dt ti))
@@ -159,7 +159,7 @@ void main()
          (swap! light + (* l dt))
          (swap! t0 + dt))
        (print "\rthreshold" (format "%.3f" @threshold)
-              "shadowing" (format "%.3f" @shadowing)
+              "anisotropic" (format "%.3f" @anisotropic)
               "multiplier" (format "%.3f" @multiplier)
               "multiplier2" (format "%.3f" @multiplier2)
               "initial" (format "%.3f" @initial) "              ")
@@ -171,7 +171,7 @@ void main()
                  (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
                  (uniform-vector3 program :origin @origin)
                  (uniform-float program :threshold @threshold)
-                 (uniform-float program :shadowing @shadowing)
+                 (uniform-float program :anisotropic @anisotropic)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
                  (uniform-float program :multiplier2 (* 0.1 @multiplier2))
                  (uniform-float program :initial @initial)

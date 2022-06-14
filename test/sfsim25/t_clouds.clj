@@ -80,10 +80,11 @@ void main()
   (template/fn [px qx n decay scatter ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
-float transmittance_forward(vec3 point, vec3 direction)
+vec3 transmittance_forward(vec3 point, vec3 direction)
 {
   float distance = 10 - point.x;
-  return exp(-<%= decay %> * distance);
+  float transmittance = exp(-<%= decay %> * distance);
+  return vec3(transmittance, transmittance, transmittance);
 }
 vec3 ray_scatter_forward(vec3 point, vec3 direction)
 {

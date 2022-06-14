@@ -1,9 +1,8 @@
 # TODO
 * combine atmospheric scattering with clouds in a numerically stable way
-  * (rayscatterp1 - transmittancep1p2 * rayscatterp2) + transmittancep1p2 * (rayscatterp2 - transmittancep2p3 * rayscatterp3)
-  * transmittancep2p3 = transmittancep1p3 / transmittancep1p2
-
+  * use colors for transparency
   * test stepwise ray scatter track without and with clouds
+  * change constant parameters to uniforms (especially
   * cloud density function using 3D textures and vertical threshold curves
 * remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
