@@ -87,7 +87,7 @@ void main()
           if (s2 > threshold) {
             float transparency = exp(-multiplier * (s2 - threshold) * intersection2.y / 6);
             float density = 1 - exp(-multiplier2 * (s2 - threshold) * intersection2.y / 6);
-            float scatter = (anisotropic * phase(0.76, -1) + (1 - anisotropic) / (4 * 3.141)) * density;
+            float scatter = (anisotropic * phase(0.76, -1) + (1 - anisotropic)) * density;
             intensity = intensity * transparency + scatter * intensity;
           }
         }
