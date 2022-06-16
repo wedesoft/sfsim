@@ -1,12 +1,8 @@
 # TODO
 * combine atmospheric scattering with clouds in a numerically stable way
-  * i(n+1) = i(n) * transparency(n) + inscatter(n)
-  * (1 - exp(-2))   (1 - exp(-2))    <->   (1 - exp(-4))
-  * (+ (- 1 (exp -2)) (\* (exp -2) (+ (- 1 (exp -2)) (\* (exp -2) 0.5))))
-  * (+ (- 1 (exp -4)) (\* (exp -4) 0.5))
-  * add light direction to ray\_scatter\_forward parameters
-  * test stepwise ray scatter track without and with clouds
   * change constant parameters to uniforms (especially
+  * test anisotropic/isotropic scattering in cloud
+  * test stepwise ray scatter track without and with clouds
   * cloud density function using 3D textures and vertical threshold curves
   * article about clouds
 * article about TDD and OpenGL
