@@ -96,13 +96,17 @@ float cloud_density(vec3 point)
 {
   return <%= density %>;
 }
-vec3 cloud_track(vec3 p, vec3 q, int n, vec3 background);
+vec3 clouded_light(vec3 point, vec3 light)
+{
+  return vec3(0, 1, 0);
+}
+vec3 cloud_track(vec3 p, vec3 q, int n, vec3 background, vec3 light);
 void main()
 {
   vec3 p = vec3(<%= px %>, 0, 0);
   vec3 q = vec3(<%= qx %>, 0, 0);
   vec3 background = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  fragColor = cloud_track(p, q, <%= n %>, background);
+  fragColor = cloud_track(p, q, <%= n %>, background, vec3(0, 0, 1));
 }
 "))
 
@@ -111,13 +115,15 @@ void main()
 (tabular "Shader for putting volumetric clouds into the atmosphere"
          (fact (cloud-track-test ?px ?qx ?n ?decay ?scatter ?density ?ir ?ig ?ib)
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?px ?qx ?n ?decay  ?scatter ?density ?ir ?ig ?ib ?or      ?og ?ob
-         0    1  1  0       0        0.0      0   0   0   0        0   0
-         0    0  1  0       0        0.0      1   1   1   1        1   1
-         0    1  1  0       0        0.0      1   1   1   1        1   1
-         0    1  1  1       0        0.0      1   0   0   (exp -1) 0   0
-         9   10  1  0       1        0.0      0   0   0   0        0   0.5
-         8    9  1  0       1        0.0      0   0   0   0        0   0.25
-         8    9  1  (log 2) 1        0.0      0   0   0   0        0   0.5
-         8    9  2  (log 2) 1        0.0      0   0   0   0        0   0.5
-         0    1  1  0       0        1.0      0   0   0   0        0   0)
+         ?px ?qx ?n ?decay  ?scatter ?density ?ir ?ig ?ib ?or      ?og            ?ob
+         0    1  1  0       0        0.0      0   0   0   0        0              0
+         0    0  1  0       0        0.0      1   1   1   1        1              1
+         0    1  1  0       0        0.0      1   1   1   1        1              1
+         0    1  1  1       0        0.0      1   0   0   (exp -1) 0              0
+         9   10  1  0       1        0.0      0   0   0   0        0              0.5
+         8    9  1  0       1        0.0      0   0   0   0        0              0.25
+         8    9  1  (log 2) 1        0.0      0   0   0   0        0              0.5
+         8    9  2  (log 2) 1        0.0      0   0   0   0        0              0.5
+         0    1  1  0       0        1.0      0   0   0   0        (- 1 (exp -1)) 0
+         0    2  1  0       0        1.0      0   0   0   0        (- 1 (exp -2)) 0
+         0    2  2  0       0        1.0      0   0   0   0        (- 1 (exp -2)) 0)
