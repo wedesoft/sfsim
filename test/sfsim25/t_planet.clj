@@ -1,28 +1,15 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
+              [sfsim25.conftest :refer (roughly-matrix is-image)]
               [comb.template :as template]
               [clojure.math :refer (PI)]
-              [clojure.core.matrix :refer (matrix sub mul identity-matrix)]
-              [clojure.core.matrix.linear :refer (norm)]
+              [clojure.core.matrix :refer (matrix mul identity-matrix)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all]))
-
-; Compare RGB components of image and ignore alpha values.
-(defn is-image [filename]
-  (fn [other]
-      (let [img (slurp-image filename)]
-        (and (= (:width img) (:width other))
-             (= (:height img) (:height other))
-             (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
-
-; Use this test function to record the image the first time.
-(defn record-image [filename]
-  (fn [other]
-      (spit-image filename other)))
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (matrix [-0.75 -0.5  -1.0])
@@ -244,8 +231,6 @@ void main()
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
                           (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/heightfield.png"))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (def vertex-passthrough "#version 410 core
 in highp vec3 point;

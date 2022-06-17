@@ -1,7 +1,7 @@
 (ns sfsim25.t-sphere
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix mget sub)]
-            [clojure.core.matrix.linear :refer (norm)]
+            [sfsim25.conftest :refer (roughly-matrix)]
+            [clojure.core.matrix :refer (matrix mget)]
             [clojure.math :refer (PI)]
             [sfsim25.sphere :refer :all]))
 
@@ -37,8 +37,6 @@
          (ray-pointing-downwards sphere #:sfsim25.ray {:origin (matrix [5 2 1]) :direction (matrix [-1 0 0])}) => true
          (ray-pointing-downwards sphere #:sfsim25.ray {:origin (matrix [5 2 1]) :direction (matrix [ 1 0 0])}) => false
          (ray-pointing-downwards sphere #:sfsim25.ray {:origin (matrix [2 2 1]) :direction (matrix [ 1 0 0])}) => true))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (facts "Integrate over a circle"
   (integrate-circle 64 (fn [x] (matrix [0]))) => (roughly-matrix (matrix [0]) 1e-6)

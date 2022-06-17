@@ -1,6 +1,6 @@
 # TODO
 * combine atmospheric scattering with clouds in a numerically stable way
-  * change constant parameters to uniforms (especially
+  * change constant parameters to uniforms
   * test anisotropic/isotropic scattering in cloud
   * test stepwise ray scatter track without and with clouds
   * cloud density function using 3D textures and vertical threshold curves

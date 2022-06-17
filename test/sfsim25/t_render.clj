@@ -1,22 +1,10 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
+            [sfsim25.conftest :refer (is-image)]
             [clojure.core.matrix :refer (matrix identity-matrix)]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode]))
-
-; Compare RGB components of image and ignore alpha values.
-(defn is-image [filename]
-  (fn [other]
-    (let [img (slurp-image filename)]
-      (and (= (:width img) (:width other))
-           (= (:height img) (:height other))
-           (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
-
-; Use this test function to record the image the first time.
-(defn record-image [filename]
-  (fn [other]
-    (spit-image filename other)))
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/render/red.png"))

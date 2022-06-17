@@ -1,7 +1,7 @@
 (ns sfsim25.t-cubemap
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix sub add mul)]
-            [clojure.core.matrix.linear :refer (norm)]
+            [sfsim25.conftest :refer (roughly-matrix)]
+            [clojure.core.matrix :refer (matrix add mul)]
             [clojure.math :refer (sqrt PI)]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
@@ -89,8 +89,6 @@
   (latitude (matrix [0 6378000 0]) 6378000 6357000) => (roughly 0        1e-6)
   (latitude (matrix [0 0 6357000]) 6378000 6357000) => (roughly (/ PI 2) 1e-6)
   (latitude (matrix [6378000 0 0]) 6378000 6357000) => (roughly 0        1e-6))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (tabular "Conversion from geodetic to cartesian coordinates"
   (fact

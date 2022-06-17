@@ -1,10 +1,8 @@
 (ns sfsim25.t-ray
   (:require [midje.sweet :refer :all]
-            [clojure.core.matrix :refer (matrix sub mget)]
-            [clojure.core.matrix.linear :refer (norm)]
+            [sfsim25.conftest :refer (roughly-matrix)]
+            [clojure.core.matrix :refer (matrix mget)]
             [sfsim25.ray :refer :all]))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (facts "Integrate over a ray"
   (integral-ray #:sfsim25.ray{:origin (matrix [2 3 5]) :direction (matrix [1 0 0])} 10 0 (fn [x] (matrix [2])))

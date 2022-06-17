@@ -1,9 +1,9 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
+              [sfsim25.conftest :refer (roughly-matrix)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
-              [clojure.core.matrix :refer (ecount mget matrix sub)]
-              [clojure.core.matrix.linear :refer (norm)]
+              [clojure.core.matrix :refer (ecount mget matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.clouds :refer :all :as clouds]))
@@ -49,8 +49,6 @@
          (nth (worley-noise 2 2) 7)     => 1.0)
       (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.0 0.0 0.0])])]
          (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (def vertex-passthrough "#version 410 core
 in highp vec3 point;

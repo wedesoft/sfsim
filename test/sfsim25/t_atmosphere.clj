@@ -1,9 +1,9 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
+              [sfsim25.conftest :refer (roughly-matrix is-image)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
-              [clojure.core.matrix :refer (matrix mget mul sub identity-matrix)]
-              [clojure.core.matrix.linear :refer (norm)]
+              [clojure.core.matrix :refer (matrix mget mul identity-matrix)]
               [sfsim25.matrix :refer :all]
               [sfsim25.sphere :as sphere]
               [sfsim25.interpolate :refer :all]
@@ -12,19 +12,6 @@
               [sfsim25.util :refer :all]
               [sfsim25.atmosphere :refer :all :as atmosphere])
     (:import [mikera.vectorz Vector]))
-
-; Compare RGB components of image and ignore alpha values.
-(defn is-image [filename]
-  (fn [other]
-      (let [img (slurp-image filename)]
-        (and (= (:width img) (:width other))
-             (= (:height img) (:height other))
-             (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
-
-; Use this test function to record the image the first time.
-(defn record-image [filename]
-  (fn [other]
-      (spit-image filename other)))
 
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
   (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6]) :scatter-scale 8000}]
@@ -144,8 +131,6 @@
       (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]) false) => (matrix [0.0 0.0 0.0])
       (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]) false) => (matrix [0.0 0.0 0.0])
       )))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (fact "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
   (let [radius           6378000.0

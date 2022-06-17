@@ -1,9 +1,10 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
+            [sfsim25.conftest :refer (roughly-matrix)]
             [comb.template :as template]
-            [clojure.core.matrix :refer (matrix mget mmul dot sub div transpose identity-matrix)]
-            [clojure.math :refer (cos sin PI)]
+            [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix)]
             [clojure.core.matrix.linear :refer (norm)]
+            [clojure.math :refer (cos sin PI)]
             [sfsim25.shaders :refer :all]
             [sfsim25.render :refer :all]
             [sfsim25.util :refer :all])
@@ -122,8 +123,6 @@ void main()
   (dot  (orthogonal-vector-test 0 0 1) (matrix [0 0 1])) => 0.0
   (norm (orthogonal-vector-test 0 0 1)) => 1.0)
 
-(defn roughly-matrix [m] (fn [x] (< (norm (sub m x)) 1e-3)))
-
 (def oriented-matrix-probe
   (template/fn [x y z] "#version 410 core
 out lowp vec3 fragColor;
@@ -137,8 +136,8 @@ void main()
 
 (facts "Create oriented matrix given a normal vector"
        (let [m (transpose (matrix [(oriented-matrix-test 1 0 0) (oriented-matrix-test 0 1 0) (oriented-matrix-test 0 0 1)])) ]
-         (mmul m (matrix [0.36 0.48 0.8])) => (roughly-matrix (matrix [1 0 0]))
-         (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3))))
+         (mmul m (matrix [0.36 0.48 0.8])) => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3) 1e-6)))
 
 (def clip-angle-probe
   (template/fn [angle] "#version 410 core
@@ -170,7 +169,7 @@ void main()
 (def convert-2d-index-test (shader-test convert-2d-index-probe convert-2d-index))
 
 (tabular "Convert 2D index to 2D texture lookup index"
-         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1]))))
+         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1])) 1e-6))
          ?x  ?y  ?r   ?g
           0   0   0.5  0.5
          14   0  14.5  0.5
@@ -190,7 +189,7 @@ void main()
 (def convert-4d-index-test (shader-test convert-4d-index-probe convert-4d-index))
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
-         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1)))
+         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1) 1e-6))
          ?x ?y ?z     ?w     ?s2 ?s1 ?selector ?r               ?g
          0  0   0.123  0.123 11  5   "st"      0.5              (+ 0.5 11)
          1  0   0.123  0.123 11  5   "st"      1.5              (+ 1.5 11)
@@ -220,7 +219,7 @@ void main()
       sa    (sin angle)]
   (tabular "Convert point and direction to 2D lookup index in transmittance table"
            (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power ?above)
-                 => (roughly-matrix (div (matrix [?u ?v 0]) (matrix [16 8 1]))))
+                 => (roughly-matrix (div (matrix [?u ?v 0]) (matrix [16 8 1])) 1e-3))
            ?x      ?y ?z ?dx  ?dy ?dz ?power ?above ?u  ?v
            6378000 0  0  1    0   0   1      true   0.0  0.0
            6478000 0  0  1    0   0   1      true   0.0  8.0
@@ -406,7 +405,7 @@ void main()
 (def convert-3d-index-test (shader-test convert-3d-index-probe convert-3d-index))
 
 (tabular "Convert 3D point to 3D texture lookup index"
-         (fact (convert-3d-index-test ?x ?y ?z) => (roughly-matrix (matrix [?r ?g ?b])))
+         (fact (convert-3d-index-test ?x ?y ?z) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
          ?x  ?y  ?z ?r ?g ?b
         -30 -20 -10 0  0  0
          10 -20 -10 1  0  0
@@ -479,7 +478,7 @@ void main()
 
 (tabular "Shader for computing intersections of ray with a shell"
          (fact (ray-shell-test ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector)
-               => (roughly-matrix (matrix [?ix ?iy 0])))
+               => (roughly-matrix (matrix [?ix ?iy 0]) 1e-6))
          ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix ?iy
          0   0   0   1        2        -10 0   0   0   1   0   "st"       0  0
          0   0   0   1        2        -10 0   0   0   1   0   "pq"       0  0
