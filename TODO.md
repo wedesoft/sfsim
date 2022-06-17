@@ -1,5 +1,6 @@
 # TODO
 * combine atmospheric scattering with clouds in a numerically stable way
+  * create flexible shader-test macro
   * change constant parameters to uniforms
   * test anisotropic/isotropic scattering in cloud
   * test stepwise ray scatter track without and with clouds
