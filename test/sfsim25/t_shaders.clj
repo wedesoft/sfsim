@@ -18,15 +18,15 @@ void main()
   gl_Position = vec4(point, 1);
 }")
 
-(defn shader-test [probe & shaders]
-  (fn [& args]
+(defn shader-test [setup probe & shaders]
+  (fn [uniforms args]
       (let [result (promise)]
         (offscreen-render 1 1
           (let [indices  [0 1 3 2]
                 vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao      (make-vertex-array-object program indices vertices [:point 3])
-                tex      (texture-render 1 1 true (use-program program) (render-quads vao))
+                tex      (texture-render 1 1 true (use-program program) (apply setup program uniforms) (render-quads vao))
                 img      (texture->vectors tex 1 1)]
             (deliver result (get-vector img 0 0))
             (destroy-texture tex)
@@ -47,10 +47,10 @@ void main()
   fragColor = vec3(result.x, result.y, 0);
 }"))
 
-(def ray-sphere-test (shader-test ray-sphere-probe ray-sphere))
+(def ray-sphere-test (shader-test identity ray-sphere-probe ray-sphere))
 
 (tabular "Shader for intersection of ray with sphere"
-         (fact (ray-sphere-test ?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz) => (matrix [?ix ?iy 0]))
+         (fact (ray-sphere-test [] [?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz]) => (matrix [?ix ?iy 0]))
          ?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz ?ix ?iy
          0   0   0   2   2  -1   0   0   1   0.0 0.0
          0   0   0   0   0  -2   0   0   1   1.0 2.0
@@ -60,19 +60,25 @@ void main()
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
 (def elevation-to-index-probe
-  (template/fn [above-horizon elevation horizon-angle power] "#version 410 core
+  (template/fn [above-horizon elevation horizon-angle] "#version 410 core
 out lowp vec3 fragColor;
-float elevation_to_index(int size, float elevation, float horizon_angle, float power, bool above_horizon);
+float elevation_to_index(float elevation, float horizon_angle, bool above_horizon);
 void main()
 {
-  float result = elevation_to_index(17, <%= elevation %>, <%= horizon-angle %>, <%= power %>, <%= above-horizon %>);
+  float result = elevation_to_index(<%= elevation %>, <%= horizon-angle %>, <%= above-horizon %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def elevation-to-index-test (shader-test elevation-to-index-probe elevation-to-index))
+(def elevation-to-index-test
+  (shader-test
+    (fn [program elevation-size elevation-power]
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-float program :elevation_power elevation-power))
+    elevation-to-index-probe elevation-to-index))
 
 (tabular "Shader for converting elevation to index"
-         (fact (mget (elevation-to-index-test ?above-horizon ?elevation ?horizon-angle ?power) 0) => (roughly (/ ?result 16)))
+         (fact (mget (elevation-to-index-test [17 ?power] [?above-horizon ?elevation ?horizon-angle]) 0)
+               => (roughly (/ ?result 16)))
          ?above-horizon ?elevation        ?horizon-angle ?power ?result
          true           0.0               0.0            1.0     0
          true           (* 0.5 3.14159)   0.0            1.0     8
@@ -97,12 +103,12 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def horizon-angle-test (shader-test horizon-angle-probe horizon-angle))
+(def horizon-angle-test (shader-test identity horizon-angle-probe horizon-angle))
 
 (facts "Angle of sphere's horizon angle below horizontal plane depending on height"
-       (mget (horizon-angle-test 6378000 0 0) 0)       => (roughly 0.0)
-       (mget (horizon-angle-test (* 2 6378000) 0 0) 0) => (roughly (/ PI 3))
-       (mget (horizon-angle-test 6377999 0 0) 0)       => (roughly 0.0))
+       (mget (horizon-angle-test [] [6378000 0 0]) 0)       => (roughly 0.0)
+       (mget (horizon-angle-test [] [(* 2 6378000) 0 0]) 0) => (roughly (/ PI 3))
+       (mget (horizon-angle-test [] [6377999 0 0]) 0)       => (roughly 0.0))
 
 (def orthogonal-vector-probe
   (template/fn [x y z] "#version 410 core
