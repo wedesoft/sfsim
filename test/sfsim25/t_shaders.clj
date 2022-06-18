@@ -119,15 +119,15 @@ void main()
   fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
-(def orthogonal-vector-test (shader-test orthogonal-vector-probe orthogonal-vector))
+(def orthogonal-vector-test (shader-test identity orthogonal-vector-probe orthogonal-vector))
 
 (facts "Create normal vector orthogonal to the specified one"
-  (dot  (orthogonal-vector-test 1 0 0) (matrix [1 0 0])) => 0.0
-  (norm (orthogonal-vector-test 1 0 0)) => 1.0
-  (dot  (orthogonal-vector-test 0 1 0) (matrix [0 1 0])) => 0.0
-  (norm (orthogonal-vector-test 0 1 0)) => 1.0
-  (dot  (orthogonal-vector-test 0 0 1) (matrix [0 0 1])) => 0.0
-  (norm (orthogonal-vector-test 0 0 1)) => 1.0)
+       (dot  (orthogonal-vector-test [] [1 0 0]) (matrix [1 0 0])) => 0.0
+       (norm (orthogonal-vector-test [] [1 0 0])) => 1.0
+       (dot  (orthogonal-vector-test [] [0 1 0]) (matrix [0 1 0])) => 0.0
+       (norm (orthogonal-vector-test [] [0 1 0])) => 1.0
+       (dot  (orthogonal-vector-test [] [0 0 1]) (matrix [0 0 1])) => 0.0
+       (norm (orthogonal-vector-test [] [0 0 1])) => 1.0)
 
 (def oriented-matrix-probe
   (template/fn [x y z] "#version 410 core
@@ -138,10 +138,12 @@ void main()
   fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
 }"))
 
-(def oriented-matrix-test (shader-test oriented-matrix-probe orthogonal-vector oriented-matrix))
+(def oriented-matrix-test (shader-test identity oriented-matrix-probe orthogonal-vector oriented-matrix))
 
 (facts "Create oriented matrix given a normal vector"
-       (let [m (transpose (matrix [(oriented-matrix-test 1 0 0) (oriented-matrix-test 0 1 0) (oriented-matrix-test 0 0 1)])) ]
+       (let [m (transpose (matrix [(oriented-matrix-test [] [1 0 0])
+                                   (oriented-matrix-test [] [0 1 0])
+                                   (oriented-matrix-test [] [0 0 1])])) ]
          (mmul m (matrix [0.36 0.48 0.8])) => (roughly-matrix (matrix [1 0 0]) 1e-6)
          (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3) 1e-6)))
 
@@ -154,13 +156,13 @@ void main()
   fragColor = vec3(clip_angle(<%= angle %>), 0, 0);
 }"))
 
-(def clip-angle-test (shader-test clip-angle-probe clip-angle))
+(def clip-angle-test (shader-test identity clip-angle-probe clip-angle))
 
 (facts "Convert angle to be between -pi and +pi"
-       (mget (clip-angle-test 0) 0) => (roughly 0 1e-6)
-       (mget (clip-angle-test 1) 0) => (roughly 1 1e-6)
-       (mget (clip-angle-test (- 0 PI 0.01)) 0) => (roughly (- PI 0.01) 1e-6)
-       (mget (clip-angle-test (+ PI 0.01)) 0) => (roughly (- 0.01 PI) 1e-6))
+       (mget (clip-angle-test [] [0            ]) 0) => (roughly 0           1e-6)
+       (mget (clip-angle-test [] [1            ]) 0) => (roughly 1           1e-6)
+       (mget (clip-angle-test [] [(- 0 PI 0.01)]) 0) => (roughly (- PI 0.01) 1e-6)
+       (mget (clip-angle-test [] [(+ PI 0.01)  ]) 0) => (roughly (- 0.01 PI) 1e-6))
 
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
@@ -172,10 +174,10 @@ void main()
   fragColor.b = 0;
 }"))
 
-(def convert-2d-index-test (shader-test convert-2d-index-probe convert-2d-index))
+(def convert-2d-index-test (shader-test identity convert-2d-index-probe convert-2d-index))
 
 (tabular "Convert 2D index to 2D texture lookup index"
-         (fact (convert-2d-index-test ?x ?y) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1])) 1e-6))
+         (fact (convert-2d-index-test [] [?x ?y]) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1])) 1e-6))
          ?x  ?y  ?r   ?g
           0   0   0.5  0.5
          14   0  14.5  0.5
@@ -192,10 +194,10 @@ void main()
   fragColor.b = 0;
 }"))
 
-(def convert-4d-index-test (shader-test convert-4d-index-probe convert-4d-index))
+(def convert-4d-index-test (shader-test identity convert-4d-index-probe convert-4d-index))
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
-         (fact (convert-4d-index-test ?x ?y ?z ?w ?selector) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1) 1e-6))
+         (fact (convert-4d-index-test [] [?x ?y ?z ?w ?selector]) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1) 1e-6))
          ?x ?y ?z     ?w     ?s2 ?s1 ?selector ?r               ?g
          0  0   0.123  0.123 11  5   "st"      0.5              (+ 0.5 11)
          1  0   0.123  0.123 11  5   "st"      1.5              (+ 1.5 11)
