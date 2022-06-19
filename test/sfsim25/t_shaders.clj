@@ -47,7 +47,7 @@ void main()
   fragColor = vec3(result.x, result.y, 0);
 }"))
 
-(def ray-sphere-test (shader-test identity ray-sphere-probe ray-sphere))
+(def ray-sphere-test (shader-test (fn [program]) ray-sphere-probe ray-sphere))
 
 (tabular "Shader for intersection of ray with sphere"
          (fact (ray-sphere-test [] [?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz]) => (matrix [?ix ?iy 0]))
@@ -96,19 +96,20 @@ void main()
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core
 out lowp vec3 fragColor;
-float horizon_angle(vec3 point, float radius);
+float horizon_angle(vec3 point);
 void main()
 {
-  float result = horizon_angle(vec3(<%= x %>, <%= y %>, <%= z %>), 6378000);
+  float result = horizon_angle(vec3(<%= x %>, <%= y %>, <%= z %>));
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def horizon-angle-test (shader-test identity horizon-angle-probe horizon-angle))
+(def horizon-angle-test
+  (shader-test (fn [program radius] (uniform-float program :radius radius)) horizon-angle-probe horizon-angle))
 
 (facts "Angle of sphere's horizon angle below horizontal plane depending on height"
-       (mget (horizon-angle-test [] [6378000 0 0]) 0)       => (roughly 0.0)
-       (mget (horizon-angle-test [] [(* 2 6378000) 0 0]) 0) => (roughly (/ PI 3))
-       (mget (horizon-angle-test [] [6377999 0 0]) 0)       => (roughly 0.0))
+       (mget (horizon-angle-test [6378000] [6378000 0 0]) 0)       => (roughly 0.0 1e-3)
+       (mget (horizon-angle-test [6378000] [(* 2 6378000) 0 0]) 0) => (roughly (/ PI 3) 1e-3)
+       (mget (horizon-angle-test [6378000] [6377999 0 0]) 0)       => (roughly 0.0 1e-3))
 
 (def orthogonal-vector-probe
   (template/fn [x y z] "#version 410 core
@@ -119,7 +120,7 @@ void main()
   fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
-(def orthogonal-vector-test (shader-test identity orthogonal-vector-probe orthogonal-vector))
+(def orthogonal-vector-test (shader-test (fn [program]) orthogonal-vector-probe orthogonal-vector))
 
 (facts "Create normal vector orthogonal to the specified one"
        (dot  (orthogonal-vector-test [] [1 0 0]) (matrix [1 0 0])) => 0.0
@@ -138,7 +139,7 @@ void main()
   fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
 }"))
 
-(def oriented-matrix-test (shader-test identity oriented-matrix-probe orthogonal-vector oriented-matrix))
+(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe orthogonal-vector oriented-matrix))
 
 (facts "Create oriented matrix given a normal vector"
        (let [m (transpose (matrix [(oriented-matrix-test [] [1 0 0])
@@ -156,7 +157,7 @@ void main()
   fragColor = vec3(clip_angle(<%= angle %>), 0, 0);
 }"))
 
-(def clip-angle-test (shader-test identity clip-angle-probe clip-angle))
+(def clip-angle-test (shader-test (fn [program]) clip-angle-probe clip-angle))
 
 (facts "Convert angle to be between -pi and +pi"
        (mget (clip-angle-test [] [0            ]) 0) => (roughly 0           1e-6)
@@ -174,7 +175,7 @@ void main()
   fragColor.b = 0;
 }"))
 
-(def convert-2d-index-test (shader-test identity convert-2d-index-probe convert-2d-index))
+(def convert-2d-index-test (shader-test (fn [program]) convert-2d-index-probe convert-2d-index))
 
 (tabular "Convert 2D index to 2D texture lookup index"
          (fact (convert-2d-index-test [] [?x ?y]) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1])) 1e-6))
@@ -194,7 +195,7 @@ void main()
   fragColor.b = 0;
 }"))
 
-(def convert-4d-index-test (shader-test identity convert-4d-index-probe convert-4d-index))
+(def convert-4d-index-test (shader-test (fn [program]) convert-4d-index-probe convert-4d-index))
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
          (fact (convert-4d-index-test [] [?x ?y ?z ?w ?selector]) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1) 1e-6))
@@ -209,24 +210,32 @@ void main()
          0  0   0.123  2.123  7  3   "pq"      (+ 0.5 (* 2 7))  (+ 0.5 (* 2 7)))
 
 (def transmittance-forward-probe
-  (template/fn [x y z dx dy dz power above] "#version 410 core
+  (template/fn [x y z dx dy dz above] "#version 410 core
 out lowp vec3 fragColor;
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int height_size, int elevation_size,
-                           float power, bool above_horizon);
+vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
 void main()
 {
-  fragColor.rg = transmittance_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                       6378000.0, 100000, 9, 17, <%= power %>, <%= above %>);
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  fragColor.rg = transmittance_forward(point, direction, <%= above %>);
   fragColor.b = 0;
 }"))
 
-(def transmittance-forward-test (shader-test transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
+(def transmittance-forward-test
+  (shader-test
+    (fn [program height-size elevation-size elevation-power radius max-height]
+        (uniform-int program :height_size height-size)
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-float program :elevation_power elevation-power)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
 
 (let [angle (* 0.375 PI)
       ca    (cos angle)
       sa    (sin angle)]
   (tabular "Convert point and direction to 2D lookup index in transmittance table"
-           (fact (transmittance-forward-test ?x ?y ?z ?dx ?dy ?dz ?power ?above)
+           (fact (transmittance-forward-test [9 17 ?power 6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
                  => (roughly-matrix (div (matrix [?u ?v 0]) (matrix [16 8 1])) 1e-3))
            ?x      ?y ?z ?dx  ?dy ?dz ?power ?above ?u  ?v
            6378000 0  0  1    0   0   1      true   0.0  0.0
