@@ -402,10 +402,10 @@ void main()
   fragColor = vec3(result, 0);
 }"))
 
-(def ray-box-test (shader-test ray-box-probe ray-box))
+(def ray-box-test (shader-test (fn [program]) ray-box-probe ray-box))
 
 (tabular "Shader for intersection of ray with axis-aligned box"
-         (fact (ray-box-test ?ax ?ay ?az ?bx ?by ?bz ?ox ?oy ?oz ?dx ?dy ?dz) => (matrix [?ix ?iy 0]))
+         (fact (ray-box-test [] [?ax ?ay ?az ?bx ?by ?bz ?ox ?oy ?oz ?dx ?dy ?dz]) => (matrix [?ix ?iy 0]))
          ?ax ?ay ?az ?bx ?by ?bz ?ox  ?oy  ?oz ?dx ?dy ?dz ?ix ?iy
          3   0   0   4   1   1  -2    0.5  0.5  1  0   0   5   1
          3   0   0   4   1   1  -2    0.5  0.5  2  0   0   2.5 0.5
@@ -426,10 +426,10 @@ void main()
   fragColor = convert_3d_index(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(-30, -20, -10), vec3(10, 0, 5));
 }"))
 
-(def convert-3d-index-test (shader-test convert-3d-index-probe convert-3d-index))
+(def convert-3d-index-test (shader-test (fn [program]) convert-3d-index-probe convert-3d-index))
 
 (tabular "Convert 3D point to 3D texture lookup index"
-         (fact (convert-3d-index-test ?x ?y ?z) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+         (fact (convert-3d-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
          ?x  ?y  ?z ?r ?g ?b
         -30 -20 -10 0  0  0
          10 -20 -10 1  0  0
