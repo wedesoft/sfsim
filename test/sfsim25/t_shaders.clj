@@ -1,38 +1,15 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (roughly-matrix)]
+            [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
             [comb.template :as template]
             [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix)]
             [clojure.core.matrix.linear :refer (norm)]
             [clojure.math :refer (cos sin PI)]
-            [sfsim25.shaders :refer :all]
             [sfsim25.render :refer :all]
+            [sfsim25.shaders :refer :all]
             [sfsim25.util :refer :all])
   (:import [org.lwjgl BufferUtils]
            [org.lwjgl.opengl Pbuffer PixelFormat]))
-
-(def vertex-passthrough "#version 410 core
-in highp vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
-
-(defn shader-test [setup probe & shaders]
-  (fn [uniforms args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices  [0 1 3 2]
-                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao      (make-vertex-array-object program indices vertices [:point 3])
-                tex      (texture-render 1 1 true (use-program program) (apply setup program uniforms) (render-quads vao))
-                img      (texture->vectors tex 1 1)]
-            (deliver result (get-vector img 0 0))
-            (destroy-texture tex)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
 
 (def ray-sphere-probe
   (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
