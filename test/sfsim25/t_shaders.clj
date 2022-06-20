@@ -489,19 +489,18 @@ out lowp vec3 fragColor;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 void main()
 {
-  vec4 result = ray_shell(vec3(<%= cx %>, <%= cy %>, <%= cz %>),
-                          <%= radius1 %>,
-                          <%= radius2 %>,
-                          vec3(<%= ox %>, <%= oy %>, <%= oz %>),
-                          vec3(<%= dx %>, <%= dy %>, <%= dz %>));
+  vec3 centre = vec3(<%= cx %>, <%= cy %>, <%= cz %>);
+  vec3 origin = vec3(<%= ox %>, <%= oy %>, <%= oz %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  vec4 result = ray_shell(centre, <%= radius1 %>, <%= radius2 %>, origin, direction);
   fragColor.rg = result.<%= selector %>;
   fragColor.b = 0;
 }"))
 
-(def ray-shell-test (shader-test ray-shell-probe ray-shell ray-sphere))
+(def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell ray-sphere))
 
 (tabular "Shader for computing intersections of ray with a shell"
-         (fact (ray-shell-test ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector)
+         (fact (ray-shell-test [] [?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector])
                => (roughly-matrix (matrix [?ix ?iy 0]) 1e-6))
          ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix ?iy
          0   0   0   1        2        -10 0   0   0   1   0   "st"       0  0
