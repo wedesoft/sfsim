@@ -60,24 +60,22 @@ void main()
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
 (def elevation-to-index-probe
-  (template/fn [above-horizon elevation horizon-angle] "#version 410 core
+  (template/fn [elevation-size, above-horizon elevation horizon-angle] "#version 410 core
 out lowp vec3 fragColor;
-float elevation_to_index(float elevation, float horizon_angle, bool above_horizon);
+float elevation_to_index(int elevation_size, float elevation, float horizon_angle, bool above_horizon);
 void main()
 {
-  float result = elevation_to_index(<%= elevation %>, <%= horizon-angle %>, <%= above-horizon %>);
+  float result = elevation_to_index(<%= elevation-size %>, <%= elevation %>, <%= horizon-angle %>, <%= above-horizon %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
 (def elevation-to-index-test
   (shader-test
-    (fn [program elevation-size elevation-power]
-        (uniform-int program :elevation_size elevation-size)
-        (uniform-float program :elevation_power elevation-power))
+    (fn [program elevation-power] (uniform-float program :elevation_power elevation-power))
     elevation-to-index-probe elevation-to-index))
 
 (tabular "Shader for converting elevation to index"
-         (fact (mget (elevation-to-index-test [17 ?power] [?above-horizon ?elevation ?horizon-angle]) 0)
+         (fact (mget (elevation-to-index-test [?power] [17 ?above-horizon ?elevation ?horizon-angle]) 0)
                => (roughly (/ ?result 16)))
          ?above-horizon ?elevation        ?horizon-angle ?power ?result
          true           0.0               0.0            1.0     0
@@ -337,22 +335,30 @@ void main()
          0    0  0.5 0.5 7.0)
 
 (def ray-scatter-forward-probe
-  (template/fn [x y z dx dy dz lx ly lz power above selector] "#version 410 core
+  (template/fn [x y z dx dy dz lx ly lz above selector] "#version 410 core
 out lowp vec3 fragColor;
-vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int height_size,
-                         int elevation_size, int light_elevation_size, int heading_size, float power, bool above_horizon);
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 void main()
 {
-  vec4 result = ray_scatter_forward(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(<%= dx %>, <%= dy %>, <%= dz %>),
-                                    vec3(<%= lx %>, <%= ly %>, <%= lz %>), 6378000.0, 100000.0, 17, 17, 17, 17, <%= power %>,
-                                    <%= above %>);
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  vec4 result = ray_scatter_forward(point, direction, light_direction, <%= above %>);
   fragColor.r = result.<%= selector %>;
   fragColor.g = 0;
   fragColor.b = 0;
 }"))
 
-(def ray-scatter-forward-test (shader-test ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle
-                                           clip-angle oriented-matrix orthogonal-vector is-above-horizon))
+(def ray-scatter-forward-test
+  (shader-test
+    (fn [program elevation-size light-elevation-size elevation-power radius max-height]
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-int program :light_elevation_size light-elevation-size)
+        (uniform-float program :elevation_power elevation-power)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle clip-angle oriented-matrix
+    orthogonal-vector is-above-horizon))
 
 (let [angle (* 0.375 PI)
       ca    (cos angle)
@@ -360,7 +366,8 @@ void main()
       r     6378000
       h     100000]
   (tabular "Get 4D lookup index for ray scattering"
-           (fact (mget (ray-scatter-forward-test ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?power ?above ?sel) 0)
+           (fact (mget (ray-scatter-forward-test [17 17 ?power 6378000.0 100000.0]
+                                                 [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?sel]) 0)
                  => (roughly (/ ?result 16) 1e-3))
            ?x       ?y ?z ?dx  ?dy ?dz  ?lx    ?ly ?lz  ?power ?above ?sel ?result
            r        0  0  1    0   0    1      0   0    1.0    true   "w"   0.0

@@ -2,11 +2,10 @@
 
 float M_PI = 3.14159265358;
 
-uniform int elevation_size;
 uniform float elevation_power;
 
 // Convert elevation value to a texture lookup index between 0 and 1.
-float elevation_to_index(float elevation, float horizon_angle, bool above_horizon) {
+float elevation_to_index(int elevation_size, float elevation, float horizon_angle, bool above_horizon) {
   int ground_size = (elevation_size - 1) / 2;
   int sky_size = elevation_size / 2 + 1;
   float horizon = 0.5 * M_PI + horizon_angle;
