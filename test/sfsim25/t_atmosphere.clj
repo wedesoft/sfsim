@@ -494,8 +494,8 @@ void main()
          0   0   6453000 0   0   6478000 0.75
          0   0   6428000 0   0   6453000 (/ 0.5 0.75))
 
-(defn ray-scatter-shader-test [probe & shaders]
-  (fn [& args]
+(defn ray-scatter-shader-test [setup probe & shaders]
+  (fn [uniforms args]
       (let [result (promise)]
         (offscreen-render 1 1
           (let [indices       [0 1 3 2]
@@ -510,6 +510,7 @@ void main()
                                               (use-program program)
                                               (uniform-sampler program :transmittance 0)
                                               (uniform-sampler program :ray_scatter 1)
+                                              (apply setup program uniforms)
                                               (use-textures transmittance ray-scatter)
                                               (render-quads vao))
                 img           (texture->vectors tex 1 1)]
@@ -523,27 +524,43 @@ void main()
 
 (def ray-scatter-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
-uniform sampler2D transmittance;
-uniform sampler2D ray_scatter;
 out lowp vec3 fragColor;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size,
-                       int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
-                       vec3 p, vec3 q);
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 void main()
 {
   vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
   vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-  fragColor = ray_scatter_track(ray_scatter, transmittance, 6378000, 100000, 5, 5, 5, 5, 1, vec3(0, 0, 1), p, q);
+  fragColor = ray_scatter_track(vec3(0, 0, 1), p, q);
 }"))
 
-(def ray-scatter-track-test (ray-scatter-shader-test ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward
-                                                     shaders/horizon-angle shaders/oriented-matrix shaders/orthogonal-vector
-                                                     shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d
-                                                     shaders/convert-4d-index transmittance-track shaders/transmittance-forward
-                                                     shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon))
+(def ray-scatter-track-test
+  (ray-scatter-shader-test
+    (fn [program height-size elevation-size light-elevation-size heading-size elevation-power radius max-height]
+        (uniform-int program :height_size height-size)
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-int program :light_elevation_size light-elevation-size)
+        (uniform-int program :heading_size heading-size)
+        (uniform-float program :elevation_power elevation-power)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    ray-scatter-track-probe
+    ray-scatter-track
+    shaders/ray-scatter-forward
+    shaders/horizon-angle
+    shaders/oriented-matrix
+    shaders/orthogonal-vector
+    shaders/clip-angle
+    shaders/elevation-to-index
+    shaders/interpolate-4d
+    shaders/convert-4d-index
+    transmittance-track
+    shaders/transmittance-forward
+    shaders/interpolate-2d
+    shaders/convert-2d-index
+    shaders/is-above-horizon))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
-         (fact (mget (ray-scatter-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => ?result)
+         (fact (mget (ray-scatter-track-test [5 5 5 5 1 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0) => ?result)
          ?px ?py ?pz     ?qx ?qy ?qz     ?result
          0   0   6478000 0   0   6478000 0.0
          0   0   6428000 0   0   6478000 (- 1.0 (* 0.5 1.0)))
