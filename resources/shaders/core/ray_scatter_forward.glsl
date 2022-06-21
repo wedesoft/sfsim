@@ -10,7 +10,7 @@ uniform float max_height;
 float clip_angle(float angle);
 float horizon_angle(vec3 point);
 float elevation_to_index(int elevation_size, float elevation, float horizon_angle, bool above_horizon);
-bool is_above_horizon(float radius, vec3 point, vec3 direction);
+bool is_above_horizon(vec3 point, vec3 direction);
 mat3 oriented_matrix(vec3 n);
 
 // Convert input parameters to 4D index for lookup in precomputed ray scatter table.
@@ -28,7 +28,7 @@ vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool 
   float light_heading_index = light_heading / M_PI;
   float cos_light_elevation = dot(normal, light_direction);
   float light_elevation = acos(cos_light_elevation);
-  bool light_above = is_above_horizon(radius, point, light_direction);
+  bool light_above = is_above_horizon(point, light_direction);
   float light_elevation_index = elevation_to_index(light_elevation_size, light_elevation, horizon, light_above);
   float cos_elevation = dot(normal, direction);
   float elevation = acos(cos_elevation);

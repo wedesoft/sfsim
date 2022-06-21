@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix is-image)]
+              [sfsim25.conftest :refer (roughly-matrix is-image vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul identity-matrix)]
@@ -437,15 +437,8 @@
 (fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
       point-scatter-space => (exactly ray-scatter-space))
 
-(def vertex-passthrough "#version 410 core
-in highp vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
-
-(defn transmittance-shader-test [probe & shaders]
-  (fn [& args]
+(defn transmittance-shader-test [setup probe & shaders]
+  (fn [uniforms args]
       (let [result (promise)]
         (offscreen-render 1 1
           (let [indices       [0 1 3 2]
@@ -457,6 +450,7 @@ void main()
                 tex           (texture-render 1 1 true
                                               (use-program program)
                                               (uniform-sampler program :transmittance 0)
+                                              (apply setup program uniforms)
                                               (use-textures transmittance)
                                               (render-quads vao))
                 img           (texture->vectors tex 1 1)]
@@ -469,24 +463,31 @@ void main()
 
 (def transmittance-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
-uniform sampler2D transmittance;
 out lowp vec3 fragColor;
-vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
-                         float power, vec3 p, vec3 q);
+vec3 transmittance_track(vec3 p, vec3 q);
 void main()
 {
   vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
   vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-  fragColor = transmittance_track(transmittance, 6378000, 100000, 17, 17, 1, p, q);
+  fragColor = transmittance_track(p, q);
 }"))
 
-(def transmittance-track-test (transmittance-shader-test transmittance-track-probe transmittance-track
-                                                         shaders/transmittance-forward shaders/horizon-angle
-                                                         shaders/elevation-to-index shaders/interpolate-2d
-                                                         shaders/convert-2d-index shaders/is-above-horizon))
+(def transmittance-track-test
+  (transmittance-shader-test
+    (fn [program height-size elevation-size elevation-power radius max-height]
+        (uniform-int program :height_size height-size)
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-float program :elevation_power elevation-power)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-track-probe transmittance-track
+    shaders/transmittance-forward shaders/horizon-angle
+    shaders/elevation-to-index shaders/interpolate-2d
+    shaders/convert-2d-index shaders/is-above-horizon))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
-         (fact (mget (transmittance-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => (roughly ?result 1e-6))
+         (fact (mget (transmittance-track-test [17 17 1 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0)
+               => (roughly ?result 1e-6))
          ?px ?py ?pz     ?qx ?qy ?qz     ?result
          0   0   6478000 0   0   6478000 1
          0   0   6428000 0   0   6478000 0.5
