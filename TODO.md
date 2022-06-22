@@ -3,7 +3,8 @@
   * create flexible shader-test macro
   * change constant parameters to uniforms
   * test anisotropic/isotropic scattering in cloud
-  * test stepwise ray scatter track without and with clouds
+  * function for ray scatter to end of atmosphere involving transmittance of light from space (combining with interpolate func),
+    maybe call it ray\_scatter\_open
   * cloud density function using 3D textures and vertical threshold curves
   * article about clouds
 * article about TDD and OpenGL

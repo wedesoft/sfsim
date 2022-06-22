@@ -7,7 +7,6 @@ uniform float radius;
 uniform float polar_radius;
 uniform float max_height;
 uniform float specular;
-uniform float power;
 uniform int height_size;
 uniform int elevation_size;
 uniform int light_elevation_size;
@@ -23,10 +22,8 @@ in VS_OUT
 out lowp vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec2 transmittance_forward(vec3 point, vec3 direction, float radius, float max_height, int heigh_size, int elevation_size,
-                           float power, bool above_horizon);
-vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, float radius, float max_height, int height_size,
-                         int elevation_size, int light_elevation_size, int heading_size, float power, bool above_horizon);
+vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
 
@@ -46,10 +43,8 @@ void main()
   if (atmosphere_intersection.y > 0) {
     vec3 scaled_point = scaled_origin + atmosphere_intersection.x * scaled_direction;
     vec3 scaled_light = normalize(stretch(light));
-    vec2 transmittance_index = transmittance_forward(scaled_point, scaled_direction, radius, max_height, height_size,
-                                                     elevation_size, power, true);
-    vec4 ray_scatter_index = ray_scatter_forward(scaled_point, scaled_direction, scaled_light, radius, max_height, height_size,
-                                                 elevation_size, light_elevation_size, heading_size, power, true);
+    vec2 transmittance_index = transmittance_forward(scaled_point, scaled_direction, true);
+    vec4 ray_scatter_index = ray_scatter_forward(scaled_point, scaled_direction, scaled_light, true);
     vec3 atmospheric_contribution = interpolate_4d(ray_scatter, height_size, elevation_size, light_elevation_size,
                                                    heading_size, ray_scatter_index).rgb;
     vec3 remaining_glare = glare * interpolate_2d(transmittance, height_size, elevation_size, transmittance_index).rgb;

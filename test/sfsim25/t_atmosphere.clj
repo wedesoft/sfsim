@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix is-image vertex-passthrough)]
+              [sfsim25.conftest :refer (roughly-matrix is-image vertex-passthrough shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul identity-matrix)]
@@ -670,7 +670,7 @@ void main()
                                (uniform-int program :elevation_size size)
                                (uniform-int program :light_elevation_size size)
                                (uniform-int program :heading_size size)
-                               (uniform-float program :power power)
+                               (uniform-float program :elevation_power power)
                                (uniform-float program :amplification 5)
                                (use-textures transmittance ray-scatter)
                                (render-quads vao)
@@ -687,22 +687,6 @@ void main()
          0  (* 3 radius) 0                       radius       (* -0.5 PI) 0   1    0   "yview.png"
          0  (* 3 radius) 0                       (/ radius 2) (* -0.5 PI) 0   1    0   "ellipsoid.png")
 
-(defn shader-test [probe & shaders]
-  (fn [& args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices  [0 1 3 2]
-                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao      (make-vertex-array-object program indices vertices [:point 3])
-                tex      (texture-render 1 1 true (use-program program) (render-quads vao))
-                img      (texture->vectors tex 1 1)]
-            (deliver result (get-vector img 0 0))
-            (destroy-texture tex)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
-
 (def phase-probe
   (template/fn [g mu] "#version 410 core
 out lowp vec3 fragColor;
@@ -713,10 +697,10 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def phase-test (shader-test phase-probe phase-function))
+(def phase-test (shader-test (fn [program]) phase-probe phase-function))
 
 (tabular "Shader function for scattering phase function"
-         (fact (mget (phase-test ?g ?mu) 0) => (roughly ?result))
+         (fact (mget (phase-test [] [?g ?mu]) 0) => (roughly ?result))
          ?g  ?mu ?result
          0   0   (/ 3 (* 16 PI))
          0   1   (/ 6 (* 16 PI))
