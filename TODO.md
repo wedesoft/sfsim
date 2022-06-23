@@ -1,6 +1,4 @@
 # TODO
-* function for ray scatter to end of atmosphere involving transmittance of light from space (combining with interpolate func),
-  maybe call it ray\_scatter\_open
 * joint function for transmittance and in-scattering
 * use tested anisotropic/isotropic scattering in cloud prototype
 * add clouds to atmospheric and planetary shader

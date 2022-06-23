@@ -643,7 +643,8 @@ void main()
                                    origin        (matrix [?x ?y ?z])
                                    transform     (transformation-matrix (rotation-x ?rotation) origin)
                                    program       (make-program :vertex [vertex-atmosphere]
-                                                               :fragment [fragment-atmosphere shaders/ray-sphere
+                                                               :fragment [fragment-atmosphere transmittance-outer
+                                                                          ray-scatter-outer shaders/ray-sphere
                                                                           shaders/transmittance-forward shaders/horizon-angle
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
                                                                           shaders/oriented-matrix shaders/orthogonal-vector
