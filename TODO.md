@@ -1,13 +1,11 @@
 # TODO
-* combine atmospheric scattering with clouds in a numerically stable way
-  * create flexible shader-test macro
-  * change constant parameters to uniforms
-  * test anisotropic/isotropic scattering in cloud
-  * function for ray scatter to end of atmosphere involving transmittance of light from space (combining with interpolate func),
-    maybe call it ray\_scatter\_open
-  * cloud density function using 3D textures and vertical threshold curves
-  * article about clouds
-* article about TDD and OpenGL
+* function for ray scatter to end of atmosphere involving transmittance of light from space (combining with interpolate func),
+  maybe call it ray\_scatter\_open
+* use tested anisotropic/isotropic scattering in cloud prototype
+* add clouds to atmospheric and planetary shader
+* cloud density function using 3D textures and vertical threshold curves
+* article about TDD and OpenGL (rendering offscreen image and using probe shaders)
+* article about clouds
 * remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
