@@ -328,8 +328,7 @@ void main()
 }")
 
 (def fake-transmittance "#version 410 core
-vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
-                         float power, vec3 p, vec3 q)
+vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dist = distance(p, q);
   if (dist < 150) return vec3(1, 1, 1);
@@ -339,9 +338,7 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
 
 (def fake-ray-scatter "#version 410 core
 uniform vec3 scatter;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size,
-                       int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
-                       vec3 p, vec3 q)
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return scatter;
 }")
@@ -354,7 +351,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
   (uniform-sampler program :ray_scatter 3)
   (uniform-sampler program :surface_radiance 4)
   (uniform-sampler program :water 5)
-  (uniform-float program :power 2.0)
+  (uniform-float program :elevation_power 2.0)
   (uniform-float program :specular 100)
   (uniform-float program :max_height 100000)
   (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34])))
