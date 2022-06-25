@@ -280,6 +280,10 @@
   "Shader function to determine in-scattered light between point in the atmosphere and space"
   (slurp "resources/shaders/atmosphere/ray_scatter_outer.glsl"))
 
+(def attenuation-outer
+  "Shader function combining transmittance and in-scattered light between point in the atmosphere and space"
+  (slurp "resources/shaders/atmosphere/attenuation_outer.glsl"))
+
 (def vertex-atmosphere
   "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
   (slurp "resources/shaders/atmosphere/vertex.glsl"))
