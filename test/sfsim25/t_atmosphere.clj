@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix is-image vertex-passthrough shader-test)]
+              [sfsim25.conftest :refer (roughly-matrix record-image is-image vertex-passthrough shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul identity-matrix)]
