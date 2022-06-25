@@ -5,6 +5,7 @@
               [clojure.math :refer (PI)]
               [clojure.core.matrix :refer (matrix mul identity-matrix)]
               [sfsim25.cubemap :as cubemap]
+              [sfsim25.atmosphere :as atmosphere]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
@@ -384,7 +385,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                                           shaders/horizon-angle shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-sphere
                                                                           shaders/is-above-horizon fake-ray-scatter
-                                                                          ground-radiance])
+                                                                          atmosphere/attenuation-track ground-radiance])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000

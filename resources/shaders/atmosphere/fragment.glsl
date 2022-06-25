@@ -27,15 +27,16 @@ vec3 stretch(vec3 v)
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
-  float glare = pow(max(0, dot(direction, light)), specular) / amplification;
+  float glare = pow(max(0, dot(direction, light)), specular);
+  vec3 incoming = vec3(glare, glare, glare) / amplification;
   vec3 scaled_origin = stretch(origin);
   vec3 scaled_direction = normalize(stretch(direction));
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, scaled_origin, scaled_direction);
   if (atmosphere_intersection.y > 0) {
     vec3 scaled_point = scaled_origin + atmosphere_intersection.x * scaled_direction;
-    vec3 scaled_light = normalize(stretch(light));
-    fragColor = amplification * attenuation_outer(scaled_light, scaled_point, scaled_direction, vec3(glare, glare, glare));
+    vec3 scaled_light_direction = normalize(stretch(light));
+    fragColor = amplification * attenuation_outer(scaled_light_direction, scaled_point, scaled_direction, incoming);
   } else {
-    fragColor = amplification * vec3(glare, glare, glare);
+    fragColor = amplification * incoming;
   };
 }

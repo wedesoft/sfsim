@@ -24,8 +24,7 @@ out lowp vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
-vec3 transmittance_track(vec3 p, vec3 q);
-vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
+vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
 
 vec3 stretch(vec3 v)
 {
@@ -55,7 +54,5 @@ void main()
   vec3 scaled_light_direction = normalize(stretch(light_direction));
   vec3 surface_light = ground_radiance(scaled_point, scaled_light_direction, wet, cos_incidence, highlight,
                                        land_color, water_color);
-  vec3 surface_transmittance = transmittance_track(scaled_atmosphere_start, scaled_point);
-  vec3 in_scattering = ray_scatter_track(scaled_light_direction, scaled_atmosphere_start, scaled_point);
-  fragColor = amplification * (surface_light * surface_transmittance + in_scattering);
+  fragColor = amplification * attenuation_track(scaled_light_direction, scaled_atmosphere_start, scaled_point, surface_light);
 }
