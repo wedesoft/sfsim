@@ -1,5 +1,6 @@
 # TODO
-* joint function for transmittance and in-scattering
+* implement clouded\_light
+* have prototype use tested cloud\_track and clouded\_light function
 * add clouds to atmospheric and planetary shader
 * cloud density function using 3D textures and vertical threshold curves
 * article about TDD and OpenGL (rendering offscreen image and using probe shaders)
