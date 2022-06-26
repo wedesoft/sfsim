@@ -1,6 +1,6 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix)]
+              [sfsim25.conftest :refer (roughly-matrix shader-test)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
               [clojure.core.matrix :refer (ecount mget matrix)]
@@ -50,30 +50,6 @@
       (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.0 0.0 0.0])])]
          (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
 
-(def vertex-passthrough "#version 410 core
-in highp vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
-
-(defn shader-test [probe & shaders]
-  (fn [& args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices       [0 1 3 2]
-                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render 1 1 true
-                                              (use-program program)
-                                              (render-quads vao))
-                img           (texture->vectors tex 1 1)]
-            (deliver result (get-vector img 0 0))
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
-
 (def cloud-track-probe
   (template/fn [px qx n decay scatter density lx ly lz ir ig ib]
 "#version 410 core
@@ -113,10 +89,10 @@ void main()
 }
 "))
 
-(def cloud-track-test (shader-test cloud-track-probe cloud-track))
+(def cloud-track-test (shader-test (fn [program]) cloud-track-probe cloud-track))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test ?px ?qx ?n ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib)
+         (fact (cloud-track-test [] [?px ?qx ?n ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
          ?px ?qx ?n ?decay  ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
          0    1  1  0       0        0.0      0   0   1   0   0   0   0        0                      0
