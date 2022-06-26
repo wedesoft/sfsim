@@ -1,6 +1,5 @@
 # TODO
 * joint function for transmittance and in-scattering
-* use tested anisotropic/isotropic scattering in cloud prototype
 * add clouds to atmospheric and planetary shader
 * cloud density function using 3D textures and vertical threshold curves
 * article about TDD and OpenGL (rendering offscreen image and using probe shaders)

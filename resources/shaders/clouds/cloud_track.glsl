@@ -1,12 +1,14 @@
 #version 410 core
 
+uniform float anisotropic;
+
 vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light);
 vec3 transmittance_forward(vec3 point, vec3 direction);
 float cloud_density(vec3 point);
 vec3 clouded_light(vec3 point, vec3 light);
 float phase(float g, float mu);
 
-vec3 cloud_track(vec3 p, vec3 q, int n, vec3 background, vec3 light)
+vec3 cloud_track(vec3 p, vec3 q, int n, vec3 incoming, vec3 light)
 {
   float dist = distance(p, q);
   if (dist > 0) {
@@ -26,9 +28,10 @@ vec3 cloud_track(vec3 p, vec3 q, int n, vec3 background, vec3 light)
       float density = cloud_density(c);
       float transmittance_cloud = exp(-density * stepsize);
       vec3 intensity = clouded_light(c, light);
-      vec3 cloud_scatter = (1 - transmittance_cloud) * phase(0.76, dot(direction, light)) * intensity;
-      background = background * transmittance_atmosphere * transmittance_cloud + ray_scatter_atmosphere + cloud_scatter;
+      float scatter_amount = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
+      vec3 cloud_scatter = (1 - transmittance_cloud) * scatter_amount * intensity;
+      incoming = incoming * transmittance_atmosphere * transmittance_cloud + ray_scatter_atmosphere + cloud_scatter;
     };
   };
-  return background;
+  return incoming;
 }
