@@ -78,14 +78,14 @@ float phase(float g, float mu)
 {
   return 1.0 - 0.5 * mu;
 }
-vec3 cloud_track(vec3 p, vec3 q, int n, vec3 incoming, vec3 light);
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, int n, vec3 incoming);
 void main()
 {
   vec3 p = vec3(<%= px %>, 0, 0);
   vec3 q = vec3(<%= qx %>, 0, 0);
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  vec3 light = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_track(p, q, <%= n %>, incoming, light);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  fragColor = cloud_track(light_direction, p, q, <%= n %>, incoming);
 }
 "))
 

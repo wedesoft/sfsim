@@ -1,4 +1,5 @@
 # TODO
+* use cloud\_samples uniform value
 * implement clouded\_light
 * have prototype use tested cloud\_track and clouded\_light function
 * add clouds to atmospheric and planetary shader
