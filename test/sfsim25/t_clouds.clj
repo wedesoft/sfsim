@@ -113,3 +113,58 @@ void main()
          0    2  2  0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -2))         0
          0    1  1  0       0        1.0      1            1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
          0    1  1  0       0        1.0      0            1   0   0   0   0   0   0        (- 1 (exp -1))         0)
+
+(def cloud-track-base-probe
+  (template/fn [px qx n decay scatter density ir ig ib]
+"#version 410 core
+out lowp vec3 fragColor;
+vec3 transmittance_forward(vec3 point, vec3 direction)
+{
+  float distance = 10 - point.x;
+  float transmittance = exp(-<%= decay %> * distance);
+  return vec3(transmittance, transmittance, transmittance);
+}
+vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light)
+{
+  float distance = 10 - point.x;
+  float amount = <%= scatter %> * (1 - pow(2, -distance));
+  return vec3(0, 0, amount);
+}
+float cloud_density(vec3 point)
+{
+  return <%= density %>;
+}
+float phase(float g, float mu)
+{
+  return 1.0 - 0.5 * mu;
+}
+vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming);
+void main()
+{
+  vec3 p = vec3(<%= px %>, 0, 0);
+  vec3 q = vec3(<%= qx %>, 0, 0);
+  vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
+  fragColor = cloud_track_base(p, q, <%= n %>, incoming);
+}
+"))
+
+(def cloud-track-base-test
+  (shader-test
+    (fn [program anisotropic]
+        (uniform-float program :anisotropic anisotropic))
+    cloud-track-base-probe
+    cloud-track-base))
+
+(tabular "Shader for determining shadowing (or lack of shadowing) by clouds"
+         (fact (cloud-track-base-test [?anisotropic] [?px ?qx ?n ?decay ?scatter ?density ?ir ?ig ?ib])
+               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
+         ?px  ?qx ?n ?decay  ?scatter ?density ?anisotropic ?ir ?ig ?ib ?or                                 ?og ?ob
+         0    0   1  0       0        0.0      1            0   0   0   0                                   0   0
+         0    0   1  0       0        0.0      1            1   0   0   1                                   0   0
+         0    1   1  0       0        0.0      1            1   0   0   1                                   0   0
+         0    1   1  1       0        0.0      1            1   0   0   (exp -1)                            0   0
+         0    1   2  1       0        0.0      1            1   0   0   (exp -1)                            0   0
+         9   10   1  0       1        0.0      1            0   0   0   0                                   0   0.5
+         8    9   1  0       1        0.0      1            0   0   0   0                                   0   0.25
+         8    9   1  (log 2) 1        0.0      1            0   0   0   0                                   0   0.5
+         )

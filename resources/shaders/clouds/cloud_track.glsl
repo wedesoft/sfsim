@@ -2,8 +2,8 @@
 
 uniform float anisotropic;
 
-vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light);
 vec3 transmittance_forward(vec3 point, vec3 direction);
+vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light);
 float cloud_density(vec3 point);
 vec3 clouded_light(vec3 point, vec3 light_direction);
 float phase(float g, float mu);

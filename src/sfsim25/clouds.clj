@@ -39,3 +39,7 @@
 (def cloud-track
   "Shader for putting volumetric clouds into the atmosphere"
   (slurp "resources/shaders/clouds/cloud_track.glsl"))
+
+(def cloud-track-base
+  "Shader for determining shadowing (or lack of shadowing) by clouds"
+  (slurp "resources/shaders/clouds/cloud_track_base.glsl"))
