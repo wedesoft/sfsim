@@ -1,5 +1,7 @@
 #version 410 core
 
+uniform float anisotropic;
+
 vec3 transmittance_forward(vec3 point, vec3 direction);
 vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light);
 float cloud_density(vec3 point);
@@ -23,7 +25,8 @@ vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming)
       vec3 ray_scatter_b = ray_scatter_forward(b, light_direction, light_direction);
       vec3 ray_scatter_atmosphere = ray_scatter_a - ray_scatter_b * transmittance_atmosphere;
       float density = cloud_density(c);
-      float transmittance_cloud = exp(-density * stepsize);
+      float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
+      float transmittance_cloud = exp((scatter_amount - 1) * density * stepsize);
       incoming = incoming * transmittance_atmosphere * transmittance_cloud + ray_scatter_atmosphere;
     };
     return incoming;

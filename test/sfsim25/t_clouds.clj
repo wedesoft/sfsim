@@ -136,7 +136,7 @@ float cloud_density(vec3 point)
 }
 float phase(float g, float mu)
 {
-  return 1.0 - 0.5 * mu;
+  return 1.0 + 0.5 * mu;
 }
 vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming);
 void main()
@@ -158,13 +158,15 @@ void main()
 (tabular "Shader for determining shadowing (or lack of shadowing) by clouds"
          (fact (cloud-track-base-test [?anisotropic] [?px ?qx ?n ?decay ?scatter ?density ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?px  ?qx ?n ?decay  ?scatter ?density ?anisotropic ?ir ?ig ?ib ?or                                 ?og ?ob
-         0    0   1  0       0        0.0      1            0   0   0   0                                   0   0
-         0    0   1  0       0        0.0      1            1   0   0   1                                   0   0
-         0    1   1  0       0        0.0      1            1   0   0   1                                   0   0
-         0    1   1  1       0        0.0      1            1   0   0   (exp -1)                            0   0
-         0    1   2  1       0        0.0      1            1   0   0   (exp -1)                            0   0
-         9   10   1  0       1        0.0      1            0   0   0   0                                   0   0.5
-         8    9   1  0       1        0.0      1            0   0   0   0                                   0   0.25
-         8    9   1  (log 2) 1        0.0      1            0   0   0   0                                   0   0.5
-         )
+         ?px  ?qx ?n ?decay  ?scatter ?density ?anisotropic ?ir ?ig ?ib ?or        ?og ?ob
+         0    0   1  0       0        0.0      1            0   0   0   0          0   0
+         0    0   1  0       0        0.0      1            1   0   0   1          0   0
+         0    1   1  0       0        0.0      1            1   0   0   1          0   0
+         0    1   1  1       0        0.0      1            1   0   0   (exp -1)   0   0
+         0    1   2  1       0        0.0      1            1   0   0   (exp -1)   0   0
+         9   10   1  0       1        0.0      1            0   0   0   0          0   0.5
+         8    9   1  0       1        0.0      1            0   0   0   0          0   0.25
+         8    9   1  (log 2) 1        0.0      1            0   0   0   0          0   0.5
+         0    1   1  0       0        1.0      1            1   0   0   (exp -0.5) 0   0
+         0    1   2  0       0        1.0      1            1   0   0   (exp -0.5) 0   0
+         0    1   2  0       0        1.0      0            1   0   0   1          0   0)
