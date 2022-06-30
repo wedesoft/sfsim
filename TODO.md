@@ -2,6 +2,7 @@
 * use cloud\_samples uniform value
 * implement clouded\_light
 * have prototype use tested cloud\_track and clouded\_light function
+* does ray\_scatter\_atmosphere need to be multiplied with transmittance\_cloud?
 * add clouds to atmospheric and planetary shader
 * cloud density function using 3D textures and vertical threshold curves
 * article about TDD and OpenGL (rendering offscreen image and using probe shaders)

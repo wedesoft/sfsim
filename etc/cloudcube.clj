@@ -32,7 +32,6 @@
 (def threshold (atom 0.1))
 (def anisotropic (atom 0.4))
 (def multiplier (atom 0.8))
-(def multiplier2 (atom 0.6))
 (def initial (atom 1.0))
 (def light (atom 0.0))
 
@@ -56,18 +55,40 @@ uniform vec3 origin;
 uniform vec3 light;
 uniform sampler3D tex;
 uniform float threshold;
-uniform float anisotropic;
 uniform float multiplier;
-uniform float multiplier2;
 uniform float initial;
 in VS_OUT
 {
   highp vec3 direction;
 } fs_in;
 out vec3 fragColor;
-float phase(float g, float mu);
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, int n, vec3 incoming);
+vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming);
+float cloud_density(vec3 point)
+{
+  float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
+  if (s > threshold)
+    return (s - threshold) * multiplier;
+  else
+    return 0.0;
+}
+vec3 clouded_light(vec3 point, vec3 light_direction)
+{
+  vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light_direction);
+  vec3 p = point + intersection.x * light_direction;
+  vec3 q = point + (intersection.x + intersection.y) * light_direction;
+  return cloud_track_base(p, q, 8, vec3(1, 1, 1));
+}
+vec3 transmittance_forward(vec3 point, vec3 direction)
+{
+  return vec3(1, 1, 1);
+}
+vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light)
+{
+  return vec3(0, 0, 0);
+}
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -75,28 +96,9 @@ void main()
   vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3(0.3, 0.3, 0.5);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   if (intersection.y > 0) {
-    for (int i=63; i>=0; i--) {
-      vec3 point = origin + (intersection.x + (i + 0.5) / 64 * intersection.y) * direction;
-      float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
-      if (s > threshold) {
-        vec2 intersection2 = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light);
-        float intensity = initial;
-        for (int j=0; j<6; j++) {
-          vec3 point2 = point + (intersection2.x + (j + 0.5) / 6 * intersection2.y) * light;
-          float s2 = interpolate_3d(tex, point2, vec3(-30, -30, -30), vec3(30, 30, 30));
-          if (s2 > threshold) {
-            float transparency = exp(-multiplier * (s2 - threshold) * intersection2.y / 6);
-            float density = 1 - exp(-multiplier2 * (s2 - threshold) * intersection2.y / 6);
-            float scatter = (anisotropic * phase(0.76, -1) + (1 - anisotropic)) * density;
-            intensity = intensity * transparency + scatter * intensity;
-          }
-        }
-        float transparency = exp(-multiplier * (s - threshold) * intersection.y / 64);
-        float density = 1 - exp(-multiplier2 * (s - threshold) * intersection.y / 64);
-        float scatter = (anisotropic * phase(0.76, dot(direction, light)) + (1 - anisotropic)) * density;
-        bg = bg * transparency + scatter * intensity;
-      }
-    }
+    vec3 p = origin + intersection.x * direction;
+    vec3 q = origin + (intersection.x + intersection.y) * direction;
+    bg = cloud_track(light, p, q, 64, bg);
     fragColor = bg;
   } else
     fragColor = bg;
@@ -104,7 +106,8 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function]))
+                :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function cloud-track-base
+                           cloud-track]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -144,8 +147,7 @@ void main()
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              ts (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
              tm (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
-             t2 (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
-             ti (if (@keystates Keyboard/KEY_T) 0.001 (if (@keystates Keyboard/KEY_G) -0.001 0))
+             ti (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
@@ -153,7 +155,6 @@ void main()
          (swap! threshold + (* dt tr))
          (swap! anisotropic + (* dt ts))
          (swap! multiplier + (* dt tm))
-         (swap! multiplier2 + (* dt t2))
          (swap! initial + (* dt ti))
          (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
          (swap! light + (* l dt))
@@ -173,8 +174,6 @@ void main()
                  (uniform-float program :threshold @threshold)
                  (uniform-float program :anisotropic @anisotropic)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
-                 (uniform-float program :multiplier2 (* 0.1 @multiplier2))
-                 (uniform-float program :initial @initial)
                  (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
                  (render-quads vao)))
 
