@@ -21,6 +21,7 @@
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 480))
+;(Display/setFullscreen true)
 (Display/create)
 (Keyboard/create)
 
@@ -69,10 +70,7 @@ vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming);
 float cloud_density(vec3 point)
 {
   float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
-  if (s > threshold)
-    return (s - threshold) * multiplier;
-  else
-    return 0.0;
+  return max((s - threshold) * multiplier, 0);
 }
 vec3 clouded_light(vec3 point, vec3 light_direction)
 {
@@ -113,7 +111,7 @@ void main()
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-(def size 64)
+(def size 128)
 
 ;(def values1 (worley-noise 30 size))
 ;(def values2 (worley-noise 120 size))
