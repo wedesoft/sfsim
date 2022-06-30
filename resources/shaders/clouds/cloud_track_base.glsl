@@ -14,7 +14,7 @@ vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming)
     vec3 light_direction = (q - p) / dist;
     vec3 delta = (q - p) / n;
     float stepsize = dist / n;
-    for (int i=0; i<n; i++) {
+    for (int i=n-1; i>=0; i--) {
       vec3 a = p + delta * i;
       vec3 b = a + delta;
       vec3 c = 0.5 * (a + b);
