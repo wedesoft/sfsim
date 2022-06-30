@@ -49,6 +49,22 @@
   "Get 4D lookup index for ray scattering"
   (slurp "resources/shaders/core/ray_scatter_forward.glsl"))
 
-(def sky-or-ground
+(def is-above-horizon
   "Check whether a ray hits the ground or stays in the sky"
-  (slurp "resources/shaders/core/sky_or_ground.glsl"))
+  (slurp "resources/shaders/core/is_above_horizon.glsl"))
+
+(def ray-box
+  "Shader function for computing intersection of ray with box"
+  (slurp "resources/shaders/core/ray_box.glsl"))
+
+(def convert-3d-index
+  "Convert 3D point to 3D texture lookup index"
+  (slurp "resources/shaders/core/convert_3d_index.glsl"))
+
+(def interpolate-3d
+  "Perform 3D interpolation"
+  (slurp "resources/shaders/core/interpolate_3d.glsl"))
+
+(def ray-shell
+  "Shader function for computing intersections of ray with a shell"
+  (slurp "resources/shaders/core/ray_shell.glsl"))

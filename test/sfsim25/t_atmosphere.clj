@@ -1,9 +1,9 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
+              [sfsim25.conftest :refer (roughly-matrix record-image is-image vertex-passthrough shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
-              [clojure.core.matrix :refer (matrix mget mul sub identity-matrix)]
-              [clojure.core.matrix.linear :refer (norm)]
+              [clojure.core.matrix :refer (matrix mget mul identity-matrix)]
               [sfsim25.matrix :refer :all]
               [sfsim25.sphere :as sphere]
               [sfsim25.interpolate :refer :all]
@@ -12,19 +12,6 @@
               [sfsim25.util :refer :all]
               [sfsim25.atmosphere :refer :all :as atmosphere])
     (:import [mikera.vectorz Vector]))
-
-; Compare RGB components of image and ignore alpha values.
-(defn is-image [filename]
-  (fn [other]
-      (let [img (slurp-image filename)]
-        (and (= (:width img) (:width other))
-             (= (:height img) (:height other))
-             (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
-
-; Use this test function to record the image the first time.
-(defn record-image [filename]
-  (fn [other]
-      (spit-image filename other)))
 
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
   (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6]) :scatter-scale 8000}]
@@ -144,8 +131,6 @@
       (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]) false) => (matrix [0.0 0.0 0.0])
       (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]) false) => (matrix [0.0 0.0 0.0])
       )))
-
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
 
 (fact "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
   (let [radius           6378000.0
@@ -452,15 +437,8 @@
 (fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
       point-scatter-space => (exactly ray-scatter-space))
 
-(def vertex-passthrough "#version 410 core
-in highp vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
-
-(defn transmittance-shader-test [probe & shaders]
-  (fn [& args]
+(defn transmittance-shader-test [setup probe & shaders]
+  (fn [uniforms args]
       (let [result (promise)]
         (offscreen-render 1 1
           (let [indices       [0 1 3 2]
@@ -472,6 +450,7 @@ void main()
                 tex           (texture-render 1 1 true
                                               (use-program program)
                                               (uniform-sampler program :transmittance 0)
+                                              (apply setup program uniforms)
                                               (use-textures transmittance)
                                               (render-quads vao))
                 img           (texture->vectors tex 1 1)]
@@ -484,32 +463,39 @@ void main()
 
 (def transmittance-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
-uniform sampler2D transmittance;
 out lowp vec3 fragColor;
-vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
-                         float power, vec3 p, vec3 q);
+vec3 transmittance_track(vec3 p, vec3 q);
 void main()
 {
   vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
   vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-  fragColor = transmittance_track(transmittance, 6378000, 100000, 17, 17, 1, p, q);
+  fragColor = transmittance_track(p, q);
 }"))
 
-(def transmittance-track-test (transmittance-shader-test transmittance-track-probe transmittance-track
-                                                         shaders/transmittance-forward shaders/horizon-angle
-                                                         shaders/elevation-to-index shaders/interpolate-2d
-                                                         shaders/convert-2d-index shaders/sky-or-ground))
+(def transmittance-track-test
+  (transmittance-shader-test
+    (fn [program height-size elevation-size elevation-power radius max-height]
+        (uniform-int program :height_size height-size)
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-float program :elevation_power elevation-power)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-track-probe transmittance-track
+    shaders/transmittance-forward shaders/horizon-angle
+    shaders/elevation-to-index shaders/interpolate-2d
+    shaders/convert-2d-index shaders/is-above-horizon))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
-         (fact (mget (transmittance-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => (roughly ?result 1e-6))
+         (fact (mget (transmittance-track-test [17 17 1 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0)
+               => (roughly ?result 1e-6))
          ?px ?py ?pz     ?qx ?qy ?qz     ?result
          0   0   6478000 0   0   6478000 1
          0   0   6428000 0   0   6478000 0.5
          0   0   6453000 0   0   6478000 0.75
          0   0   6428000 0   0   6453000 (/ 0.5 0.75))
 
-(defn ray-scatter-shader-test [probe & shaders]
-  (fn [& args]
+(defn ray-scatter-shader-test [setup probe & shaders]
+  (fn [uniforms args]
       (let [result (promise)]
         (offscreen-render 1 1
           (let [indices       [0 1 3 2]
@@ -524,6 +510,7 @@ void main()
                                               (use-program program)
                                               (uniform-sampler program :transmittance 0)
                                               (uniform-sampler program :ray_scatter 1)
+                                              (apply setup program uniforms)
                                               (use-textures transmittance ray-scatter)
                                               (render-quads vao))
                 img           (texture->vectors tex 1 1)]
@@ -537,27 +524,43 @@ void main()
 
 (def ray-scatter-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
-uniform sampler2D transmittance;
-uniform sampler2D ray_scatter;
 out lowp vec3 fragColor;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size,
-                       int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
-                       vec3 p, vec3 q);
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 void main()
 {
   vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
   vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-  fragColor = ray_scatter_track(ray_scatter, transmittance, 6378000, 100000, 5, 5, 5, 5, 1, vec3(0, 0, 1), p, q);
+  fragColor = ray_scatter_track(vec3(0, 0, 1), p, q);
 }"))
 
-(def ray-scatter-track-test (ray-scatter-shader-test ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward
-                                                     shaders/horizon-angle shaders/oriented-matrix shaders/orthogonal-vector
-                                                     shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d
-                                                     shaders/convert-4d-index transmittance-track shaders/transmittance-forward
-                                                     shaders/interpolate-2d shaders/convert-2d-index shaders/sky-or-ground))
+(def ray-scatter-track-test
+  (ray-scatter-shader-test
+    (fn [program height-size elevation-size light-elevation-size heading-size elevation-power radius max-height]
+        (uniform-int program :height_size height-size)
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-int program :light_elevation_size light-elevation-size)
+        (uniform-int program :heading_size heading-size)
+        (uniform-float program :elevation_power elevation-power)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    ray-scatter-track-probe
+    ray-scatter-track
+    shaders/ray-scatter-forward
+    shaders/horizon-angle
+    shaders/oriented-matrix
+    shaders/orthogonal-vector
+    shaders/clip-angle
+    shaders/elevation-to-index
+    shaders/interpolate-4d
+    shaders/convert-4d-index
+    transmittance-track
+    shaders/transmittance-forward
+    shaders/interpolate-2d
+    shaders/convert-2d-index
+    shaders/is-above-horizon))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
-         (fact (mget (ray-scatter-track-test ?px ?py ?pz ?qx ?qy ?qz) 0) => ?result)
+         (fact (mget (ray-scatter-track-test [5 5 5 5 1 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0) => ?result)
          ?px ?py ?pz     ?qx ?qy ?qz     ?result
          0   0   6478000 0   0   6478000 0.0
          0   0   6428000 0   0   6478000 (- 1.0 (* 0.5 1.0)))
@@ -640,13 +643,14 @@ void main()
                                    origin        (matrix [?x ?y ?z])
                                    transform     (transformation-matrix (rotation-x ?rotation) origin)
                                    program       (make-program :vertex [vertex-atmosphere]
-                                                               :fragment [fragment-atmosphere shaders/ray-sphere
+                                                               :fragment [fragment-atmosphere transmittance-outer
+                                                                          ray-scatter-outer attenuation-outer shaders/ray-sphere
                                                                           shaders/transmittance-forward shaders/horizon-angle
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
                                                                           shaders/oriented-matrix shaders/orthogonal-vector
                                                                           shaders/clip-angle shaders/interpolate-2d
                                                                           shaders/convert-2d-index shaders/interpolate-4d
-                                                                          shaders/convert-4d-index shaders/sky-or-ground])
+                                                                          shaders/convert-4d-index shaders/is-above-horizon])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d {:width size :height size :data T})
                                    ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
@@ -667,7 +671,7 @@ void main()
                                (uniform-int program :elevation_size size)
                                (uniform-int program :light_elevation_size size)
                                (uniform-int program :heading_size size)
-                               (uniform-float program :power power)
+                               (uniform-float program :elevation_power power)
                                (uniform-float program :amplification 5)
                                (use-textures transmittance ray-scatter)
                                (render-quads vao)
@@ -683,3 +687,24 @@ void main()
          0  0            (- 0 radius 2)          radius       0           0   0   -1   "inside.png"
          0  (* 3 radius) 0                       radius       (* -0.5 PI) 0   1    0   "yview.png"
          0  (* 3 radius) 0                       (/ radius 2) (* -0.5 PI) 0   1    0   "ellipsoid.png")
+
+(def phase-probe
+  (template/fn [g mu] "#version 410 core
+out lowp vec3 fragColor;
+float phase(float g, float mu);
+void main()
+{
+  float result = phase(<%= g %>, <%= mu %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def phase-test (shader-test (fn [program]) phase-probe phase-function))
+
+(tabular "Shader function for scattering phase function"
+         (fact (mget (phase-test [] [?g ?mu]) 0) => (roughly ?result))
+         ?g  ?mu ?result
+         0   0   (/ 3 (* 16 PI))
+         0   1   (/ 6 (* 16 PI))
+         0  -1   (/ 6 (* 16 PI))
+         0.5 0   (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5)))
+         0.5 1   (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))

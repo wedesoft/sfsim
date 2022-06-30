@@ -1,28 +1,16 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
+              [sfsim25.conftest :refer (roughly-matrix is-image vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (PI)]
-              [clojure.core.matrix :refer (matrix sub mul identity-matrix)]
-              [clojure.core.matrix.linear :refer (norm)]
+              [clojure.core.matrix :refer (matrix mul identity-matrix)]
               [sfsim25.cubemap :as cubemap]
+              [sfsim25.atmosphere :as atmosphere]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all]))
-
-; Compare RGB components of image and ignore alpha values.
-(defn is-image [filename]
-  (fn [other]
-      (let [img (slurp-image filename)]
-        (and (= (:width img) (:width other))
-             (= (:height img) (:height other))
-             (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
-
-; Use this test function to record the image the first time.
-(defn record-image [filename]
-  (fn [other]
-      (spit-image filename other)))
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (matrix [-0.75 -0.5  -1.0])
@@ -245,17 +233,8 @@ void main()
                           (destroy-vertex-array-object vao)
                           (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/heightfield.png"))
 
-(defn roughly-matrix [y error] (fn [x] (<= (norm (sub y x)) error)))
-
-(def vertex-passthrough "#version 410 core
-in highp vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
-
-(defn radiance-shader-test [probe & shaders]
-  (fn [& args]
+(defn radiance-shader-test [setup probe & shaders]
+  (fn [uniforms args]
       (let [result (promise)]
         (offscreen-render 1 1
           (let [indices   [0 1 3 2]
@@ -268,8 +247,9 @@ void main()
                 vao       (make-vertex-array-object program indices vertices [:point 3])
                 tex       (texture-render 1 1 true
                                           (use-program program)
-                                          (uniform-sampler program :red 0)
-                                          (uniform-sampler program :blue 1)
+                                          (uniform-sampler program :transmittance 0)
+                                          (uniform-sampler program :surface_radiance 1)
+                                          (apply setup program uniforms)
                                           (use-textures red blue)
                                           (render-quads vao))
                 img       (texture->vectors tex 1 1)]
@@ -282,29 +262,41 @@ void main()
         @result)))
 
 (def ground-radiance-probe
-  (template/fn [albedo x y z cos-incidence highlight lx ly lz water cr cg cb] "#version 410 core
-uniform sampler2D red;
-uniform sampler2D blue;
+  (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb] "#version 410 core
 out lowp vec3 fragColor;
-vec3 ground_radiance(float albedo, sampler2D transmittance, sampler2D surface_radiance, float radius, float max_height,
-                     int height_size, int elevation_size, float power, vec3 point, vec3 light_direction, float water,
-                     float reflectivity, float cos_incidence, float highlight, vec3 land_color, vec3 water_color);
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
+                     vec3 land_color, vec3 water_color);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
   vec3 light = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
   vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
   vec3 water_color = vec3(0.1, 0.2, 0.4);
-  fragColor = ground_radiance(<%= albedo %>, red, blue, 6378000, 100000, 17, 17, 2.0, point, light, <%= water %>, 0.5,
-                              <%= cos-incidence %>, <%= highlight %>, land_color, water_color);
+  fragColor = ground_radiance(point, light, <%= water %>, <%= cos-incidence %>, <%= highlight %>, land_color, water_color);
 }"))
 
-(def ground-radiance-test (radiance-shader-test ground-radiance-probe ground-radiance shaders/transmittance-forward
-                                                shaders/horizon-angle shaders/elevation-to-index shaders/interpolate-2d
-                                                shaders/convert-2d-index shaders/sky-or-ground))
+(def ground-radiance-test
+  (radiance-shader-test
+    (fn [program radius max-height elevation-size height-size elevation-power albedo reflectivity]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height)
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-int program :height_size height-size)
+        (uniform-float program :elevation_power elevation-power)
+        (uniform-float program :albedo albedo)
+        (uniform-float program :reflectivity reflectivity))
+    ground-radiance-probe
+    ground-radiance
+    shaders/transmittance-forward
+    shaders/horizon-angle
+    shaders/elevation-to-index
+    shaders/interpolate-2d
+    shaders/convert-2d-index
+    shaders/is-above-horizon))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mul (ground-radiance-test ?albedo ?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb) PI)
+         (fact (mul (ground-radiance-test [6378000.0 100000.0 17 17 2.0 ?albedo 0.5]
+                                          [?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
          ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
          1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
@@ -337,8 +329,7 @@ void main()
 }")
 
 (def fake-transmittance "#version 410 core
-vec3 transmittance_track(sampler2D transmittance, float radius, float max_height, int height_size, int elevation_size,
-                         float power, vec3 p, vec3 q)
+vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dist = distance(p, q);
   if (dist < 150) return vec3(1, 1, 1);
@@ -348,9 +339,7 @@ vec3 transmittance_track(sampler2D transmittance, float radius, float max_height
 
 (def fake-ray-scatter "#version 410 core
 uniform vec3 scatter;
-vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float radius, float max_height, int height_size, 
-                       int elevation_size, int light_elevation_size, int heading_size, float power, vec3 light_direction,
-                       vec3 p, vec3 q)
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return scatter;
 }")
@@ -363,7 +352,7 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
   (uniform-sampler program :ray_scatter 3)
   (uniform-sampler program :surface_radiance 4)
   (uniform-sampler program :water 5)
-  (uniform-float program :power 2.0)
+  (uniform-float program :elevation_power 2.0)
   (uniform-float program :specular 100)
   (uniform-float program :max_height 100000)
   (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34])))
@@ -395,8 +384,8 @@ vec3 ray_scatter_track(sampler2D ray_scatter, sampler2D transmittance, float rad
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/horizon-angle shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-sphere
-                                                                          shaders/sky-or-ground fake-ray-scatter
-                                                                          ground-radiance])
+                                                                          shaders/is-above-horizon fake-ray-scatter
+                                                                          atmosphere/attenuation-track ground-radiance])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000

@@ -23,13 +23,14 @@
 (defn -main
   "Program to generate lookup tables for atmospheric scattering"
   [& args]
-  (.println *err* "Initialization")
-  (let [height-size                   33
-        heading-size                  65
+  (.println *err* (str "Initialization " (.toString (java.time.LocalDateTime/now))))
+  (let [height-size                   9
+        heading-size                  33
         elevation-size                129
-        light-elevation-size          129
+        light-elevation-size          33
         transmittance-shape           [height-size elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
+        bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) height-size)
         ray-steps                     100
         sphere-steps                  15
         iterations                    5
@@ -41,7 +42,7 @@
         surface-radiance-space-planet (surface-radiance-space earth transmittance-shape power)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
         point-scatter-space-planet    (point-scatter-space earth ray-scatter-shape power)
-        ray-scatter-base-planet       (partial ray-scatter earth scatter ray-steps point-scatter-base-planet)
+        ray-scatter-base-planet       (bar (partial ray-scatter earth scatter ray-steps point-scatter-base-planet))
         ray-scatter-space-planet      (ray-scatter-space earth ray-scatter-shape power)
         T                             (interpolate-function transmittance-planet transmittance-space-planet)
         dE                            (atom (interpolate-function surface-radiance-base-planet surface-radiance-space-planet))
@@ -49,11 +50,11 @@
         dS                            (atom (interpolate-function ray-scatter-base-planet ray-scatter-space-planet))
         S                             (atom @dS)]
     (doseq [iteration (range iterations)]
-           (.println *err* (str "Iteration " (inc iteration) "/" iterations))
-           (let [point-scatter-planet    (partial point-scatter earth scatter @dS @dE (matrix [1 1 1]) sphere-steps ray-steps)
+           (.println *err* (str "Iteration " (inc iteration) "/" iterations " " (.toString (java.time.LocalDateTime/now))))
+           (let [point-scatter-planet    (bar (partial point-scatter earth scatter @dS @dE (matrix [1 1 1]) sphere-steps ray-steps))
                  surface-radiance-planet (partial surface-radiance earth @dS ray-steps)
                  dJ                      (interpolate-function point-scatter-planet point-scatter-space-planet)
-                 ray-scatter-planet      (partial ray-scatter earth scatter ray-steps dJ)]
+                 ray-scatter-planet      (bar (partial ray-scatter earth scatter ray-steps dJ))]
              (reset! dE (interpolate-function surface-radiance-planet surface-radiance-space-planet))
              (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
              (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s a] (add (E x s a) (dE x s a))) surface-radiance-space-planet)))

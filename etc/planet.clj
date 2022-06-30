@@ -38,10 +38,10 @@
 
 (def keystates (atom {}))
 
-(def height-size 33)
-(def heading-size 65)
+(def height-size 9)
+(def heading-size 33)
 (def elevation-size 129)
-(def light-elevation-size 129)
+(def light-elevation-size 33)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
@@ -54,10 +54,11 @@
 
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere shaders/ray-sphere shaders/transmittance-forward shaders/horizon-angle
-                           shaders/ray-scatter-forward shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d
-                           shaders/orthogonal-vector shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d
-                           shaders/convert-2d-index shaders/sky-or-ground]))
+                :fragment [fragment-atmosphere attenuation-outer ray-scatter-outer transmittance-outer shaders/ray-sphere
+                           shaders/transmittance-forward shaders/horizon-angle shaders/ray-scatter-forward
+                           shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d shaders/orthogonal-vector
+                           shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d shaders/convert-2d-index
+                           shaders/is-above-horizon]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -73,7 +74,7 @@
 
 (go-loop []
          (if-let [tree (<! tree-state)]
-                 (let [increase? (partial increase-level? tilesize radius polar-radius (Display/getWidth) 60 10 4 @position)]
+                 (let [increase? (partial increase-level? tilesize radius polar-radius (Display/getWidth) 60 10 5 @position)]
                    (>! changes (update-level-of-detail tree increase? true))
                    (recur))))
 
@@ -82,11 +83,11 @@
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet shaders/ray-sphere ground-radiance shaders/transmittance-forward
+                :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance shaders/transmittance-forward
                            transmittance-track shaders/horizon-angle shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
-                           shaders/sky-or-ground]))
+                           shaders/is-above-horizon]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
@@ -182,7 +183,7 @@
                           (uniform-int program-planet :elevation_size elevation-size)
                           (uniform-int program-planet :light_elevation_size light-elevation-size)
                           (uniform-int program-planet :heading_size heading-size)
-                          (uniform-float program-planet :power 2.0)
+                          (uniform-float program-planet :elevation_power 2.0)
                           (uniform-float program-planet :albedo 0.9)
                           (uniform-float program-planet :reflectivity 0.1)
                           (uniform-float program-planet :specular 100)
@@ -203,7 +204,7 @@
                           (uniform-float program-atmosphere :polar_radius polar-radius)
                           (uniform-float program-atmosphere :max_height max-height)
                           (uniform-float program-atmosphere :specular 100)
-                          (uniform-float program-atmosphere :power 2.0)
+                          (uniform-float program-atmosphere :elevation_power 2.0)
                           (uniform-int program-atmosphere :height_size height-size)
                           (uniform-int program-atmosphere :elevation_size elevation-size)
                           (uniform-int program-atmosphere :light_elevation_size light-elevation-size)

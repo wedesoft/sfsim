@@ -18,6 +18,7 @@ out TCS_OUT
   mediump vec2 colorcoord;
 } tcs_out[];
 
+// Control amount of tessellation so that it matches with neighbouring patches.
 void main(void)
 {
   if (gl_InvocationID == 0) {

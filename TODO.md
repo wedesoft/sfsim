@@ -1,14 +1,23 @@
 # TODO
-* make convert-2d-to-4d more generic (support differing dimensions)
+* use cloud\_samples uniform value
+* implement clouded\_light
+* have prototype use tested cloud\_track and clouded\_light function
+* add clouds to atmospheric and planetary shader
+* cloud density function using 3D textures and vertical threshold curves
+* article about TDD and OpenGL (rendering offscreen image and using probe shaders)
+* article about clouds
+* remove lowp, mediump, highp
+* 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
+* how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
+* how to render clouds and cloud shadows?
+* how to render waves
+* how to render stars
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
-* rename sky\_or\_ground to is\_above\_horizon
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
 * is an above-horizon boolean needed for the light-direction when computing ray-scatter and ray-scatter-forward?
 * elevation\_to\_index should use elevation value between -pi/2 and pi/2
-* only render sun glare when sun is above horizon
-* add keyboard motion commands
+* only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
 * extract functions from prototype
-* remove update-tree-parents code
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius, polar-radius in a configuration file
 * \_ -> - in shader file names
@@ -16,14 +25,10 @@
 * light -> light-direction
 * radius1, radius2 -> radius, polar-radius
 * use Earth explorer data: https://earthexplorer.usgs.gov/
+* use GMTED2010 data: https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
 * improve rendering of sun
-* how to render clouds
-* how to render shadows on planet surface
-* how to render shadows in atmosphere
-* how to render waves
-* how to render stars
 * render moonlight and moon
 * organize fixtures using subdirectories
 * is all planet rendering represented as a quad-tree?

@@ -24,3 +24,5 @@ lein midje
 * [Reversed-z rendering in OpenGL](https://nlguillemot.wordpress.com/2016/12/07/reversed-z-in-opengl/)
 * [Reversed-z rendering precision](https://developer.nvidia.com/content/depth-precision-visualized)
 * [Incanter interpolation API](https://incanter.github.io/incanter/interpolation-api.html)
+* [Bruneton: Precomputed Atmospheric Scattering](https://hal.inria.fr/inria-00288758/document)
+* [Bouthors: Interactive multiple anisotropic scattering in clouds](https://hal.inria.fr/file/index/docid/333007/filename/clouds.pdf)

@@ -222,16 +222,23 @@
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
-(def-context-macro with-1d-texture (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_1D texture)) (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_1D 0)))
+(def-context-macro with-1d-texture
+  (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_1D texture)) (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_1D 0)))
 
-(def-context-macro with-2d-texture (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)) (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)))
+(def-context-macro with-2d-texture
+  (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D texture)) (fn [texture] (GL11/glBindTexture GL11/GL_TEXTURE_2D 0)))
+
+(def-context-macro with-3d-texture
+  (fn [texture] (GL11/glBindTexture GL12/GL_TEXTURE_3D texture)) (fn [texture] (GL11/glBindTexture GL12/GL_TEXTURE_3D 0)))
 
 (def-context-create-macro create-1d-texture (fn [] (GL11/glGenTextures)) 'with-1d-texture)
 
 (def-context-create-macro create-2d-texture (fn [] (GL11/glGenTextures)) 'with-2d-texture)
 
+(def-context-create-macro create-3d-texture (fn [] (GL11/glGenTextures)) 'with-3d-texture)
+
 (defn make-float-texture-1d
-  "Load floating-point 1D data into red-channel of an OpenGL texture"
+  "Load floating-point 1D data into red channel of an OpenGL texture"
   [data]
   (let [buffer  (make-float-buffer data)]
     (GL13/glActiveTexture GL13/GL_TEXTURE0)
@@ -259,12 +266,12 @@
   (make-texture-2d image make-int-buffer GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-float-texture-2d
-  "Load floating-point 2D data into red-channel of an OpenGL texture"
+  "Load floating-point 2D data into red channel of an OpenGL texture"
   [image]
   (make-texture-2d image make-float-buffer GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
 
 (defn make-ubyte-texture-2d
-  "Load unsigned-byte 2D data into red-channel of an OpenGL texture (data needs to be 32-bit aligned!)"
+  "Load unsigned-byte 2D data into red channel of an OpenGL texture (data needs to be 32-bit aligned!)"
   [image]
   (make-texture-2d image make-byte-buffer GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
 
@@ -272,6 +279,20 @@
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   [image]
   (make-texture-2d image make-float-buffer GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+
+(defn make-float-texture-3d
+  "Load floating-point 3D data into red channel of an OpenGL texture"
+  [image]
+  (let [buffer (make-float-buffer (:data image))]
+    (GL13/glActiveTexture GL13/GL_TEXTURE0)
+    (create-3d-texture texture
+      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
+      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
+      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT)
+      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+      {:texture texture :target GL12/GL_TEXTURE_3D})))
 
 (defn destroy-texture
   "Delete an OpenGL texture"

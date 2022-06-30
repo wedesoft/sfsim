@@ -1,5 +1,6 @@
 #version 410 core
 
+// Given a normal vector return an orthogonal vector.
 vec3 orthogonal_vector(vec3 n)
 {
   vec3 v;

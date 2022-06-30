@@ -7,6 +7,7 @@
                  [org.clojure/core.memoize "1.0.236"]
                  [org.clojure/core.async   "1.3.618"]
                  [com.climate/claypoole      "1.1.4"]
+                 [progrock                   "0.1.2"]
                  [net.mikera/core.matrix    "0.62.0"]
                  [net.mikera/vectorz-clj    "0.48.0"]
                  [comb                       "0.1.1"]

@@ -1,22 +1,10 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
+            [sfsim25.conftest :refer (is-image)]
             [clojure.core.matrix :refer (matrix identity-matrix)]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode]))
-
-; Compare RGB components of image and ignore alpha values.
-(defn is-image [filename]
-  (fn [other]
-    (let [img (slurp-image filename)]
-      (and (= (:width img) (:width other))
-           (= (:height img) (:height other))
-           (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
-
-; Use this test function to record the image the first time.
-(defn record-image [filename]
-  (fn [other]
-    (spit-image filename other)))
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/render/red.png"))
@@ -328,6 +316,32 @@ void main()
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png"))
+
+(def fragment-texture-3d "#version 410 core
+in mediump vec2 uv_fragment;
+out lowp vec3 fragColor;
+uniform sampler3D tex;
+void main()
+{
+  fragColor = texture(tex, vec3(uv_fragment, 1.0)).rgb;
+}")
+
+(fact "Render 3D floating-point texture"
+      (offscreen-render 64 64
+        (let [indices  [0 1 3 2]
+              vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+              program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-3d])
+              vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+              data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
+              tex      (make-float-texture-3d {:width 2 :height 2 :depth 2 :data (float-array data)})]
+          (clear (matrix [0.0 0.0 0.0]))
+          (use-program program)
+          (uniform-sampler program :tex 0)
+          (use-textures tex)
+          (render-quads vao)
+          (destroy-texture tex)
+          (destroy-vertex-array-object vao)
+          (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/slice.png"))
 
 (def fragment-two-textures "#version 410 core
 in mediump vec2 uv_fragment;

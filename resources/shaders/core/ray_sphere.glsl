@@ -1,5 +1,6 @@
 #version 410 core
 
+// Determine intersection of ray with sphere (returns distance and length of intersection).
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   vec3 offset = origin - centre;
