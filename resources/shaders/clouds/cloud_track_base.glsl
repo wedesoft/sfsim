@@ -33,4 +33,3 @@ vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming)
   } else
     return incoming;
 }
-
