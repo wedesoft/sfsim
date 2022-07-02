@@ -1,6 +1,7 @@
 #version 410 core
 
 uniform float anisotropic;
+uniform int cloud_samples;
 
 vec3 transmittance_forward(vec3 point, vec3 direction);
 vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light);
@@ -8,14 +9,14 @@ float cloud_density(vec3 point);
 vec3 clouded_light(vec3 point, vec3 light_direction);
 float phase(float g, float mu);
 
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, int n, vec3 incoming)
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
 {
   float dist = distance(p, q);
   if (dist > 0) {
     vec3 direction = (q - p) / dist;
-    vec3 delta = (q - p) / n;
-    float stepsize = dist / n;
-    for (int i=n-1; i>=0; i--) {
+    vec3 delta = (q - p) / cloud_samples;
+    float stepsize = dist / cloud_samples;
+    for (int i=cloud_samples-1; i>=0; i--) {
       vec3 a = p + delta * i;
       vec3 b = a + delta;
       vec3 c = 0.5 * (a + b);

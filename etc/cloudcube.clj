@@ -65,8 +65,8 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, int n, vec3 incoming);
-vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming);
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
+vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming);
 float cloud_density(vec3 point)
 {
   float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
@@ -77,7 +77,7 @@ vec3 clouded_light(vec3 point, vec3 light_direction)
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light_direction);
   vec3 p = point + intersection.x * light_direction;
   vec3 q = point + (intersection.x + intersection.y) * light_direction;
-  return cloud_track_base(p, q, 8, vec3(1, 1, 1));
+  return cloud_track_base(p, q, vec3(1, 1, 1));
 }
 vec3 transmittance_forward(vec3 point, vec3 direction)
 {
@@ -96,7 +96,7 @@ void main()
   if (intersection.y > 0) {
     vec3 p = origin + intersection.x * direction;
     vec3 q = origin + (intersection.x + intersection.y) * direction;
-    bg = cloud_track(light, p, q, 64, bg);
+    bg = cloud_track(light, p, q, bg);
     fragColor = bg;
   } else
     fragColor = bg;
@@ -170,6 +170,8 @@ void main()
                  (uniform-vector3 program :origin @origin)
                  (uniform-float program :threshold @threshold)
                  (uniform-float program :anisotropic @anisotropic)
+                 (uniform-int program :cloud_samples 64)
+                 (uniform-int program :cloud_base_samples 8)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
                  (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
                  (render-quads vao)))

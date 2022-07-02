@@ -51,7 +51,7 @@
          (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
 
 (def cloud-track-probe
-  (template/fn [px qx n decay scatter density lx ly lz ir ig ib]
+  (template/fn [px qx decay scatter density lx ly lz ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
 vec3 transmittance_forward(vec3 point, vec3 direction)
@@ -78,26 +78,27 @@ float phase(float g, float mu)
 {
   return 1.0 - 0.5 * mu;
 }
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, int n, vec3 incoming);
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
 void main()
 {
   vec3 p = vec3(<%= px %>, 0, 0);
   vec3 q = vec3(<%= qx %>, 0, 0);
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_track(light_direction, p, q, <%= n %>, incoming);
+  fragColor = cloud_track(light_direction, p, q, incoming);
 }
 "))
 
 (def cloud-track-test
   (shader-test
-    (fn [program anisotropic]
-        (uniform-float program :anisotropic anisotropic))
+    (fn [program anisotropic n]
+        (uniform-float program :anisotropic anisotropic)
+        (uniform-int program :cloud_samples n))
     cloud-track-probe
     cloud-track))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test [?anisotropic] [?px ?qx ?n ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
+         (fact (cloud-track-test [?anisotropic ?n] [?px ?qx ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
          ?px ?qx ?n ?decay  ?scatter ?density ?anisotropic ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
          0    1  1  0       0        0.0      1            0   0   1   0   0   0   0        0                      0
@@ -115,7 +116,7 @@ void main()
          0    1  1  0       0        1.0      0            1   0   0   0   0   0   0        (- 1 (exp -1))         0)
 
 (def cloud-track-base-probe
-  (template/fn [px qx n decay scatter density ir ig ib]
+  (template/fn [px qx decay scatter density ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
 vec3 transmittance_forward(vec3 point, vec3 direction)
@@ -138,25 +139,26 @@ float phase(float g, float mu)
 {
   return 1.0 + 0.5 * mu;
 }
-vec3 cloud_track_base(vec3 p, vec3 q, int n, vec3 incoming);
+vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming);
 void main()
 {
   vec3 p = vec3(<%= px %>, 0, 0);
   vec3 q = vec3(<%= qx %>, 0, 0);
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  fragColor = cloud_track_base(p, q, <%= n %>, incoming);
+  fragColor = cloud_track_base(p, q, incoming);
 }
 "))
 
 (def cloud-track-base-test
   (shader-test
-    (fn [program anisotropic]
-        (uniform-float program :anisotropic anisotropic))
+    (fn [program anisotropic n]
+        (uniform-float program :anisotropic anisotropic)
+        (uniform-int program :cloud_base_samples n))
     cloud-track-base-probe
     cloud-track-base))
 
 (tabular "Shader for determining shadowing (or lack of shadowing) by clouds"
-         (fact (cloud-track-base-test [?anisotropic] [?px ?qx ?n ?decay ?scatter ?density ?ir ?ig ?ib])
+         (fact (cloud-track-base-test [?anisotropic ?n] [?px ?qx ?decay ?scatter ?density ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
          ?px  ?qx ?n ?decay  ?scatter ?density ?anisotropic ?ir ?ig ?ib ?or        ?og ?ob
          0    0   1  0       0        0.0      1            0   0   0   0          0   0

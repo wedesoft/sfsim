@@ -1,5 +1,5 @@
 # TODO
-* implement clouded\_light
+* implement sky-outer, sky-track, clouded-light
 * does ray\_scatter\_atmosphere need to be multiplied with transmittance\_cloud?
 * add clouds to atmospheric and planetary shader
 * cloud density function using 3D textures and vertical threshold curves
