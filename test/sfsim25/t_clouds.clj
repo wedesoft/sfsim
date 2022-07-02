@@ -172,3 +172,26 @@ void main()
          0    1   1  0       0        1.0      1            1   0   0   (exp -0.5) 0   0
          0    1   2  0       0        1.0      1            1   0   0   (exp -0.5) 0   0
          0    1   2  0       0        1.0      0            1   0   0   1          0   0)
+
+(def sky-outer-probe
+  (template/fn [x y z dx dy dz lx ly lz ir ig ib]
+"#version 410 core
+out lowp vec3 fragColor;
+vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming);
+void main()
+{
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
+  fragColor = sky_outer(light_direction, point, direction, incoming);
+}
+"))
+
+(def sky-outer-test (shader-test (fn [program]) sky-outer-probe sky-outer))
+
+(tabular "Shader for determining lighting of atmosphere including clouds"
+         (fact (sky-outer-test [] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
+               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
+         ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib ?or ?og ?ob
+         0  0  0  1   0   0   1   0   0   0   0   0   0   0   0)
