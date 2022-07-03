@@ -27,6 +27,14 @@ vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming)
         vec3 next_point = point + cloud_intersections.y * direction;
         incoming = cloud_track(light_direction, point, next_point, incoming);
         point = next_point;
+        if (cloud_intersections.w > 0) {
+          vec3 next_point = point + (cloud_intersections.z - cloud_intersections.y - cloud_intersections.x) * direction;
+          incoming = attenuation_track(light_direction, point, next_point, incoming);
+          point = next_point;
+          next_point = point + cloud_intersections.w * direction;
+          incoming = cloud_track(light_direction, point, next_point, incoming);
+          point = next_point;
+        };
       };
     };
     incoming = attenuation_outer(light_direction, point, direction, incoming);

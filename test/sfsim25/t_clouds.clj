@@ -185,11 +185,11 @@ vec3 attenuation_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 in
 }
 vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
 {
-  return vec3(incoming.r, (q.x - p.x) * 0.01, incoming.b);
+  return vec3(incoming.r, incoming.g + (q.x - p.x) * 0.01, incoming.b);
 }
 vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
 {
-  return vec3(incoming.r, incoming.g, (q.x - p.x) * 0.01);
+  return vec3(incoming.r, incoming.g, incoming.b + (q.x - p.x) * 0.01);
 }
 void main()
 {
@@ -222,4 +222,5 @@ void main()
           90 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.9 0.0 0.0
         -110 0  0  1   0   0    0   0  1   0   0   0.1 0.0 0.0 -1.0 0.0 0.0
           80 0  0  1   0   0   10  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.0
-          70 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.1)
+          70 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.1
+        -110 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.2 1.7)
