@@ -187,6 +187,10 @@ vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
 {
   return vec3(incoming.r, (q.x - p.x) * 0.01, incoming.b);
 }
+vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+{
+  return vec3(incoming.r, incoming.g, (q.x - p.x) * 0.01);
+}
 void main()
 {
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
@@ -217,4 +221,5 @@ void main()
          110 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.1 0.0 0.0
           90 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.9 0.0 0.0
         -110 0  0  1   0   0    0   0  1   0   0   0.1 0.0 0.0 -1.0 0.0 0.0
-          80 0  0  1   0   0   10  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.0)
+          80 0  0  1   0   0   10  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.0
+          70 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.1)

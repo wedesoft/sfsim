@@ -9,6 +9,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming);
 vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
+vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
 
 vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming)
 {
@@ -18,6 +19,11 @@ vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming)
     if (cloud_top > cloud_bottom) {
       vec4 cloud_intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, point, direction);
       if (cloud_intersections.y > 0) {
+        if (cloud_intersections.x > 0) {
+          vec3 next_point = point + cloud_intersections.x * direction;
+          incoming = attenuation_track(light_direction, point, next_point, incoming);
+          point = next_point;
+        };
         vec3 next_point = point + cloud_intersections.y * direction;
         incoming = cloud_track(light_direction, point, next_point, incoming);
         point = next_point;
