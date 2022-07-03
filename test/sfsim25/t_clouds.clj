@@ -183,6 +183,10 @@ vec3 attenuation_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 in
 {
   return vec3(point.x * 0.01, incoming.g, incoming.b);
 }
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+{
+  return vec3(incoming.r, (q.x - p.x) * 0.01, incoming.b);
+}
 void main()
 {
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
@@ -202,12 +206,15 @@ void main()
         (uniform-float program :cloud_top cloud-top))
     sky-outer-probe
     sky-outer
-    ray-sphere))
+    ray-sphere
+    ray-shell))
 
 (tabular "Shader for determining lighting of atmosphere including clouds"
-         (fact (sky-outer-test [60 40 10 30] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
+         (fact (sky-outer-test [60 40 ?h1 ?h2] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
-         ?x  ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib ?or ?og ?ob
-         110 0  0  1   0   0   1   0   0   0   0   0   0   0   0
-         110 0  0  1   0   0   1   0   0   0.1 0.2 0.3 0.1 0.2 0.3
-          90 0  0  1   0   0   1   0   0   0.1 0.2 0.3 0.9 0.2 0.3)
+         ?x  ?y ?z ?dx ?dy ?dz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
+         110 0  0  1   0   0   10  20  1   0   0   0   0   0    0   0   0
+         110 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.1 0.0 0.0
+          90 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.9 0.0 0.0
+        -110 0  0  1   0   0    0   0  1   0   0   0.1 0.0 0.0 -1.0 0.0 0.0
+          80 0  0  1   0   0   10  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.0)
