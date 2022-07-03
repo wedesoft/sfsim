@@ -5,6 +5,7 @@
               [clojure.math :refer (exp log)]
               [clojure.core.matrix :refer (ecount mget matrix)]
               [sfsim25.render :refer :all]
+              [sfsim25.shaders :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.clouds :refer :all :as clouds]))
 
@@ -178,6 +179,10 @@ void main()
 "#version 410 core
 out lowp vec3 fragColor;
 vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming);
+vec3 attenuation_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming)
+{
+  return vec3(point.x * 0.01, incoming.g, incoming.b);
+}
 void main()
 {
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
@@ -188,10 +193,21 @@ void main()
 }
 "))
 
-(def sky-outer-test (shader-test (fn [program]) sky-outer-probe sky-outer))
+(def sky-outer-test
+  (shader-test
+    (fn [program radius max-height cloud-bottom cloud-top]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height)
+        (uniform-float program :cloud_bottom cloud-bottom)
+        (uniform-float program :cloud_top cloud-top))
+    sky-outer-probe
+    sky-outer
+    ray-sphere))
 
 (tabular "Shader for determining lighting of atmosphere including clouds"
-         (fact (sky-outer-test [] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
-               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib ?or ?og ?ob
-         0  0  0  1   0   0   1   0   0   0   0   0   0   0   0)
+         (fact (sky-outer-test [60 40 10 30] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
+               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
+         ?x  ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib ?or ?og ?ob
+         110 0  0  1   0   0   1   0   0   0   0   0   0   0   0
+         110 0  0  1   0   0   1   0   0   0.1 0.2 0.3 0.1 0.2 0.3
+          90 0  0  1   0   0   1   0   0   0.1 0.2 0.3 0.9 0.2 0.3)

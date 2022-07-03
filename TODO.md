@@ -1,5 +1,7 @@
 # TODO
 * implement sky-outer, sky-track, clouded-light
+* plan work
+* make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * does ray\_scatter\_atmosphere need to be multiplied with transmittance\_cloud?
 * add clouds to atmospheric and planetary shader
 * cloud density function using 3D textures and vertical threshold curves
