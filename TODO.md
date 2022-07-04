@@ -1,5 +1,6 @@
 # TODO
 * implement sky-outer, sky-track, clouded-light
+* remove lowp, mediump, highp
 * plan work
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * does ray\_scatter\_atmosphere need to be multiplied with transmittance\_cloud?
@@ -7,7 +8,6 @@
 * cloud density function using 3D textures and vertical threshold curves
 * article about TDD and OpenGL (rendering offscreen image and using probe shaders)
 * article about clouds
-* remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
 * how to render clouds and cloud shadows?
