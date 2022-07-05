@@ -45,5 +45,9 @@
   (slurp "resources/shaders/clouds/cloud_track_base.glsl"))
 
 (def sky-outer
-  "Shader for determining lighting of atmosphere including clouds"
+  "Shader for determining lighting of atmosphere including clouds coming from space"
   (slurp "resources/shaders/clouds/sky_outer.glsl"))
+
+(def sky-track
+  "Shader for determining lighting of atmosphere including clouds between to points"
+  (slurp "resources/shaders/clouds/sky_track.glsl"))

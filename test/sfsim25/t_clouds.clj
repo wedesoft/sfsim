@@ -198,8 +198,7 @@ void main()
   vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
   fragColor = sky_outer(light_direction, point, direction, incoming);
-}
-"))
+}"))
 
 (def sky-outer-test
   (shader-test
@@ -213,7 +212,7 @@ void main()
     ray-sphere
     ray-shell))
 
-(tabular "Shader for determining lighting of atmosphere including clouds"
+(tabular "Shader for determining lighting of atmosphere including clouds coming from space"
          (fact (sky-outer-test [60 40 ?h1 ?h2] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
          ?x  ?y ?z ?dx ?dy ?dz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
@@ -224,3 +223,46 @@ void main()
           80 0  0  1   0   0   10  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.0
           70 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.1
         -110 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.2 1.7)
+
+(def sky-track-probe
+  (template/fn [px py pz qx qy qz lx ly lz ir ig ib]
+"#version 410 core
+out lowp vec3 fragColor;
+vec3 sky_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+{
+  return vec3(incoming.r, incoming.g + (p.x - q.x) * 0.01, incoming.b);
+}
+vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+{
+  return vec3(incoming.r, incoming.g, incoming.b + (p.x - q.x) * 0.01);
+}
+void main()
+{
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
+  vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
+  fragColor = sky_track(light_direction, p, q, incoming);
+}"))
+
+(def sky-track-test
+  (shader-test
+    (fn [program radius max-height cloud-bottom cloud-top]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height)
+        (uniform-float program :cloud_bottom cloud-bottom)
+        (uniform-float program :cloud_top cloud-top))
+    sky-track-probe
+    sky-track
+    ray-sphere
+    ray-shell))
+
+(tabular "Shader for determining lighting of atmosphere including clouds between two points"
+         (fact (sky-track-test [60 40 ?h1 ?h2] [?px ?py ?pz ?qx ?qy ?qz ?lx ?ly ?lz ?ir ?ig ?ib])
+               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
+         ?px ?py ?pz  ?qx ?qy ?qz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
+        -120 0  -110 -110 0   0   20  30  1   0   0   0   0   0    0   0   0
+        -120 0  -110 -110 0   0   20  30  1   0   0   0.1 0   0    0.1 0   0
+          70 0   0    60  0   0   20  30  1   0   0   0.1 0   0    0.1 0   0.1
+         110 0   0    60  0   0    0   0  1   0   0   0.1 0   0    0.1 0   0.4)
