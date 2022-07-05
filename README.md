@@ -10,6 +10,9 @@ lein midje
 # External Links
 
 * [Orbiter 2016](https://github.com/mschweiger/orbiter)
+* [Rogue System](http://imagespaceinc.com/rogsys/)
+* [Flight of Nova](https://flight-of-nova.com/)
+* [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
 * [Java native interface example](https://www.baeldung.com/jni)
 * [Oreon Engine](https://github.com/fynnfluegge/oreon-engine)
 * [LWJGL 2](http://legacy.lwjgl.org/)
