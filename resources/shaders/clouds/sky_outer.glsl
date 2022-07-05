@@ -15,7 +15,7 @@ vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming)
 {
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, point, direction);
   if (atmosphere_intersection.y > 0) {
-    point = point + direction * atmosphere_intersection.x;
+    point = point + atmosphere_intersection.x * direction;
     if (cloud_top > cloud_bottom) {
       vec4 cloud_intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, point, direction);
       if (cloud_intersections.y > 0) {
