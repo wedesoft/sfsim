@@ -19,25 +19,22 @@ vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming)
     if (cloud_top > cloud_bottom) {
       vec4 cloud_intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, point, direction);
       if (cloud_intersections.y > 0) {
-        if (cloud_intersections.x > 0) {
-          vec3 next_point = point + cloud_intersections.x * direction;
-          incoming = attenuation_track(light_direction, point, next_point, incoming);
-          point = next_point;
-        };
-        vec3 next_point = point + cloud_intersections.y * direction;
-        incoming = cloud_track(light_direction, point, next_point, incoming);
-        point = next_point;
+        vec3 a = point + cloud_intersections.x * direction;
+        vec3 b = a + cloud_intersections.y * direction;
         if (cloud_intersections.w > 0) {
-          vec3 next_point = point + (cloud_intersections.z - cloud_intersections.y - cloud_intersections.x) * direction;
-          incoming = attenuation_track(light_direction, point, next_point, incoming);
-          point = next_point;
-          next_point = point + cloud_intersections.w * direction;
-          incoming = cloud_track(light_direction, point, next_point, incoming);
-          point = next_point;
-        };
-      };
-    };
-    incoming = attenuation_outer(light_direction, point, direction, incoming);
+          vec3 c = point + cloud_intersections.z * direction;
+          vec3 d = c + cloud_intersections.w * direction;
+          incoming = attenuation_outer(light_direction, d, direction, incoming);
+          incoming = cloud_track(light_direction, c, d, incoming);
+          incoming = attenuation_track(light_direction, b, c, incoming);
+        } else
+          incoming = attenuation_outer(light_direction, b, direction, incoming);
+        incoming = cloud_track(light_direction, a, b, incoming);
+        incoming = attenuation_track(light_direction, point, a, incoming);
+      } else
+        incoming = attenuation_outer(light_direction, point, direction, incoming);
+    } else
+      incoming = attenuation_outer(light_direction, point, direction, incoming);
   };
   return incoming;
 }

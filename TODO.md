@@ -1,5 +1,4 @@
 # TODO
-* sky-outer needs to go from outside in!
 * implement sky-outer, sky-track, clouded-light
 * remove lowp, mediump, highp
 * plan work
