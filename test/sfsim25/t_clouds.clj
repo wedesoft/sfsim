@@ -270,3 +270,33 @@ void main()
           90 0   0     60 0   0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.2
          100 0   0     60 0   0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.3
          100 0   0   -100 0   0   20  30  1   0   0   0.1 0   0    0.1 0.2 1.8)
+
+(def cloud-shadow-probe
+  (template/fn [x y z lx ly lz]
+"#version 410 core
+out lowp vec3 fragColor;
+vec3 cloud_shadow(vec3 point, vec3 light_direction);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  fragColor = cloud_shadow(point, light_direction);
+}"))
+
+(def cloud-shadow-test
+  (shader-test
+    (fn [program radius max-height cloud-bottom cloud-top]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height)
+        (uniform-float program :cloud_bottom cloud-bottom)
+        (uniform-float program :cloud_top cloud-top))
+    cloud-shadow-probe
+    cloud-shadow
+    ray-sphere
+    ray-shell))
+
+(tabular "Shader for determining illumination of clouds"
+         (fact (cloud-shadow-test [60 40 ?h1 ?h2] [?x ?y ?z ?lx ?ly ?lz])
+               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
+         ?x  ?y ?z ?lx ?ly ?lz ?h1 ?h2 ?or ?og ?ob
+         100 0  0  1   0   0   0   0   1   1   1)

@@ -1,5 +1,5 @@
 # TODO
-* implement louded-light
+* implement cloud-shadow
 * remove lowp, mediump, highp
 * plan work
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image

@@ -51,3 +51,7 @@
 (def sky-track
   "Shader for determining lighting of atmosphere including clouds between to points"
   (slurp "resources/shaders/clouds/sky_track.glsl"))
+
+(def cloud-shadow
+  "Shader for determining illumination of clouds"
+  (slurp "resources/shaders/clouds/cloud_shadow.glsl"))
