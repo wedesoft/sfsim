@@ -72,7 +72,7 @@ float cloud_density(vec3 point)
   float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
   return max((s - threshold) * multiplier, 0);
 }
-vec3 clouded_light(vec3 point, vec3 light_direction)
+vec3 cloud_shadow(vec3 point, vec3 light_direction)
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light_direction);
   vec3 p = point + intersection.x * light_direction;

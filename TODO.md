@@ -1,5 +1,5 @@
 # TODO
-* implement sky-outer, sky-track, clouded-light
+* implement louded-light
 * remove lowp, mediump, highp
 * plan work
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image

@@ -6,7 +6,7 @@ uniform int cloud_samples;
 vec3 transmittance_forward(vec3 point, vec3 direction);
 vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light);
 float cloud_density(vec3 point);
-vec3 clouded_light(vec3 point, vec3 light_direction);
+vec3 cloud_shadow(vec3 point, vec3 light_direction);
 float phase(float g, float mu);
 
 vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
@@ -28,7 +28,7 @@ vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
       vec3 ray_scatter_atmosphere = ray_scatter_a - ray_scatter_b * transmittance_atmosphere;
       float density = cloud_density(c);
       float transmittance_cloud = exp(-density * stepsize);
-      vec3 intensity = clouded_light(c, light_direction);
+      vec3 intensity = cloud_shadow(c, light_direction);
       float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
       vec3 cloud_scatter = (1 - transmittance_cloud) * scatter_amount * intensity;
       incoming = incoming * transmittance_atmosphere * transmittance_cloud + ray_scatter_atmosphere + cloud_scatter;

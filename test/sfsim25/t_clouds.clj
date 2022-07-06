@@ -71,7 +71,7 @@ float cloud_density(vec3 point)
 {
   return <%= density %>;
 }
-vec3 clouded_light(vec3 point, vec3 light)
+vec3 cloud_shadow(vec3 point, vec3 light)
 {
   return vec3(0, 1, 0);
 }
