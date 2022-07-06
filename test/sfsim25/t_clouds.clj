@@ -276,6 +276,10 @@ void main()
 "#version 410 core
 out lowp vec3 fragColor;
 vec3 cloud_shadow(vec3 point, vec3 light_direction);
+vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+{
+  return vec3(incoming.r - abs(p.x - q.x) * 0.01, incoming.g, incoming.b);
+}
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
@@ -299,4 +303,5 @@ void main()
          (fact (cloud-shadow-test [60 40 ?h1 ?h2] [?x ?y ?z ?lx ?ly ?lz])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
          ?x  ?y ?z ?lx ?ly ?lz ?h1 ?h2 ?or ?og ?ob
-         100 0  0  1   0   0   0   0   1   1   1)
+         100 0  0  1   0   0   0   0   1   1   1
+          80 0  0  1   0   0   0   0   0.8 1   1)
