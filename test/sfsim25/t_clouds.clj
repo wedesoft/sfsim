@@ -278,7 +278,11 @@ out lowp vec3 fragColor;
 vec3 cloud_shadow(vec3 point, vec3 light_direction);
 vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
 {
-  return vec3(incoming.r - abs(p.x - q.x) * 0.01, incoming.g, incoming.b);
+  return vec3(incoming.r - abs(p.x - q.x) * 0.01, incoming.g, abs(p.x - q.x) * 0.01);
+}
+vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+{
+  return vec3(incoming.r, incoming.g - abs(p.x - q.x) * 0.01, incoming.b);
 }
 void main()
 {
@@ -300,8 +304,14 @@ void main()
     ray-shell))
 
 (tabular "Shader for determining illumination of clouds"
-         (fact (cloud-shadow-test [60 40 ?h1 ?h2] [?x ?y ?z ?lx ?ly ?lz])
+         (fact (cloud-shadow-test [?radius ?h ?h1 ?h2] [?x ?y ?z ?lx ?ly ?lz])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
-         ?x  ?y ?z ?lx ?ly ?lz ?h1 ?h2 ?or ?og ?ob
-         100 0  0  1   0   0   0   0   1   1   1
-          80 0  0  1   0   0   0   0   0.8 1   1)
+         ?x  ?y ?z ?lx ?ly ?lz ?radius ?h ?h1 ?h2 ?or ?og ?ob
+         100 0  0  1   0   0   60       40   0   0  1   1   1
+          80 0  0  1   0   0   60       40   0   0  0.8 1   0.2
+          80 0  0 -1   0   0   60       40   0   0 -0.2 0   0.2
+         120 0  0 -1   0   0   60       40   0   0 -0.4 0   0.4
+          80 0  0  1   0   0   60       40  20  30  0.9 0.9 0.0
+          70 0  0  1   0   0   60       40  20  30  0.8 0.9 0.1
+        -100 0  0  1   0   0    0      100  80  90 -0.8 0.8 0.1
+        -110 0  0  1   0   0    0      100  80  90 -0.8 0.8 0.1)
