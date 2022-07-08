@@ -1,6 +1,6 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix shader-test)]
+              [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
               [clojure.core.matrix :refer (ecount mget matrix)]
@@ -315,3 +315,42 @@ void main()
           70 0  0  1   0   0   60       40  20  30  0.8 0.9 0.1
         -100 0  0  1   0   0    0      100  80  90 -0.8 0.8 0.1
         -110 0  0  1   0   0    0      100  80  90 -0.8 0.8 0.1)
+
+(def cloud-density-probe
+  (template/fn [x y z]
+"#version 410 core
+out lowp vec3 fragColor;
+float cloud_density(vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = cloud_density(point);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn cloud-density-test [radius cloud-bottom cloud-top x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices  [0 1 3 2]
+            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            program  (make-program :vertex [vertex-passthrough]
+                                   :fragment (list (cloud-density-probe x y z) cloud-density))
+            vao      (make-vertex-array-object program indices vertices [:point 3])
+            tex      (texture-render 1 1 true
+                                     (use-program program)
+                                     (uniform-float program :radius radius)
+                                     (uniform-float program :cloud_bottom cloud-bottom)
+                                     (uniform-float program :cloud_top cloud-top)
+                                     (render-quads vao))
+            img      (texture->vectors tex 1 1)]
+        (println (get-vector img 0 0))
+        (deliver result (get-vector img 0 0))
+        (destroy-texture tex)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)))
+    @result))
+
+(tabular "Shader for determining cloud density at specified point"
+         (fact (mget (cloud-density-test 60 ?h1 ?h2 ?x ?y ?z) 0) => (roughly ?result 1e-5))
+         ?h1 ?h2 ?x ?y ?z ?result
+         20  30  0  0  0  0)

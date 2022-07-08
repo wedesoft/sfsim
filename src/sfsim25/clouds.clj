@@ -55,3 +55,7 @@
 (def cloud-shadow
   "Shader for determining illumination of clouds"
   (slurp "resources/shaders/clouds/cloud_shadow.glsl"))
+
+(def cloud-density
+  "Shader for determining cloud density at specified point"
+  (slurp "resources/shaders/clouds/cloud_density.glsl"))
