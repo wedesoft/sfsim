@@ -10,7 +10,8 @@
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
-              [sfsim25.atmosphere :refer :all :as atmosphere])
+              [sfsim25.atmosphere :refer :all :as atmosphere]
+              [sfsim25.clouds :as clouds])
     (:import [mikera.vectorz Vector]))
 
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
@@ -650,7 +651,12 @@ void main()
                                                                           shaders/oriented-matrix shaders/orthogonal-vector
                                                                           shaders/clip-angle shaders/interpolate-2d
                                                                           shaders/convert-2d-index shaders/interpolate-4d
-                                                                          shaders/convert-4d-index shaders/is-above-horizon])
+                                                                          shaders/convert-4d-index shaders/is-above-horizon
+                                                                          clouds/sky-outer shaders/ray-shell
+                                                                          clouds/cloud-track clouds/cloud-density
+                                                                          clouds/cloud-shadow attenuation-track
+                                                                          transmittance-track ray-scatter-track
+                                                                          phase-function])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d {:width size :height size :data T})
                                    ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
