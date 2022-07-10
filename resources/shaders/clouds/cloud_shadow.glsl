@@ -8,7 +8,7 @@ uniform float cloud_top;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
+vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming);
 
 vec3 cloud_shadow(vec3 point, vec3 light_direction)
 {
@@ -32,11 +32,11 @@ vec3 cloud_shadow(vec3 point, vec3 light_direction)
           vec3 c = point + cloud_intersections.z * light_direction;
           vec3 d = c + cloud_intersections.w * light_direction;
           incoming = attenuation_track(light_direction, d, point + limit * light_direction, incoming);
-          incoming = cloud_track(light_direction, c, d, incoming);
+          incoming = cloud_track_base(c, d, incoming);
           incoming = attenuation_track(light_direction, b, c, incoming);
         } else
           incoming = attenuation_track(light_direction, b, point + limit * light_direction, incoming);
-        incoming = cloud_track(light_direction, a, b, incoming);
+        incoming = cloud_track_base(a, b, incoming);
         incoming = attenuation_track(light_direction, point, a, incoming);
       } else
         incoming = attenuation_track(light_direction, point, point + limit * light_direction, incoming);
