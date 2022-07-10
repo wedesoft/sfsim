@@ -653,18 +653,24 @@ void main()
                                                                           shaders/convert-2d-index shaders/interpolate-4d
                                                                           shaders/convert-4d-index shaders/is-above-horizon
                                                                           clouds/sky-outer shaders/ray-shell
-                                                                          clouds/cloud-track clouds/cloud-density
-                                                                          clouds/cloud-shadow attenuation-track
-                                                                          transmittance-track ray-scatter-track
-                                                                          phase-function])
+                                                                          clouds/cloud-track clouds/cloud-track-base
+                                                                          clouds/cloud-density clouds/cloud-shadow
+                                                                          attenuation-track transmittance-track
+                                                                          ray-scatter-track phase-function])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d {:width size :height size :data T})
                                    ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
+                                   worley-data   (float-array (repeat (* 2 2 2) 1.0))
+                                   worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})
+                                   profile-data  (float-array [0 1 1 1 1 1 1 0])
+                                   profile       (make-float-texture-1d profile-data)
                                    vao           (make-vertex-array-object program indices vertices variables)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-sampler program :transmittance 0)
                                (uniform-sampler program :ray_scatter 1)
+                               (uniform-sampler program :worley 2)
+                               (uniform-sampler program :cloud_profile 3)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-vector3 program :origin origin)
                                (uniform-matrix4 program :transform transform)
@@ -679,12 +685,17 @@ void main()
                                (uniform-int program :heading_size size)
                                (uniform-float program :elevation_power power)
                                (uniform-float program :amplification 5)
-                               (use-textures transmittance ray-scatter)
+                               (uniform-float program :cloud_bottom 0)
+                               (uniform-float program :cloud_top -1)
+                               (uniform-float program :cloud_size 16)
+                               (use-textures transmittance ray-scatter worley profile)
                                (render-quads vao)
+                               (destroy-texture profile)
+                               (destroy-texture worley)
                                (destroy-texture ray-scatter)
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program)))   => (is-image (str "test/sfsim25/fixtures/atmosphere/"?result)))
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/atmosphere/"?result)))
          ?x ?y           ?z                      ?polar       ?rotation   ?lx ?ly ?lz  ?result
          0  0            (- 0 radius max-height) radius       0           0   0   -1   "sun.png"
          0  0            (- 0 radius max-height) radius       0           0   0    1   "space.png"
