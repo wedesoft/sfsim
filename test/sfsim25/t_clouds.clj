@@ -55,7 +55,7 @@
   (template/fn [px qx decay scatter density lx ly lz ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 transmittance_forward(vec3 point, vec3 direction)
+vec3 transmittance_forward(vec3 point, vec3 direction, bool above_horizon)
 {
   float distance = 10 - point.x;
   float transmittance = exp(-<%= decay %> * distance);
@@ -96,7 +96,9 @@ void main()
         (uniform-float program :anisotropic anisotropic)
         (uniform-int program :cloud_samples n))
     cloud-track-probe
-    cloud-track))
+    cloud-track
+    is-above-horizon
+    horizon-angle))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
          (fact (cloud-track-test [?anisotropic ?n] [?px ?qx ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
@@ -120,7 +122,7 @@ void main()
   (template/fn [px qx decay scatter density ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 transmittance_forward(vec3 point, vec3 direction)
+vec3 transmittance_forward(vec3 point, vec3 direction, bool above_horizon)
 {
   float distance = 10 - point.x;
   float transmittance = exp(-<%= decay %> * distance);
@@ -156,7 +158,9 @@ void main()
         (uniform-float program :anisotropic anisotropic)
         (uniform-int program :cloud_base_samples n))
     cloud-track-base-probe
-    cloud-track-base))
+    cloud-track-base
+    is-above-horizon
+    horizon-angle))
 
 (tabular "Shader for determining shadowing (or lack of shadowing) by clouds"
          (fact (cloud-track-base-test [?anisotropic ?n] [?px ?qx ?decay ?scatter ?density ?ir ?ig ?ib])
