@@ -1,5 +1,5 @@
 # TODO
-* implement cloud-shadow
+* use sky shader with clouds in planet shader
 * remove lowp, mediump, highp
 * plan work
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
