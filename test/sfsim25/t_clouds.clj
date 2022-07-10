@@ -284,7 +284,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
 {
   return vec3(incoming.r - abs(p.x - q.x) * 0.01, incoming.g, abs(p.x - q.x) * 0.01);
 }
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming)
 {
   return vec3(incoming.r, incoming.g - abs(p.x - q.x) * 0.01, incoming.b);
 }
