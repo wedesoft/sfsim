@@ -61,7 +61,7 @@ vec3 transmittance_forward(vec3 point, vec3 direction, bool above_horizon)
   float transmittance = exp(-<%= decay %> * distance);
   return vec3(transmittance, transmittance, transmittance);
 }
-vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light)
+vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon)
 {
   float distance = 10 - point.x;
   float amount = <%= scatter %> * (1 - pow(2, -distance));
@@ -128,7 +128,7 @@ vec3 transmittance_forward(vec3 point, vec3 direction, bool above_horizon)
   float transmittance = exp(-<%= decay %> * distance);
   return vec3(transmittance, transmittance, transmittance);
 }
-vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light)
+vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon)
 {
   float distance = 10 - point.x;
   float amount = <%= scatter %> * (1 - pow(2, -distance));
