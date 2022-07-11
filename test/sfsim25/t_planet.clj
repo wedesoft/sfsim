@@ -6,6 +6,7 @@
               [clojure.core.matrix :refer (matrix mul identity-matrix)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.atmosphere :as atmosphere]
+              [sfsim25.clouds :as clouds]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
@@ -352,6 +353,8 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   (uniform-sampler program :ray_scatter 3)
   (uniform-sampler program :surface_radiance 4)
   (uniform-sampler program :water 5)
+  (uniform-sampler program :worley 6)
+  (uniform-sampler program :cloud_profile 7)
   (uniform-float program :elevation_power 2.0)
   (uniform-float program :specular 100)
   (uniform-float program :max_height 100000)
@@ -369,7 +372,13 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   (uniform-float program :polar_radius ?polar)
   (uniform-vector3 program :position (matrix [0 0 (+ ?polar ?dist)]))
   (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
-  (uniform-float program :amplification ?a))
+  (uniform-float program :amplification ?a)
+  (uniform-float program :cloud_bottom 0)
+  (uniform-float program :cloud_top -1)
+  (uniform-float program :cloud_size 16)
+  (uniform-float program :anisotropic 0.4)
+  (uniform-int program :cloud_samples 64)
+  (uniform-int program :cloud_base_samples 8))
 
 (tabular "Fragment shader to render planetary surface"
          (fact
@@ -385,7 +394,11 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                                           shaders/horizon-angle shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-sphere
                                                                           shaders/is-above-horizon fake-ray-scatter
-                                                                          atmosphere/attenuation-track ground-radiance])
+                                                                          atmosphere/attenuation-track ground-radiance
+                                                                          clouds/sky-track shaders/ray-shell
+                                                                          clouds/cloud-track clouds/cloud-track-base
+                                                                          clouds/cloud-density clouds/cloud-shadow
+                                                                          atmosphere/phase-function])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000
@@ -404,19 +417,19 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                    {:width size :height size
                                                     :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
                                    water         (make-ubyte-texture-2d
-                                                   {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})]
+                                                   {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
+                                   worley-data   (float-array (repeat (* 2 2 2) 1.0))
+                                   worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})
+                                   profile-data  (float-array [0 1 1 1 1 1 1 0])
+                                   profile       (make-float-texture-1d profile-data)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a)
-                               (use-textures colors normals transmittance ray-scatter radiance water)
+                               (use-textures colors normals transmittance ray-scatter radiance water worley profile)
                                (render-quads vao)
-                               (destroy-texture water)
-                               (destroy-texture radiance)
-                               (destroy-texture ray-scatter)
-                               (destroy-texture transmittance)
-                               (destroy-texture normals)
-                               (destroy-texture colors)
+                               (doseq [tex [profile worley water radiance ray-scatter transmittance normals colors]]
+                                      (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
          ?colors   ?albedo ?a ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result

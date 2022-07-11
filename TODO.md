@@ -1,4 +1,5 @@
 # TODO
+* check above horizon for sky-outer
 * use sky shader with clouds in planet shader
 * remove lowp, mediump, highp
 * plan work
