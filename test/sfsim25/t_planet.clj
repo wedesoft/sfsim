@@ -398,7 +398,10 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                                           clouds/sky-track shaders/ray-shell
                                                                           clouds/cloud-track clouds/cloud-track-base
                                                                           clouds/cloud-density clouds/cloud-shadow
-                                                                          atmosphere/phase-function])
+                                                                          atmosphere/phase-function
+                                                                          shaders/clip-shell-intersections
+                                                                          shaders/ray-scatter-forward shaders/oriented-matrix
+                                                                          shaders/orthogonal-vector shaders/clip-angle])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000
