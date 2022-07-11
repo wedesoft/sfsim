@@ -8,6 +8,7 @@
          '[sfsim25.planet :refer :all]
          '[sfsim25.quadtree :refer :all]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.clouds :refer :all]
          '[sfsim25.planet :refer :all]
          '[sfsim25.util :refer :all])
 
@@ -17,8 +18,8 @@
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-;(Display/setDisplayMode (DisplayMode. 1280 720))
-(Display/setFullscreen true)
+(Display/setDisplayMode (DisplayMode. 1280 720))
+;(Display/setFullscreen true)
 (Display/create)
 
 (Keyboard/create)
@@ -40,6 +41,7 @@
 
 (def height-size 9)
 (def heading-size 33)
+(def worley-size 128)
 (def elevation-size 129)
 (def light-elevation-size 33)
 
@@ -52,13 +54,20 @@
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
+(def data (slurp-floats "mixed.raw"))
+(def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
+
+(def data (float-array [1 1 1 1 1 1 1 0]))
+(def P (make-float-texture-1d data))
+
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere attenuation-outer ray-scatter-outer transmittance-outer shaders/ray-sphere
                            shaders/transmittance-forward shaders/horizon-angle shaders/ray-scatter-forward
                            shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d shaders/orthogonal-vector
                            shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d shaders/convert-2d-index
-                           shaders/is-above-horizon]))
+                           shaders/is-above-horizon sky-outer shaders/ray-shell cloud-track attenuation-track cloud-density
+                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -67,6 +76,8 @@
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere :transmittance 0)
 (uniform-sampler program-atmosphere :ray_scatter 1)
+(uniform-sampler program-atmosphere :worley 2)
+(uniform-sampler program-atmosphere :cloud_profile 3)
 
 (def tree-state (chan))
 (def changes (chan))
@@ -87,16 +98,19 @@
                            transmittance-track shaders/horizon-angle shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
-                           shaders/is-above-horizon]))
+                           shaders/is-above-horizon sky-track shaders/ray-shell shaders/clip-shell-intersections cloud-track
+                           cloud-density cloud-shadow cloud-track-base phase-function]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
 (uniform-sampler program-planet :ray_scatter      1)
 (uniform-sampler program-planet :surface_radiance 2)
-(uniform-sampler program-planet :heightfield      3)
-(uniform-sampler program-planet :colors           4)
-(uniform-sampler program-planet :normals          5)
-(uniform-sampler program-planet :water            6)
+(uniform-sampler program-planet :worley           3)
+(uniform-sampler program-planet :cloud_profile    4)
+(uniform-sampler program-planet :heightfield      5)
+(uniform-sampler program-planet :colors           6)
+(uniform-sampler program-planet :normals          7)
+(uniform-sampler program-planet :water            8)
 
 (defn load-tile-into-opengl
   [tile]
@@ -135,7 +149,7 @@
     (uniform-int program-planet :high_detail (dec tilesize))
     (uniform-int program-planet :low_detail (quot (dec tilesize) 2))
     (uniform-int program-planet :neighbours neighbours)
-    (use-textures T S E (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
+    (use-textures T S E W P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
     (render-patches (:vao tile))))
 
 (defn render-tree
@@ -190,6 +204,12 @@
                           (uniform-float program-planet :radius radius)
                           (uniform-float program-planet :polar_radius polar-radius)
                           (uniform-float program-planet :max_height max-height)
+                          (uniform-float program-planet :cloud_bottom 2000)
+                          (uniform-float program-planet :cloud_top 3500)
+                          (uniform-float program-planet :cloud_size 4000)
+                          (uniform-float program-planet :anisotropic 0.4)
+                          (uniform-int program-planet :cloud_samples 32)
+                          (uniform-int program-planet :cloud_base_samples 3)
                           (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
                           (uniform-vector3 program-planet :position @position)
                           (uniform-vector3 program-planet :light_direction (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
@@ -203,6 +223,12 @@
                           (uniform-float program-atmosphere :radius radius)
                           (uniform-float program-atmosphere :polar_radius polar-radius)
                           (uniform-float program-atmosphere :max_height max-height)
+                          (uniform-float program-atmosphere :cloud_bottom 2000)
+                          (uniform-float program-atmosphere :cloud_top 3500)
+                          (uniform-float program-atmosphere :cloud_size 4000)
+                          (uniform-float program-atmosphere :anisotropic 0.4)
+                          (uniform-int program-atmosphere :cloud_samples 32)
+                          (uniform-int program-atmosphere :cloud_base_samples 3)
                           (uniform-float program-atmosphere :specular 100)
                           (uniform-float program-atmosphere :elevation_power 2.0)
                           (uniform-int program-atmosphere :height_size height-size)
@@ -211,7 +237,7 @@
                           (uniform-int program-atmosphere :heading_size heading-size)
                           (uniform-float program-atmosphere :amplification 5)
                           (uniform-vector3 program-atmosphere :origin @position)
-                          (use-textures T S)
+                          (use-textures T S W P)
                           (render-quads atmosphere-vao))
          (swap! t0 + dt)))
 
@@ -222,6 +248,8 @@
 
 (destroy-program program-planet)
 (destroy-program program-atmosphere)
+(destroy-texture W)
+(destroy-texture P)
 (destroy-texture S)
 (destroy-texture T)
 (destroy-texture E)
