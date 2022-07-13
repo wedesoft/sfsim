@@ -129,10 +129,13 @@ vec3 transmittance_track(vec3 p, vec3 q)
   float transmittance = exp(-<%= decay %> * (dp - dq));
   return vec3(transmittance, transmittance, transmittance);
 }
-vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon)
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
-  float distance = 10 - point.x;
-  float amount = <%= scatter %> * (1 - pow(2, -distance));
+  float dp = 10 - p.x;
+  float amountp = <%= scatter %> * (1 - pow(2, -dp));
+  float dq = 10 - q.x;
+  float amountq = <%= scatter %> * (1 - pow(2, -dq));
+  float amount = amountp - transmittance_track(p, q).r * amountq;
   return vec3(0, 0, amount);
 }
 float cloud_density(vec3 point)
@@ -160,7 +163,6 @@ void main()
         (uniform-int program :cloud_base_samples n))
     cloud-track-base-probe
     cloud-track-base
-    is-above-horizon
     horizon-angle))
 
 (tabular "Shader for determining shadowing (or lack of shadowing) by clouds"
