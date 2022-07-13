@@ -55,10 +55,11 @@
   (template/fn [px qx decay scatter density lx ly lz ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 transmittance_forward(vec3 point, vec3 direction, bool above_horizon)
+vec3 transmittance_track(vec3 p, vec3 q)
 {
-  float distance = 10 - point.x;
-  float transmittance = exp(-<%= decay %> * distance);
+  float dp = 10 - p.x;
+  float dq = 10 - q.x;
+  float transmittance = exp(-<%= decay %> * (dp - dq));
   return vec3(transmittance, transmittance, transmittance);
 }
 vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon)
