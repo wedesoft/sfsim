@@ -1,4 +1,5 @@
 # TODO
+* replace transmittance_forward and ray_scatter_forward with method including lookup
 * set cloud multiplier
 * check above horizon for sky-outer
 * use sky shader with clouds in planet shader
