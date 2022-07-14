@@ -18,7 +18,7 @@
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 1280 720))
+(Display/setDisplayMode (DisplayMode. 640 480))
 ;(Display/setFullscreen true)
 (Display/create)
 
