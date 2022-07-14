@@ -146,8 +146,6 @@
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
-    (uniform-int program-planet :high_detail (dec tilesize))
-    (uniform-int program-planet :low_detail (quot (dec tilesize) 2))
     (uniform-int program-planet :neighbours neighbours)
     (use-textures T S E W P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
     (render-patches (:vao tile))))
@@ -163,7 +161,11 @@
 (>!! tree-state @tree)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
+
+(use-program program-planet)
 (uniform-matrix4 program-planet :projection projection)
+(uniform-int program-planet :high_detail (dec tilesize))
+(uniform-int program-planet :low_detail (quot (dec tilesize) 2))
 (uniform-int program-planet :height_size height-size)
 (uniform-int program-planet :elevation_size elevation-size)
 (uniform-int program-planet :light_elevation_size light-elevation-size)
@@ -184,6 +186,8 @@
 (uniform-float program-planet :cloud_multiplier 0.0002)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
 (uniform-float program-planet :amplification 5)
+
+(use-program program-atmosphere)
 (uniform-matrix4 program-atmosphere :projection projection)
 (uniform-float program-atmosphere :radius radius)
 (uniform-float program-atmosphere :polar_radius polar-radius)
