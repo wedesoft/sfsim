@@ -17,6 +17,9 @@ vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
     vec3 direction = (q - p) / dist;
     vec3 delta = (q - p) / cloud_samples;
     float stepsize = dist / cloud_samples;
+    vec3 ray_scatter_atmosphere = ray_scatter_track(light_direction, p, q);
+    vec3 transmittance_atmosphere = transmittance_track(p, q);
+    incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
     for (int i=cloud_samples-1; i>=0; i--) {
       bool above = is_above_horizon(p, direction);
       vec3 a = p + delta * i;
@@ -29,9 +32,6 @@ vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
       vec3 cloud_scatter = (1 - transmittance_cloud) * scatter_amount * intensity;
       incoming = incoming * transmittance_cloud + cloud_scatter;
     };
-    vec3 transmittance_atmosphere = transmittance_track(p, q);
-    vec3 ray_scatter_atmosphere = ray_scatter_track(light_direction, p, q);
-    incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
   };
   return incoming;
 }
