@@ -32,7 +32,7 @@
 
 (def light1 (atom 0.885))
 (def light2 (atom 0))
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 1500)])))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 2700)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
@@ -183,7 +183,7 @@
 (uniform-float program-planet :anisotropic 0.4)
 (uniform-int program-planet :cloud_samples 8)
 (uniform-int program-planet :cloud_base_samples 3)
-(uniform-float program-planet :cloud_multiplier 0.0002)
+(uniform-float program-planet :cloud_multiplier 0.0005)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
 (uniform-float program-planet :amplification 5)
 
@@ -198,7 +198,7 @@
 (uniform-float program-atmosphere :anisotropic 0.4)
 (uniform-int program-atmosphere :cloud_samples 8)
 (uniform-int program-atmosphere :cloud_base_samples 3)
-(uniform-float program-atmosphere :cloud_multiplier 0.0002)
+(uniform-float program-atmosphere :cloud_multiplier 0.0005)
 (uniform-float program-atmosphere :specular 100)
 (uniform-float program-atmosphere :elevation_power 2.0)
 (uniform-int program-atmosphere :height_size height-size)
