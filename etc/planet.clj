@@ -32,7 +32,7 @@
 
 (def light1 (atom 0.885))
 (def light2 (atom 0))
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 2700)])))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 1500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
