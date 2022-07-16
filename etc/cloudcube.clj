@@ -79,11 +79,11 @@ vec3 cloud_shadow(vec3 point, vec3 light_direction)
   vec3 q = point + (intersection.x + intersection.y) * light_direction;
   return cloud_track_base(p, q, vec3(1, 1, 1));
 }
-vec3 transmittance_forward(vec3 point, vec3 direction)
+vec3 transmittance_track(vec3 p, vec3 q)
 {
   return vec3(1, 1, 1);
 }
-vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light)
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return vec3(0, 0, 0);
 }
@@ -105,7 +105,7 @@ void main()
 (def program
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function cloud-track-base
-                           cloud-track]))
+                           cloud-track s/is-above-horizon s/horizon-angle]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
