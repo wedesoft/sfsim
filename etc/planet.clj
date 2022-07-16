@@ -225,7 +225,6 @@
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
-         ;(swap! position add (mul dt 0.001 (matrix [0 0 1000])))
          (swap! light1 + (* l 0.1 dt))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
