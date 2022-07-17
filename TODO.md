@@ -1,4 +1,10 @@
 # TODO
+* keyboard shortcuts for cloud paramete
+* http://advances.realtimerendering.com/s2015/index.html
+  * abort sampling if opacity goes below certain value
+  * reduce sampling rate between clouds
+  * use lower-resolution cloud rendering?
+  * add flat cirrus clouds
 * make clouds darker
 * set cloud multiplier
 * check above horizon for sky-outer
