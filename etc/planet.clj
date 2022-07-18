@@ -244,6 +244,8 @@
                           (uniform-vector3 program-atmosphere :light (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
                           (use-textures T S W P)
                           (render-quads atmosphere-vao))
+         (print "\r" (format "%5.3f    " (* 0.001 dt)))
+         (flush)
          (swap! t0 + dt)))
 
 (close! tree-state)

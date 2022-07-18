@@ -1,5 +1,6 @@
 # TODO
-* keyboard shortcuts for cloud paramete
+* keyboard shortcuts for cloud parameters
+* add timing code
 * http://advances.realtimerendering.com/s2015/index.html
   * abort sampling if opacity goes below certain value
   * reduce sampling rate between clouds
