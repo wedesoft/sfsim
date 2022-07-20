@@ -19,10 +19,12 @@ vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming)
     vec3 transmittance_atmosphere = transmittance_track(p, q);
     vec3 ray_scatter_atmosphere = ray_scatter_track(light_direction, p, q);
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
-    for (int i=cloud_base_samples-1; i>=0; i--) {
-      vec3 a = p + delta * i;
-      vec3 b = a + delta;
-      vec3 c = 0.5 * (a + b);
+    vec3 b = p;
+    vec3 c = p + delta * 0.5;
+    for (int i=0; i<cloud_base_samples; i++) {
+      vec3 a = b;
+      b = a + delta;
+      c = c + delta;
       float density = cloud_density(c);
       float transmittance_cloud = exp((scatter_amount - 1) * density * stepsize);
       incoming = incoming * transmittance_cloud;
