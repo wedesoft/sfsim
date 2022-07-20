@@ -5,6 +5,7 @@
   * reduce sampling rate between clouds
   * use lower-resolution cloud rendering?
   * add flat cirrus clouds
+  * render clouds with low resolution, sample with different z-offsets and blur
 * make clouds darker
 * set cloud multiplier
 * check above horizon for sky-outer
