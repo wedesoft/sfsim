@@ -3,7 +3,7 @@
   :url "https://github.com/wedesoft/sfsim25"
   :license {:name "GPL-3.0-or-later"
             :url "https://www.gnu.org/licenses/gpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure       "1.11.0"]
+  :dependencies [[org.clojure/clojure       "1.11.1"]
                  [org.clojure/core.memoize "1.0.236"]
                  [org.clojure/core.async   "1.3.618"]
                  [com.climate/claypoole      "1.1.4"]
