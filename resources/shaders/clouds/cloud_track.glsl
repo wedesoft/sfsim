@@ -26,11 +26,13 @@ vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
       vec3 b = a + delta;
       vec3 c = 0.5 * (a + b);
       float density = cloud_density(c);
-      float transmittance_cloud = exp(-density * stepsize);
-      vec3 intensity = cloud_shadow(c, light_direction);
-      float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
-      vec3 cloud_scatter = (1 - transmittance_cloud) * scatter_amount * intensity;
-      incoming = incoming * transmittance_cloud + cloud_scatter;
+      if (density > 0) {
+        float transmittance_cloud = exp(-density * stepsize);
+        vec3 intensity = cloud_shadow(c, light_direction);
+        float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
+        vec3 cloud_scatter = (1 - transmittance_cloud) * scatter_amount * intensity;
+        incoming = incoming * transmittance_cloud + cloud_scatter;
+      };
     };
   };
   return incoming;
