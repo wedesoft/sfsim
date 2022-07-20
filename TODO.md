@@ -2,6 +2,7 @@
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
   * abort sampling if opacity goes below certain value
+  * avoid multiplication with loop variable in cloud\_track
   * reduce sampling rate between clouds
   * use lower-resolution cloud rendering?
   * add flat cirrus clouds
