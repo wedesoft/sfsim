@@ -1,6 +1,7 @@
 # TODO
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
+  * make clouds darker and restore amplification value (control cloud brightness with uniform value)
   * avoid multiplication with loop variable in cloud\_track
   * read häggströms thesis
   * reduce sampling rate between clouds

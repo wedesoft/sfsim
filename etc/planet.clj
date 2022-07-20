@@ -186,7 +186,7 @@
 (uniform-float program-planet :cloud_multiplier 0.005)
 (uniform-float program-planet :transparency_cutoff 0.05)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
-(uniform-float program-planet :amplification 2)
+(uniform-float program-planet :amplification 5)
 
 (use-program program-atmosphere)
 (uniform-matrix4 program-atmosphere :projection projection)
@@ -207,7 +207,7 @@
 (uniform-int program-atmosphere :elevation_size elevation-size)
 (uniform-int program-atmosphere :light_elevation_size light-elevation-size)
 (uniform-int program-atmosphere :heading_size heading-size)
-(uniform-float program-atmosphere :amplification 2)
+(uniform-float program-atmosphere :amplification 5)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
