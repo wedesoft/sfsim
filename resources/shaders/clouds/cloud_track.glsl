@@ -3,7 +3,6 @@
 uniform float anisotropic;
 uniform int cloud_samples;
 
-bool is_above_horizon(vec3 point, vec3 direction);
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 float cloud_density(vec3 point);
@@ -21,7 +20,6 @@ vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
     vec3 transmittance_atmosphere = transmittance_track(p, q);
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
     for (int i=cloud_samples-1; i>=0; i--) {
-      bool above = is_above_horizon(p, direction);
       vec3 a = p + delta * i;
       vec3 b = a + delta;
       vec3 c = 0.5 * (a + b);

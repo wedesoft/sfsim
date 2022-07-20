@@ -100,9 +100,7 @@ void main()
         (uniform-float program :anisotropic anisotropic)
         (uniform-int program :cloud_samples n))
     cloud-track-probe
-    cloud-track
-    is-above-horizon
-    horizon-angle))
+    cloud-track))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
          (fact (cloud-track-test [?anisotropic ?n] [?px ?qx ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
@@ -166,8 +164,7 @@ void main()
         (uniform-float program :anisotropic anisotropic)
         (uniform-int program :cloud_base_samples n))
     cloud-track-base-probe
-    cloud-track-base
-    horizon-angle))
+    cloud-track-base))
 
 (tabular "Shader for determining shadowing (or lack of shadowing) by clouds"
          (fact (cloud-track-base-test [?anisotropic ?n] [?px ?qx ?decay ?scatter ?density ?ir ?ig ?ib])
