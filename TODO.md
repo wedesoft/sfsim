@@ -1,7 +1,6 @@
 # TODO
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
-  * abort sampling if opacity goes below certain value
   * avoid multiplication with loop variable in cloud\_track
   * read häggströms thesis
   * reduce sampling rate between clouds

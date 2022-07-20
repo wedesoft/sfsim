@@ -2,6 +2,7 @@
 
 uniform float anisotropic;
 uniform int cloud_samples;
+uniform float transparency_cutoff;
 
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
@@ -19,19 +20,26 @@ vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
     vec3 ray_scatter_atmosphere = ray_scatter_track(light_direction, p, q);
     vec3 transmittance_atmosphere = transmittance_track(p, q);
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
-    for (int i=cloud_samples-1; i>=0; i--) {
-      vec3 a = p + delta * i;
-      vec3 b = a + delta;
-      vec3 c = 0.5 * (a + b);
+    float transparency = 1.0;
+    vec3 cloud_scatter = vec3(0, 0, 0);
+    vec3 b = p;
+    vec3 c = p + delta * 0.5;
+    for (int i=0; i<cloud_samples; i++) {
+      vec3 a = b;
+      b = a + delta;
+      c = c + delta;
       float density = cloud_density(c);
       if (density > 0) {
         float transmittance_cloud = exp(-density * stepsize);
         vec3 intensity = cloud_shadow(c, light_direction);
         float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
-        vec3 cloud_scatter = (1 - transmittance_cloud) * scatter_amount * intensity;
-        incoming = incoming * transmittance_cloud + cloud_scatter;
+        cloud_scatter = cloud_scatter + transparency * (1 - transmittance_cloud) * scatter_amount * intensity;
+        transparency = transparency * transmittance_cloud;
       };
+      if (transparency <= transparency_cutoff)
+        break;
     };
+    incoming = incoming * transparency + cloud_scatter;
   };
   return incoming;
 }

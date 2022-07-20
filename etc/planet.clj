@@ -184,6 +184,7 @@
 (uniform-int program-planet :cloud_samples 64)
 (uniform-int program-planet :cloud_base_samples 5)
 (uniform-float program-planet :cloud_multiplier 0.005)
+(uniform-float program-planet :transparency_cutoff 0.05)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
 (uniform-float program-planet :amplification 2)
 
@@ -199,6 +200,7 @@
 (uniform-int program-atmosphere :cloud_samples 64)
 (uniform-int program-atmosphere :cloud_base_samples 5)
 (uniform-float program-atmosphere :cloud_multiplier 0.005)
+(uniform-float program-atmosphere :transparency_cutoff 0.05)
 (uniform-float program-atmosphere :specular 100)
 (uniform-float program-atmosphere :elevation_power 2.0)
 (uniform-int program-atmosphere :height_size height-size)

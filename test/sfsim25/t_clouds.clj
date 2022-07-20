@@ -98,7 +98,8 @@ void main()
   (shader-test
     (fn [program anisotropic n]
         (uniform-float program :anisotropic anisotropic)
-        (uniform-int program :cloud_samples n))
+        (uniform-int program :cloud_samples n)
+        (uniform-float program :transparency_cutoff 0.0))
     cloud-track-probe
     cloud-track))
 
