@@ -1,13 +1,13 @@
 # TODO
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
-  * make clouds darker and restore amplification value (control cloud brightness with uniform value)
-  * read häggströms thesis
+  * make clouds darker and restore amplification value (multiply scatter amount with uniform value)
+  * use mipmap for clouds, GL30/glGenerateMipmap, third parameter to textureLod
   * increase stepsize between clouds (also only sample low-resolution noise)
   * increase stepsize with increasing distance to camera
-  * multiple levels of Worley and Perlin noise in channels of 3D texture
   * separate shape and density?
   * sun/shadow ray sampling with decreasing fidelity (mipmap level)
+  * multiple levels of Worley and Perlin noise in channels of 3D texture
   * render partially (dithered) and fill in the rest using reprojection or blurring?
   * offset sample start using blue noise
   * atmospheric blending of clouds?
