@@ -12,7 +12,7 @@ vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming);
 
 vec3 cloud_shadow(vec3 point, vec3 light_direction)
 {
-  vec3 incoming = vec3(1, 1, 1) * 0.2;
+  vec3 incoming = vec3(1, 1, 1);
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, point, light_direction);
   if (atmosphere_intersection.y > 0) {
     point = point + atmosphere_intersection.x * light_direction;
