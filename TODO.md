@@ -2,12 +2,20 @@
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
   * make clouds darker and restore amplification value (control cloud brightness with uniform value)
-  * avoid multiplication with loop variable in cloud\_track
   * read häggströms thesis
-  * reduce sampling rate between clouds
+  * increase stepsize between clouds (also only sample low-resolution noise)
+  * increase stepsize with increasing distance to camera
+  * multiple levels of Worley and Perlin noise in channels of 3D texture
+  * separate shape and density?
+  * sun/shadow ray sampling with decreasing fidelity (mipmap level)
+  * render partially (dithered) and fill in the rest using reprojection or blurring?
+  * offset sample start using blue noise
+  * atmospheric blending of clouds?
+  * compute shadows on ground with quarter resolution
   * use lower-resolution cloud rendering?
   * add flat cirrus clouds
   * render clouds with low resolution, sample with different z-offsets and blur
+  * move different levels of noise to create moving and shape-changing clouds
 * make clouds darker
 * set cloud multiplier
 * check above horizon for sky-outer
