@@ -30,7 +30,7 @@
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def light1 (atom 0.885))
+(def light1 (atom 1.559))
 (def light2 (atom 0))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 1500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
