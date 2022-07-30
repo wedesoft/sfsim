@@ -237,6 +237,7 @@
      (with-texture ~target ~texture ~@body)))
 
 (defn generate-mipmap [texture]
+  "Generate mipmap for texture and set texture min filter to linear mipmap mode"
   (with-texture (:target texture) (:texture texture)
     (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
     (GL30/glGenerateMipmap GL11/GL_TEXTURE_1D)))
