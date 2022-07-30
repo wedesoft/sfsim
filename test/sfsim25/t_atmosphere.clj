@@ -698,7 +698,7 @@ void main()
                                (destroy-texture ray-scatter)
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/atmosphere/"?result)))
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result)))
          ?x ?y           ?z                      ?polar       ?rotation   ?lx ?ly ?lz  ?result
          0  0            (- 0 radius max-height) radius       0           0   0   -1   "sun.png"
          0  0            (- 0 radius max-height) radius       0           0   0    1   "space.png"

@@ -237,6 +237,11 @@
 
 (def-context-create-macro create-3d-texture (fn [] (GL11/glGenTextures)) 'with-3d-texture)
 
+(defn generate-mipmap [texture]
+  (with-1d-texture (:texture texture)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
+    (GL30/glGenerateMipmap GL11/GL_TEXTURE_1D)))
+
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
   [data]

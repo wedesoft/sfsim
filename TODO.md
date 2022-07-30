@@ -1,8 +1,8 @@
 # TODO
 * unit test for mipmaps 1D, 2D, 3D
+* make clouds darker and restore amplification value (multiply scatter amount with uniform value)
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
-  * make clouds darker and restore amplification value (multiply scatter amount with uniform value)
   * use mipmap for clouds, GL30/glGenerateMipmap, third parameter to textureLod
   * increase stepsize between clouds (also only sample low-resolution noise)
   * increase stepsize with increasing distance to camera
