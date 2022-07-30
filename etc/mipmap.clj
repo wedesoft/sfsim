@@ -35,7 +35,7 @@ void main()
 (with-2d-texture (:texture tex)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
-  (GL30/glGenerateMipmap GL11/GL_TEXTURE_2D GL11/GL_LINEAR_MIPMAP_LINEAR))
+  (GL30/glGenerateMipmap GL11/GL_TEXTURE_2D))
 
 (def indices [0 1 3 2])
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
