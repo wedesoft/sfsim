@@ -26,7 +26,7 @@ uniform float lod;
 void main()
 {
   float value = textureLod(tex, uv_fragment, lod).r;
-  fragColor = vec3 (value, value, value);
+  fragColor = vec3(value, value, value);
 }")
 
 (def size 32)
