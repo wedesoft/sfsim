@@ -1,4 +1,5 @@
 # TODO
+* unit test for mipmaps
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
   * make clouds darker and restore amplification value (multiply scatter amount with uniform value)

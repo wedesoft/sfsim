@@ -34,7 +34,6 @@ void main()
 (def tex (make-float-texture-2d {:width size :height size :data (float-array data)}))
 (with-2d-texture (:texture tex)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
   (GL30/glGenerateMipmap GL11/GL_TEXTURE_2D))
 
 (def indices [0 1 3 2])
