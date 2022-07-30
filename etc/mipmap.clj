@@ -25,7 +25,8 @@ uniform sampler2D tex;
 uniform float lod;
 void main()
 {
-  fragColor = textureLod(tex, uv_fragment, lod).rgb;
+  float value = textureLod(tex, uv_fragment, lod).r;
+  fragColor = vec3 (value, value, value);
 }")
 
 (def size 32)
