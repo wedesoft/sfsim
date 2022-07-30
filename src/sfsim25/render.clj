@@ -238,9 +238,10 @@
 
 (defn generate-mipmap [texture]
   "Generate mipmap for texture and set texture min filter to linear mipmap mode"
-  (with-texture (:target texture) (:texture texture)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
-    (GL30/glGenerateMipmap GL11/GL_TEXTURE_1D)))
+  (let [target (:target texture)]
+    (with-texture target (:texture texture)
+      (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
+      (GL30/glGenerateMipmap target))))
 
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
