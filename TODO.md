@@ -1,5 +1,10 @@
 # TODO
 * make clouds darker and restore amplification value (multiply scatter amount with uniform value)
+* pass in origin to cloud\_track functions to allow exponential sampling
+  use factors, origin, and direction instead of p, q
+  numsteps(origin, p, q, maxsamples, minstep)   ((q-o) / (p-o)) ^ (1/maxsamples), steps = log(q-o, (o-p+minstep) / (o-p))
+  stepsize(origin, p, q, numsteps)   ((q-o) / (p-o)) ^ (1/numsteps)
+  nextpoint(origin, point, stepsize)  (point - o) * stepsize + o
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
   * use mipmap for clouds, GL30/glGenerateMipmap, third parameter to textureLod
