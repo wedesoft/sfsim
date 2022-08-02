@@ -59,3 +59,7 @@
 (def cloud-density
   "Shader for determining cloud density at specified point"
   (slurp "resources/shaders/clouds/cloud_density.glsl"))
+
+(def linear-sampling
+  "Shader functions for defining linear sampling"
+  (slurp "resources/shaders/clouds/linear_sampling.glsl"))

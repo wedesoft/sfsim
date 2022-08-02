@@ -381,3 +381,33 @@ void main()
          20  30  1   1   1     0      0      1     85    0    0    0
          20  30  1   1   1     1      0      1     80.5  0    0    1
          20  30  1   1   1     1      0      1     85    0    0    0)
+
+(def linear-sampling-probe
+  (template/fn [term]
+"#version 410 core
+out lowp vec3 fragColor;
+int number_of_steps(vec3 origin, vec3 p, vec3 q, int max_samples, float min_step);
+float step_size(vec3 origin, vec3 p, vec3 q, int num_steps);
+vec3 next_point(vec3 origin, vec3 point, float step_size);
+void main()
+{
+  vec3 origin = vec3(10, 0, 0);
+  vec3 p = vec3(20, 0, 0);
+  vec3 q = vec3(30, 0, 0);
+  fragColor = <%= term %>;
+}"))
+
+(def linear-sampling-test
+  (shader-test
+    (fn [program])
+    linear-sampling-probe
+    linear-sampling))
+
+(tabular "Shader functions for defining linear sampling"
+         (fact (linear-sampling-test [] [?term]) => (roughly-matrix (matrix [?x ?y ?z]) 1e-5))
+         ?term                                                ?x ?y ?z
+         "vec3(number_of_steps(origin, p, q, 10, 0.5), 0, 0)" 10  0  0
+         "vec3(number_of_steps(origin, p, q, 10, 2.0), 0, 0)"  5  0  0
+         "vec3(number_of_steps(origin, p, q, 10, 2.1), 0, 0)"  5  0  0
+         "vec3(step_size(origin, p, q, 5), 0, 0)"              2  0  0
+         "next_point(origin, vec3(26, 0, 0), 2)"              28  0  0)

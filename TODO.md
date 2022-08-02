@@ -1,7 +1,7 @@
 # TODO
 * make clouds darker and restore amplification value (multiply scatter amount with uniform value)
 * pass in origin to cloud\_track functions to allow exponential sampling
-  use factors, origin, and direction instead of p, q
+  use factors, origin, and direction instead of p, q; change cloud\_track to accept origin, direction, and scaling factors
   numsteps(origin, p, q, maxsamples, minstep)   ((q-o) / (p-o)) ^ (1/maxsamples), steps = log(q-o, (o-p+minstep) / (o-p))
   stepsize(origin, p, q, numsteps)   ((q-o) / (p-o)) ^ (1/numsteps)
   nextpoint(origin, point, stepsize)  (point - o) * stepsize + o
