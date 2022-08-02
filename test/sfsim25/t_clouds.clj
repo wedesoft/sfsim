@@ -386,15 +386,12 @@ void main()
   (template/fn [term]
 "#version 410 core
 out lowp vec3 fragColor;
-int number_of_steps(vec3 origin, vec3 p, vec3 q, int max_samples, float min_step);
-float step_size(vec3 origin, vec3 p, vec3 q, int num_steps);
-vec3 next_point(vec3 origin, vec3 point, float step_size);
+int number_of_steps(float a, float b, int max_samples, float min_step);
+float step_size(float a, float b, int num_steps);
+float next_point(float p, float step_size);
 void main()
 {
-  vec3 origin = vec3(10, 0, 0);
-  vec3 p = vec3(20, 0, 0);
-  vec3 q = vec3(30, 0, 0);
-  fragColor = <%= term %>;
+  fragColor = vec3(<%= term %>, 0, 0);
 }"))
 
 (def linear-sampling-test
@@ -404,10 +401,10 @@ void main()
     linear-sampling))
 
 (tabular "Shader functions for defining linear sampling"
-         (fact (linear-sampling-test [] [?term]) => (roughly-matrix (matrix [?x ?y ?z]) 1e-5))
-         ?term                                                ?x ?y ?z
-         "vec3(number_of_steps(origin, p, q, 10, 0.5), 0, 0)" 10  0  0
-         "vec3(number_of_steps(origin, p, q, 10, 2.0), 0, 0)"  5  0  0
-         "vec3(number_of_steps(origin, p, q, 10, 2.1), 0, 0)"  5  0  0
-         "vec3(step_size(origin, p, q, 5), 0, 0)"              2  0  0
-         "next_point(origin, vec3(26, 0, 0), 2)"              28  0  0)
+         (fact (mget (linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
+         ?term                                                ?result
+         "number_of_steps(10, 20, 10, 0.5)" 10
+         "number_of_steps(10, 20, 10, 2.0)"  5
+         "number_of_steps(10, 20, 10, 2.1)"  5
+         "step_size(10, 20, 5)"              2
+         "next_point(26, 2)"                28)
