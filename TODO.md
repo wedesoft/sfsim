@@ -5,6 +5,7 @@
   stepsize(origin, p, q, numsteps)   ((q-o) / (p-o)) ^ (1/numsteps)
   nextpoint(origin, point, stepsize)  (point - o) * stepsize + o
   change cloud\_track to accept origin, direction, and scaling factors?
+  pass in level of detail for mipmaps in cloud\_track and cloud\_track\_base
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
   * use mipmap for clouds, GL30/glGenerateMipmap, third parameter to textureLod
