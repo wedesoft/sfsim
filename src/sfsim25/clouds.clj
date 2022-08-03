@@ -63,3 +63,7 @@
 (def linear-sampling
   "Shader functions for defining linear sampling"
   (slurp "resources/shaders/clouds/linear_sampling.glsl"))
+
+(def exponential-sampling
+  "Shader functions for defining exponential sampling"
+  (slurp "resources/shaders/clouds/exponential_sampling.glsl"))

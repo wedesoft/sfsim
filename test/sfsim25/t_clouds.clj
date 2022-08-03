@@ -382,7 +382,7 @@ void main()
          20  30  1   1   1     1      0      1     80.5  0    0    1
          20  30  1   1   1     1      0      1     85    0    0    0)
 
-(def linear-sampling-probe
+(def sampling-probe
   (template/fn [term]
 "#version 410 core
 out lowp vec3 fragColor;
@@ -394,17 +394,25 @@ void main()
   fragColor = vec3(<%= term %>, 0, 0);
 }"))
 
-(def linear-sampling-test
-  (shader-test
-    (fn [program])
-    linear-sampling-probe
-    linear-sampling))
+(def linear-sampling-test (shader-test (fn [program]) sampling-probe linear-sampling))
 
 (tabular "Shader functions for defining linear sampling"
          (fact (mget (linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
-         ?term                                                ?result
+         ?term                              ?result
          "number_of_steps(10, 20, 10, 0.5)" 10
          "number_of_steps(10, 20, 10, 2.0)"  5
          "number_of_steps(10, 20, 10, 2.1)"  5
          "step_size(10, 20, 5)"              2
          "next_point(26, 2)"                28)
+
+(def exponential-sampling-test (shader-test (fn [program]) sampling-probe exponential-sampling))
+
+(tabular "Shader functions for defining exponential sampling"
+         (fact (mget (exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
+         ?term                               ?result
+         "number_of_steps(10, 20, 10, 1.05)" 10
+         "number_of_steps(10, 20, 10, 2.0)"   1
+         "number_of_steps(10, 20, 10, 2.1)"   1
+         "step_size(10, 20, 1)"               2
+         "step_size(10, 40, 2)"               2
+         "next_point(10, 2)"                 20)
