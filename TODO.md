@@ -1,7 +1,8 @@
 # TODO
-* pass in origin to cloud\_track functions to allow exponential sampling
-  update sky\_outer to use scaling factors
-  change cloud\_track and attenuation\_\* to accept origin, direction, and scaling factors?
+* update sky\_track to use scaling factors
+* update cloud\_track to use scaling factors
+* update attenuation\_outer to use scaling factors
+* update attenuation\_track to use scaling factors
 * sky\_outer already does atmospheric intersection -> simplify atmospheric fragment shader
 * pass in level of detail for mipmaps in cloud\_track and cloud\_track\_base
 * make clouds darker and restore amplification value (multiply scatter amount with uniform value)
