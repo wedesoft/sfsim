@@ -187,26 +187,26 @@ void main()
   (template/fn [x y z dx dy dz lx ly lz ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming);
-vec3 attenuation_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming)
+vec3 sky_outer(vec3 light_direction, vec3 origin, vec3 direction, vec3 incoming);
+vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming)
 {
-  return vec3(point.x * 0.01, incoming.g, incoming.b);
+  return vec3((origin.x + a) * 0.01, incoming.g, incoming.b);
 }
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  return vec3(incoming.r, incoming.g + (q.x - p.x) * 0.01, incoming.b);
+  return vec3(incoming.r, incoming.g + (b - a) * 0.01, incoming.b);
 }
-vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  return vec3(incoming.r, incoming.g, incoming.b + (q.x - p.x) * 0.01);
+  return vec3(incoming.r, incoming.g, incoming.b + (b - a) * 0.01);
 }
 void main()
 {
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 origin = vec3(<%= x %>, <%= y %>, <%= z %>);
   vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  fragColor = sky_outer(light_direction, point, direction, incoming);
+  fragColor = sky_outer(light_direction, origin, direction, incoming);
 }"))
 
 (def sky-outer-test
