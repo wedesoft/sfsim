@@ -1,5 +1,4 @@
 # TODO
-* update sky\_track to use scaling factors
 * update cloud\_track to use scaling factors
 * update attenuation\_outer to use scaling factors
 * update attenuation\_track to use scaling factors
