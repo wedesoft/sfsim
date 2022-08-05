@@ -271,14 +271,14 @@ void main()
 (tabular "Shader for determining lighting of atmosphere including clouds between two points"
          (fact (sky-track-test [60 40 ?h1 ?h2] [?px ?py ?pz ?qx ?qy ?qz ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
-         ?px ?py ?pz  ?qx ?qy ?qz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
-        -120 0  -110 -110 0   0   20  30  1   0   0   0   0   0    0   0   0
-        -120 0  -110 -110 0   0   20  30  1   0   0   0.1 0   0    0.1 0   0
-          70 0   0     60 0   0   20  30  1   0   0   0.1 0   0    0.1 0   0.1
-         110 0   0     60 0   0    0   0  1   0   0   0.1 0   0    0.1 0   0.4
-          90 0   0     60 0   0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.2
-         100 0   0     60 0   0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.3
-         100 0   0   -100 0   0   20  30  1   0   0   0.1 0   0    0.1 0.2 1.8)
+         ?px ?py ?pz  ?qx ?qy  ?qz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
+        -120 0  -110 -110 0   -110 20  30  1   0   0   0   0   0    0   0   0
+        -120 0  -110 -110 0   -110 20  30  1   0   0   0.1 0   0    0.1 0   0
+          70 0     0   60 0      0 20  30  1   0   0   0.1 0   0    0.1 0   0.1
+         110 0     0   60 0      0  0   0  1   0   0   0.1 0   0    0.1 0   0.4
+          90 0     0   60 0      0 20  30  1   0   0   0.1 0   0    0.1 0.1 0.2
+         100 0     0   60 0      0 20  30  1   0   0   0.1 0   0    0.1 0.1 0.3
+         100 0     0 -100 0      0 20  30  1   0   0   0.1 0   0    0.1 0.2 1.8)
 
 (def cloud-shadow-probe
   (template/fn [x y z lx ly lz]
