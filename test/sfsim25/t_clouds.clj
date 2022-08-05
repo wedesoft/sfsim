@@ -234,25 +234,27 @@ void main()
         -110 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.2 1.7)
 
 (def sky-track-probe
-  (template/fn [px py pz qx qy qz lx ly lz ir ig ib]
+  (template/fn [px py pz dx dy dz a b lx ly lz ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 sky_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+vec3 sky_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
+vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  return vec3(incoming.r, incoming.g + (p.x - q.x) * 0.01, incoming.b);
+  return vec3(incoming.r, incoming.g + (b - a) * 0.01, incoming.b);
 }
-vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  return vec3(incoming.r, incoming.g, incoming.b + (p.x - q.x) * 0.01);
+  return vec3(incoming.r, incoming.g, incoming.b + (b - a) * 0.01);
 }
 void main()
 {
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
-  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
+  vec3 origin = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  fragColor = sky_track(light_direction, p, q, incoming);
+  float a = <%= a %>;
+  float b = <%= b %>;
+  fragColor = sky_track(light_direction, origin, direction, a, b, incoming);
 }"))
 
 (def sky-track-test
@@ -269,16 +271,16 @@ void main()
     clip-shell-intersections))
 
 (tabular "Shader for determining lighting of atmosphere including clouds between two points"
-         (fact (sky-track-test [60 40 ?h1 ?h2] [?px ?py ?pz ?qx ?qy ?qz ?lx ?ly ?lz ?ir ?ig ?ib])
+         (fact (sky-track-test [60 40 ?h1 ?h2] [?px ?py ?pz ?dx ?dy ?dz ?a ?b ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
-         ?px ?py ?pz  ?qx ?qy  ?qz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
-        -120 0  -110 -110 0   -110 20  30  1   0   0   0   0   0    0   0   0
-        -120 0  -110 -110 0   -110 20  30  1   0   0   0.1 0   0    0.1 0   0
-          70 0     0   60 0      0 20  30  1   0   0   0.1 0   0    0.1 0   0.1
-         110 0     0   60 0      0  0   0  1   0   0   0.1 0   0    0.1 0   0.4
-          90 0     0   60 0      0 20  30  1   0   0   0.1 0   0    0.1 0.1 0.2
-         100 0     0   60 0      0 20  30  1   0   0   0.1 0   0    0.1 0.1 0.3
-         100 0     0 -100 0      0 20  30  1   0   0   0.1 0   0    0.1 0.2 1.8)
+         ?px ?py ?pz  ?a ?b  ?dx ?dy  ?dz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
+        -120 0  -110   0  0  1   0    0   20  30  1   0   0   0   0   0    0   0   0
+        -120 0  -110   0  0  1   0    0   20  30  1   0   0   0.1 0   0    0.1 0   0
+          70 0     0   0 10 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0   0.1
+         110 0     0  10 50 -1   0    0    0   0  1   0   0   0.1 0   0    0.1 0   0.4
+          90 0     0  0  30 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.2
+         100 0     0  0  40 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.3
+         100 0     0  0 200 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0.2 1.8)
 
 (def cloud-shadow-probe
   (template/fn [x y z lx ly lz]
