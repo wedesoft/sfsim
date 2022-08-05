@@ -287,13 +287,13 @@ void main()
 "#version 410 core
 out lowp vec3 fragColor;
 vec3 cloud_shadow(vec3 point, vec3 light_direction);
-vec3 attenuation_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming)
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  return vec3(incoming.r - abs(p.x - q.x) * 0.01, incoming.g, abs(p.x - q.x) * 0.01);
+  return vec3(incoming.r - abs(b - a) * 0.01, incoming.g, abs(b - a) * 0.01);
 }
-vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming)
+vec3 cloud_track_base(vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  return vec3(incoming.r, incoming.g - abs(p.x - q.x) * 0.01, incoming.b);
+  return vec3(incoming.r, incoming.g - abs(b - a) * 0.01, incoming.b);
 }
 void main()
 {
@@ -317,15 +317,16 @@ void main()
 (tabular "Shader for determining illumination of clouds"
          (fact (cloud-shadow-test [?radius ?h ?h1 ?h2] [?x ?y ?z ?lx ?ly ?lz])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
-         ?x  ?y ?z ?lx ?ly ?lz ?radius ?h ?h1 ?h2 ?or ?og ?ob
-         100 0  0  1   0   0   60       40   0   0  1   1   1
-          80 0  0  1   0   0   60       40   0   0  0.8 1   0.2
-          80 0  0 -1   0   0   60       40   0   0 -0.2 0   0.2
-         120 0  0 -1   0   0   60       40   0   0 -0.4 0   0.4
-          80 0  0  1   0   0   60       40  20  30  0.9 0.9 0.0
-          70 0  0  1   0   0   60       40  20  30  0.8 0.9 0.1
-        -100 0  0  1   0   0    0      100  80  90 -0.8 0.8 0.1
-        -110 0  0  1   0   0    0      100  80  90 -0.8 0.8 0.1)
+         ?x  ?y ?z ?lx ?ly ?lz ?radius ?h  ?h1 ?h2  ?or  ?og ?ob
+         100 0  0  1   0   0   60       40   0   0  1    1   1
+          80 0  0  1   0   0   60       40   0   0  0.8  1   0.2
+          80 0  0 -1   0   0   60       40   0   0 -0.2  0   0.2
+         120 0  0 -1   0   0   60       40   0   0 -0.4  0   0.4
+          80 0  0  1   0   0   60       40  20  30  0.9  0.9 0.0
+          70 0  0  1   0   0   60       40  20  30  0.8  0.9 0.1
+        -100 0  0  1   0   0    0      100  80  90 -0.8  0.8 0.1
+        -200 0  0  1   0   0    0      100  80  90 -0.8  0.8 0.1
+        -100 0  0  1   0   0   60       40  20  30 -0.3 -0.1 0.1)
 
 (def cloud-density-probe
   (template/fn [x y z]
