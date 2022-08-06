@@ -52,7 +52,7 @@
          (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
 
 (def cloud-track-probe
-  (template/fn [px qx decay scatter density lx ly lz ir ig ib]
+  (template/fn [a b decay scatter density lx ly lz ir ig ib]
 "#version 410 core
 out lowp vec3 fragColor;
 vec3 transmittance_track(vec3 p, vec3 q)
@@ -83,14 +83,16 @@ float phase(float g, float mu)
 {
   return 1.0 - 0.5 * mu;
 }
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
+vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 void main()
 {
-  vec3 p = vec3(<%= px %>, 0, 0);
-  vec3 q = vec3(<%= qx %>, 0, 0);
+  vec3 origin = vec3(0, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  float a = <%= a %>;
+  float b = <%= b %>;
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_track(light_direction, p, q, incoming);
+  fragColor = cloud_track(light_direction, origin, direction, a, b, incoming);
 }
 "))
 
@@ -104,9 +106,9 @@ void main()
     cloud-track))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test [?anisotropic ?n] [?px ?qx ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
+         (fact (cloud-track-test [?anisotropic ?n] [?a ?b ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?px ?qx ?n ?decay  ?scatter ?density ?anisotropic ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
+         ?a  ?b  ?n ?decay  ?scatter ?density ?anisotropic ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
          0    1  1  0       0        0.0      1            0   0   1   0   0   0   0        0                      0
          0    0  1  0       0        0.0      1            0   0   1   1   1   1   1        1                      1
          0    1  1  0       0        0.0      1            0   0   1   1   1   1   1        1                      1
