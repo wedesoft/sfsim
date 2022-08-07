@@ -1,6 +1,4 @@
 # TODO
-* update attenuation\_outer to use scaling factors
-* update attenuation\_track to use scaling factors
 * sky\_outer and sky\_track already does atmospheric intersection -> simplify atmospheric fragment shader
 * use sampling functions in cloud\_track
 * pass in level of detail for mipmaps in cloud\_track and cloud\_track\_base
