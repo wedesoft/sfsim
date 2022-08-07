@@ -1,5 +1,5 @@
 # TODO
-* sky\_outer and sky\_track already does atmospheric intersection -> simplify atmospheric fragment shader
+* change ray\_scatter\_track and transmittance\_track to accept direction and scale factors?
 * use sampling functions in cloud\_track
 * pass in level of detail for mipmaps in cloud\_track and cloud\_track\_base
 * make clouds darker and restore amplification value (multiply scatter amount with uniform value)
