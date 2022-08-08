@@ -101,9 +101,11 @@ void main()
     (fn [program anisotropic n]
         (uniform-float program :anisotropic anisotropic)
         (uniform-int program :cloud_samples n)
+        (uniform-float program :cloud_min_step 0.1)
         (uniform-float program :transparency_cutoff 0.0))
     cloud-track-probe
-    cloud-track))
+    cloud-track
+    linear-sampling))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
          (fact (cloud-track-test [?anisotropic ?n] [?a ?b ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])

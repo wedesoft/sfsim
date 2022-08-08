@@ -65,8 +65,8 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, vec3 incoming);
-vec3 cloud_track_base(vec3 p, vec3 q, vec3 incoming);
+vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
+vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming);
 float cloud_density(vec3 point)
 {
   float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
@@ -77,7 +77,7 @@ vec3 cloud_shadow(vec3 point, vec3 light_direction)
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light_direction);
   vec3 p = point + intersection.x * light_direction;
   vec3 q = point + (intersection.x + intersection.y) * light_direction;
-  return cloud_track_base(p, q, vec3(1, 1, 1));
+  return cloud_track_base(point, light_direction, intersection.x, intersection.x + intersection.y, vec3(1, 1, 1));
 }
 vec3 transmittance_track(vec3 p, vec3 q)
 {
@@ -93,19 +93,13 @@ void main()
   float cos_light = dot(light, direction);
   vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3(0.3, 0.3, 0.5);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
-  if (intersection.y > 0) {
-    vec3 p = origin + intersection.x * direction;
-    vec3 q = origin + (intersection.x + intersection.y) * direction;
-    bg = cloud_track(light, p, q, bg);
-    fragColor = bg;
-  } else
-    fragColor = bg;
+  fragColor = cloud_track(light, origin, direction, intersection.x, intersection.x + intersection.y, bg);
 }")
 
 (def program
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function cloud-track-base
-                           cloud-track s/is-above-horizon s/horizon-angle]))
+                           cloud-track linear-sampling s/is-above-horizon s/horizon-angle]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -171,6 +165,7 @@ void main()
                  (uniform-float program :threshold @threshold)
                  (uniform-float program :anisotropic @anisotropic)
                  (uniform-int program :cloud_samples 64)
+                 (uniform-float program :cloud_min_step 0.1)
                  (uniform-int program :cloud_base_samples 8)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
                  (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))

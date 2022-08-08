@@ -378,6 +378,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   (uniform-float program :cloud_size 16)
   (uniform-float program :anisotropic 0.4)
   (uniform-int program :cloud_samples 64)
+  (uniform-float program :cloud_min_step 0.1)
   (uniform-int program :cloud_base_samples 8))
 
 (tabular "Fragment shader to render planetary surface"
@@ -398,7 +399,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                                           clouds/sky-track shaders/ray-shell
                                                                           clouds/cloud-track clouds/cloud-track-base
                                                                           clouds/cloud-density clouds/cloud-shadow
-                                                                          atmosphere/phase-function
+                                                                          clouds/linear-sampling atmosphere/phase-function
                                                                           shaders/clip-shell-intersections
                                                                           shaders/ray-scatter-forward shaders/oriented-matrix
                                                                           shaders/orthogonal-vector shaders/clip-angle])

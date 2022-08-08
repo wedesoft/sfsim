@@ -655,8 +655,8 @@ void main()
                                                                           clouds/sky-outer shaders/ray-shell
                                                                           clouds/cloud-track clouds/cloud-track-base
                                                                           clouds/cloud-density clouds/cloud-shadow
-                                                                          attenuation-track transmittance-track
-                                                                          ray-scatter-track phase-function])
+                                                                          clouds/linear-sampling attenuation-track
+                                                                          transmittance-track ray-scatter-track phase-function])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d {:width size :height size :data T})
                                    ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
@@ -690,6 +690,7 @@ void main()
                                (uniform-float program :cloud_size 16)
                                (uniform-float program :anisotropic 0.4)
                                (uniform-int program :cloud_samples 64)
+                               (uniform-float program :cloud_min_step 0.1)
                                (uniform-int program :cloud_base_samples 8)
                                (use-textures transmittance ray-scatter worley profile)
                                (render-quads vao)

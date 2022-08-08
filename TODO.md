@@ -1,8 +1,9 @@
 # TODO
-* in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
-* use sampling functions in cloud\_track
-* pass in level of detail for mipmaps in cloud\_track and cloud\_track\_base
 * make clouds darker and restore amplification value (multiply scatter amount with uniform value)
+* in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
+* determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
+* use stepsize and level of detail in cloud\_track\_base
+* try exponential sampling
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
   * use mipmap for clouds, GL30/glGenerateMipmap, third parameter to textureLod
