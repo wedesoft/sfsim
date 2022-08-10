@@ -2,6 +2,7 @@
 
 uniform float anisotropic;
 uniform int cloud_samples;
+uniform float cloud_scatter_amount;
 uniform float cloud_min_step;
 uniform float transparency_cutoff;
 
@@ -36,7 +37,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
       if (density > 0) {
         float transmittance_cloud = exp(-density * (b - a));
         vec3 intensity = cloud_shadow(c, light_direction);
-        float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
+        float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * cloud_scatter_amount;
         cloud_scatter = cloud_scatter + transparency * (1 - transmittance_cloud) * scatter_amount * intensity;
         transparency = transparency * transmittance_cloud;
       };

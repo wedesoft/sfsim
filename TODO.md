@@ -1,5 +1,5 @@
 # TODO
-* make clouds darker and restore amplification value (multiply scatter amount with uniform value)
+* prototype linear-exponential mix
 * in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
 * determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
 * use level of detail in cloud\_track\_base

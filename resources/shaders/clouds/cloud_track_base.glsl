@@ -2,6 +2,7 @@
 
 uniform float anisotropic;
 uniform int cloud_base_samples;
+uniform float cloud_scatter_amount;
 
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
@@ -16,7 +17,7 @@ vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 
     vec3 q = origin + b * light_direction;
     float stepsize = dist / cloud_base_samples;
     vec3 delta = light_direction * stepsize;
-    float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
+    float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
     vec3 transmittance_atmosphere = transmittance_track(p, q);
     vec3 ray_scatter_atmosphere = ray_scatter_track(light_direction, p, q);
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
