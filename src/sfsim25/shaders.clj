@@ -68,3 +68,7 @@
 (def ray-shell
   "Shader function for computing intersections of ray with a shell"
   (slurp "resources/shaders/core/ray_shell.glsl"))
+
+(def clip-shell-intersections
+  "Clip the intersection information of ray and shell using given limit"
+  (slurp "resources/shaders/core/clip_shell_intersections.glsl"))

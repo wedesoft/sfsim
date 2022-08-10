@@ -114,21 +114,6 @@
   (dissoc-in {:a 42 :b 51} [:b]) => {:a 42}
   (dissoc-in {:a {:b 42 :c 20}} [:a :b]) => {:a {:c 20}})
 
-(def context-test (atom nil))
-(def-context-macro with-test-ctx
-  (fn [x] (reset! context-test (if (= x 123)  42 :error)))
-  (fn [x] (reset! context-test (if (= x 123) nil :error))))
-
-(facts "Definition of context macro"
-  (with-test-ctx 123 @context-test) => 42
-  @context-test => nil)
-
-(def-context-create-macro create-test-ctx (fn [] 123) 'with-test-ctx)
-
-(facts "Definition of context creating macro"
-       (create-test-ctx ctx (+ ctx @context-test)) => (+ 123 42)
-       @context-test => nil)
-
 (facts "Alignment function"
        (align-address 0 4) => 0
        (align-address 8 4) => 8

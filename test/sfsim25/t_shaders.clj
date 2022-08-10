@@ -488,3 +488,29 @@ void main()
          0   0   0   2        3        -10 0   0   1   0   0   "pq"      12  1
          0   0   0   2        3          0 0   0   1   0   0   "st"       2  1
          0   0   0   2        3          0 0   0   1   0   0   "pq"       0  0)
+
+(def clip-shell-intersections-probe
+  (template/fn [a b c d limit selector]
+"#version 410 core
+out lowp vec3 fragColor;
+vec4 clip_shell_intersections(vec4 intersections, float limit);
+void main()
+{
+  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), <%= limit %>);
+  fragColor.xy = result.<%= selector %>;
+  fragColor.z = 0;
+}"))
+
+(def clip-shell-intersections-test (shader-test (fn [program]) clip-shell-intersections-probe clip-shell-intersections))
+
+(tabular "Clip the intersection information of ray and shell using given limit"
+         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?limit ?selector])
+               => (roughly-matrix (matrix [?ix ?iy 0]) 1e-6))
+         ?a ?b ?c ?d ?limit ?selector ?ix ?iy
+         2  3  6  2  9      "xy"      2   3
+         2  3  6  2  9      "zw"      6   2
+         2  3  6  2  7      "zw"      6   1
+         2  3  6  2  5      "zw"      0   0
+         2  3  0  0  9      "zw"      0   0
+         2  3  6  2  3      "xy"      2   1
+         2  3  6  2  1      "xy"      0   0)

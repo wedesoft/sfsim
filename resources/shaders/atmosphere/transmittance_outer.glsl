@@ -12,5 +12,3 @@ vec3 transmittance_outer(vec3 point, vec3 direction)
   vec2 transmittance_index = transmittance_forward(point, direction, true);
   return interpolate_2d(transmittance, height_size, elevation_size, transmittance_index).rgb;
 }
-
-

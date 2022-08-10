@@ -1,6 +1,6 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (is-image)]
+            [sfsim25.conftest :refer (is-image record-image)]
             [clojure.core.matrix :refer (matrix identity-matrix)]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
@@ -465,3 +465,38 @@ void main()
               img (texture->image tex 160 120)]
           img => (is-image "test/sfsim25/fixtures/render/red.png")
           (destroy-texture tex))))
+
+(def lod-texture-1d "#version 410 core
+in mediump vec2 uv_fragment;
+out lowp vec3 fragColor;
+uniform sampler1D tex;
+uniform float lod;
+void main()
+{
+  float value = textureLod(tex, uv_fragment.x, lod).r;
+  fragColor = vec3(value, value, value);
+}")
+
+(tabular "1D mipmaps"
+         (fact
+           (offscreen-render 64 64
+             (let [indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+                   program  (make-program :vertex [vertex-texture] :fragment [lod-texture-1d])
+                   vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                   data     (flatten (repeat 8 [0 0 1 1]))
+                   tex      (make-float-texture-1d (float-array data))]
+               (generate-mipmap tex)
+               (clear (matrix [0.0 0.0 0.0]))
+               (use-program program)
+               (uniform-sampler program :tex 0)
+               (uniform-float program :lod ?lod)
+               (use-textures tex)
+               (render-quads vao)
+               (destroy-texture tex)
+               (destroy-vertex-array-object vao)
+               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+         ?lod ?result
+         0.0  "lod-1d-0"
+         1.0  "lod-1d-1"
+         2.0  "lod-1d-2")

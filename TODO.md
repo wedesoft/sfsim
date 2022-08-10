@@ -1,12 +1,38 @@
 # TODO
-* use cloud\_samples uniform value
-* implement clouded\_light
-* have prototype use tested cloud\_track and clouded\_light function
+* make clouds darker and restore amplification value (multiply scatter amount with uniform value)
+* in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
+* determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
+* use level of detail in cloud\_track\_base
+* adapt stepsize in cloud\_track\_base
+* try exponential sampling
+* keyboard shortcuts for cloud parameters
+* http://advances.realtimerendering.com/s2015/index.html
+  * use mipmap for clouds, GL30/glGenerateMipmap, third parameter to textureLod
+  * increase stepsize between clouds (also only sample low-resolution noise)
+  * increase stepsize with increasing distance to camera
+  * separate shape and density?
+  * sun/shadow ray sampling with decreasing fidelity (mipmap level)
+  * multiple levels of Worley and Perlin noise in channels of 3D texture
+  * render partially (dithered) and fill in the rest using reprojection or blurring?
+  * offset sample start using blue noise
+  * atmospheric blending of clouds?
+  * compute shadows on ground with quarter resolution
+  * use lower-resolution cloud rendering?
+  * add flat cirrus clouds
+  * render clouds with low resolution, sample with different z-offsets and blur
+  * move different levels of noise to create moving and shape-changing clouds
+* make clouds darker
+* set cloud multiplier
+* check above horizon for sky-outer
+* use sky shader with clouds in planet shader
+* remove lowp, mediump, highp
+* plan work
+* make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
+* does ray\_scatter\_atmosphere need to be multiplied with transmittance\_cloud?
 * add clouds to atmospheric and planetary shader
 * cloud density function using 3D textures and vertical threshold curves
 * article about TDD and OpenGL (rendering offscreen image and using probe shaders)
 * article about clouds
-* remove lowp, mediump, highp
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
 * how to render clouds and cloud shadows?

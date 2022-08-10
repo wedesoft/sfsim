@@ -1,37 +1,49 @@
 #version 410 core
 
 uniform float anisotropic;
+uniform int cloud_samples;
+uniform float cloud_min_step;
+uniform float transparency_cutoff;
 
-vec3 transmittance_forward(vec3 point, vec3 direction);
-vec3 ray_scatter_forward(vec3 point, vec3 direction, vec3 light);
+vec3 transmittance_track(vec3 p, vec3 q);
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 float cloud_density(vec3 point);
-vec3 clouded_light(vec3 point, vec3 light_direction);
+vec3 cloud_shadow(vec3 point, vec3 light_direction);
 float phase(float g, float mu);
+int number_of_steps(float a, float b, int max_samples, float min_step);
+float step_size(float a, float b, int num_steps);
+float next_point(float p, float step_size);
 
-vec3 cloud_track(vec3 light_direction, vec3 p, vec3 q, int n, vec3 incoming)
+vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  float dist = distance(p, q);
+  float dist = b - a;
   if (dist > 0) {
-    vec3 direction = (q - p) / dist;
-    vec3 delta = (q - p) / n;
-    float stepsize = dist / n;
-    for (int i=0; i<n; i++) {
-      vec3 a = p + delta * i;
-      vec3 b = a + delta;
-      vec3 c = 0.5 * (a + b);
-      vec3 transmittance_atmosphere_a = transmittance_forward(a, direction);
-      vec3 transmittance_atmosphere_b = transmittance_forward(b, direction);
-      vec3 transmittance_atmosphere = transmittance_atmosphere_a / transmittance_atmosphere_b;
-      vec3 ray_scatter_a = ray_scatter_forward(a, direction, light_direction);
-      vec3 ray_scatter_b = ray_scatter_forward(b, direction, light_direction);
-      vec3 ray_scatter_atmosphere = ray_scatter_a - ray_scatter_b * transmittance_atmosphere;
+    vec3 p = origin + a * direction;
+    vec3 q = origin + b * direction;
+    vec3 ray_scatter_atmosphere = ray_scatter_track(light_direction, p, q);
+    vec3 transmittance_atmosphere = transmittance_track(p, q);
+    incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
+    float transparency = 1.0;
+    int samples = number_of_steps(a, b, cloud_samples, cloud_min_step);
+    float stepsize = step_size(a, b, samples);
+    vec3 cloud_scatter = vec3(0, 0, 0);
+    float b = a;
+    for (int i=0; i<samples; i++) {
+      float a = b;
+      b = next_point(b, stepsize);
+      vec3 c = origin + 0.5 * (a + b) * direction;
       float density = cloud_density(c);
-      float transmittance_cloud = exp(-density * stepsize);
-      vec3 intensity = clouded_light(c, light_direction);
-      float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
-      vec3 cloud_scatter = (1 - transmittance_cloud) * scatter_amount * intensity;
-      incoming = incoming * transmittance_atmosphere * transmittance_cloud + ray_scatter_atmosphere + cloud_scatter;
+      if (density > 0) {
+        float transmittance_cloud = exp(-density * (b - a));
+        vec3 intensity = cloud_shadow(c, light_direction);
+        float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
+        cloud_scatter = cloud_scatter + transparency * (1 - transmittance_cloud) * scatter_amount * intensity;
+        transparency = transparency * transmittance_cloud;
+      };
+      if (transparency <= transparency_cutoff)
+        break;
     };
+    incoming = incoming * transparency + cloud_scatter;
   };
   return incoming;
 }
