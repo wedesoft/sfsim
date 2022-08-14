@@ -16,6 +16,6 @@
 (defn next-point [obj p]
   (- (* (+ p (:offset obj)) (:multiplier obj)) (:offset obj)))
 
-(def o (stepping 300 4000 64 1.1))
+(def o (stepping 1 100000 64 1.1))
 (take (inc (:samples o)) (iterate #(next-point o %1) (:a o)))
 o

@@ -102,7 +102,7 @@ void main()
         (uniform-float program :anisotropic anisotropic)
         (uniform-int program :cloud_samples n)
         (uniform-float program :cloud_scatter_amount amount)
-        (uniform-float program :cloud_min_step 0.1)
+        (uniform-float program :cloud_max_step 0.1)
         (uniform-float program :transparency_cutoff 0.0))
     cloud-track-probe
     cloud-track
@@ -399,9 +399,10 @@ void main()
   (template/fn [term]
 "#version 410 core
 out lowp vec3 fragColor;
-int number_of_steps(float a, float b, int max_samples, float min_step);
-float step_size(float a, float b, int num_steps);
-float next_point(float p, float step_size);
+int number_of_steps(float a, float b, int max_samples, float max_step);
+float step_size(float a, float b, float scaling_offset, int num_steps);
+float next_point(float p, float scaling_offset, float step_size);
+float scaling_offset(float a, float b, int samples, float max_step);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
@@ -415,8 +416,8 @@ void main()
          "number_of_steps(10, 20, 10, 0.5)" 10
          "number_of_steps(10, 20, 10, 2.0)"  5
          "number_of_steps(10, 20, 10, 2.1)"  5
-         "step_size(10, 20, 5)"              2
-         "next_point(26, 2)"                28)
+         "step_size(10, 20, 0, 5)"           2
+         "next_point(26, 0, 2)"             28)
 
 (def exponential-sampling-test (shader-test (fn [program]) sampling-probe exponential-sampling))
 
@@ -426,6 +427,11 @@ void main()
          "number_of_steps(10, 20, 10, 1.05)" 10
          "number_of_steps(10, 20, 10, 2.0)"   1
          "number_of_steps(10, 20, 10, 2.1)"   1
-         "step_size(10, 20, 1)"               2
-         "step_size(10, 40, 2)"               2
-         "next_point(10, 2)"                 20)
+         "scaling_offset(10, 20, 1, 2.0)"     0
+         "scaling_offset(10, 30, 1, 2.0)"    10
+         "scaling_offset(10, 30, 10, 2.0)"    0
+         "step_size(10, 20, 0, 1)"            2
+         "step_size(10, 40, 0, 2)"            2
+         "step_size(10, 30, 10, 1)"           2
+         "next_point(10, 0, 2)"              20
+         "next_point(10, 10, 2)"             30)
