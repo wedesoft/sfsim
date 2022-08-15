@@ -12,6 +12,7 @@ float cloud_density(vec3 point);
 vec3 cloud_shadow(vec3 point, vec3 light_direction);
 float phase(float g, float mu);
 int number_of_steps(float a, float b, int max_samples, float max_step);
+float scaling_offset(float a, float b, int samples, float min_step);
 float step_size(float a, float b, float scaling_offset, int num_steps);
 float next_point(float p, float scaling_offset, float step_size);
 
@@ -26,12 +27,13 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
     float transparency = 1.0;
     int samples = number_of_steps(a, b, cloud_samples, cloud_max_step);
-    float stepsize = step_size(a, b, 0.0, samples);
+    float scale_offset = scaling_offset(a, b, samples, cloud_max_step);
+    float stepsize = step_size(a, b, scale_offset, samples);
     vec3 cloud_scatter = vec3(0, 0, 0);
     float b = a;
     for (int i=0; i<samples; i++) {
       float a = b;
-      b = next_point(b, 0, stepsize);
+      b = next_point(b, scale_offset, stepsize);
       vec3 c = origin + 0.5 * (a + b) * direction;
       float density = cloud_density(c);
       if (density > 0) {

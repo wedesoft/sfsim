@@ -1,13 +1,13 @@
 #version 410 core
 
-int number_of_steps(float a, float b, int max_samples, float min_step)
+int number_of_steps(float a, float b, int max_samples, float max_step)
 {
   float dist = b - a;
-  int min_step_samples = int(ceil(dist / min_step));
-  return min(min_step_samples, max_samples);
+  int max_step_samples = int(ceil(dist / max_step));
+  return min(max_step_samples, max_samples);
 }
 
-float scaling_offset(float a, float b, int samples, float min_step)
+float scaling_offset(float a, float b, int samples, float max_step)
 {
   return 0.0;
 }
