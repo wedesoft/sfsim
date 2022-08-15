@@ -99,7 +99,7 @@ void main()
 (def program
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function cloud-track-base
-                           cloud-track linear-sampling s/is-above-horizon s/horizon-angle]))
+                           cloud-track exponential-sampling s/is-above-horizon s/horizon-angle]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -166,7 +166,7 @@ void main()
                  (uniform-float program :anisotropic @anisotropic)
                  (uniform-float program :cloud_scatter_amount 1.0)
                  (uniform-int program :cloud_samples 64)
-                 (uniform-float program :cloud_max_step 0.1)
+                 (uniform-float program :cloud_max_step 1.05)
                  (uniform-int program :cloud_base_samples 8)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
                  (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
