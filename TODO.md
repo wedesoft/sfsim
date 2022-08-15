@@ -1,7 +1,8 @@
 # TODO
 * determine level of detail in sampling file
-* change cloud\_density to accept level of detail
+* change cloud\_density to accept level of detail for worley noise
 * change cloud\_track\_base and cloud\_shadow to accept level of detail
+* mipmapping of vertical threshold?
 * in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
 * determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
 * use level of detail in cloud\_track\_base
