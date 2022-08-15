@@ -67,7 +67,7 @@
                            shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d shaders/orthogonal-vector
                            shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d shaders/convert-2d-index
                            shaders/is-above-horizon sky-outer shaders/ray-shell cloud-track attenuation-track cloud-density
-                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base linear-sampling phase-function]))
+                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base exponential-sampling phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -99,7 +99,7 @@
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
                            shaders/is-above-horizon sky-track shaders/ray-shell shaders/clip-shell-intersections cloud-track
-                           cloud-density cloud-shadow cloud-track-base linear-sampling phase-function]))
+                           cloud-density cloud-shadow cloud-track-base exponential-sampling phase-function]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
@@ -183,7 +183,7 @@
 (uniform-float program-planet :anisotropic 0.5)
 (uniform-int program-planet :cloud_samples 128)
 (uniform-float program-planet :cloud_scatter_amount 0.2)
-(uniform-float program-planet :cloud_max_step 100)
+(uniform-float program-planet :cloud_max_step 1.2)
 (uniform-int program-planet :cloud_base_samples 5)
 (uniform-float program-planet :cloud_multiplier 0.005)
 (uniform-float program-planet :transparency_cutoff 0.05)
@@ -201,7 +201,7 @@
 (uniform-float program-atmosphere :anisotropic 0.5)
 (uniform-int program-atmosphere :cloud_samples 128)
 (uniform-float program-atmosphere :cloud_scatter_amount 0.2)
-(uniform-float program-atmosphere :cloud_max_step 100)
+(uniform-float program-atmosphere :cloud_max_step 1.2)
 (uniform-int program-atmosphere :cloud_base_samples 5)
 (uniform-float program-atmosphere :cloud_multiplier 0.005)
 (uniform-float program-atmosphere :transparency_cutoff 0.05)
