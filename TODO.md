@@ -1,5 +1,5 @@
 # TODO
-* determine level of detail in sampling file
+* determine increment for level of detail
 * change cloud\_density to accept level of detail for worley noise
 * change cloud\_track\_base and cloud\_shadow to accept level of detail
 * mipmapping of vertical threshold?

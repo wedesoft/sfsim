@@ -369,7 +369,7 @@ void main()
                                          (uniform-float program :radius radius)
                                          (uniform-float program :cloud_bottom cloud-bottom)
                                          (uniform-float program :cloud_top cloud-top)
-                                         (uniform-float program :cloud_size cloud-size)
+                                         (uniform-float program :cloud_scale cloud-size)
                                          (uniform-float program :cloud_multiplier cloud-multiplier)
                                          (use-textures worley profile)
                                          (render-quads vao))
@@ -403,12 +403,19 @@ int number_of_steps(float a, float b, int max_samples, float max_step);
 float step_size(float a, float b, float scaling_offset, int num_steps);
 float next_point(float p, float scaling_offset, float step_size);
 float scaling_offset(float a, float b, int samples, float max_step);
+float initial_lod(float a, float scaling_offset, float step_size);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
 }"))
 
-(def linear-sampling-test (shader-test (fn [program]) sampling-probe linear-sampling))
+(def linear-sampling-test
+  (shader-test
+    (fn [program]
+        (uniform-float program :cloud_scale 100)
+        (uniform-int program :cloud_size 20))
+    sampling-probe
+    linear-sampling))
 
 (tabular "Shader functions for defining linear sampling"
          (fact (mget (linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
@@ -417,9 +424,18 @@ void main()
          "number_of_steps(10, 20, 10, 2.0)"  5
          "number_of_steps(10, 20, 10, 2.1)"  5
          "step_size(10, 20, 0, 5)"           2
-         "next_point(26, 0, 2)"             28)
+         "next_point(26, 0, 2)"             28
+         "scaling_offset(10, 20, 10, 2.0)"   0
+         "initial_lod(10, 0, 5)"             0
+         "initial_lod(10, 0, 10)"            1)
 
-(def exponential-sampling-test (shader-test (fn [program]) sampling-probe exponential-sampling))
+(def exponential-sampling-test
+  (shader-test
+    (fn [program]
+        (uniform-float program :cloud_scale 100)
+        (uniform-int program :cloud_size 20))
+    sampling-probe
+    exponential-sampling))
 
 (tabular "Shader functions for defining exponential sampling"
          (fact (mget (exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
@@ -434,4 +450,7 @@ void main()
          "step_size(10, 40, 0, 2)"            2
          "step_size(10, 30, 10, 1)"           2
          "next_point(10, 0, 2)"              20
-         "next_point(10, 10, 2)"             30)
+         "next_point(10, 10, 2)"             30
+         "initial_lod(10, 0, 1.5)"            0
+         "initial_lod(10, 0, 2.0)"            1
+         "initial_lod(3, 7, 2.0)"             1)
