@@ -8,7 +8,7 @@ uniform float cloud_multiplier;
 uniform sampler3D worley;
 uniform sampler1D cloud_profile;
 
-float cloud_density(vec3 point)
+float cloud_density(vec3 point, float lod)
 {
   float dist = length(point);
   float noise = texture(worley, point / cloud_scale).r;

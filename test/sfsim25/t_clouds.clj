@@ -71,7 +71,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   float amount = amountp - transmittance_track(p, q).r * amountq;
   return vec3(0, 0, amount);
 }
-float cloud_density(vec3 point)
+float cloud_density(vec3 point, float lod)
 {
   return <%= density %>;
 }
@@ -147,7 +147,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   float amount = amountp - transmittance_track(p, q).r * amountq;
   return vec3(0, 0, amount);
 }
-float cloud_density(vec3 point)
+float cloud_density(vec3 point, float lod)
 {
   return <%= density %>;
 }
@@ -342,11 +342,11 @@ void main()
   (template/fn [x y z]
 "#version 410 core
 out lowp vec3 fragColor;
-float cloud_density(vec3 point);
+float cloud_density(vec3 point, float lod);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = cloud_density(point);
+  float result = cloud_density(point, 0);
   fragColor = vec3(result, 0, 0);
 }"))
 

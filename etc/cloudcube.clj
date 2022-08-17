@@ -67,7 +67,7 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming);
-float cloud_density(vec3 point)
+float cloud_density(vec3 point, float lod)
 {
   float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
   return max((s - threshold) * multiplier, 0);
@@ -166,6 +166,8 @@ void main()
                  (uniform-float program :anisotropic @anisotropic)
                  (uniform-float program :cloud_scatter_amount 1.0)
                  (uniform-int program :cloud_samples 64)
+                 (uniform-int program :cloud_size size)
+                 (uniform-float program :cloud_scale 60)
                  (uniform-float program :cloud_max_step 1.05)
                  (uniform-int program :cloud_base_samples 8)
                  (uniform-float program :multiplier (* 0.1 @multiplier))

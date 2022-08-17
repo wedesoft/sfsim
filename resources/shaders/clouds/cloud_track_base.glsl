@@ -6,7 +6,7 @@ uniform float cloud_scatter_amount;
 
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
-float cloud_density(vec3 point);
+float cloud_density(vec3 point, float lod);
 float phase(float g, float mu);
 
 vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming)
@@ -27,7 +27,7 @@ vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 
       vec3 a = b;
       b = a + delta;
       c = c + delta;
-      float density = cloud_density(c);
+      float density = cloud_density(c, 0);
       float transmittance_cloud = exp((scatter_amount - 1) * density * stepsize);
       incoming = incoming * transmittance_cloud;
     };

@@ -8,13 +8,15 @@ uniform float transparency_cutoff;
 
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
-float cloud_density(vec3 point);
+float cloud_density(vec3 point, float lod);
 vec3 cloud_shadow(vec3 point, vec3 light_direction);
 float phase(float g, float mu);
 int number_of_steps(float a, float b, int max_samples, float max_step);
 float scaling_offset(float a, float b, int samples, float min_step);
 float step_size(float a, float b, float scaling_offset, int num_steps);
 float next_point(float p, float scaling_offset, float step_size);
+float initial_lod(float a, float scaling_offset, float step_size);
+float lod_increment(float step_size);
 
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
@@ -29,13 +31,15 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     int samples = number_of_steps(a, b, cloud_samples, cloud_max_step);
     float scale_offset = scaling_offset(a, b, samples, cloud_max_step);
     float stepping = step_size(a, b, scale_offset, samples);
+    float lod = initial_lod(a, scale_offset, stepping);
+    float lod_incr = lod_increment(stepping);
     vec3 cloud_scatter = vec3(0, 0, 0);
     float b = a;
     for (int i=0; i<samples; i++) {
       float a = b;
       b = next_point(b, scale_offset, stepping);
       vec3 c = origin + 0.5 * (a + b) * direction;
-      float density = cloud_density(c);
+      float density = cloud_density(c, lod);
       if (density > 0) {
         float stepsize = b - a;
         float transmittance_cloud = exp(-density * stepsize);
@@ -46,6 +50,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
       };
       if (transparency <= transparency_cutoff)
         break;
+      lod = lod + lod_incr;
     };
     incoming = incoming * transparency + cloud_scatter;
   };
