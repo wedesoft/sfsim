@@ -29,3 +29,8 @@ float initial_lod(float a, float scaling_offset, float step_size)
   float cloud_pixel = cloud_scale / cloud_size;
   return log2((a + scaling_offset) * (step_size - 1) / cloud_pixel);
 }
+
+float lod_increment(float step_size)
+{
+  return log2(step_size);
+}

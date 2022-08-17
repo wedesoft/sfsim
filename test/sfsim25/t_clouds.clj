@@ -404,6 +404,7 @@ float step_size(float a, float b, float scaling_offset, int num_steps);
 float next_point(float p, float scaling_offset, float step_size);
 float scaling_offset(float a, float b, int samples, float max_step);
 float initial_lod(float a, float scaling_offset, float step_size);
+float lod_increment(float step_size);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
@@ -427,7 +428,8 @@ void main()
          "next_point(26, 0, 2)"             28
          "scaling_offset(10, 20, 10, 2.0)"   0
          "initial_lod(10, 0, 5)"             0
-         "initial_lod(10, 0, 10)"            1)
+         "initial_lod(10, 0, 10)"            1
+         "lod_increment(10)"                 0)
 
 (def exponential-sampling-test
   (shader-test
@@ -453,4 +455,6 @@ void main()
          "next_point(10, 10, 2)"             30
          "initial_lod(10, 0, 1.5)"            0
          "initial_lod(10, 0, 2.0)"            1
-         "initial_lod(3, 7, 2.0)"             1)
+         "initial_lod(3, 7, 2.0)"             1
+         "lod_increment(1.0)"                 0
+         "lod_increment(2.0)"                 1)
