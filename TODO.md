@@ -1,5 +1,8 @@
 # TODO
 * change cloud\_track\_base and cloud\_shadow to accept level of detail
+* problem: horizon visible through clouds
+* problem: white artifacts when sun is in zenith
+* problem: clouds disappear when going to space
 * mipmapping of vertical threshold?
 * in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
 * determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
