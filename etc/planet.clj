@@ -18,7 +18,7 @@
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 640 480))
+(Display/setDisplayMode (DisplayMode. (/ 1920 4) (/ 1080 4)))
 ;(Display/setFullscreen true)
 (Display/create)
 
@@ -30,9 +30,9 @@
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def threshold (atom 0.1))
-(def anisotropic (atom 0.4))
-(def multiplier (atom 0.8))
+(def threshold (atom 0.17))
+(def anisotropic (atom 0.45))
+(def multiplier (atom 0.32))
 
 (def light1 (atom 1.559))
 (def light2 (atom 0))
