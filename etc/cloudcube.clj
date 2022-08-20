@@ -66,18 +66,18 @@ out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming);
+vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
 float cloud_density(vec3 point, float lod)
 {
   float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
   return max((s - threshold) * multiplier, 0);
 }
-vec3 cloud_shadow(vec3 point, vec3 light_direction)
+vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light_direction);
   vec3 p = point + intersection.x * light_direction;
   vec3 q = point + (intersection.x + intersection.y) * light_direction;
-  return cloud_track_base(point, light_direction, intersection.x, intersection.x + intersection.y, vec3(1, 1, 1));
+  return cloud_track_base(point, light_direction, intersection.x, intersection.x + intersection.y, vec3(1, 1, 1), 0);
 }
 vec3 transmittance_track(vec3 p, vec3 q)
 {

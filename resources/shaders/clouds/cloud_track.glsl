@@ -9,7 +9,7 @@ uniform float transparency_cutoff;
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 float cloud_density(vec3 point, float lod);
-vec3 cloud_shadow(vec3 point, vec3 light_direction);
+vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
 float phase(float g, float mu);
 int number_of_steps(float a, float b, int max_samples, float max_step);
 float scaling_offset(float a, float b, int samples, float min_step);
@@ -43,7 +43,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
       if (density > 0) {
         float stepsize = b - a;
         float transmittance_cloud = exp(-density * stepsize);
-        vec3 intensity = cloud_shadow(c, light_direction);
+        vec3 intensity = cloud_shadow(c, light_direction, lod);
         float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * cloud_scatter_amount;
         cloud_scatter = cloud_scatter + transparency * (1 - transmittance_cloud) * scatter_amount * intensity;
         transparency = transparency * transmittance_cloud;

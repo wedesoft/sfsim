@@ -75,7 +75,7 @@ float cloud_density(vec3 point, float lod)
 {
   return <%= density %>;
 }
-vec3 cloud_shadow(vec3 point, vec3 light)
+vec3 cloud_shadow(vec3 point, vec3 light, float lod)
 {
   return vec3(0, 1, 0);
 }
@@ -155,7 +155,7 @@ float phase(float g, float mu)
 {
   return 1.0 + 0.5 * mu;
 }
-vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming);
+vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
 void main()
 {
   vec3 origin = vec3(0, 0, 0);
@@ -163,7 +163,7 @@ void main()
   float a = <%= a %>;
   float b = <%= b %>;
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  fragColor = cloud_track_base(origin, light_direction, a, b, incoming);
+  fragColor = cloud_track_base(origin, light_direction, a, b, incoming, 0);
 }
 "))
 
@@ -296,12 +296,12 @@ void main()
   (template/fn [x y z lx ly lz]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 cloud_shadow(vec3 point, vec3 light_direction);
+vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
   return vec3(incoming.r - abs(b - a) * 0.01, incoming.g, abs(b - a) * 0.01);
 }
-vec3 cloud_track_base(vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+vec3 cloud_track_base(vec3 origin, vec3 direction, float a, float b, vec3 incoming, float lod)
 {
   return vec3(incoming.r, incoming.g - abs(b - a) * 0.01, incoming.b);
 }
@@ -309,7 +309,7 @@ void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_shadow(point, light_direction);
+  fragColor = cloud_shadow(point, light_direction, 0);
 }"))
 
 (def cloud-shadow-test
