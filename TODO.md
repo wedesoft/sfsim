@@ -1,7 +1,7 @@
 # TODO
+* problem: clouds disappear when going to space
 * problem: horizon visible through clouds
 * problem: white artifacts when sun is in zenith
-* problem: clouds disappear when going to space
 * add cloud shadow computation to ground radiance function
 * mipmapping of vertical threshold?
 * in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
