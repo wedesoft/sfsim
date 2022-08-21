@@ -1,6 +1,6 @@
 # TODO
-* problem: clouds disappear when going to space
 * problem: horizon visible through clouds
+* problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
 * add cloud shadow computation to ground radiance function
 * mipmapping of vertical threshold?
