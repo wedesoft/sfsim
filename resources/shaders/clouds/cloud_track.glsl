@@ -36,14 +36,14 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     float lod = initial_lod(a, scale_offset, stepping);
     float lod_incr = lod_increment(stepping);
     vec3 cloud_scatter = vec3(0, 0, 0);
-    float b = a;
+    float b_step = a;
     for (int i=0; i<samples; i++) {
-      float a = b;
-      b = next_point(b, scale_offset, stepping);
-      vec3 c = origin + 0.5 * (a + b) * direction;
+      float a_step = b_step;
+      b_step = next_point(b_step, scale_offset, stepping);
+      vec3 c = origin + 0.5 * (a_step + b_step) * direction;
       float density = cloud_density(c, lod);
       if (density > 0) {
-        float stepsize = b - a;
+        float stepsize = b_step - a_step;
         float transmittance_cloud = exp(-density * stepsize);
         vec3 intensity = cloud_shadow(c, light_direction, lod);
         float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * cloud_scatter_amount;

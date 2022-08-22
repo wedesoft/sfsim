@@ -1,6 +1,6 @@
 # TODO
+* fade out cloud\_density at a distance
 * problem: horizon visible through clouds
-* fade out clouds at distance?
 * problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
 * add cloud shadow computation to ground radiance function
