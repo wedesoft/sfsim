@@ -62,7 +62,7 @@
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 
-(def data (float-array [0.0 1.0 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.5 0.3 0]))
+(def data (float-array [0.0 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.5 0.3 0]))
 (def P (atom (make-float-texture-1d data)))
 
 (def program-atmosphere
@@ -250,7 +250,7 @@
          (swap! light1 + (* l 0.1 dt))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
-                          (let [data (float-array (map #(+ @threshold %) [0.0 1.0 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.5 0.3 0]))]
+                          (let [data (float-array (map #(+ @threshold %) [0.0 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.5 0.3 0]))]
                             (destroy-texture @P)
                             (reset! P (make-float-texture-1d data)))
                           ; Render planet

@@ -1,6 +1,6 @@
 # TODO
-* fade out cloud\_density at a distance
-* problem: horizon visible through clouds
+* fade out cloud density at a distance or remove cloud\_max\_dist
+* problem: horizon visible through clouds (transparency cutoff and sampling to coarse?)
 * problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
 * add cloud shadow computation to ground radiance function
