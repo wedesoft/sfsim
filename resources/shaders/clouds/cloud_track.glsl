@@ -54,7 +54,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
         break;
       lod = lod + lod_incr;
     };
-    incoming = incoming * transparency + cloud_scatter;
+    incoming = incoming * max(0, transparency - transparency_cutoff) + cloud_scatter;
   };
   return incoming;
 }
