@@ -11,6 +11,7 @@ bool is_above_horizon(vec3 point, vec3 direction);
 // Compute transmittance between two points inside the atmosphere.
 vec3 transmittance_track(vec3 p, vec3 q)
 {
+  return vec3(1, 1, 1);
   vec3 direction;
   float dist = distance(p, q);
   if (dist > 0) {

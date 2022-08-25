@@ -11,6 +11,7 @@ vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int siz
 
 vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction)
 {
+  return vec3(0, 0, 0);
   vec4 ray_scatter_index = ray_scatter_forward(point, direction, light_direction, true);
   return interpolate_4d(ray_scatter, height_size, elevation_size, light_elevation_size, heading_size, ray_scatter_index).rgb;
 }

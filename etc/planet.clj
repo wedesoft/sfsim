@@ -25,18 +25,19 @@
 (Keyboard/create)
 
 (def radius 6378000.0)
-(def polar-radius 6357000.0)
+;(def polar-radius 6357000.0)
+(def polar-radius radius)
 (def max-height 35000.0)
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def threshold (atom 0.17))
+(def threshold (atom 0.5))
 (def anisotropic (atom 0.45))
 (def multiplier (atom 0.32))
 
 (def light1 (atom 1.559))
 (def light2 (atom 0))
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 1500)])))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 4000)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
@@ -72,7 +73,7 @@
                            shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d shaders/orthogonal-vector
                            shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d shaders/convert-2d-index
                            shaders/is-above-horizon sky-outer shaders/ray-shell cloud-track attenuation-track cloud-density
-                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base exponential-sampling phase-function]))
+                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base linear-sampling phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -104,7 +105,7 @@
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
                            shaders/is-above-horizon sky-track shaders/ray-shell shaders/clip-shell-intersections cloud-track
-                           cloud-density cloud-shadow cloud-track-base exponential-sampling phase-function]))
+                           cloud-density cloud-shadow cloud-track-base linear-sampling phase-function]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
@@ -193,7 +194,7 @@
 (uniform-float program-planet :cloud_max_step 1.025)
 (uniform-int program-planet :cloud_base_samples 5)
 (uniform-float program-planet :cloud_multiplier 0.01)
-(uniform-float program-planet :transparency_cutoff 0.05)
+(uniform-float program-planet :transparency_cutoff 0.0)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
 (uniform-float program-planet :amplification 8)
 
@@ -213,7 +214,7 @@
 (uniform-float program-atmosphere :cloud_max_step 1.025)
 (uniform-int program-atmosphere :cloud_base_samples 5)
 (uniform-float program-atmosphere :cloud_multiplier 0.01)
-(uniform-float program-atmosphere :transparency_cutoff 0.05)
+(uniform-float program-atmosphere :transparency_cutoff 0.00)
 (uniform-float program-atmosphere :specular 100)
 (uniform-float program-atmosphere :elevation_power 2.0)
 (uniform-int program-atmosphere :height_size height-size)
@@ -264,7 +265,7 @@
                           (uniform-matrix4 program-planet :inverse_transform (inverse transform))
                           (uniform-vector3 program-planet :position @position)
                           (uniform-vector3 program-planet :light_direction (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
-                          (render-tree @tree)
+                          ;(render-tree @tree)
                           ; Render atmosphere
                           (use-program program-atmosphere)
                           (uniform-float program-atmosphere :threshold @threshold)

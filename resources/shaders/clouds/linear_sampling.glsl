@@ -28,6 +28,7 @@ float next_point(float p, float scaling_offset, float step_size)
 
 float initial_lod(float a, float scaling_offset, float step_size)
 {
+  return 6.0;
   float cloud_pixel = cloud_scale / cloud_size;
   return log2(step_size / cloud_pixel);
 }

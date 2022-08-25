@@ -11,6 +11,7 @@ float phase(float g, float mu);
 
 vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod)
 {
+  return incoming;
   float dist = b - a;
   if (dist > 0) {
     vec3 p = origin + a * light_direction;

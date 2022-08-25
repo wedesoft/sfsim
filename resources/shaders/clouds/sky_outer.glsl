@@ -20,13 +20,13 @@ vec3 sky_outer(vec3 light_direction, vec3 origin, vec3 direction, vec3 incoming)
       if (cloud_intersections.y > 0) {
         float a = cloud_intersections.x;
         float b = cloud_intersections.x + cloud_intersections.y;
-        if (cloud_intersections.w > 0) {
-          float c = cloud_intersections.z;
-          float d = cloud_intersections.z + cloud_intersections.w;
-          incoming = attenuation_outer(light_direction, origin, direction, d, incoming);
-          incoming = cloud_track(light_direction, origin, direction, c, d, incoming);
-          incoming = attenuation_track(light_direction, origin, direction, b, c, incoming);
-        } else
+        // if (cloud_intersections.w > 0) {
+        //   float c = cloud_intersections.z;
+        //   float d = cloud_intersections.z + cloud_intersections.w;
+        //   incoming = attenuation_outer(light_direction, origin, direction, d, incoming);
+        //   incoming = cloud_track(light_direction, origin, direction, c, d, incoming);
+        //   incoming = attenuation_track(light_direction, origin, direction, b, c, incoming);
+        // } else
           incoming = attenuation_outer(light_direction, origin, direction, b, incoming);
         incoming = cloud_track(light_direction, origin, direction, a, b, incoming);
         incoming = attenuation_track(light_direction, origin, direction, atmosphere_intersection.x, a, incoming);

@@ -14,6 +14,7 @@ bool is_above_horizon(vec3 point, vec3 direction);
 // Compute in-scattered light between two points inside the atmosphere.
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
+  return vec3(0, 0, 0);
   vec3 direction;
   float dist = distance(p, q);
   if (dist > 0) {

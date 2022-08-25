@@ -1,5 +1,5 @@
 # TODO
-* problem: horizon visible through clouds (transparency cutoff and sampling to coarse?)
+* problem: horizon visible through clouds (transparency cutoff and sampling to coarse in atmosphere renderer?)
 * fade out cloud density at a distance or remove cloud\_max\_dist
 * problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
