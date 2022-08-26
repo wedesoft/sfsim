@@ -26,9 +26,13 @@ vec3 sky_outer(vec3 light_direction, vec3 origin, vec3 direction, vec3 incoming)
           incoming = attenuation_outer(light_direction, origin, direction, d, incoming);
           incoming = cloud_track(light_direction, origin, direction, c, d, incoming);
           incoming = attenuation_track(light_direction, origin, direction, b, c, incoming);
-        } else
+          incoming = cloud_track(light_direction, origin, direction, a, b, incoming);
+        } else {
           incoming = attenuation_outer(light_direction, origin, direction, b, incoming);
-        incoming = cloud_track(light_direction, origin, direction, a, b, incoming);
+          float m = 0.5 * (a + b);
+          incoming = cloud_track(light_direction, origin, direction, m, b, incoming);
+          incoming = cloud_track(light_direction, origin, direction, a, m, incoming);
+        };
         incoming = attenuation_track(light_direction, origin, direction, atmosphere_intersection.x, a, incoming);
       } else
         incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
