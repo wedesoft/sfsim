@@ -3,7 +3,6 @@
 uniform float anisotropic;
 uniform int cloud_samples;
 uniform float cloud_scatter_amount;
-uniform float cloud_max_dist;
 uniform float cloud_max_step;
 uniform float transparency_cutoff;
 
@@ -21,9 +20,8 @@ float lod_increment(float step_size);
 
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
-  float dist = min(cloud_max_dist, b - a);
+  float dist = b - a;
   if (dist > 0) {
-    b = a + dist;
     vec3 p = origin + a * direction;
     vec3 q = origin + b * direction;
     vec3 ray_scatter_atmosphere = ray_scatter_track(light_direction, p, q);
