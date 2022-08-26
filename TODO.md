@@ -1,6 +1,5 @@
 # TODO
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
-* fade out cloud density at a distance or remove cloud\_max\_dist
 * problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
 * add cloud shadow computation to ground radiance function
