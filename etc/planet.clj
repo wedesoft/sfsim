@@ -30,9 +30,9 @@
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def threshold (atom 0.17))
-(def anisotropic (atom 0.45))
-(def multiplier (atom 0.32))
+(def threshold (atom 0.40))
+(def anisotropic (atom 0.34))
+(def multiplier (atom 0.33))
 
 (def light1 (atom 1.559))
 (def light2 (atom 0))
