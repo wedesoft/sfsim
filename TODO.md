@@ -1,4 +1,7 @@
 # TODO
+* 3D procedural noise: simplex noise with domain warping, Google search "opengl procedural volumetric clouds"
+  https://www.youtube.com/watch?v=B7wUUqXgkUc
+  https://github.com/fede-vaccaro/TerrainEngine-OpenGL
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
