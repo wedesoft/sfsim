@@ -1,12 +1,17 @@
 # TODO
 * 3D procedural noise: simplex noise with domain warping, Google search "opengl procedural volumetric clouds"
-  https://www.youtube.com/watch?v=B7wUUqXgkUc
-  https://github.com/fede-vaccaro/TerrainEngine-OpenGL
+  https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/
+  https://github.com/Piraxus/Skybolt/
+  https://lup.lub.lu.se/student-papers/record/8893256/file/8893258.pdf    description of noise functions
+  https://www.researchgate.net/publication/224688956_Generating_and_Rendering_Procedural_Clouds_in_Real_Time_on_Programmable_3D_Graphics_Hardware    describes octaves of noise
+  https://www.mdpi.com/2073-8994/10/4/125/pdf-vor
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
 * add cloud shadow computation to ground radiance function
 * global cloud patterns
+* transmittance-weighted average cloud distance -> correct atmospheric scattering
+* blue noise dithering
 * in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
 * determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
 * keyboard shortcuts for cloud parameters
