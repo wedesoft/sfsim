@@ -1,4 +1,5 @@
 # TODO
+* Fractal Worley noise
 * 3D procedural noise: simplex noise with domain warping, Google search "opengl procedural volumetric clouds"
   https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/
   https://github.com/Piraxus/Skybolt/
