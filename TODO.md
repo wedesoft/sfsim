@@ -1,4 +1,5 @@
 # TODO
+* Faster 3D Worley noise
 * Fractal Worley noise (octaves added together?)
   https://www.shadertoy.com/view/XdGyRc
   https://gamedev.stackexchange.com/questions/197861/how-to-handle-octave-frequency-in-the-perlin-noise-algorithm
