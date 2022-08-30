@@ -2,7 +2,8 @@
     "Rendering of clouds"
     (:require [clojure.core.matrix :refer (matrix add sub)]
               [clojure.core.matrix.linear :refer (norm)]
-              [com.climate.claypoole :refer (pfor ncpus)]))
+              [com.climate.claypoole :refer (pfor ncpus)]
+              [sfsim25.util :refer (make-progress-bar tick-and-print)]))
 
 (defn random-points
   "Create a vector of random points"
@@ -29,12 +30,16 @@
 
 (defn worley-noise
   "Create 3D Worley noise"
-  [n size]
-  (let [points (repeat-points size (random-points n size))]
-    (invert-vector
-      (normalise-vector
-        (pfor (+ 2 (ncpus)) [i (range size) j (range size) k (range size)]
-              (apply min (map (fn [point] (norm (sub (add (matrix [i j k]) 0.5) point))) points)))))))
+  ([n size] (worley-noise n size false))
+  ([n size progress]
+   (let [points (repeat-points size (random-points n size))
+         bar    (if progress (agent (make-progress-bar (* size size size) 1)))]
+     (invert-vector
+       (normalise-vector
+         (pfor (+ 2 (ncpus)) [i (range size) j (range size) k (range size)]
+               (let [result (apply min (map (fn [point] (norm (sub (add (matrix [i j k]) 0.5) point))) points))]
+                 (if progress (send bar tick-and-print))
+                 result)))))))
 
 (def cloud-track
   "Shader for putting volumetric clouds into the atmosphere"

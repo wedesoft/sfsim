@@ -1,5 +1,7 @@
 # TODO
-* Fractal Worley noise
+* Fractal Worley noise (octaves added together?)
+  https://www.shadertoy.com/view/XdGyRc
+  https://gamedev.stackexchange.com/questions/197861/how-to-handle-octave-frequency-in-the-perlin-noise-algorithm
 * 3D procedural noise: simplex noise with domain warping, Google search "opengl procedural volumetric clouds"
   https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/
   https://github.com/Piraxus/Skybolt/

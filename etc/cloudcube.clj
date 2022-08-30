@@ -107,18 +107,14 @@ void main()
 
 (def size 128)
 
-;(def values1 (worley-noise 30 size))
-;(def values2 (worley-noise 120 size))
-;(def mixed (float-array (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
-;(spit-floats "values1.raw" (float-array values1))
-;(spit-floats "values2.raw" (float-array values2))
-;(spit-floats "mixed.raw" mixed)
+(def values (worley-noise (* 12 12 12) size true))
+(spit-floats "values.raw" (float-array values))
 
-(def mixed (slurp-floats "mixed.raw"))
+(def values (slurp-floats "values.raw"))
 
-(def tex (make-float-texture-3d {:width size :height size :depth size :data mixed}))
+(def tex (make-float-texture-3d {:width size :height size :depth size :data values}))
 
-;(show-floats {:width size :height size :data (float-array (take (* size size) mixed))})
+;(show-floats {:width size :height size :data (float-array (take (* size size) values))})
 
 (use-program program)
 (uniform-sampler program :tex 0)
