@@ -9,27 +9,6 @@
               [sfsim25.util :refer :all]
               [sfsim25.clouds :refer :all :as clouds]))
 
-(facts "Create a vector of random points"
-       (random-points 0 64)                  => []
-       (count (random-points 1 64))          => 1
-       (random-points 1 64)                  => vector?
-       (ecount (first (random-points 1 64))) => 3
-       (mget (first (random-points 1 64)) 0) => #(>= % 0)
-       (mget (first (random-points 1 64)) 0) => #(<= % 64))
-
-(facts "Repeat point cloud in each direction"
-       (repeat-points 10 [])                         => []
-       (count (repeat-points 10 [(matrix [2 3 5])])) => 27
-       (repeat-points 10 [(matrix [2 3 5])])         => vector?
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 0) => (matrix [2 3 5])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  0) => (matrix [ 0  0  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  1) => (matrix [-1  0  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  2) => (matrix [ 1  0  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  3) => (matrix [ 0 -1  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  6) => (matrix [ 0  1  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  9) => (matrix [ 0  0 -1])
-       (nth (repeat-points 1 [(matrix [0 0 0])]) 18) => (matrix [ 0  0  1]))
-
 (facts "Create a 3D grid with a random point in each cell"
        (dimensionality (random-point-grid 1 1)) => 4
        (map #(dimension-count (random-point-grid 1 1) %) (range 4)) => [1 1 1 3]
@@ -77,14 +56,10 @@
        (invert-vector [1.0]) => vector?)
 
 (facts "Create 3D Worley noise"
-       (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.5 0.5 0.5])])]
-         (nth (worley-noise 1 2) 0)     => 1.0
-         (count (worley-noise 1 2))     => 8
-         (apply min (worley-noise 1 2)) => 0.0)
-       (with-redefs [clouds/random-points (fn [n size] (facts n => 2 size => 2) [(matrix [0.5 0.5 0.5]) (matrix [1.5 1.5 1.5])])]
-         (nth (worley-noise 2 2) 7)     => 1.0)
-      (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.0 0.0 0.0])])]
-         (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
+       (with-redefs [clouds/random-point-grid (fn [n size] (facts n => 1 size => 2) (array [[[[0.5 0.5 0.5]]]]))]
+         (nth (worley-noise 1 2) 0) => 1.0
+         (count (worley-noise 1 2)) => 8
+         (apply min (worley-noise 1 2)) => 0.0))
 
 (def cloud-track-probe
   (template/fn [a b decay scatter density lx ly lz ir ig ib]
