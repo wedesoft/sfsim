@@ -3,7 +3,7 @@
               [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
-              [clojure.core.matrix :refer (ecount mget matrix dimensionality dimension-count)]
+              [clojure.core.matrix :refer (ecount mget matrix array dimensionality dimension-count)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
               [sfsim25.util :refer :all]
@@ -39,6 +39,15 @@
        (mget (random-point-grid 2 8 identity) 0 0 1 0) => 8.0
        (mget (random-point-grid 2 8 identity) 0 1 0 1) => 8.0
        (mget (random-point-grid 2 8 identity) 1 0 0 2) => 8.0)
+
+(facts "Extract point from specified cell"
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 0) => (matrix [1 2 3])
+       (extract-point-from-grid (array [[[[1 2 3] [4 5 6]]]]) 10 0 0 1) => (matrix [4 5 6])
+       (extract-point-from-grid (array [[[[1 2 3]] [[4 5 6]]]]) 10 0 1 0) => (matrix [4 5 6])
+       (extract-point-from-grid (array [[[[1 2 3]]] [[[4 5 6]]]]) 10 1 0 0) => (matrix [4 5 6])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 1) => (matrix [11 2 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 1 0) => (matrix [1 12 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 1 0 0) => (matrix [1 2 13]))
 
 (facts "Normalise values of a vector"
        (normalise-vector [1.0])         => [1.0]
