@@ -1,6 +1,6 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
-    (:require [clojure.core.matrix :refer (matrix add sub)]
+    (:require [clojure.core.matrix :refer (matrix add sub array)]
               [clojure.core.matrix.linear :refer (norm)]
               [com.climate.claypoole :refer (pfor ncpus)]
               [sfsim25.util :refer (make-progress-bar tick-and-print)]))
@@ -16,6 +16,22 @@
   (let [offsets      [0 (- size) size]
         combinations (for [k offsets j offsets i offsets] (matrix [i j k]))]
     (vec (flatten (map (fn [point] (map #(add point %) combinations)) points)))))
+
+(defn random-point-grid
+  "Create a 3D grid with a random point in each cell"
+  ([divisions size]
+   (random-point-grid divisions size rand))
+  ([divisions size random]
+   (let [cellsize (/ size divisions)]
+     (array
+       (map (fn [k]
+                (map (fn [j]
+                         (map (fn [i]
+                                  (add (matrix [(* i cellsize) (* j cellsize) (* k cellsize)])
+                                       (matrix (repeatedly 3 #(random cellsize)))))
+                              (range divisions)))
+                     (range divisions)))
+            (range divisions))))))
 
 (defn normalise-vector
   "Normalise the values of a vector"

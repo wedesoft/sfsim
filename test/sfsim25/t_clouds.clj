@@ -3,7 +3,7 @@
               [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
-              [clojure.core.matrix :refer (ecount mget matrix)]
+              [clojure.core.matrix :refer (ecount mget matrix dimensionality dimension-count)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
               [sfsim25.util :refer :all]
@@ -29,6 +29,16 @@
        (nth (repeat-points 1 [(matrix [0 0 0])])  6) => (matrix [ 0  1  0])
        (nth (repeat-points 1 [(matrix [0 0 0])])  9) => (matrix [ 0  0 -1])
        (nth (repeat-points 1 [(matrix [0 0 0])]) 18) => (matrix [ 0  0  1]))
+
+(facts "Create a 3D grid with a random point in each cell"
+       (dimensionality (random-point-grid 1 1)) => 4
+       (map #(dimension-count (random-point-grid 1 1) %) (range 4)) => [1 1 1 3]
+       (map #(mget (random-point-grid 1 1 identity) 0 0 0 %) (range 3)) => [1.0 1.0 1.0]
+       (map #(dimension-count (random-point-grid 2 1) %) (range 4)) => [2 2 2 3]
+       (mget (random-point-grid 2 8 identity) 0 0 0 0) => 4.0
+       (mget (random-point-grid 2 8 identity) 0 0 1 0) => 8.0
+       (mget (random-point-grid 2 8 identity) 0 1 0 1) => 8.0
+       (mget (random-point-grid 2 8 identity) 1 0 0 2) => 8.0)
 
 (facts "Normalise values of a vector"
        (normalise-vector [1.0])         => [1.0]
