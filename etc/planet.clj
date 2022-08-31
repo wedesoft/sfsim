@@ -58,7 +58,7 @@
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
-(def data (slurp-floats "mixed.raw"))
+(def data (slurp-floats "values.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 
@@ -184,7 +184,7 @@
 (uniform-float program-planet :max_height max-height)
 (uniform-float program-planet :cloud_bottom 2000)
 (uniform-float program-planet :cloud_top 4000)
-(uniform-float program-planet :cloud_scale 1000)
+(uniform-float program-planet :cloud_scale 10000)
 (uniform-int program-planet :cloud_size worley-size)
 (uniform-float program-planet :anisotropic 0.5)
 (uniform-int program-planet :cloud_samples 256)
@@ -203,7 +203,7 @@
 (uniform-float program-atmosphere :max_height max-height)
 (uniform-float program-atmosphere :cloud_bottom 2000)
 (uniform-float program-atmosphere :cloud_top 4000)
-(uniform-float program-atmosphere :cloud_scale 1000)
+(uniform-float program-atmosphere :cloud_scale 10000)
 (uniform-int program-atmosphere :cloud_size worley-size)
 (uniform-float program-atmosphere :anisotropic 0.5)
 (uniform-int program-atmosphere :cloud_samples 256)

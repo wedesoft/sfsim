@@ -107,8 +107,8 @@ void main()
 
 (def size 128)
 
-(def values (worley-noise (* 12 12 12) size true))
-(spit-floats "values.raw" (float-array values))
+;(def values (worley-noise 12 size true))
+;(spit-floats "values.raw" (float-array values))
 
 (def values (slurp-floats "values.raw"))
 
