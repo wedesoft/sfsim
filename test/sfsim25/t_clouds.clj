@@ -47,7 +47,23 @@
        (extract-point-from-grid (array [[[[1 2 3]]] [[[4 5 6]]]]) 10 1 0 0) => (matrix [4 5 6])
        (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 1) => (matrix [11 2 3])
        (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 1 0) => (matrix [1 12 3])
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 1 0 0) => (matrix [1 2 13]))
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 1 0 0) => (matrix [1 2 13])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 -1) => (matrix [-9 2 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 -1 0) => (matrix [1 -8 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 -1 0 0) => (matrix [1 2 -7]))
+
+(facts "Closest distance of point in grid"
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]]]]) 1 2 (matrix [1 1 1])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]]]]) 1 2 (matrix [0.5 1 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1 1] [3 1 1]]]]) 2 4 (matrix [3 1 1])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]] [[1 3 1]]]]) 2 4 (matrix [1 3 1])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]]] [[[1 1 3]]]]) 2 4 (matrix [1 1 3])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[0.25 1 1]]]]) 1 2 (matrix [1.75 1 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1.75 1 1]]]]) 1 2 (matrix [0.25 1 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 0.25 1]]]]) 1 2 (matrix [1 1.75 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1.75 1]]]]) 1 2 (matrix [1 0.25 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1 0.25]]]]) 1 2 (matrix [1 1 1.75])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1 1.75]]]]) 1 2 (matrix [1 1 0.25])) => 0.5)
 
 (facts "Normalise values of a vector"
        (normalise-vector [1.0])         => [1.0]

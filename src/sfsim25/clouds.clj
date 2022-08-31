@@ -1,6 +1,6 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
-    (:require [clojure.core.matrix :refer (matrix add sub array slice-view dimension-count)]
+    (:require [clojure.core.matrix :refer (matrix add sub array slice-view dimension-count eseq)]
               [clojure.core.matrix.linear :refer (norm)]
               [com.climate.claypoole :refer (pfor ncpus)]
               [sfsim25.util :refer (make-progress-bar tick-and-print)]))
@@ -36,8 +36,8 @@
 (defn- clipped-index-and-offset
   [grid size dimension index]
   (let [divisions     (dimension-count grid dimension)
-        clipped-index (if (< index divisions) index (- index divisions))
-        offset        (if (< index divisions) 0 size)]
+        clipped-index (if (< index divisions) (if (>= index 0) index (+ index divisions)) (- index divisions))
+        offset        (if (< index divisions) (if (>= index 0) 0 (- size)) size)]
     [clipped-index offset]))
 
 (defn extract-point-from-grid
@@ -47,6 +47,14 @@
         [j-clip y-offset] (clipped-index-and-offset grid size 1 j)
         [k-clip z-offset] (clipped-index-and-offset grid size 0 k)]
     (add (slice-view (slice-view (slice-view grid k-clip) j-clip) i-clip) (matrix [x-offset y-offset z-offset]))))
+
+(defn closest-distance-to-point-in-grid
+  [grid divisions size point]
+  (let [cellsize (/ size divisions)
+        [x y z]  (eseq point)
+        [i j k]  [(quot x cellsize) (quot y cellsize) (quot z cellsize)]
+        points   (for [dk [-1 0 1] dj [-1 0 1] di [-1 0 1]] (extract-point-from-grid grid size (+ k dk) (+ j dj) (+ i di)))]
+    (apply min (map #(norm (sub point %)) points))))
 
 (defn normalise-vector
   "Normalise the values of a vector"
