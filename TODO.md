@@ -1,19 +1,21 @@
 # TODO
-* Faster 3D Worley noise
+* problem: clouds disappear when going to space
+* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
+* offscreen render depth map
+* offscreen render cloud texture using depth map
+* apply cloud texture to high resolution picture (upscale and alpha-blend)
 * Fractal Worley noise (octaves added together?)
   https://www.shadertoy.com/view/XdGyRc
   https://gamedev.stackexchange.com/questions/197861/how-to-handle-octave-frequency-in-the-perlin-noise-algorithm
+* global cloud map (skybox?)
+* add cloud shadow computation to ground radiance function
 * 3D procedural noise: simplex noise with domain warping, Google search "opengl procedural volumetric clouds"
   https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/
   https://github.com/Piraxus/Skybolt/
   https://lup.lub.lu.se/student-papers/record/8893256/file/8893258.pdf    description of noise functions
   https://www.researchgate.net/publication/224688956_Generating_and_Rendering_Procedural_Clouds_in_Real_Time_on_Programmable_3D_Graphics_Hardware    describes octaves of noise
   https://www.mdpi.com/2073-8994/10/4/125/pdf-vor
-* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
-* problem: clouds disappear when going to space
 * problem: white artifacts when sun is in zenith
-* add cloud shadow computation to ground radiance function
-* global cloud patterns
 * transmittance-weighted average cloud distance -> correct atmospheric scattering
 * blue noise dithering
 * in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
