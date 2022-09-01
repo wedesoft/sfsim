@@ -32,7 +32,7 @@
 
 (def threshold (atom 0.1))
 (def anisotropic (atom 0.36))
-(def multiplier (atom 3.5))
+(def multiplier (atom 1.8))
 
 (def light1 (atom 1.559))
 (def light2 (atom 0))
@@ -187,7 +187,7 @@
 (uniform-float program-planet :cloud_scale 5000)
 (uniform-int program-planet :cloud_size worley-size)
 (uniform-float program-planet :anisotropic 0.5)
-(uniform-int program-planet :cloud_samples 180)
+(uniform-int program-planet :cloud_samples 128)
 (uniform-float program-planet :cloud_scatter_amount 0.2)
 (uniform-float program-planet :cloud_max_step 1.025)
 (uniform-int program-planet :cloud_base_samples 8)
@@ -206,7 +206,7 @@
 (uniform-float program-atmosphere :cloud_scale 5000)
 (uniform-int program-atmosphere :cloud_size worley-size)
 (uniform-float program-atmosphere :anisotropic 0.5)
-(uniform-int program-atmosphere :cloud_samples 180)
+(uniform-int program-atmosphere :cloud_samples 128)
 (uniform-float program-atmosphere :cloud_scatter_amount 0.2)
 (uniform-float program-atmosphere :cloud_max_step 1.025)
 (uniform-int program-atmosphere :cloud_base_samples 8)
