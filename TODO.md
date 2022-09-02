@@ -1,5 +1,6 @@
 # TODO
 * test offscreen rendering with alpha channel
+* offset with blue noise
 * problem: clouds disappear when going to space
 * offscreen render clouds (with atmosphere in front) with alpha channel
 * render planet without clouds
