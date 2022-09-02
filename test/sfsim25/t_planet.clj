@@ -253,8 +253,8 @@ void main()
                                           (apply setup program uniforms)
                                           (use-textures red blue)
                                           (render-quads vao))
-                img       (texture->vectors tex 1 1)]
-            (deliver result (get-vector img 0 0))
+                img       (texture->vectors3 tex 1 1)]
+            (deliver result (get-vector3 img 0 0))
             (destroy-texture tex)
             (destroy-texture blue)
             (destroy-texture red)

@@ -1,10 +1,11 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (is-image record-image)]
+            [sfsim25.conftest :refer (is-image record-image roughly-matrix)]
             [clojure.core.matrix :refer (matrix identity-matrix)]
+            [comb.template :as template]
             [sfsim25.util :refer :all]
             [sfsim25.render :refer :all])
-  (:import [org.lwjgl.opengl Display DisplayMode]))
+  (:import [org.lwjgl.opengl Display DisplayMode GL11]))
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/render/red.png"))
@@ -456,7 +457,7 @@ void main()
 (fact "Render to floating-point texture (needs active OpenGL context)"
       (offscreen-render 32 32
         (let [tex (texture-render 8 8 true (clear (matrix [1.0 2.0 3.0])))]
-          (get-vector (texture->vectors tex 32 32) 0 0) => (matrix [1.0 2.0 3.0])
+          (get-vector3 (texture->vectors3 tex 32 32) 0 0) => (matrix [1.0 2.0 3.0])
           (destroy-texture tex))))
 
 (fact "Render to image texture (needs active OpenGL context)"
@@ -500,3 +501,30 @@ void main()
          0.0  "lod-1d-0"
          1.0  "lod-1d-1"
          2.0  "lod-1d-2")
+
+(def alpha-probe
+  (template/fn [alpha] "#version 410 core
+out lowp vec4 fragColor;
+void main()
+{
+  fragColor = vec4(0.25, 0.5, 0.75, <%= alpha %>);
+}"))
+
+(tabular "render alpha"
+         (fact
+           (let [result (promise)]
+             (offscreen-render 1 1
+               (let [indices  [0 1 3 2]
+                     vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                     program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
+                     vao      (make-vertex-array-object program indices vertices [:point 3])
+                     tex      (texture-render 1 1 true (use-program program) (render-quads vao))
+                     img      (texture->vectors4 tex 1 1)]
+                 (deliver result (get-vector4 img 0 0))
+                 (destroy-texture tex)
+                 (destroy-vertex-array-object vao)
+                 (destroy-program program)))
+             @result) => (roughly-matrix (matrix [?alpha 0.25 0.5 0.75]) 1e-6))
+         ?alpha
+         1.0
+         0.0)

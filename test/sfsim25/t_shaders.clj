@@ -237,8 +237,8 @@ void main()
                                                           (uniform-sampler program :table 0)
                                                           (use-textures table)
                                                           (render-quads vao))
-                                img       (texture->vectors tex 1 1)]
-                            (deliver result (get-vector img 0 0))
+                                img       (texture->vectors3 tex 1 1)]
+                            (deliver result (get-vector3 img 0 0))
                             (destroy-texture tex)
                             (destroy-texture table)
                             (destroy-vertex-array-object vao)
@@ -281,8 +281,8 @@ void main()
                                           (uniform-sampler program :table 0)
                                           (use-textures table)
                                           (render-quads vao))
-                img       (texture->vectors tex 1 1)]
-            (deliver result (get-vector img 0 0))
+                img       (texture->vectors3 tex 1 1)]
+            (deliver result (get-vector3 img 0 0))
             (destroy-texture tex)
             (destroy-texture table)
             (destroy-vertex-array-object vao)
@@ -429,8 +429,8 @@ void main()
                                                           (uniform-sampler program :table 0)
                                                           (use-textures table)
                                                           (render-quads vao))
-                                img       (texture->vectors tex 1 1)]
-                            (deliver result (get-vector img 0 0))
+                                img       (texture->vectors3 tex 1 1)]
+                            (deliver result (get-vector3 img 0 0))
                             (destroy-texture tex)
                             (destroy-texture table)
                             (destroy-vertex-array-object vao)

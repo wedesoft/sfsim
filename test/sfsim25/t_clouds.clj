@@ -383,8 +383,8 @@ void main()
                                          (uniform-float program :cloud_multiplier cloud-multiplier)
                                          (use-textures worley profile)
                                          (render-quads vao))
-            img          (texture->vectors tex 1 1)]
-        (deliver result (get-vector img 0 0))
+            img          (texture->vectors3 tex 1 1)]
+        (deliver result (get-vector3 img 0 0))
         (destroy-texture tex)
         (destroy-texture profile)
         (destroy-texture worley)

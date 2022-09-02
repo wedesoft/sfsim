@@ -320,7 +320,7 @@
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
        (GL11/glBindTexture GL11/GL_TEXTURE_2D tex#)
-       (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 (if ~floating-point GL30/GL_RGB32F GL11/GL_RGBA8) ~width ~height)
+       (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8) ~width ~height)
        (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex# 0)
        (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
        (GL11/glViewport 0 0 ~width ~height)
@@ -330,13 +330,23 @@
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
          (GL30/glDeleteFramebuffers fbo#)))))
 
-(defn texture->vectors
-  "Extract floating-point vectors from texture"
+(defn texture->vectors3
+  "Extract floating-point BGR vectors from texture"
   [texture width height]
   (with-texture (:target texture) (:texture texture)
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGR GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(defn texture->vectors4
+  "Extract floating-point BGRA vectors from texture"
+  [texture width height]
+  (with-texture (:target texture) (:texture texture)
+    (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
+          data (float-array (* width height 4))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 
