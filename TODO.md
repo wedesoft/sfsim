@@ -1,9 +1,10 @@
 # TODO
+* test offscreen rendering with alpha channel
 * problem: clouds disappear when going to space
+* offscreen render clouds (with atmosphere in front) with alpha channel
+* render planet without clouds
+* apply cloud texture to higher resolution picture (upscale and alpha-blend)
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
-* offscreen render depth map
-* offscreen render cloud texture using depth map
-* apply cloud texture to high resolution picture (upscale and alpha-blend)
 * Fractal Worley noise (octaves added together?)
   https://www.shadertoy.com/view/XdGyRc
   https://gamedev.stackexchange.com/questions/197861/how-to-handle-octave-frequency-in-the-perlin-noise-algorithm
