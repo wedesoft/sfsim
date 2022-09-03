@@ -1,7 +1,8 @@
 #version 410 core
 
 uniform float anisotropic;
-uniform int cloud_samples;
+uniform int cloud_min_samples;
+uniform int cloud_max_samples;
 uniform float cloud_scatter_amount;
 uniform float cloud_max_step;
 uniform float transparency_cutoff;
@@ -11,7 +12,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 float cloud_density(vec3 point, float lod);
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
 float phase(float g, float mu);
-int number_of_steps(float a, float b, int max_samples, float max_step);
+int number_of_steps(float a, float b, int min_samples, int max_samples, float max_step);
 float scaling_offset(float a, float b, int samples, float min_step);
 float step_size(float a, float b, float scaling_offset, int num_steps);
 float next_point(float p, float scaling_offset, float step_size);
@@ -28,7 +29,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     vec3 transmittance_atmosphere = transmittance_track(p, q);
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
     float transparency = 1.0;
-    int samples = number_of_steps(a, b, cloud_samples, cloud_max_step);
+    int samples = number_of_steps(a, b, cloud_min_samples, cloud_max_samples, cloud_max_step);
     float scale_offset = scaling_offset(a, b, samples, cloud_max_step);
     float stepping = step_size(a, b, scale_offset, samples);
     float lod = initial_lod(a, scale_offset, stepping);

@@ -1,5 +1,5 @@
 # TODO
-* problem: clouds disappear when going to space
+* problem: clouds still disappear when going to space
 * offscreen render clouds (with atmosphere in front) with alpha channel
 * render planet without clouds
 * apply cloud texture to higher resolution picture (upscale and alpha-blend)
