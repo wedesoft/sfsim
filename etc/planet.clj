@@ -19,6 +19,7 @@
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. (/ 1920 4) (/ 1080 4)))
+;(Display/setDisplayMode (DisplayMode. 1920 1080))
 ;(Display/setFullscreen true)
 (Display/create)
 
