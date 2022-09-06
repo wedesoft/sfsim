@@ -3,32 +3,46 @@
               [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
-              [clojure.core.matrix :refer (ecount mget matrix)]
+              [clojure.core.matrix :refer (ecount mget matrix array dimensionality dimension-count)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.clouds :refer :all :as clouds]))
 
-(facts "Create a vector of random points"
-       (random-points 0 64)                  => []
-       (count (random-points 1 64))          => 1
-       (random-points 1 64)                  => vector?
-       (ecount (first (random-points 1 64))) => 3
-       (mget (first (random-points 1 64)) 0) => #(>= % 0)
-       (mget (first (random-points 1 64)) 0) => #(<= % 64))
+(facts "Create a 3D grid with a random point in each cell"
+       (dimensionality (random-point-grid 1 1)) => 4
+       (map #(dimension-count (random-point-grid 1 1) %) (range 4)) => [1 1 1 3]
+       (map #(mget (random-point-grid 1 1 identity) 0 0 0 %) (range 3)) => [1.0 1.0 1.0]
+       (map #(dimension-count (random-point-grid 2 1) %) (range 4)) => [2 2 2 3]
+       (mget (random-point-grid 2 8 identity) 0 0 0 0) => 4.0
+       (mget (random-point-grid 2 8 identity) 0 0 1 0) => 8.0
+       (mget (random-point-grid 2 8 identity) 0 1 0 1) => 8.0
+       (mget (random-point-grid 2 8 identity) 1 0 0 2) => 8.0)
 
-(facts "Repeat point cloud in each direction"
-       (repeat-points 10 [])                         => []
-       (count (repeat-points 10 [(matrix [2 3 5])])) => 27
-       (repeat-points 10 [(matrix [2 3 5])])         => vector?
-       (nth (repeat-points 10 [(matrix [2 3 5])]) 0) => (matrix [2 3 5])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  0) => (matrix [ 0  0  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  1) => (matrix [-1  0  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  2) => (matrix [ 1  0  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  3) => (matrix [ 0 -1  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  6) => (matrix [ 0  1  0])
-       (nth (repeat-points 1 [(matrix [0 0 0])])  9) => (matrix [ 0  0 -1])
-       (nth (repeat-points 1 [(matrix [0 0 0])]) 18) => (matrix [ 0  0  1]))
+(facts "Extract point from specified cell"
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 0) => (matrix [1 2 3])
+       (extract-point-from-grid (array [[[[1 2 3] [4 5 6]]]]) 10 0 0 1) => (matrix [4 5 6])
+       (extract-point-from-grid (array [[[[1 2 3]] [[4 5 6]]]]) 10 0 1 0) => (matrix [4 5 6])
+       (extract-point-from-grid (array [[[[1 2 3]]] [[[4 5 6]]]]) 10 1 0 0) => (matrix [4 5 6])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 1) => (matrix [11 2 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 1 0) => (matrix [1 12 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 1 0 0) => (matrix [1 2 13])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 -1) => (matrix [-9 2 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 -1 0) => (matrix [1 -8 3])
+       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 -1 0 0) => (matrix [1 2 -7]))
+
+(facts "Closest distance of point in grid"
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]]]]) 1 2 (matrix [1 1 1])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]]]]) 1 2 (matrix [0.5 1 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1 1] [3 1 1]]]]) 2 4 (matrix [3 1 1])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]] [[1 3 1]]]]) 2 4 (matrix [1 3 1])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[1 1 1]]] [[[1 1 3]]]]) 2 4 (matrix [1 1 3])) => 0.0
+       (closest-distance-to-point-in-grid (array [[[[0.25 1 1]]]]) 1 2 (matrix [1.75 1 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1.75 1 1]]]]) 1 2 (matrix [0.25 1 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 0.25 1]]]]) 1 2 (matrix [1 1.75 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1.75 1]]]]) 1 2 (matrix [1 0.25 1])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1 0.25]]]]) 1 2 (matrix [1 1 1.75])) => 0.5
+       (closest-distance-to-point-in-grid (array [[[[1 1 1.75]]]]) 1 2 (matrix [1 1 0.25])) => 0.5)
 
 (facts "Normalise values of a vector"
        (normalise-vector [1.0])         => [1.0]
@@ -42,14 +56,10 @@
        (invert-vector [1.0]) => vector?)
 
 (facts "Create 3D Worley noise"
-       (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.5 0.5 0.5])])]
-         (nth (worley-noise 1 2) 0)     => 1.0
-         (count (worley-noise 1 2))     => 8
-         (apply min (worley-noise 1 2)) => 0.0)
-       (with-redefs [clouds/random-points (fn [n size] (facts n => 2 size => 2) [(matrix [0.5 0.5 0.5]) (matrix [1.5 1.5 1.5])])]
-         (nth (worley-noise 2 2) 7)     => 1.0)
-      (with-redefs [clouds/random-points (fn [n size] (facts n => 1 size => 2) [(matrix [0.0 0.0 0.0])])]
-         (nth (worley-noise 1 2) 7)     => (nth (worley-noise 1 2) 0)))
+       (with-redefs [clouds/random-point-grid (fn [n size] (facts n => 1 size => 2) (array [[[[0.5 0.5 0.5]]]]))]
+         (nth (worley-noise 1 2) 0) => 1.0
+         (count (worley-noise 1 2)) => 8
+         (apply min (worley-noise 1 2)) => 0.0))
 
 (def cloud-track-probe
   (template/fn [a b decay scatter density lx ly lz ir ig ib]
@@ -71,11 +81,11 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   float amount = amountp - transmittance_track(p, q).r * amountq;
   return vec3(0, 0, amount);
 }
-float cloud_density(vec3 point)
+float cloud_density(vec3 point, float lod)
 {
   return <%= density %>;
 }
-vec3 cloud_shadow(vec3 point, vec3 light)
+vec3 cloud_shadow(vec3 point, vec3 light, float lod)
 {
   return vec3(0, 1, 0);
 }
@@ -98,32 +108,35 @@ void main()
 
 (def cloud-track-test
   (shader-test
-    (fn [program anisotropic n]
+    (fn [program anisotropic n amount]
         (uniform-float program :anisotropic anisotropic)
-        (uniform-int program :cloud_samples n)
-        (uniform-float program :cloud_min_step 0.1)
+        (uniform-int program :cloud_min_samples 1)
+        (uniform-int program :cloud_max_samples n)
+        (uniform-float program :cloud_scatter_amount amount)
+        (uniform-float program :cloud_max_step 0.1)
         (uniform-float program :transparency_cutoff 0.0))
     cloud-track-probe
     cloud-track
     linear-sampling))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test [?anisotropic ?n] [?a ?b ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
+         (fact (cloud-track-test [?anisotropic ?n ?amnt] [?a ?b ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?a  ?b  ?n ?decay  ?scatter ?density ?anisotropic ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
-         0    1  1  0       0        0.0      1            0   0   1   0   0   0   0        0                      0
-         0    0  1  0       0        0.0      1            0   0   1   1   1   1   1        1                      1
-         0    1  1  0       0        0.0      1            0   0   1   1   1   1   1        1                      1
-         0    1  1  1       0        0.0      1            0   0   1   1   0   0   (exp -1) 0                      0
-         9   10  1  0       1        0.0      1            0   0   1   0   0   0   0        0                      0.5
-         8    9  1  0       1        0.0      1            0   0   1   0   0   0   0        0                      0.25
-         8    9  1  (log 2) 1        0.0      1            0   0   1   0   0   0   0        0                      0.5
-         8    9  2  (log 2) 1        0.0      1            0   0   1   0   0   0   0        0                      0.5
-         0    1  1  0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -1))         0
-         0    2  1  0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    2  2  0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    1  1  0       0        1.0      1            1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
-         0    1  1  0       0        1.0      0            1   0   0   0   0   0   0        (- 1 (exp -1))         0)
+         ?a  ?b  ?n ?amnt ?decay  ?scatter ?density ?anisotropic ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
+         0    1  1  1     0       0        0.0      1            0   0   1   0   0   0   0        0                      0
+         0    0  1  1     0       0        0.0      1            0   0   1   1   1   1   1        1                      1
+         0    1  1  1     0       0        0.0      1            0   0   1   1   1   1   1        1                      1
+         0    1  1  1     1       0        0.0      1            0   0   1   1   0   0   (exp -1) 0                      0
+         9   10  1  1     0       1        0.0      1            0   0   1   0   0   0   0        0                      0.5
+         8    9  1  1     0       1        0.0      1            0   0   1   0   0   0   0        0                      0.25
+         8    9  1  1     (log 2) 1        0.0      1            0   0   1   0   0   0   0        0                      0.5
+         8    9  2  1     (log 2) 1        0.0      1            0   0   1   0   0   0   0        0                      0.5
+         0    1  1  1     0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -1))         0
+         0    1  1  0.5   0       0        1.0      1            0   0   1   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
+         0    2  1  1     0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -2))         0
+         0    2  2  1     0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -2))         0
+         0    1  1  1     0       0        1.0      1            1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
+         0    1  1  1     0       0        1.0      0            1   0   0   0   0   0   0        (- 1 (exp -1))         0)
 
 (def cloud-track-base-probe
   (template/fn [a b decay scatter density ir ig ib]
@@ -145,7 +158,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   float amount = amountp - transmittance_track(p, q).r * amountq;
   return vec3(0, 0, amount);
 }
-float cloud_density(vec3 point)
+float cloud_density(vec3 point, float lod)
 {
   return <%= density %>;
 }
@@ -153,7 +166,7 @@ float phase(float g, float mu)
 {
   return 1.0 + 0.5 * mu;
 }
-vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming);
+vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
 void main()
 {
   vec3 origin = vec3(0, 0, 0);
@@ -161,33 +174,35 @@ void main()
   float a = <%= a %>;
   float b = <%= b %>;
   vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  fragColor = cloud_track_base(origin, light_direction, a, b, incoming);
+  fragColor = cloud_track_base(origin, light_direction, a, b, incoming, 0);
 }
 "))
 
 (def cloud-track-base-test
   (shader-test
-    (fn [program anisotropic n]
+    (fn [program anisotropic n amount]
         (uniform-float program :anisotropic anisotropic)
-        (uniform-int program :cloud_base_samples n))
+        (uniform-int program :cloud_base_samples n)
+        (uniform-float program :cloud_scatter_amount amount))
     cloud-track-base-probe
     cloud-track-base))
 
 (tabular "Shader for determining shadowing (or lack of shadowing) by clouds"
-         (fact (cloud-track-base-test [?anisotropic ?n] [?a ?b ?decay ?scatter ?density ?ir ?ig ?ib])
+         (fact (cloud-track-base-test [?anisotropic ?n ?amount] [?a ?b ?decay ?scatter ?density ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?a   ?b  ?n ?decay  ?scatter ?density ?anisotropic ?ir ?ig ?ib ?or        ?og ?ob
-         0    0   1  0       0        0.0      1            0   0   0   0          0   0
-         0    0   1  0       0        0.0      1            1   0   0   1          0   0
-         0    1   1  0       0        0.0      1            1   0   0   1          0   0
-         0    1   1  1       0        0.0      1            1   0   0   (exp -1)   0   0
-         0    1   2  1       0        0.0      1            1   0   0   (exp -1)   0   0
-         9   10   1  0       1        0.0      1            0   0   0   0          0   0.5
-         8    9   1  0       1        0.0      1            0   0   0   0          0   0.25
-         8    9   1  (log 2) 1        0.0      1            0   0   0   0          0   0.5
-         0    1   1  0       0        1.0      1            1   0   0   (exp -0.5) 0   0
-         0    1   2  0       0        1.0      1            1   0   0   (exp -0.5) 0   0
-         0    1   2  0       0        1.0      0            1   0   0   1          0   0)
+         ?a   ?b  ?n ?amount ?decay  ?scatter ?density ?anisotropic ?ir ?ig ?ib ?or         ?og ?ob
+         0    0   1  1       0       0        0.0      1            0   0   0   0           0   0
+         0    0   1  1       0       0        0.0      1            1   0   0   1           0   0
+         0    1   1  1       0       0        0.0      1            1   0   0   1           0   0
+         0    1   1  1       1       0        0.0      1            1   0   0   (exp -1)    0   0
+         0    1   2  1       1       0        0.0      1            1   0   0   (exp -1)    0   0
+         9   10   1  1       0       1        0.0      1            0   0   0   0           0   0.5
+         8    9   1  1       0       1        0.0      1            0   0   0   0           0   0.25
+         8    9   1  1       (log 2) 1        0.0      1            0   0   0   0           0   0.5
+         0    1   1  1       0       0        1.0      1            1   0   0   (exp -0.5)  0   0
+         0    1   2  1       0       0        1.0      1            1   0   0   (exp -0.5)  0   0
+         0    1   2  1       0       0        1.0      0            1   0   0   1           0   0
+         0    1   1  0.5     0       0        1.0      1            1   0   0   (exp -0.75) 0   0)
 
 (def sky-outer-probe
   (template/fn [x y z dx dy dz lx ly lz ir ig ib]
@@ -292,12 +307,12 @@ void main()
   (template/fn [x y z lx ly lz]
 "#version 410 core
 out lowp vec3 fragColor;
-vec3 cloud_shadow(vec3 point, vec3 light_direction);
+vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
   return vec3(incoming.r - abs(b - a) * 0.01, incoming.g, abs(b - a) * 0.01);
 }
-vec3 cloud_track_base(vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+vec3 cloud_track_base(vec3 origin, vec3 direction, float a, float b, vec3 incoming, float lod)
 {
   return vec3(incoming.r, incoming.g - abs(b - a) * 0.01, incoming.b);
 }
@@ -305,7 +320,7 @@ void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_shadow(point, light_direction);
+  fragColor = cloud_shadow(point, light_direction, 0);
 }"))
 
 (def cloud-shadow-test
@@ -338,11 +353,11 @@ void main()
   (template/fn [x y z]
 "#version 410 core
 out lowp vec3 fragColor;
-float cloud_density(vec3 point);
+float cloud_density(vec3 point, float lod);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = cloud_density(point);
+  float result = cloud_density(point, 0);
   fragColor = vec3(result, 0, 0);
 }"))
 
@@ -365,12 +380,12 @@ void main()
                                          (uniform-float program :radius radius)
                                          (uniform-float program :cloud_bottom cloud-bottom)
                                          (uniform-float program :cloud_top cloud-top)
-                                         (uniform-float program :cloud_size cloud-size)
+                                         (uniform-float program :cloud_scale cloud-size)
                                          (uniform-float program :cloud_multiplier cloud-multiplier)
                                          (use-textures worley profile)
                                          (render-quads vao))
-            img          (texture->vectors tex 1 1)]
-        (deliver result (get-vector img 0 0))
+            img          (texture->vectors3 tex 1 1)]
+        (deliver result (get-vector3 img 0 0))
         (destroy-texture tex)
         (destroy-texture profile)
         (destroy-texture worley)
@@ -395,33 +410,64 @@ void main()
   (template/fn [term]
 "#version 410 core
 out lowp vec3 fragColor;
-int number_of_steps(float a, float b, int max_samples, float min_step);
-float step_size(float a, float b, int num_steps);
-float next_point(float p, float step_size);
+int number_of_steps(float a, float b, int min_samples, int max_samples, float max_step);
+float step_size(float a, float b, float scaling_offset, int num_steps);
+float next_point(float p, float scaling_offset, float step_size);
+float scaling_offset(float a, float b, int samples, float max_step);
+float initial_lod(float a, float scaling_offset, float step_size);
+float lod_increment(float step_size);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
 }"))
 
-(def linear-sampling-test (shader-test (fn [program]) sampling-probe linear-sampling))
+(def linear-sampling-test
+  (shader-test
+    (fn [program]
+        (uniform-float program :cloud_scale 100)
+        (uniform-int program :cloud_size 20))
+    sampling-probe
+    linear-sampling))
 
 (tabular "Shader functions for defining linear sampling"
          (fact (mget (linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
          ?term                              ?result
-         "number_of_steps(10, 20, 10, 0.5)" 10
-         "number_of_steps(10, 20, 10, 2.0)"  5
-         "number_of_steps(10, 20, 10, 2.1)"  5
-         "step_size(10, 20, 5)"              2
-         "next_point(26, 2)"                28)
+         "number_of_steps(10, 20, 1, 10, 0.5)" 10
+         "number_of_steps(10, 20, 1, 10, 2.0)"  5
+         "number_of_steps(10, 20, 1, 10, 2.1)"  5
+         "number_of_steps(10, 20, 6, 10, 2.1)"  6
+         "step_size(10, 20, 0, 5)"              2
+         "next_point(26, 0, 2)"                28
+         "scaling_offset(10, 20, 10, 2.0)"      0
+         "initial_lod(10, 0, 5)"                0
+         "initial_lod(10, 0, 10)"               1
+         "lod_increment(10)"                    0)
 
-(def exponential-sampling-test (shader-test (fn [program]) sampling-probe exponential-sampling))
+(def exponential-sampling-test
+  (shader-test
+    (fn [program]
+        (uniform-float program :cloud_scale 100)
+        (uniform-int program :cloud_size 20))
+    sampling-probe
+    exponential-sampling))
 
 (tabular "Shader functions for defining exponential sampling"
          (fact (mget (exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
          ?term                               ?result
-         "number_of_steps(10, 20, 10, 1.05)" 10
-         "number_of_steps(10, 20, 10, 2.0)"   1
-         "number_of_steps(10, 20, 10, 2.1)"   1
-         "step_size(10, 20, 1)"               2
-         "step_size(10, 40, 2)"               2
-         "next_point(10, 2)"                 20)
+         "number_of_steps(10, 20, 1, 10, 1.05)" 10
+         "number_of_steps(10, 20, 1, 10, 2.0)"   1
+         "number_of_steps(10, 20, 1, 10, 2.1)"   1
+         "number_of_steps(10, 20, 2, 10, 2.1)"   2
+         "scaling_offset(10, 20, 1, 2.0)"        0
+         "scaling_offset(10, 30, 1, 2.0)"       10
+         "scaling_offset(10, 30, 10, 2.0)"       0
+         "step_size(10, 20, 0, 1)"               2
+         "step_size(10, 40, 0, 2)"               2
+         "step_size(10, 30, 10, 1)"              2
+         "next_point(10, 0, 2)"                 20
+         "next_point(10, 10, 2)"                30
+         "initial_lod(10, 0, 1.5)"               0
+         "initial_lod(10, 0, 2.0)"               1
+         "initial_lod(3, 7, 2.0)"                1
+         "lod_increment(1.0)"                    0
+         "lod_increment(2.0)"                    1)

@@ -1,30 +1,36 @@
 # TODO
-* make clouds darker and restore amplification value (multiply scatter amount with uniform value)
+* problem: clouds still disappear when going to space
+* offscreen render clouds (with atmosphere in front) with alpha channel
+* render planet without clouds
+* apply cloud texture to higher resolution picture (upscale and alpha-blend)
+* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
+* offset cloud sampling with blue noise
+* Fractal Worley noise (octaves added together?)
+  https://www.shadertoy.com/view/XdGyRc
+  https://gamedev.stackexchange.com/questions/197861/how-to-handle-octave-frequency-in-the-perlin-noise-algorithm
+* global cloud map (skybox?)
+* add cloud shadow computation to ground radiance function
+* 3D procedural noise: simplex noise with domain warping, Google search "opengl procedural volumetric clouds"
+  https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/
+  https://github.com/Piraxus/Skybolt/
+  https://lup.lub.lu.se/student-papers/record/8893256/file/8893258.pdf    description of noise functions
+  https://www.researchgate.net/publication/224688956_Generating_and_Rendering_Procedural_Clouds_in_Real_Time_on_Programmable_3D_Graphics_Hardware    describes octaves of noise
+  https://www.mdpi.com/2073-8994/10/4/125/pdf-vor
+* problem: white artifacts when sun is in zenith
+* transmittance-weighted average cloud distance -> correct atmospheric scattering
+* blue noise dithering
 * in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
 * determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
-* use level of detail in cloud\_track\_base
-* adapt stepsize in cloud\_track\_base
-* try exponential sampling
 * keyboard shortcuts for cloud parameters
 * http://advances.realtimerendering.com/s2015/index.html
-  * use mipmap for clouds, GL30/glGenerateMipmap, third parameter to textureLod
   * increase stepsize between clouds (also only sample low-resolution noise)
-  * increase stepsize with increasing distance to camera
-  * separate shape and density?
-  * sun/shadow ray sampling with decreasing fidelity (mipmap level)
   * multiple levels of Worley and Perlin noise in channels of 3D texture
-  * render partially (dithered) and fill in the rest using reprojection or blurring?
-  * offset sample start using blue noise
-  * atmospheric blending of clouds?
-  * compute shadows on ground with quarter resolution
-  * use lower-resolution cloud rendering?
-  * add flat cirrus clouds
+  * use lower-resolution cloud rendering
   * render clouds with low resolution, sample with different z-offsets and blur
+  * offset sample start using blue noise
+  * compute shadows on ground with quarter resolution
+  * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
-* make clouds darker
-* set cloud multiplier
-* check above horizon for sky-outer
-* use sky shader with clouds in planet shader
 * remove lowp, mediump, highp
 * plan work
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image

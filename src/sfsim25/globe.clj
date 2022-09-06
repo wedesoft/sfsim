@@ -48,7 +48,7 @@
                 normal           (normal-for-point point (min 4 in-level) out-level width color-tilesize radius1 radius2)
                 color            (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)
                 wet              (water-geodetic (min 4 (+ in-level sublevel)) width lon lat)]
-            (set-vector! normals v u normal)
+            (set-vector3! normals v u normal)
             (set-pixel! tile v u color)
             (set-water! water v u wet)))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))

@@ -18,7 +18,8 @@
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 640 480))
+(Display/setDisplayMode (DisplayMode. (/ 1920 4) (/ 1080 4)))
+;(Display/setDisplayMode (DisplayMode. 1920 1080))
 ;(Display/setFullscreen true)
 (Display/create)
 
@@ -29,6 +30,10 @@
 (def max-height (* 50 35000.0))
 (def tilesize 33)
 (def color-tilesize 129)
+
+(def threshold (atom 0.15))
+(def anisotropic (atom 0.3))
+(def multiplier (atom 1.2))
 
 (def light1 (atom 1.559))
 (def light2 (atom 0))
@@ -54,11 +59,12 @@
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
-(def data (slurp-floats "mixed.raw"))
+(def data (slurp-floats "values.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
+(generate-mipmap W)
 
-(def data (float-array [0.0 1.0 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.5 0.3 0]))
-(def P (make-float-texture-1d data))
+(def data (float-array [0.0 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.5 0.3 0]))
+(def P (atom (make-float-texture-1d data)))
 
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
@@ -67,7 +73,7 @@
                            shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d shaders/orthogonal-vector
                            shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d shaders/convert-2d-index
                            shaders/is-above-horizon sky-outer shaders/ray-shell cloud-track attenuation-track cloud-density
-                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base linear-sampling phase-function]))
+                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base exponential-sampling phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -99,7 +105,7 @@
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
                            shaders/is-above-horizon sky-track shaders/ray-shell shaders/clip-shell-intersections cloud-track
-                           cloud-density cloud-shadow cloud-track-base linear-sampling phase-function]))
+                           cloud-density cloud-shadow cloud-track-base exponential-sampling phase-function]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
@@ -147,7 +153,7 @@
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet :neighbours neighbours)
-    (use-textures T S E W P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
+    (use-textures T S E W @P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
     (render-patches (:vao tile))))
 
 (defn render-tree
@@ -178,16 +184,17 @@
 (uniform-float program-planet :polar_radius polar-radius)
 (uniform-float program-planet :max_height max-height)
 (uniform-float program-planet :cloud_bottom 2000)
-(uniform-float program-planet :cloud_top 7000)
-(uniform-float program-planet :cloud_size 5000)
-(uniform-float program-planet :anisotropic 0.5)
-(uniform-int program-planet :cloud_samples 64)
-(uniform-float program-planet :cloud_min_step 0.1)
-(uniform-int program-planet :cloud_base_samples 5)
-(uniform-float program-planet :cloud_multiplier 0.005)
-(uniform-float program-planet :transparency_cutoff 0.05)
+(uniform-float program-planet :cloud_top 5000)
+(uniform-float program-planet :cloud_scale 5000)
+(uniform-int program-planet :cloud_size worley-size)
+(uniform-int program-planet :cloud_min_samples 5)
+(uniform-int program-planet :cloud_max_samples 96)
+(uniform-float program-planet :cloud_scatter_amount 0.2)
+(uniform-float program-planet :cloud_max_step 1.06)
+(uniform-int program-planet :cloud_base_samples 8)
+(uniform-float program-planet :transparency_cutoff 0.1)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
-(uniform-float program-planet :amplification 5)
+(uniform-float program-planet :amplification 8)
 
 (use-program program-atmosphere)
 (uniform-matrix4 program-atmosphere :projection projection)
@@ -195,21 +202,23 @@
 (uniform-float program-atmosphere :polar_radius polar-radius)
 (uniform-float program-atmosphere :max_height max-height)
 (uniform-float program-atmosphere :cloud_bottom 2000)
-(uniform-float program-atmosphere :cloud_top 7000)
-(uniform-float program-atmosphere :cloud_size 5000)
-(uniform-float program-atmosphere :anisotropic 0.5)
-(uniform-int program-atmosphere :cloud_samples 64)
-(uniform-float program-atmosphere :cloud_min_step 0.1)
-(uniform-int program-atmosphere :cloud_base_samples 5)
-(uniform-float program-atmosphere :cloud_multiplier 0.005)
-(uniform-float program-atmosphere :transparency_cutoff 0.05)
+(uniform-float program-atmosphere :cloud_top 5000)
+(uniform-float program-atmosphere :cloud_scale 5000)
+(uniform-int program-atmosphere :cloud_size worley-size)
+(uniform-int program-atmosphere :cloud_min_samples 5)
+(uniform-int program-atmosphere :cloud_max_samples 96)
+(uniform-float program-atmosphere :cloud_scatter_amount 0.2)
+(uniform-float program-atmosphere :cloud_max_step 1.06)
+(uniform-int program-atmosphere :cloud_base_samples 8)
+(uniform-float program-atmosphere :transparency_cutoff 0.1)
 (uniform-float program-atmosphere :specular 100)
 (uniform-float program-atmosphere :elevation_power 2.0)
 (uniform-int program-atmosphere :height_size height-size)
 (uniform-int program-atmosphere :elevation_size elevation-size)
 (uniform-int program-atmosphere :light_elevation_size light-elevation-size)
 (uniform-int program-atmosphere :heading_size heading-size)
-(uniform-float program-atmosphere :amplification 5)
+(uniform-float program-atmosphere :amplification 8)
+
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -224,31 +233,49 @@
              rb        (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc        (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
              v         (if (@keystates Keyboard/KEY_PRIOR) 5 (if (@keystates Keyboard/KEY_NEXT) -5 0))
+             tr        (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
+             ts        (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
+             tm        (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
              l         (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (swap! threshold + (* dt tr))
+         (swap! anisotropic + (* dt ts))
+         (swap! multiplier + (* dt tm))
          (swap! light1 + (* l 0.1 dt))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
+                          (let [data (float-array (map #(+ @threshold %) [0.0 0.1 0.2 0.3 0.4 0.5 0.5 0.4 0.3 0.2 0.1 0.0]))]
+                            (destroy-texture @P)
+                            (reset! P (make-float-texture-1d data)))
                           ; Render planet
                           (when-let [data (poll! changes)]
                             (unload-tiles-from-opengl (:drop data))
                             (>!! tree-state (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))))
                           (use-program program-planet)
+                          (uniform-float program-planet :threshold @threshold)
+                          (uniform-float program-planet :anisotropic @anisotropic)
+                          (uniform-float program-planet :cloud_multiplier (* 0.01 @multiplier))
                           (uniform-matrix4 program-planet :inverse_transform (inverse transform))
                           (uniform-vector3 program-planet :position @position)
                           (uniform-vector3 program-planet :light_direction (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
                           (render-tree @tree)
                           ; Render atmosphere
                           (use-program program-atmosphere)
+                          (uniform-float program-atmosphere :threshold @threshold)
+                          (uniform-float program-atmosphere :anisotropic @anisotropic)
+                          (uniform-float program-atmosphere :cloud_multiplier (* 0.01 @multiplier))
                           (uniform-matrix4 program-atmosphere :transform transform)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (uniform-vector3 program-atmosphere :light (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
-                          (use-textures T S W P)
+                          (use-textures T S W @P)
                           (render-quads atmosphere-vao))
-         (print "\r" (format "%5.3f    " (* 0.001 dt)))
+         (print "\rthreshold" (format "%.3f" @threshold)
+                "anisotropic" (format "%.3f" @anisotropic)
+                "multiplier" (format "%.3f" @multiplier)
+                "dt" (format "%5.3f    " (* 0.001 dt)) "              ")
          (flush)
          (swap! t0 + dt)))
 

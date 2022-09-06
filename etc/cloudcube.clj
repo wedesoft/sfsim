@@ -66,18 +66,18 @@ out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming);
-float cloud_density(vec3 point)
+vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
+float cloud_density(vec3 point, float lod)
 {
   float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
   return max((s - threshold) * multiplier, 0);
 }
-vec3 cloud_shadow(vec3 point, vec3 light_direction)
+vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light_direction);
   vec3 p = point + intersection.x * light_direction;
   vec3 q = point + (intersection.x + intersection.y) * light_direction;
-  return cloud_track_base(point, light_direction, intersection.x, intersection.x + intersection.y, vec3(1, 1, 1));
+  return cloud_track_base(point, light_direction, intersection.x, intersection.x + intersection.y, vec3(1, 1, 1), 0);
 }
 vec3 transmittance_track(vec3 p, vec3 q)
 {
@@ -99,7 +99,7 @@ void main()
 (def program
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function cloud-track-base
-                           cloud-track linear-sampling s/is-above-horizon s/horizon-angle]))
+                           cloud-track exponential-sampling s/is-above-horizon s/horizon-angle]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -107,18 +107,14 @@ void main()
 
 (def size 128)
 
-;(def values1 (worley-noise 30 size))
-;(def values2 (worley-noise 120 size))
-;(def mixed (float-array (pmap #(* %1 (+ 0.25 (* 0.75 %2))) values1 values2)))
-;(spit-floats "values1.raw" (float-array values1))
-;(spit-floats "values2.raw" (float-array values2))
-;(spit-floats "mixed.raw" mixed)
+;(def values (worley-noise 12 size true))
+;(spit-floats "values.raw" (float-array values))
 
-(def mixed (slurp-floats "mixed.raw"))
+(def values (slurp-floats "values.raw"))
 
-(def tex (make-float-texture-3d {:width size :height size :depth size :data mixed}))
+(def tex (make-float-texture-3d {:width size :height size :depth size :data values}))
 
-;(show-floats {:width size :height size :data (float-array (take (* size size) mixed))})
+;(show-floats {:width size :height size :data (float-array (take (* size size) values))})
 
 (use-program program)
 (uniform-sampler program :tex 0)
@@ -164,8 +160,12 @@ void main()
                  (uniform-vector3 program :origin @origin)
                  (uniform-float program :threshold @threshold)
                  (uniform-float program :anisotropic @anisotropic)
-                 (uniform-int program :cloud_samples 64)
-                 (uniform-float program :cloud_min_step 0.1)
+                 (uniform-float program :cloud_scatter_amount 1.0)
+                 (uniform-int program :cloud_min_samples 1)
+                 (uniform-int program :cloud_max_samples 64)
+                 (uniform-int program :cloud_size size)
+                 (uniform-float program :cloud_scale 60)
+                 (uniform-float program :cloud_max_step 1.05)
                  (uniform-int program :cloud_base_samples 8)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
                  (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))

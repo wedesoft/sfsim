@@ -103,11 +103,17 @@
     (set-water! water 1 2 136) => anything
     (get-water water 1 2) => 136))
 
-(facts "Reading and writing of vectors"
+(facts "Reading and writing of BGR vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
-    (get-vector vectors 1 2) => (matrix [20.0 19.0 18.0])
-    (set-vector! vectors 1 2 (matrix [24.5 25.5 26.5])) => anything
-    (get-vector vectors 1 2) => (matrix [24.5 25.5 26.5])))
+    (get-vector3 vectors 1 2) => (matrix [20.0 19.0 18.0])
+    (set-vector3! vectors 1 2 (matrix [24.5 25.5 26.5])) => anything
+    (get-vector3 vectors 1 2) => (matrix [24.5 25.5 26.5])))
+
+(facts "Reading and writing of BGRA vectors"
+  (let [vectors {:width 4 :height 2 :data (float-array (range 32))}]
+    (get-vector4 vectors 1 2) => (matrix [27.0 26.0 25.0 24.0])
+    (set-vector4! vectors 1 2 (matrix [1.5 2.5 3.5 4.5])) => anything
+    (get-vector4 vectors 1 2) => (matrix [1.5 2.5 3.5 4.5])))
 
 (facts "Removal of entry in nested hash"
   (dissoc-in {:a 42} [:a]) => {}

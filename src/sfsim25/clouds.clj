@@ -1,20 +1,50 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
-    (:require [clojure.core.matrix :refer (matrix add sub)]
+    (:require [clojure.core.matrix :refer (matrix add sub array slice-view dimension-count eseq)]
               [clojure.core.matrix.linear :refer (norm)]
-              [com.climate.claypoole :refer (pfor ncpus)]))
+              [com.climate.claypoole :refer (pfor ncpus)]
+              [sfsim25.util :refer (make-progress-bar tick-and-print)]))
 
-(defn random-points
-  "Create a vector of random points"
-  [n size]
-  (vec (repeatedly n (fn [] (matrix (repeatedly 3 #(rand size)))))))
+(defn random-point-grid
+  "Create a 3D grid with a random point in each cell"
+  ([divisions size]
+   (random-point-grid divisions size rand))
+  ([divisions size random]
+   (let [cellsize (/ size divisions)]
+     (array
+       (map (fn [k]
+                (map (fn [j]
+                         (map (fn [i]
+                                  (add (matrix [(* i cellsize) (* j cellsize) (* k cellsize)])
+                                       (matrix (repeatedly 3 #(random cellsize)))))
+                              (range divisions)))
+                     (range divisions)))
+            (range divisions))))))
 
-(defn repeat-points
-  "Repeat point cloud in each direction"
-  [size points]
-  (let [offsets      [0 (- size) size]
-        combinations (for [k offsets j offsets i offsets] (matrix [i j k]))]
-    (vec (flatten (map (fn [point] (map #(add point %) combinations)) points)))))
+(defn- clipped-index-and-offset
+  "Return index modulo dimension of grid and offset for corresponding coordinate"
+  [grid size dimension index]
+  (let [divisions     (dimension-count grid dimension)
+        clipped-index (if (< index divisions) (if (>= index 0) index (+ index divisions)) (- index divisions))
+        offset        (if (< index divisions) (if (>= index 0) 0 (- size)) size)]
+    [clipped-index offset]))
+
+(defn extract-point-from-grid
+  "Extract the random point from the given grid cell"
+  [grid size k j i]
+  (let [[i-clip x-offset] (clipped-index-and-offset grid size 2 i)
+        [j-clip y-offset] (clipped-index-and-offset grid size 1 j)
+        [k-clip z-offset] (clipped-index-and-offset grid size 0 k)]
+    (add (slice-view (slice-view (slice-view grid k-clip) j-clip) i-clip) (matrix [x-offset y-offset z-offset]))))
+
+(defn closest-distance-to-point-in-grid
+  "Return distance to closest point in 3D grid"
+  [grid divisions size point]
+  (let [cellsize (/ size divisions)
+        [x y z]  (eseq point)
+        [i j k]  [(quot x cellsize) (quot y cellsize) (quot z cellsize)]
+        points   (for [dk [-1 0 1] dj [-1 0 1] di [-1 0 1]] (extract-point-from-grid grid size (+ k dk) (+ j dj) (+ i di)))]
+    (apply min (map #(norm (sub point %)) points))))
 
 (defn normalise-vector
   "Normalise the values of a vector"
@@ -29,12 +59,17 @@
 
 (defn worley-noise
   "Create 3D Worley noise"
-  [n size]
-  (let [points (repeat-points size (random-points n size))]
-    (invert-vector
-      (normalise-vector
-        (pfor (+ 2 (ncpus)) [i (range size) j (range size) k (range size)]
-              (apply min (map (fn [point] (norm (sub (add (matrix [i j k]) 0.5) point))) points)))))))
+  ([divisions size]
+   (worley-noise divisions size false))
+  ([divisions size progress]
+   (let [grid (random-point-grid divisions size)
+         bar  (if progress (agent (make-progress-bar (* size size size) 1)))]
+     (invert-vector
+       (normalise-vector
+         (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
+               (do
+                 (if progress (send bar tick-and-print))
+                 (closest-distance-to-point-in-grid grid divisions size (matrix [(+ k 0.5) (+ j 0.5) (+ i 0.5)])))))))))
 
 (def cloud-track
   "Shader for putting volumetric clouds into the atmosphere"
