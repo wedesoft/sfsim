@@ -1,5 +1,6 @@
 (require '[clojure.math :refer (cos sin sqrt pow to-radians)]
          '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
+         '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.quaternion :as q]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.render :refer :all]
@@ -18,8 +19,10 @@
 (Keyboard/create)
 
 (def radius 6378000.0)
+(def max-height 35000.0)
+(def cloud-step 500.0)
 (def light (atom 1.559))
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 1500)])))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
@@ -35,6 +38,10 @@ uniform mat4 projection;
 uniform mat4 transform;
 uniform vec3 origin;
 uniform float radius;
+uniform float max_height;
+uniform float cloud_step;
+uniform float cloud_bottom;
+uniform float cloud_top;
 in highp vec3 point;
 
 in VS_OUT
@@ -49,11 +56,26 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
-  vec2 intersection = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
-  if (intersection.y > 0)
-    fragColor = vec3(1, 0, 0);
-  else
-    fragColor = vec3(0, 0, 1);
+  vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  vec3 background;
+  if (planet.y > 0) {
+    if (atmosphere.x + atmosphere.y > planet.y)
+      atmosphere.y = planet.y - atmosphere.x;
+    background = vec3(1, 0, 0);
+  } else
+    background = vec3(0, 0, 1);
+  int steps = int(ceil(atmosphere.y / cloud_step));
+  vec3 point = origin + direction * (atmosphere.x + atmosphere.y);
+  for (int i=0; i<steps; i++) {
+    float r = length(point);
+    if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
+      float t = exp(-cloud_step * 0.0001);
+      background = background * t + vec3(1, 1, 1) * (1 - t);
+    };
+    point -= direction * cloud_step;
+  };
+  fragColor = background;
 }
 ")
 
@@ -67,6 +89,10 @@ void main()
 (use-program program)
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
+(uniform-float program :max_height max-height)
+(uniform-float program :cloud_step cloud-step)
+(uniform-float program :cloud_bottom 2000)
+(uniform-float program :cloud_top 5000)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -89,6 +115,8 @@ void main()
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
                           (render-quads vao))
+         (print "\rheight" (format "%.3f    " (- (norm @position) radius)))
+         (flush)
          (swap! t0 + dt)))
 
 (destroy-vertex-array-object vao)
