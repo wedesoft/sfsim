@@ -20,7 +20,7 @@
 
 (def radius 6378000.0)
 (def max-height 35000.0)
-(def cloud-step 500.0)
+(def cloud-step 100.0)
 (def light (atom 1.559))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
@@ -60,8 +60,8 @@ void main()
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   vec3 background;
   if (planet.y > 0) {
-    if (atmosphere.x + atmosphere.y > planet.y)
-      atmosphere.y = planet.y - atmosphere.x;
+    if (atmosphere.x + atmosphere.y > planet.x)
+      atmosphere.y = planet.x - atmosphere.x;
     background = vec3(1, 0, 0);
   } else
     background = vec3(0, 0, 1);
