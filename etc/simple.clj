@@ -66,14 +66,15 @@ void main()
   } else
     background = vec3(0, 0, 1);
   int steps = int(ceil(atmosphere.y / cloud_step));
-  vec3 point = origin + direction * (atmosphere.x + atmosphere.y);
+  float step = atmosphere.y / steps;
+  vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
   for (int i=0; i<steps; i++) {
     float r = length(point);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float t = exp(-cloud_step * 0.0001);
+      float t = exp(-step * 0.0001);
       background = background * t + vec3(1, 1, 1) * (1 - t);
     };
-    point -= direction * cloud_step;
+    point -= direction * step;
   };
   fragColor = background;
 }
