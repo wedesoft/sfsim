@@ -67,22 +67,13 @@ void main()
     background = vec3(0, 0, 1);
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
-  vec3 point = origin + direction * (atmosphere.x + step * 0.5);
-  if (direction.x >= 0) {
-    for (int i=0; i<steps; i++) {
-      float r = length(point);
-      if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-        float t = exp(-step * 0.0001);
-        background = background * t + vec3(1, 1, 1) * (1 - t);
-      };
-      point = point + direction * step;
+  vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
+  for (int i=0; i<steps; i++) {
+    float r = length(point - i * direction * step);
+    if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
+      float t = exp(-step * 0.0001);
+      background = background * t + vec3(1, 1, 1) * (1 - t);
     };
-  } else {
-    vec4 intersection = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
-    if (planet.y > 0)
-      intersection = clip_shell_intersections(intersection, planet.x);
-    float t = exp(-(intersection.y + intersection.w) * 0.0001);
-    background = background * t + vec3(1, 1, 1) * (1 - t);
   };
   fragColor = background;
 }")
@@ -98,7 +89,7 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 50)
+(uniform-float program :cloud_step 500)
 (uniform-float program :cloud_bottom 2000)
 (uniform-float program :cloud_top 5000)
 
