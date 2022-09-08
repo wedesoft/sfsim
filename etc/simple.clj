@@ -67,7 +67,7 @@ void main()
     background = vec3(0, 0, 1);
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
-  vec3 point = origin + direction * step * 0.5;
+  vec3 point = origin + direction * (atmosphere.x + step * 0.5);
   if (direction.x >= 0) {
     for (int i=0; i<steps; i++) {
       float r = length(point);
