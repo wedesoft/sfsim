@@ -99,7 +99,7 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 100)
+(uniform-float program :cloud_step 50)
 (uniform-float program :cloud_bottom 2000)
 (uniform-float program :cloud_top 5000)
 
