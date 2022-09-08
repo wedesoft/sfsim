@@ -20,7 +20,6 @@
 
 (def radius 6378000.0)
 (def max-height 35000.0)
-(def cloud-step 100.0)
 (def light (atom 1.559))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
@@ -52,6 +51,8 @@ in VS_OUT
 out lowp vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
+vec4 clip_shell_intersections(vec4 intersections, float limit);
 
 void main()
 {
@@ -68,20 +69,27 @@ void main()
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
   vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
-  for (int i=0; i<steps; i++) {
-    float r = length(point);
-    if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float t = exp(-step * 0.0001);
-      background = background * t + vec3(1, 1, 1) * (1 - t);
+  if (direction.x >= 0) {
+    for (int i=0; i<steps; i++) {
+      float r = length(point);
+      if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
+        float t = exp(-step * 0.0001);
+        background = background * t + vec3(1, 1, 1) * (1 - t);
+      };
+      point -= direction * step;
     };
-    point -= direction * step;
+  } else {
+    vec4 intersection = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
+    if (planet.y > 0)
+      intersection = clip_shell_intersections(intersection, planet.x);
+    float t = exp(-(intersection.y + intersection.w) * 0.0001);
+    background = background * t + vec3(1, 1, 1) * (1 - t);
   };
   fragColor = background;
-}
-")
+}")
 
 (def program
-  (make-program :vertex [vertex-atmosphere] :fragment [fragment shaders/ray-sphere]))
+  (make-program :vertex [vertex-atmosphere] :fragment [fragment shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -91,7 +99,7 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step cloud-step)
+(uniform-float program :cloud_step 100)
 (uniform-float program :cloud_bottom 2000)
 (uniform-float program :cloud_top 5000)
 
