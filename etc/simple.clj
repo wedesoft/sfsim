@@ -61,14 +61,13 @@ void main()
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   vec3 background;
   if (planet.y > 0) {
-    if (atmosphere.x + atmosphere.y > planet.x)
-      atmosphere.y = planet.x - atmosphere.x;
+    atmosphere.y = planet.x - atmosphere.x;
     background = vec3(1, 0, 0);
   } else
     background = vec3(0, 0, 1);
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
-  vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
+  vec3 point = origin + direction * step * 0.5;
   if (direction.x >= 0) {
     for (int i=0; i<steps; i++) {
       float r = length(point);
@@ -76,7 +75,7 @@ void main()
         float t = exp(-step * 0.0001);
         background = background * t + vec3(1, 1, 1) * (1 - t);
       };
-      point -= direction * step;
+      point = point + direction * step;
     };
   } else {
     vec4 intersection = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
