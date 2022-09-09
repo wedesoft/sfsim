@@ -24,8 +24,9 @@
 (def light (atom 1.559))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
-(def threshold (atom 0.4))
+(def threshold (atom 0.48))
 (def multiplier (atom 10.0))
+(def anisotropic (atom 0.3))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
 (def worley-size 128)
@@ -42,6 +43,7 @@
 uniform mat4 projection;
 uniform mat4 transform;
 uniform vec3 origin;
+uniform vec3 light;
 uniform float radius;
 uniform float max_height;
 uniform float cloud_step;
@@ -50,6 +52,7 @@ uniform float cloud_top;
 uniform float cloud_scale;
 uniform float cloud_multiplier;
 uniform float threshold;
+uniform float anisotropic;
 uniform sampler3D worley;
 in highp vec3 point;
 
@@ -63,6 +66,7 @@ out lowp vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
+float phase(float g, float mu);
 
 void main()
 {
@@ -72,20 +76,24 @@ void main()
   vec3 background;
   if (planet.y > 0) {
     atmosphere.y = planet.x - atmosphere.x;
-    background = vec3(1, 0, 0);
+    vec3 pos = origin + direction * planet.x;
+    vec3 normal = normalize(pos);
+    float cos_incidence = dot(normal, light);
+    background = vec3(max(cos_incidence, 0), 0, 0);
   } else
     background = vec3(0, 0, 1);
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
   vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
   for (int i=0; i<steps; i++) {
-    vec3 pos = point - i * direction * step;
+    vec3 pos = point - i * step * direction;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float noise = (texture(worley, pos / cloud_scale).r - threshold) * cloud_multiplier;
       if (noise > 0) {
         float t = exp(-step * 0.0001 * noise);
-        background = background * t + vec3(1, 1, 1) * (1 - t);
+        float scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
+        background = background * t + scatter * (1 - t);
       };
     };
   };
@@ -93,7 +101,8 @@ void main()
 }")
 
 (def program
-  (make-program :vertex [vertex-atmosphere] :fragment [fragment shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections]))
+  (make-program :vertex [vertex-atmosphere]
+                :fragment [fragment shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -106,7 +115,7 @@ void main()
 (uniform-float program :cloud_step 100)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 6000)
-(uniform-float program :cloud_scale 20000)
+(uniform-float program :cloud_scale 15000)
 (uniform-sampler program :worley 0)
 
 (def t0 (atom (System/currentTimeMillis)))
@@ -119,28 +128,35 @@ void main()
              dt        (- t1 @t0)
              tr        (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              tm        (if (@keystates Keyboard/KEY_E) 0.01 (if (@keystates Keyboard/KEY_D) -0.01 0))
+             ts        (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
              ra        (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb        (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc        (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-             v         (if (@keystates Keyboard/KEY_PRIOR) 5 (if (@keystates Keyboard/KEY_NEXT) -5 0))]
+             v         (if (@keystates Keyboard/KEY_PRIOR) 5 (if (@keystates Keyboard/KEY_NEXT) -5 0))
+             l         (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! threshold + (* dt tr))
          (swap! multiplier + (* dt tm))
+         (swap! anisotropic + (* dt ts))
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (swap! light + (* l 0.1 dt))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           (use-program program)
                           (use-textures W)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
+                          (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
                           (uniform-float program :threshold @threshold)
                           (uniform-float program :cloud_multiplier @multiplier)
+                          (uniform-float program :anisotropic @anisotropic)
                           (render-quads vao))
          (print "\rheight" (format "%.3f" (- (norm @position) radius))
                 "threshold" (format "%.3f" @threshold)
                 "multiplier" (format "%.3f" @multiplier)
+                "anisotropic" (format "%.3f" @anisotropic)
                 "      ")
          (flush)
          (swap! t0 + dt)))
