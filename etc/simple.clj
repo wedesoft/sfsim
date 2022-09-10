@@ -47,6 +47,7 @@ uniform vec3 light;
 uniform float radius;
 uniform float max_height;
 uniform float cloud_step;
+uniform float cloud_step2;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float cloud_scale;
@@ -54,6 +55,7 @@ uniform float cloud_multiplier;
 uniform float threshold;
 uniform float anisotropic;
 uniform float specular;
+uniform float cloud_scatter_amount;
 uniform sampler3D worley;
 in highp vec3 point;
 
@@ -88,6 +90,7 @@ void main()
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
   vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
+  float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   for (int i=0; i<steps; i++) {
     vec3 pos = point - i * step * direction;
     float r = length(pos);
@@ -97,11 +100,26 @@ void main()
         vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
         float t = exp(-step * 0.0001 * noise);
         float scatter;
+        float intensity;
         if (planet.y == 0) {
+          vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
+          int steps2 = int(ceil(atmosphere2.y / cloud_step2));
+          float step2 = atmosphere2.y / steps2;
+          intensity = 1;
+          for (int j=0; j<10; j++) {
+            vec3 pos2 = pos + (j + 0.5) * step2 * light;
+            float noise2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
+            if (noise2 > 0) {
+              float t2 = exp((scatter_amount - 1) * step2 * 0.0001 * noise);
+              intensity = intensity * t2;
+            };
+          };
           scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
-        } else
+        } else {
           scatter = 0;
-        background = background * t + scatter * (1 - t);
+          intensity = 0;
+        };
+        background = background * t + intensity * scatter * (1 - t);
       };
     };
   };
@@ -121,9 +139,11 @@ void main()
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
 (uniform-float program :cloud_step 100)
+(uniform-float program :cloud_step2 1000)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 6000)
 (uniform-float program :cloud_scale 15000)
+(uniform-float program :cloud_scatter_amount 1.0)
 (uniform-float program :specular 200)
 (uniform-sampler program :worley 0)
 
