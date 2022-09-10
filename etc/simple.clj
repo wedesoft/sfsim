@@ -91,8 +91,13 @@ void main()
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float noise = (texture(worley, pos / cloud_scale).r - threshold) * cloud_multiplier;
       if (noise > 0) {
+        vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
         float t = exp(-step * 0.0001 * noise);
-        float scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
+        float scatter;
+        if (planet.y == 0) {
+          scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
+        } else
+          scatter = 0;
         background = background * t + scatter * (1 - t);
       };
     };

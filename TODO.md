@@ -1,4 +1,5 @@
 # TODO
+* determine when atmosphere ray leaves Earth's shadow
 * problem: clouds still disappear when going to space
 * offscreen render clouds (with atmosphere in front) with alpha channel
 * render planet without clouds
