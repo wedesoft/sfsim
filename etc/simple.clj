@@ -53,6 +53,7 @@ uniform float cloud_scale;
 uniform float cloud_multiplier;
 uniform float threshold;
 uniform float anisotropic;
+uniform float specular;
 uniform sampler3D worley;
 in highp vec3 point;
 
@@ -80,8 +81,10 @@ void main()
     vec3 normal = normalize(pos);
     float cos_incidence = dot(normal, light);
     background = vec3(max(cos_incidence, 0), 0, 0);
-  } else
-    background = vec3(0, 0, 1);
+  } else {
+    float glare = pow(max(0, dot(direction, light)), specular);
+    background = vec3(glare, glare, 1);
+  };
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
   vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
@@ -121,6 +124,7 @@ void main()
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 6000)
 (uniform-float program :cloud_scale 15000)
+(uniform-float program :specular 200)
 (uniform-sampler program :worley 0)
 
 (def t0 (atom (System/currentTimeMillis)))
