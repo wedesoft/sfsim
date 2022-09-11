@@ -106,8 +106,9 @@ void main()
           int steps2 = int(ceil(atmosphere2.y / cloud_step2));
           float step2 = atmosphere2.y / steps2;
           intensity = 1;
+          vec3 point2 = pos + (atmosphere2.y - 0.5 * step2) * light;
           for (int j=0; j<steps2; j++) {
-            vec3 pos2 = pos + (j + 0.5) * step2 * light;
+            vec3 pos2 = point2 - j * step2 * light;
             float noise2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
             if (noise2 > 0) {
               float t2 = exp((scatter_amount - 1) * step2 * 0.0001 * noise2);
