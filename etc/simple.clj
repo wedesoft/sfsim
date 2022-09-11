@@ -110,7 +110,7 @@ void main()
             vec3 pos2 = pos + (j + 0.5) * step2 * light;
             float noise2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
             if (noise2 > 0) {
-              float t2 = exp((scatter_amount - 1) * step2 * 0.0001 * noise);
+              float t2 = exp((scatter_amount - 1) * step2 * 0.0001 * noise2);
               intensity = intensity * t2;
             };
           };
@@ -141,8 +141,8 @@ void main()
 (uniform-float program :cloud_step 250)
 (uniform-float program :cloud_step2 2500)
 (uniform-float program :cloud_bottom 1000)
-(uniform-float program :cloud_top 6000)
-(uniform-float program :cloud_scale 15000)
+(uniform-float program :cloud_top 5000)
+(uniform-float program :cloud_scale 10000)
 (uniform-float program :cloud_scatter_amount 1.0)
 (uniform-float program :specular 200)
 (uniform-sampler program :worley 0)
