@@ -106,7 +106,7 @@ void main()
           int steps2 = int(ceil(atmosphere2.y / cloud_step2));
           float step2 = atmosphere2.y / steps2;
           intensity = 1;
-          for (int j=0; j<10; j++) {
+          for (int j=0; j<steps2; j++) {
             vec3 pos2 = pos + (j + 0.5) * step2 * light;
             float noise2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
             if (noise2 > 0) {
@@ -138,8 +138,8 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 100)
-(uniform-float program :cloud_step2 1000)
+(uniform-float program :cloud_step 250)
+(uniform-float program :cloud_step2 2500)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 6000)
 (uniform-float program :cloud_scale 15000)
