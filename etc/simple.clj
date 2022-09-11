@@ -24,8 +24,8 @@
 (def light (atom 1.559))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
-(def threshold (atom 0.48))
-(def multiplier (atom 10.0))
+(def threshold (atom 0.575))
+(def multiplier (atom 0.005))
 (def anisotropic (atom 0.3))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
@@ -95,32 +95,32 @@ void main()
     vec3 pos = point - i * step * direction;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float noise = (texture(worley, pos / cloud_scale).r - threshold) * cloud_multiplier;
-      if (noise > 0) {
+      float density = (texture(worley, pos / cloud_scale).r - threshold) * cloud_multiplier;
+      if (density > 0) {
         vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
-        float t = exp(-step * 0.0001 * noise);
+        float t = exp(-step * density);
         float scatter;
-        float intensity;
+        float incoming;
         if (planet.y == 0) {
           vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
           int steps2 = int(ceil(atmosphere2.y / cloud_step2));
           float step2 = atmosphere2.y / steps2;
-          intensity = 1;
+          incoming = 1;
           vec3 point2 = pos + (atmosphere2.y - 0.5 * step2) * light;
           for (int j=0; j<steps2; j++) {
             vec3 pos2 = point2 - j * step2 * light;
-            float noise2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
-            if (noise2 > 0) {
-              float t2 = exp((scatter_amount - 1) * step2 * 0.0001 * noise2);
-              intensity = intensity * t2;
+            float density2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
+            if (density2 > 0) {
+              float t2 = exp((scatter_amount - 1) * step2 * density2);
+              incoming = incoming * t2;
             };
           };
           scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
         } else {
           scatter = 0;
-          intensity = 0;
+          incoming = 0;
         };
-        background = background * t + intensity * scatter * (1 - t);
+        background = background * t + incoming * scatter * (1 - t);
       };
     };
   };
@@ -139,12 +139,12 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 250)
+(uniform-float program :cloud_step 100)
 (uniform-float program :cloud_step2 2500)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 5000)
 (uniform-float program :cloud_scale 10000)
-(uniform-float program :cloud_scatter_amount 1.0)
+(uniform-float program :cloud_scatter_amount 0.2)
 (uniform-float program :specular 200)
 (uniform-sampler program :worley 0)
 
@@ -157,7 +157,7 @@ void main()
        (let [t1        (System/currentTimeMillis)
              dt        (- t1 @t0)
              tr        (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
-             tm        (if (@keystates Keyboard/KEY_E) 0.01 (if (@keystates Keyboard/KEY_D) -0.01 0))
+             tm        (if (@keystates Keyboard/KEY_E) 0.0001 (if (@keystates Keyboard/KEY_D) -0.0001 0))
              ts        (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
              ra        (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb        (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
