@@ -144,7 +144,7 @@ void main()
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 5000)
 (uniform-float program :cloud_scale 10000)
-(uniform-float program :cloud_scatter_amount 0.2)
+(uniform-float program :cloud_scatter_amount 1.0)
 (uniform-float program :specular 200)
 (uniform-sampler program :worley 0)
 
