@@ -24,9 +24,9 @@
 (def light (atom 1.559))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 500)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
-(def threshold (atom 0.575))
-(def multiplier (atom 0.005))
-(def anisotropic (atom 0.3))
+(def threshold (atom 0.6))
+(def multiplier (atom 0.002))
+(def anisotropic (atom 0.15))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
 (def worley-size 128)
@@ -77,6 +77,7 @@ void main()
   vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   float lod = log2(128 * cloud_step / cloud_scale);
+  float lod2 = log2(128 * cloud_step2 / cloud_scale);
   vec3 background;
   if (planet.y > 0) {
     atmosphere.y = planet.x - atmosphere.x;
@@ -108,7 +109,7 @@ void main()
           incoming = 1;
           for (int j=0; j<steps2; j++) {
             vec3 pos2 = pos + (steps2 - j - 0.5) * step2 * light;
-            float density2 = (textureLod(worley, pos2 / cloud_scale, lod).r - threshold) * cloud_multiplier;
+            float density2 = (textureLod(worley, pos2 / cloud_scale, lod2).r - threshold) * cloud_multiplier;
             if (density2 > 0) {
               float t2 = exp((scatter_amount - 1) * step2 * density2);
               incoming = incoming * t2;
@@ -138,11 +139,11 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 250)
-(uniform-float program :cloud_step2 1250)
+(uniform-float program :cloud_step 500)
+(uniform-float program :cloud_step2 1000)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 5000)
-(uniform-float program :cloud_scale 10000)
+(uniform-float program :cloud_scale 50000)
 (uniform-float program :cloud_scatter_amount 1.0)
 (uniform-float program :specular 200)
 (uniform-sampler program :worley 0)
