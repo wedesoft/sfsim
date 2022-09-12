@@ -76,6 +76,7 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  float lod = log2(128 * cloud_step / cloud_scale);
   vec3 background;
   if (planet.y > 0) {
     atmosphere.y = planet.x - atmosphere.x;
@@ -94,7 +95,7 @@ void main()
     vec3 pos = origin + (atmosphere.x + (steps - i - 0.5) * step) * direction;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float density = (texture(worley, pos / cloud_scale).r - threshold) * cloud_multiplier;
+      float density = (textureLod(worley, pos / cloud_scale, lod).r - threshold) * cloud_multiplier;
       if (density > 0) {
         vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
         float t = exp(-step * density);
@@ -107,7 +108,7 @@ void main()
           incoming = 1;
           for (int j=0; j<steps2; j++) {
             vec3 pos2 = pos + (steps2 - j - 0.5) * step2 * light;
-            float density2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
+            float density2 = (textureLod(worley, pos2 / cloud_scale, lod).r - threshold) * cloud_multiplier;
             if (density2 > 0) {
               float t2 = exp((scatter_amount - 1) * step2 * density2);
               incoming = incoming * t2;
@@ -137,8 +138,8 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 100)
-(uniform-float program :cloud_step2 2500)
+(uniform-float program :cloud_step 250)
+(uniform-float program :cloud_step2 1000)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 5000)
 (uniform-float program :cloud_scale 10000)
