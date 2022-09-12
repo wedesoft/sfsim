@@ -89,10 +89,9 @@ void main()
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
-  vec3 point = origin + direction * (atmosphere.x + atmosphere.y - step * 0.5);
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   for (int i=0; i<steps; i++) {
-    vec3 pos = point - i * step * direction;
+    vec3 pos = origin + (atmosphere.x + (steps - i - 0.5) * step) * direction;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float density = (texture(worley, pos / cloud_scale).r - threshold) * cloud_multiplier;
@@ -106,9 +105,8 @@ void main()
           int steps2 = int(ceil(atmosphere2.y / cloud_step2));
           float step2 = atmosphere2.y / steps2;
           incoming = 1;
-          vec3 point2 = pos + (atmosphere2.y - 0.5 * step2) * light;
           for (int j=0; j<steps2; j++) {
-            vec3 pos2 = point2 - j * step2 * light;
+            vec3 pos2 = pos + (steps2 - j - 0.5) * step2 * light;
             float density2 = (texture(worley, pos2 / cloud_scale).r - threshold) * cloud_multiplier;
             if (density2 > 0) {
               float t2 = exp((scatter_amount - 1) * step2 * density2);
