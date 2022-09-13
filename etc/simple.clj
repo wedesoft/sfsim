@@ -109,10 +109,13 @@ void main()
           incoming = 1;
           for (int j=0; j<steps2; j++) {
             vec3 pos2 = pos + (steps2 - j - 0.5) * step2 * light;
-            float density2 = (textureLod(worley, pos2 / cloud_scale, lod2).r - threshold) * cloud_multiplier;
-            if (density2 > 0) {
-              float t2 = exp((scatter_amount - 1) * step2 * density2);
-              incoming = incoming * t2;
+            float r2 = length(pos2);
+            if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
+              float density2 = (textureLod(worley, pos2 / cloud_scale, lod2).r - threshold) * cloud_multiplier;
+              if (density2 > 0) {
+                float t2 = exp((scatter_amount - 1) * step2 * density2);
+                incoming = incoming * t2;
+              };
             };
           };
           scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
