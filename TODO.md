@@ -1,4 +1,6 @@
 # TODO
+* use 2d blue noise for sampling offsets
+* add cutoff to prototype
 * determine when atmosphere ray leaves Earth's shadow
 * problem: clouds still disappear when going to space
 * offscreen render clouds (with atmosphere in front) with alpha channel
