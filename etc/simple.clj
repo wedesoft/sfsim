@@ -89,8 +89,8 @@ void main()
     float glare = pow(max(0, dot(direction, light)), specular);
     background = vec3(glare, glare, 1);
   };
-  int steps = int(ceil(atmosphere.y / cloud_step));
-  float step = atmosphere.y / steps;
+  int steps = int(floor(atmosphere.y / cloud_step));
+  float step = cloud_step;
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   for (int i=0; i<steps; i++) {
     vec3 pos = origin + (atmosphere.x + (steps - i - 0.5) * step) * direction;
@@ -104,11 +104,11 @@ void main()
         float incoming;
         if (planet.y == 0) {
           vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
-          int steps2 = int(ceil(atmosphere2.y / cloud_step2));
-          float step2 = atmosphere2.y / steps2;
+          int steps2 = int(floor(atmosphere2.y / cloud_step2));
+          float step2 = cloud_step2;
           incoming = 1;
           for (int j=0; j<steps2; j++) {
-            vec3 pos2 = pos + (steps2 - j - 0.5) * step2 * light;
+            vec3 pos2 = pos + (j + 0.5) * step2 * light;
             float r2 = length(pos2);
             if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
               float density2 = (textureLod(worley, pos2 / cloud_scale, lod2).r - threshold) * cloud_multiplier;
@@ -142,7 +142,7 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 500)
+(uniform-float program :cloud_step 250)
 (uniform-float program :cloud_step2 500)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 5000)
@@ -190,6 +190,7 @@ void main()
                 "threshold q/a" (format "%.3f" @threshold)
                 "anisotropic w/s" (format "%.3f" @anisotropic)
                 "multiplier e/d" (format "%.3f" @multiplier)
+                "dt" (format "%.3f" (* dt 0.001))
                 "      ")
          (flush)
          (swap! t0 + dt)))
