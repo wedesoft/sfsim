@@ -55,6 +55,7 @@ uniform float cloud_multiplier;
 uniform float threshold;
 uniform float anisotropic;
 uniform float specular;
+uniform float cutoff;
 uniform float cloud_scatter_amount;
 uniform sampler3D worley;
 in highp vec3 point;
@@ -92,8 +93,10 @@ void main()
   int steps = int(floor(atmosphere.y / cloud_step));
   float step = cloud_step;
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
+  float rest = 1.0;
+  float cloud = 0.0;
   for (int i=0; i<steps; i++) {
-    vec3 pos = origin + (atmosphere.x + (steps - i - 0.5) * step) * direction;
+    vec3 pos = origin + (atmosphere.x + (i + 0.5) * step) * direction;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float density = (textureLod(worley, pos / cloud_scale, lod).r - threshold) * cloud_multiplier;
@@ -123,10 +126,17 @@ void main()
           scatter = 0;
           incoming = 0;
         };
-        background = background * t + incoming * scatter * (1 - t);
+        cloud = cloud + rest * incoming * scatter * (1 - t);
+        rest = rest * t;
       };
     };
+    if (rest <= cutoff) {
+      cloud = cloud / (1 - rest);
+      rest = 0.0;
+      break;
+    };
   };
+  background = rest * background + cloud;
   fragColor = background;
 }")
 
@@ -149,6 +159,7 @@ void main()
 (uniform-float program :cloud_scale 15000)
 (uniform-float program :cloud_scatter_amount 1.0)
 (uniform-float program :specular 200)
+(uniform-float program :cutoff 0.05)
 (uniform-sampler program :worley 0)
 
 (def t0 (atom (System/currentTimeMillis)))
