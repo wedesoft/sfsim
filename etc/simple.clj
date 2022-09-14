@@ -52,6 +52,7 @@ uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float cloud_scale;
 uniform float cloud_multiplier;
+uniform int shadow_max_steps;
 uniform float threshold;
 uniform float anisotropic;
 uniform float specular;
@@ -107,7 +108,7 @@ void main()
         float incoming;
         if (planet.y == 0) {
           vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
-          int steps2 = int(floor(atmosphere2.y / cloud_step2));
+          int steps2 = min(int(floor(atmosphere2.y / cloud_step2)), shadow_max_steps);
           float step2 = cloud_step2;
           incoming = 1;
           for (int j=0; j<steps2; j++) {
@@ -131,12 +132,11 @@ void main()
       };
     };
     if (rest <= cutoff) {
-      cloud = cloud / (1 - rest);
-      rest = 0.0;
+      rest = cutoff;
       break;
     };
   };
-  background = rest * background + cloud;
+  background = (rest - cutoff) * background + cloud / (1 - cutoff);
   fragColor = background;
 }")
 
@@ -152,12 +152,13 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 250)
-(uniform-float program :cloud_step2 500)
+(uniform-float program :cloud_step 100)
+(uniform-float program :cloud_step2 250)
 (uniform-float program :cloud_bottom 1000)
 (uniform-float program :cloud_top 5000)
-(uniform-float program :cloud_scale 15000)
+(uniform-float program :cloud_scale 10000)
 (uniform-float program :cloud_scatter_amount 1.0)
+(uniform-int program :shadow_max_steps 40)
 (uniform-float program :specular 200)
 (uniform-float program :cutoff 0.05)
 (uniform-sampler program :worley 0)
