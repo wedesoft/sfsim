@@ -1,7 +1,8 @@
 # TODO
-* exponentially reduce and or limit samples with distance or when viewing from space
+* exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * problem: clouds still disappear when going to space
 * add atmospheric scattering taking cloud shadow into account
+* multiple octaves of noise
 * use 2d blue noise for sampling offsets
 * offscreen render clouds (with atmosphere in front) with alpha channel
 * render planet without clouds
