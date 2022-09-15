@@ -14,7 +14,7 @@
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. (/ 1920 2) (/ 1080 2)))
+(Display/setDisplayMode (DisplayMode. (/ 1920 4) (/ 1080 4)))
 (Display/create)
 
 (Keyboard/create)
