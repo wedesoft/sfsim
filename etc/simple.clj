@@ -37,6 +37,9 @@
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 
+(def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.3 0.0]))
+(def P (make-float-texture-1d data))
+
 (def fragment
 "#version 410 core
 
@@ -59,6 +62,7 @@ uniform float specular;
 uniform float cutoff;
 uniform float cloud_scatter_amount;
 uniform sampler3D worley;
+uniform sampler1D profile;
 in highp vec3 point;
 
 in VS_OUT
@@ -100,7 +104,8 @@ void main()
     vec3 pos = origin + (atmosphere.x + (i + 0.5) * step) * direction;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float density = (textureLod(worley, pos / cloud_scale, lod).r - threshold) * cloud_multiplier;
+      float h = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
+      float density = (textureLod(worley, pos / cloud_scale, lod).r - (h * threshold + 1 - h)) * cloud_multiplier;
       if (density > 0) {
         vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
         float t = exp(-step * density);
@@ -115,7 +120,8 @@ void main()
             vec3 pos2 = pos + (j + 0.5) * step2 * light;
             float r2 = length(pos2);
             if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
-              float density2 = (textureLod(worley, pos2 / cloud_scale, lod2).r - threshold) * cloud_multiplier;
+              float h2 = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
+              float density2 = (textureLod(worley, pos2 / cloud_scale, lod2).r - (h * threshold + 1 - h)) * cloud_multiplier;
               if (density2 > 0) {
                 float t2 = exp((scatter_amount - 1) * step2 * density2);
                 incoming = incoming * t2;
@@ -162,6 +168,7 @@ void main()
 (uniform-float program :specular 200)
 (uniform-float program :cutoff 0.05)
 (uniform-sampler program :worley 0)
+(uniform-sampler program :profile 1)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -190,7 +197,7 @@ void main()
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           (use-program program)
-                          (use-textures W)
+                          (use-textures W P)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
                           (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
