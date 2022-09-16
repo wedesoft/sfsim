@@ -1,5 +1,6 @@
 ; http://cv.ulichney.com/papers/1993-void-cluster.pdf
-(require '[sfsim25.util :refer :all])
+(require '[clojure.math :refer (exp)]
+         '[sfsim25.util :refer :all])
 
 (import '[ij.process ByteProcessor]
         '[ij ImagePlus])
@@ -22,3 +23,6 @@
         img       (ImagePlus.)]
     (.setProcessor img processor)
     (.show img)))
+
+(defn energy-filter [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
+(def f (energy-filter 1.9))
