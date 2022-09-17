@@ -104,20 +104,42 @@
        (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
        (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
 
-(defn seed-pattern [mask m f]
-  (let [da      (dither-array mask m f)
-        cluster (argmax-with-mask da mask)]
-    (aset-boolean mask cluster false)
-    (let [da   (dither-array mask m f)
-          void (argmin-with-mask da mask)]
-      (aset-boolean mask void true)
-      (if (= cluster void)
-        mask
-        (recur mask m f)))))
+(defn dither-remove [da m f index]
+  (let [cy (quot index m)
+        cx (mod index m)]
+    (pfor (+ 2 (ncpus)) [y (range m) x (range m)]
+          (let [index (+ (* y m) x)]
+            (- (nth da index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
+
+(facts "Remove sample from dither array"
+       (dither-remove [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 0 0 0])
+
+(defn dither-add [da m f index]
+  (let [cy (quot index m)
+        cx (mod index m)]
+    (pfor (+ 2 (ncpus)) [y (range m) x (range m)]
+          (let [index (+ (* y m) x)]
+            (+ (nth da index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
+
+(facts "Remove sample from dither array"
+       (dither-add [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 -2 0 -2])
+
+(defn seed-pattern
+  ([mask m f] (seed-pattern (dither-array mask m f) mask m f))
+  ([da mask m f]
+   (let [cluster (argmax-with-mask da mask)]
+     (aset-boolean mask cluster false)
+     (let [da   (dither-remove da m f cluster)
+           void (argmin-with-mask da mask)]
+       (aset-boolean mask void true)
+       (println cluster "=>" void)
+       (if (= cluster void)
+         mask
+         (recur (dither-add da m f void) mask m f))))))
 
 (facts "Initial binary pattern generator"
        (seq (seed-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
        (seq (seed-pattern (boolean-array [true true false false]) 2 (density 1.9))) => [true false false true])
 
 (def result (seed-pattern (scatter-mask (pick-n (indices-2d 64) (* 16 26)) 64) 64 (density 1.5)))
-(show-bools 32 result)
+(show-bools 64 result)
