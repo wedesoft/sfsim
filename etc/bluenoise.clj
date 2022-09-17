@@ -23,11 +23,15 @@
        (pick-n [0 1 2 3] 2 reverse) => [3 2]
        (count (pick-n [0 1 2 3] 2)) => 2)
 
-(defn initial [M Ones]
-  (let [result (boolean-array (* M M))]
-    (doseq [index (pick-n (indices M) Ones)]
+(defn scatter [arr m]
+  (let [result (boolean-array (* m m))]
+    (doseq [index arr]
            (aset-boolean result index true))
     result))
+
+(facts "Scatter given indices on boolean array"
+       (seq (scatter [] 2)) => [false false false false]
+       (seq (scatter [2] 2)) => [false false true false])
 
 (defn show-bools [M data]
   (let [processor (ByteProcessor. M M (byte-array (map #(if % 0 255) data)))
