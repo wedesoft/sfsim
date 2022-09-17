@@ -6,8 +6,14 @@
 (import '[ij.process ByteProcessor]
         '[ij ImagePlus])
 
-(def M 16)
-(def Ones 26)
+(defn show-bools [M data]
+  (let [processor (ByteProcessor. M M (byte-array (map #(if % 0 255) data)))
+        img       (ImagePlus.)]
+    (.setProcessor img processor)
+    (.show img)))
+
+(def m 16)
+(def ones 26)
 
 (defn indices-2d [m] (range (* m m)))
 
@@ -33,13 +39,18 @@
        (seq (scatter [] 2)) => [false false false false]
        (seq (scatter [2] 2)) => [false false true false])
 
-(defn show-bools [M data]
-  (let [processor (ByteProcessor. M M (byte-array (map #(if % 0 255) data)))
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.show img)))
+;(defn energy-filter [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
 
 (defn energy-filter [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
+
+(facts "Weighting function to determine clusters and voids"
+       ((energy-filter 1) 0 0) => (roughly 1.0 1e-6)
+       ((energy-filter 1) 1 0) => (roughly (exp -0.5))
+       ((energy-filter 1) 0 1) => (roughly (exp -0.5))
+       ((energy-filter 1) -1 0) => (roughly (exp -0.5))
+       ((energy-filter 1) 0 -1) => (roughly (exp -0.5))
+       ((energy-filter 2) 2 0) => (roughly (exp -0.5)))
+
 (def f (energy-filter 1.9))
 
 (defn argmax [arr] (first (apply max-key second (map-indexed vector arr))))
