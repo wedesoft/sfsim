@@ -1,6 +1,7 @@
 ; http://cv.ulichney.com/papers/1993-void-cluster.pdf
 (require '[clojure.math :refer (exp)]
-         '[sfsim25.util :refer :all])
+         '[sfsim25.util :refer :all]
+         '[midje.sweet :refer :all])
 
 (import '[ij.process ByteProcessor]
         '[ij ImagePlus])
@@ -8,9 +9,19 @@
 (def M 16)
 (def Ones 26)
 
-(defn indices [M] (range (* M M)))
+(defn indices-2d [m] (range (* m m)))
 
-(defn pick-n [values n] (take n (shuffle values)))
+(fact "Generate indices for 2D array"
+      (indices-2d 3) => [0 1 2 3 4 5 6 7 8])
+
+(defn pick-n
+  ([arr n order] (take n (order arr)))
+  ([arr n] (pick-n arr n shuffle)))
+
+(facts "Pick n random values from array"
+       (pick-n [0 1 2 3] 2 identity) => [0 1]
+       (pick-n [0 1 2 3] 2 reverse) => [3 2]
+       (count (pick-n [0 1 2 3] 2)) => 2)
 
 (defn initial [M Ones]
   (let [result (boolean-array (* M M))]
