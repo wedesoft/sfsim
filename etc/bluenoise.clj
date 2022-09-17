@@ -26,3 +26,5 @@
 
 (defn energy-filter [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
 (def f (energy-filter 1.9))
+
+(defn argmax [arr] (first (apply max-key second (map-indexed vector arr))))
