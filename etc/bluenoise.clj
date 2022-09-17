@@ -7,8 +7,8 @@
 (import '[ij.process ByteProcessor]
         '[ij ImagePlus])
 
-(defn show-bools [M data]
-  (let [processor (ByteProcessor. M M (byte-array (map #(if % 0 255) data)))
+(defn show-bools [m data]
+  (let [processor (ByteProcessor. m m (byte-array (map #(if % 0 255) data)))
         img       (ImagePlus.)]
     (.setProcessor img processor)
     (.show img)))
@@ -50,13 +50,17 @@
        ((density 1) 0 -1) => (roughly (exp -0.5))
        ((density 2) 2 0) => (roughly (exp -0.5)))
 
-(def f (density 1.9))
-
 (defn argmax [arr] (first (apply max-key second (map-indexed vector arr))))
 
 (facts "Index of largest element"
        (argmax [5 3 2]) => 0
        (argmax [3 5 2]) => 1)
+
+(defn argmin [arr] (first (apply min-key second (map-indexed vector arr))))
+
+(facts "Index of largest element"
+       (argmin [2 3 5]) => 0
+       (argmin [3 2 5]) => 1)
 
 (defn wrap [x m]
   (let [offset (quot m 2)]
@@ -95,3 +99,21 @@
 (facts "Compute dither array for given boolean mask"
        (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
        (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
+
+(defn initial-binary-pattern [mask m f]
+  (let [da      (dither-array mask m f)
+        cluster (argmax da)]
+    (aset-boolean mask cluster false)
+    (let [da   (dither-array mask m f)
+          void (argmin da)]
+      (aset-boolean mask void true)
+      (if (= cluster void)
+        mask
+        (recur mask m f)))))
+
+(facts "Initial binary pattern generator"
+       (seq (initial-binary-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
+       (seq (initial-binary-pattern (boolean-array [true true false false]) 2 (density 1.9))) => [true false false true])
+
+(def result (initial-binary-pattern (scatter-mask (pick-n (indices-2d 32) (* 4 26)) 32) 32 (density 1.9)))
+(show-bools 32 result)
