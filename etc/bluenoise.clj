@@ -54,3 +54,7 @@
 (def f (energy-filter 1.9))
 
 (defn argmax [arr] (first (apply max-key second (map-indexed vector arr))))
+
+(facts "Index of largest element"
+       (argmax [5 3 2]) => 0
+       (argmax [3 5 2]) => 1)
