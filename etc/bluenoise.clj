@@ -111,7 +111,6 @@
     (let [da   (dither-array mask m f)
           void (argmin-with-mask da mask)]
       (aset-boolean mask void true)
-      (println cluster "=>" void)
       (if (= cluster void)
         mask
         (recur mask m f)))))
