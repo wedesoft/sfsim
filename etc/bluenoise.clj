@@ -57,14 +57,23 @@
        (argmax [5 3 2]) => 0
        (argmax [3 5 2]) => 1)
 
-(facts "Wrap coordinate ")
+(defn wrap [x m]
+  (let [offset (quot m 2)]
+    (- (mod (+ x offset) m) offset)))
+
+(facts "Wrap coordinate"
+       (wrap 0 5) => 0
+       (wrap 2 5) => 2
+       (wrap 5 5) => 0
+       (wrap 3 5) => -2
+       (wrap 2 4) => -2)
 
 (defn dither-sample [mask m f cx cy]
   (reduce +
     (for [y (range m) x (range m)]
        (let [index (+ (* y m) x)]
          (if (aget mask index)
-           (f (- x cx) (- y cy))
+           (f (wrap (- x cx) m) (wrap (- y cy) m))
            0)))))
 
 (facts "Compute sample of correlation of binary image with density function"
@@ -74,7 +83,7 @@
        (dither-sample (boolean-array (repeat 4 true)) 2 (fn [dx dy] 1) 0 0) => 4
        (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 1 1) => 0
        (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 1 1) => 0
-       (dither-sample (boolean-array [false true false false]) 2 (fn [dx dy] dx) 0 0) => 1
-       (dither-sample (boolean-array [false false true false]) 2 (fn [dx dy] dy) 0 0) => 1
+       (dither-sample (boolean-array [false false true false]) 2 (fn [dx dy] dx) 1 1) => -1
+       (dither-sample (boolean-array [false true false false]) 2 (fn [dx dy] dy) 1 1) => -1
        (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 2 2) => 0
        (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 2 2) => 0)
