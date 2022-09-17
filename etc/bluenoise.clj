@@ -104,7 +104,7 @@
        (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
        (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
 
-(defn initial-binary-pattern [mask m f]
+(defn seed-pattern [mask m f]
   (let [da      (dither-array mask m f)
         cluster (argmax-with-mask da mask)]
     (aset-boolean mask cluster false)
@@ -116,8 +116,8 @@
         (recur mask m f)))))
 
 (facts "Initial binary pattern generator"
-       (seq (initial-binary-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
-       (seq (initial-binary-pattern (boolean-array [true true false false]) 2 (density 1.9))) => [true false false true])
+       (seq (seed-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
+       (seq (seed-pattern (boolean-array [true true false false]) 2 (density 1.9))) => [true false false true])
 
-(def result (initial-binary-pattern (scatter-mask (pick-n (indices-2d 32) (* 4 26)) 32) 32 (density 1.5)))
+(def result (seed-pattern (scatter-mask (pick-n (indices-2d 64) (* 16 26)) 64) 64 (density 1.5)))
 (show-bools 32 result)
