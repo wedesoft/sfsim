@@ -50,17 +50,21 @@
        ((density 1) 0 -1) => (roughly (exp -0.5))
        ((density 2) 2 0) => (roughly (exp -0.5)))
 
-(defn argmax [arr] (first (apply max-key second (map-indexed vector arr))))
+(defn argmax-with-mask [arr mask]
+  (first (apply max-key second (filter (fn [[idx value]] (aget mask idx)) (map-indexed vector arr)))))
 
 (facts "Index of largest element"
-       (argmax [5 3 2]) => 0
-       (argmax [3 5 2]) => 1)
+       (argmax-with-mask [5 3 2] (boolean-array (repeat 3 true))) => 0
+       (argmax-with-mask [3 5 2] (boolean-array (repeat 3 true))) => 1
+       (argmax-with-mask [3 5 2] (boolean-array [true false true])) => 0)
 
-(defn argmin [arr] (first (apply min-key second (map-indexed vector arr))))
+(defn argmin-with-mask [arr mask]
+  (first (apply min-key second (remove (fn [[idx value]] (aget mask idx)) (map-indexed vector arr)))))
 
 (facts "Index of largest element"
-       (argmin [2 3 5]) => 0
-       (argmin [3 2 5]) => 1)
+       (argmin-with-mask [2 3 5] (boolean-array (repeat 3 false))) => 0
+       (argmin-with-mask [3 2 5] (boolean-array (repeat 3 false))) => 1
+       (argmin-with-mask [3 2 5] (boolean-array [false true false])) => 0)
 
 (defn wrap [x m]
   (let [offset (quot m 2)]
@@ -102,11 +106,12 @@
 
 (defn initial-binary-pattern [mask m f]
   (let [da      (dither-array mask m f)
-        cluster (argmax da)]
+        cluster (argmax-with-mask da mask)]
     (aset-boolean mask cluster false)
     (let [da   (dither-array mask m f)
-          void (argmin da)]
+          void (argmin-with-mask da mask)]
       (aset-boolean mask void true)
+      (println cluster "=>" void)
       (if (= cluster void)
         mask
         (recur mask m f)))))
@@ -115,5 +120,5 @@
        (seq (initial-binary-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
        (seq (initial-binary-pattern (boolean-array [true true false false]) 2 (density 1.9))) => [true false false true])
 
-(def result (initial-binary-pattern (scatter-mask (pick-n (indices-2d 32) (* 4 26)) 32) 32 (density 1.9)))
+(def result (initial-binary-pattern (scatter-mask (pick-n (indices-2d 32) (* 4 26)) 32) 32 (density 1.5)))
 (show-bools 32 result)
