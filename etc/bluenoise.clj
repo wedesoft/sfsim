@@ -1,7 +1,8 @@
 ; http://cv.ulichney.com/papers/1993-void-cluster.pdf
 (require '[clojure.math :refer (exp)]
-         '[sfsim25.util :refer :all]
-         '[midje.sweet :refer :all])
+         '[com.climate.claypoole :refer (pfor ncpus)]
+         '[midje.sweet :refer :all]
+         '[sfsim25.util :refer :all])
 
 (import '[ij.process ByteProcessor]
         '[ij ImagePlus])
@@ -87,3 +88,10 @@
        (dither-sample (boolean-array [false true false false]) 2 (fn [dx dy] dy) 1 1) => -1
        (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 2 2) => 0
        (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 2 2) => 0)
+
+(defn dither-array [mask m f]
+  (vec (pfor (+ 2 (ncpus)) [cy (range m) cx (range m)] (dither-sample mask m f cx cy))))
+
+(facts "Compute dither array for given boolean mask"
+       (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
+       (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
