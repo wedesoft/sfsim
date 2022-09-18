@@ -101,37 +101,28 @@
        (density-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
        (density-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
 
-(defn density-remove [density m f index]
+(defn density-change [density m op f index]
   (let [cy (quot index m)
         cx (mod index m)]
     (pfor (+ 2 (ncpus)) [y (range m) x (range m)]
           (let [index (+ (* y m) x)]
-            (- (nth density index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
+            (op (nth density index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
 
-(facts "Remove sample from dither array"
-       (density-remove [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 0 0 0])
-
-(defn density-add [density m f index]
-  (let [cy (quot index m)
-        cx (mod index m)]
-    (pfor (+ 2 (ncpus)) [y (range m) x (range m)]
-          (let [index (+ (* y m) x)]
-            (+ (nth density index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
-
-(facts "Remove sample from dither array"
-       (density-add [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 -2 0 -2])
+(facts "Add/subtract sample from dither array"
+       (density-change [0 -1 0 -1] 2 + (fn [dx dy] dx) 0) => [0 -2 0 -2]
+       (density-change [0 -1 0 -1] 2 - (fn [dx dy] dx) 0) => [0 0 0 0])
 
 (defn seed-pattern
   ([mask m f] (seed-pattern mask m f (density-array (aclone mask) m f)))
   ([mask m f density]
    (let [cluster (argmax-with-mask density mask)]
      (aset-boolean mask cluster false)
-     (let [density (density-remove density m f cluster)
+     (let [density (density-change density m - f cluster)
            void    (argmin-with-mask density mask)]
        (aset-boolean mask void true)
        (if (= cluster void)
          mask
-         (recur mask m f (density-add density m f void)))))))
+         (recur mask m f (density-change density m + f void)))))))
 
 (facts "Initial binary pattern generator"
        (seq (seed-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
