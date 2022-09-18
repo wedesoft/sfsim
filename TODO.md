@@ -1,5 +1,6 @@
 # TODO
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* create blue noise tool, test blue noise shader, use in etc/simple.clj
 * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * problem: clouds still disappear when going to space
 * add atmospheric scattering taking cloud shadow into account
