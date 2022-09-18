@@ -13,9 +13,6 @@
     (.setProcessor img processor)
     (.show img)))
 
-(def m 16)
-(def ones 26)
-
 (defn indices-2d [m] (range (* m m)))
 
 (fact "Generate indices for 2D array"
