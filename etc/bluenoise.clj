@@ -28,14 +28,11 @@
        (count (pick-n [0 1 2 3] 2)) => 2)
 
 (defn scatter-mask [arr m]
-  (let [result (boolean-array (* m m))]
-    (doseq [index arr]
-           (aset-boolean result index true))
-    result))
+  (reduce #(assoc %1 %2 true) (vec (repeat (* m m) false)) arr))
 
 (facts "Scatter given indices on boolean array"
-       (seq (scatter-mask [] 2)) => [false false false false]
-       (seq (scatter-mask [2] 2)) => [false false true false])
+       (scatter-mask [] 2) => [false false false false]
+       (scatter-mask [2] 2) => [false false true false])
 
 (defn density-function [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
 
@@ -48,20 +45,20 @@
        ((density-function 2) 2 0) => (roughly (exp -0.5)))
 
 (defn argmax-with-mask [arr mask]
-  (first (apply max-key second (filter (fn [[idx value]] (aget mask idx)) (map-indexed vector arr)))))
+  (first (apply max-key second (filter (fn [[idx value]] (nth mask idx)) (map-indexed vector arr)))))
 
 (facts "Index of largest element"
-       (argmax-with-mask [5 3 2] (boolean-array (repeat 3 true))) => 0
-       (argmax-with-mask [3 5 2] (boolean-array (repeat 3 true))) => 1
-       (argmax-with-mask [3 5 2] (boolean-array [true false true])) => 0)
+       (argmax-with-mask [5 3 2] (repeat 3 true)) => 0
+       (argmax-with-mask [3 5 2] (repeat 3 true)) => 1
+       (argmax-with-mask [3 5 2] [true false true]) => 0)
 
 (defn argmin-with-mask [arr mask]
-  (first (apply min-key second (remove (fn [[idx value]] (aget mask idx)) (map-indexed vector arr)))))
+  (first (apply min-key second (remove (fn [[idx value]] (nth mask idx)) (map-indexed vector arr)))))
 
 (facts "Index of largest element"
-       (argmin-with-mask [2 3 5] (boolean-array (repeat 3 false))) => 0
-       (argmin-with-mask [3 2 5] (boolean-array (repeat 3 false))) => 1
-       (argmin-with-mask [3 2 5] (boolean-array [false true false])) => 0)
+       (argmin-with-mask [2 3 5] (repeat 3 false)) => 0
+       (argmin-with-mask [3 2 5] (repeat 3 false)) => 1
+       (argmin-with-mask [3 2 5] [false true false]) => 0)
 
 (defn wrap [x m]
   (let [offset (quot m 2)]
@@ -78,28 +75,28 @@
   (reduce +
     (for [y (range m) x (range m)]
        (let [index (+ (* y m) x)]
-         (if (aget mask index)
+         (if (nth mask index)
            (f (wrap (- x cx) m) (wrap (- y cy) m))
            0)))))
 
 (facts "Compute sample of correlation of binary image with density function"
-       (density-sample (boolean-array (repeat 4 false)) 2 (fn [dx dy] 1) 0 0) => 0
-       (density-sample (boolean-array [true false false false]) 2 (fn [dx dy] 1) 0 0) => 1
-       (density-sample (boolean-array [true false false false]) 2 (fn [dx dy] 2) 0 0) => 2
-       (density-sample (boolean-array (repeat 4 true)) 2 (fn [dx dy] 1) 0 0) => 4
-       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 1 1) => 0
-       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 1 1) => 0
-       (density-sample (boolean-array [false false true false]) 2 (fn [dx dy] dx) 1 1) => -1
-       (density-sample (boolean-array [false true false false]) 2 (fn [dx dy] dy) 1 1) => -1
-       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 2 2) => 0
-       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 2 2) => 0)
+       (density-sample (repeat 4 false) 2 (fn [dx dy] 1) 0 0) => 0
+       (density-sample [true false false false] 2 (fn [dx dy] 1) 0 0) => 1
+       (density-sample [true false false false] 2 (fn [dx dy] 2) 0 0) => 2
+       (density-sample (repeat 4 true) 2 (fn [dx dy] 1) 0 0) => 4
+       (density-sample (repeat 9 true) 3 (fn [dx dy] dx) 1 1) => 0
+       (density-sample (repeat 9 true) 3 (fn [dx dy] dy) 1 1) => 0
+       (density-sample [false false true false] 2 (fn [dx dy] dx) 1 1) => -1
+       (density-sample [false true false false] 2 (fn [dx dy] dy) 1 1) => -1
+       (density-sample (repeat 9 true) 3 (fn [dx dy] dx) 2 2) => 0
+       (density-sample (repeat 9 true) 3 (fn [dx dy] dy) 2 2) => 0)
 
 (defn density-array [mask m f]
   (vec (pfor (+ 2 (ncpus)) [cy (range m) cx (range m)] (density-sample mask m f cx cy))))
 
 (facts "Compute dither array for given boolean mask"
-       (density-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
-       (density-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
+       (density-array [true false false false] 2 (fn [dx dy] dx)) => [0 -1 0 -1]
+       (density-array [true false false false] 2 (fn [dx dy] dx)) => vector?)
 
 (defn density-change [density m op f index]
   (let [cy (quot index m)
@@ -113,36 +110,36 @@
        (density-change [0 -1 0 -1] 2 - (fn [dx dy] dx) 0) => [0 0 0 0])
 
 (defn seed-pattern
-  ([mask m f] (seed-pattern mask m f (density-array (aclone mask) m f)))
+  ([mask m f] (seed-pattern mask m f (density-array mask m f)))
   ([mask m f density]
-   (let [cluster (argmax-with-mask density mask)]
-     (aset-boolean mask cluster false)
+   (let [cluster (argmax-with-mask density mask)
+         mask    (assoc mask cluster false)]
      (let [density (density-change density m - f cluster)
-           void    (argmin-with-mask density mask)]
-       (aset-boolean mask void true)
+           void    (argmin-with-mask density mask)
+           mask    (assoc mask void true)]
        (if (= cluster void)
          mask
          (recur mask m f (density-change density m + f void)))))))
 
 (facts "Initial binary pattern generator"
-       (seq (seed-pattern (boolean-array [true false false false]) 2 (density-function 1.9))) => [false false false true]
-       (seq (seed-pattern (boolean-array [true true false false]) 2 (density-function 1.9))) => [true false false true])
+       (seed-pattern [true false false false] 2 (density-function 1.9)) => [false false false true]
+       (seed-pattern [true true false false] 2 (density-function 1.9)) => [true false false true])
 
 (defn dither-phase1
   ([mask m n f] (dither-phase1 mask m n f (density-array mask m f)))
-  ([mask m n f density] (dither-phase1 (aclone mask) m n f density (int-array (* m m))))
+  ([mask m n f density] (dither-phase1 mask m n f density (int-array (* m m))))
   ([mask m n f density dither]
    (if (zero? n)
      dither
      (let [cluster (argmax-with-mask density mask)
-           density (density-change density m - f cluster)]
-       (aset-boolean mask cluster false)
+           density (density-change density m - f cluster)
+           mask    (assoc mask cluster false)]
        (aset-int dither cluster (dec n))
        (recur mask m (dec n) f density dither)))))
 
 (facts "Phase 1 dithering"
-       (seq (dither-phase1 (boolean-array [true false false false]) 2 1 (density-function 1.5))) => [0 0 0 0]
-       (seq (dither-phase1 (boolean-array [true false false true]) 2 2 (density-function 1.5))) => [0 0 0 1])
+       (seq (dither-phase1 [true false false false] 2 1 (density-function 1.5))) => [0 0 0 0]
+       (seq (dither-phase1 [true false false true] 2 2 (density-function 1.5))) => [0 0 0 1])
 
 (defn dither-phase2
   ([mask m n dither f] (dither-phase2 mask m n dither f (density-array mask m f)))
@@ -150,33 +147,30 @@
    (if (>= n (quot (* m m) 2))
      dither
      (let [void    (argmin-with-mask density mask)
-           density (density-change density m + f void)]
-       (aset-boolean mask void true)
+           density (density-change density m + f void)
+           mask    (assoc mask void true)]
        (aset-int dither void n)
        (recur mask m (inc n) dither f density)))))
 
 (facts "Phase 2 dithering"
-       (seq (dither-phase2 (boolean-array [true false false true]) 2 2 (int-array [0 0 0 1]) (density-function 1.5)))
-       => [0 0 0 1]
-       (seq (dither-phase2 (boolean-array [true false false false]) 2 1 (int-array [0 0 0 0]) (density-function 1.5)))
-       => [0 0 0 1])
+       (seq (dither-phase2 [true false false true] 2 2 (int-array [0 0 0 1]) (density-function 1.5))) => [0 0 0 1]
+       (seq (dither-phase2 [true false false false] 2 1 (int-array [0 0 0 0]) (density-function 1.5))) => [0 0 0 1])
 
 (defn dither-phase3
   ([mask m n dither f]
-   (let [mask-not (boolean-array (map not mask))]
+   (let [mask-not (mapv not mask)]
      (dither-phase3 mask-not m n dither f (density-array mask-not m f))))
   ([mask-not m n dither f density]
    (if (>= n (* m m))
      dither
-     (let [cluster (argmax-with-mask density mask-not)
-           density (density-change density m - f cluster)]
-       (aset-boolean mask-not cluster false)
+     (let [cluster  (argmax-with-mask density mask-not)
+           density  (density-change density m - f cluster)
+           mask-not (assoc mask-not cluster false)]
        (aset-int dither cluster n)
        (recur mask-not m (inc n) dither f density)))))
 
 (fact "Phase 3 dithering"
-      (seq (dither-phase3 (boolean-array [true false false true]) 2 2 (int-array [0 0 0 1]) (density-function 1.5)))
-      => [0 3 2 1])
+      (seq (dither-phase3 [true false false true] 2 2 (int-array [0 0 0 1]) (density-function 1.5))) => [0 3 2 1])
 
 (def m 64)
 (def n (* 16 26))
