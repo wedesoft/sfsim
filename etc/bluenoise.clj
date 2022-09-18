@@ -163,16 +163,16 @@
 
 (defn dither-phase3
   ([mask m n dither f]
-   (let [mask (boolean-array (map not mask))]
-     (dither-phase3 mask m n dither f (density-array mask m f))))
-  ([mask m n dither f density]
+   (let [mask-not (boolean-array (map not mask))]
+     (dither-phase3 mask-not m n dither f (density-array mask-not m f))))
+  ([mask-not m n dither f density]
    (if (>= n (* m m))
      dither
-     (let [cluster (argmax-with-mask density mask)
+     (let [cluster (argmax-with-mask density mask-not)
            density (density-change density m - f cluster)]
-       (aset-boolean mask cluster false)
+       (aset-boolean mask-not cluster false)
        (aset-int dither cluster n)
-       (recur mask m (inc n) dither f density)))))
+       (recur mask-not m (inc n) dither f density)))))
 
 (fact "Phase 3 dithering"
       (seq (dither-phase3 (boolean-array [true false false true]) 2 2 (int-array [0 0 0 1]) (density-function 1.5)))
@@ -189,6 +189,7 @@
 (def dither (dither-phase2 mask m n dither f density))
 (def dither (dither-phase3 mask m (quot (* m m) 2) dither f))
 
+(show-floats {:width m :height m :data (float-array (map #(* % (/ 255.0 64 64)) dither))})
+
 ; TODO: reduce use of arrays
 ; TODO: use hashmap containing size of texture
-; TODO: mask-not
