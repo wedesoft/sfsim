@@ -40,12 +40,12 @@
 (defn density-function [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
 
 (facts "Weighting function to determine clusters and voids"
-       ((density 1) 0 0) => (roughly 1.0 1e-6)
-       ((density 1) 1 0) => (roughly (exp -0.5))
-       ((density 1) 0 1) => (roughly (exp -0.5))
-       ((density 1) -1 0) => (roughly (exp -0.5))
-       ((density 1) 0 -1) => (roughly (exp -0.5))
-       ((density 2) 2 0) => (roughly (exp -0.5)))
+       ((density-function 1) 0 0) => (roughly 1.0 1e-6)
+       ((density-function 1) 1 0) => (roughly (exp -0.5))
+       ((density-function 1) 0 1) => (roughly (exp -0.5))
+       ((density-function 1) -1 0) => (roughly (exp -0.5))
+       ((density-function 1) 0 -1) => (roughly (exp -0.5))
+       ((density-function 2) 2 0) => (roughly (exp -0.5)))
 
 (defn argmax-with-mask [arr mask]
   (first (apply max-key second (filter (fn [[idx value]] (aget mask idx)) (map-indexed vector arr)))))
@@ -125,8 +125,8 @@
          (recur mask m f (density-change density m + f void)))))))
 
 (facts "Initial binary pattern generator"
-       (seq (seed-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
-       (seq (seed-pattern (boolean-array [true true false false]) 2 (density 1.9))) => [true false false true])
+       (seq (seed-pattern (boolean-array [true false false false]) 2 (density-function 1.9))) => [false false false true]
+       (seq (seed-pattern (boolean-array [true true false false]) 2 (density-function 1.9))) => [true false false true])
 
 (defn dither-phase1
   ([mask m n f] (dither-phase1 (aclone mask) m n f (density-array mask m f) (int-array (* m m))))
@@ -136,12 +136,12 @@
      (let [cluster (argmax-with-mask density mask)]
        (aset-boolean mask cluster false)
        (aset-int dither cluster (dec n))
-       (let [density (density-remove density m f cluster)]
+       (let [density (density-change density m - f cluster)]
          (recur mask m (dec n) f density dither))))))
 
 (facts "Phase 1 dithering"
-       (seq (dither-phase1 (boolean-array [true false false false]) 2 1 (density 1.5))) => [0 0 0 0]
-       (seq (dither-phase1 (boolean-array [true false false true]) 2 2 (density 1.5))) => [0 0 0 1])
+       (seq (dither-phase1 (boolean-array [true false false false]) 2 1 (density-function 1.5))) => [0 0 0 0]
+       (seq (dither-phase1 (boolean-array [true false false true]) 2 2 (density-function 1.5))) => [0 0 0 1])
 
 (def m 64)
 (def n (* 16 26))
