@@ -179,8 +179,5 @@
 (def dither (dither-phase1 mask m n f density))
 (def dither (dither-phase2 mask m n dither f density))
 (def dither (dither-phase3 mask m (quot (* m m) 2) dither f))
-
 (show-floats {:width m :height m :data (float-array (map #(* % (/ 255.0 64 64)) dither))})
-
-; TODO: reduce use of arrays
-; TODO: use hashmap containing size of texture
+(spit-floats "bluenoise.raw" (float-array (map #(/ % 64 64) dither)))
