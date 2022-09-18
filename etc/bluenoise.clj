@@ -40,7 +40,7 @@
        (seq (scatter-mask [] 2)) => [false false false false]
        (seq (scatter-mask [2] 2)) => [false false true false])
 
-(defn density [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
+(defn density-function [sigma] (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
 
 (facts "Weighting function to determine clusters and voids"
        ((density 1) 0 0) => (roughly 1.0 1e-6)
@@ -77,7 +77,7 @@
        (wrap 3 5) => -2
        (wrap 2 4) => -2)
 
-(defn dither-sample [mask m f cx cy]
+(defn density-sample [mask m f cx cy]
   (reduce +
     (for [y (range m) x (range m)]
        (let [index (+ (* y m) x)]
@@ -86,60 +86,80 @@
            0)))))
 
 (facts "Compute sample of correlation of binary image with density function"
-       (dither-sample (boolean-array (repeat 4 false)) 2 (fn [dx dy] 1) 0 0) => 0
-       (dither-sample (boolean-array [true false false false]) 2 (fn [dx dy] 1) 0 0) => 1
-       (dither-sample (boolean-array [true false false false]) 2 (fn [dx dy] 2) 0 0) => 2
-       (dither-sample (boolean-array (repeat 4 true)) 2 (fn [dx dy] 1) 0 0) => 4
-       (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 1 1) => 0
-       (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 1 1) => 0
-       (dither-sample (boolean-array [false false true false]) 2 (fn [dx dy] dx) 1 1) => -1
-       (dither-sample (boolean-array [false true false false]) 2 (fn [dx dy] dy) 1 1) => -1
-       (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 2 2) => 0
-       (dither-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 2 2) => 0)
+       (density-sample (boolean-array (repeat 4 false)) 2 (fn [dx dy] 1) 0 0) => 0
+       (density-sample (boolean-array [true false false false]) 2 (fn [dx dy] 1) 0 0) => 1
+       (density-sample (boolean-array [true false false false]) 2 (fn [dx dy] 2) 0 0) => 2
+       (density-sample (boolean-array (repeat 4 true)) 2 (fn [dx dy] 1) 0 0) => 4
+       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 1 1) => 0
+       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 1 1) => 0
+       (density-sample (boolean-array [false false true false]) 2 (fn [dx dy] dx) 1 1) => -1
+       (density-sample (boolean-array [false true false false]) 2 (fn [dx dy] dy) 1 1) => -1
+       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dx) 2 2) => 0
+       (density-sample (boolean-array (repeat 9 true)) 3 (fn [dx dy] dy) 2 2) => 0)
 
-(defn dither-array [mask m f]
-  (vec (pfor (+ 2 (ncpus)) [cy (range m) cx (range m)] (dither-sample mask m f cx cy))))
+(defn density-array [mask m f]
+  (vec (pfor (+ 2 (ncpus)) [cy (range m) cx (range m)] (density-sample mask m f cx cy))))
 
 (facts "Compute dither array for given boolean mask"
-       (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
-       (dither-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
+       (density-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => [0 -1 0 -1]
+       (density-array (boolean-array [true false false false]) 2 (fn [dx dy] dx)) => vector?)
 
-(defn dither-remove [da m f index]
+(defn density-remove [density m f index]
   (let [cy (quot index m)
         cx (mod index m)]
     (pfor (+ 2 (ncpus)) [y (range m) x (range m)]
           (let [index (+ (* y m) x)]
-            (- (nth da index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
+            (- (nth density index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
 
 (facts "Remove sample from dither array"
-       (dither-remove [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 0 0 0])
+       (density-remove [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 0 0 0])
 
-(defn dither-add [da m f index]
+(defn density-add [density m f index]
   (let [cy (quot index m)
         cx (mod index m)]
     (pfor (+ 2 (ncpus)) [y (range m) x (range m)]
           (let [index (+ (* y m) x)]
-            (+ (nth da index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
+            (+ (nth density index) (f (wrap (- x cx) m) (wrap (- y cy) m)))))))
 
 (facts "Remove sample from dither array"
-       (dither-add [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 -2 0 -2])
+       (density-add [0 -1 0 -1] 2 (fn [dx dy] dx) 0) => [0 -2 0 -2])
 
 (defn seed-pattern
-  ([mask m f] (seed-pattern (dither-array mask m f) mask m f))
-  ([da mask m f]
-   (let [cluster (argmax-with-mask da mask)]
+  ([mask m f] (seed-pattern mask m f (density-array (aclone mask) m f)))
+  ([mask m f density]
+   (let [cluster (argmax-with-mask density mask)]
      (aset-boolean mask cluster false)
-     (let [da   (dither-remove da m f cluster)
-           void (argmin-with-mask da mask)]
+     (let [density (density-remove density m f cluster)
+           void    (argmin-with-mask density mask)]
        (aset-boolean mask void true)
-       (println cluster "=>" void)
        (if (= cluster void)
          mask
-         (recur (dither-add da m f void) mask m f))))))
+         (recur mask m f (density-add density m f void)))))))
 
 (facts "Initial binary pattern generator"
        (seq (seed-pattern (boolean-array [true false false false]) 2 (density 1.9))) => [false false false true]
        (seq (seed-pattern (boolean-array [true true false false]) 2 (density 1.9))) => [true false false true])
 
-(def result (seed-pattern (scatter-mask (pick-n (indices-2d 64) (* 16 26)) 64) 64 (density 1.5)))
-(show-bools 64 result)
+(defn dither-phase1
+  ([mask m n f] (dither-phase1 (aclone mask) m n f (density-array mask m f) (int-array (* m m))))
+  ([mask m n f density dither]
+   (if (zero? n)
+     dither
+     (let [cluster (argmax-with-mask density mask)]
+       (aset-boolean mask cluster false)
+       (aset-int dither cluster (dec n))
+       (let [density (density-remove density m f cluster)]
+         (recur mask m (dec n) f density dither))))))
+
+(facts "Phase 1 dithering"
+       (seq (dither-phase1 (boolean-array [true false false false]) 2 1 (density 1.5))) => [0 0 0 0]
+       (seq (dither-phase1 (boolean-array [true false false true]) 2 2 (density 1.5))) => [0 0 0 1])
+
+(def m 64)
+(def n (* 16 26))
+(def mask (scatter-mask (pick-n (indices-2d m) n) m))
+(def f (density-function 1.5))
+(def density (density-array mask m f))
+(def seed (seed-pattern mask m f density))
+(def dither (dither-phase1 mask m n f))
+;(show-bools m seed)
