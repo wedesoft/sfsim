@@ -129,19 +129,54 @@
        (seq (seed-pattern (boolean-array [true true false false]) 2 (density-function 1.9))) => [true false false true])
 
 (defn dither-phase1
-  ([mask m n f] (dither-phase1 (aclone mask) m n f (density-array mask m f) (int-array (* m m))))
+  ([mask m n f] (dither-phase1 mask m n f (density-array mask m f)))
+  ([mask m n f density] (dither-phase1 (aclone mask) m n f density (int-array (* m m))))
   ([mask m n f density dither]
    (if (zero? n)
      dither
-     (let [cluster (argmax-with-mask density mask)]
+     (let [cluster (argmax-with-mask density mask)
+           density (density-change density m - f cluster)]
        (aset-boolean mask cluster false)
        (aset-int dither cluster (dec n))
-       (let [density (density-change density m - f cluster)]
-         (recur mask m (dec n) f density dither))))))
+       (recur mask m (dec n) f density dither)))))
 
 (facts "Phase 1 dithering"
        (seq (dither-phase1 (boolean-array [true false false false]) 2 1 (density-function 1.5))) => [0 0 0 0]
        (seq (dither-phase1 (boolean-array [true false false true]) 2 2 (density-function 1.5))) => [0 0 0 1])
+
+(defn dither-phase2
+  ([mask m n dither f] (dither-phase2 mask m n dither f (density-array mask m f)))
+  ([mask m n dither f density]
+   (if (>= n (quot (* m m) 2))
+     dither
+     (let [void    (argmin-with-mask density mask)
+           density (density-change density m + f void)]
+       (aset-boolean mask void true)
+       (aset-int dither void n)
+       (recur mask m (inc n) dither f density)))))
+
+(facts "Phase 2 dithering"
+       (seq (dither-phase2 (boolean-array [true false false true]) 2 2 (int-array [0 0 0 1]) (density-function 1.5)))
+       => [0 0 0 1]
+       (seq (dither-phase2 (boolean-array [true false false false]) 2 1 (int-array [0 0 0 0]) (density-function 1.5)))
+       => [0 0 0 1])
+
+(defn dither-phase3
+  ([mask m n dither f]
+   (let [mask (boolean-array (map not mask))]
+     (dither-phase3 mask m n dither f (density-array mask m f))))
+  ([mask m n dither f density]
+   (if (>= n (* m m))
+     dither
+     (let [cluster (argmax-with-mask density mask)
+           density (density-change density m - f cluster)]
+       (aset-boolean mask cluster false)
+       (aset-int dither cluster n)
+       (recur mask m (inc n) dither f density)))))
+
+(fact "Phase 3 dithering"
+      (seq (dither-phase3 (boolean-array [true false false true]) 2 2 (int-array [0 0 0 1]) (density-function 1.5)))
+      => [0 3 2 1])
 
 (def m 64)
 (def n (* 16 26))
@@ -149,5 +184,11 @@
 (def f (density-function 1.5))
 (def density (density-array mask m f))
 (def seed (seed-pattern mask m f density))
-(def dither (dither-phase1 mask m n f))
-;(show-bools m seed)
+(show-bools m seed)
+(def dither (dither-phase1 mask m n f density))
+(def dither (dither-phase2 mask m n dither f density))
+(def dither (dither-phase3 mask m (quot (* m m) 2) dither f))
+
+; TODO: reduce use of arrays
+; TODO: use hashmap containing size of texture
+; TODO: mask-not
