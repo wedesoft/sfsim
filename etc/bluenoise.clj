@@ -19,8 +19,8 @@
       (indices-2d 3) => [0 1 2 3 4 5 6 7 8])
 
 (defn pick-n
-  ([arr n order] (take n (order arr)))
-  ([arr n] (pick-n arr n shuffle)))
+  ([arr n] (pick-n arr n shuffle))
+  ([arr n order] (take n (order arr))))
 
 (facts "Pick n random values from array"
        (pick-n [0 1 2 3] 2 identity) => [0 1]
@@ -127,19 +127,18 @@
 
 (defn dither-phase1
   ([mask m n f] (dither-phase1 mask m n f (density-array mask m f)))
-  ([mask m n f density] (dither-phase1 mask m n f density (int-array (* m m))))
+  ([mask m n f density] (dither-phase1 mask m n f density (vec (repeat (* m m) 0))))
   ([mask m n f density dither]
    (if (zero? n)
      dither
      (let [cluster (argmax-with-mask density mask)
            density (density-change density m - f cluster)
            mask    (assoc mask cluster false)]
-       (aset-int dither cluster (dec n))
-       (recur mask m (dec n) f density dither)))))
+       (recur mask m (dec n) f density (assoc dither cluster (dec n)))))))
 
 (facts "Phase 1 dithering"
-       (seq (dither-phase1 [true false false false] 2 1 (density-function 1.5))) => [0 0 0 0]
-       (seq (dither-phase1 [true false false true] 2 2 (density-function 1.5))) => [0 0 0 1])
+       (dither-phase1 [true false false false] 2 1 (density-function 1.5)) => [0 0 0 0]
+       (dither-phase1 [true false false true] 2 2 (density-function 1.5)) => [0 0 0 1])
 
 (defn dither-phase2
   ([mask m n dither f] (dither-phase2 mask m n dither f (density-array mask m f)))
@@ -149,12 +148,11 @@
      (let [void    (argmin-with-mask density mask)
            density (density-change density m + f void)
            mask    (assoc mask void true)]
-       (aset-int dither void n)
-       (recur mask m (inc n) dither f density)))))
+       (recur mask m (inc n) (assoc dither void n) f density)))))
 
 (facts "Phase 2 dithering"
-       (seq (dither-phase2 [true false false true] 2 2 (int-array [0 0 0 1]) (density-function 1.5))) => [0 0 0 1]
-       (seq (dither-phase2 [true false false false] 2 1 (int-array [0 0 0 0]) (density-function 1.5))) => [0 0 0 1])
+       (dither-phase2 [true false false true] 2 2 [0 0 0 1] (density-function 1.5)) => [0 0 0 1]
+       (dither-phase2 [true false false false] 2 1 [0 0 0 0] (density-function 1.5)) => [0 0 0 1])
 
 (defn dither-phase3
   ([mask m n dither f]
@@ -166,11 +164,10 @@
      (let [cluster  (argmax-with-mask density mask-not)
            density  (density-change density m - f cluster)
            mask-not (assoc mask-not cluster false)]
-       (aset-int dither cluster n)
-       (recur mask-not m (inc n) dither f density)))))
+       (recur mask-not m (inc n) (assoc dither cluster n) f density)))))
 
 (fact "Phase 3 dithering"
-      (seq (dither-phase3 [true false false true] 2 2 (int-array [0 0 0 1]) (density-function 1.5))) => [0 3 2 1])
+      (dither-phase3 [true false false true] 2 2 [0 0 0 1] (density-function 1.5)) => [0 3 2 1])
 
 (def m 64)
 (def n (* 16 26))
