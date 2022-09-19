@@ -5,10 +5,11 @@
          '[sfsim25.matrix :refer :all]
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.clouds :refer :all]
          '[sfsim25.shaders :as shaders]
          '[sfsim25.util :refer :all])
 
-(import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
+(import '[org.lwjgl.opengl Display DisplayMode PixelFormat GL11]
         '[org.lwjgl.input Keyboard])
 
 (set! *unchecked-math* true)
@@ -30,15 +31,24 @@
 (def z-near 1000)
 (def z-far (* 2.0 radius))
 (def worley-size 128)
+(def noise-size 64)
 (def keystates (atom {}))
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
 
-(def data (slurp-floats "values.raw"))
+;(def data (worley-noise 12 worley-size true))
+;(spit-floats "data/worley.raw" (float-array data))
+(def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 
 (def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.3 0.0]))
 (def P (make-float-texture-1d data))
+
+(def data (slurp-floats "data/bluenoise.raw"))
+(def B (make-float-texture-2d {:width noise-size :height noise-size :data data}))
+(with-texture GL11/GL_TEXTURE_2D (:texture B)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
 
 (def fragment
 "#version 410 core
@@ -61,7 +71,9 @@ uniform float anisotropic;
 uniform float specular;
 uniform float cutoff;
 uniform float cloud_scatter_amount;
+uniform int noise_size;
 uniform sampler3D worley;
+uniform sampler2D bluenoise;
 uniform sampler1D profile;
 in highp vec3 point;
 
@@ -100,8 +112,9 @@ void main()
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   float rest = 1.0;
   float cloud = 0.0;
+  float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
   for (int i=0; i<steps; i++) {
-    vec3 pos = origin + (atmosphere.x + (i + 0.5) * step) * direction;
+    vec3 pos = origin + (atmosphere.x + (i + offset) * step) * direction;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float h = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
@@ -167,8 +180,10 @@ void main()
 (uniform-int program :shadow_max_steps 80)
 (uniform-float program :specular 200)
 (uniform-float program :cutoff 0.05)
+(uniform-int program :noise_size 64)
 (uniform-sampler program :worley 0)
-(uniform-sampler program :profile 1)
+(uniform-sampler program :bluenoise 1)
+(uniform-sampler program :profile 2)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -197,7 +212,7 @@ void main()
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           (use-program program)
-                          (use-textures W P)
+                          (use-textures W B P)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
                           (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
