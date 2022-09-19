@@ -130,7 +130,7 @@ void main()
           float step2 = cloud_step2;
           incoming = 1;
           for (int j=0; j<steps2; j++) {
-            vec3 pos2 = pos + (j + 0.5) * step2 * light;
+            vec3 pos2 = pos + (j + offset) * step2 * light;
             float r2 = length(pos2);
             if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
               float h2 = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
