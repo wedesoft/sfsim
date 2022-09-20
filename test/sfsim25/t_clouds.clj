@@ -3,63 +3,11 @@
               [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
-              [clojure.core.matrix :refer (ecount mget matrix array dimensionality dimension-count)]
+              [clojure.core.matrix :refer (mget matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
               [sfsim25.util :refer :all]
-              [sfsim25.clouds :refer :all :as clouds]))
-
-(facts "Create a 3D grid with a random point in each cell"
-       (dimensionality (random-point-grid 1 1)) => 4
-       (map #(dimension-count (random-point-grid 1 1) %) (range 4)) => [1 1 1 3]
-       (map #(mget (random-point-grid 1 1 identity) 0 0 0 %) (range 3)) => [1.0 1.0 1.0]
-       (map #(dimension-count (random-point-grid 2 1) %) (range 4)) => [2 2 2 3]
-       (mget (random-point-grid 2 8 identity) 0 0 0 0) => 4.0
-       (mget (random-point-grid 2 8 identity) 0 0 1 0) => 8.0
-       (mget (random-point-grid 2 8 identity) 0 1 0 1) => 8.0
-       (mget (random-point-grid 2 8 identity) 1 0 0 2) => 8.0)
-
-(facts "Extract point from specified cell"
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 0) => (matrix [1 2 3])
-       (extract-point-from-grid (array [[[[1 2 3] [4 5 6]]]]) 10 0 0 1) => (matrix [4 5 6])
-       (extract-point-from-grid (array [[[[1 2 3]] [[4 5 6]]]]) 10 0 1 0) => (matrix [4 5 6])
-       (extract-point-from-grid (array [[[[1 2 3]]] [[[4 5 6]]]]) 10 1 0 0) => (matrix [4 5 6])
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 1) => (matrix [11 2 3])
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 1 0) => (matrix [1 12 3])
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 1 0 0) => (matrix [1 2 13])
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 0 -1) => (matrix [-9 2 3])
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 0 -1 0) => (matrix [1 -8 3])
-       (extract-point-from-grid (array [[[[1 2 3]]]]) 10 -1 0 0) => (matrix [1 2 -7]))
-
-(facts "Closest distance of point in grid"
-       (closest-distance-to-point-in-grid (array [[[[1 1 1]]]]) 1 2 (matrix [1 1 1])) => 0.0
-       (closest-distance-to-point-in-grid (array [[[[1 1 1]]]]) 1 2 (matrix [0.5 1 1])) => 0.5
-       (closest-distance-to-point-in-grid (array [[[[1 1 1] [3 1 1]]]]) 2 4 (matrix [3 1 1])) => 0.0
-       (closest-distance-to-point-in-grid (array [[[[1 1 1]] [[1 3 1]]]]) 2 4 (matrix [1 3 1])) => 0.0
-       (closest-distance-to-point-in-grid (array [[[[1 1 1]]] [[[1 1 3]]]]) 2 4 (matrix [1 1 3])) => 0.0
-       (closest-distance-to-point-in-grid (array [[[[0.25 1 1]]]]) 1 2 (matrix [1.75 1 1])) => 0.5
-       (closest-distance-to-point-in-grid (array [[[[1.75 1 1]]]]) 1 2 (matrix [0.25 1 1])) => 0.5
-       (closest-distance-to-point-in-grid (array [[[[1 0.25 1]]]]) 1 2 (matrix [1 1.75 1])) => 0.5
-       (closest-distance-to-point-in-grid (array [[[[1 1.75 1]]]]) 1 2 (matrix [1 0.25 1])) => 0.5
-       (closest-distance-to-point-in-grid (array [[[[1 1 0.25]]]]) 1 2 (matrix [1 1 1.75])) => 0.5
-       (closest-distance-to-point-in-grid (array [[[[1 1 1.75]]]]) 1 2 (matrix [1 1 0.25])) => 0.5)
-
-(facts "Normalise values of a vector"
-       (normalise-vector [1.0])         => [1.0]
-       (normalise-vector [0.0 1.0 2.0]) => [0.0 0.5 1.0]
-       (normalise-vector [1.0])         => vector?)
-
-(facts "Invert values of a vector"
-       (invert-vector []) => []
-       (invert-vector [0.0]) => [1.0]
-       (invert-vector [1.0]) => [0.0]
-       (invert-vector [1.0]) => vector?)
-
-(facts "Create 3D Worley noise"
-       (with-redefs [clouds/random-point-grid (fn [n size] (facts n => 1 size => 2) (array [[[[0.5 0.5 0.5]]]]))]
-         (nth (worley-noise 1 2) 0) => 1.0
-         (count (worley-noise 1 2)) => 8
-         (apply min (worley-noise 1 2)) => 0.0))
+              [sfsim25.clouds :refer :all]))
 
 (def cloud-track-probe
   (template/fn [a b decay scatter density lx ly lz ir ig ib]

@@ -19,6 +19,7 @@
              :run-elevation-tiles {:main sfsim25.elevation-tiles}
              :run-globe           {:main sfsim25.globe}
              :run-atmosphere-lut  {:main sfsim25.atmosphere-lut}
+             :run-worley          {:main sfsim25.worley}
              :run-bluenoise       {:main sfsim25.bluenoise}
              :uberjar             {:aot :all}
              :dev                 {:dependencies [[midje "1.9.10"]]}}
@@ -28,6 +29,7 @@
             "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
             "run-globe"           ["with-profile" "run-globe"           "run"]
             "run-atmosphere-lut"  ["with-profile" "run-atmosphere-lut"  "run"]
+            "run-worley"          ["with-profile" "run-worley"          "run"]
             "run-bluenoise"       ["with-profile" "run-bluenoise"       "run"]}
   :resource-paths ["/usr/share/java/lwjgl.jar"
                    "/usr/share/java/ij.jar"]

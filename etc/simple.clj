@@ -27,7 +27,7 @@
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def threshold (atom 0.4))
 (def multiplier (atom 0.008))
-(def anisotropic (atom 0.2))
+(def anisotropic (atom 0.15))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
 (def worley-size 128)
@@ -39,8 +39,6 @@
 (def focal-length (/ (/ (Display/getWidth) 2) (tan (to-radians (/ fov 2)))))
 (def base-lod (/ (* worley-size (tan (/ (to-radians fov) 2))) (/ (Display/getWidth) 2) cloud-scale))
 
-;(def data (worley-noise 12 worley-size true))
-;(spit-floats "data/worley.raw" (float-array data))
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
