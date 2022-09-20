@@ -113,6 +113,7 @@ void main()
   float rest = 1.0;
   float cloud = 0.0;
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
+  float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   for (int i=0; i<steps; i++) {
     vec3 pos = origin + (atmosphere.x + (i + offset) * step) * direction;
     float r = length(pos);
@@ -130,7 +131,7 @@ void main()
           float step2 = cloud_step2;
           incoming = 1;
           for (int j=0; j<steps2; j++) {
-            vec3 pos2 = pos + (j + offset) * step2 * light;
+            vec3 pos2 = pos + (j + offset2) * step2 * light;
             float r2 = length(pos2);
             if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
               float h2 = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
