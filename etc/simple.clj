@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (cos sin sqrt pow to-radians)]
+(require '[clojure.math :refer (cos sin sqrt pow to-radians tan)]
          '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.quaternion :as q]
@@ -33,7 +33,11 @@
 (def worley-size 128)
 (def noise-size 64)
 (def keystates (atom {}))
-(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
+(def fov 60.0)
+(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians fov)))
+(def cloud-scale 5000)
+(def focal-length (/ (/ (Display/getWidth) 2) (tan (to-radians (/ fov 2)))))
+(def base-lod (/ (* worley-size (tan (/ (to-radians fov) 2))) (/ (Display/getWidth) 2) cloud-scale))
 
 ;(def data (worley-noise 12 worley-size true))
 ;(spit-floats "data/worley.raw" (float-array data))
@@ -48,7 +52,9 @@
 (def B (make-float-texture-2d {:width noise-size :height noise-size :data data}))
 (with-texture GL11/GL_TEXTURE_2D (:texture B)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
 
 (def fragment
 "#version 410 core
@@ -72,6 +78,7 @@ uniform float specular;
 uniform float cutoff;
 uniform float cloud_scatter_amount;
 uniform int noise_size;
+uniform float base_lod;
 uniform sampler3D worley;
 uniform sampler2D bluenoise;
 uniform sampler1D profile;
@@ -94,8 +101,6 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  float lod = log2(128 * cloud_step / cloud_scale);
-  float lod2 = log2(128 * cloud_step2 / cloud_scale);
   vec3 background;
   if (planet.y > 0) {
     atmosphere.y = planet.x - atmosphere.x;
@@ -115,7 +120,9 @@ void main()
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
   float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   for (int i=0; i<steps; i++) {
-    vec3 pos = origin + (atmosphere.x + (i + offset) * step) * direction;
+    float dist = atmosphere.x + (i + offset) * step;
+    vec3 pos = origin + dist * direction;
+    float lod = max(log2(base_lod * dist), 0);
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float h = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
@@ -135,7 +142,7 @@ void main()
             float r2 = length(pos2);
             if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
               float h2 = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
-              float density2 = (textureLod(worley, pos2 / cloud_scale, lod2).r - (h * threshold + 1 - h)) * cloud_multiplier;
+              float density2 = (textureLod(worley, pos2 / cloud_scale, lod).r - (h * threshold + 1 - h)) * cloud_multiplier;
               if (density2 > 0) {
                 float t2 = exp((scatter_amount - 1) * step2 * density2);
                 incoming = incoming * t2;
@@ -176,12 +183,13 @@ void main()
 (uniform-float program :cloud_step2 250)
 (uniform-float program :cloud_bottom 1500)
 (uniform-float program :cloud_top 6500)
-(uniform-float program :cloud_scale 5000)
+(uniform-float program :cloud_scale cloud-scale)
 (uniform-float program :cloud_scatter_amount 1.0)
 (uniform-int program :shadow_max_steps 80)
 (uniform-float program :specular 200)
 (uniform-float program :cutoff 0.05)
 (uniform-int program :noise_size 64)
+(uniform-float program :base_lod base-lod)
 (uniform-sampler program :worley 0)
 (uniform-sampler program :bluenoise 1)
 (uniform-sampler program :profile 2)
