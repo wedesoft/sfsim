@@ -1,9 +1,8 @@
 # TODO
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* lod for samples
 * command-line tool to create Worley noise
 * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
-* problem: clouds still disappear when going to space
+* check clouds don't disappear when going to space
 * convert prototype to tested code
 * multiple octaves of noise
 * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
