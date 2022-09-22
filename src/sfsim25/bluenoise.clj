@@ -74,7 +74,7 @@
   ([mask m n dither f] (dither-phase2 mask m n dither f (density-array mask m f)))
   ([mask m n dither f density]
    (if (>= n (quot (* m m) 2))
-     dither
+     [dither mask]
      (let [void    (argmin-with-mask density mask)
            density (density-change density m + f void)
            mask    (assoc mask void true)]
@@ -95,15 +95,15 @@
 (defn -main
   "Program to generate blue noise tile"
   [& args]
-  (let [m       64
-        n       (quot (* m m) 10)
-        mask    (scatter-mask (pick-n (indices-2d m) n) m)
-        f       (density-function 1.5)
-        density (density-array mask m f)
-        seed    (seed-pattern mask m f density)
-        dither  (dither-phase1 mask m n f density)
-        dither  (dither-phase2 mask m n dither f density)
-        dither  (dither-phase3 mask m (quot (* m m) 2) dither f)]
+  (let [m             64
+        n             (quot (* m m) 10)
+        mask          (scatter-mask (pick-n (indices-2d m) n) m)
+        f             (density-function 1.5)
+        seed          (seed-pattern mask m f)
+        density       (density-array seed m f)
+        dither        (dither-phase1 seed m n f density)
+        [dither half] (dither-phase2 seed m n dither f density)
+        dither        (dither-phase3 half m (quot (* m m) 2) dither f)]
     (spit-floats "data/bluenoise.raw" (float-array (map #(/ % m m) dither)))
     (System/exit 0)))
 

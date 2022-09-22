@@ -69,8 +69,10 @@
        (dither-phase1 [true false false true] 2 2 (density-function 1.5)) => [0 0 0 1])
 
 (facts "Phase 2 dithering"
-       (dither-phase2 [true false false true] 2 2 [0 0 0 1] (density-function 1.5)) => [0 0 0 1]
-       (dither-phase2 [true false false false] 2 1 [0 0 0 0] (density-function 1.5)) => [0 0 0 1])
+       (first (dither-phase2 [true false false true] 2 2 [0 0 0 1] (density-function 1.5))) => [0 0 0 1]
+       (first (dither-phase2 [true false false false] 2 1 [0 0 0 0] (density-function 1.5))) => [0 0 0 1]
+       (second (dither-phase2 [true false false true] 2 2 [0 0 0 1] (density-function 1.5))) => [true false false true]
+       (second (dither-phase2 [true false false false] 2 1 [0 0 0 0] (density-function 1.5))) => [true false false true])
 
 (fact "Phase 3 dithering"
       (dither-phase3 [true false false true] 2 2 [0 0 0 1] (density-function 1.5)) => [0 3 2 1])
