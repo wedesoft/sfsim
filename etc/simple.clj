@@ -115,8 +115,8 @@ void main()
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   float rest = 1.0;
   float cloud = 0.0;
-  float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
-  float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
+  float offset = 0.5; // texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
+  float offset2 = 0.5; // texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   for (int i=0; i<steps; i++) {
     float dist = atmosphere.x + (i + offset) * step;
     vec3 pos = origin + dist * direction;
