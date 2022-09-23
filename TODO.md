@@ -1,5 +1,6 @@
 # TODO
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* shadow map coordinates and depth: compute in vertex shader?
 * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * check clouds don't disappear when going to space
 * convert prototype to tested code
