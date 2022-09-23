@@ -110,13 +110,13 @@ void main()
     float glare = pow(max(0, dot(direction, light)), specular);
     background = vec3(glare, glare, 1);
   };
-  int steps = int(floor(atmosphere.y / cloud_step));
+  int steps = int(ceil(atmosphere.y / cloud_step));
   float step = cloud_step;
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   float rest = 1.0;
   float cloud = 0.0;
-  float offset = 0.25 + 0.5 * texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
-  float offset2 = 0.25 + 0.5 * texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
+  float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
+  float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   for (int i=0; i<steps; i++) {
     float dist = atmosphere.x + (i + offset) * step;
     vec3 pos = origin + dist * direction;
@@ -132,7 +132,7 @@ void main()
         float incoming;
         if (planet.y == 0) {
           vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
-          int steps2 = min(int(floor(atmosphere2.y / cloud_step2)), shadow_max_steps);
+          int steps2 = min(int(ceil(atmosphere2.y / cloud_step2)), shadow_max_steps);
           float step2 = cloud_step2;
           incoming = 1;
           for (int j=0; j<steps2; j++) {
