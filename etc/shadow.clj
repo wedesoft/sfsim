@@ -47,15 +47,17 @@ void main(void)
 }")
 
 (def indices [0 1 3 2])
-(def vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5])
+(def vertices [-0.5 -0.5 0.1, 0.5 -0.5 0.1, -0.5 0.5 0.9, 0.5 0.5 0.9])
 (def program (make-program :vertex [vert] :fragment [frag]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
+
 (GL11/glViewport 0 0 size size)
 (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER shadow)
 (GL11/glClearDepth 0.5)
 (GL11/glClear GL11/GL_DEPTH_BUFFER_BIT)
 (use-program program)
 (render-quads vao)
+;(GL11/glFlush)
 (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
 
 (def img
