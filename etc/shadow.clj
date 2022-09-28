@@ -36,10 +36,8 @@ void main(void)
 
 (def frag
 "#version 410 core
-out vec3 fragColor;
 void main(void)
 {
-  fragColor = vec3(1, 1, 1);
 }")
 
 (def indices [0 1 3 2])
@@ -52,7 +50,7 @@ void main(void)
 (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER shadow)
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 (GL11/glClearDepth 0.75)
-(GL11/glClear (bit-or GL11/GL_DEPTH_BUFFER_BIT GL11/GL_COLOR_BUFFER_BIT))
+(GL11/glClear GL11/GL_DEPTH_BUFFER_BIT)
 ;(GL11/glDepthFunc GL11/GL_LEQUAL)
 ;(GL11/glDisable GL11/GL_CULL_FACE)
 (use-program program)
