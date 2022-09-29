@@ -45,7 +45,6 @@ void main(void)
 (def program (make-program :vertex [vert] :fragment [frag]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-;(Display/makeCurrent)
 (GL11/glViewport 0 0 size size)
 (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER shadow)
 (GL11/glEnable GL11/GL_DEPTH_TEST)
@@ -53,23 +52,18 @@ void main(void)
 (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
 (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE)
 (GL11/glClear GL11/GL_DEPTH_BUFFER_BIT)
-;(GL11/glDisable GL11/GL_CULL_FACE)
+(GL11/glDisable GL11/GL_CULL_FACE)
 (use-program program)
 (render-quads vao)
-;(GL11/glFlush)
 (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
-;(Display/update)
 
-;(def img
+;(show-floats
 ;  (with-texture GL11/GL_TEXTURE_2D tex
 ;    (let [buf  (BufferUtils/createFloatBuffer (* size size))
 ;          data (float-array (* size size))]
 ;      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT buf)
 ;      (.get buf data)
 ;      {:width size :height size :data data})))
-;(show-floats img)
-;(apply min (:data img))
-;(apply max (:data img))
 
 (def vert2
 "#version 410 core
@@ -97,7 +91,6 @@ void main(void)
 (def program2 (make-program :vertex [vert2] :fragment [frag2]))
 (def vao2 (make-vertex-array-object program2 indices vertices [:point 3]))
 
-(Display/makeCurrent)
 (GL11/glViewport 0 0 size size)
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 (GL11/glClearDepth 0.0)
