@@ -326,7 +326,7 @@
        (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8) ~width ~height)
        (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex# 0)
        (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
-       (GL11/glViewport 0 0 ~width ~height)
+       (setup-rendering ~width ~height)
        ~@body
        {:texture tex# :target GL11/GL_TEXTURE_2D}
        (finally
@@ -349,7 +349,7 @@
        (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL14/GL_COMPARE_R_TO_TEXTURE); TODO: test this
        (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL); TODO: test this
        (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT tex# 0)
-       (GL11/glViewport 0 0 ~width ~height)
+       (setup-rendering ~width ~height)
        ~@body
        {:texture tex# :target GL11/GL_TEXTURE_2D}
        (finally
