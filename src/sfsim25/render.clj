@@ -318,7 +318,7 @@
 (defmacro texture-render-color
   "Macro to render color image to a texture"
   [width height floating-point & body]
-  `(let [fbo# (GL45/glCreateFramebuffers) ; TODO: use GL30/glGenFramebuffers?
+  `(let [fbo# (GL30/glGenFramebuffers)
          tex# (GL11/glGenTextures)]
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
