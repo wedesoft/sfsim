@@ -528,3 +528,27 @@ void main()
          ?alpha
          1.0
          0.0)
+
+(fact "Render empty depth map"
+      (offscreen-render 32 32
+        (let [tex (texture-render-depth 10 10 (clear))]
+          (get-scale (texture->floats tex 10 10) 0 0) => 0.0)))
+
+(def fragment-noop
+"#version 410 core
+void main(void)
+{
+}")
+
+(tabular "Render quad into depth map"
+         (offscreen-render 32 32
+           (let [indices  [0 1 3 2]
+                 vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
+                 program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
+                 vao      (make-vertex-array-object program indices vertices [:point 3])
+                 tex      (texture-render-depth 10 10 (clear) (use-program program) (render-quads vao))]
+             (get-scale (texture->floats tex 10 10) 5 5) => ?z))
+         ?z
+         0.5
+         0.75
+         0.25)

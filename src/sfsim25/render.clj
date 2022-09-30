@@ -1,7 +1,7 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
   (:require [clojure.core.matrix :refer (mget eseq)])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
+  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [mikera.vectorz Vector]
            [mikera.matrixx Matrix]))
@@ -44,10 +44,13 @@
 
 (defn clear
   "Set clear color and clear color buffer as well as depth buffer"
-  [color]
-  (GL11/glClearColor (mget color 0) (mget color 1) (mget color 2) 1.0)
-  (GL11/glClearDepth 0.0); Reversed-z rendering requires initial depth to be zero.
-  (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
+  ([]
+   (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
+   (GL11/glClear GL11/GL_DEPTH_BUFFER_BIT))
+  ([color]
+   (GL11/glClearColor (mget color 0) (mget color 1) (mget color 2) 1.0)
+   (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
+   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))))
 
 (defn make-shader
   "Compile a GLSL shader"
@@ -313,9 +316,9 @@
     (GL11/glBindTexture (:target texture) (:texture texture))))
 
 (defmacro texture-render-color
-  "Macro to render to a texture"
+  "Macro to render color image to a texture"
   [width height floating-point & body]
-  `(let [fbo# (GL45/glCreateFramebuffers)
+  `(let [fbo# (GL45/glCreateFramebuffers) ; TODO: use GL30/glGenFramebuffers?
          tex# (GL11/glGenTextures)]
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
@@ -329,6 +332,39 @@
        (finally
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
          (GL30/glDeleteFramebuffers fbo#)))))
+
+(defmacro texture-render-depth
+  "Macro to render depth map to a texture"
+  [width height & body]
+  `(let [fbo# (GL30/glGenFramebuffers)
+         tex# (GL11/glGenTextures)]
+     (try
+       (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
+       (GL11/glBindTexture GL11/GL_TEXTURE_2D tex#)
+       (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F ~width ~height)
+       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE); TODO: set border color?
+       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL14/GL_COMPARE_R_TO_TEXTURE); TODO: test this
+       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL); TODO: test this
+       (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT tex# 0)
+       (GL11/glViewport 0 0 ~width ~height)
+       ~@body
+       {:texture tex# :target GL11/GL_TEXTURE_2D}
+       (finally
+         (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
+         (GL30/glDeleteFramebuffers fbo#)))))
+
+(defn texture->floats
+  "Extract floating-point depth map from texture"
+  [texture width height]
+  (with-texture (:target texture) (:texture texture)
+    (let [buf  (BufferUtils/createFloatBuffer (* width height))
+          data (float-array (* width height))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
 
 (defn texture->vectors3
   "Extract floating-point BGR vectors from texture"
