@@ -312,7 +312,7 @@
     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
     (GL11/glBindTexture (:target texture) (:texture texture))))
 
-(defmacro texture-render
+(defmacro texture-render-color
   "Macro to render to a texture"
   [width height floating-point & body]
   `(let [fbo# (GL45/glCreateFramebuffers)

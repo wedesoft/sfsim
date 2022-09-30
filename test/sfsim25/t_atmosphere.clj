@@ -448,12 +448,13 @@
                 transmittance (make-vector-texture-2d {:width 17 :height 17 :data (float-array data)})
                 program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render 1 1 true
-                                              (use-program program)
-                                              (uniform-sampler program :transmittance 0)
-                                              (apply setup program uniforms)
-                                              (use-textures transmittance)
-                                              (render-quads vao))
+                tex           (texture-render-color
+                                1 1 true
+                                (use-program program)
+                                (uniform-sampler program :transmittance 0)
+                                (apply setup program uniforms)
+                                (use-textures transmittance)
+                                (render-quads vao))
                 img           (texture->vectors3 tex 1 1)]
             (deliver result (get-vector3 img 0 0))
             (destroy-texture tex)
@@ -507,13 +508,14 @@ void main()
                 ray-scatter   (make-vector-texture-2d {:width 25 :height 25 :data (float-array data-ray)})
                 program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render 1 1 true
-                                              (use-program program)
-                                              (uniform-sampler program :transmittance 0)
-                                              (uniform-sampler program :ray_scatter 1)
-                                              (apply setup program uniforms)
-                                              (use-textures transmittance ray-scatter)
-                                              (render-quads vao))
+                tex           (texture-render-color
+                                1 1 true
+                                (use-program program)
+                                (uniform-sampler program :transmittance 0)
+                                (uniform-sampler program :ray_scatter 1)
+                                (apply setup program uniforms)
+                                (use-textures transmittance ray-scatter)
+                                (render-quads vao))
                 img           (texture->vectors3 tex 1 1)]
             (deliver result (get-vector3 img 0 0))
             (destroy-texture tex)

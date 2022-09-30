@@ -232,11 +232,12 @@ void main()
                                 table     (make-vector-texture-2d {:width 2 :height 3 :data (float-array data-flat)})
                                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                                 vao       (make-vertex-array-object program indices vertices [:point 3])
-                                tex       (texture-render 1 1 true
-                                                          (use-program program)
-                                                          (uniform-sampler program :table 0)
-                                                          (use-textures table)
-                                                          (render-quads vao))
+                                tex       (texture-render-color
+                                            1 1 true
+                                            (use-program program)
+                                            (uniform-sampler program :table 0)
+                                            (use-textures table)
+                                            (render-quads vao))
                                 img       (texture->vectors3 tex 1 1)]
                             (deliver result (get-vector3 img 0 0))
                             (destroy-texture tex)
@@ -276,11 +277,12 @@ void main()
                 table     (make-vector-texture-2d {:width 4 :height 4 :data (float-array data-flat)})
                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao       (make-vertex-array-object program indices vertices [:point 3])
-                tex       (texture-render 1 1 true
-                                          (use-program program)
-                                          (uniform-sampler program :table 0)
-                                          (use-textures table)
-                                          (render-quads vao))
+                tex       (texture-render-color
+                            1 1 true
+                            (use-program program)
+                            (uniform-sampler program :table 0)
+                            (use-textures table)
+                            (render-quads vao))
                 img       (texture->vectors3 tex 1 1)]
             (deliver result (get-vector3 img 0 0))
             (destroy-texture tex)
@@ -424,11 +426,12 @@ void main()
                                 table     (make-float-texture-3d {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
                                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                                 vao       (make-vertex-array-object program indices vertices [:point 3])
-                                tex       (texture-render 1 1 true
-                                                          (use-program program)
-                                                          (uniform-sampler program :table 0)
-                                                          (use-textures table)
-                                                          (render-quads vao))
+                                tex       (texture-render-color
+                                            1 1 true
+                                            (use-program program)
+                                            (uniform-sampler program :table 0)
+                                            (use-textures table)
+                                            (render-quads vao))
                                 img       (texture->vectors3 tex 1 1)]
                             (deliver result (get-vector3 img 0 0))
                             (destroy-texture tex)
