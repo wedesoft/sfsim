@@ -59,7 +59,7 @@
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"
   [width height near far field-of-view]
-  (let [dx (/ 1.0 (tan (/ field-of-view 2.0)))
+  (let [dx (/ 1.0 (tan (* 0.5 field-of-view)))
         dy (-> dx (* width) (/ height))
         a  (/ (* far near) (- far near))
         b  (/ near (- far near))]
@@ -67,6 +67,20 @@
              [ 0 dy  0  0]
              [ 0  0  b  a]
              [ 0  0 -1  0]])))
+
+(defn frustum-corners
+  "Determine corners of OpenGL frustum"
+  [width height near far field-of-view]
+  (let [t      (tan (* 0.5 field-of-view))
+        aspect (/ width height)]
+    [(matrix [(- (* t near)) (- (/ (* t near) aspect)) (- near) 1.0])
+     (matrix [    (* t near) (- (/ (* t near) aspect)) (- near) 1.0])
+     (matrix [(- (* t near))     (/ (* t near) aspect) (- near) 1.0])
+     (matrix [    (* t near)     (/ (* t near) aspect) (- near) 1.0])
+     (matrix [ (- (* t far))  (- (/ (* t far) aspect))  (- far) 1.0])
+     (matrix [     (* t far)  (- (/ (* t far) aspect))  (- far) 1.0])
+     (matrix [ (- (* t far))      (/ (* t far) aspect)  (- far) 1.0])
+     (matrix [     (* t far)      (/ (* t far) aspect)  (- far) 1.0])]))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"

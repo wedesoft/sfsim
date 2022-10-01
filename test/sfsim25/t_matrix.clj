@@ -31,13 +31,25 @@
 (fact "Creating a 4x4 matrix from a 3x3 matrix and a translation vector"
   (transformation-matrix (matrix [[1 2 3] [5 6 7] [9 10 11]]) (matrix [4 8 12])) => (matrix [[1 2 3 4] [5 6 7 8] [9 10 11 12] [0 0 0 1]]))
 
-(fact "OpenGL projection matrix"
+(facts "OpenGL projection matrix"
   (let [m (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))]
     (project (mmul m (matrix [   0    0    -5 1]))) => (roughly-matrix (matrix [0 0 1]) 1e-6)
     (project (mmul m (matrix [   0    0 -1000 1]))) => (roughly-matrix (matrix [0 0 0]) 1e-6)
     (project (mmul m (matrix [1000    0 -1000 1]))) => (roughly-matrix (matrix [1 0 0]) 1e-6)
     (project (mmul m (matrix [   5    0    -5 1]))) => (roughly-matrix (matrix [1 0 1]) 1e-6)
     (project (mmul m (matrix [   0 3.75    -5 1]))) => (roughly-matrix (matrix [0 1 1]) 1e-6)))
+
+(facts "Corners of OpenGL frustum"
+       (let [corners (frustum-corners 640 480 5.0 1000.0 (* 0.5 PI))
+             m       (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))]
+         (project (mmul m (nth corners 0))) => (roughly-matrix (matrix [-1 -1 1]) 1e-6)
+         (project (mmul m (nth corners 1))) => (roughly-matrix (matrix [ 1 -1 1]) 1e-6)
+         (project (mmul m (nth corners 2))) => (roughly-matrix (matrix [-1  1 1]) 1e-6)
+         (project (mmul m (nth corners 3))) => (roughly-matrix (matrix [ 1  1 1]) 1e-6)
+         (project (mmul m (nth corners 4))) => (roughly-matrix (matrix [-1 -1 0]) 1e-6)
+         (project (mmul m (nth corners 5))) => (roughly-matrix (matrix [ 1 -1 0]) 1e-6)
+         (project (mmul m (nth corners 6))) => (roughly-matrix (matrix [-1  1 0]) 1e-6)
+         (project (mmul m (nth corners 7))) => (roughly-matrix (matrix [ 1  1 0]) 1e-6)))
 
 (facts "Generate orthogonal vector"
   (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0
