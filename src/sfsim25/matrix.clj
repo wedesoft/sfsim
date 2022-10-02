@@ -82,6 +82,15 @@
      (matrix [ (- (* t far))      (/ (* t far) aspect)  (- far) 1.0])
      (matrix [     (* t far)      (/ (* t far) aspect)  (- far) 1.0])]))
 
+(defn bounding-box
+  "Compute 3D bounding box for a set of points"
+  [points]
+  (let [x (map #(mget % 0) points)
+        y (map #(mget % 1) points)
+        z (map #(mget % 2) points)]
+    {:topleftnear (matrix [(apply min x) (apply min y) (apply max z)])
+     :bottomrightfar (matrix [(apply max x) (apply max y) (apply min z)])}))
+
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"
   [n]
