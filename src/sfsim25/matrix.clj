@@ -88,8 +88,22 @@
   (let [x (map #(mget % 0) points)
         y (map #(mget % 1) points)
         z (map #(mget % 2) points)]
-    {:topleftnear (matrix [(apply min x) (apply min y) (apply max z)])
-     :bottomrightfar (matrix [(apply max x) (apply max y) (apply min z)])}))
+    {:bottomleftnear (matrix [(apply min x) (apply min y) (apply max z)])
+     :toprightfar (matrix [(apply max x) (apply max y) (apply min z)])}))
+
+(defn shadow-box-to-ndc
+  "Scale and translate light box coordinates to normalised device coordinates"
+  [{:keys [bottomleftnear toprightfar]}]
+  (let [left   (mget bottomleftnear 0)
+        right  (mget toprightfar 0)
+        bottom (mget bottomleftnear 1)
+        top    (mget toprightfar 1)
+        near   (- (mget bottomleftnear 2))
+        far    (- (mget toprightfar 2))]
+    (matrix [[(/ 2 (- right left))                    0                  0   (- (/ (* 2 left) (- left right)) 1)]
+             [                   0 (/ 2 (- top bottom))                  0 (- (/ (* 2 bottom) (- bottom top)) 1)]
+             [                   0                    0 (/ 1 (- far near))                  (/ far (- far near))]
+             [                   0                    0                  0                                     1]])))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"

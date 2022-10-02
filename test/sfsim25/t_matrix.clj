@@ -51,11 +51,18 @@
          (project (mmul m (nth corners 6))) => (roughly-matrix (matrix [-1  1 0]) 1e-6)
          (project (mmul m (nth corners 7))) => (roughly-matrix (matrix [ 1  1 0]) 1e-6)))
 
-(facts "Bounding box for set of points"
-       (:topleftnear (bounding-box [(matrix [2 3 -5])])) => (matrix [2 3 -5])
-       (:bottomrightfar (bounding-box [(matrix [2 3 -5])])) => (matrix [2 3 -5])
-       (:topleftnear (bounding-box [(matrix [2 3 -5]) (matrix [1 2 -3])])) => (matrix [1 2 -3])
-       (:bottomrightfar (bounding-box [(matrix [2 3 -5]) (matrix [5 7 -11])])) => (matrix [5 7 -11]))
+(facts "3D bounding box for set of points"
+       (:bottomleftnear (bounding-box [(matrix [2 3 -5])])) => (matrix [2 3 -5])
+       (:toprightfar (bounding-box [(matrix [2 3 -5])])) => (matrix [2 3 -5])
+       (:bottomleftnear (bounding-box [(matrix [2 3 -5]) (matrix [1 2 -3])])) => (matrix [1 2 -3])
+       (:toprightfar (bounding-box [(matrix [2 3 -5]) (matrix [5 7 -11])])) => (matrix [5 7 -11]))
+
+(facts "Scale and translate light box coordinates to normalised device coordinates"
+       (let [m (shadow-box-to-ndc {:bottomleftnear (matrix [2 3 -5]) :toprightfar (matrix [7 11 -13])})]
+         (project (mmul m (matrix [2  3  -5 1]))) => (roughly-matrix (matrix [-1 -1 1]) 1e-6)
+         (project (mmul m (matrix [7  3  -5 1]))) => (roughly-matrix (matrix [ 1 -1 1]) 1e-6)
+         (project (mmul m (matrix [2 11  -5 1]))) => (roughly-matrix (matrix [-1  1 1]) 1e-6)
+         (project (mmul m (matrix [2  3 -13 1]))) => (roughly-matrix (matrix [-1 -1 0]) 1e-6)))
 
 (facts "Generate orthogonal vector"
   (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0

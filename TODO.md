@@ -1,13 +1,7 @@
 # TODO
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* create axis-aligned orthonormal projection for given bounding box, test by projecting corners of volume
-
-x' = 2 * (x - l w) / (r - l) - w
-y' = 2 * (y - b w) / (t - b) - w
-z' = (far w + z) / (far - near)
-w' = w
-
 * use frustum, pose, and light vector to create orthonormal projection for rendering shadow map
+* add occluders to bounding box
 * front face culling
 * shadow map coordinates and depth: compute in vertex shader? front-face culling, bias, glPolygonOffset, clamp and set border color
 * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
