@@ -71,12 +71,19 @@
   (norm (orthogonal (matrix [0 1 0]))) => 1.0
   (dot (orthogonal (matrix [0 0 1])) (matrix [0 0 1])) => 0.0)
 
-(facts "Generate isometry with given normal vector as first column"
+(facts "Generate isometry with given normal vector as first row"
   (let [n (matrix [0.36 0.48 0.8])
         m (oriented-matrix n)]
     (mmul m n) => (roughly-matrix (matrix [1 0 0]) 1e-6)
     (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3) 1e-6)
     (det m) => (roughly 1.0 1e-6)))
+
+(facts "Rotate points into coordinate system with z-axis pointing towards the light"
+       (let [m (orient-to-light (matrix [0.64 0.48 0.6]))]
+         (mmul m (matrix [0 0 0 1])) => (roughly-matrix (matrix [0 0 0 1]) 1e-6)
+         (mmul m (matrix [0.64 0.48 0.6 1])) => (roughly-matrix (matrix [0 0 1 1]) 1e-6)
+         (mmul m (transpose m)) => (roughly-matrix (identity-matrix 4) 1e-6)
+         (det m) => (roughly 1.0 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"
       (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])

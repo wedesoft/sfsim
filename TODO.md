@@ -1,6 +1,7 @@
 # TODO
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* use frustum, pose, and light vector to create orthonormal projection for rendering shadow map
+* use light vector to create orthographic projection
+* use frustum, pose, and light vector to create orthographic projection for rendering shadow map
 * add occluders to bounding box
 * front face culling
 * shadow map coordinates and depth: compute in vertex shader? front-face culling, bias, glPolygonOffset, clamp and set border color

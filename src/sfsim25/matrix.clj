@@ -112,11 +112,20 @@
     (normalise (cross n b))))
 
 (defn oriented-matrix
-  "Create an isometry with given normal vector as first column"
+  "Create a 3x3 isometry with given normal vector as first row"
   [n]
   (let [o1 (orthogonal n)
         o2 (cross n o1)]
     (matrix [n o1 o2])))
+
+(defn orient-to-light
+  "Return matrix to rotate points into coordinate system with z-axis pointing towards the light"
+  [light-vector]
+  (let [o (oriented-matrix light-vector)]
+    (matrix [[(mget o 1 0) (mget o 1 1) (mget o 1 2) 0]
+             [(mget o 2 0) (mget o 2 1) (mget o 2 2) 0]
+             [(mget o 0 0) (mget o 0 1) (mget o 0 2) 0]
+             [0 0 0 1]])))
 
 (defn pack-matrices
   "Pack nested vector of matrices into float array"
