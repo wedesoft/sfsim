@@ -1,6 +1,6 @@
 (ns sfsim25.matrix
   "Matrix and vector operations"
-  (:require [clojure.core.matrix :refer (matrix mget eseq transpose div dot identity-matrix normalise cross)]
+  (:require [clojure.core.matrix :refer (matrix mget mmul inverse eseq transpose div dot identity-matrix normalise cross)]
             [clojure.math :refer (cos sin tan)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.util :refer :all]
@@ -70,17 +70,17 @@
 
 (defn frustum-corners
   "Determine corners of OpenGL frustum"
-  [width height near far field-of-view]
-  (let [t      (tan (* 0.5 field-of-view))
-        aspect (/ width height)]
-    [(matrix [(- (* t near)) (- (/ (* t near) aspect)) (- near) 1.0])
-     (matrix [    (* t near) (- (/ (* t near) aspect)) (- near) 1.0])
-     (matrix [(- (* t near))     (/ (* t near) aspect) (- near) 1.0])
-     (matrix [    (* t near)     (/ (* t near) aspect) (- near) 1.0])
-     (matrix [ (- (* t far))  (- (/ (* t far) aspect))  (- far) 1.0])
-     (matrix [     (* t far)  (- (/ (* t far) aspect))  (- far) 1.0])
-     (matrix [ (- (* t far))      (/ (* t far) aspect)  (- far) 1.0])
-     (matrix [     (* t far)      (/ (* t far) aspect)  (- far) 1.0])]))
+  [projection-matrix]
+  (let [minv (inverse projection-matrix)]
+    (mapv #(mmul minv %)
+          [(matrix [-1 -1 1 1])
+           (matrix [ 1 -1 1 1])
+           (matrix [-1  1 1 1])
+           (matrix [ 1  1 1 1])
+           (matrix [-1 -1 0 1])
+           (matrix [ 1 -1 0 1])
+           (matrix [-1  1 0 1])
+           (matrix [ 1  1 0 1])])))
 
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
@@ -104,6 +104,11 @@
              [                   0 (/ 2 (- top bottom))                  0 (- (/ (* 2 bottom) (- bottom top)) 1)]
              [                   0                    0 (/ 1 (- far near))                  (/ far (- far near))]
              [                   0                    0                  0                                     1]])))
+
+(defn shadow-box-to-map
+  "Scale and translate light box coordinates to shadow map texture coordinates"
+  [bounding-box]
+  (mmul (matrix [[0.5 0 0 0.5] [0 -0.5 0 0.5] [0 0 1 0] [0 0 0 1]]) (shadow-box-to-ndc bounding-box)))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"
