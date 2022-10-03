@@ -85,9 +85,9 @@
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
   [points]
-  (let [x (map #(mget % 0) points)
-        y (map #(mget % 1) points)
-        z (map #(mget % 2) points)]
+  (let [x (map #(/ (mget % 0) (mget % 3)) points)
+        y (map #(/ (mget % 1) (mget % 3)) points)
+        z (map #(/ (mget % 2) (mget % 3)) points)]
     {:bottomleftnear (matrix [(apply min x) (apply min y) (apply max z)])
      :toprightfar (matrix [(apply max x) (apply max y) (apply min z)])}))
 
@@ -130,7 +130,17 @@
     (matrix [[(mget o 1 0) (mget o 1 1) (mget o 1 2) 0]
              [(mget o 2 0) (mget o 2 1) (mget o 2 2) 0]
              [(mget o 0 0) (mget o 0 1) (mget o 0 2) 0]
-             [0 0 0 1]])))
+             [           0            0            0 1]])))
+
+(defn shadow-matrices
+  "Choose NDC and texture coordinate matrices for shadow mapping"
+  [projection-matrix transform light-vector]
+  (let [points       (map #(mmul transform %) (frustum-corners projection-matrix))
+        light-matrix (orient-to-light light-vector)
+        bbox         (bounding-box (map #(mmul light-matrix %) points))
+        shadow-ndc   (shadow-box-to-ndc bbox)
+        shadow-map   (shadow-box-to-map bbox)]
+    {:shadow-ndc-matrix (mmul shadow-ndc light-matrix) :shadow-map-matrix (mmul shadow-map light-matrix)}))
 
 (defn pack-matrices
   "Pack nested vector of matrices into float array"

@@ -1,7 +1,7 @@
 (ns sfsim25.t-matrix
   (:require [midje.sweet :refer :all]
             [sfsim25.conftest :refer (roughly-matrix)]
-            [clojure.core.matrix :refer (matrix mmul det dot identity-matrix transpose)]
+            [clojure.core.matrix :refer (matrix mmul mget det dot identity-matrix transpose)]
             [clojure.core.matrix.linear :refer (norm)]
             [clojure.math :refer (sqrt PI)]
             [sfsim25.matrix :refer :all]
@@ -52,10 +52,11 @@
          (project (mmul m (nth corners 7))) => (roughly-matrix (matrix [ 1  1 0]) 1e-6)))
 
 (facts "3D bounding box for set of points"
-       (:bottomleftnear (bounding-box [(matrix [2 3 -5])])) => (matrix [2 3 -5])
-       (:toprightfar (bounding-box [(matrix [2 3 -5])])) => (matrix [2 3 -5])
-       (:bottomleftnear (bounding-box [(matrix [2 3 -5]) (matrix [1 2 -3])])) => (matrix [1 2 -3])
-       (:toprightfar (bounding-box [(matrix [2 3 -5]) (matrix [5 7 -11])])) => (matrix [5 7 -11]))
+       (:bottomleftnear (bounding-box [(matrix [2 3 -5 1])])) => (matrix [2 3 -5])
+       (:toprightfar (bounding-box [(matrix [2 3 -5 1])])) => (matrix [2 3 -5])
+       (:bottomleftnear (bounding-box [(matrix [2 3 -5 1]) (matrix [1 2 -3 1])])) => (matrix [1 2 -3])
+       (:toprightfar (bounding-box [(matrix [2 3 -5 1]) (matrix [5 7 -11 1])])) => (matrix [5 7 -11])
+       (:bottomleftnear (bounding-box [(matrix [4 6 -10 2])])) => (matrix [2 3 -5]))
 
 (facts "Scale and translate light box coordinates to normalised device coordinates"
        (let [m (shadow-box-to-ndc {:bottomleftnear (matrix [2 3 -5]) :toprightfar (matrix [7 11 -13])})]
@@ -91,6 +92,22 @@
          (mmul m (matrix [0.64 0.48 0.6 1])) => (roughly-matrix (matrix [0 0 1 1]) 1e-6)
          (mmul m (transpose m)) => (roughly-matrix (identity-matrix 4) 1e-6)
          (det m) => (roughly 1.0 1e-6)))
+
+(facts "Choose NDC and texture coordinate matrices for shadow mapping"
+       (let [projection (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
+             transform1 (identity-matrix 4)
+             transform2 (transformation-matrix (rotation-x (/ PI 2)) (matrix [0 0 0]))
+             light (matrix [0 1 0])]
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light)) (matrix [0 750 -1000 1]))
+         => (roughly-matrix (matrix [1 0 1 1]) 1e-6)
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light)) (matrix [0 -750 -1000 1]))
+         => (roughly-matrix (matrix [1 0 0 1]) 1e-6)
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light)) (matrix [0 1000 0 1]))
+         => (roughly-matrix (matrix [0 0 1 1]) 1e-6)
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light)) (matrix [0 5 0 1]))
+         => (roughly-matrix (matrix [0 0 0 1]) 1e-6)
+         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light)) (matrix [0 1000 0 1]))
+         => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"
       (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])
