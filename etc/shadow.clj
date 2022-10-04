@@ -97,5 +97,6 @@ void main(void)
 
 (destroy-vertex-array-object vao)
 (destroy-program program-main)
+(destroy-program program-shadow)
 
 (Display/destroy)
