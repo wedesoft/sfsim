@@ -4,7 +4,7 @@
 * check sign of y-coordinate of shadow map texture vs normalised device coordinates
 * add occluders to bounding box
 * front face culling
-* shadow map coordinates and depth: compute in vertex shader? front-face culling, bias, glPolygonOffset, clamp and set border color
+* shadow map coordinates and depth: compute in vertex shader? front-face culling, bias, glPolygonOffset, clamp and set border color, use polygon offset?
 * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * check clouds don't disappear when going to space
 * convert prototype to tested code
