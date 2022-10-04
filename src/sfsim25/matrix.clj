@@ -108,7 +108,7 @@
 (defn shadow-box-to-map
   "Scale and translate light box coordinates to shadow map texture coordinates"
   [bounding-box]
-  (mmul (matrix [[0.5 0 0 0.5] [0 -0.5 0 0.5] [0 0 1 0] [0 0 0 1]]) (shadow-box-to-ndc bounding-box)))
+  (mmul (matrix [[0.5 0 0 0.5] [0 0.5 0 0.5] [0 0 1 0] [0 0 0 1]]) (shadow-box-to-ndc bounding-box)))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"

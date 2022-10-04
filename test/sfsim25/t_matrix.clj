@@ -67,10 +67,10 @@
 
 (facts "Scale and translate light box coordinates to shadow map coordinates"
        (let [m (shadow-box-to-map {:bottomleftnear (matrix [2 3 -5]) :toprightfar (matrix [7 11 -13])})]
-         (project (mmul m (matrix [2  3  -5 1]))) => (roughly-matrix (matrix [ 0  1 1]) 1e-6)
-         (project (mmul m (matrix [7  3  -5 1]))) => (roughly-matrix (matrix [ 1  1 1]) 1e-6)
-         (project (mmul m (matrix [2 11  -5 1]))) => (roughly-matrix (matrix [ 0  0 1]) 1e-6)
-         (project (mmul m (matrix [2  3 -13 1]))) => (roughly-matrix (matrix [ 0  1 0]) 1e-6)))
+         (project (mmul m (matrix [2  3  -5 1]))) => (roughly-matrix (matrix [ 0  0 1]) 1e-6)
+         (project (mmul m (matrix [7  3  -5 1]))) => (roughly-matrix (matrix [ 1  0 1]) 1e-6)
+         (project (mmul m (matrix [2 11  -5 1]))) => (roughly-matrix (matrix [ 0  1 1]) 1e-6)
+         (project (mmul m (matrix [2  3 -13 1]))) => (roughly-matrix (matrix [ 0  0 0]) 1e-6)))
 
 (facts "Generate orthogonal vector"
   (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0

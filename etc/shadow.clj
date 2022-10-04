@@ -46,22 +46,14 @@ void main(void)
 "#version 410 core
 uniform vec3 light;
 uniform mat4 shadow_map_matrix;
-// uniform sampler2DShadow shadow_map;
-uniform sampler2D shadow_map;
+uniform sampler2DShadow shadow_map;
 in vec4 pos;
 out vec3 fragColor;
 void main(void)
 {
-  vec4 pos2 = shadow_map_matrix * pos;
-  //float shade = textureProj(shadow_map, pos2);
-  //float brightness = max(light.z, 0) * (0.5 * shade + 0.1) + 0.1 * (4 + pos.z);
-  vec2 p = pos2.xy / pos2.w;
-  p.y = 1.0 - p.y;
-  float brightness = texture(shadow_map, p).r * 0.8 + 0.2 + 0.1 * (4 + pos.z);
-  float red = 0;
-  if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1)
-    red = 1;
-  fragColor = vec3(red, brightness, brightness);
+  float shade = textureProj(shadow_map, shadow_map_matrix * pos);
+  float brightness = max(light.z, 0) * (0.5 * shade + 0.1) + 0.1 * (4 + pos.z);
+  fragColor = vec3(brightness, brightness, brightness);
 }")
 
 (def projection (projection-matrix size size 2 5 (to-radians 60)))
