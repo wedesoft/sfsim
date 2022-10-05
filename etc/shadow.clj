@@ -8,9 +8,11 @@
         '[org.lwjgl BufferUtils])
 
 (def size 256)
+(def width 320)
+(def height 240)
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. size size))
+(Display/setDisplayMode (DisplayMode. width height))
 (Display/create)
 
 (def vertex-shadow
@@ -56,7 +58,7 @@ void main(void)
   fragColor = vec3(brightness, brightness, brightness);
 }")
 
-(def projection (projection-matrix size size 2 5 (to-radians 60)))
+(def projection (projection-matrix width height 2 5 (to-radians 90)))
 (def transform (identity-matrix 4))
 (def light-vector (normalize (matrix [1 1 2])))
 (def shadow (shadow-matrices projection transform light-vector))
@@ -83,7 +85,7 @@ void main(void)
      {:width size :height size :data data})))
 
 
-(onscreen-render size size
+(onscreen-render width height
                  (clear (matrix [0.0 0.0 0.0]))
                  (use-program program-main)
                  (uniform-sampler program-main :shadow_map 0)
