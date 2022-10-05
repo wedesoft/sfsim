@@ -61,7 +61,7 @@ void main(void)
 (def light-vector (normalize (matrix [1 1 2])))
 (def shadow (shadow-matrices projection transform light-vector))
 
-(def indices [0 1 3 2 4 5 7 6])
+(def indices [0 1 3 2 6 7 5 4])
 (def vertices [-2 -2 -4, 2 -2 -4, -2 2 -4, 2 2 -4
                -1 -1 -3, 1 -1 -3, -1 1 -3, 1 1 -3])
 (def program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene]))
@@ -69,6 +69,8 @@ void main(void)
 
 (def shadow-map (texture-render-depth
                   size size
+                  (GL11/glEnable GL11/GL_CULL_FACE)
+                  (GL11/glCullFace GL11/GL_FRONT)
                   (clear)
                   (use-program program-shadow)
                   (uniform-matrix4 program-shadow :shadow_ndc_matrix (:shadow-ndc-matrix shadow))
