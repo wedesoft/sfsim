@@ -540,9 +540,9 @@ void main(void)
 {
 }")
 
-(tabular "Render quad into depth map"
+(tabular "Render back face of quad into shadow map"
          (offscreen-render 32 32
-           (let [indices  [0 1 3 2]
+           (let [indices  (reverse [0 1 3 2])
                  vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
                  program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
                  vao      (make-vertex-array-object program indices vertices [:point 3])
