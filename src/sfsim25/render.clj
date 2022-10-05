@@ -8,11 +8,11 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
-  [width height]
+  [width height cull-front]
   (GL11/glViewport 0 0 width height)
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace GL11/GL_BACK)
+  (GL11/glCullFace (if cull-front GL11/GL_FRONT GL11/GL_BACK))
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
@@ -23,7 +23,7 @@
          pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 24 0 0) nil nil)
          data#    (int-array (* ~width ~height))]
      (.makeCurrent pbuffer#)
-     (setup-rendering ~width ~height)
+     (setup-rendering ~width ~height false)
      (try
        ~@body
        (GL11/glReadPixels 0 0 ~width ~height GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixels#)
@@ -38,7 +38,7 @@
   [width height & body]
   `(do
      (Display/makeCurrent)
-     (setup-rendering ~width ~height)
+     (setup-rendering ~width ~height false)
      ~@body
      (Display/update)))
 
@@ -326,7 +326,7 @@
        (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8) ~width ~height)
        (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex# 0)
        (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
-       (setup-rendering ~width ~height)
+       (setup-rendering ~width ~height false)
        ~@body
        {:texture tex# :target GL11/GL_TEXTURE_2D}
        (finally
@@ -334,7 +334,7 @@
          (GL30/glDeleteFramebuffers fbo#)))))
 
 (defmacro texture-render-depth
-  "Macro to render depth map to a texture"
+  "Macro to create shadow map"
   [width height & body]
   `(let [fbo# (GL30/glGenFramebuffers)
          tex# (GL11/glGenTextures)]
@@ -349,7 +349,7 @@
        (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL14/GL_COMPARE_R_TO_TEXTURE); TODO: test this
        (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL); TODO: test this
        (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT tex# 0)
-       (setup-rendering ~width ~height)
+       (setup-rendering ~width ~height true)
        ~@body
        {:texture tex# :target GL11/GL_TEXTURE_2D}
        (finally

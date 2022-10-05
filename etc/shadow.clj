@@ -69,8 +69,6 @@ void main(void)
 
 (def shadow-map (texture-render-depth
                   size size
-                  (GL11/glEnable GL11/GL_CULL_FACE)
-                  (GL11/glCullFace GL11/GL_FRONT)
                   (clear)
                   (use-program program-shadow)
                   (uniform-matrix4 program-shadow :shadow_ndc_matrix (:shadow-ndc-matrix shadow))
