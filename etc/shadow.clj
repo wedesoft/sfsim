@@ -7,7 +7,7 @@
 (import '[org.lwjgl.opengl Pbuffer Display DisplayMode PixelFormat GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL43 GL45]
         '[org.lwjgl BufferUtils])
 
-(def size 256)
+(def size 512)
 (def width 320)
 (def height 240)
 
@@ -57,8 +57,8 @@ in vec3 pos;
 out vec3 fragColor;
 void main(void)
 {
-  float shade = textureProj(shadow_map, shadow_pos);
-  float brightness = (0.1 + 0.9 * max(light.z, 0)) * (0.7 * shade + 0.1) * (0.8 + (4 + pos.z) * 0.2);
+  float shade = textureProj(shadow_map, shadow_pos) * max(light.z, 0);
+  float brightness = (0.9 * shade + 0.1) * (0.8 + (4 + pos.z) * 0.2);
   fragColor = vec3(brightness, brightness, brightness);
 }")
 
