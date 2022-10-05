@@ -35,13 +35,14 @@ void main(void)
 
 (def vertex-scene
 "#version 410 core
+uniform mat4 transform;
 uniform mat4 projection;
 uniform mat4 shadow_map_matrix;
 in vec3 point;
 out vec4 shadow_pos;
 void main(void)
 {
-  gl_Position = projection * vec4(point, 1);
+  gl_Position = projection * transform * vec4(point, 1);
   shadow_pos = shadow_map_matrix * vec4(point, 1);
 }")
 
@@ -59,7 +60,7 @@ void main(void)
 }")
 
 (def projection (projection-matrix width height 2 5 (to-radians 90)))
-(def transform (identity-matrix 4))
+(def transform (transformation-matrix (rotation-z (to-radians 30)) (matrix [0 0 0])))
 (def light-vector (normalize (matrix [1 1 2])))
 (def shadow (shadow-matrices projection transform light-vector))
 
@@ -91,6 +92,7 @@ void main(void)
                  (uniform-sampler program-main :shadow_map 0)
                  (uniform-matrix4 program-main :projection projection)
                  (uniform-matrix4 program-main :shadow_map_matrix (:shadow-map-matrix shadow))
+                 (uniform-matrix4 program-main :transform transform)
                  (uniform-vector3 program-main :light light-vector)
                  (use-textures shadow-map)
                  (render-quads vao))

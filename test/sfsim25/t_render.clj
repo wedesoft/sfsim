@@ -2,8 +2,10 @@
   (:require [midje.sweet :refer :all]
             [sfsim25.conftest :refer (is-image record-image roughly-matrix)]
             [clojure.core.matrix :refer (matrix identity-matrix)]
+            [clojure.math :refer (to-radians)]
             [comb.template :as template]
             [sfsim25.util :refer :all]
+            [sfsim25.matrix :refer :all]
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode GL11]))
 
@@ -552,3 +554,78 @@ void main(void)
          0.5
          0.75
          0.25)
+
+(def vertex-shadow
+"#version 410 core
+uniform mat4 shadow_ndc_matrix;
+in vec3 point;
+void main(void)
+{
+  gl_Position = shadow_ndc_matrix * vec4(point, 1);
+}
+")
+
+(def fragment-shadow
+"#version 410 core
+void main(void)
+{
+}")
+
+(def vertex-scene
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 shadow_map_matrix;
+in vec3 point;
+out vec4 shadow_pos;
+void main(void)
+{
+  gl_Position = projection * vec4(point, 1);
+  shadow_pos = shadow_map_matrix * vec4(point, 1);
+}")
+
+(def fragment-scene
+"#version 410 core
+uniform vec3 light;
+uniform sampler2DShadow shadow_map;
+in vec4 shadow_pos;
+out vec3 fragColor;
+void main(void)
+{
+  float shade = textureProj(shadow_map, shadow_pos);
+  float brightness = max(light.z, 0) * (0.9 * shade + 0.1);
+  fragColor = vec3(brightness, brightness, brightness);
+}")
+
+(fact "Shadow mapping integration test"
+      (offscreen-render 320 240
+        (let [projection (projection-matrix 320 240 2 5 (to-radians 90))
+              transform (identity-matrix 4)
+              light-vector (normalize (matrix [1 1 2]))
+              shadow (shadow-matrices projection transform light-vector)
+              indices [0 1 3 2 6 7 5 4 8 9 11 10]
+              vertices [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
+                        -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
+                        -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
+              program-shadow (make-program :vertex [vertex-shadow] :fragment [fragment-shadow])
+              program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene])
+              vao (make-vertex-array-object program-main indices vertices [:point 3])
+              shadow-map (texture-render-depth
+                256 256
+                (clear)
+                (use-program program-shadow)
+                (uniform-matrix4 program-shadow :shadow_ndc_matrix (:shadow-ndc-matrix shadow))
+                (render-quads vao))]
+          (setup-rendering 320 240 false); Need to set it up again because texture-render-depth has overriden the settings
+          (clear (matrix [0 0 0]))
+          (use-program program-main)
+          (uniform-sampler program-main :shadow_map 0)
+          (uniform-matrix4 program-main :projection projection)
+          (uniform-matrix4 program-main :shadow_map_matrix (:shadow-map-matrix shadow))
+          (uniform-vector3 program-main :light light-vector)
+          (use-textures shadow-map)
+          (render-quads vao)
+          (destroy-texture shadow-map)
+          (destroy-vertex-array-object vao)
+          (destroy-program program-main)
+          (destroy-program program-shadow)))
+      => (record-image "test/sfsim25/fixtures/render/shadow.png"))
