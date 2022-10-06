@@ -103,6 +103,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
+vec3 transmittance_outer(vec3 point, vec3 direction);
 float phase(float g, float mu);
 
 void main()
@@ -126,7 +127,7 @@ void main()
   float step = cloud_step;
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   float rest = 1.0;
-  float cloud = 0.0;
+  vec3 cloud = vec3(0, 0, 0);
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
   float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   for (int i=0; i<steps; i++) {
@@ -141,12 +142,12 @@ void main()
         vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
         float t = exp(-step * density);
         float scatter;
-        float incoming;
+        vec3 incoming;
         if (planet.y == 0) {
           vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
           int steps2 = min(int(ceil(atmosphere2.y / cloud_step2)), shadow_max_steps);
           float step2 = cloud_step2;
-          incoming = 1;
+          incoming = transmittance_outer(pos, light);
           for (int j=0; j<steps2; j++) {
             vec3 pos2 = pos + (j + offset2) * step2 * light;
             float r2 = length(pos2);
@@ -162,7 +163,7 @@ void main()
           scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
         } else {
           scatter = 0;
-          incoming = 0;
+          incoming = vec3(0, 0, 0);
         };
         cloud = cloud + rest * incoming * scatter * (1 - t);
         rest = rest * t;
