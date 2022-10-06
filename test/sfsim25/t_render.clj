@@ -587,7 +587,6 @@ void main(void)
 
 (def fragment-scene
 "#version 410 core
-uniform vec3 light;
 uniform sampler2DShadow shadow_map;
 in vec4 shadow_pos;
 in float ambient;
@@ -624,7 +623,6 @@ void main(void)
           (uniform-sampler program-main :shadow_map 0)
           (uniform-matrix4 program-main :projection projection)
           (uniform-matrix4 program-main :shadow_map_matrix (:shadow-map-matrix shadow))
-          (uniform-vector3 program-main :light light-vector)
           (use-textures shadow-map)
           (render-quads vao)
           (destroy-texture shadow-map)
