@@ -94,7 +94,7 @@
 (defn expand-bounding-box-near
   "Enlarge bounding box towards positive z (near)"
   [bbox z-expand]
-  (update bbox :bottomleftnear #(add % (matrix [0 0 z-expand]))))
+  (update bbox :bottomleftnear add (matrix [0 0 z-expand])))
 
 (defn shadow-box-to-ndc
   "Scale and translate light box coordinates to normalised device coordinates"
