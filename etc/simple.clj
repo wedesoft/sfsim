@@ -262,6 +262,11 @@ void main()
          (flush)
          (swap! t0 + dt)))
 
+(destroy-texture W)
+(destroy-texture B)
+(destroy-texture P)
+(destroy-texture T)
+(destroy-texture S)
 (destroy-vertex-array-object vao)
 (destroy-program program)
 
