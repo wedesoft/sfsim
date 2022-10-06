@@ -577,10 +577,12 @@ uniform mat4 projection;
 uniform mat4 shadow_map_matrix;
 in vec3 point;
 out vec4 shadow_pos;
+out float ambient;
 void main(void)
 {
   gl_Position = projection * vec4(point, 1);
   shadow_pos = shadow_map_matrix * vec4(point, 1);
+  ambient = -point.z - 3;
 }")
 
 (def fragment-scene
@@ -588,11 +590,12 @@ void main(void)
 uniform vec3 light;
 uniform sampler2DShadow shadow_map;
 in vec4 shadow_pos;
+in float ambient;
 out vec3 fragColor;
 void main(void)
 {
   float shade = textureProj(shadow_map, shadow_pos);
-  float brightness = max(light.z, 0) * (0.9 * shade + 0.1);
+  float brightness = 0.7 * shade + 0.1 * ambient + 0.1;
   fragColor = vec3(brightness, brightness, brightness);
 }")
 
