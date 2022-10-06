@@ -38,6 +38,10 @@
 (def cloud-scale 5000)
 (def focal-length (/ (/ (Display/getWidth) 2) (tan (to-radians (/ fov 2)))))
 (def base-lod (/ (* worley-size (tan (/ (to-radians fov) 2))) (/ (Display/getWidth) 2) cloud-scale))
+(def height-size 9)
+(def heading-size 33)
+(def elevation-size 129)
+(def light-elevation-size 33)
 
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
@@ -46,6 +50,11 @@
 (def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.3 0.0]))
 (def P (make-float-texture-1d data))
 
+(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def T (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
+
+(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 (def data (slurp-floats "data/bluenoise.raw"))
 (def B (make-float-texture-2d {:width noise-size :height noise-size :data data}))
 (with-texture GL11/GL_TEXTURE_2D (:texture B)
@@ -75,6 +84,7 @@ uniform float anisotropic;
 uniform float specular;
 uniform float cutoff;
 uniform float cloud_scatter_amount;
+uniform float amplification;
 uniform int noise_size;
 uniform float base_lod;
 uniform sampler3D worley;
@@ -92,6 +102,7 @@ out lowp vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
+vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
 float phase(float g, float mu);
 
 void main()
@@ -107,8 +118,9 @@ void main()
     float cos_incidence = dot(normal, light);
     background = vec3(max(cos_incidence, 0), 0, 0);
   } else {
-    float glare = pow(max(0, dot(direction, light)), specular);
-    background = vec3(glare, glare, 1);
+    float glare = pow(max(0, dot(direction, light)), specular) / amplification;
+    background = vec3(glare, glare, glare);
+    background = attenuation_outer(light, origin, direction, atmosphere.x, background) * amplification;
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = cloud_step;
@@ -167,7 +179,12 @@ void main()
 
 (def program
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections phase-function]))
+                :fragment [fragment shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections phase-function
+                           attenuation-track attenuation-outer transmittance-track transmittance-outer
+                           ray-scatter-track ray-scatter-outer shaders/ray-scatter-forward shaders/horizon-angle
+                           shaders/oriented-matrix shaders/interpolate-4d shaders/transmittance-forward
+                           shaders/orthogonal-vector shaders/clip-angle shaders/convert-4d-index shaders/elevation-to-index
+                           shaders/interpolate-2d shaders/is-above-horizon shaders/convert-2d-index]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -188,9 +205,17 @@ void main()
 (uniform-float program :cutoff 0.05)
 (uniform-int program :noise_size 64)
 (uniform-float program :base_lod base-lod)
+(uniform-int program :height_size height-size)
+(uniform-int program :elevation_size elevation-size)
+(uniform-int program :light_elevation_size light-elevation-size)
+(uniform-int program :heading_size heading-size)
+(uniform-float program :elevation_power 2.0)
+(uniform-float program :amplification 8.0)
 (uniform-sampler program :worley 0)
 (uniform-sampler program :bluenoise 1)
 (uniform-sampler program :profile 2)
+(uniform-sampler program :transmittance 3)
+(uniform-sampler program :ray_scatter 4)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -219,7 +244,7 @@ void main()
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           (use-program program)
-                          (use-textures W B P)
+                          (use-textures W B P T S)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
                           (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))

@@ -1,10 +1,10 @@
 # TODO
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
 * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * check clouds don't disappear when going to space
 * convert prototype to tested code
 * multiple octaves of noise
-* add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
 * use 2d blue noise for sampling offsets
 * offscreen render clouds (with atmosphere in front) with alpha channel
 * render planet without clouds
@@ -83,7 +83,7 @@
 * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
 * Skydome scaled to ZFAR * 0.5
 * use short integers for normal vector textures?
-* soft-dock, hard-dock
+* NASA docking system, soft-dock, hard-dock, https://www.youtube.com/watch?v=dWYpVfhvsak
 * EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
