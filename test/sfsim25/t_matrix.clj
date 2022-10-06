@@ -58,6 +58,11 @@
        (:toprightfar (bounding-box [(matrix [2 3 -5 1]) (matrix [5 7 -11 1])])) => (matrix [5 7 -11])
        (:bottomleftnear (bounding-box [(matrix [4 6 -10 2])])) => (matrix [2 3 -5]))
 
+(facts "Expand near portion of bounding box"
+       (let [bbox {:bottomleftnear (matrix [2 3 -5]) :toprightfar (matrix [7 11 -13])}]
+         (expand-bounding-box-near bbox 0) => bbox
+         (expand-bounding-box-near bbox 1) => {:bottomleftnear (matrix [2 3 -4]) :toprightfar (matrix [7 11 -13])}))
+
 (facts "Scale and translate light box coordinates to normalised device coordinates"
        (let [m (shadow-box-to-ndc {:bottomleftnear (matrix [2 3 -5]) :toprightfar (matrix [7 11 -13])})]
          (project (mmul m (matrix [2  3  -5 1]))) => (roughly-matrix (matrix [-1 -1 1]) 1e-6)
@@ -98,15 +103,17 @@
              transform1 (identity-matrix 4)
              transform2 (transformation-matrix (rotation-x (/ PI 2)) (matrix [0 0 0]))
              light (matrix [0 1 0])]
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light)) (matrix [0 750 -1000 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light 0)) (matrix [0 750 -1000 1]))
          => (roughly-matrix (matrix [1 0 1 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light)) (matrix [0 -750 -1000 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light 0)) (matrix [0 -750 -1000 1]))
          => (roughly-matrix (matrix [1 0 0 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light)) (matrix [0 1000 0 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light 0)) (matrix [0 1000 0 1]))
          => (roughly-matrix (matrix [0 0 1 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light)) (matrix [0 5 0 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light 0)) (matrix [0 5 0 1]))
          => (roughly-matrix (matrix [0 0 0 1]) 1e-6)
-         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light)) (matrix [0 1000 0 1]))
+         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light 0)) (matrix [0 1000 0 1]))
+         => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)
+         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light 500)) (matrix [0 1500 0 1]))
          => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"

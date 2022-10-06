@@ -1,6 +1,6 @@
 (ns sfsim25.matrix
   "Matrix and vector operations"
-  (:require [clojure.core.matrix :refer (matrix mget mmul inverse eseq transpose div dot identity-matrix normalise cross)]
+  (:require [clojure.core.matrix :refer (matrix mget mmul inverse eseq transpose div dot identity-matrix normalise cross add)]
             [clojure.math :refer (cos sin tan)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.util :refer :all]
@@ -91,6 +91,11 @@
     {:bottomleftnear (matrix [(apply min x) (apply min y) (apply max z)])
      :toprightfar (matrix [(apply max x) (apply max y) (apply min z)])}))
 
+(defn expand-bounding-box-near
+  "Enlarge bounding box towards positive z (near)"
+  [bbox z-expand]
+  (update bbox :bottomleftnear #(add %1 (matrix [0 0 %2])) z-expand))
+
 (defn shadow-box-to-ndc
   "Scale and translate light box coordinates to normalised device coordinates"
   [{:keys [bottomleftnear toprightfar]}]
@@ -134,10 +139,10 @@
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
-  [projection-matrix transform light-vector]
+  [projection-matrix transform light-vector longest-shadow]
   (let [points       (map #(mmul transform %) (frustum-corners projection-matrix))
         light-matrix (orient-to-light light-vector)
-        bbox         (bounding-box (map #(mmul light-matrix %) points))
+        bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)
         shadow-ndc   (shadow-box-to-ndc bbox)
         shadow-map   (shadow-box-to-map bbox)]
     {:shadow-ndc-matrix (mmul shadow-ndc light-matrix) :shadow-map-matrix (mmul shadow-map light-matrix)}))
