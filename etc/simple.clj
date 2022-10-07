@@ -121,7 +121,7 @@ void main()
     float cos_incidence = dot(normal, light);
     background = vec3(max(cos_incidence, 0), 0, 0);
   } else {
-    float glare = pow(max(0, dot(direction, light)), specular) / amplification;
+    float glare = pow(max(0, dot(direction, light)), specular);
     background = vec3(glare, glare, glare);
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
@@ -176,6 +176,12 @@ void main()
         cloud = cloud + rest * atten;
         rest = rest * transm;
       };
+    } else {
+      vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
+      vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
+      if (r >= radius + cloud_bottom)
+        cloud = cloud + rest * atten;
+      rest = rest * transm;
     };
     if (rest.g <= cutoff) {
       rest = vec3(cutoff, cutoff, cutoff);
@@ -203,15 +209,15 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 150)
-(uniform-float program :cloud_step2 250)
+(uniform-float program :cloud_step 300)
+(uniform-float program :cloud_step2 500)
 (uniform-float program :cloud_bottom 1500)
 (uniform-float program :cloud_top 6500)
 (uniform-float program :cloud_scale cloud-scale)
 (uniform-float program :cloud_scatter_amount 1.0)
 (uniform-int program :shadow_max_steps 80)
 (uniform-float program :specular 200)
-(uniform-float program :cutoff 0.05)
+(uniform-float program :cutoff 0.01)
 (uniform-int program :noise_size 64)
 (uniform-float program :base_lod base-lod)
 (uniform-int program :height_size height-size)
