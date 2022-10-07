@@ -1,5 +1,6 @@
 # TODO
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* attenuation of far clouds
 * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
 * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * check clouds don't disappear when going to space
