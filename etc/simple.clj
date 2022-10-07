@@ -103,7 +103,9 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 transmittance_outer(vec3 point, vec3 direction);
+vec3 transmittance_track(vec3 p, vec3 q);
 float phase(float g, float mu);
 
 void main()
@@ -121,12 +123,11 @@ void main()
   } else {
     float glare = pow(max(0, dot(direction, light)), specular) / amplification;
     background = vec3(glare, glare, glare);
-    background = attenuation_outer(light, origin, direction, atmosphere.x, background) * amplification;
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = cloud_step;
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
-  float rest = 1.0;
+  vec3 rest = vec3(1, 1, 1);
   vec3 cloud = vec3(0, 0, 0);
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
   float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
@@ -165,12 +166,19 @@ void main()
           scatter = 0;
           incoming = vec3(0, 0, 0);
         };
-        cloud = cloud + rest * incoming * scatter * (1 - t);
-        rest = rest * t;
+        vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
+        vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
+        cloud = cloud + rest * (incoming * scatter * (1 - t) + atten);
+        rest = rest * t * transm;
+      } else {
+        vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
+        vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
+        cloud = cloud + rest * atten;
+        rest = rest * transm;
       };
     };
-    if (rest <= cutoff) {
-      rest = cutoff;
+    if (rest.g <= cutoff) {
+      rest = vec3(cutoff, cutoff, cutoff);
       break;
     };
   };
