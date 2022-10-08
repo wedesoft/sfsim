@@ -48,6 +48,7 @@
 * article about clouds
 * 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
 * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
+* shadow polygonoffset?
 * how to render clouds and cloud shadows?
 * how to render waves
 * how to render stars
@@ -126,7 +127,6 @@
 * on board displays, cameras, MFDs
 * no need to adjust MFDs during critical parts of the mission
 * https://github.com/HappyEnte/DreamChaser
-* shadows (mask color pipeline output)
 * HDR bloom (separable convolution)
 * multisampling
 * windows (blending, reflections), greyscale cameras, MFDs

@@ -168,8 +168,12 @@ void main()
         };
         vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
         vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
-        cloud = cloud + rest * (incoming * scatter * (1 - t) + atten);
-        rest = rest * t * transm;
+        // cloud = cloud + rest * (incoming * scatter * (1 - t) + atten);
+        cloud = cloud + rest * atten;
+        if (direction.x < -0.2)
+          rest = rest * t * transm;
+        else
+          rest = rest * transm;
       } else {
         vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
         vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
@@ -179,16 +183,17 @@ void main()
     } else {
       vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
       vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
-      if (r >= radius + cloud_bottom)
-        cloud = cloud + rest * atten;
+      cloud = cloud + rest * atten;
       rest = rest * transm;
     };
-    if (rest.g <= cutoff) {
-      rest = vec3(cutoff, cutoff, cutoff);
-      break;
-    };
+    // if (rest.g <= cutoff) {
+    //   rest = vec3(cutoff, cutoff, cutoff);
+    //   break;
+    // };
   };
-  background = (rest - cutoff) * background + cloud / (1 - cutoff);
+  // background = (rest - cutoff) * background + cloud / (1 - cutoff);
+  if (direction.x < -0.0)
+    background = rest * background + cloud;
   fragColor = background;
 }")
 
@@ -217,7 +222,7 @@ void main()
 (uniform-float program :cloud_scatter_amount 1.0)
 (uniform-int program :shadow_max_steps 80)
 (uniform-float program :specular 200)
-(uniform-float program :cutoff 0.01)
+(uniform-float program :cutoff 0.0)
 (uniform-int program :noise_size 64)
 (uniform-float program :base_lod base-lod)
 (uniform-int program :height_size height-size)
