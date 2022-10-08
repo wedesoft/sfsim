@@ -106,6 +106,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 transmittance_outer(vec3 point, vec3 direction);
 vec3 transmittance_track(vec3 p, vec3 q);
+bool is_above_horizon(vec3 point, vec3 direction);
 float phase(float g, float mu);
 
 void main()
@@ -170,10 +171,7 @@ void main()
         vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
         // cloud = cloud + rest * (incoming * scatter * (1 - t) + atten);
         cloud = cloud + rest * atten;
-        if (direction.x < -0.2)
-          rest = rest * t * transm;
-        else
-          rest = rest * transm;
+        rest = rest * t * transm;
       } else {
         vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
         vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
@@ -192,7 +190,7 @@ void main()
     // };
   };
   // background = (rest - cutoff) * background + cloud / (1 - cutoff);
-  if (direction.x < -0.0)
+  if (direction.x > 0 != is_above_horizon(origin, direction))
     background = rest * background + cloud;
   fragColor = background;
 }")
@@ -230,7 +228,7 @@ void main()
 (uniform-int program :light_elevation_size light-elevation-size)
 (uniform-int program :heading_size heading-size)
 (uniform-float program :elevation_power 2.0)
-(uniform-float program :amplification 8.0)
+(uniform-float program :amplification 4.0)
 (uniform-sampler program :worley 0)
 (uniform-sampler program :bluenoise 1)
 (uniform-sampler program :profile 2)
