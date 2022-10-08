@@ -174,9 +174,31 @@ void main()
         cloud = cloud + rest * incoming * (scatter * (1 - t) + atten);
         rest = rest * t * transm;
       } else {
+        vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
+        vec3 incoming;
+        if (planet.y == 0) {
+          vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
+          int steps2 = min(int(ceil(atmosphere2.y / cloud_step2)), shadow_max_steps);
+          float step2 = cloud_step2;
+          incoming = transmittance_outer(pos, light);
+          for (int j=0; j<steps2; j++) {
+            vec3 pos2 = pos + (j + offset2) * step2 * light;
+            float r2 = length(pos2);
+            if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
+              float h2 = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
+              float density2 = (textureLod(worley, pos2 / cloud_scale, lod).r - (h * threshold + 1 - h)) * cloud_multiplier;
+              if (density2 > 0) {
+                float t2 = exp((scatter_amount - 1) * step2 * density2);
+                incoming = incoming * t2;
+              };
+            };
+          };
+        } else {
+          incoming = vec3(0, 0, 0);
+        };
         vec3 atten = attenuation_track(light, origin, direction, atmosphere.x + i * step, atmosphere.x + (i + 1) * step, vec3(0, 0, 0)) * amplification;
         vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
-        cloud = cloud + rest * atten;
+        cloud = cloud + rest * atten * incoming;
         rest = rest * transm;
       };
     } else {
