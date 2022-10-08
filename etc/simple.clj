@@ -126,7 +126,8 @@ void main()
     background = vec3(glare, glare, glare);
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
-  float step = cloud_step;
+  // float step = cloud_step;
+  float step = atmosphere.y / steps;
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   vec3 rest = vec3(1, 1, 1);
   vec3 cloud = vec3(0, 0, 0);
@@ -135,7 +136,8 @@ void main()
   for (int i=0; i<steps; i++) {
     float dist = atmosphere.x + (i + offset) * step;
     vec3 pos = origin + dist * direction;
-    float lod = max(log2(base_lod * dist), 0);
+    // float lod = max(log2(base_lod * dist), 0);
+    float lod = 0.0;
     float r = length(pos);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float h = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
@@ -190,8 +192,8 @@ void main()
     // };
   };
   // background = (rest - cutoff) * background + cloud / (1 - cutoff);
-  if (direction.x > 0 != is_above_horizon(origin, direction))
-    background = rest * background + cloud;
+  // if (direction.x > 0 != is_above_horizon(origin, direction))
+  background = rest * background + cloud;
   fragColor = background;
 }")
 
