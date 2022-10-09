@@ -22,19 +22,18 @@
 
 (def radius 6378000.0)
 (def max-height 35000.0)
-(def light (atom 0.142))
+(def light (atom 0.041))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 15000)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
-(def threshold (atom 0.4))
-;(def multiplier (atom 0.008))
-(def multiplier (atom 1.0))
+(def threshold (atom 0.956))
+(def multiplier (atom 0.001))
 (def anisotropic (atom 0.15))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
 (def worley-size 128)
 (def noise-size 64)
 (def keystates (atom {}))
-(def fov 60.0)
+(def fov 45.0)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians fov)))
 (def cloud-scale 5000)
 (def focal-length (/ (/ (Display/getWidth) 2) (tan (to-radians (/ fov 2)))))
@@ -190,6 +189,10 @@ void main()
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
   float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   bool above = is_above_horizon(origin, direction);
+  if (direction.x > 0.1)
+    above = true;
+  if (direction.x < -0.1)
+    above = false;
   for (int i=0; i<steps; i++) {
     float dist = atmosphere.x + (i + offset) * step;
     float a = atmosphere.x + i * step;
