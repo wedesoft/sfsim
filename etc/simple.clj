@@ -22,11 +22,12 @@
 
 (def radius 6378000.0)
 (def max-height 35000.0)
-(def light (atom 1.559))
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 500)])))
+(def light (atom 0.142))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 15000)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def threshold (atom 0.4))
-(def multiplier (atom 0.008))
+;(def multiplier (atom 0.008))
+(def multiplier (atom 1.0))
 (def anisotropic (atom 0.15))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
@@ -195,11 +196,9 @@ void main()
     float b = atmosphere.x + (i + 1) * step;
     vec3 pos = origin + dist * direction;
     float r = length(pos);
-    vec3 transm = transmittance_track(origin + (atmosphere.x + i * step) * direction, origin + (atmosphere.x + (i + 1) * step) * direction);
+    vec3 transm = transmittance_track2(origin + a * direction, origin + b * direction, above);
     vec3 atten = attenuation_track2(light, origin, direction, a, b, vec3(0, 0, 0), above) * amplification;
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float h = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
-      // float density = (textureLod(worley, pos / cloud_scale, 0.0).r - (h * threshold + 1 - h)) * cloud_multiplier;
       float density = (1 - threshold) * cloud_multiplier;
       if (density > 0) {
         vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
@@ -236,10 +235,10 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 300)
-(uniform-float program :cloud_step2 500)
+(uniform-float program :cloud_step 1000)
+(uniform-float program :cloud_step2 100)
 (uniform-float program :cloud_bottom 1500)
-(uniform-float program :cloud_top 6500)
+(uniform-float program :cloud_top 12000)
 (uniform-float program :cloud_scale cloud-scale)
 (uniform-float program :cloud_scatter_amount 1.0)
 (uniform-int program :shadow_max_steps 80)
