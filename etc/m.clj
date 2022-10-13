@@ -38,5 +38,5 @@
 (defn x [u-r] (matrix [(r u-r) 0 0]))
 (defn mu [u-r u-mu]
   (let [r (r u-r)
-        h (* 2 (- 0.5 u-mu) (sqrt (- (sqr r) (sqr Rg))))]
+        h (* (rho u-r) (- 1 (* 2 u-mu)))]
     (/ (- (sqr Rg) (sqr r) (sqr h)) (* 2 r h))))
