@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (sqrt exp sin cos)])
+(require '[clojure.math :refer (sqrt exp sin cos log)])
 (require '[clojure.core.matrix :refer (matrix dot)])
 (require '[clojure.core.matrix.linear :refer (norm)])
 (require '[gnuplot.core :as g])
@@ -46,3 +46,6 @@
 (defn v [u-r u-mu]
   (let [mu (mu u-r u-mu)]
     (matrix [mu (sqrt (- 1 (sqr mu)))])))
+(defn mu-s [u-mu-s] (- (+ (/ (log (- 1 (* u-mu-s (- 1 (exp -3.6))))) 3) 0.2)))
+
+; nu, mu-s, mu -> s

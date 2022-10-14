@@ -1,6 +1,5 @@
 # TODO
 * test forward and backward transformations (with integers)
-* integration test for atmospheric scattering and transmittance?
 * tested shader implementation of forward and backward transformation
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * attenuation of far clouds
