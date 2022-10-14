@@ -703,14 +703,15 @@ void main()
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result)))
-         ?x ?y           ?z                      ?polar       ?rotation   ?lx ?ly ?lz  ?result
-         0  0            (- 0 radius max-height) radius       0           0   0   -1   "sun.png"
-         0  0            (- 0 radius max-height) radius       0           0   0    1   "space.png"
-         0  0            (* 2.5 radius)          radius       0           0   1    0   "haze.png"
-         0  radius       (* 0.5 radius)          radius       0           0   0   -1   "sunset.png"
-         0  0            (- 0 radius 2)          radius       0           0   0   -1   "inside.png"
-         0  (* 3 radius) 0                       radius       (* -0.5 PI) 0   1    0   "yview.png"
-         0  (* 3 radius) 0                       (/ radius 2) (* -0.5 PI) 0   1    0   "ellipsoid.png")
+         ?x ?y              ?z                      ?polar       ?rotation   ?lx ?ly       ?lz           ?result
+         0  0               (- 0 radius max-height) radius       0           0   0         -1            "sun.png"
+         0  0               (- 0 radius max-height) radius       0           0   0          1            "space.png"
+         0  0               (* 2.5 radius)          radius       0           0   1          0            "haze.png"
+         0  radius          (* 0.5 radius)          radius       0           0   0         -1            "sunset.png"
+         0  (+ radius 1000) 0                       radius       0           0   (sin 0.2) (- (cos 0.2)) "sunset2.png"
+         0  0               (- 0 radius 2)          radius       0           0   0         -1            "inside.png"
+         0  (* 3 radius)    0                       radius       (* -0.5 PI) 0   1          0            "yview.png"
+         0  (* 3 radius)    0                       (/ radius 2) (* -0.5 PI) 0   1          0            "ellipsoid.png")
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core

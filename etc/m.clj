@@ -43,3 +43,6 @@
         (/ (- (sqr Rg) (sqr r) (sqr h)) (* 2 r h)))
       (let [h (* (+ (rho u-r) H) (- (* 2 u-mu) 1))]
         (/ (- (sqr Rt) (sqr r) (sqr h)) (* 2 r h))))))
+(defn v [u-r u-mu]
+  (let [mu (mu u-r u-mu)]
+    (matrix [mu (sqrt (- 1 (sqr mu)))])))
