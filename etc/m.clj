@@ -45,7 +45,41 @@
         (/ (- (sqr Rt) (sqr r) (sqr h)) (* 2 r h))))))
 (defn v [u-r u-mu]
   (let [mu (mu u-r u-mu)]
-    (matrix [mu (sqrt (- 1 (sqr mu)))])))
+    (matrix [mu (sqrt (- 1 (sqr mu))) 0])))
 (defn mu-s [u-mu-s] (- (+ (/ (log (- 1 (* u-mu-s (- 1 (exp -3.6))))) 3) 0.2)))
+(defn s [u-mu-s u-nu u-r u-mu]
+  (let [nu   (- (* 2 u-nu) 1)
+        mu   (mu u-r u-mu)
+        mu-s (mu-s u-mu-s)
+        s1   mu-s
+        s2   (/ (- nu (* mu mu-s)) (sqrt (- 1 (sqr mu))))
+        s3   (sqrt (- 1 (sqr s1) (sqr s2)))]
+    (matrix [s1 s2 s3])))
 
-; nu, mu-s, mu -> s
+(def u-r 0.5)
+(def u-mu 0.55)
+(def u-mu-s 0.6)
+(def u-nu 0.2)
+
+(def x (x u-r))
+(def v (v u-r u-mu))
+(def s (s u-mu-s u-nu u-r u-mu))
+
+(def mu (mu x v))
+(def mu-s (mu-s x s))
+(def nu (nu v s))
+(def r (r x))
+(u-r r)
+(u-mu r mu)
+(u-mu-s mu-s)
+(u-nu nu)
+
+; [v1 v2 0]
+; [s1 s2? s3?]
+
+; mu-s = s.x / |x|
+; nu = v.s
+;
+; s1 = mu-s
+; s2 = (nu - v1 mu-s) / v2
+; s3 = sqrt(1 - s1^2 + s2^2)
