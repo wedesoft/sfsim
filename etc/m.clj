@@ -1,15 +1,51 @@
-(require '[clojure.math :refer (sqrt exp sin cos log)])
-(require '[clojure.core.matrix :refer (matrix dot)])
-(require '[clojure.core.matrix.linear :refer (norm)])
-(require '[gnuplot.core :as g])
-(require '[sfsim25.atmosphere :refer (horizon-angle)])
+(require '[clojure.math :refer (sqrt exp sin cos log)]
+         '[clojure.core.matrix :refer (matrix dot)]
+         '[clojure.core.matrix.linear :refer (norm)]
+         '[midje.sweet :refer :all]
+         '[gnuplot.core :as g]
+         '[sfsim25.atmosphere :refer (horizon-angle)]
+         '[sfsim25.util :refer :all])
 
+(defn horizon-distance [planet radius]
+  "Distance from point with specified radius to horizon of planet"
+  (sqrt (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))))
 
-(def Rg 6360000)
-(def Rt 6420000)
+(facts "Distance from point with radius to horizon of planet"
+       (horizon-distance #:sfsim25.sphere{:radius 4.0} 4.0) => 0.0
+       (horizon-distance #:sfsim25.sphere{:radius 4.0} 5.0) => 3.0)
+
+(defn height-to-index
+  "Convert height of point to index"
+  [planet size point]
+  (let [radius     (:sfsim25.sphere/radius planet)
+        max-height (:sfsim25.atmosphere/height planet)]
+    (* (dec size) (/ (horizon-distance planet (norm point)) (horizon-distance planet (+ radius max-height))))))
+
+(facts "Convert height of point to index"
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4 0 0])) => 0.0
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [5 0 0])) => 1.0
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4.5 0 0])) => (roughly 0.687 1e-3)
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 17 (matrix [5 0 0])) => 16.0)
+
+(defn sun-elevation-to-index
+  "Convert sun elevation to index"
+  [size point light-direction]
+  (let [sin-elevation (/ (dot point light-direction) (norm point))]
+    (* (dec size) (max 0.0 (/ (- 1 (exp (- 0 (* 3 sin-elevation) 0.6))) (- 1 (exp -3.6)))))))
+
+(facts "Convert sun elevation to index"
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [1 0 0])) => 1.0
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [0 1 0])) => (roughly 0.464 1e-3)
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [-0.2 0.980 0])) => 0.0
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [-1 0 0])) => 0.0
+       (sun-elevation-to-index 17 (matrix [4 0 0]) (matrix [1 0 0])) => 16.0)
+
+;(def Rg 6360000)
+;(def Rt 6420000)
+(def Rg 4)
+(def Rt 5)
 (def H (sqrt (- (* Rt Rt) (* Rg Rg))))
 
-(defn sqr [v] (* v v))
 (defn r [x] (norm x))
 (defn rho [r] (sqrt (- (sqr r) (sqr Rg))))
 (defn mu [x v] (/ (dot v x) (r x)))
@@ -69,6 +105,7 @@
 (def mu-s (mu-s x s))
 (def nu (nu v s))
 (def r (r x))
+
 (u-r r)
 (u-mu r mu)
 (u-mu-s mu-s)
