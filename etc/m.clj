@@ -40,6 +40,16 @@
        (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [-1 0 0])) => 0.0
        (sun-elevation-to-index 17 (matrix [4 0 0]) (matrix [1 0 0])) => 16.0)
 
+(defn heading-to-index
+  "Convert sun and viewing direction angle to index"
+  [size direction light-direction]
+  (* (dec size) (/ (+ 1 (dot direction light-direction)) 2)))
+
+(facts "Convert sun and viewing direction angle to index"
+       (heading-to-index 2 (matrix [0 1 0]) (matrix [0 1 0])) => 1.0
+       (heading-to-index 2 (matrix [0 1 0]) (matrix [0 -1 0])) => 0.0
+       (heading-to-index 17 (matrix [0 1 0]) (matrix [1 0 0])) => 8.0)
+
 ;(def Rg 6360000)
 ;(def Rt 6420000)
 (def Rg 4)
