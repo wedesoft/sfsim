@@ -57,10 +57,10 @@
 (defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
   [planet point direction]
-  (let [radius           (norm point)
-        sin-elevation    (/ (dot direction point) radius)
-        horizon-distance (sqrt (- (sqr radius) (sqr (:sfsim25.sphere/radius planet))))]
-    (or (>= sin-elevation 0) (<= (- (sqr (* sin-elevation radius)) (sqr horizon-distance)) 0))))
+  (let [radius               (norm point)
+        sin-elevation-radius (dot direction point)
+        horizon-distance-2   (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))]
+    (or (>= sin-elevation-radius 0) (<= (sqr sin-elevation-radius) horizon-distance-2))))
 
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"
