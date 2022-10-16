@@ -310,7 +310,8 @@
          (is-above-horizon? earth (matrix [radius 0 0]) (matrix [1 0 0])) => true
          (is-above-horizon? earth (matrix [radius 0 0]) (matrix [-1 0 0])) => false
          (is-above-horizon? earth (matrix [radius 0 0]) (matrix [-1e-4 1 0])) => false
-         (is-above-horizon? earth (matrix [(+ radius 100000) 0 0]) (matrix [-1e-4 1 0])) => true))
+         (is-above-horizon? earth (matrix [(+ radius 100000) 0 0]) (matrix [-1e-4 1 0])) => true
+         (is-above-horizon? earth (matrix [(+ radius 100000) 0 0]) (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0])) => false))
 
 (tabular "Map elevation value to lookup table index depending on position of horizon"
          (let [radius  6378000.0

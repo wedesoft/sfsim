@@ -2,7 +2,7 @@
     "Functions for computing the atmosphere"
     (:require [clojure.core.matrix :refer (matrix mget mmul add sub mul div normalise dot) :as m]
               [clojure.core.matrix.linear :refer (norm)]
-              [clojure.math :refer (cos sin exp pow atan2 acos asin PI)]
+              [clojure.math :refer (cos sin exp pow atan2 acos asin PI sqrt)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
               [sfsim25.ray :refer :all]
@@ -57,9 +57,10 @@
 (defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
   [planet point direction]
-  (let [angle  (horizon-angle planet point)
-        normal (normalise point)]
-    (>= (dot normal direction) (- (sin angle)))))
+  (let [radius           (norm point)
+        sin-elevation    (/ (dot direction point) radius)
+        horizon-distance (sqrt (- (sqr radius) (sqr (:sfsim25.sphere/radius planet))))]
+    (or (>= sin-elevation 0) (<= (- (sqr (* sin-elevation radius)) (sqr horizon-distance)) 0))))
 
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"
