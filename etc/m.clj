@@ -1,10 +1,11 @@
-(require '[clojure.math :refer (sqrt exp sin cos log)]
-         '[clojure.core.matrix :refer (matrix dot)]
+(require '[clojure.math :refer (sqrt exp sin cos log acos)]
+         '[clojure.core.matrix :refer (matrix dot sub normalise)]
          '[clojure.core.matrix.linear :refer (norm)]
+         '[sfsim25.atmosphere :refer (is-above-horizon?)]
          '[midje.sweet :refer :all]
          '[gnuplot.core :as g]
-         '[sfsim25.atmosphere :refer (horizon-angle)]
          '[sfsim25.util :refer :all])
+(import '[mikera.vectorz Vector])
 
 (defn horizon-distance [planet radius]
   "Distance from point with specified radius to horizon of planet"
@@ -50,10 +51,37 @@
        (heading-to-index 2 (matrix [0 1 0]) (matrix [0 -1 0])) => 0.0
        (heading-to-index 17 (matrix [0 1 0]) (matrix [1 0 0])) => 8.0)
 
-;(def Rg 6360000)
-;(def Rt 6420000)
-(def Rg 4)
-(def Rt 5)
+(defn elevation-to-index
+  "Convert elevation to index depending on height"
+  [planet size point direction above-horizon]
+  (let [epsilon       1e-3
+        radius        (norm point)
+        ground-radius (:sfsim25.sphere/radius planet)
+        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        sin-elevation (/ (dot point direction) radius)
+        rho           (horizon-distance planet radius)
+        Delta         (- (sqr (* radius sin-elevation)) (sqr rho))
+        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
+    (* (dec size)
+       (if above-horizon
+         (- 0.5 (/ (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H))))
+         (+ 0.5 (/ (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 (max rho epsilon))))))))
+
+(facts "Convert elevation to index"
+       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 0.5 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) false) => (roughly (/ 1 3) 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) false) => (roughly 0.223 1e-3)
+         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) true) => (roughly (/ 2 3) 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [0 1 0]) true) => (roughly 0.5 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 2.0 1e-3)))
+
+(def Rg 6360000)
+(def Rt 6420000)
+;(def Rg 4)
+;(def Rt 5)
 (def H (sqrt (- (* Rt Rt) (* Rg Rg))))
 
 (defn r [x] (norm x))
