@@ -57,6 +57,16 @@
        (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [-1 0 0])) => 0.0
        (sun-elevation-to-index 17 (matrix [4 0 0]) (matrix [1 0 0])) => 16.0)
 
+(defn index-to-sin-sun-elevation
+  "Convert index to sinus of sun elevation"
+  [size index]
+  (/ (+ (log (- 1 (* index (- 1 (exp -3.6))))) 0.6) -3))
+
+(facts "Convert index to sinus of sun elevation"
+       (index-to-sin-sun-elevation 2 1.0) => (roughly 1.0 1e-3)
+       (index-to-sin-sun-elevation 2 0.0) => (roughly -0.2 1e-3)
+       (index-to-sin-sun-elevation 2 0.463863) => (roughly 0.0 1e-3))
+
 (defn heading-to-index
   "Convert sun and viewing direction angle to index"
   [size direction light-direction]
