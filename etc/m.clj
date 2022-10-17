@@ -1,6 +1,7 @@
 (require '[clojure.math :refer (sqrt exp sin cos log acos)]
          '[clojure.core.matrix :refer (matrix dot sub normalise)]
          '[clojure.core.matrix.linear :refer (norm)]
+         '[sfsim25.conftest :refer (roughly-matrix)]
          '[sfsim25.atmosphere :refer (is-above-horizon?)]
          '[midje.sweet :refer :all]
          '[gnuplot.core :as g]
@@ -12,8 +13,8 @@
   (sqrt (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))))
 
 (facts "Distance from point with radius to horizon of planet"
-       (horizon-distance #:sfsim25.sphere{:radius 4.0} 4.0) => 0.0
-       (horizon-distance #:sfsim25.sphere{:radius 4.0} 5.0) => 3.0)
+       (horizon-distance {:sfsim25.sphere/radius 4.0} 4.0) => 0.0
+       (horizon-distance {:sfsim25.sphere/radius 4.0} 5.0) => 3.0)
 
 (defn height-to-index
   "Convert height of point to index"
@@ -27,6 +28,21 @@
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [5 0 0])) => 1.0
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4.5 0 0])) => (roughly 0.687 1e-3)
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 17 (matrix [5 0 0])) => 16.0)
+
+(defn index-to-height
+  "Convert index to point with corresponding height"
+  [planet size index]
+  (let [radius       (:sfsim25.sphere/radius planet)
+        max-height   (:sfsim25.atmosphere/height planet)
+        max-horizon  (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
+        horizon-dist (* (/ index (dec size)) max-horizon)]
+    (matrix [(sqrt (+ (sqr radius) (sqr horizon-dist))) 0 0])))
+
+(facts "Convert index to point with corresponding height"
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.0) => (matrix [4 0 0])
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 1.0) => (matrix [5 0 0])
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.68718) => (roughly-matrix (matrix [4.5 0 0]) 1e-3)
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 3 2.0) => (matrix [5 0 0]))
 
 (defn sun-elevation-to-index
   "Convert sun elevation to index"
