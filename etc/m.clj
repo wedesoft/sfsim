@@ -119,7 +119,7 @@
             sin-elevation (max -1.0 (/ (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist)))]
         (matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]))
       (let [sky-dist      (* (+ horizon-dist H) (- (* 2 index) 1))
-            sin-elevation (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist))]
+            sin-elevation (min 1.0 (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist)))]
         (matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0])))))
 
 (facts "Convert index and height to elevation"
@@ -132,7 +132,9 @@
          (index-to-elevation planet 2 4.0 1.0) => (roughly-matrix (matrix [0 1 0]) 1e-3)
          (index-to-elevation planet 2 5.0 1.0) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
          (index-to-elevation planet 2 5.0 0.5) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (index-to-elevation planet 2 5.0 0.50001) => (roughly-matrix (matrix [0 1 0]) 1e-3)))
+         (index-to-elevation planet 2 5.0 0.50001) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (index-to-elevation planet 2 4.0 0.5) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (index-to-elevation planet 2 4.0 0.50001) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
 
 (def Rg 6360000)
 (def Rt 6420000)
