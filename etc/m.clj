@@ -67,7 +67,7 @@
        (index-to-sin-sun-elevation 2 0.0) => (roughly -0.2 1e-3)
        (index-to-sin-sun-elevation 2 0.463863) => (roughly 0.0 1e-3))
 
-(defn heading-to-index
+(defn heading-to-index  ; TODO: rename
   "Convert sun and viewing direction angle to index"
   [size direction light-direction]
   (* (dec size) (/ (+ 1 (dot direction light-direction)) 2)))
@@ -99,10 +99,40 @@
          (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) false) => (roughly (/ 1 3) 1e-3)
          (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) false) => (roughly 0.223 1e-3)
          (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) false) => (roughly 0.0 1e-3)
          (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) true) => (roughly (/ 2 3) 1e-3)
          (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [0 1 0]) true) => (roughly 0.5 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) true) => (roughly 1.0 1e-3)
          (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 1.0 1e-3)
          (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 2.0 1e-3)))
+
+(defn index-to-elevation
+  "Convert index and radius to elevation"
+  [planet size radius index]
+  (let [epsilon      1e-3
+        ground-radius (:sfsim25.sphere/radius planet)
+        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        horizon-dist  (horizon-distance planet radius)
+        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
+    (if (<= index 0.5)
+      (let [ground-dist   (max epsilon (* horizon-dist (- 1 (* 2 index))))
+            sin-elevation (max -1.0 (/ (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist)))]
+        (matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]))
+      (let [sky-dist      (* (+ horizon-dist H) (- (* 2 index) 1))
+            sin-elevation (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist))]
+        (matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0])))))
+
+(facts "Convert index and height to elevation"
+       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
+         (index-to-elevation planet 2 5.0 (/ 1 3)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (index-to-elevation planet 2 5.0 0.222549) => (roughly-matrix (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) 1e-3)
+         (index-to-elevation planet 2 5.0 0.4) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (index-to-elevation planet 2 4.0 0.4) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (index-to-elevation planet 2 4.0 (/ 2 3)) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (index-to-elevation planet 2 4.0 1.0) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (index-to-elevation planet 2 5.0 1.0) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
+         (index-to-elevation planet 2 5.0 0.5) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (index-to-elevation planet 2 5.0 0.50001) => (roughly-matrix (matrix [0 1 0]) 1e-3)))
 
 (def Rg 6360000)
 (def Rt 6420000)
