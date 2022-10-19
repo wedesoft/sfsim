@@ -31,3 +31,4 @@ lein midje
 * [Bruneton: Precomputed Atmospheric Scattering](https://hal.inria.fr/inria-00288758/document)
 * [Bouthors: Interactive multiple anisotropic scattering in clouds](https://hal.inria.fr/file/index/docid/333007/filename/clouds.pdf)
 * [Cascaded Shadow Maps](https://dev.theomader.com/cascaded-shadow-mapping-1/)
+* [Emulating double precision in Godot](https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds)
