@@ -1,5 +1,5 @@
 (require '[clojure.math :refer (sqrt exp sin cos log acos)]
-         '[clojure.core.matrix :refer (matrix dot sub normalise)]
+         '[clojure.core.matrix :refer (matrix dot sub normalise mget)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.conftest :refer (roughly-matrix)]
          '[sfsim25.atmosphere :refer (is-above-horizon?)]
@@ -113,28 +113,73 @@
         ground-radius (:sfsim25.sphere/radius planet)
         top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
         horizon-dist  (horizon-distance planet radius)
-        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
-    (if (<= index 0.5)
-      (let [ground-dist   (max epsilon (* horizon-dist (- 1 (* 2 index))))
+        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
+        scaled-index  (/ index (dec size))]
+    (if (<= scaled-index 0.5)
+      (let [ground-dist   (max epsilon (* horizon-dist (- 1 (* 2 scaled-index))))
             sin-elevation (max -1.0 (/ (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist)))]
-        (matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]))
-      (let [sky-dist      (* (+ horizon-dist H) (- (* 2 index) 1))
+        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) false])
+      (let [sky-dist      (* (+ horizon-dist H) (- (* 2 scaled-index) 1))
             sin-elevation (min 1.0 (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist)))]
-        (matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0])))))
+        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) true]))))
 
 (facts "Convert index and height to elevation"
        (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
-         (index-to-elevation planet 2 5.0 (/ 1 3)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (index-to-elevation planet 2 5.0 0.222549) => (roughly-matrix (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) 1e-3)
-         (index-to-elevation planet 2 5.0 0.4) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (index-to-elevation planet 2 4.0 0.4) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (index-to-elevation planet 2 4.0 (/ 2 3)) => (roughly-matrix (matrix [1 0 0]) 1e-3)
-         (index-to-elevation planet 2 4.0 1.0) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (index-to-elevation planet 2 5.0 1.0) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
-         (index-to-elevation planet 2 5.0 0.5) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (index-to-elevation planet 2 5.0 0.50001) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (index-to-elevation planet 2 4.0 0.5) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (index-to-elevation planet 2 4.0 0.50001) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
+         (first (index-to-elevation planet 2 5.0 (/ 1 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 3 5.0 (/ 2 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (second (index-to-elevation planet 2 5.0 (/ 1 3))) => false
+         (first (index-to-elevation planet 2 5.0 0.222549)) => (roughly-matrix (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.4)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.4)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 (/ 2 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (first (index-to-elevation planet 3 4.0 (/ 4 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (second (index-to-elevation planet 2 4.0 (/ 2 3))) => true
+         (first (index-to-elevation planet 2 4.0 1.0)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 1.0)) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.5)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.50001)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.5)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.50001)) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
+
+
+(defn transmittance-forward
+  "Forward transformation for interpolating transmittance function"
+  [planet shape]
+  (fn [point direction above-horizon]
+      [(height-to-index planet (first shape) point)
+       (elevation-to-index planet (second shape) point direction above-horizon)]))
+
+(defn transmittance-backward
+  "Backward transformation for looking up transmittance values"
+  [planet shape]
+  (fn [height-index elevation-index]
+      (let [point                     (index-to-height planet (first shape) height-index)
+            [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)]
+        [point direction above-horizon])))
+
+(defn transmittance-space
+  "Create transformations for interpolating transmittance function"
+  [planet shape]
+  #:sfsim25.interpolate{:shape shape :forward (transmittance-forward planet shape) :backward (transmittance-backward planet shape)})
+
+
+(facts "Create transformations for interpolating transmittance function"
+       (let [radius   6378000.0
+             height   100000.0
+             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             space    (transmittance-space earth [15 17])
+             forward  (:sfsim25.interpolate/forward space)
+             backward (:sfsim25.interpolate/backward space)]
+         (:sfsim25.interpolate/shape space) => [15 17]
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]) true) => [0.0 16.0]
+         (forward (matrix [(+ radius height) 0 0]) (matrix [0 1 0]) true) => [14.0 8.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) false) => [0.0 8.0]
+         (first (backward 0.0 16.0)) => (matrix [radius 0 0])
+         (first (backward 14.0 8.0)) => (matrix [(+ radius height) 0 0])
+         (second (backward 0.0 16.0)) => (matrix [0 1 0])
+         (second (backward 14.0 8.0)) => (matrix [-1 0 0])
+         (third (backward 0.0 16.0)) => true
+         (third (backward 14.0 8.0)) => false))
 
 (def Rg 6360000)
 (def Rt 6420000)
