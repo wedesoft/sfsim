@@ -9,6 +9,13 @@
   [expected error]
   (fn [actual] (<= (norm (sub expected actual)) error)))
 
+(defn roughly-vector
+  "Elementwise comparison of vector"
+  [expected error]
+  (fn [actual]
+      (and (= (count expected) (count actual)))
+      (every? true? (map #((roughly %1 error) %2) expected actual))))
+
 (defn is-image
   "Compare RGB components of image and ignore alpha values."
   [filename]
