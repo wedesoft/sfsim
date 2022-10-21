@@ -149,15 +149,14 @@
 (defn index-to-elevation
   "Convert index and radius to elevation"
   [planet size radius index]
-  (let [epsilon      1e-3  ; TODO: avoid use of epsilon
-        ground-radius (:sfsim25.sphere/radius planet)
+  (let [ground-radius (:sfsim25.sphere/radius planet)
         top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
         horizon-dist  (horizon-distance planet radius)
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
         scaled-index  (/ index (dec size))]
     (if (<= scaled-index 0.5)
-      (let [ground-dist   (max epsilon (* horizon-dist (- 1 (* 2 scaled-index))))
-            sin-elevation (max -1.0 (/ (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist)))]
+      (let [ground-dist   (* horizon-dist (- 1 (* 2 scaled-index)))
+            sin-elevation (limit-quot (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist) 1.0)]
         [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) false])
       (let [sky-dist      (* (+ horizon-dist H) (- (* 2 scaled-index) 1))
             sin-elevation (min 1.0 (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist)))]
