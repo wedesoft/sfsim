@@ -60,12 +60,14 @@
 (defn index-to-sin-sun-elevation
   "Convert index to sinus of sun elevation"
   [size index]
-  (/ (+ (log (- 1 (* index (- 1 (exp -3.6))))) 0.6) -3))
+  (/ (+ (log (- 1 (* (/ index (dec size)) (- 1 (exp -3.6))))) 0.6) -3))
 
 (facts "Convert index to sinus of sun elevation"
        (index-to-sin-sun-elevation 2 1.0) => (roughly 1.0 1e-3)
        (index-to-sin-sun-elevation 2 0.0) => (roughly -0.2 1e-3)
-       (index-to-sin-sun-elevation 2 0.463863) => (roughly 0.0 1e-3))
+       (index-to-sin-sun-elevation 2 0.463863) => (roughly 0.0 1e-3)
+       (index-to-sin-sun-elevation 2 0.5) => (roughly 0.022 1e-3)
+       (index-to-sin-sun-elevation 3 1.0) => (roughly 0.022 1e-3))
 
 (defn sun-angle-to-index
   "Convert sun and viewing direction angle to index"
@@ -81,7 +83,7 @@
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
   [size direction sin-sun-elevation index]
   (let [epsilon      1e-6
-        dot-view-sun (- (* 2.0 index) 1.0)
+        dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
         sun-1        (/ (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1))
         sun-2        (sqrt (- 1 (sqr sin-sun-elevation) (sqr sun-1)))]
     (matrix [sin-sun-elevation sun-1 sun-2])))
@@ -93,12 +95,12 @@
        (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 0.5) => (matrix [0 0 1])
        (index-to-sun-direction 2 (matrix [1 0 0]) 1.0 1.0) => (matrix [1 0 0])
        (index-to-sun-direction 2 (matrix [0 -1 0]) 0.0 1.0) => (matrix [0 -1 0]); TODO:limit range of sun-1 and sun-2
-       )
+       (index-to-sun-direction 3 (matrix [0 1 0]) 0.0 1.0) => (matrix [0 0 1]))
 
 (defn elevation-to-index
   "Convert elevation to index depending on height"
   [planet size point direction above-horizon]
-  (let [epsilon       1e-3
+  (let [epsilon       1e-3  ; TODO: avoid use of epsilon
         radius        (norm point)
         ground-radius (:sfsim25.sphere/radius planet)
         top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
@@ -212,9 +214,9 @@
   (fn [height-index elevation-index sun-elevation-index sun-heading-index]
       (let [point                     (index-to-height planet (first shape) height-index)
             [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)
-            ; TODO: light vector, above horizon
-            ]
-        [point direction])))
+            sin-sun-elevation         (index-to-sin-sun-elevation (third shape) sun-elevation-index)
+            light-direction           (index-to-sun-direction (fourth shape) direction sin-sun-elevation sun-heading-index)]
+        [point direction light-direction above-horizon])))
 
 (defn ray-scatter-space
   "Create transformation for interpolating ray scatter function"
@@ -244,13 +246,11 @@
          (nth (backward 20.0 0.0 0.0 0.0) 0) => (matrix [(+ radius height) 0 0])
          (nth (backward 0.0 9.79376 0.0 0.0) 1) => (roughly-matrix (matrix [1 0 0]) 1e-6)
          (nth (backward 0.0 18.0 0.0 0.0) 1) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         ;(nth (backward 0.0 0.0 0.0 0.0) 2) => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         ;(nth (backward 0.0 0.0 8.0 0.0) 2) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         ;(nth (backward 0.0 0.0 8.0 7.0) 2) => (roughly-matrix (matrix [0 0 1]) 1e-6)
-         ;(nth (backward 0.0 0.0 0.0 7.0) 2) => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         ;(nth (backward 0.0 9.0 0.0 0.0) 3) => true
-         ;(nth (backward 0.0 10.0 0.0 0.0) 3) => false
-         ))
+         (nth (backward 0.0 9.7937607 16.0 14.0) 2) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (nth (backward 0.0 9.7937607 7.421805 7.0) 2) => (roughly-matrix (matrix [0 0 1]) 1e-3)
+         (nth (backward 0.0 18.0 7.421805 7.0) 2) => (roughly-matrix (matrix [0 0 1]) 1e-3)
+         (nth (backward 0.0 9.79376 0.0 0.0) 3) => true
+         (nth (backward 20.0 8.206 16.0 0.0) 3) => false))
 
 (def Rg 6360000)
 (def Rt 6420000)

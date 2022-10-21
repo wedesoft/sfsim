@@ -1,6 +1,7 @@
 (ns sfsim25.conftest
     (:require [clojure.core.matrix :refer (sub)]
               [clojure.core.matrix.linear :refer (norm)]
+              [midje.sweet :refer (roughly)]
               [sfsim25.render :refer :all]
               [sfsim25.util :refer :all]))
 
