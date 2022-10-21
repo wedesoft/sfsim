@@ -104,15 +104,16 @@
   [size direction sin-sun-elevation index]
   (let [epsilon      1e-6
         dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
-        max-sun-1    (sqrt (- 1 (sqr sin-sun-elevation)))
+        max-sun-1    (sqrt (max 0 (- 1 (sqr sin-sun-elevation))))
         sun-1        (limit-quot (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1) max-sun-1)
-        sun-2        (sqrt (- 1 (sqr sin-sun-elevation) (sqr sun-1)))]
+        sun-2        (sqrt (max 0 (- 1 (sqr sin-sun-elevation) (sqr sun-1))))]
     (matrix [sin-sun-elevation sun-1 sun-2])))
 
 (facts "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
        (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 1.0) => (matrix [0 1 0])
        (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 0.0) => (matrix [0 -1 0])
        (index-to-sun-direction 2 (matrix [0 1 0]) 1.0 0.5) => (matrix [1 0 0])
+       (index-to-sun-direction 2 (matrix [0 1 0]) 1.00001 0.5) => (roughly-matrix (matrix [1 0 0]) 1e-3)
        (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 0.5) => (matrix [0 0 1])
        (index-to-sun-direction 2 (matrix [1 0 0]) 1.0 1.0) => (matrix [1 0 0])
        (index-to-sun-direction 2 (matrix [0 -1 0]) 0.0 1.0) => (matrix [0 -1 0])
