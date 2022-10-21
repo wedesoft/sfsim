@@ -102,8 +102,7 @@
 (defn index-to-sun-direction
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
   [size direction sin-sun-elevation index]
-  (let [epsilon      1e-6
-        dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
+  (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
         max-sun-1    (sqrt (max 0 (- 1 (sqr sin-sun-elevation))))
         sun-1        (limit-quot (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1) max-sun-1)
         sun-2        (sqrt (max 0 (- 1 (sqr sin-sun-elevation) (sqr sun-1))))]
@@ -122,8 +121,7 @@
 (defn elevation-to-index
   "Convert elevation to index depending on height"
   [planet size point direction above-horizon]
-  (let [epsilon       1e-3  ; TODO: avoid use of epsilon
-        radius        (norm point)
+  (let [radius        (norm point)
         ground-radius (:sfsim25.sphere/radius planet)
         top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
         sin-elevation (/ (dot point direction) radius)
@@ -133,7 +131,7 @@
     (* (dec size)
        (if above-horizon
          (- 0.5 (/ (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H))))
-         (+ 0.5 (/ (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 (max rho epsilon))))))))
+         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 rho) 0.5))))))
 
 (facts "Convert elevation to index"  ; TODO: clip extreme cases where above-horizon is wrong
        (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
@@ -151,7 +149,7 @@
 (defn index-to-elevation
   "Convert index and radius to elevation"
   [planet size radius index]
-  (let [epsilon      1e-3
+  (let [epsilon      1e-3  ; TODO: avoid use of epsilon
         ground-radius (:sfsim25.sphere/radius planet)
         top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
         horizon-dist  (horizon-distance planet radius)
