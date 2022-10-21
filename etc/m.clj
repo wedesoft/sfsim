@@ -79,12 +79,33 @@
        (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 -1 0])) => 0.0
        (sun-angle-to-index 17 (matrix [0 1 0]) (matrix [1 0 0])) => 8.0)
 
+(defn limit-quot
+  "Compute quotient and limit it"
+  [a b limit]
+  (if (zero? a)
+    a
+    (if (< b 0)
+      (limit-quot (- a) (- b) limit)
+      (if (< a (* b limit))
+        (if (> a (- (* b limit)))
+          (/ a b)
+          (- limit))
+        limit))))
+
+(facts "Compute quotient and limit it"
+       (limit-quot 0 0 1) => 0
+       (limit-quot 4 2 1) => 1
+       (limit-quot -4 2 1) => -1
+       (limit-quot 1 2 1) => 1/2
+       (limit-quot -4 -2 1) => 1)
+
 (defn index-to-sun-direction
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
   [size direction sin-sun-elevation index]
   (let [epsilon      1e-6
         dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
-        sun-1        (/ (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1))
+        max-sun-1    (sqrt (- 1 (sqr sin-sun-elevation)))
+        sun-1        (limit-quot (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1) max-sun-1)
         sun-2        (sqrt (- 1 (sqr sin-sun-elevation) (sqr sun-1)))]
     (matrix [sin-sun-elevation sun-1 sun-2])))
 
@@ -94,7 +115,7 @@
        (index-to-sun-direction 2 (matrix [0 1 0]) 1.0 0.5) => (matrix [1 0 0])
        (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 0.5) => (matrix [0 0 1])
        (index-to-sun-direction 2 (matrix [1 0 0]) 1.0 1.0) => (matrix [1 0 0])
-       (index-to-sun-direction 2 (matrix [0 -1 0]) 0.0 1.0) => (matrix [0 -1 0]); TODO:limit range of sun-1 and sun-2
+       (index-to-sun-direction 2 (matrix [0 -1 0]) 0.0 1.0) => (matrix [0 -1 0])
        (index-to-sun-direction 3 (matrix [0 1 0]) 0.0 1.0) => (matrix [0 0 1]))
 
 (defn elevation-to-index
