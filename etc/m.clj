@@ -1,8 +1,10 @@
 (require '[clojure.math :refer (sqrt exp sin cos log acos)]
          '[clojure.core.matrix :refer (matrix dot sub normalise mget)]
          '[clojure.core.matrix.linear :refer (norm)]
-         '[sfsim25.conftest :refer (roughly-matrix roughly-vector)]
+         '[comb.template :as template]
+         '[sfsim25.conftest :refer (roughly-matrix roughly-vector shader-test)]
          '[sfsim25.atmosphere :refer (is-above-horizon?)]
+         '[sfsim25.render :refer :all]
          '[midje.sweet :refer :all]
          '[gnuplot.core :as g]
          '[sfsim25.util :refer :all])
@@ -274,3 +276,44 @@
          (nth (backward 0.0 18.0 7.421805 7.0) 2) => (roughly-matrix (matrix [0 0 1]) 1e-3)
          (nth (backward 0.0 9.79376 0.0 0.0) 3) => true
          (nth (backward 20.0 8.206 16.0 0.0) 3) => false))
+
+
+(def height-to-index-shader
+"#version 410
+uniform float radius;
+uniform float max_height;
+float height_to_index(vec3 point)
+{
+  float horizon_distance = sqrt(dot(point, point) - radius * radius);
+  float top_radius = radius + max_height;
+  float max_horizon_distance = sqrt(top_radius * top_radius - radius * radius);
+  return horizon_distance / max_horizon_distance;
+}")
+
+
+(def height-to-index-probe
+  (template/fn [x y z]
+"#version 410 core
+out lowp vec3 fragColor;
+float height_to_index(vec3 point);
+void main()
+{
+  float result = height_to_index(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def height-to-index-test
+  (shader-test
+    (fn [program radius max-height height-size]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height)
+        (uniform-int program :height_size height-size))
+    height-to-index-probe height-to-index-shader))
+
+(tabular "Shader for converting height to index"
+         (fact (mget (height-to-index-test [?radius ?max-height ?size] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
+         ?radius ?max-height ?size ?x  ?y ?z ?result
+         4       1           2     4   0  0  0.0
+         4       1           2     5   0  0  1.0
+         4       1           2     4.5 0  0  0.687184
+         4       1           17    5   0  0  1.0)
