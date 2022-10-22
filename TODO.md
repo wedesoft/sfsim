@@ -127,7 +127,7 @@
 * music player, mp3 player
 * video communication with screen in 3D cockpit
 * autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
-* on board displays, cameras, MFDs
+* on board displays, cameras, MFDs (horizon with height/vario and scrolling scales)
 * no need to adjust MFDs during critical parts of the mission
 * https://github.com/HappyEnte/DreamChaser
 * HDR bloom (separable convolution)
