@@ -81,16 +81,18 @@
 
 (defn limit-quot
   "Compute quotient and limit it"
-  [a b limit]
-  (if (zero? a)
-    a
-    (if (< b 0)
-      (limit-quot (- a) (- b) limit)
-      (if (< a (* b limit))
-        (if (> a (- (* b limit)))
-          (/ a b)
-          (- limit))
-        limit))))
+  ([a b limit]
+   (limit-quot (- limit) limit))
+  ([a b limit-lower limit-upper]
+   (if (zero? a)
+     a
+     (if (< b 0)
+       (limit-quot (- a) (- b) limit-lower limit-upper)
+       (if (< a (* b limit-upper))
+         (if (> a (* b limit-lower))
+           (/ a b)
+           limit-lower)
+         limit-upper)))))
 
 (facts "Compute quotient and limit it"
        (limit-quot 0 0 1) => 0
@@ -130,10 +132,10 @@
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
     (* (dec size)
        (if above-horizon
-         (- 0.5 (/ (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H))))
-         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 rho) 0.5))))))
+         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H)) -0.5 0.0))
+         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 rho) -0.5 0.0))))))
 
-(facts "Convert elevation to index"  ; TODO: clip extreme cases where above-horizon is wrong
+(facts "Convert elevation to index"
        (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
          (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 0.5 1e-3)
          (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) false) => (roughly (/ 1 3) 1e-3)
@@ -144,7 +146,9 @@
          (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [0 1 0]) true) => (roughly 0.5 1e-3)
          (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) true) => (roughly 1.0 1e-3)
          (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 1.0 1e-3)
-         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 2.0 1e-3)))
+         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 2.0 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) false) => (roughly 0.5 1e-3)))
 
 (defn index-to-elevation
   "Convert index and radius to elevation"
