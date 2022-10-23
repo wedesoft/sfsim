@@ -85,7 +85,7 @@
 (defn limit-quot
   "Compute quotient and limit it"
   ([a b limit]
-   (limit-quot (- limit) limit))
+   (limit-quot a b (- limit) limit))
   ([a b limit-lower limit-upper]
    (if (zero? a)
      a
