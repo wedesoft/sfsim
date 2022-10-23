@@ -278,19 +278,25 @@
          (nth (backward 0.0 9.79376 0.0 0.0) 3) => true
          (nth (backward 20.0 8.206 16.0 0.0) 3) => false))
 
+(def horizon-distance-shader
+"#version 410
+float horizon_distance(float ground_radius, float radius_sqr)
+{
+  return sqrt(radius_sqr - ground_radius * ground_radius);
+}")
 
 (def height-to-index-shader
 "#version 410
 uniform float radius;
 uniform float max_height;
+float horizon_distance(float ground_radius, float radius_sqr);
 float height_to_index(vec3 point)
 {
-  float horizon_distance = sqrt(dot(point, point) - radius * radius);
+  float current_horizon_distance = horizon_distance(radius, dot(point, point));
   float top_radius = radius + max_height;
-  float max_horizon_distance = sqrt(top_radius * top_radius - radius * radius);
-  return horizon_distance / max_horizon_distance;
+  float max_horizon_distance = horizon_distance(radius, top_radius * top_radius);
+  return current_horizon_distance / max_horizon_distance;
 }")
-
 
 (def height-to-index-probe
   (template/fn [x y z]
@@ -308,7 +314,7 @@ void main()
     (fn [program radius max-height]
         (uniform-float program :radius radius)
         (uniform-float program :max_height max-height))
-    height-to-index-probe height-to-index-shader))
+    height-to-index-probe height-to-index-shader horizon-distance-shader))
 
 (tabular "Shader for converting height to index"
          (fact (mget (height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
