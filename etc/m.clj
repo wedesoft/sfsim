@@ -304,16 +304,49 @@ void main()
 
 (def height-to-index-test
   (shader-test
-    (fn [program radius max-height height-size]
+    (fn [program radius max-height]
         (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height)
-        (uniform-int program :height_size height-size))
+        (uniform-float program :max_height max-height))
     height-to-index-probe height-to-index-shader))
 
 (tabular "Shader for converting height to index"
-         (fact (mget (height-to-index-test [?radius ?max-height ?size] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
-         ?radius ?max-height ?size ?x  ?y ?z ?result
-         4       1           2     4   0  0  0.0
-         4       1           2     5   0  0  1.0
-         4       1           2     4.5 0  0  0.687184
-         4       1           17    5   0  0  1.0)
+         (fact (mget (height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
+         ?radius ?max-height ?x  ?y ?z ?result
+         4       1           4   0  0  0.0
+         4       1           5   0  0  1.0
+         4       1           4.5 0  0  0.687184
+         4       1           5   0  0  1.0)
+
+(def sun-elevation-to-index-shader
+"#version 410 core
+float sun_elevation_to_index(vec3 point, vec3 light_direction)
+{
+  float sin_elevation = dot(point, light_direction) / length(point);
+  return max(0, (1 - exp(- 3 * sin_elevation - 0.6)) / (1 - exp(-3.6)));
+}")
+
+(def sun-elevation-to-index-probe
+  (template/fn [x y z dx dy dz]
+"#version 410 core
+out lowp vec3 fragColor;
+float sun_elevation_to_index(vec3 point, vec3 light_direction);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 light_direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  float result = sun_elevation_to_index(point, light_direction);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sun-elevation-to-index-test
+  (shader-test
+    (fn [program])
+    sun-elevation-to-index-probe sun-elevation-to-index-shader))
+
+(tabular "Shader for converting sun elevation to index"
+         (fact (mget (sun-elevation-to-index-test [] [?x ?y ?z ?dx ?dy ?dz]) 0) => (roughly ?result 1e-6))
+         ?x ?y ?z ?dx ?dy      ?dz ?result
+         4  0  0  1   0        0   1.0
+         4  0  0  0   1        0   0.463863
+         4  0  0 -0.2 0.979796 0   0.0
+         4  0  0 -1   0        0   0.0)
