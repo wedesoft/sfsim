@@ -79,6 +79,7 @@
 (facts "Convert sun and viewing direction angle to index"
        (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 1 0])) => 1.0
        (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 -1 0])) => 0.0
+       (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 0 1])) => 0.5
        (sun-angle-to-index 17 (matrix [0 1 0]) (matrix [1 0 0])) => 8.0)
 
 (defn limit-quot
@@ -236,11 +237,11 @@
 (defn ray-scatter-backward
   "Backward transformation for interpolating ray scatter function"
   [planet shape]
-  (fn [height-index elevation-index sun-elevation-index sun-heading-index]
+  (fn [height-index elevation-index sun-elevation-index sun-angle-index]
       (let [point                     (index-to-height planet (first shape) height-index)
             [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)
             sin-sun-elevation         (index-to-sin-sun-elevation (third shape) sun-elevation-index)
-            light-direction           (index-to-sun-direction (fourth shape) direction sin-sun-elevation sun-heading-index)]
+            light-direction           (index-to-sun-direction (fourth shape) direction sin-sun-elevation sun-angle-index)]
         [point direction light-direction above-horizon])))
 
 (defn ray-scatter-space
@@ -350,3 +351,35 @@ void main()
          4  0  0  0   1        0   0.463863
          4  0  0 -0.2 0.979796 0   0.0
          4  0  0 -1   0        0   0.0)
+
+(def sun-angle-to-index-shader
+"#version 410 core
+float sun_angle_to_index(vec3 direction, vec3 light_direction)
+{
+  return 0.5 * (1 + dot(direction, light_direction));
+}")
+
+(def sun-angle-to-index-probe
+  (template/fn [dx dy dz lx ly lz]
+"#version 410 core
+out lowp vec3 fragColor;
+float sun_angle_to_index(vec3 direction, vec3 light_direction);
+void main()
+{
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  float result = sun_angle_to_index(direction, light_direction);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sun-angle-to-index-test
+  (shader-test
+    (fn [program])
+    sun-angle-to-index-probe sun-angle-to-index-shader))
+
+(tabular "Shader for converting sun angle to index"
+         (fact (mget (sun-angle-to-index-test [] [?dx ?dy ?dz ?lx ?ly ?lz]) 0) => (roughly ?result 1e-6))
+         ?dx ?dy ?dz ?lx ?ly ?lz ?result
+         0   1   0   0   1   0   1.0
+         0   1   0   0  -1   0   0.0
+         0   1   0   0   0   1   0.5)
