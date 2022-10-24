@@ -1,5 +1,4 @@
 # TODO
-* test forward and backward transformations (with integers)
 * tested shader implementation of forward and backward transformation
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * attenuation of far clouds
