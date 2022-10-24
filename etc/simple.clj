@@ -189,10 +189,10 @@ void main()
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
   float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   bool above = is_above_horizon(origin, direction);
-  if (direction.x > 0.1)
-    above = true;
-  if (direction.x < -0.1)
-    above = false;
+  // if (direction.x > 0.1)
+  //   above = true;
+  // if (direction.x < -0.1)
+  //   above = false;
   for (int i=0; i<steps; i++) {
     float dist = atmosphere.x + (i + offset) * step;
     float a = atmosphere.x + i * step;
