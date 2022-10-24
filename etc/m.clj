@@ -389,3 +389,77 @@ void main()
          0   1   0   0   1   0   1.0
          0   1   0   0  -1   0   0.0
          0   1   0   0   0   1   0.5)
+
+(def limit-quot-shader
+"#version 410 core
+float limit_quot(float a, float b, float lower, float upper)
+{
+  if (a == 0.0)
+    return 0.0;
+  if (b < 0) {
+    a = -a;
+    b = -b;
+  };
+  if (a < b * upper) {
+    if (a > b * lower)
+      return a / b;
+    else
+      return lower;
+  } else
+    return upper;
+}")
+
+(def elevation-to-index-shader
+"#version 410 core
+uniform float radius;
+uniform float max_height;
+float limit_quot(float a, float b, float lower, float upper);
+float horizon_distance(float ground_radius, float radius_sqr);
+float elevation_to_index(vec3 point, vec3 direction, bool above_horizon)
+{
+  float point_radius = length(point);
+  float sin_elevation = dot(point, direction) / point_radius;
+  float rho = horizon_distance(radius, point_radius * point_radius);
+  float delta = point_radius * point_radius * sin_elevation * sin_elevation - rho * rho;
+  if (above_horizon) {
+    float top_radius = radius + max_height;
+    float h = sqrt(top_radius * top_radius - radius * radius);
+    return 0.5 - limit_quot(point_radius * sin_elevation - sqrt(max(0, delta + h * h)), 2 * rho + 2 * h, -0.5, 0.0);
+  } else
+    return 0.5 + limit_quot(point_radius * sin_elevation + sqrt(max(0, delta)), 2 * rho, -0.5, 0.0);
+}")
+
+(def elevation-to-index-probe
+  (template/fn [x y z dx dy dz above-horizon]
+"#version 410 core
+out lowp vec3 fragColor;
+float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  float result = elevation_to_index(point, direction, <%= above-horizon %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def elevation-to-index-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    elevation-to-index-probe elevation-to-index-shader horizon-distance-shader limit-quot-shader))
+
+(tabular "Shader for converting view direction elevation to index"
+         (fact (mget (elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
+               => (roughly ?result 1e-6))
+         ?radius ?max-height ?x ?y ?z ?dx           ?dy        ?dz ?above-horizon ?result
+         4       1           4  0  0 -1             0          0   false          0.5
+         4       1           5  0  0 -1             0          0   false          (/ 1 3)
+         4       1           5  0  0 (- (sqrt 0.5)) (sqrt 0.5) 0   false          0.222549
+         4       1           5  0  0 -0.6           0.8        0   false          0.0
+         4       1           4  0  0  1             0          0   true           (/ 2 3)
+         4       1           5  0  0  0             1          0   true           0.5
+         4       1           5  0  0 -0.6           0.8        0   true           1.0
+         4       1           4  0  0  0             1          0   true           1.0
+         4       1           5  0  0 -1             0          0   true           1.0
+         4       1           4  0  0  1             0          0   false          0.5)
