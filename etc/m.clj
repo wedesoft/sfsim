@@ -463,3 +463,43 @@ void main()
          4       1           4  0  0  0             1          0   true           1.0
          4       1           5  0  0 -1             0          0   true           1.0
          4       1           4  0  0  1             0          0   false          0.5)
+
+(def transmittance-forward-shader
+"#version 410 core
+float height_to_index(vec3 point);
+float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
+vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon)
+{
+  float height_index = height_to_index(point);
+  float elevation_index = elevation_to_index(point, direction, above_horizon);
+  return vec2(height_index, elevation_index);
+}")
+
+(def transmittance-forward-probe
+  (template/fn [x y z dx dy dz above]
+"#version 410 core
+out lowp vec3 fragColor;
+vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  fragColor.rg = transmittance_forward(point, direction, <%= above %>);
+  fragColor.b = 0;
+}"))
+
+(def transmittance-forward-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-forward-probe transmittance-forward-shader height-to-index-shader horizon-distance-shader
+    elevation-to-index-shader limit-quot-shader))
+
+(tabular "Convert point and direction to 2D lookup index in transmittance table"
+         (fact (transmittance-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
+               => (roughly-matrix (matrix [?u ?v 0]) 1e-3))
+         ?x      ?y ?z  ?dx ?dy ?dz ?above ?u ?v
+         6378000 0  0   0   1   0   true   0  1
+         6478000 0  0   0   1   0   true   1  0.5
+         6378000 0  0  -1   0   0   false  0  0.5)
