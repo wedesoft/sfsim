@@ -503,3 +503,56 @@ void main()
          6378000 0  0   0   1   0   true   0  1
          6478000 0  0   0   1   0   true   1  0.5
          6378000 0  0  -1   0   0   false  0  0.5)
+
+(def ray-scatter-forward-shader
+"#version 410 core
+float height_to_index(vec3 point);
+float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
+float sun_elevation_to_index(vec3 point, vec3 light_direction);
+float sun_angle_to_index(vec3 direction, vec3 light_direction);
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon)
+{
+  float height_index = height_to_index(point);
+  float elevation_index = elevation_to_index(point, direction, above_horizon);
+  float sun_elevation_index = sun_elevation_to_index(point, light_direction);
+  float sun_angle_index = sun_angle_to_index(direction, light_direction);
+  return vec4(height_index, elevation_index, sun_elevation_index, sun_angle_index);
+}")
+
+(def ray-scatter-forward-probe
+  (template/fn [x y z dx dy dz lx ly lz above selector]
+"#version 410 core
+out lowp vec3 fragColor;
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  vec4 result = ray_scatter_forward(point, direction, light_direction, <%= above %>);
+  fragColor.r = result.<%= selector %>;
+  fragColor.g = 0;
+  fragColor.b = 0;
+}"))
+
+(def ray-scatter-forward-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    ray-scatter-forward-probe ray-scatter-forward-shader height-to-index-shader elevation-to-index-shader
+    horizon-distance-shader limit-quot-shader sun-elevation-to-index-shader sun-angle-to-index-shader))
+
+(tabular "Get 4D lookup index for ray scattering"
+         (fact (mget (ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
+               => (roughly ?result 1e-3))
+         ?x      ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector ?result
+         6378000 0  0  1   0   0   1   0   0   true   "x"       0.0
+         6478000 0  0  1   0   0   1   0   0   true   "x"       1.0
+         6478000 0  0  1   0   0   1   0   0   true   "y"       0.5
+         6378000 0  0  0   0   1   0   0   1   true   "y"       1.0
+         6378000 0  0  0   0   1   0   0   1   false  "y"       0.5
+         6378000 0  0  1   0   0   1   0   0   true   "z"       1.0
+         6378000 0  0  1   0   0  -1   0   0   true   "z"       0.0
+         6378000 0  0  0   1   0   0   1   0   true   "w"       1.0
+         6378000 0  0  0   1   0   0  -1   0   true   "w"       0.0)
