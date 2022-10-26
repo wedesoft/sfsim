@@ -1,5 +1,5 @@
 # TODO
-* how to test transmittance\_track
+* how to test transmittance\_track and ray\_scatter\_track
 * tested shader implementation of forward and backward transformation
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * attenuation of far clouds
