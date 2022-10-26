@@ -4,10 +4,10 @@
             [comb.template :as template]
             [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix)]
             [clojure.core.matrix.linear :refer (norm)]
-            [clojure.math :refer (cos sin PI)]
+            [clojure.math :refer (cos sin PI sqrt)]
             [sfsim25.render :refer :all]
             [sfsim25.shaders :refer :all]
-            [sfsim25.util :refer :all])
+            [sfsim25.util :refer (get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl BufferUtils]
            [org.lwjgl.opengl Pbuffer PixelFormat]))
 
@@ -35,38 +35,6 @@ void main()
          0   0   0   0   0  -2   0   0   2   0.5 1.0
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
-
-(def elevation-to-index-probe
-  (template/fn [elevation-size, above-horizon elevation horizon-angle] "#version 410 core
-out lowp vec3 fragColor;
-float elevation_to_index(int elevation_size, float elevation, float horizon_angle, bool above_horizon);
-void main()
-{
-  float result = elevation_to_index(<%= elevation-size %>, <%= elevation %>, <%= horizon-angle %>, <%= above-horizon %>);
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def elevation-to-index-test
-  (shader-test
-    (fn [program elevation-power] (uniform-float program :elevation_power elevation-power))
-    elevation-to-index-probe elevation-to-index))
-
-(tabular "Shader for converting elevation to index"
-         (fact (mget (elevation-to-index-test [?power] [17 ?above-horizon ?elevation ?horizon-angle]) 0)
-               => (roughly (/ ?result 16)))
-         ?above-horizon ?elevation        ?horizon-angle ?power ?result
-         true           0.0               0.0            1.0     0
-         true           (* 0.5 3.14159)   0.0            1.0     8
-         false          (* 0.5 3.14160)   0.0            1.0     9
-         false          (* 0.5 3.14159)   0.0            1.0     9
-         true           (* 0.5 3.14160)   0.0            1.0     8
-         false          3.14159           0.0            1.0    16
-         true           (* 0.375 3.14159) 0.0            1.0     6
-         true           (* 0.375 3.14159) 0.0            2.0     4
-         false          (* 0.625 3.14159) 0.0            1.0    10.75
-         false          (* 0.625 3.14159) 0.0            2.0    12.5
-         true           (* 0.5 3.34159)   0.1            1.0     8
-         false          (* 0.5 3.34160)   0.1            1.0     9)
 
 (def horizon-angle-probe
   (template/fn [x y z] "#version 410 core
@@ -184,43 +152,6 @@ void main()
          0  0   0.123  1.123  7  3   "pq"      (+ 0.5 7)        (+ 0.5 (* 2 7))
          0  0   0.123  2.123  7  3   "pq"      (+ 0.5 (* 2 7))  (+ 0.5 (* 2 7)))
 
-(def transmittance-forward-probe
-  (template/fn [x y z dx dy dz above] "#version 410 core
-out lowp vec3 fragColor;
-vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
-void main()
-{
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
-  fragColor.rg = transmittance_forward(point, direction, <%= above %>);
-  fragColor.b = 0;
-}"))
-
-(def transmittance-forward-test
-  (shader-test
-    (fn [program height-size elevation-size elevation-power radius max-height]
-        (uniform-int program :height_size height-size)
-        (uniform-int program :elevation_size elevation-size)
-        (uniform-float program :elevation_power elevation-power)
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
-    transmittance-forward-probe transmittance-forward elevation-to-index horizon-angle))
-
-(let [angle (* 0.375 PI)
-      ca    (cos angle)
-      sa    (sin angle)]
-  (tabular "Convert point and direction to 2D lookup index in transmittance table"
-           (fact (transmittance-forward-test [9 17 ?power 6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
-                 => (roughly-matrix (div (matrix [?u ?v 0]) (matrix [16 8 1])) 1e-3))
-           ?x      ?y ?z ?dx  ?dy ?dz ?power ?above ?u  ?v
-           6378000 0  0  1    0   0   1      true   0.0  0.0
-           6478000 0  0  1    0   0   1      true   0.0  8.0
-           6378000 0  0  1e-6 1   0   1      true   8.0  0.0
-           6378000 0  0 -1e-6 1   0   1      false  9.0  0.0
-           6378025 0  0 -1e-6 1   0   1      true   8.0  0.0
-           6378000 0  0  ca   sa  0   1      true   6.0  0.0
-           6378000 0  0  ca   sa  0   2      true   4.0  0.0))
-
 (defn lookup-2d-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
@@ -312,62 +243,6 @@ void main()
          0    0  0.5 0   3.0
          0    0  0   0.5 5.0
          0    0  0.5 0.5 7.0)
-
-(def ray-scatter-forward-probe
-  (template/fn [x y z dx dy dz lx ly lz above selector] "#version 410 core
-out lowp vec3 fragColor;
-vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
-void main()
-{
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
-  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  vec4 result = ray_scatter_forward(point, direction, light_direction, <%= above %>);
-  fragColor.r = result.<%= selector %>;
-  fragColor.g = 0;
-  fragColor.b = 0;
-}"))
-
-(def ray-scatter-forward-test
-  (shader-test
-    (fn [program elevation-size light-elevation-size elevation-power radius max-height]
-        (uniform-int program :elevation_size elevation-size)
-        (uniform-int program :light_elevation_size light-elevation-size)
-        (uniform-float program :elevation_power elevation-power)
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
-    ray-scatter-forward-probe ray-scatter-forward elevation-to-index horizon-angle clip-angle oriented-matrix
-    orthogonal-vector is-above-horizon))
-
-(let [angle (* 0.375 PI)
-      ca    (cos angle)
-      sa    (sin angle)
-      r     6378000
-      h     100000]
-  (tabular "Get 4D lookup index for ray scattering"
-           (fact (mget (ray-scatter-forward-test [17 17 ?power 6378000.0 100000.0]
-                                                 [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?sel]) 0)
-                 => (roughly (/ ?result 16) 1e-3))
-           ?x       ?y ?z ?dx  ?dy ?dz  ?lx    ?ly ?lz  ?power ?above ?sel ?result
-           r        0  0  1    0   0    1      0   0    1.0    true   "w"   0.0
-           (+ r h)  0  0  1    0   0    1      0   0    1.0    true   "w"  16.0
-           r        0  0  1    0   0    1      0   0    1.0    true   "z"   0.0
-           r        0  0  0    1   0    1      0   0    1.0    true   "z"   8.0
-           r        0  0  0    1   0    1      0   0    1.0    false  "z"   9.0
-           r        0  0  ca   sa  0    1      0   0    1.0    true   "z"   6.0
-           r        0  0  ca   sa  0    1      0   0    2.0    true   "z"   4.0
-           r        0  0  1    0   0    1      0   0    1.0    true   "y"   0.0
-           r        0  0  1    0   0    1e-3   1   0    1.0    true   "y"   8.0
-           r        0  0  1    0   0   -1e-3   1   0    1.0    true   "y"   9.0
-           (+ r 25) 0  0  1    0   0   -1e-3   1   0    1.0    true   "y"   8.0
-           r        0  0  1    0   0    ca     sa  0    1.0    true   "y"   6.0
-           r        0  0  1    0   0    ca     sa  0    2.0    true   "y"   4.0
-           r        0  0  0    1   0    0      1   0    1.0    true   "x"   0.0
-           r        0  0  0    1   0    0      0   1    1.0    true   "x"   8.0
-           r        0  0  0    1   0    0      0  -1    1.0    true   "x"   8.0
-           r        0  0  0    0   1    0      0   1    1.0    true   "x"   0.0
-           r        0  0  0   -1   1e-6 0     -1  -1e-6 1.0    true   "x"   0.0
-           0        r  0  ca   0   sa   (- sa) 0   ca   1.0    true   "x"   8.0))
 
 (def ray-box-probe
   (template/fn [ax ay az bx by bz ox oy oz dx dy dz]
@@ -517,3 +392,181 @@ void main()
          2  3  0  0  9      "zw"      0   0
          2  3  6  2  3      "xy"      2   1
          2  3  6  2  1      "xy"      0   0)
+
+(def height-to-index-probe
+  (template/fn [x y z]
+"#version 410 core
+out lowp vec3 fragColor;
+float height_to_index(vec3 point);
+void main()
+{
+  float result = height_to_index(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def height-to-index-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    height-to-index-probe height-to-index horizon-distance))
+
+(tabular "Shader for converting height to index"
+         (fact (mget (height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
+         ?radius ?max-height ?x  ?y ?z ?result
+         4       1           4   0  0  0.0
+         4       1           5   0  0  1.0
+         4       1           4.5 0  0  0.687184
+         4       1           5   0  0  1.0)
+
+(def sun-elevation-to-index-probe
+  (template/fn [x y z dx dy dz]
+"#version 410 core
+out lowp vec3 fragColor;
+float sun_elevation_to_index(vec3 point, vec3 light_direction);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 light_direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  float result = sun_elevation_to_index(point, light_direction);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sun-elevation-to-index-test
+  (shader-test
+    (fn [program])
+    sun-elevation-to-index-probe sun-elevation-to-index))
+
+(tabular "Shader for converting sun elevation to index"
+         (fact (mget (sun-elevation-to-index-test [] [?x ?y ?z ?dx ?dy ?dz]) 0) => (roughly ?result 1e-6))
+         ?x ?y ?z ?dx ?dy      ?dz ?result
+         4  0  0  1   0        0   1.0
+         4  0  0  0   1        0   0.463863
+         4  0  0 -0.2 0.979796 0   0.0
+         4  0  0 -1   0        0   0.0)
+
+(def sun-angle-to-index-probe
+  (template/fn [dx dy dz lx ly lz]
+"#version 410 core
+out lowp vec3 fragColor;
+float sun_angle_to_index(vec3 direction, vec3 light_direction);
+void main()
+{
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  float result = sun_angle_to_index(direction, light_direction);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sun-angle-to-index-test
+  (shader-test
+    (fn [program])
+    sun-angle-to-index-probe sun-angle-to-index))
+
+(tabular "Shader for converting sun angle to index"
+         (fact (mget (sun-angle-to-index-test [] [?dx ?dy ?dz ?lx ?ly ?lz]) 0) => (roughly ?result 1e-6))
+         ?dx ?dy ?dz ?lx ?ly ?lz ?result
+         0   1   0   0   1   0   1.0
+         0   1   0   0  -1   0   0.0
+         0   1   0   0   0   1   0.5)
+
+(def elevation-to-index-probe
+  (template/fn [x y z dx dy dz above-horizon]
+"#version 410 core
+out lowp vec3 fragColor;
+float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  float result = elevation_to_index(point, direction, <%= above-horizon %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def elevation-to-index-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    elevation-to-index-probe elevation-to-index horizon-distance limit-quot))
+
+(tabular "Shader for converting view direction elevation to index"
+         (fact (mget (elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
+               => (roughly ?result 1e-6))
+         ?radius ?max-height ?x ?y ?z ?dx           ?dy        ?dz ?above-horizon ?result
+         4       1           4  0  0 -1             0          0   false          0.5
+         4       1           5  0  0 -1             0          0   false          (/ 1 3)
+         4       1           5  0  0 (- (sqrt 0.5)) (sqrt 0.5) 0   false          0.222549
+         4       1           5  0  0 -0.6           0.8        0   false          0.0
+         4       1           4  0  0  1             0          0   true           (/ 2 3)
+         4       1           5  0  0  0             1          0   true           0.5
+         4       1           5  0  0 -0.6           0.8        0   true           1.0
+         4       1           4  0  0  0             1          0   true           1.0
+         4       1           5  0  0 -1             0          0   true           1.0
+         4       1           4  0  0  1             0          0   false          0.5)
+
+(def transmittance-forward-probe
+  (template/fn [x y z dx dy dz above]
+"#version 410 core
+out lowp vec3 fragColor;
+vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  fragColor.rg = transmittance_forward(point, direction, <%= above %>);
+  fragColor.b = 0;
+}"))
+
+(def transmittance-forward-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-forward-probe transmittance-forward height-to-index horizon-distance elevation-to-index limit-quot))
+
+(tabular "Convert point and direction to 2D lookup index in transmittance table"
+         (fact (transmittance-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
+               => (roughly-matrix (matrix [?u ?v 0]) 1e-3))
+         ?x      ?y ?z  ?dx ?dy ?dz ?above ?u ?v
+         6378000 0  0   0   1   0   true   0  1
+         6478000 0  0   0   1   0   true   1  0.5
+         6378000 0  0  -1   0   0   false  0  0.5)
+
+(def ray-scatter-forward-probe
+  (template/fn [x y z dx dy dz lx ly lz above selector]
+"#version 410 core
+out lowp vec3 fragColor;
+vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  vec4 result = ray_scatter_forward(point, direction, light_direction, <%= above %>);
+  fragColor.r = result.<%= selector %>;
+  fragColor.g = 0;
+  fragColor.b = 0;
+}"))
+
+(def ray-scatter-forward-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    ray-scatter-forward-probe ray-scatter-forward height-to-index elevation-to-index horizon-distance limit-quot
+    sun-elevation-to-index sun-angle-to-index))
+
+(tabular "Get 4D lookup index for ray scattering"
+         (fact (mget (ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
+               => (roughly ?result 1e-3))
+         ?x      ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector ?result
+         6378000 0  0  1   0   0   1   0   0   true   "x"       0.0
+         6478000 0  0  1   0   0   1   0   0   true   "x"       1.0
+         6478000 0  0  1   0   0   1   0   0   true   "y"       0.5
+         6378000 0  0  0   0   1   0   0   1   true   "y"       1.0
+         6378000 0  0  0   0   1   0   0   1   false  "y"       0.5
+         6378000 0  0  1   0   0   1   0   0   true   "z"       1.0
+         6378000 0  0  1   0   0  -1   0   0   true   "z"       0.0
+         6378000 0  0  0   1   0   0   1   0   true   "w"       1.0
+         6378000 0  0  0   1   0   0  -1   0   true   "w"       0.0)

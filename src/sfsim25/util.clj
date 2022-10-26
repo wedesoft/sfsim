@@ -304,4 +304,19 @@
         (send bar tick-and-print)
         (apply fun args))))
 
+(defn limit-quot
+  "Compute quotient and limit it"
+  ([a b limit]
+   (limit-quot a b (- limit) limit))
+  ([a b limit-lower limit-upper]
+   (if (zero? a)
+     a
+     (if (< b 0)
+       (limit-quot (- a) (- b) limit-lower limit-upper)
+       (if (< a (* b limit-upper))
+         (if (> a (* b limit-lower))
+           (/ a b)
+           limit-lower)
+         limit-upper)))))
+
 (set! *unchecked-math* false)

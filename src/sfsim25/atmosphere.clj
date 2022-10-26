@@ -2,7 +2,7 @@
     "Functions for computing the atmosphere"
     (:require [clojure.core.matrix :refer (matrix mget mmul add sub mul div normalise dot) :as m]
               [clojure.core.matrix.linear :refer (norm)]
-              [clojure.math :refer (cos sin exp pow atan2 acos asin PI sqrt)]
+              [clojure.math :refer (cos sin exp pow atan2 acos asin PI sqrt log)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
               [sfsim25.ray :refer :all]
@@ -139,6 +139,10 @@
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (integral-half-sphere steps normal #(mul (ray-scatter x % light-direction true) (dot % normal)))))
 
+(defn horizon-distance [planet radius]
+  "Distance from point with specified radius to horizon of planet"
+  (sqrt (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))))
+
 (defn elevation-to-index
   "Convert elevation value to lookup table index depending on position of horizon"
   [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power point direction above-horizon]
@@ -155,113 +159,125 @@
       (-> elevation (- (- horizon)) (max 0) (/ (+ pi2 horizon)) distort invert (* (dec sky-size)))
       (-> (- (- horizon) elevation) (max 0) (/ (- pi2 horizon)) distort (* (dec ground-size)) (+ sky-size)))))
 
+(defn elevation-to-index
+  "Convert elevation to index depending on height"
+  [planet size point direction above-horizon]
+  (let [radius        (norm point)
+        ground-radius (:sfsim25.sphere/radius planet)
+        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        sin-elevation (/ (dot point direction) radius)
+        rho           (horizon-distance planet radius)
+        Delta         (- (sqr (* radius sin-elevation)) (sqr rho))
+        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
+    (* (dec size)
+       (if above-horizon
+         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H)) -0.5 0.0))
+         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 rho) -0.5 0.0))))))
+
 (defn index-to-elevation
-  "Map elevation lookup index to directional vector depending on position of horizon"
-  [{:sfsim25.sphere/keys [^double radius] :as planet} size power height index]
-  (let [sky-size    (inc (quot size 2))
-        ground-size (quot (dec size) 2)
-        horizon     (horizon-angle planet (matrix [(+ radius height) 0 0]))
-        pi2         (/ PI 2)
-        invert      #(- 1 %)]
-    (if (<= index (dec sky-size))
-      (let [angle (-> index (/ (dec sky-size)) invert (pow power) (* (+ pi2 horizon)) (- horizon))]
-        [(matrix [(sin angle) (cos angle) 0]) true])
-      (let [angle (-> index (- sky-size) (/ (dec ground-size)) (pow power) invert (* (- pi2 horizon)) (- pi2))]
-        [(matrix [(sin angle) (cos angle) 0]) false]))))
+  "Convert index and radius to elevation"
+  [planet size radius index]
+  (let [ground-radius (:sfsim25.sphere/radius planet)
+        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        horizon-dist  (horizon-distance planet radius)
+        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
+        scaled-index  (/ index (dec size))]
+    (if (<= scaled-index 0.5)
+      (let [ground-dist   (* horizon-dist (- 1 (* 2 scaled-index)))
+            sin-elevation (limit-quot (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist) 1.0)]
+        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) false])
+      (let [sky-dist      (* (+ horizon-dist H) (- (* 2 scaled-index) 1))
+            sin-elevation (min 1.0 (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist)))]
+        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) true]))))
 
 (defn height-to-index
-  "Convert height to index"
+  "Convert height of point to index"
   [planet size point]
   (let [radius     (:sfsim25.sphere/radius planet)
         max-height (:sfsim25.atmosphere/height planet)]
-    (-> point norm (- radius) (/ max-height) (* (dec size)))))
+    (* (dec size) (/ (horizon-distance planet (norm point)) (horizon-distance planet (+ radius max-height))))))
 
 (defn index-to-height
-  "Convert index to point at certain height"
+  "Convert index to point with corresponding height"
   [planet size index]
-  (let [radius     (:sfsim25.sphere/radius planet)
-        max-height (:sfsim25.atmosphere/height planet)
-        height     (-> index (/ (dec size)) (* max-height))]
-    (matrix [(+ radius height) 0 0])))
+  (let [radius       (:sfsim25.sphere/radius planet)
+        max-height   (:sfsim25.atmosphere/height planet)
+        max-horizon  (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
+        horizon-dist (* (/ index (dec size)) max-horizon)]
+    (matrix [(sqrt (+ (sqr radius) (sqr horizon-dist))) 0 0])))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
-  [planet shape power]
+  [planet shape]
   (fn [point direction above-horizon]
       [(height-to-index planet (first shape) point)
-       (elevation-to-index planet (second shape) power point direction above-horizon)]))
+       (elevation-to-index planet (second shape) point direction above-horizon)]))
 
 (defn- transmittance-backward
   "Backward transformation for looking up transmittance values"
-  [planet shape power]
+  [planet shape]
   (fn [height-index elevation-index]
       (let [point                     (index-to-height planet (first shape) height-index)
-            [direction above-horizon] (index-to-elevation planet (second shape) power (height planet point) elevation-index)]
+            [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)]
         [point direction above-horizon])))
 
 (defn transmittance-space
   "Create transformations for interpolating transmittance function"
-  [planet shape power]
-  (let [height  (:sfsim25.atmosphere/height planet)]
-    #:sfsim25.interpolate{:shape    shape
-                          :forward  (transmittance-forward planet shape power)
-                          :backward (transmittance-backward planet shape power)}))
+  [planet shape]
+  #:sfsim25.interpolate{:shape shape :forward (transmittance-forward planet shape) :backward (transmittance-backward planet shape)})
 
 (def surface-radiance-space transmittance-space)
 
 (defn- clip-angle [angle] (if (< angle (- PI)) (+ angle (* 2 PI)) (if (>= angle PI) (- angle (* 2 PI)) angle)))
 
-(defn heading-to-index
-  "Convert absolute sun heading to lookup index"
-  [size point direction light-direction]
-  (let [normal                  (normalise point)
-        plane                   (oriented-matrix normal)
-        direction-rotated       (mmul plane direction)
-        light-direction-rotated (mmul plane light-direction)
-        direction-azimuth       (atan2 (mget direction-rotated 2) (mget direction-rotated 1))
-        light-direction-azimuth (atan2 (mget light-direction-rotated 2) (mget light-direction-rotated 1))
-        sun-abs-heading         (abs (clip-angle (- light-direction-azimuth direction-azimuth)))]
-    (-> sun-abs-heading (/ PI) (* (dec size)))))
+(defn sun-elevation-to-index
+  "Convert sun elevation to index"
+  [size point light-direction]
+  (let [sin-elevation (/ (dot point light-direction) (norm point))]
+    (* (dec size) (max 0.0 (/ (- 1 (exp (- 0 (* 3 sin-elevation) 0.6))) (- 1 (exp -3.6)))))))
 
-(defn index-to-heading
-  "Convert index to absolute sun heading"
+(defn index-to-sin-sun-elevation
+  "Convert index to sinus of sun elevation"
   [size index]
-  (-> index (/ (dec size)) (* PI)))
+  (/ (+ (log (- 1 (* (/ index (dec size)) (- 1 (exp -3.6))))) 0.6) -3))
+
+(defn sun-angle-to-index
+  "Convert sun and viewing direction angle to index"
+  [size direction light-direction]
+  (* (dec size) (/ (+ 1 (dot direction light-direction)) 2)))
+
+(defn index-to-sun-direction
+  "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
+  [size direction sin-sun-elevation index]
+  (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
+        max-sun-1    (sqrt (max 0 (- 1 (sqr sin-sun-elevation))))
+        sun-1        (limit-quot (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1) max-sun-1)
+        sun-2        (sqrt (max 0 (- 1 (sqr sin-sun-elevation) (sqr sun-1))))]
+    (matrix [sin-sun-elevation sun-1 sun-2])))
 
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
-  [{:sfsim25.sphere/keys [radius] :as planet} shape power]
+  [planet shape]
   (fn [point direction light-direction above-horizon]
-      (let []
-        [(height-to-index planet (first shape) point)
-         (elevation-to-index planet (second shape) power point direction above-horizon)
-         (elevation-to-index planet (third shape) power point light-direction (is-above-horizon? planet point light-direction))
-         (heading-to-index (fourth shape) point direction light-direction)])))
+      [(height-to-index planet (first shape) point)
+       (elevation-to-index planet (second shape) point direction above-horizon)
+       (sun-elevation-to-index (third shape) point light-direction)
+       (sun-angle-to-index (fourth shape) direction light-direction)]))
 
 (defn- ray-scatter-backward
   "Backward transformation for interpolating ray scatter function"
-  [{:sfsim25.sphere/keys [radius] :as planet} shape power]
-  (fn [height-index elevation-index sun-elevation-index sun-heading-index]
+  [planet shape]
+  (fn [height-index elevation-index sun-elevation-index sun-angle-index]
       (let [point                     (index-to-height planet (first shape) height-index)
-            height                    (height planet point)
-            [direction above-horizon] (index-to-elevation planet (second shape) power height elevation-index)
-            [light-elevation _]       (index-to-elevation planet (third shape) power height sun-elevation-index)
-            sun-heading               (index-to-heading (fourth shape) sun-heading-index)
-            cos-sun-elevation         (mget light-elevation 0)
-            sin-sun-elevation         (mget light-elevation 1)
-            cos-sun-heading           (cos sun-heading)
-            sin-sun-heading           (sin sun-heading)
-            light-direction           (matrix [cos-sun-elevation
-                                               (* sin-sun-elevation cos-sun-heading)
-                                               (* sin-sun-elevation sin-sun-heading)])]
+            [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)
+            sin-sun-elevation         (index-to-sin-sun-elevation (third shape) sun-elevation-index)
+            light-direction           (index-to-sun-direction (fourth shape) direction sin-sun-elevation sun-angle-index)]
         [point direction light-direction above-horizon])))
 
 (defn ray-scatter-space
-  "Create transformations for interpolating ray scatter function"
-  [planet shape power]
-  #:sfsim25.interpolate{:shape shape
-                        :forward (ray-scatter-forward planet shape power)
-                        :backward (ray-scatter-backward planet shape power)})
+  "Create transformation for interpolating ray scatter function"
+  [planet shape]
+  #:sfsim25.interpolate {:shape shape :forward (ray-scatter-forward planet shape) :backward (ray-scatter-backward planet shape)})
 
 (def point-scatter-space ray-scatter-space)
 

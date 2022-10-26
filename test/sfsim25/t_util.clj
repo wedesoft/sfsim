@@ -153,3 +153,10 @@
 
 (fact "Determine size of given shape"
       (size-of-shape [2 3 5]) => 30)
+
+(facts "Compute quotient and limit it"
+       (limit-quot 0 0 1) => 0
+       (limit-quot 4 2 1) => 1
+       (limit-quot -4 2 1) => -1
+       (limit-quot 1 2 1) => 1/2
+       (limit-quot -4 -2 1) => 1)

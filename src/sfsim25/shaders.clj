@@ -5,10 +5,6 @@
   "Shader function for computing intersection of ray with sphere"
   (slurp "resources/shaders/core/ray_sphere.glsl"))
 
-(def elevation-to-index
-  "Shader function to convert elevation angle to an index for texture lookup"
-  (slurp "resources/shaders/core/elevation_to_index.glsl"))
-
 (def horizon-angle
   "Shader function to determine a sphere's horizon angle below horizontal plane depending on height"
   (slurp "resources/shaders/core/horizon_angle.glsl"))
@@ -33,10 +29,6 @@
   "Convert 4D index to 2D indices for part-manual interpolation"
   (slurp "resources/shaders/core/convert_4d_index.glsl"))
 
-(def transmittance-forward
-  "Convert point and direction to 2D lookup index in transmittance table"
-  (slurp "resources/shaders/core/transmittance_forward.glsl"))
-
 (def interpolate-2d
   "Perform 2D interpolation"
   (slurp "resources/shaders/core/interpolate_2d.glsl"))
@@ -44,10 +36,6 @@
 (def interpolate-4d
   "Perform 4D interpolation"
   (slurp "resources/shaders/core/interpolate_4d.glsl"))
-
-(def ray-scatter-forward
-  "Get 4D lookup index for ray scattering"
-  (slurp "resources/shaders/core/ray_scatter_forward.glsl"))
 
 (def is-above-horizon
   "Check whether a ray hits the ground or stays in the sky"
@@ -72,3 +60,35 @@
 (def clip-shell-intersections
   "Clip the intersection information of ray and shell using given limit"
   (slurp "resources/shaders/core/clip_shell_intersections.glsl"))
+
+(def horizon-distance
+  "Distance from point with specified radius to horizon of planet"
+  (slurp "resources/shaders/core/horizon_distance.glsl"))
+
+(def height-to-index
+  "Shader for converting height to index"
+  (slurp "resources/shaders/core/height_to_index.glsl"))
+
+(def sun-elevation-to-index
+  "Shader for converting sun elevation to index"
+  (slurp "resources/shaders/core/sun_elevation_to_index.glsl"))
+
+(def sun-angle-to-index
+  "Shader for converting sun angle to index"
+  (slurp "resources/shaders/core/sun_angle_to_index.glsl"))
+
+(def limit-quot
+  "Shader for computing quotient and keeping it between bounds"
+  (slurp "resources/shaders/core/limit_quot.glsl"))
+
+(def elevation-to-index
+  "Shader function to convert elevation angle to an index for texture lookup"
+  (slurp "resources/shaders/core/elevation_to_index.glsl"))
+
+(def transmittance-forward
+  "Convert point and direction to 2D lookup index in transmittance table"
+  (slurp "resources/shaders/core/transmittance_forward.glsl"))
+
+(def ray-scatter-forward
+  "Get 4D lookup index for ray scattering"
+  (slurp "resources/shaders/core/ray_scatter_forward.glsl"))

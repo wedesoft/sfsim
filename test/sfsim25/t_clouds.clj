@@ -6,7 +6,7 @@
               [clojure.core.matrix :refer (mget matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
-              [sfsim25.util :refer :all]
+              [sfsim25.util :refer (get-vector3)]
               [sfsim25.clouds :refer :all]))
 
 (def cloud-track-probe

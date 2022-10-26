@@ -31,6 +31,7 @@
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4.5 0 0])) => (roughly 0.687 1e-3)
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 17 (matrix [5 0 0])) => 16.0)
 
+
 (defn index-to-height
   "Convert index to point with corresponding height"
   [planet size index]
@@ -45,6 +46,130 @@
        (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 1.0) => (matrix [5 0 0])
        (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.68718) => (roughly-matrix (matrix [4.5 0 0]) 1e-3)
        (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 3 2.0) => (matrix [5 0 0]))
+
+(defn transmittance-forward
+  "Forward transformation for interpolating transmittance function"
+  [planet shape]
+  (fn [point direction above-horizon]
+      [(height-to-index planet (first shape) point)
+       (elevation-to-index planet (second shape) point direction above-horizon)])
+
+(defn transmittance-backward
+  "Backward transformation for looking up transmittance values"
+  [planet shape]
+  (fn [height-index elevation-index]
+      (let [point                     (index-to-height planet (first shape) height-index)
+            [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)]
+        [point direction above-horizon])))
+
+(defn transmittance-space
+  "Create transformations for interpolating transmittance function"
+  [planet shape]
+  #:sfsim25.interpolate{:shape shape :forward (transmittance-forward planet shape) :backward (transmittance-backward planet shape)})
+
+(facts "Create transformations for interpolating transmittance function"
+       (let [radius   6378000.0
+             height   100000.0
+             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             space    (transmittance-space earth [15 17])
+             forward  (:sfsim25.interpolate/forward space)
+             backward (:sfsim25.interpolate/backward space)]
+         (:sfsim25.interpolate/shape space) => [15 17]
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]) true) => [0.0 16.0]
+         (forward (matrix [(+ radius height) 0 0]) (matrix [0 1 0]) true) => [14.0 8.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) false) => [0.0 8.0]
+         (first (backward 0.0 16.0)) => (matrix [radius 0 0])
+         (first (backward 14.0 8.0)) => (matrix [(+ radius height) 0 0])
+         (second (backward 0.0 16.0)) => (matrix [0 1 0])
+         (second (backward 14.0 8.0)) => (matrix [-1 0 0])
+         (third (backward 0.0 16.0)) => true
+         (third (backward 14.0 8.0)) => false))
+
+(defn elevation-to-index
+  "Convert elevation to index depending on height"
+  [planet size point direction above-horizon]
+  (let [radius        (norm point)
+        ground-radius (:sfsim25.sphere/radius planet)
+        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        sin-elevation (/ (dot point direction) radius)
+        rho           (horizon-distance planet radius)
+        Delta         (- (sqr (* radius sin-elevation)) (sqr rho))
+        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
+    (* (dec size)
+       (if above-horizon
+         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H)) -0.5 0.0))
+         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 rho) -0.5 0.0)))))
+
+(facts "Convert elevation to index"
+       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 0.5 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) false) => (roughly (/ 1 3) 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) false) => (roughly 0.223 1e-3)
+         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) false) => (roughly 0.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) true) => (roughly (/ 2 3) 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [0 1 0]) true) => (roughly 0.5 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 2.0 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) false) => (roughly 0.5 1e-3)))
+
+(defn limit-quot
+  "Compute quotient and limit it"
+  ([a b limit]
+   (limit-quot a b (- limit) limit))
+  ([a b limit-lower limit-upper]
+   (if (zero? a)
+     a
+     (if (< b 0)
+       (limit-quot (- a) (- b) limit-lower limit-upper)
+       (if (< a (* b limit-upper))
+         (if (> a (* b limit-lower))
+           (/ a b)
+           limit-lower)
+         limit-upper))))
+
+(facts "Compute quotient and limit it"
+       (limit-quot 0 0 1) => 0
+       (limit-quot 4 2 1) => 1
+       (limit-quot -4 2 1) => -1
+       (limit-quot 1 2 1) => 1/2
+       (limit-quot -4 -2 1) => 1)
+
+(defn index-to-elevation
+  "Convert index and radius to elevation"
+  [planet size radius index]
+  (let [ground-radius (:sfsim25.sphere/radius planet)
+        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        horizon-dist  (horizon-distance planet radius)
+        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
+        scaled-index  (/ index (dec size))]
+    (if (<= scaled-index 0.5)
+      (let [ground-dist   (* horizon-dist (- 1 (* 2 scaled-index)))
+            sin-elevation (limit-quot (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist) 1.0)]
+        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) false])
+      (let [sky-dist      (* (+ horizon-dist H) (- (* 2 scaled-index) 1))
+            sin-elevation (min 1.0 (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist)))]
+        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) true])))
+
+(facts "Convert index and height to elevation"
+       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
+         (first (index-to-elevation planet 2 5.0 (/ 1 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 3 5.0 (/ 2 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (second (index-to-elevation planet 2 5.0 (/ 1 3))) => false
+         (first (index-to-elevation planet 2 5.0 0.222549)) => (roughly-matrix (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.4)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.4)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 (/ 2 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (first (index-to-elevation planet 3 4.0 (/ 4 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (second (index-to-elevation planet 2 4.0 (/ 2 3))) => true
+         (first (index-to-elevation planet 2 4.0 1.0)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 1.0)) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.5)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.50001)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.5)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.50001)) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
 
 (defn sun-elevation-to-index
   "Convert sun elevation to index"
@@ -82,28 +207,6 @@
        (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 0 1])) => 0.5
        (sun-angle-to-index 17 (matrix [0 1 0]) (matrix [1 0 0])) => 8.0)
 
-(defn limit-quot
-  "Compute quotient and limit it"
-  ([a b limit]
-   (limit-quot a b (- limit) limit))
-  ([a b limit-lower limit-upper]
-   (if (zero? a)
-     a
-     (if (< b 0)
-       (limit-quot (- a) (- b) limit-lower limit-upper)
-       (if (< a (* b limit-upper))
-         (if (> a (* b limit-lower))
-           (/ a b)
-           limit-lower)
-         limit-upper)))))
-
-(facts "Compute quotient and limit it"
-       (limit-quot 0 0 1) => 0
-       (limit-quot 4 2 1) => 1
-       (limit-quot -4 2 1) => -1
-       (limit-quot 1 2 1) => 1/2
-       (limit-quot -4 -2 1) => 1)
-
 (defn index-to-sun-direction
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
   [size direction sin-sun-elevation index]
@@ -123,107 +226,6 @@
        (index-to-sun-direction 2 (matrix [0 -1 0]) 0.0 1.0) => (matrix [0 -1 0])
        (index-to-sun-direction 3 (matrix [0 1 0]) 0.0 1.0) => (matrix [0 0 1]))
 
-(defn elevation-to-index
-  "Convert elevation to index depending on height"
-  [planet size point direction above-horizon]
-  (let [radius        (norm point)
-        ground-radius (:sfsim25.sphere/radius planet)
-        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
-        sin-elevation (/ (dot point direction) radius)
-        rho           (horizon-distance planet radius)
-        Delta         (- (sqr (* radius sin-elevation)) (sqr rho))
-        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
-    (* (dec size)
-       (if above-horizon
-         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H)) -0.5 0.0))
-         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 rho) -0.5 0.0))))))
-
-(facts "Convert elevation to index"
-       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
-         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 0.5 1e-3)
-         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) false) => (roughly (/ 1 3) 1e-3)
-         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) false) => (roughly 0.223 1e-3)
-         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 1.0 1e-3)
-         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) false) => (roughly 0.0 1e-3)
-         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) true) => (roughly (/ 2 3) 1e-3)
-         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [0 1 0]) true) => (roughly 0.5 1e-3)
-         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) true) => (roughly 1.0 1e-3)
-         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 1.0 1e-3)
-         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 2.0 1e-3)
-         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) true) => (roughly 1.0 1e-3)
-         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) false) => (roughly 0.5 1e-3)))
-
-(defn index-to-elevation
-  "Convert index and radius to elevation"
-  [planet size radius index]
-  (let [ground-radius (:sfsim25.sphere/radius planet)
-        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
-        horizon-dist  (horizon-distance planet radius)
-        H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
-        scaled-index  (/ index (dec size))]
-    (if (<= scaled-index 0.5)
-      (let [ground-dist   (* horizon-dist (- 1 (* 2 scaled-index)))
-            sin-elevation (limit-quot (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist) 1.0)]
-        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) false])
-      (let [sky-dist      (* (+ horizon-dist H) (- (* 2 scaled-index) 1))
-            sin-elevation (min 1.0 (/ (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist)))]
-        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) true]))))
-
-(facts "Convert index and height to elevation"
-       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
-         (first (index-to-elevation planet 2 5.0 (/ 1 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (first (index-to-elevation planet 3 5.0 (/ 2 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (second (index-to-elevation planet 2 5.0 (/ 1 3))) => false
-         (first (index-to-elevation planet 2 5.0 0.222549)) => (roughly-matrix (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) 1e-3)
-         (first (index-to-elevation planet 2 5.0 0.4)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (first (index-to-elevation planet 2 4.0 0.4)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (first (index-to-elevation planet 2 4.0 (/ 2 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
-         (first (index-to-elevation planet 3 4.0 (/ 4 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
-         (second (index-to-elevation planet 2 4.0 (/ 2 3))) => true
-         (first (index-to-elevation planet 2 4.0 1.0)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (first (index-to-elevation planet 2 5.0 1.0)) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
-         (first (index-to-elevation planet 2 5.0 0.5)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (first (index-to-elevation planet 2 5.0 0.50001)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (first (index-to-elevation planet 2 4.0 0.5)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (first (index-to-elevation planet 2 4.0 0.50001)) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
-
-(defn transmittance-forward
-  "Forward transformation for interpolating transmittance function"
-  [planet shape]
-  (fn [point direction above-horizon]
-      [(height-to-index planet (first shape) point)
-       (elevation-to-index planet (second shape) point direction above-horizon)]))
-
-(defn transmittance-backward
-  "Backward transformation for looking up transmittance values"
-  [planet shape]
-  (fn [height-index elevation-index]
-      (let [point                     (index-to-height planet (first shape) height-index)
-            [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)]
-        [point direction above-horizon])))
-
-(defn transmittance-space
-  "Create transformations for interpolating transmittance function"
-  [planet shape]
-  #:sfsim25.interpolate{:shape shape :forward (transmittance-forward planet shape) :backward (transmittance-backward planet shape)})
-
-(facts "Create transformations for interpolating transmittance function"
-       (let [radius   6378000.0
-             height   100000.0
-             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
-             space    (transmittance-space earth [15 17])
-             forward  (:sfsim25.interpolate/forward space)
-             backward (:sfsim25.interpolate/backward space)]
-         (:sfsim25.interpolate/shape space) => [15 17]
-         (forward (matrix [radius 0 0]) (matrix [0 1 0]) true) => [0.0 16.0]
-         (forward (matrix [(+ radius height) 0 0]) (matrix [0 1 0]) true) => [14.0 8.0]
-         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) false) => [0.0 8.0]
-         (first (backward 0.0 16.0)) => (matrix [radius 0 0])
-         (first (backward 14.0 8.0)) => (matrix [(+ radius height) 0 0])
-         (second (backward 0.0 16.0)) => (matrix [0 1 0])
-         (second (backward 14.0 8.0)) => (matrix [-1 0 0])
-         (third (backward 0.0 16.0)) => true
-         (third (backward 14.0 8.0)) => false))
 
 (defn ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"

@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix record-image is-image vertex-passthrough shader-test)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image vertex-passthrough shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul identity-matrix)]
@@ -313,189 +313,193 @@
          (is-above-horizon? earth (matrix [(+ radius 100000) 0 0]) (matrix [-1e-4 1 0])) => true
          (is-above-horizon? earth (matrix [(+ radius 100000) 0 0]) (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0])) => false))
 
-(tabular "Map elevation value to lookup table index depending on position of horizon"
-         (let [radius  6378000.0
-               earth   #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}]
-           (fact (elevation-to-index earth 17 ?pow (matrix [?x ?y ?z]) (matrix [?dx ?dy ?dz]) ?sky) => (roughly ?result 1e-6)))
-           ?pow ?x                  ?y     ?z ?dx            ?dy        ?dz ?sky ?result
-           1.0  radius              0      0  1              0          0   true   0.0
-           1.0  radius              0      0  0              1          0   true   8.0
-           1.0  0                   radius 0  0              1          0   true   0.0
-           1.0  radius              0      0  (sqrt 0.5)     (sqrt 0.5) 0   true   4.0
-           2.0  radius              0      0  (sqrt 0.5)     (sqrt 0.5) 0   true  (- 8 (sqrt 32))
-           2.0  radius              0      0  0              1          0   true   8.0
-           1.0  radius              0      0  0              1          0   false  9.0
-           1.0  radius              0      0 -1              0          0   false 16.0
-           1.0  radius              0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   false 12.5
-           1.0  (* (sqrt 2) radius) 0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   true   8.0
-           1.0  (* (sqrt 2) radius) 0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   false  9.0
-           1.0  (* (sqrt 2) radius) 0      0 -1              0          0   false 16.0
-           2.0  radius              0      0  (- (sqrt 0.5)) (sqrt 0.5) 0   false 13.949747
-           2.0  radius              0      0  0              1          0   false  9.0
-           1.0  radius              0      0 -1              0          0   true   8.0
-           1.0  radius              0      0  1              0          0   false  9.0)
+(facts "Distance from point with radius to horizon of planet"
+       (horizon-distance {:sfsim25.sphere/radius 4.0} 4.0) => 0.0
+       (horizon-distance {:sfsim25.sphere/radius 4.0} 5.0) => 3.0)
 
-(tabular "Map elevation lookup index to directional vector depending on position of horizon"
-         (let [radius            6378000.0
-               earth             #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}
-               [direction above] (index-to-elevation earth 17 ?pow ?height ?index) ]
-           (facts direction => (roughly-matrix (matrix [?dx ?dy 0]) 1e-6)
-                  above     => ?sky))
-           ?pow ?height                   ?index     ?dx            ?dy        ?sky
-           1.0  0                          0         1              0          true
-           1.0  0                          8         0              1          true
-           1.0  0                          9         0              1          false
-           1.0  0                         16        -1              0          false
-           1.0  (* (- (sqrt 2) 1) radius)  8         (- (sqrt 0.5)) (sqrt 0.5) true
-           1.0  (* (- (sqrt 2) 1) radius)  9         (- (sqrt 0.5)) (sqrt 0.5) false
-           1.0  (* (- (sqrt 2) 1) radius) 16        -1              0          false
-           2.0  0                          2.343146  (sqrt 0.5)     (sqrt 0.5) true
-           2.0  0                          8         0              1          true
-           2.0  0                         13.949747  (- (sqrt 0.5)) (sqrt 0.5) false
-           2.0  0                          9         0              1          false)
+(facts "Convert elevation to index"
+       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 0.5 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) false) => (roughly (/ 1 3) 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) false) => (roughly 0.223 1e-3)
+         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [-1 0 0]) false) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) false) => (roughly 0.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) true) => (roughly (/ 2 3) 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [0 1 0]) true) => (roughly 0.5 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-0.6 0.8 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 3 (matrix [4 0 0]) (matrix [0 1 0]) true) => (roughly 2.0 1e-3)
+         (elevation-to-index planet 2 (matrix [5 0 0]) (matrix [-1 0 0]) true) => (roughly 1.0 1e-3)
+         (elevation-to-index planet 2 (matrix [4 0 0]) (matrix [1 0 0]) false) => (roughly 0.5 1e-3)))
 
-(facts "Convert height to index"
-       (let [radius 6378000.0
-             height 35000.0
-             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
-         (height-to-index earth 17 (matrix [radius 0 0])) => 0.0
-         (height-to-index earth 17 (matrix [(+ radius height) 0 0])) => 16.0))
+(facts "Convert index and height to elevation"
+       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
+         (first (index-to-elevation planet 2 5.0 (/ 1 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 3 5.0 (/ 2 3))) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (second (index-to-elevation planet 2 5.0 (/ 1 3))) => false
+         (first (index-to-elevation planet 2 5.0 0.222549)) => (roughly-matrix (matrix [(- (sqrt 0.5)) (sqrt 0.5) 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.4)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.4)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 (/ 2 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (first (index-to-elevation planet 3 4.0 (/ 4 3))) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (second (index-to-elevation planet 2 4.0 (/ 2 3))) => true
+         (first (index-to-elevation planet 2 4.0 1.0)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 1.0)) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.5)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.50001)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.5)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 4.0 0.50001)) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
 
-(facts "Convert index to point at certain height"
-       (let [radius 6378000.0
-             height 35000.0
-             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
-         (index-to-height earth 17 0) => (matrix [radius 0 0])
-         (index-to-height earth 17 16) => (matrix [(+ radius height) 0 0])))
+(facts "Convert height of point to index"
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4 0 0])) => 0.0
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [5 0 0])) => 1.0
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4.5 0 0])) => (roughly 0.687 1e-3)
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 17 (matrix [5 0 0])) => 16.0)
+
+(facts "Convert index to point with corresponding height"
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.0) => (matrix [4 0 0])
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 1.0) => (matrix [5 0 0])
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.68718) => (roughly-matrix (matrix [4.5 0 0]) 1e-3)
+       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 3 2.0) => (matrix [5 0 0]))
 
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0
              height   100000.0
-             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-             space    (transmittance-space earth [15 17] 1.0)
+             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             space    (transmittance-space earth [15 17])
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
-         (:sfsim25.interpolate/shape space)                               => [15 17]
-         (forward (matrix [radius 0 0]) (matrix [1 0 0]) true)            => [0.0 0.0]
-         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) true) => [14.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 1 0]) true)            => [0.0 8.0]
-         (forward (matrix [radius 0 0]) (matrix [0 1 0]) false)           => [0.0 9.0]
-         (first (backward 0.0 0.0))                                       => (matrix [radius 0 0])
-         (first (backward 14.0 0.0))                                      => (matrix [(+ radius height) 0 0])
-         (second (backward 0.0 0.0))                                      => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (second (backward 0.0 8.0))                                      => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (nth (backward 0.0 0.0) 2)                                       => true
-         (nth (backward 0.0 8.0) 2)                                       => true
-         (nth (backward 0.0 9.0) 2)                                       => false))
+         (:sfsim25.interpolate/shape space) => [15 17]
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]) true) => [0.0 16.0]
+         (forward (matrix [(+ radius height) 0 0]) (matrix [0 1 0]) true) => [14.0 8.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) false) => [0.0 8.0]
+         (first (backward 0.0 16.0)) => (matrix [radius 0 0])
+         (first (backward 14.0 8.0)) => (matrix [(+ radius height) 0 0])
+         (second (backward 0.0 16.0)) => (matrix [0 1 0])
+         (second (backward 14.0 8.0)) => (matrix [-1 0 0])
+         (third (backward 0.0 16.0)) => true
+         (third (backward 14.0 8.0)) => false))
 
 (fact "Transformation for surface radiance interpolation is the same as the one for transmittance"
       surface-radiance-space => (exactly transmittance-space))
 
-(facts "Convert absolute sun heading to lookup index"
-       (let [radius 6378000.0
-             size 17]
-         (heading-to-index size (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0])) => 0.0
-         (heading-to-index size (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 0 1])) => (roughly 8.0 1e-6)
-         (heading-to-index size (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1])) => 0.0
-         (heading-to-index size (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0])) => (roughly 8.0 1e-6)
-         (heading-to-index size (matrix [radius 0 0]) (matrix [0 -1 -1e-8]) (matrix [0 -1 1e-8])) => (roughly 0.0 1e-6)
-         (heading-to-index size (matrix [0 radius 0]) (matrix [1 0 0]) (matrix [-1 0 0])) => (roughly 16.0 1e-6)))
+(facts "Convert sun elevation to index"
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [1 0 0])) => 1.0
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [0 1 0])) => (roughly 0.464 1e-3)
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [-0.2 0.980 0])) => 0.0
+       (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [-1 0 0])) => 0.0
+       (sun-elevation-to-index 17 (matrix [4 0 0]) (matrix [1 0 0])) => 16.0)
 
-(facts "Convert index to absolute sun heading"
-       (let [size 17]
-         (index-to-heading size 0) => 0.0
-         (index-to-heading size 16) => PI))
+(facts "Convert index to sinus of sun elevation"
+       (index-to-sin-sun-elevation 2 1.0) => (roughly 1.0 1e-3)
+       (index-to-sin-sun-elevation 2 0.0) => (roughly -0.2 1e-3)
+       (index-to-sin-sun-elevation 2 0.463863) => (roughly 0.0 1e-3)
+       (index-to-sin-sun-elevation 2 0.5) => (roughly 0.022 1e-3)
+       (index-to-sin-sun-elevation 3 1.0) => (roughly 0.022 1e-3))
+
+(facts "Convert sun and viewing direction angle to index"
+       (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 1 0])) => 1.0
+       (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 -1 0])) => 0.0
+       (sun-angle-to-index 2 (matrix [0 1 0]) (matrix [0 0 1])) => 0.5
+       (sun-angle-to-index 17 (matrix [0 1 0]) (matrix [1 0 0])) => 8.0)
+
+(facts "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
+       (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 1.0) => (matrix [0 1 0])
+       (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 0.0) => (matrix [0 -1 0])
+       (index-to-sun-direction 2 (matrix [0 1 0]) 1.0 0.5) => (matrix [1 0 0])
+       (index-to-sun-direction 2 (matrix [0 1 0]) 1.00001 0.5) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+       (index-to-sun-direction 2 (matrix [0 1 0]) 0.0 0.5) => (matrix [0 0 1])
+       (index-to-sun-direction 2 (matrix [1 0 0]) 1.0 1.0) => (matrix [1 0 0])
+       (index-to-sun-direction 2 (matrix [0 -1 0]) 0.0 1.0) => (matrix [0 -1 0])
+       (index-to-sun-direction 3 (matrix [0 1 0]) 0.0 1.0) => (matrix [0 0 1]))
 
 (facts "Create transformation for interpolating ray scatter and point scatter"
        (let [radius   6378000.0
              height   100000.0
-             earth    #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}
-             space    (ray-scatter-space earth [21 19 17 15] 1.0)
+             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             space    (ray-scatter-space earth [21 19 17 15])
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
          (:sfsim25.interpolate/shape space) => [21 19 17 15]
-         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true)            => [0.0 0.0 0.0 0.0]
-         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => [20.0 0.0 0.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]) false)          => [0.0 18.0 0.0 0.0]
-         (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [0 1 0]) false)          => [0.0 18.0 0.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [0 0 1]) true)            => [0.0 0.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) true)            => [0.0 9.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) false)           => [0.0 10.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]) true)           => [0.0 9.0 8.0 7.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]) true)            => [0.0 9.0 8.0 7.0]
-         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]) true)            => [0.0 9.0 8.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]) true)           => [0.0 9.0 8.0 14.0]
-         (nth (backward 0.0 0.0 0.0 0.0) 0)   => (matrix [radius 0 0])
-         (nth (backward 20.0 0.0 0.0 0.0) 0)  => (matrix [(+ radius height) 0 0])
-         (nth (backward 0.0 0.0 0.0 0.0) 1)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (nth (backward 0.0 9.0 0.0 0.0) 1)   => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (nth (backward 0.0 0.0 0.0 0.0) 2)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (nth (backward 0.0 0.0 8.0 0.0) 2)   => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (nth (backward 0.0 0.0 8.0 7.0) 2)   => (roughly-matrix (matrix [0 0 1]) 1e-6)
-         (nth (backward 0.0 0.0 0.0 7.0) 2)   => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (nth (backward 0.0 9.0 0.0 0.0) 3)   => true
-         (nth (backward 0.0 10.0 0.0 0.0) 3)   => false))
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => (roughly-vector [0.0 9.794 16.0 14.0] 1e-3)
+         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => [20.0 9.0 16.0 14.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]) false) => [0.0 9.0 16.0 0.0]
+         (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [0 1 0]) false) => [0.0 9.0 16.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [0 0 1]) true) => (roughly-vector [0.0 9.794 7.422 7.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) true) => (roughly-vector [0.0 18.0 7.422 14.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) false) => (roughly-vector [0.0 9.0 7.422 14.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]) true) => (roughly-vector [0.0 18.0 7.422 7.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]) true) => (roughly-vector [0.0 18.0 7.422 7.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]) true) => (roughly-vector [0.0 18.0 7.422 14.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]) true) => (roughly-vector [0.0 18.0 7.422 0.0] 1e-3)
+         (nth (backward 0.0 0.0 0.0 0.0) 0) => (matrix [radius 0 0])
+         (nth (backward 20.0 0.0 0.0 0.0) 0) => (matrix [(+ radius height) 0 0])
+         (nth (backward 0.0 9.79376 0.0 0.0) 1) => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (nth (backward 0.0 18.0 0.0 0.0) 1) => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (nth (backward 0.0 9.7937607 16.0 14.0) 2) => (roughly-matrix (matrix [1 0 0]) 1e-3)
+         (nth (backward 0.0 9.7937607 7.421805 7.0) 2) => (roughly-matrix (matrix [0 0 1]) 1e-3)
+         (nth (backward 0.0 18.0 7.421805 7.0) 2) => (roughly-matrix (matrix [0 0 1]) 1e-3)
+         (nth (backward 0.0 9.79376 0.0 0.0) 3) => true
+         (nth (backward 20.0 8.206 16.0 0.0) 3) => false))
 
 (fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
       point-scatter-space => (exactly ray-scatter-space))
 
-(defn transmittance-shader-test [setup probe & shaders]
-  (fn [uniforms args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices       [0 1 3 2]
-                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                data          (flatten (map #(repeat 17 (repeat 3 (/ % 16))) (range 17)))
-                transmittance (make-vector-texture-2d {:width 17 :height 17 :data (float-array data)})
-                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render-color
-                                1 1 true
-                                (use-program program)
-                                (uniform-sampler program :transmittance 0)
-                                (apply setup program uniforms)
-                                (use-textures transmittance)
-                                (render-quads vao))
-                img           (texture->vectors3 tex 1 1)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-texture transmittance)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
-
-(def transmittance-track-probe
-  (template/fn [px py pz qx qy qz] "#version 410 core
-out lowp vec3 fragColor;
-vec3 transmittance_track(vec3 p, vec3 q);
-void main()
-{
-  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
-  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-  fragColor = transmittance_track(p, q);
-}"))
-
-(def transmittance-track-test
-  (transmittance-shader-test
-    (fn [program height-size elevation-size elevation-power radius max-height]
-        (uniform-int program :height_size height-size)
-        (uniform-int program :elevation_size elevation-size)
-        (uniform-float program :elevation_power elevation-power)
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
-    transmittance-track-probe transmittance-track
-    shaders/transmittance-forward shaders/horizon-angle
-    shaders/elevation-to-index shaders/interpolate-2d
-    shaders/convert-2d-index shaders/is-above-horizon))
-
-(tabular "Shader function to compute transmittance between two points in the atmosphere"
-         (fact (mget (transmittance-track-test [17 17 1 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0)
-               => (roughly ?result 1e-6))
-         ?px ?py ?pz     ?qx ?qy ?qz     ?result
-         0   0   6478000 0   0   6478000 1
-         0   0   6428000 0   0   6478000 0.5
-         0   0   6453000 0   0   6478000 0.75
-         0   0   6428000 0   0   6453000 (/ 0.5 0.75))
+;(defn transmittance-shader-test [setup probe & shaders]
+;  (fn [uniforms args]
+;      (let [result (promise)]
+;        (offscreen-render 1 1
+;          (let [indices       [0 1 3 2]
+;                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+;                data          (flatten (map #(repeat 17 (repeat 3 (/ % 16))) (range 17)))
+;                transmittance (make-vector-texture-2d {:width 17 :height 17 :data (float-array data)})
+;                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+;                vao           (make-vertex-array-object program indices vertices [:point 3])
+;                tex           (texture-render-color
+;                                1 1 true
+;                                (use-program program)
+;                                (uniform-sampler program :transmittance 0)
+;                                (apply setup program uniforms)
+;                                (use-textures transmittance)
+;                                (render-quads vao))
+;                img           (texture->vectors3 tex 1 1)]
+;            (deliver result (get-vector3 img 0 0))
+;            (destroy-texture tex)
+;            (destroy-texture transmittance)
+;            (destroy-vertex-array-object vao)
+;            (destroy-program program)))
+;        @result)))
+;
+;(def transmittance-track-probe
+;  (template/fn [px py pz qx qy qz] "#version 410 core
+;out lowp vec3 fragColor;
+;vec3 transmittance_track(vec3 p, vec3 q);
+;void main()
+;{
+;  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
+;  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
+;  fragColor = transmittance_track(p, q);
+;}"))
+;
+;(def transmittance-track-test
+;  (transmittance-shader-test
+;    (fn [program height-size elevation-size radius max-height]
+;        (uniform-int program :height_size height-size)
+;        (uniform-int program :elevation_size elevation-size)
+;        (uniform-float program :radius radius)
+;        (uniform-float program :max_height max-height))
+;    transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
+;    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
+;    shaders/horizon-angle shaders/horizon-distance shaders/limit-quot))
+;
+;(tabular "Shader function to compute transmittance between two points in the atmosphere"
+;         (fact (mget (transmittance-track-test [17 17 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0)
+;               => (roughly ?result 1e-6))
+;         ?px ?py ?pz     ?qx ?qy ?qz     ?result
+;         0   0   6478000 0   0   6478000 1
+;         0   0   6428000 0   0   6478000 0.5
+;         0   0   6453000 0   0   6478000 0.75
+;         0   0   6428000 0   0   6453000 (/ 0.5 0.75))
 
 (defn ray-scatter-shader-test [setup probe & shaders]
   (fn [uniforms args]
@@ -547,21 +551,11 @@ void main()
         (uniform-float program :elevation_power elevation-power)
         (uniform-float program :radius radius)
         (uniform-float program :max_height max-height))
-    ray-scatter-track-probe
-    ray-scatter-track
-    shaders/ray-scatter-forward
-    shaders/horizon-angle
-    shaders/oriented-matrix
-    shaders/orthogonal-vector
-    shaders/clip-angle
-    shaders/elevation-to-index
-    shaders/interpolate-4d
-    shaders/convert-4d-index
-    transmittance-track
-    shaders/transmittance-forward
-    shaders/interpolate-2d
-    shaders/convert-2d-index
-    shaders/is-above-horizon))
+    ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/horizon-angle shaders/oriented-matrix
+    shaders/orthogonal-vector shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d shaders/convert-4d-index
+    transmittance-track shaders/transmittance-forward shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
+    shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
+    shaders/sun-angle-to-index))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact (mget (ray-scatter-track-test [5 5 5 5 1 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0) => ?result)
@@ -627,10 +621,10 @@ void main()
                                    :scatter-scale 8000})
 (def scatter [mie rayleigh])
 (def transmittance-earth (partial transmittance earth scatter ray-steps))
-(def transmittance-space-earth (transmittance-space earth [size size] power))
+(def transmittance-space-earth (transmittance-space earth [size size]))
 (def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
 (def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
-(def ray-scatter-space-earth (ray-scatter-space earth [size size size size] power))
+(def ray-scatter-space-earth (ray-scatter-space earth [size size size size]))
 (def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
                                          transmittance-space-earth)))
 (def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)
@@ -659,7 +653,10 @@ void main()
                                                                           clouds/cloud-track clouds/cloud-track-base
                                                                           clouds/cloud-density clouds/cloud-shadow
                                                                           clouds/linear-sampling attenuation-track
-                                                                          transmittance-track ray-scatter-track phase-function])
+                                                                          transmittance-track ray-scatter-track phase-function
+                                                                          shaders/height-to-index shaders/horizon-distance
+                                                                          shaders/limit-quot shaders/sun-elevation-to-index
+                                                                          shaders/sun-angle-to-index])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d {:width size :height size :data T})
                                    ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
