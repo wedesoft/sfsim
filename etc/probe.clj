@@ -30,7 +30,10 @@
 (forward (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
 (backward 127.0 64.0)
 
+(transmittance-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+(T (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
 (ray-scatter-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+(S (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
 
 (map
   (fn [angle]
