@@ -130,8 +130,7 @@
       (surface-radiance-base moved [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]) true)  => (mul 0.5 intensity)
       (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]) true)   => (mul 0.5 intensity)
       (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 -1 0]) false) => (matrix [0.0 0.0 0.0])
-      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]) false) => (matrix [0.0 0.0 0.0])
-      )))
+      (surface-radiance-base earth [] 10 intensity (matrix [0 radius 0]) (matrix [0 1 0]) false) => (matrix [0.0 0.0 0.0]))))
 
 (fact "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
   (let [radius           6378000.0
@@ -345,10 +344,12 @@
          (second (index-to-elevation planet 2 4.0 (/ 2 3))) => true
          (first (index-to-elevation planet 2 4.0 1.0)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
          (first (index-to-elevation planet 2 5.0 1.0)) => (roughly-matrix (matrix [-0.6 0.8 0]) 1e-3)
-         (first (index-to-elevation planet 2 5.0 0.5)) => (roughly-matrix (matrix [-1 0 0]) 1e-3)
-         (first (index-to-elevation planet 2 5.0 0.50001)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (first (index-to-elevation planet 2 5.0 0.5)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
+         (second (index-to-elevation planet 2 5.0 0.5)) => true
+         (first (index-to-elevation planet 2 5.0 0.5001)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
          (first (index-to-elevation planet 2 4.0 0.5)) => (roughly-matrix (matrix [0 1 0]) 1e-3)
-         (first (index-to-elevation planet 2 4.0 0.50001)) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
+         (second (index-to-elevation planet 2 4.0 0.5)) => false
+         (first (index-to-elevation planet 2 4.0 0.5001)) => (roughly-matrix (matrix [1 0 0]) 1e-3)))
 
 (facts "Convert height of point to index"
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4 0 0])) => 0.0
@@ -376,9 +377,9 @@
          (first (backward 0.0 16.0)) => (matrix [radius 0 0])
          (first (backward 14.0 8.0)) => (matrix [(+ radius height) 0 0])
          (second (backward 0.0 16.0)) => (matrix [0 1 0])
-         (second (backward 14.0 8.0)) => (matrix [-1 0 0])
+         (second (backward 14.0 8.0)) => (matrix [0 1 0])
          (third (backward 0.0 16.0)) => true
-         (third (backward 14.0 8.0)) => false))
+         (third (backward 14.0 8.0)) => true))
 
 (fact "Transformation for surface radiance interpolation is the same as the one for transmittance"
       surface-radiance-space => (exactly transmittance-space))
