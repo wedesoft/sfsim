@@ -144,22 +144,6 @@
   (sqrt (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))))
 
 (defn elevation-to-index
-  "Convert elevation value to lookup table index depending on position of horizon"
-  [{:sfsim25.sphere/keys [^Vector centre ^double radius] :as planet} size power point direction above-horizon]
-  (let [sky-size      (inc (quot size 2))
-        ground-size   (quot (dec size) 2)
-        horizon       (horizon-angle planet point)
-        normal        (normalise point)
-        sin-elevation (dot normal direction)
-        elevation     (asin sin-elevation)
-        pi2           (/ PI 2)
-        invert        #(- 1 %)
-        distort       #(pow % (/ 1.0 power))]
-    (if above-horizon
-      (-> elevation (- (- horizon)) (max 0) (/ (+ pi2 horizon)) distort invert (* (dec sky-size)))
-      (-> (- (- horizon) elevation) (max 0) (/ (- pi2 horizon)) distort (* (dec ground-size)) (+ sky-size)))))
-
-(defn elevation-to-index
   "Convert elevation to index depending on height"
   [planet size point direction above-horizon]
   (let [radius        (norm point)
