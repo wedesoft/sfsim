@@ -1,7 +1,8 @@
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.interpolate :refer :all])
+(require '[sfsim25.util :refer (sqr)])
 (require '[clojure.core.matrix :refer (matrix)])
-(require '[clojure.math :refer (sin cos PI)])
+(require '[clojure.math :refer (sin cos PI sqrt)])
 
 (def radius 6378000)
 (def max-height 100000)
@@ -22,13 +23,13 @@
 
 (T (matrix [radius 0 0]) (matrix [1 0 0]) true)
 (T (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
-(transmittance-earth (matrix [radius 0 0]) (matrix [1 0 0]))
+(transmittance-earth (matrix [radius 0 0]) (matrix [1 0 0]) true)
 (transmittance-earth (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
 
 (def forward (:sfsim25.interpolate/forward transmittance-space-earth))
 (def backward (:sfsim25.interpolate/backward transmittance-space-earth))
 (forward (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
-(backward 127.0 64.0)
+(backward 6.0 3.0)
 
 (transmittance-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
 ; [0.816777986276515,0.6339574577660779,0.33261999049530494]
