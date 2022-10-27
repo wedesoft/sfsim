@@ -13,11 +13,11 @@
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 (def scatter [mie rayleigh])
 (def transmittance-earth (partial transmittance earth scatter ray-steps))
-(def transmittance-space-earth (transmittance-space earth [size1 size2] 2.0))
+(def transmittance-space-earth (transmittance-space earth [size1 size2]))
 (def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
 (def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
 (def T (interpolate-function transmittance-earth transmittance-space-earth))
-(def ray-scatter-space-earth (ray-scatter-space earth [size1 size2 size2 size2] 2.0))
+(def ray-scatter-space-earth (ray-scatter-space earth [size1 size2 size2 size2]))
 (def S (interpolate-function ray-scatter-earth ray-scatter-space-earth))
 
 (T (matrix [radius 0 0]) (matrix [1 0 0]) true)
