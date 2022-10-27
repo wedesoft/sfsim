@@ -13,11 +13,11 @@
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
 (def scatter [mie rayleigh])
 (def transmittance-earth (partial transmittance earth scatter ray-steps))
-(def transmittance-space-earth (transmittance-space earth [size1 size2]))
+(def transmittance-space-earth (transmittance-space earth [size1 size2] 2.0))
 (def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
 (def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
 (def T (interpolate-function transmittance-earth transmittance-space-earth))
-(def ray-scatter-space-earth (ray-scatter-space earth [size1 size2 size2 size2]))
+(def ray-scatter-space-earth (ray-scatter-space earth [size1 size2 size2 size2] 2.0))
 (def S (interpolate-function ray-scatter-earth ray-scatter-space-earth))
 
 (T (matrix [radius 0 0]) (matrix [1 0 0]) true)
@@ -31,9 +31,13 @@
 (backward 127.0 64.0)
 
 (transmittance-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+; [0.816777986276515,0.6339574577660779,0.33261999049530494]
 (T (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+;  [0.7870684887916732,0.5993094473355886,0.31630420500679357][0.7870684887916732,0.5993094473355886,0.31630420500679357]
 (ray-scatter-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+; [0.04053243467757836,0.049369759514462486,0.04919703354249489]
 (S (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+; [0.05914855088446305,0.05950909164504497,0.04613921998145621]
 
 (map
   (fn [angle]
