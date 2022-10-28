@@ -527,10 +527,10 @@ void main()
 (tabular "Convert point and direction to 2D lookup index in transmittance table"
          (fact (transmittance-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
                => (roughly-matrix (matrix [?u ?v 0]) 1e-3))
-         ?x      ?y ?z  ?dx ?dy ?dz ?above ?u ?v
-         6378000 0  0   0   1   0   true   0  1
-         6478000 0  0   0   1   0   true   1  0.5
-         6378000 0  0  -1   0   0   false  0  0.5)
+         ?x      ?y ?z  ?dx ?dy ?dz ?above ?u  ?v
+         6378000 0  0   0   1   0   true   1   0
+         6478000 0  0   0   1   0   true   0.5 1
+         6378000 0  0  -1   0   0   false  0.5 0)
 
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz above selector]
@@ -560,12 +560,12 @@ void main()
          (fact (mget (ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
                => (roughly ?result 1e-3))
          ?x      ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector ?result
-         6378000 0  0  1   0   0   1   0   0   true   "x"       0.0
-         6478000 0  0  1   0   0   1   0   0   true   "x"       1.0
-         6478000 0  0  1   0   0   1   0   0   true   "y"       0.5
-         6378000 0  0  0   0   1   0   0   1   true   "y"       1.0
-         6378000 0  0  0   0   1   0   0   1   false  "y"       0.5
-         6378000 0  0  1   0   0   1   0   0   true   "z"       1.0
-         6378000 0  0  1   0   0  -1   0   0   true   "z"       0.0
-         6378000 0  0  0   1   0   0   1   0   true   "w"       1.0
-         6378000 0  0  0   1   0   0  -1   0   true   "w"       0.0)
+         6378000 0  0  1   0   0   1   0   0   true   "w"       0.0
+         6478000 0  0  1   0   0   1   0   0   true   "w"       1.0
+         6478000 0  0  1   0   0   1   0   0   true   "z"       0.5
+         6378000 0  0  0   0   1   0   0   1   true   "z"       1.0
+         6378000 0  0  0   0   1   0   0   1   false  "z"       0.5
+         6378000 0  0  1   0   0   1   0   0   true   "y"       1.0
+         6378000 0  0  1   0   0  -1   0   0   true   "y"       0.0
+         6378000 0  0  0   1   0   0   1   0   true   "x"       1.0
+         6378000 0  0  0   1   0   0  -1   0   true   "x"       0.0)

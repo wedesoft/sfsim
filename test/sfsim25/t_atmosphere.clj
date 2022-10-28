@@ -612,7 +612,7 @@ void main()
 (def radius 6378000)
 (def max-height 100000)
 (def ray-steps 10)
-(def size 7)
+(def size 12)
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
                             :radius radius
                             :sfsim25.atmosphere/height max-height
@@ -712,7 +712,7 @@ void main()
          0  0               (- 0 radius max-height) radius       0           0   0          1            "space.png"
          0  0               (* 2.5 radius)          radius       0           0   1          0            "haze.png"
          0  radius          (* 0.5 radius)          radius       0           0   0         -1            "sunset.png"
-         0  (+ radius 1000) 0                       radius       0           0   (sin 0.2) (- (cos 0.2)) "sunset2.png"
+         0  (+ radius 1000) 0                       radius       0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
          0  0               (- 0 radius 2)          radius       0           0   0         -1            "inside.png"
          0  (* 3 radius)    0                       radius       (* -0.5 PI) 0   1          0            "yview.png"
          0  (* 3 radius)    0                       (/ radius 2) (* -0.5 PI) 0   1          0            "ellipsoid.png")
