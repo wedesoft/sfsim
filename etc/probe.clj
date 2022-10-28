@@ -189,6 +189,7 @@ void main()
 (transmittance-earth (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
 (forward (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
 (backward 6.0 3.0)
+(apply transmittance-earth (backward 3.0 6.0))  ; Indices are swapped?
 (apply transmittance-earth (backward 6.0 3.0))
-(+ (* 6 7 3) (* 3 3))
+(take 3 (drop (+ (* 6 7 3) (* 3 3)) T))
 (count T)

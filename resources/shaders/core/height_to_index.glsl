@@ -3,6 +3,7 @@
 uniform float radius;
 uniform float max_height;
 float horizon_distance(float ground_radius, float radius_sqr);
+
 float height_to_index(vec3 point)
 {
   float current_horizon_distance = horizon_distance(radius, dot(point, point));

@@ -416,8 +416,7 @@ void main()
          ?radius ?max-height ?x  ?y ?z ?result
          4       1           4   0  0  0.0
          4       1           5   0  0  1.0
-         4       1           4.5 0  0  0.687184
-         4       1           5   0  0  1.0)
+         4       1           4.5 0  0  0.687184)
 
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
