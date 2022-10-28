@@ -11,5 +11,6 @@ vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool 
   float elevation_index = elevation_to_index(point, direction, above_horizon);
   float sun_elevation_index = sun_elevation_to_index(point, light_direction);
   float sun_angle_index = sun_angle_to_index(direction, light_direction);
+  // Reverse order of indices when compared to corresponding Clojure function
   return vec4(sun_angle_index, sun_elevation_index, elevation_index, height_index);
 }
