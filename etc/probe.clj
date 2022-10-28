@@ -184,3 +184,11 @@ void main()
 
 (transmittance-outer-test [17 17 radius max-height] [0 (+ radius 1000) 0 0 (sin 0.2) (- (cos 0.2))])
 (transmittance-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+
+(transmittance-outer-test [17 17 radius max-height] [(+ radius max-height) 0 0 1 0 0])
+(transmittance-earth (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
+(forward (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
+(backward 6.0 3.0)
+(apply transmittance-earth (backward 6.0 3.0))
+(+ (* 6 7 3) (* 3 3))
+(count T)
