@@ -24,10 +24,10 @@
   "Program to generate lookup tables for atmospheric scattering"
   [& args]
   (.println *err* (str "Initialization " (.toString (java.time.LocalDateTime/now))))
-  (let [height-size                   9
-        heading-size                  33
-        elevation-size                129
-        light-elevation-size          33
+  (let [height-size                   32
+        elevation-size                128
+        light-elevation-size          32
+        heading-size                  8
         transmittance-shape           [height-size elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
         bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) height-size)
