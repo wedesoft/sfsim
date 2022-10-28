@@ -613,7 +613,6 @@ void main()
 (def max-height 100000)
 (def ray-steps 10)
 (def size 7)
-(def power 2.0)
 (def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
                             :radius radius
                             :sfsim25.atmosphere/height max-height
@@ -650,8 +649,7 @@ void main()
                                                                           ray-scatter-outer attenuation-outer shaders/ray-sphere
                                                                           shaders/transmittance-forward shaders/horizon-angle
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
-                                                                          shaders/oriented-matrix shaders/orthogonal-vector
-                                                                          shaders/clip-angle shaders/interpolate-2d
+                                                                          shaders/interpolate-2d
                                                                           shaders/convert-2d-index shaders/interpolate-4d
                                                                           shaders/convert-4d-index shaders/is-above-horizon
                                                                           clouds/sky-outer shaders/ray-shell
@@ -688,16 +686,19 @@ void main()
                                (uniform-int program :elevation_size size)
                                (uniform-int program :light_elevation_size size)
                                (uniform-int program :heading_size size)
-                               (uniform-float program :elevation_power power)
                                (uniform-float program :amplification 5)
                                (uniform-float program :cloud_bottom 0)
                                (uniform-float program :cloud_top -1)
                                (uniform-float program :cloud_scale 16)
+                               (uniform-int program :cloud_size 2)
+                               (uniform-float program :cloud_multiplier 1.0)
                                (uniform-float program :anisotropic 0.4)
                                (uniform-int program :cloud_min_samples 1)
                                (uniform-int program :cloud_max_samples 64)
                                (uniform-float program :cloud_max_step 0.1)
                                (uniform-int program :cloud_base_samples 8)
+                               (uniform-float program :cloud_scatter_amount 1.0)
+                               (uniform-float program :transparency_cutoff 0.05)
                                (use-textures transmittance ray-scatter worley profile)
                                (render-quads vao)
                                (destroy-texture profile)
