@@ -378,8 +378,12 @@
          (first (backward 14.0 8.0)) => (matrix [(+ radius height) 0 0])
          (second (backward 0.0 16.0)) => (matrix [0 1 0])
          (second (backward 14.0 8.0)) => (matrix [0 1 0])
+         (second (backward 0.0 8.0)) => (matrix [0 1 0])
+         (second (backward 0 8)) => (matrix [0 1 0])
          (third (backward 0.0 16.0)) => true
-         (third (backward 14.0 8.0)) => true))
+         (third (backward 14.0 8.0)) => true
+         (third (backward 0.0 8.0)) => false
+         (third (backward 0 8)) => false))
 
 (fact "Transformation for surface radiance interpolation is the same as the one for transmittance"
       surface-radiance-space => (exactly transmittance-space))

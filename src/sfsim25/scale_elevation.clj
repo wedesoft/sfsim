@@ -7,7 +7,7 @@
 (defn -main
   "Program to scale elevation images"
   [& args]
-  (when-not (= (count args) 2)
+  (when-not (== (count args) 2)
     (.println *err* "Syntax: lein run-scale-elevation [input data] [output data]")
     (System/exit 1))
   (let [[input-data

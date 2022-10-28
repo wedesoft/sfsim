@@ -14,7 +14,7 @@
   "Elementwise comparison of vector"
   [expected error]
   (fn [actual]
-      (and (= (count expected) (count actual)))
+      (and (== (count expected) (count actual)))
       (every? true? (map #((roughly %1 error) %2) expected actual))))
 
 (defn is-image
@@ -22,8 +22,8 @@
   [filename]
   (fn [other]
       (let [img (slurp-image filename)]
-        (and (= (:width img) (:width other))
-             (= (:height img) (:height other))
+        (and (== (:width img) (:width other))
+             (== (:height img) (:height other))
              (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
 
 (defn record-image

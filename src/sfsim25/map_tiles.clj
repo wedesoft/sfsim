@@ -9,7 +9,7 @@
 (defn -main
   "Program to generate map tiles"
   [& args]
-  (when-not (= (count args) 6)
+  (when-not (== (count args) 6)
     (.println *err* "Syntax: lein run-map-tiles [image] [tilesize] [level] [prefix] [y offset] [x offset]")
     (System/exit 1))
   (let [input-image  (nth args 0)

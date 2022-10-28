@@ -17,6 +17,6 @@
       (Thread/sleep 20)
       (while (Keyboard/next)
         (when (Keyboard/getEventKeyState)
-          (if (= (Keyboard/getEventKey) Keyboard/KEY_ESCAPE)
+          (if (== (Keyboard/getEventKey) Keyboard/KEY_ESCAPE)
             (reset! running false)))))
     (Display/destroy)))

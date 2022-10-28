@@ -8,7 +8,7 @@
 (defn -main
   "Program to generate elevation tiles"
   [& args]
-  (when-not (= (count args) 6)
+  (when-not (== (count args) 6)
     (.println *err* "Syntax: lein run-elevation-tiles [data] [tilesize] [level] [prefix] [y offset] [x offset]")
     (System/exit 1))
   (let [input-data (nth args 0)

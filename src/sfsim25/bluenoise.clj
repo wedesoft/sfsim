@@ -74,7 +74,7 @@
      (let [density (density-change density m - f cluster)
            void    (argmin-with-mask density mask)
            mask    (assoc mask void true)]
-       (if (= cluster void)
+       (if (== cluster void)
          mask
          (recur mask m f (density-change density m + f void)))))))
 

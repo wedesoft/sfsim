@@ -166,7 +166,7 @@
         horizon-dist  (horizon-distance planet radius)
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
         scaled-index  (/ index (dec size))]
-    (if (or (< scaled-index 0.5) (and (= scaled-index 0.5) (< (* 2 radius) (+ ground-radius top-radius))))
+    (if (or (< scaled-index 0.5) (and (== scaled-index 0.5) (< (* 2 radius) (+ ground-radius top-radius))))
       (let [ground-dist   (* horizon-dist (- 1 (* 2 scaled-index)))
             sin-elevation (limit-quot (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist) 1.0)]
         [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) false])

@@ -13,7 +13,7 @@
 (defn -main
   "Program to generate tiles for cube map"
   [& args]
-  (when-not (= (count args) 2)
+  (when-not (== (count args) 2)
     (.println *err* "Syntax: lein run-globe [input level] [output level]")
     (System/exit 1))
   (let [in-level           (Integer/parseInt (nth args 0))

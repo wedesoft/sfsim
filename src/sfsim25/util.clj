@@ -291,7 +291,7 @@
 (defn tick-and-print
   "Increase progress and occasionally update progress bar"
   [bar]
-  (let [done   (= (inc (:progress bar)) (:total bar))
+  (let [done   (== (inc (:progress bar)) (:total bar))
         result (assoc (p/tick bar 1) :done? done)]
     (when (or (zero? (mod (:progress result) (:step bar))) done) (p/print result))
     result))
