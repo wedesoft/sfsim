@@ -1,7 +1,8 @@
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.interpolate :refer :all])
 (require '[sfsim25.render :refer :all])
-(require '[sfsim25.util :refer (sqr)])
+(require '[sfsim25.util :refer (sqr get-vector3)])
+(require '[sfsim25.matrix :refer (pack-matrices)])
 (require '[sfsim25.shaders :as shaders])
 (require '[clojure.core.matrix :refer (matrix mget)])
 (require '[clojure.math :refer (sin cos PI sqrt)])
@@ -121,3 +122,65 @@ void main()
                                        (mget direction 0) (mget direction 1) (mget direction 2)
                                        above-horizon])]
     [(* (dec size1) (mget v 0)) (* (dec size2) (mget v 1))]))
+
+
+(def radius 6378000)
+(def max-height 100000)
+(def ray-steps 10)
+(def size 7)
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height max-height :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5]) :scatter-scale 1200 :scatter-g 0.76 :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6]) :scatter-scale 8000})
+(def scatter [mie rayleigh])
+(def transmittance-earth (partial transmittance earth scatter ray-steps))
+(def transmittance-space-earth (transmittance-space earth [size size]))
+(def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth) transmittance-space-earth)))
+
+(def transmittance-probe
+  (template/fn [px py pz dx dy dz] "#version 410 core
+out lowp vec3 fragColor;
+vec3 transmittance_outer(vec3 point, vec3 direction);
+void main()
+{
+  vec3 point = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  fragColor = transmittance_outer(point, direction);
+}"))
+
+(defn transmittance-shader-test [setup probe & shaders]
+  (fn [uniforms args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices       [0 1 3 2]
+                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                transmittance (make-vector-texture-2d {:width size :height size :data T})
+                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao           (make-vertex-array-object program indices vertices [:point 3])
+                tex           (texture-render-color
+                                1 1 true
+                                (use-program program)
+                                (uniform-sampler program :transmittance 0)
+                                (apply setup program uniforms)
+                                (use-textures transmittance)
+                                (render-quads vao))
+                img           (texture->vectors3 tex 1 1)]
+            (deliver result (get-vector3 img 0 0))
+            (destroy-texture tex)
+            (destroy-texture transmittance)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def transmittance-outer-test
+  (transmittance-shader-test
+    (fn [program height-size elevation-size radius max-height]
+        (uniform-int program :height_size height-size)
+        (uniform-int program :elevation_size elevation-size)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
+    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
+    shaders/horizon-angle shaders/horizon-distance shaders/limit-quot))
+
+(transmittance-outer-test [17 17 radius max-height] [0 (+ radius 1000) 0 0 (sin 0.2) (- (cos 0.2))])
+(transmittance-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
