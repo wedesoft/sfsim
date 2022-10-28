@@ -1,8 +1,12 @@
 (require '[sfsim25.atmosphere :refer :all])
 (require '[sfsim25.interpolate :refer :all])
+(require '[sfsim25.render :refer :all])
 (require '[sfsim25.util :refer (sqr)])
-(require '[clojure.core.matrix :refer (matrix)])
+(require '[sfsim25.shaders :as shaders])
+(require '[clojure.core.matrix :refer (matrix mget)])
 (require '[clojure.math :refer (sin cos PI sqrt)])
+(require '[comb.template :as template])
+(require '[sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)])
 
 (def radius 6378000)
 (def max-height 100000)
@@ -50,3 +54,70 @@
                  (forward (matrix [(+ radius max-height) 0 0]) direction true)
                  (T (matrix [(+ radius max-height) 0 0]) direction true))))
      (range (/ (- PI) 2) (/ (+ PI) 2) 0.2))
+
+
+(def radius 6378000.0)
+(def height 100000.0)
+(def planet {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height})
+(def space (transmittance-space earth [15 17]))
+(def forward (:sfsim25.interpolate/forward space))
+(def backward (:sfsim25.interpolate/backward space))
+
+(def elevation-to-index-probe
+  (template/fn [x y z dx dy dz above-horizon]
+"#version 410 core
+out lowp vec3 fragColor;
+float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  float result = elevation_to_index(point, direction, <%= above-horizon %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def elevation-to-index-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    elevation-to-index-probe shaders/elevation-to-index shaders/horizon-distance shaders/limit-quot))
+
+(elevation-to-index-test [radius max-height] [radius 0 0 1 0 0 true])
+
+(defn elevation-to-index2 [planet size point direction above-horizon]
+  (mget (elevation-to-index-test [(:sfsim25.sphere/radius planet) (:sfsim25.atmosphere/height planet)]
+                                 [(mget point 0) (mget point 1) (mget point 2)
+                                  (mget direction 0) (mget direction 1) (mget direction 2)
+                                  above-horizon]) 0))
+
+(elevation-to-index planet 2 (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+(elevation-to-index2 planet 2 (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)
+
+(def transmittance-forward-probe
+  (template/fn [x y z dx dy dz above]
+"#version 410 core
+out lowp vec3 fragColor;
+vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  fragColor.rg = transmittance_forward(point, direction, <%= above %>);
+  fragColor.b = 0;
+}"))
+
+(def transmittance-forward-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-forward-probe shaders/transmittance-forward shaders/height-to-index shaders/horizon-distance
+    shaders/elevation-to-index shaders/limit-quot))
+
+(defn forward2 [point direction above-horizon]
+  (let [v (transmittance-forward-test [radius max-height]
+                                      [(mget point 0) (mget point 1) (mget point 2)
+                                       (mget direction 0) (mget direction 1) (mget direction 2)
+                                       above-horizon])]
+    [(* (dec size1) (mget v 0)) (* (dec size2) (mget v 1))]))
