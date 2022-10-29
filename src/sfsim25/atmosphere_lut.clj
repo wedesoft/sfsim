@@ -34,16 +34,15 @@
         ray-steps                     100
         sphere-steps                  15
         iterations                    5
-        power                         2.0
         scatter                       [mie rayleigh]
         transmittance-planet          (partial transmittance earth scatter ray-steps)
-        transmittance-space-planet    (transmittance-space earth transmittance-shape power)
+        transmittance-space-planet    (transmittance-space earth transmittance-shape)
         surface-radiance-base-planet  (partial surface-radiance-base earth scatter ray-steps (matrix [1 1 1]))
-        surface-radiance-space-planet (surface-radiance-space earth transmittance-shape power)
+        surface-radiance-space-planet (surface-radiance-space earth transmittance-shape)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
-        point-scatter-space-planet    (point-scatter-space earth ray-scatter-shape power)
+        point-scatter-space-planet    (point-scatter-space earth ray-scatter-shape)
         ray-scatter-base-planet       (bar (partial ray-scatter earth scatter ray-steps point-scatter-base-planet))
-        ray-scatter-space-planet      (ray-scatter-space earth ray-scatter-shape power)
+        ray-scatter-space-planet      (ray-scatter-space earth ray-scatter-shape)
         T                             (interpolate-function transmittance-planet transmittance-space-planet)
         dE                            (atom (interpolate-function surface-radiance-base-planet surface-radiance-space-planet))
         E                             (atom (constantly (matrix [0 0 0])))
