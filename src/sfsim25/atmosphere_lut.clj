@@ -25,10 +25,11 @@
   [& args]
   (.println *err* (str "Initialization " (.toString (java.time.LocalDateTime/now))))
   (let [height-size                   32
-        elevation-size                128
+        elevation-size                127
         light-elevation-size          32
         heading-size                  8
-        transmittance-shape           [height-size elevation-size]
+        transmittance-shape           [64 255]
+        surface-radiance-shape        [16 64]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
         bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) height-size)
         ray-steps                     100
@@ -38,7 +39,7 @@
         transmittance-planet          (partial transmittance earth scatter ray-steps)
         transmittance-space-planet    (transmittance-space earth transmittance-shape)
         surface-radiance-base-planet  (partial surface-radiance-base earth scatter ray-steps (matrix [1 1 1]))
-        surface-radiance-space-planet (surface-radiance-space earth transmittance-shape)
+        surface-radiance-space-planet (surface-radiance-space earth surface-radiance-shape)
         point-scatter-base-planet     (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1]))
         point-scatter-space-planet    (point-scatter-space earth ray-scatter-shape)
         ray-scatter-base-planet       (bar (partial ray-scatter earth scatter ray-steps point-scatter-base-planet))
