@@ -1,4 +1,5 @@
 # TODO
+* ray-scatter table is full of NaNs
 * state is a value of an identity at a time
 * how to test transmittance\_track and ray\_scatter\_track
 * split off first order mie scattering?

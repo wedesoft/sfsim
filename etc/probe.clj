@@ -10,7 +10,7 @@
 (require '[sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)])
 
 (def radius 6378000)
-(def max-height 100000)
+(def max-height 35000)
 (def ray-steps 10)
 (def size1 9)
 (def size2 9)
@@ -208,3 +208,7 @@ void main()
 (def backward (:sfsim25.interpolate/backward transmittance-space-earth))
 (def T (interpolation-table table transmittance-space-earth))
 (T (matrix [(+ radius max-height) 0 0]) (matrix [1 0 0]) true)
+
+(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(take 100 (map matrix (partition 3 data)))
+(def ray-scatter-space-earth (ray-scatter-space earth [height-size elevation-size light-elevation-size heading-size]))
