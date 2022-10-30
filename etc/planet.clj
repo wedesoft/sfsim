@@ -70,10 +70,11 @@
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere attenuation-outer ray-scatter-outer transmittance-outer shaders/ray-sphere
                            shaders/transmittance-forward shaders/horizon-angle shaders/ray-scatter-forward
-                           shaders/elevation-to-index shaders/oriented-matrix shaders/interpolate-4d shaders/orthogonal-vector
-                           shaders/clip-angle shaders/convert-4d-index shaders/interpolate-2d shaders/convert-2d-index
-                           shaders/is-above-horizon sky-outer shaders/ray-shell cloud-track attenuation-track cloud-density
-                           transmittance-track cloud-shadow ray-scatter-track cloud-track-base exponential-sampling phase-function]))
+                           shaders/elevation-to-index shaders/height-to-index shaders/horizon-distance shaders/limit-quot
+                           shaders/sun-elevation-to-index shaders/sun-angle-to-index shaders/convert-4d-index
+                           shaders/interpolate-2d shaders/convert-2d-index shaders/interpolate-4d shaders/is-above-horizon
+                           sky-outer shaders/ray-shell cloud-track attenuation-track cloud-density transmittance-track
+                           cloud-shadow ray-scatter-track cloud-track-base exponential-sampling phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -101,11 +102,12 @@
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
                 :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance shaders/transmittance-forward
-                           transmittance-track shaders/horizon-angle shaders/interpolate-2d shaders/interpolate-4d
-                           ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
-                           shaders/oriented-matrix shaders/convert-4d-index shaders/orthogonal-vector shaders/clip-angle
-                           shaders/is-above-horizon sky-track shaders/ray-shell shaders/clip-shell-intersections cloud-track
-                           cloud-density cloud-shadow cloud-track-base exponential-sampling phase-function]))
+                           transmittance-track shaders/horizon-angle shaders/height-to-index shaders/horizon-distance
+                           shaders/sun-elevation-to-index shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d
+                           shaders/interpolate-4d ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index
+                           shaders/ray-scatter-forward shaders/convert-4d-index shaders/is-above-horizon sky-track
+                           shaders/ray-shell shaders/clip-shell-intersections cloud-track cloud-density cloud-shadow
+                           cloud-track-base exponential-sampling phase-function]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
