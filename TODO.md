@@ -93,6 +93,7 @@
 * NASA docking system, soft-dock, hard-dock, https://www.youtube.com/watch?v=dWYpVfhvsak
 * EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
 * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
+* SpaceX cockpit: https://iss-sim.spacex.com/
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
