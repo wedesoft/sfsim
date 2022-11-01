@@ -194,8 +194,9 @@
   "Forward transformation for interpolating transmittance function"
   [planet shape]
   (fn [point direction above-horizon]
-      [(height-to-index planet (first shape) point)
-       (elevation-to-index planet (second shape) point direction above-horizon)]))
+      (let [height-index    (height-to-index planet (first shape) point)
+            elevation-index (elevation-to-index planet (second shape) point direction above-horizon)]
+        [height-index elevation-index])))
 
 (defn- transmittance-backward
   "Backward transformation for looking up transmittance values"
@@ -247,8 +248,6 @@
             elevation-index     (elevation-to-index planet (second shape) point direction above-horizon)
             sun-elevation-index (sun-elevation-to-index (third shape) point light-direction)
             sun-angle-index     (sun-angle-to-index (fourth shape) direction light-direction)]
-        (if (some (memfn Double/isNaN) [height-index elevation-index sun-elevation-index sun-angle-index])
-          (throw (Exception. (str "ray-scatter-forward: " point " " direction " " light-direction " " above-horizon))))
         [height-index elevation-index sun-elevation-index sun-angle-index])))
 
 (defn- ray-scatter-backward
@@ -259,10 +258,6 @@
             [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)
             sin-sun-elevation         (index-to-sin-sun-elevation (third shape) sun-elevation-index)
             light-direction           (index-to-sun-direction (fourth shape) direction sin-sun-elevation sun-angle-index)]
-        (if (some (memfn Double/isNaN) [(mget point 0) (mget point 1) (mget point 2)
-                                        (mget direction 0) (mget direction 1) (mget direction 2)
-                                        (mget light-direction 0) (mget light-direction 1) (mget light-direction 2)])
-          (throw (Exception. (str "ray-scatter-backward: " height-index " " elevation-index " " sun-elevation-index " " sun-angle-index))))
         [point direction light-direction above-horizon])))
 
 (defn ray-scatter-space
