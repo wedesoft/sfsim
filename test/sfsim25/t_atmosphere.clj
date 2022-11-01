@@ -355,7 +355,9 @@
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4 0 0])) => 0.0
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [5 0 0])) => 1.0
        (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (matrix [4.5 0 0])) => (roughly 0.687 1e-3)
-       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 17 (matrix [5 0 0])) => 16.0)
+       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 17 (matrix [5 0 0])) => 16.0
+       (height-to-index {:sfsim25.sphere/radius 6378000.0 :sfsim25.atmosphere/height 35000.0} 32
+                        (matrix [6377999.999549146 -16.87508805500576 73.93459155883768])) => (roughly 0.0 1e-6))
 
 (facts "Convert index to point with corresponding height"
        (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.0) => (matrix [4 0 0])
@@ -365,7 +367,7 @@
 
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0
-             height   100000.0
+             height   35000.0
              earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
              space    (transmittance-space earth [15 17])
              forward  (:sfsim25.interpolate/forward space)
@@ -376,7 +378,7 @@
          (forward (matrix [radius 0 0]) (matrix [-1 0 0]) false) => [0.0 8.0]
          (first (backward 0.0 16.0)) => (matrix [radius 0 0])
          (first (backward 14.0 8.0)) => (matrix [(+ radius height) 0 0])
-         (second (backward 0.0 16.0)) => (matrix [0 1 0])
+         (second (backward 0.0 16.0)) => (roughly-matrix (matrix [0 1 0]) 1e-6)
          (second (backward 14.0 8.0)) => (matrix [0 1 0])
          (second (backward 0.0 8.0)) => (matrix [0 1 0])
          (second (backward 0 8)) => (matrix [0 1 0])

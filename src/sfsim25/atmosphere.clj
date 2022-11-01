@@ -141,7 +141,7 @@
 
 (defn horizon-distance [planet radius]
   "Distance from point with specified radius to horizon of planet"
-  (sqrt (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))))
+  (sqrt (max 0.0 (- (sqr radius) (sqr (:sfsim25.sphere/radius planet))))))
 
 (defn elevation-to-index
   "Convert elevation to index depending on height"
