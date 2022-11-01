@@ -25,11 +25,15 @@
   [& args]
   (.println *err* (str "Initialization " (.toString (java.time.LocalDateTime/now))))
   (let [height-size                   32
-        elevation-size                129
+        elevation-size                127
         light-elevation-size          32
         heading-size                  8
-        transmittance-shape           [64 256]
-        surface-radiance-shape        [16 64]
+        transmittance-height-size     64
+        transmittance-elevation-size  255
+        surface-height-size           16
+        surface-elevation-size        63
+        transmittance-shape           [transmittance-height-size transmittance-elevation-size]
+        surface-radiance-shape        [surface-height-size surface-elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
         bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) height-size)
         ray-steps                     100

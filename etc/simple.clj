@@ -42,6 +42,8 @@
 (def elevation-size 129)
 (def light-elevation-size 32)
 (def heading-size 8)
+(def transmittance-height-size 64)
+(def transmittance-elevation-size 255)
 
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
@@ -94,6 +96,8 @@ in highp vec3 point;
 uniform sampler2D transmittance;
 uniform int height_size;
 uniform int elevation_size;
+uniform int transmittance_height_size;
+uniform int transmittance_elevation_size;
 uniform sampler2D ray_scatter;
 uniform int light_elevation_size;
 uniform int heading_size;
@@ -130,8 +134,8 @@ vec3 transmittance_track2(vec3 p, vec3 q, bool above_horizon)
     vec3 direction = (q - p) / dist;
     vec2 uvp = transmittance_forward(p, direction, above_horizon);
     vec2 uvq = transmittance_forward(q, direction, above_horizon);
-    vec3 t1 = interpolate_2d(transmittance, height_size, elevation_size, uvp).rgb;
-    vec3 t2 = interpolate_2d(transmittance, height_size, elevation_size, uvq).rgb;
+    vec3 t1 = interpolate_2d(transmittance, transmittance_height_size, transmittance_elevation_size, uvp).rgb;
+    vec3 t2 = interpolate_2d(transmittance, transmittance_height_size, transmittance_elevation_size, uvq).rgb;
     return t1 / t2;
   } else
     return vec3(1, 1, 1);
@@ -256,6 +260,8 @@ void main()
 (uniform-int program :elevation_size elevation-size)
 (uniform-int program :light_elevation_size light-elevation-size)
 (uniform-int program :heading_size heading-size)
+(uniform-int program :transmittance_height_size transmittance-height-size)
+(uniform-int program :transmittance_elevation_size transmittance-elevation-size)
 (uniform-float program :amplification 4.0)
 (uniform-sampler program :worley 0)
 (uniform-sampler program :bluenoise 1)

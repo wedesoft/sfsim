@@ -48,6 +48,10 @@
 (def elevation-size 129)
 (def light-elevation-size 32)
 (def heading-size 8)
+(def transmittance-height-size 64)
+(def transmittance-elevation-size 255)
+(def surface-height-size 16)
+(def surface-elevation-size 63)
 (def worley-size 128)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
@@ -178,6 +182,10 @@
 (uniform-int program-planet :elevation_size elevation-size)
 (uniform-int program-planet :light_elevation_size light-elevation-size)
 (uniform-int program-planet :heading_size heading-size)
+(uniform-int program-planet :transmittance_height_size transmittance-height-size)
+(uniform-int program-planet :transmittance_elevation_size transmittance-elevation-size)
+(uniform-int program-planet :surface_height_size surface-height-size)
+(uniform-int program-planet :surface_elevation_size surface-elevation-size)
 (uniform-float program-planet :albedo 0.9)
 (uniform-float program-planet :reflectivity 0.1)
 (uniform-float program-planet :specular 500)
@@ -217,6 +225,10 @@
 (uniform-int program-atmosphere :elevation_size elevation-size)
 (uniform-int program-atmosphere :light_elevation_size light-elevation-size)
 (uniform-int program-atmosphere :heading_size heading-size)
+(uniform-int program-atmosphere :transmittance_height_size transmittance-height-size)
+(uniform-int program-atmosphere :transmittance_elevation_size transmittance-elevation-size)
+(uniform-int program-atmosphere :surface_height_size surface-height-size)
+(uniform-int program-atmosphere :surface_elevation_size surface-elevation-size)
 (uniform-float program-atmosphere :amplification 8)
 
 
