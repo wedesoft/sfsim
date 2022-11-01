@@ -45,7 +45,7 @@
 (def keystates (atom {}))
 
 (def height-size 32)
-(def elevation-size 128)
+(def elevation-size 129)
 (def light-elevation-size 32)
 (def heading-size 8)
 (def worley-size 128)

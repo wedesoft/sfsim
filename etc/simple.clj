@@ -39,7 +39,7 @@
 (def focal-length (/ (/ (Display/getWidth) 2) (tan (to-radians (/ fov 2)))))
 (def base-lod (/ (* worley-size (tan (/ (to-radians fov) 2))) (/ (Display/getWidth) 2) cloud-scale))
 (def height-size 32)
-(def elevation-size 128)
+(def elevation-size 129)
 (def light-elevation-size 32)
 (def heading-size 8)
 
