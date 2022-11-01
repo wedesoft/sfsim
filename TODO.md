@@ -2,6 +2,7 @@
 * ray-scatter table is full of NaNs
 * state is a value of an identity at a time
 * how to test transmittance\_track and ray\_scatter\_track
+* test ground radiance shader
 * split off first order mie scattering?
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * attenuation of far clouds

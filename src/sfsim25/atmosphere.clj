@@ -88,7 +88,7 @@
   [planet scatter steps intensity x light-direction above-horizon]
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (if above-horizon
-      (mul (max 0 (dot normal light-direction))
+      (mul (max 0.0 (dot normal light-direction))
            (transmittance planet scatter steps x light-direction true) intensity)
       (matrix [0 0 0]))))
 
@@ -155,8 +155,8 @@
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
     (* (dec size)
        (if above-horizon
-         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H)) -0.5 0.0))
-         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0 Delta))) (* 2 rho) -0.5 0.0))))))
+         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0.0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H)) -0.5 0.0))
+         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0.0 Delta))) (* 2 rho) -0.5 0.0))))))
 
 (defn index-to-elevation
   "Convert index and radius to elevation"
@@ -235,9 +235,9 @@
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
   [size direction sin-sun-elevation index]
   (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
-        max-sun-1    (sqrt (max 0 (- 1 (sqr sin-sun-elevation))))
+        max-sun-1    (sqrt (max 0.0 (- 1 (sqr sin-sun-elevation))))
         sun-1        (limit-quot (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1) max-sun-1)
-        sun-2        (sqrt (max 0 (- 1 (sqr sin-sun-elevation) (sqr sun-1))))]
+        sun-2        (sqrt (max 0.0 (- 1 (sqr sin-sun-elevation) (sqr sun-1))))]
     (matrix [sin-sun-elevation sun-1 sun-2])))
 
 (defn- ray-scatter-forward
