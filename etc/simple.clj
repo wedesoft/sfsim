@@ -39,7 +39,7 @@
 (def focal-length (/ (/ (Display/getWidth) 2) (tan (to-radians (/ fov 2)))))
 (def base-lod (/ (* worley-size (tan (/ (to-radians fov) 2))) (/ (Display/getWidth) 2) cloud-scale))
 (def height-size 32)
-(def elevation-size 129)
+(def elevation-size 127)
 (def light-elevation-size 32)
 (def heading-size 8)
 (def transmittance-height-size 64)
@@ -53,7 +53,7 @@
 (def P (make-float-texture-1d data))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def T (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
+(def T (make-vector-texture-2d {:width transmittance-elevation-size :height transmittance-height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
