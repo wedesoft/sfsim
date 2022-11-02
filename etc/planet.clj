@@ -203,7 +203,7 @@
 (uniform-int program-planet :cloud_base_samples 8)
 (uniform-float program-planet :transparency_cutoff 0.1)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
-(uniform-float program-planet :amplification 16)
+(uniform-float program-planet :amplification 8)
 
 (use-program program-atmosphere)
 (uniform-matrix4 program-atmosphere :projection projection)
