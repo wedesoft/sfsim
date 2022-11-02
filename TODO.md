@@ -1,8 +1,9 @@
 # TODO
-* ray-scatter table is full of NaNs
+* use sun-elevation transform for surface radiance table
 * state is a value of an identity at a time
 * how to test transmittance\_track and ray\_scatter\_track
 * test ground radiance shader
+* integration test planet shader with non-trivial lookup tables?
 * split off first order mie scattering?
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * attenuation of far clouds
@@ -95,6 +96,16 @@
 * EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
 * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
 * SpaceX cockpit: https://iss-sim.spacex.com/
+* cockpit:
+  * orbit plane alignment
+  * docking view
+  * horizon with height and variometer
+  * encounter
+    * station
+    * moon/base
+    * earth
+  * aerobrake/base roll-reversal, speed-height-distance profile
+  * heading alignment cylinder
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
