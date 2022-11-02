@@ -413,10 +413,11 @@ void main()
 
 (tabular "Shader for converting height to index"
          (fact (mget (height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
-         ?radius ?max-height ?x  ?y ?z ?result
-         4       1           4   0  0  0.0
-         4       1           5   0  0  1.0
-         4       1           4.5 0  0  0.687184)
+         ?radius ?max-height ?x    ?y ?z ?result
+         4       1           4     0  0  0.0
+         4       1           5     0  0  1.0
+         4       1           4.5   0  0  0.687184
+         4       1           3.999 0  0  0.0)
 
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
