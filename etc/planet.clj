@@ -45,7 +45,7 @@
 (def keystates (atom {}))
 
 (def height-size 32)
-(def elevation-size 129)
+(def elevation-size 127)
 (def light-elevation-size 32)
 (def heading-size 8)
 (def transmittance-height-size 64)
@@ -55,10 +55,10 @@
 (def worley-size 128)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def E (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
+(def E (make-vector-texture-2d {:width surface-elevation-size :height surface-height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def T (make-vector-texture-2d {:width elevation-size :height height-size :data data}))
+(def T (make-vector-texture-2d {:width transmittance-elevation-size :height transmittance-height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
