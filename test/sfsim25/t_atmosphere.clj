@@ -387,8 +387,24 @@
          (third (backward 0.0 8.0)) => false
          (third (backward 0 8)) => false))
 
-(fact "Transformation for surface radiance interpolation is the same as the one for transmittance"
-      surface-radiance-space => (exactly transmittance-space))
+(fact "Transformation for surface radiance interpolation"
+      (let [radius   6378000.0
+             height   35000.0
+             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             space    (surface-radiance-space earth [15 17])
+             forward  (:sfsim25.interpolate/forward space)
+             backward (:sfsim25.interpolate/backward space)]
+         (:sfsim25.interpolate/shape space) => [15 17]
+         (forward (matrix [radius 0 0]) (matrix [1 0 0])) => [0.0 16.0]
+         (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0])) => [14.0 16.0]
+         (forward (matrix [radius 0 0]) (matrix [-1 0 0])) => [0.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [-0.2 0.980 0])) => [0.0 0.0]
+         (forward (matrix [radius 0 0]) (matrix [0 1 0])) => (roughly-vector [0.0 7.422] 1e-3)
+         (first (backward 0.0 16.0)) => (matrix [radius 0 0])
+         (first (backward 14.0 16.0)) => (matrix [(+ radius height) 0 0])
+         (second (backward 0.0 16.0)) => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (second (backward 14.0 0.0)) => (roughly-matrix (matrix [-0.2 0.980 0]) 1e-3)
+         (second (backward 0.0 7.422)) => (roughly-matrix (matrix [0 1 0]) 1e-3)))
 
 (facts "Convert sun elevation to index"
        (sun-elevation-to-index 2 (matrix [4 0 0]) (matrix [1 0 0])) => 1.0

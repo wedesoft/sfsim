@@ -209,11 +209,9 @@
 (defn transmittance-space
   "Create transformations for interpolating transmittance function"
   [planet shape]
-  #:sfsim25.interpolate{:shape shape :forward (transmittance-forward planet shape) :backward (transmittance-backward planet shape)})
-
-(def surface-radiance-space transmittance-space)
-
-(defn- clip-angle [angle] (if (< angle (- PI)) (+ angle (* 2 PI)) (if (>= angle PI) (- angle (* 2 PI)) angle)))
+  #:sfsim25.interpolate{:shape shape
+                        :forward (transmittance-forward planet shape)
+                        :backward (transmittance-backward planet shape)})
 
 (defn sun-elevation-to-index
   "Convert sun elevation to index"
@@ -225,6 +223,33 @@
   "Convert index to sinus of sun elevation"
   [size index]
   (/ (+ (log (- 1 (* (/ index (dec size)) (- 1 (exp -3.6))))) 0.6) -3))
+
+(defn- surface-radiance-forward
+  "Forward transformation for interpolating surface-radiance function"
+  [planet shape]
+  (fn [point direction]
+      (let [height-index        (height-to-index planet (first shape) point)
+            sun-elevation-index (sun-elevation-to-index (second shape) point direction)]
+        [height-index sun-elevation-index])))
+
+(defn- surface-radiance-backward
+  "Backward transformation for looking up surface-radiance values"
+  [planet shape]
+  (fn [height-index sun-elevation-index]
+      (let [point             (index-to-height planet (first shape) height-index)
+            sin-sun-elevation (index-to-sin-sun-elevation (second shape) sun-elevation-index)
+            cos-sun-elevation (sqrt (max 0.0 (- 1 (sqr sin-sun-elevation))))
+            light-direction   (matrix [sin-sun-elevation cos-sun-elevation 0])]
+        [point light-direction])))
+
+(defn surface-radiance-space
+  "Create transformations for interpolating surface-radiance function"
+  [planet shape]
+  #:sfsim25.interpolate{:shape shape
+                        :forward (surface-radiance-forward planet shape)
+                        :backward (surface-radiance-backward planet shape)})
+
+(defn- clip-angle [angle] (if (< angle (- PI)) (+ angle (* 2 PI)) (if (>= angle PI) (- angle (* 2 PI)) angle)))
 
 (defn sun-angle-to-index
   "Convert sun and viewing direction angle to index"
