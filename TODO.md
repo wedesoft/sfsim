@@ -1,8 +1,6 @@
 # TODO
-* use sun-elevation transform for surface radiance table
 * state is a value of an identity at a time
 * how to test transmittance\_track and ray\_scatter\_track
-* test ground radiance shader
 * integration test planet shader with non-trivial lookup tables?
 * split off first order mie scattering?
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
