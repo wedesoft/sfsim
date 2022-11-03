@@ -31,9 +31,9 @@
         transmittance-height-size     64
         transmittance-elevation-size  255
         surface-height-size           16
-        surface-elevation-size        63
+        surface-sun-elevation-size    63
         transmittance-shape           [transmittance-height-size transmittance-elevation-size]
-        surface-radiance-shape        [surface-height-size surface-elevation-size]
+        surface-radiance-shape        [surface-height-size surface-sun-elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
         bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) height-size)
         ray-steps                     100

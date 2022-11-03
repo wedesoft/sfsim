@@ -5,7 +5,7 @@ uniform sampler2D transmittance;
 uniform sampler2D surface_radiance;
 uniform int transmittance_elevation_size;
 uniform int transmittance_height_size;
-uniform int surface_elevation_size;
+uniform int surface_sun_elevation_size;
 uniform int surface_height_size;
 uniform float albedo;
 uniform float reflectivity;
@@ -27,7 +27,7 @@ vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_in
   else
     direct_light = vec3(0, 0, 0);
   vec2 surface_radiance_index = surface_radiance_forward(point, light_direction);
-  vec3 ambient_light = interpolate_2d(surface_radiance, surface_height_size, surface_elevation_size, surface_radiance_index).rgb;
+  vec3 ambient_light = interpolate_2d(surface_radiance, surface_height_size, surface_sun_elevation_size, surface_radiance_index).rgb;
   vec3 color = land_color * (1 - water) + water_color * water;
   return (albedo / M_PI) * color * (cos_incidence * direct_light + ambient_light) + (water * reflectivity * highlight) * direct_light;
 }
