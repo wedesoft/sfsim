@@ -85,12 +85,10 @@
 
 (defn surface-radiance-base
   "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
-  [planet scatter steps intensity x light-direction above-horizon]
+  [planet scatter steps intensity x light-direction]
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-    (if above-horizon
-      (mul (max 0.0 (dot normal light-direction))
-           (transmittance planet scatter steps x light-direction true) intensity)
-      (matrix [0 0 0]))))
+    (mul (max 0.0 (dot normal light-direction))
+         (transmittance planet scatter steps x light-direction true) intensity)))
 
 (defn point-scatter-base
   "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
@@ -115,8 +113,7 @@
   [planet scatter ray-scatter surface-radiance intensity sphere-steps ray-steps x view-direction light-direction above-horizon]
   (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))
         height-of-x   (height planet x)
-        scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))
-        light-above   #(is-above-horizon? planet % light-direction)]
+        scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
     (integral-sphere sphere-steps
                      normal
                      (fn [omega]
@@ -129,13 +126,13 @@
                                      (if surface
                                        (let [surface-brightness
                                              (mul (div (::brightness planet) PI)
-                                                  (surface-radiance point light-direction (light-above point)))]
+                                                  (surface-radiance point light-direction))]
                                          (mul (transmittance planet scatter ray-steps x point) surface-brightness))
                                        (matrix [0 0 0])))))))))
 
 (defn surface-radiance
   "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
-  [planet ray-scatter steps x light-direction light-above]
+  [planet ray-scatter steps x light-direction]
   (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (integral-half-sphere steps normal #(mul (ray-scatter x % light-direction true) (dot % normal)))))
 

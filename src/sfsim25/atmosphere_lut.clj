@@ -61,7 +61,7 @@
                  ray-scatter-planet      (bar (partial ray-scatter earth scatter ray-steps dJ))]
              (reset! dE (interpolate-function surface-radiance-planet surface-radiance-space-planet))
              (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
-             (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s a] (add (E x s a) (dE x s a))) surface-radiance-space-planet)))
+             (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s] (add (E x s) (dE x s))) surface-radiance-space-planet)))
              (reset! S (let [S @S dS @dS] (interpolate-function (fn [x v s a] (add (S x v s a) (dS x v s a))) ray-scatter-space-planet)))))
     (let [lookup-table-transmittance    (make-lookup-table T transmittance-space-planet)
           lookup-table-surface-radiance (make-lookup-table @E surface-radiance-space-planet)
