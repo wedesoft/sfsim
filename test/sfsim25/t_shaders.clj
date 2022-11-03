@@ -533,6 +533,36 @@ void main()
          6478000 0  0   0   1   0   true   0.5 1
          6378000 0  0  -1   0   0   false  0.5 0)
 
+(def surface-radiance-forward-probe
+  (template/fn [x y z lx ly lz]
+"#version 410 core
+out lowp vec3 fragColor;
+vec2 surface_radiance_forward(vec3 point, vec3 light_direction);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  fragColor.rg = surface_radiance_forward(point, light_direction);
+  fragColor.b = 0;
+}"))
+
+(def surface-radiance-forward-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    surface-radiance-forward-probe surface-radiance-forward height-to-index horizon-distance sun-elevation-to-index))
+
+(tabular "Convert point and direction to 2D lookup index in surface radiance table"
+         (fact (surface-radiance-forward-test [6378000.0 100000.0] [?x ?y ?z ?lx ?ly ?lz])
+               => (roughly-matrix (matrix [?u ?v 0]) 1e-3))
+         ?x      ?y ?z  ?lx ?ly   ?lz ?u    ?v
+         6378000 0  0   1   0     0   1     0
+         6478000 0  0   1   0     0   1     1
+         6378000 0  0  -1   0     0   0     0
+         6378000 0  0  -0.2 0.980 0   0     0
+         6378000 0  0   0   1     0   0.464 0)
+
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz above selector]
 "#version 410 core

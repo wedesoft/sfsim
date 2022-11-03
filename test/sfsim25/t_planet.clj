@@ -289,7 +289,7 @@ void main()
         (uniform-float program :reflectivity reflectivity))
     ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/horizon-angle shaders/elevation-to-index
     shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance
-    shaders/limit-quot))
+    shaders/limit-quot shaders/surface-radiance-forward shaders/sun-elevation-to-index))
 
 (tabular "Shader function to compute light emitted from ground"
          (fact (mul (ground-radiance-test [6378000.0 100000.0 17 17 2.0 ?albedo 0.5]
@@ -405,7 +405,8 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                                           shaders/ray-scatter-forward shaders/oriented-matrix
                                                                           shaders/orthogonal-vector shaders/clip-angle
                                                                           shaders/height-to-index shaders/horizon-distance
-                                                                          shaders/limit-quot])
+                                                                          shaders/limit-quot shaders/surface-radiance-forward
+                                                                          shaders/sun-elevation-to-index])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000

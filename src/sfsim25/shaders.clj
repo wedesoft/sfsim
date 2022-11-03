@@ -89,6 +89,10 @@
   "Convert point and direction to 2D lookup index in transmittance table"
   (slurp "resources/shaders/core/transmittance_forward.glsl"))
 
+(def surface-radiance-forward
+  "Convert point and direction to 2D lookup index in surface radiance table"
+  (slurp "resources/shaders/core/surface_radiance_forward.glsl"))
+
 (def ray-scatter-forward
   "Get 4D lookup index for ray scattering"
   (slurp "resources/shaders/core/ray_scatter_forward.glsl"))
