@@ -111,7 +111,7 @@
                            shaders/interpolate-4d ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index
                            shaders/ray-scatter-forward shaders/convert-4d-index shaders/is-above-horizon sky-track
                            shaders/ray-shell shaders/clip-shell-intersections cloud-track cloud-density cloud-shadow
-                           cloud-track-base exponential-sampling phase-function]))
+                           cloud-track-base exponential-sampling phase-function shaders/surface-radiance-forward]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
