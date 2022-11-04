@@ -94,13 +94,18 @@
   [planet component x view-direction light-direction]
   (mul (scatter-strength planet component x) (phase component (dot view-direction light-direction))))
 
+(defn- overall-in-scattering
+  "Determine overall amount of in-scattering"
+  [planet scatter x view-direction light-direction]
+  (apply add (map #(in-scattering-component planet % x view-direction light-direction) scatter)))
+
 (defn point-scatter-base
   "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
   [planet scatter steps intensity x view-direction light-direction above-horizon]
   (if (is-above-horizon? planet x light-direction)
-    (let [overall-scatter (apply add (map #(in-scattering-component planet % x view-direction light-direction) scatter))]
+    (let [overall-scatter (overall-in-scattering planet scatter x view-direction light-direction)]
       (mul intensity overall-scatter (transmittance planet scatter steps x light-direction true)))
-    (matrix [0 0 0])))
+    (matrix [0 0 0])))  ; No first-order scattering if sun is below horizon
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
@@ -113,16 +118,14 @@
 (defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
   [planet scatter ray-scatter surface-radiance intensity sphere-steps ray-steps x view-direction light-direction above-horizon]
-  (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))
-        height-of-x   (height planet x)
-        scatter-at-x  #(mul (scattering %2 height-of-x) (phase %2 (dot view-direction %1)))]
+  (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))]
     (integral-sphere sphere-steps
                      normal
                      (fn [omega]
                          (let [ray             #:sfsim25.ray{:origin x :direction omega}
                                point           (ray-extremity planet ray)
                                surface         (surface-point? planet point)
-                               overall-scatter (apply add (map (partial scatter-at-x omega) scatter))]
+                               overall-scatter (overall-in-scattering planet scatter x view-direction omega)]
                            (mul overall-scatter
                                 (add (ray-scatter x omega light-direction (not surface))
                                      (if surface
