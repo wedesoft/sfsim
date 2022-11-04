@@ -36,25 +36,6 @@ void main()
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
-(def orthogonal-vector-probe
-  (template/fn [x y z] "#version 410 core
-out lowp vec3 fragColor;
-vec3 orthogonal_vector(vec3 n);
-void main()
-{
-  fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
-}"))
-
-(def orthogonal-vector-test (shader-test (fn [program]) orthogonal-vector-probe orthogonal-vector))
-
-(facts "Create normal vector orthogonal to the specified one"
-       (dot  (orthogonal-vector-test [] [1 0 0]) (matrix [1 0 0])) => 0.0
-       (norm (orthogonal-vector-test [] [1 0 0])) => 1.0
-       (dot  (orthogonal-vector-test [] [0 1 0]) (matrix [0 1 0])) => 0.0
-       (norm (orthogonal-vector-test [] [0 1 0])) => 1.0
-       (dot  (orthogonal-vector-test [] [0 0 1]) (matrix [0 0 1])) => 0.0
-       (norm (orthogonal-vector-test [] [0 0 1])) => 1.0)
-
 (def clip-angle-probe
   (template/fn [angle] "#version 410 core
 out lowp vec3 fragColor;

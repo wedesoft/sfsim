@@ -5,10 +5,6 @@
   "Shader function for computing intersection of ray with sphere"
   (slurp "resources/shaders/core/ray_sphere.glsl"))
 
-(def orthogonal-vector
-  "Create normal vector orthogonal to the specified one"
-  (slurp "resources/shaders/core/orthogonal_vector.glsl"))
-
 (def clip-angle
   "Convert angle to be between -pi and +pi"
   (slurp "resources/shaders/core/clip_angle.glsl"))
