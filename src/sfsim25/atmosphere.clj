@@ -240,8 +240,6 @@
                         :forward (surface-radiance-forward planet shape)
                         :backward (surface-radiance-backward planet shape)})
 
-(defn- clip-angle [angle] (if (< angle (- PI)) (+ angle (* 2 PI)) (if (>= angle PI) (- angle (* 2 PI)) angle)))
-
 (defn sun-angle-to-index
   "Convert sun and viewing direction angle to index"
   [size direction light-direction]

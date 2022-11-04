@@ -36,23 +36,6 @@ void main()
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
-(def clip-angle-probe
-  (template/fn [angle] "#version 410 core
-out lowp vec3 fragColor;
-float clip_angle(float angle);
-void main()
-{
-  fragColor = vec3(clip_angle(<%= angle %>), 0, 0);
-}"))
-
-(def clip-angle-test (shader-test (fn [program]) clip-angle-probe clip-angle))
-
-(facts "Convert angle to be between -pi and +pi"
-       (mget (clip-angle-test [] [0            ]) 0) => (roughly 0           1e-6)
-       (mget (clip-angle-test [] [1            ]) 0) => (roughly 1           1e-6)
-       (mget (clip-angle-test [] [(- 0 PI 0.01)]) 0) => (roughly (- PI 0.01) 1e-6)
-       (mget (clip-angle-test [] [(+ PI 0.01)  ]) 0) => (roughly (- 0.01 PI) 1e-6))
-
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
 out lowp vec3 fragColor;

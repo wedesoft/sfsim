@@ -5,10 +5,6 @@
   "Shader function for computing intersection of ray with sphere"
   (slurp "resources/shaders/core/ray_sphere.glsl"))
 
-(def clip-angle
-  "Convert angle to be between -pi and +pi"
-  (slurp "resources/shaders/core/clip_angle.glsl"))
-
 (def convert-2d-index
   "Convert 2D index to 2D texture lookup index"
   (slurp "resources/shaders/core/convert_2d_index.glsl"))
