@@ -528,9 +528,9 @@ void main()
 
 (def transmittance-track-test
   (transmittance-shader-test
-    (fn [program height-size elevation-size radius max-height]
-        (uniform-int program :transmittance_height_size height-size)
-        (uniform-int program :transmittance_elevation_size elevation-size)
+    (fn [program transmittance-height-size transmittance-elevation-size radius max-height]
+        (uniform-int program :transmittance_height_size transmittance-height-size)
+        (uniform-int program :transmittance_elevation_size transmittance-elevation-size)
         (uniform-float program :radius radius)
         (uniform-float program :max_height max-height))
     transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
