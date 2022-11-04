@@ -180,7 +180,7 @@ void main()
         (uniform-float program :max_height max-height))
     transmittance-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-angle shaders/horizon-distance shaders/limit-quot))
+    shaders/horizon-distance shaders/limit-quot))
 
 (transmittance-outer-test [17 17 radius max-height] [0 (+ radius 1000) 0 0 (sin 0.2) (- (cos 0.2))])
 (transmittance-earth (matrix [0 (+ radius 1000) 0]) (matrix [0 (sin 0.2) (- (cos 0.2))]) true)

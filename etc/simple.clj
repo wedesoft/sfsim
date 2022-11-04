@@ -229,12 +229,11 @@ void main()
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections phase-function
                            attenuation-track attenuation-outer transmittance-track transmittance-outer
-                           ray-scatter-track ray-scatter-outer shaders/ray-scatter-forward shaders/horizon-angle
-                           shaders/oriented-matrix shaders/interpolate-4d shaders/transmittance-forward
-                           shaders/orthogonal-vector shaders/clip-angle shaders/convert-4d-index shaders/elevation-to-index
-                           shaders/interpolate-2d shaders/is-above-horizon shaders/convert-2d-index
-                           shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index shaders/limit-quot
-                           shaders/sun-angle-to-index]))
+                           ray-scatter-track ray-scatter-outer shaders/ray-scatter-forward shaders/oriented-matrix
+                           shaders/interpolate-4d shaders/transmittance-forward shaders/orthogonal-vector shaders/clip-angle
+                           shaders/convert-4d-index shaders/elevation-to-index shaders/interpolate-2d shaders/is-above-horizon
+                           shaders/convert-2d-index shaders/height-to-index shaders/horizon-distance
+                           shaders/sun-elevation-to-index shaders/limit-quot shaders/sun-angle-to-index]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))

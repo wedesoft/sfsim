@@ -48,19 +48,13 @@
   [planet point]
   (< (* 2 (height planet point)) (:sfsim25.atmosphere/height planet)))
 
-(defn horizon-angle
-  "Get angle of planet's horizon below the horizontal plane depending on the height of the observer"
-  ^double [{:sfsim25.sphere/keys [^Vector centre ^double radius]} ^Vector point]
-  (let [distance (max radius (norm (sub point centre)))]
-    (acos (/ radius distance))))
-
 (defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
   [planet point direction]
   (let [radius               (norm point)
         sin-elevation-radius (dot direction point)
-        horizon-distance-2   (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))]
-    (or (>= sin-elevation-radius 0) (<= (sqr sin-elevation-radius) horizon-distance-2))))
+        horizon-distance-sqr (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))]
+    (or (>= sin-elevation-radius 0) (<= (sqr sin-elevation-radius) horizon-distance-sqr))))
 
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"

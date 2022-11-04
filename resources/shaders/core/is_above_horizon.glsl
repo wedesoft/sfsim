@@ -2,13 +2,11 @@
 
 uniform float radius;
 
-float horizon_angle(vec3 point);
-
 // Check whether a direction is pointing above the horizon depending on height of point.
 bool is_above_horizon(vec3 point, vec3 direction)
 {
-  float horizon = horizon_angle(point);
-  vec3 normal = normalize(point);
-  float cos_elevation = dot(normal, direction);
-  return cos_elevation >= -sin(horizon); // returns true for sky, false for ground
+  float dist = length(point);
+  float sin_elevation_radius = dot(direction, point);
+  float horizon_distance_sqr = dist * dist - radius * radius;
+  return sin_elevation_radius >= 0 || sin_elevation_radius * sin_elevation_radius <= horizon_distance_sqr;
 }

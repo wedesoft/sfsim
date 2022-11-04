@@ -293,14 +293,6 @@
                       (matrix [0.2 0.3 0.5]))]
       (surface-radiance earth ray-scatter 64 x light-direction) => (matrix [0.2 0.3 0.5]))))
 
-(facts "Get angle of planet's horizon below horizontal plane depending on the height of the observer"
-       (let [radius 6378000.0
-             earth  #:sfsim25.sphere {:centre (matrix [0 0 0]) :radius radius}]
-         (horizon-angle earth (matrix [radius 0 0])) => 0.0
-         (horizon-angle earth (matrix [(* (sqrt 2) radius) 0 0])) => (roughly (/ PI 4) 1e-12)
-         (horizon-angle earth (matrix [(* 2 radius) 0 0])) => (roughly (/ PI 3) 1e-12)
-         (horizon-angle earth (matrix [(- radius 0.1) 0 0])) => 0.0))
-
 (facts "Check whether there is sky or ground in a certain direction"
        (let [radius 6378000.0
              earth #:sfsim25.sphere {:centre (matrix [0 0 0]) :radius radius}]
@@ -535,7 +527,7 @@ void main()
         (uniform-float program :max_height max-height))
     transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-angle shaders/horizon-distance shaders/limit-quot))
+    shaders/horizon-distance shaders/limit-quot))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact (mget (transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
@@ -595,9 +587,9 @@ void main()
         (uniform-int program :heading_size heading-size)
         (uniform-float program :radius radius)
         (uniform-float program :max_height max-height))
-    ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/horizon-angle shaders/oriented-matrix
-    shaders/orthogonal-vector shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d shaders/convert-4d-index
-    transmittance-track shaders/transmittance-forward shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
+    ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/oriented-matrix shaders/orthogonal-vector
+    shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d shaders/convert-4d-index transmittance-track
+    shaders/transmittance-forward shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
     shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
     shaders/sun-angle-to-index))
 
@@ -663,16 +655,16 @@ void main()
                                    program       (make-program :vertex [vertex-atmosphere]
                                                                :fragment [fragment-atmosphere transmittance-outer
                                                                           ray-scatter-outer attenuation-outer shaders/ray-sphere
-                                                                          shaders/transmittance-forward shaders/horizon-angle
+                                                                          shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
-                                                                          shaders/interpolate-2d
-                                                                          shaders/convert-2d-index shaders/interpolate-4d
-                                                                          shaders/convert-4d-index shaders/is-above-horizon
-                                                                          clouds/sky-outer shaders/ray-shell
-                                                                          clouds/cloud-track clouds/cloud-track-base
-                                                                          clouds/cloud-density clouds/cloud-shadow
-                                                                          clouds/linear-sampling attenuation-track
-                                                                          transmittance-track ray-scatter-track phase-function
+                                                                          shaders/interpolate-2d shaders/convert-2d-index
+                                                                          shaders/interpolate-4d shaders/convert-4d-index
+                                                                          shaders/is-above-horizon clouds/sky-outer
+                                                                          shaders/ray-shell clouds/cloud-track
+                                                                          clouds/cloud-track-base clouds/cloud-density
+                                                                          clouds/cloud-shadow clouds/linear-sampling
+                                                                          attenuation-track transmittance-track
+                                                                          ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
                                                                           shaders/sun-angle-to-index])

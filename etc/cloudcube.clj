@@ -99,7 +99,7 @@ void main()
 (def program
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function cloud-track-base
-                           cloud-track exponential-sampling s/is-above-horizon s/horizon-angle]))
+                           cloud-track exponential-sampling s/is-above-horizon]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -110,7 +110,7 @@ void main()
 ;(def values (worley-noise 12 size true))
 ;(spit-floats "values.raw" (float-array values))
 
-(def values (slurp-floats "values.raw"))
+(def values (slurp-floats "data/worley.raw"))
 
 (def tex (make-float-texture-3d {:width size :height size :depth size :data values}))
 

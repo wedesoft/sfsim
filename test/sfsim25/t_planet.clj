@@ -287,9 +287,9 @@ void main()
         (uniform-float program :elevation_power elevation-power)
         (uniform-float program :albedo albedo)
         (uniform-float program :reflectivity reflectivity))
-    ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/horizon-angle shaders/elevation-to-index
-    shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance
-    shaders/limit-quot shaders/surface-radiance-forward shaders/sun-elevation-to-index))
+    ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/elevation-to-index shaders/interpolate-2d
+    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
+    shaders/surface-radiance-forward shaders/sun-elevation-to-index))
 
 (tabular "Shader function to compute light emitted from ground"
          (fact (mul (ground-radiance-test [6378000.0 100000.0 17 17 2.0 ?albedo 0.5]
@@ -393,11 +393,10 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                    program       (make-program :vertex [vertex-planet-probe]
                                                                :fragment [fragment-planet fake-transmittance
                                                                           shaders/interpolate-2d shaders/convert-2d-index
-                                                                          shaders/horizon-angle shaders/transmittance-forward
-                                                                          shaders/elevation-to-index shaders/ray-sphere
-                                                                          shaders/is-above-horizon fake-ray-scatter
-                                                                          atmosphere/attenuation-track ground-radiance
-                                                                          clouds/sky-track shaders/ray-shell
+                                                                          shaders/transmittance-forward shaders/elevation-to-index
+                                                                          shaders/ray-sphere shaders/is-above-horizon
+                                                                          fake-ray-scatter atmosphere/attenuation-track
+                                                                          ground-radiance clouds/sky-track shaders/ray-shell
                                                                           clouds/cloud-track clouds/cloud-track-base
                                                                           clouds/cloud-density clouds/cloud-shadow
                                                                           clouds/linear-sampling atmosphere/phase-function

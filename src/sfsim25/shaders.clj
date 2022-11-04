@@ -5,10 +5,6 @@
   "Shader function for computing intersection of ray with sphere"
   (slurp "resources/shaders/core/ray_sphere.glsl"))
 
-(def horizon-angle
-  "Shader function to determine a sphere's horizon angle below horizontal plane depending on height"
-  (slurp "resources/shaders/core/horizon_angle.glsl"))
-
 (def orthogonal-vector
   "Create normal vector orthogonal to the specified one"
   (slurp "resources/shaders/core/orthogonal_vector.glsl"))

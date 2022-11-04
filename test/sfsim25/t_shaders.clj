@@ -36,24 +36,6 @@ void main()
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
-(def horizon-angle-probe
-  (template/fn [x y z] "#version 410 core
-out lowp vec3 fragColor;
-float horizon_angle(vec3 point);
-void main()
-{
-  float result = horizon_angle(vec3(<%= x %>, <%= y %>, <%= z %>));
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def horizon-angle-test
-  (shader-test (fn [program radius] (uniform-float program :radius radius)) horizon-angle-probe horizon-angle))
-
-(facts "Angle of sphere's horizon angle below horizontal plane depending on height"
-       (mget (horizon-angle-test [6378000] [6378000 0 0]) 0)       => (roughly 0.0 1e-3)
-       (mget (horizon-angle-test [6378000] [(* 2 6378000) 0 0]) 0) => (roughly (/ PI 3) 1e-3)
-       (mget (horizon-angle-test [6378000] [6377999 0 0]) 0)       => (roughly 0.0 1e-3))
-
 (def orthogonal-vector-probe
   (template/fn [x y z] "#version 410 core
 out lowp vec3 fragColor;
