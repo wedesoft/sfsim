@@ -466,61 +466,84 @@
 (fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
       point-scatter-space => (exactly ray-scatter-space))
 
-;(defn transmittance-shader-test [setup probe & shaders]
-;  (fn [uniforms args]
-;      (let [result (promise)]
-;        (offscreen-render 1 1
-;          (let [indices       [0 1 3 2]
-;                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-;                data          (flatten (map #(repeat 17 (repeat 3 (/ % 16))) (range 17)))
-;                transmittance (make-vector-texture-2d {:width 17 :height 17 :data (float-array data)})
-;                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-;                vao           (make-vertex-array-object program indices vertices [:point 3])
-;                tex           (texture-render-color
-;                                1 1 true
-;                                (use-program program)
-;                                (uniform-sampler program :transmittance 0)
-;                                (apply setup program uniforms)
-;                                (use-textures transmittance)
-;                                (render-quads vao))
-;                img           (texture->vectors3 tex 1 1)]
-;            (deliver result (get-vector3 img 0 0))
-;            (destroy-texture tex)
-;            (destroy-texture transmittance)
-;            (destroy-vertex-array-object vao)
-;            (destroy-program program)))
-;        @result)))
-;
-;(def transmittance-track-probe
-;  (template/fn [px py pz qx qy qz] "#version 410 core
-;out lowp vec3 fragColor;
-;vec3 transmittance_track(vec3 p, vec3 q);
-;void main()
-;{
-;  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
-;  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
-;  fragColor = transmittance_track(p, q);
-;}"))
-;
-;(def transmittance-track-test
-;  (transmittance-shader-test
-;    (fn [program height-size elevation-size radius max-height]
-;        (uniform-int program :height_size height-size)
-;        (uniform-int program :elevation_size elevation-size)
-;        (uniform-float program :radius radius)
-;        (uniform-float program :max_height max-height))
-;    transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
-;    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-;    shaders/horizon-angle shaders/horizon-distance shaders/limit-quot))
-;
-;(tabular "Shader function to compute transmittance between two points in the atmosphere"
-;         (fact (mget (transmittance-track-test [17 17 6378000.0 100000.0] [?px ?py ?pz ?qx ?qy ?qz]) 0)
-;               => (roughly ?result 1e-6))
-;         ?px ?py ?pz     ?qx ?qy ?qz     ?result
-;         0   0   6478000 0   0   6478000 1
-;         0   0   6428000 0   0   6478000 0.5
-;         0   0   6453000 0   0   6478000 0.75
-;         0   0   6428000 0   0   6453000 (/ 0.5 0.75))
+(def radius 6378000)
+(def max-height 100000)
+(def ray-steps 10)
+(def size 12)
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
+                            :radius radius
+                            :sfsim25.atmosphere/height max-height
+                            :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5])
+                              :scatter-scale 1200
+                              :scatter-g 0.76
+                              :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
+                                   :scatter-scale 8000})
+(def scatter [mie rayleigh])
+(def transmittance-earth (partial transmittance earth scatter ray-steps))
+(def transmittance-space-earth (transmittance-space earth [size size]))
+(def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
+(def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
+(def ray-scatter-space-earth (ray-scatter-space earth [size size size size]))
+(def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
+                                         transmittance-space-earth)))
+(def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)
+                                                           ray-scatter-space-earth))))
+
+(defn transmittance-shader-test [setup probe & shaders]
+  (fn [uniforms args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+          (let [indices       [0 1 3 2]
+                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                transmittance (make-vector-texture-2d {:width size :height size :data T})
+                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                vao           (make-vertex-array-object program indices vertices [:point 3])
+                tex           (texture-render-color
+                                1 1 true
+                                (use-program program)
+                                (uniform-sampler program :transmittance 0)
+                                (apply setup program uniforms)
+                                (use-textures transmittance)
+                                (render-quads vao))
+                img           (texture->vectors3 tex 1 1)]
+            (deliver result (get-vector3 img 0 0))
+            (destroy-texture tex)
+            (destroy-texture transmittance)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))
+        @result)))
+
+(def transmittance-track-probe
+  (template/fn [px py pz qx qy qz] "#version 410 core
+out lowp vec3 fragColor;
+vec3 transmittance_track(vec3 p, vec3 q);
+void main()
+{
+  vec3 p = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 q = vec3(<%= qx %>, <%= qy %>, <%= qz %>);
+  fragColor = transmittance_track(p, q);
+}"))
+
+(def transmittance-track-test
+  (transmittance-shader-test
+    (fn [program height-size elevation-size radius max-height]
+        (uniform-int program :transmittance_height_size height-size)
+        (uniform-int program :transmittance_elevation_size elevation-size)
+        (uniform-float program :radius radius)
+        (uniform-float program :max_height max-height))
+    transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
+    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
+    shaders/horizon-angle shaders/horizon-distance shaders/limit-quot))
+
+(tabular "Shader function to compute transmittance between two points in the atmosphere"
+         (fact (mget (transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
+               => (roughly ?result 1e-6))
+         ?px     ?py ?pz     ?qx     ?qy ?qz     ?result
+         0       0   6478000 0       0   6478000 1
+         0       0   6378000 0       0   6478000 0.976171
+         6378000 0   0       6378000 0   100000  0.079658)
 
 ;(defn ray-scatter-shader-test [setup probe & shaders]
 ;  (fn [uniforms args]
@@ -624,31 +647,6 @@ void main()
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
-
-(def radius 6378000)
-(def max-height 100000)
-(def ray-steps 10)
-(def size 12)
-(def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
-                            :radius radius
-                            :sfsim25.atmosphere/height max-height
-                            :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5])
-                              :scatter-scale 1200
-                              :scatter-g 0.76
-                              :scatter-quotient 0.9})
-(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
-                                   :scatter-scale 8000})
-(def scatter [mie rayleigh])
-(def transmittance-earth (partial transmittance earth scatter ray-steps))
-(def transmittance-space-earth (transmittance-space earth [size size]))
-(def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
-(def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
-(def ray-scatter-space-earth (ray-scatter-space earth [size size size size]))
-(def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
-                                         transmittance-space-earth)))
-(def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)
-                                                           ray-scatter-space-earth))))
 
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact

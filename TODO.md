@@ -1,6 +1,7 @@
 # TODO
 * state is a value of an identity at a time
 * how to test transmittance\_track and ray\_scatter\_track
+* decompose ray scatter function
 * split off first order mie scattering divided by phase function
 * integration test planet shader with non-trivial lookup tables?
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
