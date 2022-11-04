@@ -84,15 +84,23 @@
     (mul (max 0.0 (dot normal light-direction))
          (transmittance planet scatter steps x light-direction true) intensity)))
 
+(defn- scatter-strength
+  "Determine scatter strength for a scattering component at point in atmosphere"
+  [planet component x]
+  (scattering component (height planet x)))
+
+(defn- in-scattering-component
+  "Determine amount of scattering for a scattering component, view direction, and light direction"
+  [planet component x view-direction light-direction]
+  (mul (scatter-strength planet component x) (phase component (dot view-direction light-direction))))
+
 (defn point-scatter-base
   "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
   [planet scatter steps intensity x view-direction light-direction above-horizon]
-  (let [height-of-x     (height planet x)
-        scattering-at-x #(mul (scattering % height-of-x) (phase % (dot view-direction light-direction)))]
-    (if (is-above-horizon? planet x light-direction)
-      (let [overall-scatter (apply add (map scattering-at-x scatter))]
-        (mul intensity overall-scatter (transmittance planet scatter steps x light-direction true)))
-      (matrix [0 0 0]))))
+  (if (is-above-horizon? planet x light-direction)
+    (let [overall-scatter (apply add (map #(in-scattering-component planet % x view-direction light-direction) scatter))]
+      (mul intensity overall-scatter (transmittance planet scatter steps x light-direction true)))
+    (matrix [0 0 0])))
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
