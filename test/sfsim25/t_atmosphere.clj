@@ -587,11 +587,10 @@ void main()
         (uniform-int program :heading_size heading-size)
         (uniform-float program :radius radius)
         (uniform-float program :max_height max-height))
-    ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/oriented-matrix shaders/orthogonal-vector
-    shaders/clip-angle shaders/elevation-to-index shaders/interpolate-4d shaders/convert-4d-index transmittance-track
-    shaders/transmittance-forward shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
-    shaders/sun-angle-to-index))
+    ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/orthogonal-vector shaders/clip-angle
+    shaders/elevation-to-index shaders/interpolate-4d shaders/convert-4d-index transmittance-track shaders/transmittance-forward
+    shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance
+    shaders/limit-quot shaders/sun-elevation-to-index shaders/sun-angle-to-index))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact (mget (ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)

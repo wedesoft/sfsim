@@ -9,10 +9,6 @@
   "Create normal vector orthogonal to the specified one"
   (slurp "resources/shaders/core/orthogonal_vector.glsl"))
 
-(def oriented-matrix
-  "Create normal vector orthogonal to the specified one"
-  (slurp "resources/shaders/core/oriented_matrix.glsl"))
-
 (def clip-angle
   "Convert angle to be between -pi and +pi"
   (slurp "resources/shaders/core/clip_angle.glsl"))

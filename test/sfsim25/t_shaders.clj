@@ -55,24 +55,6 @@ void main()
        (dot  (orthogonal-vector-test [] [0 0 1]) (matrix [0 0 1])) => 0.0
        (norm (orthogonal-vector-test [] [0 0 1])) => 1.0)
 
-(def oriented-matrix-probe
-  (template/fn [x y z] "#version 410 core
-out lowp vec3 fragColor;
-mat3 oriented_matrix(vec3 n);
-void main()
-{
-  fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
-}"))
-
-(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe orthogonal-vector oriented-matrix))
-
-(facts "Create oriented matrix given a normal vector"
-       (let [m (transpose (matrix [(oriented-matrix-test [] [1 0 0])
-                                   (oriented-matrix-test [] [0 1 0])
-                                   (oriented-matrix-test [] [0 0 1])])) ]
-         (mmul m (matrix [0.36 0.48 0.8])) => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (mmul m (transpose m)) => (roughly-matrix (identity-matrix 3) 1e-6)))
-
 (def clip-angle-probe
   (template/fn [angle] "#version 410 core
 out lowp vec3 fragColor;

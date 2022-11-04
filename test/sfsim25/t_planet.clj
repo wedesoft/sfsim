@@ -401,10 +401,10 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                                           clouds/cloud-density clouds/cloud-shadow
                                                                           clouds/linear-sampling atmosphere/phase-function
                                                                           shaders/clip-shell-intersections
-                                                                          shaders/ray-scatter-forward shaders/oriented-matrix
-                                                                          shaders/orthogonal-vector shaders/clip-angle
-                                                                          shaders/height-to-index shaders/horizon-distance
-                                                                          shaders/limit-quot shaders/surface-radiance-forward
+                                                                          shaders/ray-scatter-forward shaders/orthogonal-vector
+                                                                          shaders/clip-angle shaders/height-to-index
+                                                                          shaders/horizon-distance shaders/limit-quot
+                                                                          shaders/surface-radiance-forward
                                                                           shaders/sun-elevation-to-index])
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
