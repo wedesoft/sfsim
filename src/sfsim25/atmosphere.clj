@@ -103,8 +103,9 @@
   "Compute single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
   [planet scatter steps intensity x view-direction light-direction above-horizon]
   (if (is-above-horizon? planet x light-direction)
-    (let [overall-scatter (overall-in-scattering planet scatter x view-direction light-direction)]
-      (mul intensity overall-scatter (transmittance planet scatter steps x light-direction true)))
+    (let [overall-scatter  (overall-in-scattering planet scatter x view-direction light-direction)
+          sun-light-filter (transmittance planet scatter steps x light-direction true)]
+      (mul intensity overall-scatter sun-light-filter))
     (matrix [0 0 0])))  ; No first-order scattering if sun is below horizon
 
 (defn ray-scatter
@@ -113,7 +114,8 @@
   (let [intersection (if above-horizon atmosphere-intersection surface-intersection)
         point        (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
         ray          #:sfsim25.ray{:origin x :direction (sub point x)}]
-    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %) (point-scatter % view-direction light-direction above-horizon)))))
+    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %)
+                                      (point-scatter % view-direction light-direction above-horizon)))))
 
 (defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
@@ -129,9 +131,8 @@
                            (mul overall-scatter
                                 (add (ray-scatter x omega light-direction (not surface))
                                      (if surface
-                                       (let [surface-brightness
-                                             (mul (div (::brightness planet) PI)
-                                                  (surface-radiance point light-direction))]
+                                       (let [surface-brightness (mul (div (::brightness planet) PI)
+                                                                     (surface-radiance point light-direction))]
                                          (mul (transmittance planet scatter ray-steps x point) surface-brightness))
                                        (matrix [0 0 0])))))))))
 
