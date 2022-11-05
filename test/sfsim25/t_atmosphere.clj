@@ -147,10 +147,11 @@
                              direction => light-direction)
                       true)
                   atmosphere/scattering
-                  (fn ^Vector [mie ^double height]
+                  (fn ^Vector [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vector x]
                       (facts "Scattering function gets called with correct arguments"
-                             (:sfsim25.atmosphere/scatter-base mie) => (matrix [2e-5 2e-5 2e-5])
-                             height => 1000.0)
+                             planet => earth
+                             component => mie
+                             x => (matrix [0 (+ radius 1000) 0]))
                       (matrix [2e-5 2e-5 2e-5]))
                   atmosphere/phase
                   (fn [mie mu]

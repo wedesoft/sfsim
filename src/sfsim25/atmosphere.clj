@@ -14,8 +14,10 @@
 
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
-  ^Vector [{:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
-  (-> height (/ scatter-scale) - exp (mul scatter-base)))
+  (^Vector [^clojure.lang.IPersistentMap {:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
+           (-> height (/ scatter-scale) - exp (mul scatter-base)))
+  (^Vector [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vector x]
+           (scattering component (height planet x))))
 
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
@@ -79,15 +81,10 @@
     (mul (max 0.0 (dot normal light-direction))
          (transmittance planet scatter steps x light-direction true) intensity)))
 
-(defn- scatter-strength
-  "Determine scatter strength for a scattering component at point in atmosphere"
-  [planet component x]
-  (scattering component (height planet x)))
-
 (defn- in-scattering-component
   "Determine amount of scattering for a scattering component, view direction, and light direction"
   [planet component x view-direction light-direction]
-  (mul (scatter-strength planet component x) (phase component (dot view-direction light-direction))))
+  (mul (scattering planet component x) (phase component (dot view-direction light-direction))))
 
 (defn- overall-in-scattering
   "Determine overall amount of in-scattering"
@@ -115,7 +112,7 @@
 (defn strength-component
   "Compute scatter strength of component of light at a point and given direction in atmosphere"
   [planet scatter component steps intensity x view-direction light-direction above-horizon]
-  (mul (scatter-strength planet component x)
+  (mul (scattering planet component x)
        (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-base
