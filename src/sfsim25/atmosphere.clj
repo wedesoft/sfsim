@@ -257,7 +257,7 @@
   [size direction sin-sun-elevation index]
   (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
         max-sun-1    (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
-        sun-1        (limit-quot (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1) max-sun-1)
+        sun-1        (limit-quot (->> sin-sun-elevation (* (mget direction 0)) (- dot-view-sun)) (mget direction 1) max-sun-1)
         sun-2        (->> sin-sun-elevation sqr (- 1 (sqr sun-1)) (max 0.0) sqrt)]
     (matrix [sin-sun-elevation sun-1 sun-2])))
 
