@@ -94,14 +94,18 @@
   [planet scatter x view-direction light-direction]
   (apply add (map #(in-scattering-component planet % x view-direction light-direction) scatter)))
 
+(defn- filtered-sun-light
+  "Determine amount of incoming direct sun light"
+  [planet scatter steps x light-direction intensity]
+  (if (is-above-horizon? planet x light-direction)
+    (mul intensity (transmittance planet scatter steps x light-direction true))
+    (matrix [0 0 0])))  ; No first-order scattering if sun is below horizon
+
 (defn- overall-point-scatter
   "Compute single-scatter components of light at a point and given direction in atmosphere"
   [planet scatter components steps intensity x view-direction light-direction above-horizon]
-  (if (is-above-horizon? planet x light-direction)
-    (let [overall-scatter  (overall-in-scattering planet components x view-direction light-direction)
-          sun-light-filter (transmittance planet scatter steps x light-direction true)]
-      (mul intensity overall-scatter sun-light-filter))
-    (matrix [0 0 0])))  ; No first-order scattering if sun is below horizon
+  (mul (overall-in-scattering planet components x view-direction light-direction)
+       (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-component
   "Compute single-scatter component of light at a point and given direction in atmosphere"
@@ -111,11 +115,8 @@
 (defn strength-component
   "Compute scatter strength of component of light at a point and given direction in atmosphere"
   [planet scatter component steps intensity x view-direction light-direction above-horizon]
-  (if (is-above-horizon? planet x light-direction)
-    (let [strength  (scatter-strength planet component x)
-          sun-light-filter (transmittance planet scatter steps x light-direction true)]
-      (mul intensity strength sun-light-filter))
-    (matrix [0 0 0])))
+  (mul (scatter-strength planet component x)
+       (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-base
   "Compute total single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
