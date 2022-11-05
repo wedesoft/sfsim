@@ -63,16 +63,11 @@
     (atmosphere-intersection planet ray)
     (surface-intersection planet ray)))
 
-(defn- exp-negative
-  "Negative exponentiation"
-  [x]
-  (m/exp (sub x)))
-
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
   ([planet scatter steps x x0]
    (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
-     (exp-negative (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction))))
+     (-> (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub m/exp)))
   ([planet scatter steps x v above-horizon]
    (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
      (transmittance planet scatter steps x (intersection planet #:sfsim25.ray{:origin x :direction v})))))
