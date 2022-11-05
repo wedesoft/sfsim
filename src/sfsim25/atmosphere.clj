@@ -236,7 +236,7 @@
   (fn [height-index sun-elevation-index]
       (let [point             (index-to-height planet (first shape) height-index)
             sin-sun-elevation (index-to-sin-sun-elevation (second shape) sun-elevation-index)
-            cos-sun-elevation (sqrt (max 0.0 (- 1 (sqr sin-sun-elevation))))
+            cos-sun-elevation (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
             light-direction   (matrix [sin-sun-elevation cos-sun-elevation 0])]
         [point light-direction])))
 
@@ -256,9 +256,9 @@
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
   [size direction sin-sun-elevation index]
   (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
-        max-sun-1    (sqrt (max 0.0 (- 1 (sqr sin-sun-elevation))))
+        max-sun-1    (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
         sun-1        (limit-quot (- dot-view-sun (* sin-sun-elevation (mget direction 0))) (mget direction 1) max-sun-1)
-        sun-2        (sqrt (max 0.0 (- 1 (sqr sin-sun-elevation) (sqr sun-1))))]
+        sun-2        (->> sin-sun-elevation sqr (- 1 (sqr sun-1)) (max 0.0) sqrt)]
     (matrix [sin-sun-elevation sun-1 sun-2])))
 
 (defn- ray-scatter-forward
