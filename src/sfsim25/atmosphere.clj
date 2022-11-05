@@ -15,7 +15,7 @@
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
   ^Vector [{:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
-  (mul scatter-base (exp (- (/ height scatter-scale)))))
+  (-> height (/ scatter-scale) - exp (mul scatter-base)))
 
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
