@@ -126,8 +126,8 @@
                            (mul overall-scatter
                                 (add (ray-scatter x omega light-direction (not surface))
                                      (if surface
-                                       (let [surface-brightness (mul (div (::brightness planet) PI)
-                                                                     (surface-radiance point light-direction))]
+                                       (let [surface-brightness (-> (::brightness planet) (div PI)
+                                                                    (mul (surface-radiance point light-direction)))]
                                          (mul (transmittance planet scatter ray-steps x point) surface-brightness))
                                        (matrix [0 0 0])))))))))
 
