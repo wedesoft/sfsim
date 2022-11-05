@@ -53,7 +53,7 @@
   [planet point direction]
   (let [radius               (norm point)
         sin-elevation-radius (dot direction point)
-        horizon-distance-sqr (- (sqr radius) (sqr (:sfsim25.sphere/radius planet)))]
+        horizon-distance-sqr (->> planet :sfsim25.sphere/radius sqr (- (sqr radius)))]
     (or (>= sin-elevation-radius 0) (<= (sqr sin-elevation-radius) horizon-distance-sqr))))
 
 (defn ray-extremity
