@@ -3,7 +3,7 @@
               [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image vertex-passthrough shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
-              [clojure.core.matrix :refer (matrix mget mul identity-matrix)]
+              [clojure.core.matrix :refer (matrix mget mul add dot identity-matrix)]
               [sfsim25.matrix :refer :all]
               [sfsim25.sphere :as sphere]
               [sfsim25.interpolate :refer :all]
@@ -212,6 +212,19 @@
                         (matrix [0 (+ radius height) 0]))]
         (ray-scatter earth [mie] 10 constant-scatter (matrix [0 radius 0]) (matrix [0 1 0]) light-direction true)
         => (roughly-matrix (mul (matrix [2e-5 2e-5 2e-5]) height 0.5) 1e-6)))))
+
+(facts "Determine scattering component while taking into account overall absorption"
+       (let [steps            100
+             intensity        (matrix [1 1 1])
+             x                (matrix [(+ radius 1000) 0 0])
+             view-direction   (matrix [0 1 0])
+             light-direction  (matrix [0.36 0.48 0.8])
+             mu               (dot view-direction light-direction)]
+         (add (point-scatter-component earth scatter mie steps intensity x view-direction light-direction true)
+              (point-scatter-component earth scatter rayleigh steps intensity x view-direction light-direction true))
+         => (roughly-matrix (point-scatter-base earth scatter steps intensity x view-direction light-direction true) 1e-12)
+         (mul (strength-component earth scatter mie steps intensity x view-direction light-direction true) (phase mie mu))
+         => (roughly-matrix (point-scatter-component earth scatter mie steps intensity x view-direction light-direction true) 1e-12)))
 
 (facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"
   (let [radius           6378000.0
