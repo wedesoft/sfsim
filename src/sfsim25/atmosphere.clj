@@ -96,7 +96,7 @@
   [planet scatter steps x light-direction intensity]
   (if (is-above-horizon? planet x light-direction)
     (mul intensity (transmittance planet scatter steps x light-direction true))
-    (matrix [0 0 0])))  ; No first-order scattering if sun is below horizon
+    (matrix [0 0 0])))  ; No first-order scattering if sun is below horizon.
 
 (defn- overall-point-scatter
   "Compute single-scatter components of light at a point and given direction in atmosphere"
