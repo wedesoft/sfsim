@@ -87,7 +87,7 @@
   (mul (scattering planet component x) (phase component (dot view-direction light-direction))))
 
 (defn- overall-in-scattering
-  "Determine overall amount of in-scattering"
+  "Determine overall amount of in-scattering for multiple scattering components"
   [planet scatter x view-direction light-direction]
   (apply add (map #(in-scattering-component planet % x view-direction light-direction) scatter)))
 
@@ -96,7 +96,7 @@
   [planet scatter steps x light-direction intensity]
   (if (is-above-horizon? planet x light-direction)
     (mul intensity (transmittance planet scatter steps x light-direction true))
-    (matrix [0 0 0])))  ; No first-order scattering if sun is below horizon.
+    (matrix [0 0 0])))  ; No direct sun light if sun is below horizon.
 
 (defn- overall-point-scatter
   "Compute single-scatter components of light at a point and given direction in atmosphere"
