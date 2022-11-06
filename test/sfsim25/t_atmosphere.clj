@@ -493,8 +493,7 @@
 (def ray-scatter-rayleigh-earth (partial ray-scatter earth scatter ray-steps point-scatter-rayleigh-earth))
 (def ray-scatter-mie-strength   (partial ray-scatter earth scatter ray-steps point-scatter-rayleigh-earth))
 (def ray-scatter-space-earth (ray-scatter-space earth [size size size size]))
-(def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
-                                         transmittance-space-earth)))
+(def T (pack-matrices (make-lookup-table transmittance-earth transmittance-space-earth)))
 (def S (pack-matrices (convert-4d-to-2d (make-lookup-table ray-scatter-rayleigh-earth ray-scatter-space-earth))))
 (def M (pack-matrices (convert-4d-to-2d (make-lookup-table ray-scatter-mie-strength ray-scatter-space-earth))))
 
@@ -549,7 +548,7 @@ void main()
                => (roughly ?result 1e-6))
          ?px     ?py ?pz     ?qx     ?qy ?qz     ?result
          0       0   6478000 0       0   6478000 1
-         0       0   6378000 0       0   6478000 0.976171
+         0       0   6378000 0       0   6478000 0.976549
          6378000 0   0       6378000 0   100000  0.079658)
 
 (defn ray-scatter-shader-test [setup probe & shaders]
@@ -614,7 +613,7 @@ void main()
                => (roughly ?result 1e-6))
          ?px ?py ?pz     ?qx    ?qy ?qz     ?result
          0   0   6378000 0      0   6378000 0.0
-         0   0   6378000 0      0   6478000 0.043395
+         0   0   6378000 0      0   6478000 0.043302
          0   0   6378000 100000 0   6378000 0.008272)
 
 (def vertex-atmosphere-probe
