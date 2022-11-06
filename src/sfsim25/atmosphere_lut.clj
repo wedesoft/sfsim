@@ -1,6 +1,6 @@
 (ns sfsim25.atmosphere-lut
     "Compute lookup tables for atmospheric scattering"
-    (:require [clojure.core.matrix :refer (matrix add)]
+    (:require [clojure.core.matrix :refer (matrix add mul dot)]
               [sfsim25.atmosphere :refer :all]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]

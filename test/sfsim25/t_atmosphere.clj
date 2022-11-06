@@ -14,6 +14,22 @@
               [sfsim25.clouds :as clouds])
     (:import [mikera.vectorz Vector]))
 
+(def radius 6378000)
+(def max-height 100000)
+(def ray-steps 10)
+(def size 12)
+(def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
+                            :radius radius
+                            :sfsim25.atmosphere/height max-height
+                            :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5])
+                              :scatter-scale 1200
+                              :scatter-g 0.76
+                              :scatter-quotient 0.9})
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
+                                   :scatter-scale 8000})
+(def scatter [mie rayleigh])
+
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
   (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6]) :scatter-scale 8000}]
     (mget (scattering rayleigh          0) 0) => 5.8e-6
@@ -42,8 +58,7 @@
     (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))))
 
 (facts "Get intersection with artificial limit of atmosphere"
-       (let [radius 6378000
-             height 100000
+       (let [height 100000
              earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius :sfsim25.atmosphere/height height}]
          (atmosphere-intersection earth #:sfsim25.ray{:origin (matrix [radius 0 0]) :direction (matrix [1 0 0])})
          => (matrix [(+ radius height) 0 0])
@@ -53,8 +68,7 @@
          => (matrix [0 (+ radius height) 0])))
 
 (facts "Get intersection with surface of planet or nearest point if there is no intersection"
-       (let [radius 6378000
-             earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}]
+       (let [earth  #:sfsim25.sphere{:centre (matrix [0 0 0]) :radius radius}]
          (surface-intersection earth #:sfsim25.ray{:origin (matrix [radius 0 0]) :direction (matrix [-1 0 0])})
          => (matrix [radius 0 0])
          (surface-intersection earth #:sfsim25.ray{:origin (matrix [(+ radius 10000) 0 0]) :direction (matrix [-1 0 0])})
@@ -472,30 +486,17 @@
 (fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
       point-scatter-space => (exactly ray-scatter-space))
 
-(def radius 6378000)
-(def max-height 100000)
-(def ray-steps 10)
-(def size 12)
-(def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
-                            :radius radius
-                            :sfsim25.atmosphere/height max-height
-                            :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5])
-                              :scatter-scale 1200
-                              :scatter-g 0.76
-                              :scatter-quotient 0.9})
-(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
-                                   :scatter-scale 8000})
-(def scatter [mie rayleigh])
 (def transmittance-earth (partial transmittance earth scatter ray-steps))
 (def transmittance-space-earth (transmittance-space earth [size size]))
-(def point-scatter-earth (partial point-scatter-base earth scatter ray-steps (matrix [1 1 1])))
-(def ray-scatter-earth (partial ray-scatter earth scatter ray-steps point-scatter-earth))
+(def point-scatter-rayleigh-earth (partial point-scatter-component earth scatter rayleigh ray-steps (matrix [1 1 1])))
+(def scatter-strength-mie-earth (partial strength-component earth scatter mie ray-steps (matrix [1 1 1])))
+(def ray-scatter-rayleigh-earth (partial ray-scatter earth scatter ray-steps point-scatter-rayleigh-earth))
+(def ray-scatter-mie-strength   (partial ray-scatter earth scatter ray-steps point-scatter-rayleigh-earth))
 (def ray-scatter-space-earth (ray-scatter-space earth [size size size size]))
 (def T (pack-matrices (make-lookup-table (interpolate-function transmittance-earth transmittance-space-earth)
                                          transmittance-space-earth)))
-(def S (pack-matrices (convert-4d-to-2d (make-lookup-table (interpolate-function ray-scatter-earth ray-scatter-space-earth)
-                                                           ray-scatter-space-earth))))
+(def S (pack-matrices (convert-4d-to-2d (make-lookup-table ray-scatter-rayleigh-earth ray-scatter-space-earth))))
+(def M (pack-matrices (convert-4d-to-2d (make-lookup-table ray-scatter-mie-strength ray-scatter-space-earth))))
 
 (defn transmittance-shader-test [setup probe & shaders]
   (fn [uniforms args]
@@ -541,7 +542,7 @@ void main()
         (uniform-float program :max_height max-height))
     transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot))
+    shaders/horizon-distance shaders/limit-quot phase-function))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact (mget (transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
@@ -559,6 +560,7 @@ void main()
                 vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 transmittance (make-vector-texture-2d {:width size :height size :data T})
                 ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
+                mie-strength  (make-vector-texture-2d {:width (* size size) :height (* size size) :data M})
                 program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
                 tex           (texture-render-color
@@ -566,8 +568,9 @@ void main()
                                 (use-program program)
                                 (uniform-sampler program :transmittance 0)
                                 (uniform-sampler program :ray_scatter 1)
+                                (uniform-sampler program :mie_strength 2)
                                 (apply setup program uniforms)
-                                (use-textures transmittance ray-scatter)
+                                (use-textures transmittance ray-scatter mie-strength)
                                 (render-quads vao))
                 img           (texture->vectors3 tex 1 1)]
             (deliver result (get-vector3 img 0 0))
@@ -604,15 +607,15 @@ void main()
     ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
     shaders/convert-4d-index transmittance-track shaders/transmittance-forward shaders/interpolate-2d shaders/convert-2d-index
     shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
-    shaders/sun-angle-to-index))
+    shaders/sun-angle-to-index phase-function))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact (mget (ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)
                => (roughly ?result 1e-6))
          ?px ?py ?pz     ?qx    ?qy ?qz     ?result
          0   0   6378000 0      0   6378000 0.0
-         0   0   6378000 0      0   6478000 0.014199
-         0   0   6378000 100000 0   6378000 0.008875)
+         0   0   6378000 0      0   6478000 0.043395
+         0   0   6378000 100000 0   6378000 0.008272)
 
 (def vertex-atmosphere-probe
   (template/fn [selector] "#version 410 core
@@ -684,6 +687,7 @@ void main()
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d {:width size :height size :data T})
                                    ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
+                                   mie-strength  (make-vector-texture-2d {:width (* size size) :height (* size size) :data M})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
                                    worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})
                                    profile-data  (float-array [0 1 1 1 1 1 1 0])
@@ -693,8 +697,9 @@ void main()
                                (use-program program)
                                (uniform-sampler program :transmittance 0)
                                (uniform-sampler program :ray_scatter 1)
-                               (uniform-sampler program :worley 2)
-                               (uniform-sampler program :cloud_profile 3)
+                               (uniform-sampler program :mie_strength 2)
+                               (uniform-sampler program :worley 3)
+                               (uniform-sampler program :cloud_profile 4)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-vector3 program :origin origin)
                                (uniform-matrix4 program :transform transform)
@@ -722,14 +727,15 @@ void main()
                                (uniform-int program :cloud_base_samples 8)
                                (uniform-float program :cloud_scatter_amount 1.0)
                                (uniform-float program :transparency_cutoff 0.05)
-                               (use-textures transmittance ray-scatter worley profile)
+                               (use-textures transmittance ray-scatter mie-strength worley profile)
                                (render-quads vao)
                                (destroy-texture profile)
                                (destroy-texture worley)
                                (destroy-texture ray-scatter)
+                               (destroy-texture mie-strength)
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result)))
+                               (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/atmosphere/" ?result)))
          ?x ?y              ?z                      ?polar       ?rotation   ?lx ?ly       ?lz           ?result
          0  0               (- 0 radius max-height) radius       0           0   0         -1            "sun.png"
          0  0               (- 0 radius max-height) radius       0           0   0          1            "space.png"

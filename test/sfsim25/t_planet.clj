@@ -279,12 +279,11 @@ void main()
 
 (def ground-radiance-test
   (radiance-shader-test
-    (fn [program radius max-height elevation-size height-size elevation-power albedo reflectivity]
+    (fn [program radius max-height elevation-size height-size albedo reflectivity]
         (uniform-float program :radius radius)
         (uniform-float program :max_height max-height)
         (uniform-int program :elevation_size elevation-size)
         (uniform-int program :height_size height-size)
-        (uniform-float program :elevation_power elevation-power)
         (uniform-float program :albedo albedo)
         (uniform-float program :reflectivity reflectivity))
     ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/elevation-to-index shaders/interpolate-2d
@@ -292,7 +291,7 @@ void main()
     shaders/surface-radiance-forward shaders/sun-elevation-to-index))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mul (ground-radiance-test [6378000.0 100000.0 17 17 2.0 ?albedo 0.5]
+         (fact (mul (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5]
                                           [?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
          ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
@@ -341,17 +340,34 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   return scatter;
 }")
 
+(defn make-planet-program []
+  (make-program :vertex [vertex-planet-probe]
+                :fragment [fragment-planet fake-transmittance
+                           shaders/interpolate-2d shaders/convert-2d-index
+                           shaders/transmittance-forward shaders/elevation-to-index
+                           shaders/ray-sphere shaders/is-above-horizon
+                           fake-ray-scatter atmosphere/attenuation-track
+                           ground-radiance clouds/sky-track shaders/ray-shell
+                           clouds/cloud-track clouds/cloud-track-base
+                           clouds/cloud-density clouds/cloud-shadow
+                           clouds/linear-sampling atmosphere/phase-function
+                           shaders/clip-shell-intersections
+                           shaders/ray-scatter-forward shaders/height-to-index
+                           shaders/horizon-distance shaders/limit-quot
+                           shaders/surface-radiance-forward
+                           shaders/sun-elevation-to-index]))
+
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
   (uniform-sampler program :colors 0)
   (uniform-sampler program :normals 1)
   (uniform-sampler program :transmittance 2)
   (uniform-sampler program :ray_scatter 3)
-  (uniform-sampler program :surface_radiance 4)
-  (uniform-sampler program :water 5)
-  (uniform-sampler program :worley 6)
-  (uniform-sampler program :cloud_profile 7)
-  (uniform-float program :elevation_power 2.0)
+  (uniform-sampler program :mie_strength 4)
+  (uniform-sampler program :surface_radiance 5)
+  (uniform-sampler program :water 6)
+  (uniform-sampler program :worley 7)
+  (uniform-sampler program :cloud_profile 8)
   (uniform-float program :specular 100)
   (uniform-float program :max_height 100000)
   (uniform-vector3 program :water_color (matrix [0.09 0.11 0.34])))
@@ -390,21 +406,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                                    0.5 -0.5 0.5 0.75 0.25 0.5 0.5
                                                   -0.5  0.5 0.5 0.25 0.75 0.5 0.5
                                                    0.5  0.5 0.5 0.75 0.75 0.5 0.5]
-                                   program       (make-program :vertex [vertex-planet-probe]
-                                                               :fragment [fragment-planet fake-transmittance
-                                                                          shaders/interpolate-2d shaders/convert-2d-index
-                                                                          shaders/transmittance-forward shaders/elevation-to-index
-                                                                          shaders/ray-sphere shaders/is-above-horizon
-                                                                          fake-ray-scatter atmosphere/attenuation-track
-                                                                          ground-radiance clouds/sky-track shaders/ray-shell
-                                                                          clouds/cloud-track clouds/cloud-track-base
-                                                                          clouds/cloud-density clouds/cloud-shadow
-                                                                          clouds/linear-sampling atmosphere/phase-function
-                                                                          shaders/clip-shell-intersections
-                                                                          shaders/ray-scatter-forward shaders/height-to-index
-                                                                          shaders/horizon-distance shaders/limit-quot
-                                                                          shaders/surface-radiance-forward
-                                                                          shaders/sun-elevation-to-index])
+                                   program       (make-planet-program)
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
                                    vao           (make-vertex-array-object program indices vertices variables)
                                    radius        6378000
@@ -419,6 +421,9 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                    ray-scatter   (make-vector-texture-2d
                                                    {:width (* size size) :height (* size size)
                                                     :data (float-array (repeat (* size size size size 3) ?s))})
+                                   mie-strength  (make-vector-texture-2d
+                                                   {:width (* size size) :height (* size size)
+                                                    :data (float-array (repeat (* size size size size 3) 0))})
                                    radiance      (make-vector-texture-2d
                                                    {:width size :height size
                                                     :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
@@ -432,9 +437,9 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                (use-program program)
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a)
-                               (use-textures colors normals transmittance ray-scatter radiance water worley profile)
+                               (use-textures colors normals transmittance ray-scatter mie-strength radiance water worley profile)
                                (render-quads vao)
-                               (doseq [tex [profile worley water radiance ray-scatter transmittance normals colors]]
+                               (doseq [tex [profile worley water radiance ray-scatter mie-strength transmittance normals colors]]
                                       (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
