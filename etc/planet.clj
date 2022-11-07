@@ -63,6 +63,9 @@
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
+(def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
+(def M (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
@@ -87,8 +90,9 @@
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere :transmittance 0)
 (uniform-sampler program-atmosphere :ray_scatter 1)
-(uniform-sampler program-atmosphere :worley 2)
-(uniform-sampler program-atmosphere :cloud_profile 3)
+(uniform-sampler program-atmosphere :mie_strength 2)
+(uniform-sampler program-atmosphere :worley 3)
+(uniform-sampler program-atmosphere :cloud_profile 4)
 
 (def tree-state (chan))
 (def changes (chan))
@@ -116,13 +120,14 @@
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)
 (uniform-sampler program-planet :ray_scatter      1)
-(uniform-sampler program-planet :surface_radiance 2)
-(uniform-sampler program-planet :worley           3)
-(uniform-sampler program-planet :cloud_profile    4)
-(uniform-sampler program-planet :heightfield      5)
-(uniform-sampler program-planet :colors           6)
-(uniform-sampler program-planet :normals          7)
-(uniform-sampler program-planet :water            8)
+(uniform-sampler program-planet :mie_strength     2)
+(uniform-sampler program-planet :surface_radiance 3)
+(uniform-sampler program-planet :worley           4)
+(uniform-sampler program-planet :cloud_profile    5)
+(uniform-sampler program-planet :heightfield      6)
+(uniform-sampler program-planet :colors           7)
+(uniform-sampler program-planet :normals          8)
+(uniform-sampler program-planet :water            9)
 
 (defn load-tile-into-opengl
   [tile]
@@ -159,7 +164,7 @@
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet :neighbours neighbours)
-    (use-textures T S E W @P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
+    (use-textures T S M E W @P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
     (render-patches (:vao tile))))
 
 (defn render-tree
@@ -252,7 +257,7 @@
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
-         (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (swap! position add (mul dt v 100 (q/rotate-vector @orientation (matrix [0 0 -1]))))1
          (swap! threshold + (* dt tr))
          (swap! anisotropic + (* dt ts))
          (swap! multiplier + (* dt tm))
@@ -282,7 +287,7 @@
                           (uniform-matrix4 program-atmosphere :transform transform)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (uniform-vector3 program-atmosphere :light (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
-                          (use-textures T S W @P)
+                          (use-textures T S M W @P)
                           (render-quads atmosphere-vao))
          (print "\rthreshold (q/a)" (format "%.3f" @threshold)
                 "anisotropic (w/s)" (format "%.3f" @anisotropic)

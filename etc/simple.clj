@@ -57,6 +57,10 @@
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+
+(def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
+(def M (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+
 (def data (slurp-floats "data/bluenoise.raw"))
 (def B (make-float-texture-2d {:width noise-size :height noise-size :data data}))
 (with-texture GL11/GL_TEXTURE_2D (:texture B)
@@ -260,7 +264,7 @@ void main()
 (uniform-int program :heading_size heading-size)
 (uniform-int program :transmittance_height_size transmittance-height-size)
 (uniform-int program :transmittance_elevation_size transmittance-elevation-size)
-(uniform-float program :amplification 4.0)
+(uniform-float program :amplification 6.0)
 (uniform-sampler program :worley 0)
 (uniform-sampler program :bluenoise 1)
 (uniform-sampler program :profile 2)
