@@ -119,7 +119,7 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
-vec3 attenuation_track2(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming, bool above);
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 transmittance_outer(vec3 point, vec3 direction);
 vec3 transmittance_track(vec3 p, vec3 q);
 bool is_above_horizon(vec3 point, vec3 direction);
@@ -128,50 +128,6 @@ vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
-
-
-vec3 transmittance_track2(vec3 p, vec3 q, bool above_horizon)
-{
-  vec3 direction;
-  float dist = distance(p, q);
-  if (dist > 0) {
-    vec3 direction = (q - p) / dist;
-    vec2 uvp = transmittance_forward(p, direction, above_horizon);
-    vec2 uvq = transmittance_forward(q, direction, above_horizon);
-    vec3 t1 = interpolate_2d(transmittance, transmittance_height_size, transmittance_elevation_size, uvp).rgb;
-    vec3 t2 = interpolate_2d(transmittance, transmittance_height_size, transmittance_elevation_size, uvq).rgb;
-    return t1 / t2;
-  } else
-    return vec3(1, 1, 1);
-}
-
-// Compute in-scattered light between two points inside the atmosphere.
-vec3 ray_scatter_track2(vec3 light_direction, vec3 p, vec3 q, bool above_horizon)
-{
-  vec3 direction;
-  float dist = distance(p, q);
-  if (dist > 0) {
-    vec3 direction = (q - p) / dist;
-    vec4 ray_scatter_index_p = ray_scatter_forward(p, direction, light_direction, above_horizon);
-    vec3 ray_scatter_p = interpolate_4d(ray_scatter, height_size, elevation_size, light_elevation_size, heading_size,
-                                        ray_scatter_index_p).rgb;
-    vec4 ray_scatter_index_q = ray_scatter_forward(q, direction, light_direction, above_horizon);
-    vec3 ray_scatter_q = interpolate_4d(ray_scatter, height_size, elevation_size, light_elevation_size, heading_size,
-                                        ray_scatter_index_q).rgb;
-    vec3 transmittance_p_q = transmittance_track(p, q);
-    return ray_scatter_p - transmittance_p_q * ray_scatter_q;
-  } else
-    return vec3(0, 0, 0);
-}
-
-vec3 attenuation_track2(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming, bool above)
-{
-  vec3 p = origin + direction * a;
-  vec3 q = origin + direction * b;
-  vec3 surface_transmittance = transmittance_track2(p, q, above);
-  vec3 in_scattering = ray_scatter_track2(light_direction, p, q, above);
-  return incoming * surface_transmittance + in_scattering;
-}
 
 void main()
 {
@@ -196,19 +152,14 @@ void main()
   vec3 cloud = vec3(0, 0, 0);
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
   float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
-  bool above = is_above_horizon(origin, direction);
-  // if (direction.x > 0.1)
-  //   above = true;
-  // if (direction.x < -0.1)
-  //   above = false;
   for (int i=0; i<steps; i++) {
     float dist = atmosphere.x + (i + offset) * step;
     float a = atmosphere.x + i * step;
     float b = atmosphere.x + (i + 1) * step;
     vec3 pos = origin + dist * direction;
     float r = length(pos);
-    vec3 transm = transmittance_track2(origin + a * direction, origin + b * direction, above);
-    vec3 atten = attenuation_track2(light, origin, direction, a, b, vec3(0, 0, 0), above) * amplification;
+    vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
+    vec3 atten = attenuation_track(light, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float density = (1 - threshold) * cloud_multiplier;
       if (density > 0) {
