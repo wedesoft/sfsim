@@ -1,6 +1,6 @@
 (require '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
          '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
-         '[clojure.math :refer (cos sin sqrt pow to-radians)]
+         '[clojure.math :refer (cos sin sqrt pow to-radians PI)]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.quaternion :as q]
          '[sfsim25.render :refer :all]
@@ -257,7 +257,7 @@
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
-         (swap! position add (mul dt v 100 (q/rotate-vector @orientation (matrix [0 0 -1]))))1
+         (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
          (swap! threshold + (* dt tr))
          (swap! anisotropic + (* dt ts))
          (swap! multiplier + (* dt tm))
