@@ -1,8 +1,7 @@
 # TODO
 * state is a value of an identity at a time
-* split off first order mie scattering divided by phase function
-* integration test planet shader with non-trivial lookup tables?
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* integration test planet shader with non-trivial lookup tables?
 * attenuation of far clouds
 * implement is\_above\_horizon without arcussinus (remove horizon\_angle)
 * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
