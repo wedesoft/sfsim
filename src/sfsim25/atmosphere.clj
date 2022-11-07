@@ -100,14 +100,14 @@
 
 (defn- overall-point-scatter
   "Compute single-scatter components of light at a point and given direction in atmosphere"
-  [planet scatter components steps intensity x view-direction light-direction above-horizon]
+  [planet scatter components steps intensity x view-direction light-direction]
   (mul (overall-in-scattering planet components x view-direction light-direction)
        (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-component
   "Compute single-scatter component of light at a point and given direction in atmosphere"
   [planet scatter component steps intensity x view-direction light-direction above-horizon]
-  (overall-point-scatter planet scatter [component] steps intensity x view-direction light-direction above-horizon))
+  (overall-point-scatter planet scatter [component] steps intensity x view-direction light-direction))
 
 (defn strength-component
   "Compute scatter strength of component of light at a point and given direction in atmosphere"
@@ -118,7 +118,7 @@
 (defn point-scatter-base
   "Compute total single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
   [planet scatter steps intensity x view-direction light-direction above-horizon]
-  (overall-point-scatter planet scatter scatter steps intensity x view-direction light-direction above-horizon))
+  (overall-point-scatter planet scatter scatter steps intensity x view-direction light-direction))
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
