@@ -25,7 +25,7 @@
   (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1)))
 
 (defn phase
-  "Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)"
+  "Mie scattering phase function by Henyey-Greenstein depending on assymetry g and mu = cos(theta)"
   [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
   (let [scatter-g-sqr (sqr scatter-g)]
     (/ (* 3 (- 1 scatter-g-sqr) (+ 1 (sqr mu)))

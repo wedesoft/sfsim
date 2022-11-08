@@ -19,7 +19,7 @@
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. (/ 1920 4) (/ 1080 4)))
-;(Display/setDisplayMode (DisplayMode. 1920 1080))
+;(Display/setDisplayMode (DisplayMode. 1280 720))
 ;(Display/setFullscreen true)
 (Display/create)
 
@@ -208,7 +208,7 @@
 (uniform-int program-planet :cloud_base_samples 8)
 (uniform-float program-planet :transparency_cutoff 0.1)
 (uniform-vector3 program-planet :water_color (matrix [0.09 0.11 0.34]))
-(uniform-float program-planet :amplification 8)
+(uniform-float program-planet :amplification 6)
 
 (use-program program-atmosphere)
 (uniform-matrix4 program-atmosphere :projection projection)
@@ -234,7 +234,7 @@
 (uniform-int program-atmosphere :transmittance_elevation_size transmittance-elevation-size)
 (uniform-int program-atmosphere :surface_height_size surface-height-size)
 (uniform-int program-atmosphere :surface_sun_elevation_size surface-sun-elevation-size)
-(uniform-float program-atmosphere :amplification 8)
+(uniform-float program-atmosphere :amplification 6)
 
 
 (def t0 (atom (System/currentTimeMillis)))

@@ -2,6 +2,7 @@
 * state is a value of an identity at a time
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * integration test planet shader with non-trivial lookup tables?
+* ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
 * attenuation of far clouds
 * implement is\_above\_horizon without arcussinus (remove horizon\_angle)
 * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
