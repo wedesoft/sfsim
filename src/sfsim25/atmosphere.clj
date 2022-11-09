@@ -307,27 +307,27 @@
 
 (def transmittance-outer
   "Shader function to compute transmittance between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/transmittance_outer.glsl"))
+  (slurp "resources/shaders/atmosphere/transmittance-outer.glsl"))
 
 (def transmittance-track
   "Shader function to compute transmittance between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/transmittance_track.glsl"))
+  (slurp "resources/shaders/atmosphere/transmittance-track.glsl"))
 
 (def ray-scatter-outer
   "Shader function to determine in-scattered light between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/ray_scatter_outer.glsl"))
+  (slurp "resources/shaders/atmosphere/ray-scatter-outer.glsl"))
 
 (def ray-scatter-track
   "Shader function to determine in-scattered light between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/ray_scatter_track.glsl"))
+  (slurp "resources/shaders/atmosphere/ray-scatter-track.glsl"))
 
 (def attenuation-outer
   "Shader function combining transmittance and in-scattered light between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/attenuation_outer.glsl"))
+  (slurp "resources/shaders/atmosphere/attenuation-outer.glsl"))
 
 (def attenuation-track
   "Shader function combining transmittance and in-scattered light between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/attenuation_track.glsl"))
+  (slurp "resources/shaders/atmosphere/attenuation-track.glsl"))
 
 (def vertex-atmosphere
   "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
@@ -339,6 +339,6 @@
 
 (def phase-function
   "Shader function for scattering phase function"
-  (slurp "resources/shaders/atmosphere/phase_function.glsl"))
+  (slurp "resources/shaders/atmosphere/phase-function.glsl"))
 
 (set! *unchecked-math* false)
