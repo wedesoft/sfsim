@@ -19,7 +19,7 @@ in GEO_OUT
   highp vec3 point;
 } fs_in;
 
-out lowp vec3 fragColor;
+out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,

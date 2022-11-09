@@ -97,7 +97,7 @@ in VS_OUT
   highp vec3 direction;
 } fs_in;
 
-out lowp vec3 fragColor;
+out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);

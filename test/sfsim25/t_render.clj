@@ -20,7 +20,7 @@ void main()
 }")
 
 (def fragment-blue "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 void main()
 {
   fragColor = vec3(0.0, 0.0, 1.0);
@@ -41,7 +41,7 @@ void main()
 (def vertex-color "#version 410 core
 in highp vec3 point;
 in mediump vec2 uv;
-out lowp vec3 color;
+out vec3 color;
 void main()
 {
   gl_Position = vec4(point, 1);
@@ -50,7 +50,7 @@ void main()
 
 (def fragment-color "#version 410 core
 in mediump vec3 color;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 void main()
 {
   fragColor = color;
@@ -82,7 +82,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quads.png"))
 
 (def fragment-red "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 void main()
 {
   fragColor = vec3(1.0, 0.0, 0.0);
@@ -120,7 +120,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/lines.png"))
 
 (def fragment-uniform-floats "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform float red;
 uniform float green;
 uniform float blue;
@@ -145,7 +145,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png"))
 
 (def fragment-uniform-ints "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform int red;
 uniform int green;
 uniform int blue;
@@ -170,7 +170,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-ints.png"))
 
 (def fragment-uniform-vector3 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform vec3 color;
 void main()
 {
@@ -214,7 +214,7 @@ void main()
 (def vertex-texture "#version 410 core
 in highp vec3 point;
 in mediump vec2 uv;
-out lowp vec3 color;
+out vec3 color;
 out mediump vec2 uv_fragment;
 void main()
 {
@@ -224,7 +224,7 @@ void main()
 
 (def fragment-texture-1d "#version 410 core
 in mediump vec2 uv_fragment;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler1D tex;
 void main()
 {
@@ -249,7 +249,7 @@ void main()
 
 (def fragment-texture-2d "#version 410 core
 in mediump vec2 uv_fragment;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
@@ -322,7 +322,7 @@ void main()
 
 (def fragment-texture-3d "#version 410 core
 in mediump vec2 uv_fragment;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler3D tex;
 void main()
 {
@@ -348,7 +348,7 @@ void main()
 
 (def fragment-two-textures "#version 410 core
 in mediump vec2 uv_fragment;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler2D tex1;
 uniform sampler2D tex2;
 void main()
@@ -437,7 +437,7 @@ vec3 fun()
 ")
 
 (def fragment-part2 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 fun();
 void main()
 {
@@ -471,7 +471,7 @@ void main()
 
 (def lod-texture-1d "#version 410 core
 in mediump vec2 uv_fragment;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler1D tex;
 uniform float lod;
 void main()
@@ -506,7 +506,7 @@ void main()
 
 (def alpha-probe
   (template/fn [alpha] "#version 410 core
-out lowp vec4 fragColor;
+out vec4 fragColor;
 void main()
 {
   fragColor = vec4(0.25, 0.5, 0.75, <%= alpha %>);

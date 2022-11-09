@@ -36,7 +36,7 @@
              (subvec arr 26 28) => [0.995 0.995]))))
 
 (def fragment-white "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 void main()
 {
   fragColor = vec3(1, 1, 1);
@@ -103,7 +103,7 @@ in GEO_OUT
   mediump vec2 heightcoord;
   highp vec3 point;
 } frag_in;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 void main()
 {
   fragColor.rg = <%= selector %>;
@@ -265,7 +265,7 @@ void main()
 
 (def ground-radiance-probe
   (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
 void main()

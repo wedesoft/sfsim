@@ -13,7 +13,7 @@ in VS_OUT
   highp vec3 direction;
 } fs_in;
 
-out lowp vec3 fragColor;
+out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming);

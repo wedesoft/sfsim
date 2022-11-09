@@ -12,7 +12,7 @@
 (def cloud-track-probe
   (template/fn [a b decay scatter density lx ly lz ir ig ib]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dp = 10 - p.x;
@@ -89,7 +89,7 @@ void main()
 (def cloud-track-base-probe
   (template/fn [a b decay scatter density ir ig ib]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dp = 10 - p.x;
@@ -155,7 +155,7 @@ void main()
 (def sky-outer-probe
   (template/fn [x y z dx dy dz lx ly lz ir ig ib]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 sky_outer(vec3 light_direction, vec3 origin, vec3 direction, vec3 incoming);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming)
 {
@@ -205,7 +205,7 @@ void main()
 (def sky-track-probe
   (template/fn [px py pz dx dy dz a b lx ly lz ir ig ib]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 sky_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
@@ -254,7 +254,7 @@ void main()
 (def cloud-shadow-probe
   (template/fn [x y z lx ly lz]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
 {
@@ -300,7 +300,7 @@ void main()
 (def cloud-density-probe
   (template/fn [x y z]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 float cloud_density(vec3 point, float lod);
 void main()
 {
@@ -358,7 +358,7 @@ void main()
 (def sampling-probe
   (template/fn [term]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 int number_of_steps(float a, float b, int min_samples, int max_samples, float max_step);
 float step_size(float a, float b, float scaling_offset, int num_steps);
 float next_point(float p, float scaling_offset, float step_size);

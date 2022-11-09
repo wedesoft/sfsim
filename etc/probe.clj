@@ -67,7 +67,7 @@
 (def elevation-to-index-probe
   (template/fn [x y z dx dy dz above-horizon]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
 void main()
 {
@@ -98,7 +98,7 @@ void main()
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz above]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
 void main()
 {
@@ -138,7 +138,7 @@ void main()
 
 (def transmittance-probe
   (template/fn [px py pz dx dy dz] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 transmittance_outer(vec3 point, vec3 direction);
 void main()
 {

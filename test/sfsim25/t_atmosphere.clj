@@ -523,7 +523,7 @@
 
 (def transmittance-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 transmittance_track(vec3 p, vec3 q);
 void main()
 {
@@ -582,7 +582,7 @@ void main()
 
 (def ray-scatter-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 void main()
 {
@@ -622,7 +622,7 @@ in VS_OUT
 {
   highp vec3 direction;
 } fs_in;
-out lowp vec3 fragColor;
+out vec3 fragColor;
 void main()
 {
   fragColor = <%= selector %>;
@@ -747,7 +747,7 @@ void main()
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 float phase(float g, float mu);
 void main()
 {

@@ -13,7 +13,7 @@
 
 (def ray-sphere-probe
   (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
 {
@@ -38,7 +38,7 @@ void main()
 
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec2 convert_2d_index(vec2 idx, int size_y, int size_x);
 void main()
 {
@@ -57,7 +57,7 @@ void main()
 
 (def convert-4d-index-probe
   (template/fn [x y z w selector] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec4 convert_4d_index(vec4 idx, int size_w, int size_z, int size_y, int size_x);
 void main()
 {
@@ -107,7 +107,7 @@ void main()
 
 (def interpolate-2d-probe
   (template/fn [x y] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler2D table;
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 void main()
@@ -152,7 +152,7 @@ void main()
 
 (def interpolate-4d-probe
   (template/fn [x y z w] "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler2D table;
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
 void main()
@@ -175,7 +175,7 @@ void main()
 (def ray-box-probe
   (template/fn [ax ay az bx by bz ox oy oz dx dy dz]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
 {
@@ -201,7 +201,7 @@ void main()
 (def convert-3d-index-probe
   (template/fn [x y z]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec3 convert_3d_index(vec3 point, vec3 box_min, vec3 box_max);
 void main()
 {
@@ -246,7 +246,7 @@ void main()
 (def interpolate-3d-probe
   (template/fn [x y z]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 uniform sampler3D table;
 float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
 void main()
@@ -268,7 +268,7 @@ void main()
 (def ray-shell-probe
   (template/fn [cx cy cz radius1 radius2 ox oy oz dx dy dz selector]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 void main()
 {
@@ -298,7 +298,7 @@ void main()
 (def clip-shell-intersections-probe
   (template/fn [a b c d limit selector]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 void main()
 {
@@ -324,7 +324,7 @@ void main()
 (def height-to-index-probe
   (template/fn [x y z]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 float height_to_index(vec3 point);
 void main()
 {
@@ -350,7 +350,7 @@ void main()
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 float sun_elevation_to_index(vec3 point, vec3 light_direction);
 void main()
 {
@@ -376,7 +376,7 @@ void main()
 (def sun-angle-to-index-probe
   (template/fn [dx dy dz lx ly lz]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 float sun_angle_to_index(vec3 direction, vec3 light_direction);
 void main()
 {
@@ -401,7 +401,7 @@ void main()
 (def elevation-to-index-probe
   (template/fn [x y z dx dy dz above-horizon]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
 void main()
 {
@@ -436,7 +436,7 @@ void main()
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz above]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
 void main()
 {
@@ -464,7 +464,7 @@ void main()
 (def surface-radiance-forward-probe
   (template/fn [x y z lx ly lz]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec2 surface_radiance_forward(vec3 point, vec3 light_direction);
 void main()
 {
@@ -494,7 +494,7 @@ void main()
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz above selector]
 "#version 410 core
-out lowp vec3 fragColor;
+out vec3 fragColor;
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 void main()
 {
