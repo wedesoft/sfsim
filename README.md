@@ -14,7 +14,7 @@ lein midje
 * [Flight of Nova](https://flight-of-nova.com/)
 * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
 * [Java native interface example](https://www.baeldung.com/jni)
-* [Skybolt Engine](https://github.com/Piraxus/Skybolt/)
+* [Skybolt Engine](https://github.com/Piraxus/Skybolt/) ([article](https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/))
 * [Oreon Engine](https://github.com/fynnfluegge/oreon-engine)
 * [LWJGL 2](http://legacy.lwjgl.org/)
 * [LWJGL Wiki](http://wiki.lwjgl.org/)
