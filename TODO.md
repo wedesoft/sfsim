@@ -1,70 +1,45 @@
 # TODO
-* state is a value of an identity at a time
+* "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* integration test planet shader with non-trivial lookup tables?
-* ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
-* attenuation of far clouds
-* implement is\_above\_horizon without arcussinus (remove horizon\_angle)
-* add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
-* exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
-* check clouds don't disappear when going to space
-* convert prototype to tested code
-* multiple octaves of noise
-* use 2d blue noise for sampling offsets
-* offscreen render clouds (with atmosphere in front) with alpha channel
-* render planet without clouds
-* apply cloud texture to higher resolution picture (upscale and alpha-blend)
-* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
-* offset cloud sampling with blue noise
-* Fractal Worley noise (octaves added together?)
-  https://www.shadertoy.com/view/XdGyRc
-  https://gamedev.stackexchange.com/questions/197861/how-to-handle-octave-frequency-in-the-perlin-noise-algorithm
-* global cloud map (skybox?)
-* add cloud shadow computation to ground radiance function
-* 3D procedural noise: simplex noise with domain warping, Google search "opengl procedural volumetric clouds"
-  https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/
-  https://github.com/Piraxus/Skybolt/
-  https://lup.lub.lu.se/student-papers/record/8893256/file/8893258.pdf    description of noise functions
-  https://www.researchgate.net/publication/224688956_Generating_and_Rendering_Procedural_Clouds_in_Real_Time_on_Programmable_3D_Graphics_Hardware    describes octaves of noise
-  https://www.mdpi.com/2073-8994/10/4/125/pdf-vor
-* problem: white artifacts when sun is in zenith
-* transmittance-weighted average cloud distance -> correct atmospheric scattering
-* blue noise dithering
-* in branch: change ray\_scatter\_\* and transmittance\_\* to accept direction and scale factors?
-* determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
-* keyboard shortcuts for cloud parameters
-* http://advances.realtimerendering.com/s2015/index.html
+* plan work
+* remove lowp, mediump, highp
+* \_ -> - in shader file names
+* make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
+* integration test planet shader with non-trivial lookup tables? convert prototype to tested code
+* clouds
+  * http://advances.realtimerendering.com/s2015/index.html
+  * cloud density function using 3D textures and vertical threshold curves
+  * add clouds to atmospheric and planetary shader
+  * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
+  * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
+  * use integral to compute proper transmittance and scattering within sampling interval
+  * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
+  * determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
+  * check clouds don't disappear when going to space
+  * multiple octaves of Worley noise
+  * use 2d blue noise for sampling offsets
   * increase stepsize between clouds (also only sample low-resolution noise)
   * multiple levels of Worley and Perlin noise in channels of 3D texture
-  * use lower-resolution cloud rendering
-  * render clouds with low resolution, sample with different z-offsets and blur
-  * offset sample start using blue noise
-  * compute shadows on ground with quarter resolution
+  * offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur
+  * apply cloud texture to higher resolution picture (upscale and alpha-blend)
   * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
-* remove lowp, mediump, highp
-* plan work
-* make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
-* does ray\_scatter\_atmosphere need to be multiplied with transmittance\_cloud?
-* add clouds to atmospheric and planetary shader
-* cloud density function using 3D textures and vertical threshold curves
-* article about TDD and OpenGL (rendering offscreen image and using probe shaders)
-* article about clouds
-* 3D Worley noise 256^3 (using random points, using cells, different frequencies) and Simplex noise
-* how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
-* shadow polygonoffset?
-* how to render clouds and cloud shadows?
+  * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
+  * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
+  * global cloud map (skybox?)
+  * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
+  * article about atmosphere rendering with clouds
+* shadows
+  * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
+  * polygonoffset?
 * how to render waves
 * how to render stars
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
-* is an above-horizon boolean needed for the light-direction when computing ray-scatter and ray-scatter-forward?
-* elevation\_to\_index should use elevation value between -pi/2 and pi/2
 * only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
 * extract functions from prototype
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius, polar-radius in a configuration file
-* \_ -> - in shader file names
 * tile-size -> tilesize
 * light -> light-direction
 * radius1, radius2 -> radius, polar-radius
