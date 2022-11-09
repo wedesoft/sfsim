@@ -1,7 +1,6 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* plan work
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * clouds
@@ -30,8 +29,30 @@
   * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
   * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
   * polygonoffset?
-* how to render waves
-* how to render stars
+* hot spots for map
+* microtextures, bump maps
+* how to render water, waves
+* render stars
+  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
+  * Skydome scaled to ZFAR * 0.5
+  * no skydome and just stars as pixels?
+* spacecraft rendering
+  * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
+  * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
+  * create windows using blending
+* 3D cockpit
+  * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
+  * SpaceX cockpit: https://iss-sim.spacex.com/
+  * orbit plane alignment
+  * docking view
+  * horizon with height and variometer
+  * encounter
+    * station
+    * moon/base
+    * earth
+  * aerobrake/base roll-reversal, speed-height-distance profile
+  * heading alignment cylinder
+* plan work
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
 * only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
@@ -47,7 +68,6 @@
 * render moonlight and moon
 * organize fixtures using subdirectories
 * is all planet rendering represented as a quad-tree?
-* glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
 * normal maps
 * text rendering using bitmap fonts
 * use data-centric APIs
@@ -56,23 +76,9 @@
 * redesign floating point math of height maps
 * improve performance of quaternions (see clojure.core.matrix implementation)
 * Get scale-image to work on large images
-* Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
-* Skydome scaled to ZFAR * 0.5
 * use short integers for normal vector textures?
 * NASA docking system, soft-dock, hard-dock, https://www.youtube.com/watch?v=dWYpVfhvsak
 * EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
-* Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
-* SpaceX cockpit: https://iss-sim.spacex.com/
-* cockpit:
-  * orbit plane alignment
-  * docking view
-  * horizon with height and variometer
-  * encounter
-    * station
-    * moon/base
-    * earth
-  * aerobrake/base roll-reversal, speed-height-distance profile
-  * heading alignment cylinder
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
@@ -91,22 +97,14 @@
 * compute forces of zero-mass spring damper gears
 * cockpit: frontal and side view of moon lander
 * XBox controller
-* 3D cockpit
 * 3D moon rendering
-* elevators, trains
-* cables, pipes
-* garbage
-* advertising
 * airport-like departure tables
-* airlocks, walkways
-* fans, fog, lighting
 * bump maps
 * render articulated objects with configuration
 * suspension using spring damper elements
 * mass matrix
 * JIT compilation to speed it up
 * compiled sfsim.scm not being found
-* 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
 * music player, mp3 player
 * video communication with screen in 3D cockpit
 * autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
@@ -124,7 +122,6 @@
 * project on sphere
 * view matrix, model matrix stack, light position
 * multiple rigid or flexible objects
-* create windows using blending
 * thrusters
 * proper lift/drag ratio for high Reynolds numbers
 * draw points, lines, triangle strips, mfd for reentry and orbital mechanics
@@ -132,5 +129,4 @@
 * threads for rendering, simulation, and loading of data
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
-* atmospheric rendering, clouds, water, elevation maps, fractal micro textures and maps
 * beep-beep sound, paraglider audio?
