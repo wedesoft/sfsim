@@ -8,14 +8,14 @@ uniform int neighbours;
 
 in VS_OUT
 {
-  mediump vec2 heightcoord;
-  mediump vec2 colorcoord;
+  vec2 heightcoord;
+  vec2 colorcoord;
 } tcs_in[];
 
 out TCS_OUT
 {
-  mediump vec2 heightcoord;
-  mediump vec2 colorcoord;
+  vec2 heightcoord;
+  vec2 colorcoord;
 } tcs_out[];
 
 // Control amount of tessellation so that it matches with neighbouring patches.

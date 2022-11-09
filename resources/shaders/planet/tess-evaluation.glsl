@@ -8,14 +8,14 @@ uniform mat4 inverse_transform;
 
 in TCS_OUT
 {
-  mediump vec2 heightcoord;
-  mediump vec2 colorcoord;
+  vec2 heightcoord;
+  vec2 colorcoord;
 } tes_in[];
 
 out TES_OUT
 {
-  mediump vec2 colorcoord;
-  mediump vec2 heightcoord;
+  vec2 colorcoord;
+  vec2 heightcoord;
   highp vec3 point;
 } tes_out;
 

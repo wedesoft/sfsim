@@ -1,13 +1,13 @@
 #version 410 core
 
 in highp vec3 point;
-in mediump vec2 heightcoord;
-in mediump vec2 colorcoord;
+in vec2 heightcoord;
+in vec2 colorcoord;
 
 out VS_OUT
 {
-  mediump vec2 heightcoord;
-  mediump vec2 colorcoord;
+  vec2 heightcoord;
+  vec2 colorcoord;
 } vs_out;
 
 // Vertex shader to pass through coordinates and texture indices for heightfield and texture.

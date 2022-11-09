@@ -40,7 +40,7 @@ void main()
 
 (def vertex-color "#version 410 core
 in highp vec3 point;
-in mediump vec2 uv;
+in vec2 uv;
 out vec3 color;
 void main()
 {
@@ -49,7 +49,7 @@ void main()
 }")
 
 (def fragment-color "#version 410 core
-in mediump vec3 color;
+in vec3 color;
 out vec3 fragColor;
 void main()
 {
@@ -213,9 +213,9 @@ void main()
 
 (def vertex-texture "#version 410 core
 in highp vec3 point;
-in mediump vec2 uv;
+in vec2 uv;
 out vec3 color;
-out mediump vec2 uv_fragment;
+out vec2 uv_fragment;
 void main()
 {
   gl_Position = vec4(point, 1);
@@ -223,7 +223,7 @@ void main()
 }")
 
 (def fragment-texture-1d "#version 410 core
-in mediump vec2 uv_fragment;
+in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler1D tex;
 void main()
@@ -248,7 +248,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/floats-1d.png"))
 
 (def fragment-texture-2d "#version 410 core
-in mediump vec2 uv_fragment;
+in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2D tex;
 void main()
@@ -321,7 +321,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png"))
 
 (def fragment-texture-3d "#version 410 core
-in mediump vec2 uv_fragment;
+in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler3D tex;
 void main()
@@ -347,7 +347,7 @@ void main()
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/slice.png"))
 
 (def fragment-two-textures "#version 410 core
-in mediump vec2 uv_fragment;
+in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2D tex1;
 uniform sampler2D tex2;
@@ -470,7 +470,7 @@ void main()
           (destroy-texture tex))))
 
 (def lod-texture-1d "#version 410 core
-in mediump vec2 uv_fragment;
+in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler1D tex;
 uniform float lod;

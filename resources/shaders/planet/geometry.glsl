@@ -2,15 +2,15 @@
 layout(triangles) in;
 in TES_OUT
 {
-  mediump vec2 colorcoord;
-  mediump vec2 heightcoord;
+  vec2 colorcoord;
+  vec2 heightcoord;
   highp vec3 point;
 } geo_in[3];
 layout(triangle_strip, max_vertices = 3) out;
 out GEO_OUT
 {
-  mediump vec2 colorcoord;
-  mediump vec2 heightcoord;
+  vec2 colorcoord;
+  vec2 heightcoord;
   highp vec3 point;
 } geo_out;
 

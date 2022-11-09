@@ -14,8 +14,8 @@ uniform vec3 light_direction;
 
 in GEO_OUT
 {
-  mediump vec2 colorcoord;
-  mediump vec2 heightcoord;
+  vec2 colorcoord;
+  vec2 heightcoord;
   highp vec3 point;
 } fs_in;
 

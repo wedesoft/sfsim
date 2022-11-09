@@ -99,8 +99,8 @@ void main()
   (template/fn [selector] "#version 410 core
 in GEO_OUT
 {
-  mediump vec2 colorcoord;
-  mediump vec2 heightcoord;
+  vec2 colorcoord;
+  vec2 heightcoord;
   highp vec3 point;
 } frag_in;
 out vec3 fragColor;
@@ -306,14 +306,14 @@ void main()
 
 (def vertex-planet-probe "#version 410 core
 in highp vec3 point;
-in mediump vec2 colorcoord;
-in mediump vec2 heightcoord;
+in vec2 colorcoord;
+in vec2 heightcoord;
 uniform float radius;
 uniform float polar_radius;
 out GEO_OUT
 {
-  mediump vec2 colorcoord;
-  mediump vec2 heightcoord;
+  vec2 colorcoord;
+  vec2 heightcoord;
   highp vec3 point;
 } vs_out;
 void main()
