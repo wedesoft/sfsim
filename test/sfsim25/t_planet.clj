@@ -101,7 +101,7 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec2 heightcoord;
-  highp vec3 point;
+  vec3 point;
 } frag_in;
 out vec3 fragColor;
 void main()
@@ -305,7 +305,7 @@ void main()
          1       0  0  6378000  1              0          0   0  -1   0      1   1   1   0           0  1)
 
 (def vertex-planet-probe "#version 410 core
-in highp vec3 point;
+in vec3 point;
 in vec2 colorcoord;
 in vec2 heightcoord;
 uniform float radius;
@@ -314,7 +314,7 @@ out GEO_OUT
 {
   vec2 colorcoord;
   vec2 heightcoord;
-  highp vec3 point;
+  vec3 point;
 } vs_out;
 void main()
 {

@@ -39,10 +39,10 @@
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
 uniform mat4 transform;
-in highp vec3 point;
+in vec3 point;
 out VS_OUT
 {
-  highp vec3 direction;
+  vec3 direction;
 } vs_out;
 void main()
 {
@@ -60,7 +60,7 @@ uniform float multiplier;
 uniform float initial;
 in VS_OUT
 {
-  highp vec3 direction;
+  vec3 direction;
 } fs_in;
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);

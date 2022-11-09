@@ -620,7 +620,7 @@ void main()
   (template/fn [selector] "#version 410 core
 in VS_OUT
 {
-  highp vec3 direction;
+  vec3 direction;
 } fs_in;
 out vec3 fragColor;
 void main()

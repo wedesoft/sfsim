@@ -10,7 +10,7 @@ uniform float amplification;
 
 in VS_OUT
 {
-  highp vec3 direction;
+  vec3 direction;
 } fs_in;
 
 out vec3 fragColor;

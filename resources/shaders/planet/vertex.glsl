@@ -1,6 +1,6 @@
 #version 410 core
 
-in highp vec3 point;
+in vec3 point;
 in vec2 heightcoord;
 in vec2 colorcoord;
 

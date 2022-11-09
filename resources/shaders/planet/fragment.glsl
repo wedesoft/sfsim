@@ -16,7 +16,7 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec2 heightcoord;
-  highp vec3 point;
+  vec3 point;
 } fs_in;
 
 out vec3 fragColor;

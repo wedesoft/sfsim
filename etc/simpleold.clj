@@ -90,11 +90,11 @@ uniform float base_lod;
 uniform sampler3D worley;
 uniform sampler2D bluenoise;
 uniform sampler1D profile;
-in highp vec3 point;
+in vec3 point;
 
 in VS_OUT
 {
-  highp vec3 direction;
+  vec3 direction;
 } fs_in;
 
 out vec3 fragColor;

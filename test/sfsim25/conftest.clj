@@ -33,7 +33,7 @@
       (spit-image filename other)))
 
 (def vertex-passthrough "#version 410 core
-in highp vec3 point;
+in vec3 point;
 void main()
 {
   gl_Position = vec4(point, 1);

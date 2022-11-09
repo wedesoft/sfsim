@@ -13,7 +13,7 @@
   (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/render/red.png"))
 
 (def vertex-passthrough "#version 410 core
-in highp vec3 point;
+in vec3 point;
 void main()
 {
   gl_Position = vec4(point, 1);
@@ -39,7 +39,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
 
 (def vertex-color "#version 410 core
-in highp vec3 point;
+in vec3 point;
 in vec2 uv;
 out vec3 color;
 void main()
@@ -191,7 +191,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png"))
 
 (def vertex-transform "#version 410 core
-in highp vec3 point;
+in vec3 point;
 uniform mat4 transform;
 void main()
 {
@@ -212,7 +212,7 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
 
 (def vertex-texture "#version 410 core
-in highp vec3 point;
+in vec3 point;
 in vec2 uv;
 out vec3 color;
 out vec2 uv_fragment;

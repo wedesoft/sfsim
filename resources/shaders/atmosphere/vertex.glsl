@@ -2,11 +2,11 @@
 
 uniform mat4 projection;
 uniform mat4 transform;
-in highp vec3 point;
+in vec3 point;
 
 out VS_OUT
 {
-  highp vec3 direction;
+  vec3 direction;
 } vs_out;
 
 // Simple vertex shader passing through coordinates of background quad for rendering the atmosphere.
