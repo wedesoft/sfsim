@@ -5,11 +5,11 @@
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
-  [face level y x height-tile-size color-tile-size]
+  [face level y x height-tilesize color-tilesize]
   (let [[a b c d] (cube-map-corners face level y x)
-        h0        (/ 0.5 height-tile-size)
+        h0        (/ 0.5 height-tilesize)
         h1        (- 1.0 h0)
-        c0        (/ 0.5 color-tile-size)
+        c0        (/ 0.5 color-tilesize)
         c1        (- 1.0 c0)]
     [(mget a 0) (mget a 1) (mget a 2) h0 h0 c0 c0
      (mget b 0) (mget b 1) (mget b 2) h1 h0 c1 c0
