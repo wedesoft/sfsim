@@ -89,7 +89,6 @@ uniform float threshold;
 uniform float anisotropic;
 uniform float specular;
 uniform float cutoff;
-uniform float cloud_scatter_amount;
 uniform float amplification;
 uniform int noise_size;
 uniform float base_lod;
@@ -147,11 +146,10 @@ void main()
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = atmosphere.y / steps;
-  float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
+  float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
   vec3 rest = vec3(1, 1, 1);
   vec3 cloud = vec3(0, 0, 0);
   float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
-  float offset2 = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size) + 0.5).r;
   for (int i=0; i<steps; i++) {
     float dist = atmosphere.x + (i + offset) * step;
     float a = atmosphere.x + i * step;
@@ -161,12 +159,11 @@ void main()
     vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
     vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float density = (1 - threshold) * cloud_multiplier;
+      float density = (textureLod(worley, pos / cloud_scale, 0.0).r - threshold) * cloud_multiplier;
       if (density > 0) {
-        vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light_direction);
         float t = exp(-step * density);
         rest = rest * t * transm;
-        cloud = cloud + rest * atten;
+        cloud = cloud + rest * atten + rest * (1 - t) * vec3(1, 1, 1);
       } else {
         rest = rest * transm;
         cloud = cloud + rest * atten;
@@ -199,11 +196,10 @@ void main()
 (uniform-float program :max_height max-height)
 (uniform-float program :cloud_step 1000)
 (uniform-float program :cloud_step2 100)
-(uniform-float program :cloud_bottom 0)
-(uniform-float program :cloud_top -1)
+(uniform-float program :cloud_bottom 1500)
+(uniform-float program :cloud_top 3000)
 (uniform-float program :cloud_scale cloud-scale)
 (uniform-int program :cloud_size worley-size)
-(uniform-float program :cloud_scatter_amount 1.0)
 (uniform-int program :shadow_max_steps 80)
 (uniform-float program :specular 200)
 (uniform-float program :cutoff 0.0)
@@ -221,6 +217,7 @@ void main()
 (uniform-sampler program :profile 2)
 (uniform-sampler program :transmittance 3)
 (uniform-sampler program :ray_scatter 4)
+(uniform-sampler program :mie_strength 5)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -249,7 +246,7 @@ void main()
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           (use-program program)
-                          (use-textures W B P T S)
+                          (use-textures W B P T S M)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
                           (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
