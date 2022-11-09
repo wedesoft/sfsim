@@ -69,7 +69,7 @@
 uniform mat4 projection;
 uniform mat4 transform;
 uniform vec3 origin;
-uniform vec3 light;
+uniform vec3 light_direction;
 uniform float radius;
 uniform float max_height;
 uniform float cloud_step;
@@ -116,12 +116,12 @@ void main()
     atmosphere.y = planet.x - atmosphere.x;
     vec3 pos = origin + direction * planet.x;
     vec3 normal = normalize(pos);
-    float cos_incidence = dot(normal, light);
+    float cos_incidence = dot(normal, light_direction);
     background = vec3(max(cos_incidence, 0), 0, 0);
   } else {
-    float glare = pow(max(0, dot(direction, light)), specular) / amplification;
+    float glare = pow(max(0, dot(direction, light_direction)), specular) / amplification;
     background = vec3(glare, glare, glare);
-    background = attenuation_outer(light, origin, direction, atmosphere.x, background) * amplification;
+    background = attenuation_outer(light_direction, origin, direction, atmosphere.x, background) * amplification;
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
   float step = cloud_step;
@@ -139,17 +139,17 @@ void main()
       float h = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
       float density = (textureLod(worley, pos / cloud_scale, lod).r - (h * threshold + 1 - h)) * cloud_multiplier;
       if (density > 0) {
-        vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
+        vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light_direction);
         float t = exp(-step * density);
         float scatter;
         vec3 incoming;
         if (planet.y == 0) {
-          vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light);
+          vec2 atmosphere2 = ray_sphere(vec3(0, 0, 0), radius + max_height, pos, light_direction);
           int steps2 = min(int(ceil(atmosphere2.y / cloud_step2)), shadow_max_steps);
           float step2 = cloud_step2;
-          incoming = transmittance_outer(pos, light);
+          incoming = transmittance_outer(pos, light_direction);
           for (int j=0; j<steps2; j++) {
-            vec3 pos2 = pos + (j + offset2) * step2 * light;
+            vec3 pos2 = pos + (j + offset2) * step2 * light_direction;
             float r2 = length(pos2);
             if (r2 >= radius + cloud_bottom && r2 <= radius + cloud_top) {
               float h2 = texture(profile, (r - radius) / (cloud_top - cloud_bottom)).r;
@@ -160,7 +160,7 @@ void main()
               };
             };
           };
-          scatter = anisotropic * phase(0.76, dot(direction, light)) + 1 - anisotropic;
+          scatter = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
         } else {
           scatter = 0;
           incoming = vec3(0, 0, 0);
@@ -248,7 +248,7 @@ void main()
                           (use-textures W B P T S)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
-                          (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
+                          (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
                           (uniform-float program :threshold @threshold)
                           (uniform-float program :cloud_multiplier @multiplier)
                           (uniform-float program :anisotropic @anisotropic)

@@ -75,7 +75,7 @@
 uniform mat4 projection;
 uniform mat4 transform;
 uniform vec3 origin;
-uniform vec3 light;
+uniform vec3 light_direction;
 uniform float radius;
 uniform float max_height;
 uniform float cloud_step;
@@ -139,10 +139,10 @@ void main()
     atmosphere.y = planet.x - atmosphere.x;
     vec3 pos = origin + direction * planet.x;
     vec3 normal = normalize(pos);
-    float cos_incidence = dot(normal, light);
+    float cos_incidence = dot(normal, light_direction);
     background = vec3(max(cos_incidence, 0), 0, 0);
   } else {
-    float glare = pow(max(0, dot(direction, light)), specular);
+    float glare = pow(max(0, dot(direction, light_direction)), specular);
     background = vec3(glare, glare, glare);
   };
   int steps = int(ceil(atmosphere.y / cloud_step));
@@ -159,11 +159,11 @@ void main()
     vec3 pos = origin + dist * direction;
     float r = length(pos);
     vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
-    vec3 atten = attenuation_track(light, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
+    vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float density = (1 - threshold) * cloud_multiplier;
       if (density > 0) {
-        vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light);
+        vec2 planet = ray_sphere(vec3(0, 0, 0), radius, pos, light_direction);
         float t = exp(-step * density);
         rest = rest * t * transm;
         cloud = cloud + rest * atten;
@@ -252,7 +252,7 @@ void main()
                           (use-textures W B P T S)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
-                          (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
+                          (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
                           (uniform-float program :threshold @threshold)
                           (uniform-float program :cloud_multiplier @multiplier)
                           (uniform-float program :anisotropic @anisotropic)

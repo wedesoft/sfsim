@@ -286,7 +286,7 @@
                           (uniform-float program-atmosphere :cloud_multiplier (* 0.01 @multiplier))
                           (uniform-matrix4 program-atmosphere :transform transform)
                           (uniform-vector3 program-atmosphere :origin @position)
-                          (uniform-vector3 program-atmosphere :light (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
+                          (uniform-vector3 program-atmosphere :light_direction (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
                           (use-textures T S M W @P)
                           (render-quads atmosphere-vao))
          (print "\rthreshold (q/a)" (format "%.3f" @threshold)

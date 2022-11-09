@@ -53,7 +53,7 @@ void main()
 (def fragment-shader
 "#version 410 core
 uniform vec3 origin;
-uniform vec3 light;
+uniform vec3 light_direction;
 uniform sampler3D tex;
 uniform float threshold;
 uniform float multiplier;
@@ -90,10 +90,10 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
-  float cos_light = dot(light, direction);
+  float cos_light = dot(light_direction, direction);
   vec3 bg = 0.7 * pow(max(cos_light, 0), 1000) + vec3(0.3, 0.3, 0.5);
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
-  fragColor = cloud_track(light, origin, direction, intersection.x, intersection.x + intersection.y, bg);
+  fragColor = cloud_track(light_direction, origin, direction, intersection.x, intersection.x + intersection.y, bg);
 }")
 
 (def program
@@ -168,7 +168,7 @@ void main()
                  (uniform-float program :cloud_max_step 1.05)
                  (uniform-int program :cloud_base_samples 8)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
-                 (uniform-vector3 program :light (matrix [0 (cos @light) (sin @light)]))
+                 (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
                  (render-quads vao)))
 
 (destroy-texture tex)

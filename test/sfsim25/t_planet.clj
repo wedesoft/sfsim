@@ -271,10 +271,10 @@ vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_in
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 light = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
   vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
   vec3 water_color = vec3(0.1, 0.2, 0.4);
-  fragColor = ground_radiance(point, light, <%= water %>, <%= cos-incidence %>, <%= highlight %>, land_color, water_color);
+  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= cos-incidence %>, <%= highlight %>, land_color, water_color);
 }"))
 
 (def ground-radiance-test

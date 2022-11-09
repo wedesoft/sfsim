@@ -102,18 +102,18 @@
        (let [projection (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
              transform1 (identity-matrix 4)
              transform2 (transformation-matrix (rotation-x (/ PI 2)) (matrix [0 0 0]))
-             light (matrix [0 1 0])]
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light 0)) (matrix [0 750 -1000 1]))
+             light_direction (matrix [0 1 0])]
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light_direction 0)) (matrix [0 750 -1000 1]))
          => (roughly-matrix (matrix [1 0 1 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light 0)) (matrix [0 -750 -1000 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light_direction 0)) (matrix [0 -750 -1000 1]))
          => (roughly-matrix (matrix [1 0 0 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light 0)) (matrix [0 1000 0 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
          => (roughly-matrix (matrix [0 0 1 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light 0)) (matrix [0 5 0 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light_direction 0)) (matrix [0 5 0 1]))
          => (roughly-matrix (matrix [0 0 0 1]) 1e-6)
-         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light 0)) (matrix [0 1000 0 1]))
+         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
          => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)
-         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light 500)) (matrix [0 1500 0 1]))
+         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light_direction 500)) (matrix [0 1500 0 1]))
          => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"
