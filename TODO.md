@@ -4,6 +4,7 @@
 * plan work
 * remove lowp, mediump, highp
 * \_ -> - in shader file names
+* light -> light-direction
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * clouds
@@ -24,12 +25,12 @@
   * apply cloud texture to higher resolution picture (upscale and alpha-blend)
   * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
-  * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
   * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
   * global cloud map (skybox?)
-  * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
   * article about atmosphere rendering with clouds
 * shadows
+  * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
+  * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
   * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
   * polygonoffset?
 * how to render waves
@@ -40,8 +41,6 @@
 * extract functions from prototype
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius, polar-radius in a configuration file
-* tile-size -> tilesize
-* light -> light-direction
 * radius1, radius2 -> radius, polar-radius
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * use GMTED2010 data: https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
@@ -51,7 +50,6 @@
 * render moonlight and moon
 * organize fixtures using subdirectories
 * is all planet rendering represented as a quad-tree?
-* volumetric clouds or billboard clouds
 * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
 * normal maps
 * text rendering using bitmap fonts
