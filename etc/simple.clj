@@ -36,7 +36,7 @@
 (def keystates (atom {}))
 (def fov 45.0)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians fov)))
-(def cloud-scale 20000)
+(def cloud-scale 5000)
 (def focal-length (/ (/ (Display/getWidth) 2) (tan (to-radians (/ fov 2)))))
 (def base-lod (/ (* worley-size (tan (/ (to-radians fov) 2))) (/ (Display/getWidth) 2) cloud-scale))
 (def height-size 32)
@@ -178,6 +178,18 @@ void main()
           cloud = cloud + rest * atten;
           rest = rest * transm;
         };
+        if (rest.g < 0.05) {
+          rest = vec3(0, 0, 0);
+          break;
+        };
+      };
+      if (rest.g >= 0.05) {
+        float a = clouds.x + clouds.y;
+        float b = atmosphere.x + atmosphere.y;
+        vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
+        vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
+        cloud = cloud + rest * atten;
+        rest = rest * transm;
       };
     } else {
       float a = atmosphere.x;
