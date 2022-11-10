@@ -127,6 +127,7 @@ vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
 vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 
 void main()
 {
@@ -144,33 +145,46 @@ void main()
     float glare = pow(max(0, dot(direction, light_direction)), specular);
     background = vec3(glare, glare, glare);
   };
-  int steps = int(ceil(atmosphere.y / cloud_step));
-  float step = atmosphere.y / steps;
-  float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
   vec3 rest = vec3(1, 1, 1);
   vec3 cloud = vec3(0, 0, 0);
-  float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
-  for (int i=0; i<steps; i++) {
-    float dist = atmosphere.x + (i + offset) * step;
-    float a = atmosphere.x + i * step;
-    float b = atmosphere.x + (i + 1) * step;
-    vec3 pos = origin + dist * direction;
-    float r = length(pos);
-    vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
-    vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
-    if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float density = (textureLod(worley, pos / cloud_scale, 0.0).r - threshold) * cloud_multiplier;
-      if (density > 0) {
-        float t = exp(-step * density);
-        rest = rest * t * transm;
-        cloud = cloud + rest * atten + rest * (1 - t) * vec3(1, 1, 1);
-      } else {
-        rest = rest * transm;
-        cloud = cloud + rest * atten;
+  if (atmosphere.y > 0) {
+    vec4 clouds = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
+    if (clouds.y > 0 && clouds.x < atmosphere.x + atmosphere.y) {
+      float a = atmosphere.x;
+      float b = clouds.x;
+      vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
+      vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
+      cloud = cloud + rest * atten;
+      rest = rest * transm;
+      int steps = int(ceil(clouds.y / cloud_step));
+      float step = clouds.y / steps;
+      float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
+      float offset = texture(bluenoise, vec2(gl_FragCoord.x / noise_size, gl_FragCoord.y / noise_size)).r;
+      for (int i=0; i<steps; i++) {
+        float dist = clouds.x + (i + offset) * step;
+        float a = clouds.x + i * step;
+        float b = clouds.x + (i + 1) * step;
+        vec3 pos = origin + dist * direction;
+        float r = length(pos);
+        vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
+        vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
+        float density = (textureLod(worley, pos / cloud_scale, 0.0).r - threshold) * cloud_multiplier;
+        if (density > 0) {
+          float t = exp(-step * density);
+          cloud = cloud + rest * atten + rest * (1 - t) * vec3(1, 1, 1);
+          rest = rest * t * transm;
+        } else {
+          cloud = cloud + rest * atten;
+          rest = rest * transm;
+        };
       };
     } else {
-      rest = rest * transm;
+      float a = atmosphere.x;
+      float b = atmosphere.x + atmosphere.y;
+      vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
+      vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
       cloud = cloud + rest * atten;
+      rest = rest * transm;
     };
   };
   background = rest * background + cloud;
