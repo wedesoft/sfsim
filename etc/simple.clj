@@ -169,7 +169,8 @@ void main()
         float r = length(pos);
         vec3 transm = transmittance_track(origin + a * direction, origin + b * direction);
         vec3 atten = attenuation_track(light_direction, origin, direction, a, b, vec3(0, 0, 0)) * amplification;
-        float density = (textureLod(worley, pos / cloud_scale, 0.0).r - threshold) * cloud_multiplier;
+        float h = texture(profile, (r - radius - cloud_bottom) / (cloud_top - cloud_bottom)).r;
+        float density = (textureLod(worley, pos / cloud_scale, 0.0).r - (h * threshold + 1 - h)) * cloud_multiplier;
         if (density > 0) {
           float t = exp(-step * density);
           cloud = cloud + rest * atten + rest * (1 - t) * vec3(1, 1, 1);
