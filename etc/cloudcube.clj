@@ -1,4 +1,4 @@
-(require '[clojure.core.matrix :refer (matrix div sub mul add mget mmul) :as m]
+(require '[clojure.core.matrix :refer (matrix div sub mul add mget mmul inverse) :as m]
          '[clojure.core.matrix.linear :refer (norm)]
          '[clojure.math :refer (PI sqrt pow cos sin to-radians)]
          '[com.climate.claypoole :as cp]
@@ -25,8 +25,8 @@
 (Display/create)
 (Keyboard/create)
 
-(def z-near 10)
-(def z-far 1000)
+(def z-near 50)
+(def z-far 150)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
@@ -58,6 +58,8 @@ uniform sampler3D tex;
 uniform float threshold;
 uniform float multiplier;
 uniform float initial;
+uniform int cloud_size;
+uniform float cloud_scale;
 in VS_OUT
 {
   vec3 direction;
@@ -69,7 +71,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
 vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
 float cloud_density(vec3 point, float lod)
 {
-  float s = interpolate_3d(tex, point, vec3(-30, -30, -30), vec3(30, 30, 30));
+  float s = interpolate_3d(tex, point * cloud_size / cloud_scale, vec3(-30, -30, -30), vec3(30, 30, 30));
   return max((s - threshold) * multiplier, 0);
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
@@ -121,6 +123,58 @@ void main()
 
 (def keystates (atom {}))
 
+(def svertex-shader
+"#version 410 core
+uniform mat4 iprojection;
+in vec3 point;
+out VS_OUT
+{
+  vec3 origin;
+} vs_out;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  vec4 point = iprojection * vec4(point, 1);
+  vs_out.origin = point.xyz / point.w;
+}")
+
+(def sfragment-shader
+"#version 410 core
+uniform vec3 light_vector;
+in VS_OUT
+{
+  vec3 origin;
+} fs_in;
+out vec3 fragColor;
+vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
+void main()
+{
+  vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_vector);
+  float f = intersection.y;
+  fragColor = vec3(f, f, f);
+}")
+
+(def sprogram
+  (make-program :vertex [svertex-shader]
+                :fragment [sfragment-shader s/ray-box]))
+
+(def light-vector (matrix [0 (cos @light) (sin @light)]))
+(def transform    (transformation-matrix (quaternion->matrix @orientation) @origin))
+(def shadow-mat   (shadow-matrices projection transform light-vector 0))
+
+(let [indices      [0 1 3 2]
+      vertices     [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1]  ; quad near to light in NDCs
+      vao          (make-vertex-array-object sprogram indices vertices [:point 3])]
+  (onscreen-render (Display/getWidth) (Display/getHeight)
+                   (clear (matrix [0 0 0]))
+                   (use-program sprogram)
+                   (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
+                   (uniform-vector3 sprogram :light_vector light-vector)
+                   (render-quads vao)
+                   (destroy-vertex-array-object vao)))
+
+(destroy-program sprogram)
+
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
        (while (Keyboard/next)
@@ -164,7 +218,7 @@ void main()
                  (uniform-int program :cloud_min_samples 1)
                  (uniform-int program :cloud_max_samples 64)
                  (uniform-int program :cloud_size size)
-                 (uniform-float program :cloud_scale 60)
+                 (uniform-float program :cloud_scale 200)
                  (uniform-float program :cloud_max_step 1.05)
                  (uniform-int program :cloud_base_samples 8)
                  (uniform-float program :multiplier (* 0.1 @multiplier))
