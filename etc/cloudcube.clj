@@ -34,7 +34,7 @@
 (def anisotropic (atom 0.4))
 (def multiplier (atom 0.8))
 (def initial (atom 1.0))
-(def light (atom 0.0))
+(def light (atom (/ PI 4)))
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -170,10 +170,10 @@ void main()
     (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_RGBA32F 512 512)
     ;(GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
-    (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex 0)
+    (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 GL11/GL_TEXTURE_2D tex 0)
     (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
     (setup-rendering 512 512 false)
-    (clear (matrix [0 0 255]))
+    (clear (matrix [0 0 0]))
     (use-program sprogram)
     (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
     (uniform-vector3 sprogram :light_vector light-vector)
@@ -183,8 +183,11 @@ void main()
     (GL30/glDeleteFramebuffers fbo)
     {:texture tex :target GL11/GL_TEXTURE_2D}))
 
+(apply max (:data img))
+
 (def img (texture->vectors3 result 512 512))
 (show-image {:width 512 :height 512 :data (int-array (map (fn [[x y z]] (bit-or (bit-shift-left -1 24) (bit-shift-left x 16) (bit-shift-left y 8) z)) (partition 3 (map int (:data img)))))})
+
 ;(def img (texture->floats result 512 512))
 ;(show-floats img)
 
