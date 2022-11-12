@@ -16,7 +16,7 @@
 
 (import '[ij ImagePlus]
         '[ij.process FloatProcessor])
-(import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
+(import '[org.lwjgl.opengl Display DisplayMode PixelFormat GL11 GL20 GL30 GL32 GL42]
         '[org.lwjgl.input Keyboard])
 
 (Display/setTitle "scratch")
@@ -116,8 +116,6 @@ void main()
 
 (def tex (make-float-texture-3d {:width size :height size :depth size :data values}))
 
-;(show-floats {:width size :height size :data (float-array (take (* size size) values))})
-
 (use-program program)
 (uniform-sampler program :tex 0)
 
@@ -162,16 +160,31 @@ void main()
 (def transform    (transformation-matrix (quaternion->matrix @orientation) @origin))
 (def shadow-mat   (shadow-matrices projection transform light-vector 0))
 
-(let [indices      [0 1 3 2]
-      vertices     [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1]  ; quad near to light in NDCs
-      vao          (make-vertex-array-object sprogram indices vertices [:point 3])]
-  (onscreen-render (Display/getWidth) (Display/getHeight)
-                   (clear (matrix [0 0 0]))
-                   (use-program sprogram)
-                   (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
-                   (uniform-vector3 sprogram :light_vector light-vector)
-                   (render-quads vao)
-                   (destroy-vertex-array-object vao)))
+(def result
+  (let [indices      [0 1 3 2]
+        vertices     [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1]  ; quad near to light in NDCs
+        vao          (make-vertex-array-object sprogram indices vertices [:point 3])
+        fbo          (GL30/glGenFramebuffers)
+        tex          (GL11/glGenTextures)]
+    (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
+    (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_RGBA32F 512 512)
+    (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex 0)
+    (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
+    (setup-rendering 512 512 false)
+    (clear (matrix [0 0 0]))
+    (use-program sprogram)
+    (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
+    (uniform-vector3 sprogram :light_vector light-vector)
+    (render-quads vao)
+    (destroy-vertex-array-object vao)
+    (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
+    (GL30/glDeleteFramebuffers fbo)
+    {:texture tex :target GL11/GL_TEXTURE_2D}))
+
+(def img (texture->vectors3 result 512 512))
+
+(show-image {:width 512 :height 512 :data (int-array (map (fn [[x y z]] (bit-or (bit-shift-left -1 24) (bit-shift-left x 16) (bit-shift-left y 8) z)) (partition 3 (map int (:data img)))))})
 
 (destroy-program sprogram)
 
