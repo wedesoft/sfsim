@@ -114,7 +114,9 @@
          (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
          => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)
          (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light_direction 500)) (matrix [0 1500 0 1]))
-         => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)))
+         => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)
+         (:depth (shadow-matrices projection transform1 light_direction 0))
+         => (roughly 1500 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"
       (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])

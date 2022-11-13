@@ -144,8 +144,9 @@
         light-matrix (orient-to-light light-vector)
         bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)
         shadow-ndc   (shadow-box-to-ndc bbox)
-        shadow-map   (shadow-box-to-map bbox)]
-    {:shadow-ndc-matrix (mmul shadow-ndc light-matrix) :shadow-map-matrix (mmul shadow-map light-matrix)}))
+        shadow-map   (shadow-box-to-map bbox)
+        depth        (- (mget (:bottomleftnear bbox) 2) (mget (:toprightfar bbox) 2))]
+    {:shadow-ndc-matrix (mmul shadow-ndc light-matrix) :shadow-map-matrix (mmul shadow-map light-matrix) :depth depth}))
 
 (defn pack-matrices
   "Pack nested vector of matrices into float array"
