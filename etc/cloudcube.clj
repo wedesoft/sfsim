@@ -17,7 +17,8 @@
 (import '[ij ImagePlus]
         '[ij.process FloatProcessor])
 (import '[org.lwjgl.opengl Display DisplayMode PixelFormat GL11 GL20 GL30 GL32 GL42]
-        '[org.lwjgl.input Keyboard])
+        '[org.lwjgl.input Keyboard]
+        '[org.lwjgl BufferUtils])
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 480))
@@ -185,7 +186,7 @@ void main()
 
 (apply max (:data img))
 
-(def img (texture->vectors3 result 512 512))
+(def img (rgb-texture->vectors3 result 512 512))
 (show-image {:width 512 :height 512 :data (int-array (map (fn [[x y z]] (bit-or (bit-shift-left -1 24) (bit-shift-left x 16) (bit-shift-left y 8) z)) (partition 3 (map int (:data img)))))})
 
 (defn texture->floats2

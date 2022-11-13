@@ -356,7 +356,7 @@
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
          (GL30/glDeleteFramebuffers fbo#)))))
 
-(defn texture->floats
+(defn depth-texture->floats
   "Extract floating-point depth map from texture"
   [texture width height]
   (with-texture (:target texture) (:texture texture)
@@ -366,7 +366,7 @@
       (.get buf data)
       {:width width :height height :data data})))
 
-(defn texture->vectors3
+(defn rgb-texture->vectors3
   "Extract floating-point BGR vectors from texture"
   [texture width height]
   (with-texture (:target texture) (:texture texture)
@@ -376,7 +376,7 @@
       (.get buf data)
       {:width width :height height :data data})))
 
-(defn texture->vectors4
+(defn rgba-texture->vectors4
   "Extract floating-point BGRA vectors from texture"
   [texture width height]
   (with-texture (:target texture) (:texture texture)

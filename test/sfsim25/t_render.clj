@@ -459,7 +459,7 @@ void main()
 (fact "Render to floating-point texture (needs active OpenGL context)"
       (offscreen-render 32 32
         (let [tex (texture-render-color 8 8 true (clear (matrix [1.0 2.0 3.0])))]
-          (get-vector3 (texture->vectors3 tex 32 32) 0 0) => (matrix [1.0 2.0 3.0])
+          (get-vector3 (rgb-texture->vectors3 tex 32 32) 0 0) => (matrix [1.0 2.0 3.0])
           (destroy-texture tex))))
 
 (fact "Render to image texture (needs active OpenGL context)"
@@ -521,7 +521,7 @@ void main()
                      program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
                      vao      (make-vertex-array-object program indices vertices [:point 3])
                      tex      (texture-render-color 1 1 true (use-program program) (render-quads vao))
-                     img      (texture->vectors4 tex 1 1)]
+                     img      (rgba-texture->vectors4 tex 1 1)]
                  (deliver result (get-vector4 img 0 0))
                  (destroy-texture tex)
                  (destroy-vertex-array-object vao)
@@ -534,7 +534,7 @@ void main()
 (fact "Render empty depth map"
       (offscreen-render 32 32
         (let [tex (texture-render-depth 10 10 (clear))]
-          (get-scale (texture->floats tex 10 10) 0 0) => 0.0)))
+          (get-scale (depth-texture->floats tex 10 10) 0 0) => 0.0)))
 
 (def fragment-noop
 "#version 410 core
@@ -549,7 +549,7 @@ void main(void)
                  program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
                  vao      (make-vertex-array-object program indices vertices [:point 3])
                  tex      (texture-render-depth 10 10 (clear) (use-program program) (render-quads vao))]
-             (get-scale (texture->floats tex 10 10) 5 5) => ?z))
+             (get-scale (depth-texture->floats tex 10 10) 5 5) => ?z))
          ?z
          0.5
          0.75
