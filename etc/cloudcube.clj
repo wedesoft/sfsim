@@ -34,7 +34,6 @@
 (def threshold (atom 0.1))
 (def anisotropic (atom 0.4))
 (def multiplier (atom 0.8))
-(def initial (atom 1.0))
 (def light (atom (/ PI 4)))
 
 (def vertex-shader "#version 410 core
@@ -58,7 +57,6 @@ uniform vec3 light_direction;
 uniform sampler3D worley;
 uniform float threshold;
 uniform float multiplier;
-uniform float initial;
 uniform int cloud_size;
 uniform float cloud_scale;
 in VS_OUT
@@ -236,14 +234,12 @@ void main()
          (swap! threshold + (* dt tr))
          (swap! anisotropic + (* dt ts))
          (swap! multiplier + (* dt tm))
-         (swap! initial + (* dt ti))
          (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
          (swap! light + (* l dt))
          (swap! t0 + dt)
          (print "\rthreshold" (format "%.3f" @threshold)
                 "anisotropic" (format "%.3f" @anisotropic)
                 "multiplier" (format "%.3f" @multiplier)
-                "initial" (format "%.3f" @initial)
                 "dt" (format "%.3f" (* dt 0.001)) "              "))
        (onscreen-render (Display/getWidth) (Display/getHeight)
                  (clear (matrix [0 0 0]))
