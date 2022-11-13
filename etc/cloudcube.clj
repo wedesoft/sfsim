@@ -55,7 +55,7 @@ void main()
 "#version 410 core
 uniform vec3 origin;
 uniform vec3 light_direction;
-uniform sampler3D tex;
+uniform sampler3D worley;
 uniform float threshold;
 uniform float multiplier;
 uniform float initial;
@@ -72,7 +72,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
 vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
 float cloud_density(vec3 point, float lod)
 {
-  float s = interpolate_3d(tex, point * cloud_size / cloud_scale, vec3(-30, -30, -30), vec3(30, 30, 30));
+  float s = interpolate_3d(worley, point * cloud_size / cloud_scale, vec3(-30, -30, -30), vec3(30, 30, 30));
   return max((s - threshold) * multiplier, 0);
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
@@ -114,11 +114,10 @@ void main()
 ;(spit-floats "values.raw" (float-array values))
 
 (def values (slurp-floats "data/worley.raw"))
-
-(def tex (make-float-texture-3d {:width size :height size :depth size :data values}))
+(def worley (make-float-texture-3d {:width size :height size :depth size :data values}))
 
 (use-program program)
-(uniform-sampler program :tex 0)
+(uniform-sampler program :worley 0)
 
 (def keystates (atom {}))
 
@@ -248,7 +247,7 @@ void main()
        (onscreen-render (Display/getWidth) (Display/getHeight)
                  (clear (matrix [0 0 0]))
                  (use-program program)
-                 (use-textures tex)
+                 (use-textures worley)
                  (uniform-matrix4 program :projection projection)
                  (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
                  (uniform-vector3 program :origin @origin)
@@ -265,7 +264,7 @@ void main()
                  (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
                  (render-quads vao)))
 
-(destroy-texture tex)
+(destroy-texture worley)
 (destroy-vertex-array-object vao)
 (destroy-program program)
 (Display/destroy)
