@@ -16,7 +16,7 @@
 
 (import '[ij ImagePlus]
         '[ij.process FloatProcessor])
-(import '[org.lwjgl.opengl Display DisplayMode PixelFormat GL11 GL20 GL30 GL32 GL42]
+(import '[org.lwjgl.opengl Display DisplayMode PixelFormat GL11 GL12 GL20 GL30 GL32 GL42]
         '[org.lwjgl.input Keyboard]
         '[org.lwjgl BufferUtils])
 
@@ -144,13 +144,27 @@ in VS_OUT
 {
   vec3 origin;
 } fs_in;
-out vec3 fragColor;
+layout (location = 0) out float color0;
+layout (location = 1) out float color1;
+layout (location = 2) out float color2;
+layout (location = 3) out float color3;
+layout (location = 4) out float color4;
+layout (location = 5) out float color5;
+layout (location = 6) out float color6;
+layout (location = 7) out float color7;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_vector);
   float f = intersection.y;
-  fragColor = vec3(f, f, f);
+  color0 = 0.1 * f;
+  color1 = 0.2 * f;
+  color2 = 0.3 * f;
+  color3 = 0.4 * f;
+  color4 = 0.5 * f;
+  color5 = 0.6 * f;
+  color6 = 0.7 * f;
+  color7 = 0.8 * f;
 }")
 
 (def sprogram
@@ -168,12 +182,12 @@ void main()
         fbo          (GL30/glGenFramebuffers)
         tex          (GL11/glGenTextures)]
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
-    (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
-    (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
-    (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 GL11/GL_TEXTURE_2D tex 0)
-    (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
+    (GL11/glBindTexture GL12/GL_TEXTURE_3D tex)
+    (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 8)
+    (doseq [i (range 8)]
+           (GL30/glFramebufferTexture3D GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) GL12/GL_TEXTURE_3D tex 0 i))
+    (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 8)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
     (setup-rendering 512 512 false)
-    (clear (matrix [0 0 0]))
     (use-program sprogram)
     (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
     (uniform-vector3 sprogram :light_vector light-vector)
@@ -181,20 +195,21 @@ void main()
     (destroy-vertex-array-object vao)
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
     (GL30/glDeleteFramebuffers fbo)
-    {:texture tex :target GL11/GL_TEXTURE_2D}))
+    {:texture tex :target GL12/GL_TEXTURE_3D}))
 
 
 (defn texture->floats
   "Extract floating-point depth map from texture"
-  [texture width height]
+  [texture width height depth layer]
   (with-texture (:target texture) (:texture texture)
-    (let [buf  (BufferUtils/createFloatBuffer (* width height))
-          data (float-array (* width height))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
+    (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
+          size (* width height)
+          data (float-array (* width height depth))]
+      (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      {:width width :height height :data (float-array (take size (drop (* layer size) data)))})))
 
-(def img (texture->floats result 512 512))
+(def img (texture->floats result 512 512 8 7))
 (apply max (:data img))
 (show-floats img)
 
