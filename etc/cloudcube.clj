@@ -136,7 +136,14 @@ void main()
 
 (def sfragment-shader
 "#version 410 core
+uniform sampler3D worley;
 uniform vec3 light_vector;
+uniform float depth;
+uniform float threshold;
+uniform float multiplier;
+uniform int cloud_size;
+uniform float cloud_scale;
+uniform int cloud_base_samples;
 in VS_OUT
 {
   vec3 origin;
@@ -150,6 +157,11 @@ layout (location = 5) out float color5;
 layout (location = 6) out float color6;
 layout (location = 7) out float color7;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
+float cloud_density(vec3 point, float lod)
+{
+  float s = interpolate_3d(worley, point * cloud_size / cloud_scale, vec3(-30, -30, -30), vec3(30, 30, 30));
+  return max((s - threshold) * multiplier, 0);
+}
 void main()
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_vector);
@@ -167,6 +179,9 @@ void main()
 (def sprogram
   (make-program :vertex [svertex-shader]
                 :fragment [sfragment-shader s/ray-box]))
+
+(use-program program)
+(uniform-sampler program :worley 0)
 
 (def light-vector (matrix [0 (cos @light) (sin @light)]))
 (def transform    (transformation-matrix (quaternion->matrix @orientation) @origin))
@@ -186,8 +201,17 @@ void main()
     (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 8)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
     (setup-rendering 512 512 false)
     (use-program sprogram)
+    (use-textures worley)
     (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
     (uniform-vector3 sprogram :light_vector light-vector)
+    (uniform-float sprogram :depth (:depth shadow-mat))
+    (uniform-float sprogram :threshold @threshold)
+    (uniform-float sprogram :anisotropic @anisotropic)
+    (uniform-float sprogram :multiplier (* 0.1 @multiplier))
+    (uniform-float sprogram :cloud_scatter_amount 1.0)
+    (uniform-int program :cloud_base_samples 64)
+    (uniform-int sprogram :cloud_size size)
+    (uniform-float sprogram :cloud_scale 350)
     (render-quads vao)
     (destroy-vertex-array-object vao)
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)

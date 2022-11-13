@@ -1,12 +1,10 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* draw to 8 color attachments
+* clouds: deep opacity maps (iso-surfaces) using 3D texture
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * clouds
-  * http://advances.realtimerendering.com/s2015/index.html
-  * cloud density function using 3D textures and vertical threshold curves
   * add clouds to atmospheric and planetary shader
   * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
   * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
