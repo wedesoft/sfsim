@@ -169,8 +169,7 @@ void main()
         tex          (GL11/glGenTextures)]
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D tex)
-    (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_RGBA32F 512 512)
-    ;(GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
+    (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
     (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 GL11/GL_TEXTURE_2D tex 0)
     (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
     (setup-rendering 512 512 false)
@@ -184,12 +183,8 @@ void main()
     (GL30/glDeleteFramebuffers fbo)
     {:texture tex :target GL11/GL_TEXTURE_2D}))
 
-(apply max (:data img))
 
-(def img (rgb-texture->vectors3 result 512 512))
-(show-image {:width 512 :height 512 :data (int-array (map (fn [[x y z]] (bit-or (bit-shift-left -1 24) (bit-shift-left x 16) (bit-shift-left y 8) z)) (partition 3 (map int (:data img)))))})
-
-(defn texture->floats2
+(defn texture->floats
   "Extract floating-point depth map from texture"
   [texture width height]
   (with-texture (:target texture) (:texture texture)
@@ -199,7 +194,8 @@ void main()
       (.get buf data)
       {:width width :height height :data data})))
 
-(def img (texture->floats2 result 512 512))
+(def img (texture->floats result 512 512))
+(apply max (:data img))
 (show-floats img)
 
 (destroy-program sprogram)
