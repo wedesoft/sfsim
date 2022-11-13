@@ -188,8 +188,18 @@ void main()
 (def img (texture->vectors3 result 512 512))
 (show-image {:width 512 :height 512 :data (int-array (map (fn [[x y z]] (bit-or (bit-shift-left -1 24) (bit-shift-left x 16) (bit-shift-left y 8) z)) (partition 3 (map int (:data img)))))})
 
-;(def img (texture->floats result 512 512))
-;(show-floats img)
+(defn texture->floats2
+  "Extract floating-point depth map from texture"
+  [texture width height]
+  (with-texture (:target texture) (:texture texture)
+    (let [buf  (BufferUtils/createFloatBuffer (* width height))
+          data (float-array (* width height))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(def img (texture->floats2 result 512 512))
+(show-floats img)
 
 (destroy-program sprogram)
 
