@@ -140,10 +140,12 @@ uniform sampler3D worley;
 uniform vec3 light_vector;
 uniform float depth;
 uniform float threshold;
+uniform float anisotropic;
 uniform float multiplier;
 uniform int cloud_size;
 uniform float cloud_scale;
 uniform int cloud_base_samples;
+uniform float cloud_scatter_amount;
 in VS_OUT
 {
   vec3 origin;
@@ -157,6 +159,8 @@ layout (location = 5) out float color5;
 layout (location = 6) out float color6;
 layout (location = 7) out float color7;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
+float interpolate_3d(sampler3D table, vec3 point, vec3 box_min, vec3 box_max);
+float phase(float g, float mu);
 float cloud_density(vec3 point, float lod)
 {
   float s = interpolate_3d(worley, point * cloud_size / cloud_scale, vec3(-30, -30, -30), vec3(30, 30, 30));
@@ -165,20 +169,35 @@ float cloud_density(vec3 point, float lod)
 void main()
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_vector);
-  float f = intersection.y;
-  color0 = 0.1 * f;
-  color1 = 0.2 * f;
-  color2 = 0.3 * f;
-  color3 = 0.4 * f;
-  color4 = 0.5 * f;
-  color5 = 0.6 * f;
-  color6 = 0.7 * f;
-  color7 = 0.8 * f;
+  float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
+  float stepsize = 60.0 / cloud_base_samples;
+  int steps = int(ceil(intersection.y / stepsize));
+  stepsize = intersection.y / steps;
+  float previous_transmittance = 1.0;
+  for (int i=0; i<steps; i++) {
+    float dist = intersection.x + (i + 0.5) * stepsize;
+    vec3 point = fs_in.origin - light_vector * dist;
+    float density = cloud_density(point, 0.0);
+    float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
+    float transmittance = previous_transmittance * transmittance_step;
+    if (previous_transmittance > 6.0/7.0 && transmittance <= 6.0/7.0) {
+      float d = intersection.x + (i + (previous_transmittance - 6.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
+      color0 = d / depth;
+    };
+  };
+  color0 = 0.1; // 6/7
+  color1 = 0.2; // 5/7
+  color2 = 0.3; // 4/7
+  color3 = 0.4; // 3/7
+  color4 = 0.5; // 2/7
+  color5 = 0.6; // 1/7
+  color6 = 0.7; // 0/7
+  color7 = 0.8; // final
 }")
 
 (def sprogram
   (make-program :vertex [svertex-shader]
-                :fragment [sfragment-shader s/ray-box]))
+                :fragment [sfragment-shader s/ray-box s/interpolate-3d phase-function s/convert-3d-index]))
 
 (use-program program)
 (uniform-sampler program :worley 0)
