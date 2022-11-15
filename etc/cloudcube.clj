@@ -183,15 +183,33 @@ void main()
       float d = intersection.x + (i + (previous_transmittance - 6.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
       color0 = d / depth;
     };
+    if (previous_transmittance > 5.0/7.0 && transmittance <= 5.0/7.0) {
+      float d = intersection.x + (i + (previous_transmittance - 5.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
+      color1 = d / depth;
+    };
+    if (previous_transmittance > 4.0/7.0 && transmittance <= 4.0/7.0) {
+      float d = intersection.x + (i + (previous_transmittance - 4.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
+      color2 = d / depth;
+    };
+    if (previous_transmittance > 3.0/7.0 && transmittance <= 3.0/7.0) {
+      float d = intersection.x + (i + (previous_transmittance - 3.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
+      color3 = d / depth;
+    };
+    if (previous_transmittance > 2.0/7.0 && transmittance <= 2.0/7.0) {
+      float d = intersection.x + (i + (previous_transmittance - 2.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
+      color4 = d / depth;
+    };
+    if (previous_transmittance > 1.0/7.0 && transmittance <= 1.0/7.0) {
+      float d = intersection.x + (i + (previous_transmittance - 1.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
+      color5 = d / depth;
+    };
+    if (previous_transmittance > 0.0/7.0 && transmittance <= 0.0/7.0) {
+      float d = intersection.x + (i + (previous_transmittance - 0.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
+      color6 = d / depth;
+    };
+    previous_transmittance = transmittance;
   };
-  color0 = 0.1; // 6/7
-  color1 = 0.2; // 5/7
-  color2 = 0.3; // 4/7
-  color3 = 0.4; // 3/7
-  color4 = 0.5; // 2/7
-  color5 = 0.6; // 1/7
-  color6 = 0.7; // 0/7
-  color7 = 0.8; // final
+  color7 = previous_transmittance;
 }")
 
 (def sprogram
