@@ -35,6 +35,7 @@
 (def anisotropic (atom 0.4))
 (def multiplier (atom 0.8))
 (def light (atom (/ PI 4)))
+(def keystates (atom {}))
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -116,8 +117,6 @@ void main()
 
 (use-program program)
 (uniform-sampler program :worley 0)
-
-(def keystates (atom {}))
 
 (def svertex-shader
 "#version 410 core
