@@ -270,7 +270,6 @@ void main()
 (apply max (:data img))
 (show-floats img)
 
-(destroy-program sprogram)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -324,4 +323,5 @@ void main()
 (destroy-texture worley)
 (destroy-vertex-array-object vao)
 (destroy-program program)
+(destroy-program sprogram)
 (Display/destroy)
