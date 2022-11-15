@@ -1,7 +1,7 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* clouds: deep opacity maps (iso-surfaces) using 3D texture
+* clouds: deep opacity maps (iso-surfaces), use array texture (no interpolation in 3rd dimension), use separate shadow map?
 * put deep opacity map functions under test
 * write article about it
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
