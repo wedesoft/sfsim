@@ -108,10 +108,8 @@ void main()
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
 (def size 128)
-
 ;(def values (worley-noise 12 size true))
 ;(spit-floats "values.raw" (float-array values))
-
 (def values (slurp-floats "data/worley.raw"))
 (def worley (make-float-texture-3d {:width size :height size :depth size :data values}))
 
@@ -230,10 +228,10 @@ void main()
         fbo          (GL30/glGenFramebuffers)
         tex          (GL11/glGenTextures)]
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
-    (GL11/glBindTexture GL12/GL_TEXTURE_3D tex)
-    (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 8)
+    (GL11/glBindTexture GL30/GL_TEXTURE_2D_ARRAY tex)
+    (GL42/glTexStorage3D GL30/GL_TEXTURE_2D_ARRAY 1 GL30/GL_R32F 512 512 8)
     (doseq [i (range 8)]
-           (GL30/glFramebufferTexture3D GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) GL12/GL_TEXTURE_3D tex 0 i))
+           (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) tex 0 i))
     (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 8)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
     (setup-rendering 512 512 false)
     (use-program sprogram)
@@ -252,7 +250,7 @@ void main()
     (destroy-vertex-array-object vao)
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
     (GL30/glDeleteFramebuffers fbo)
-    {:texture tex :target GL12/GL_TEXTURE_3D}))
+    {:texture tex :target GL30/GL_TEXTURE_2D_ARRAY}))
 
 
 (defn texture->floats
@@ -262,11 +260,11 @@ void main()
     (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
           size (* width height)
           data (float-array (* width height depth))]
-      (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage GL30/GL_TEXTURE_2D_ARRAY 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data (float-array (take size (drop (* layer size) data)))})))
 
-(def img (texture->floats result 512 512 8 7))
+(def img (texture->floats result 512 512 8 0))
 (apply max (:data img))
 (show-floats img)
 
