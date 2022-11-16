@@ -173,6 +173,7 @@ void main()
   float previous_transmittance = 1.0;
   float previous_depth = intersection.x;
   float start_depth = 0.0;
+  int filled = 0;
   for (int i=0; i<steps; i++) {
     float dist = intersection.x + (i + 0.5) * stepsize;
     float depth = intersection.x + (i + 1) * stepsize;
@@ -185,7 +186,6 @@ void main()
     if (density > 0) {
       float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
       transmittance = previous_transmittance * transmittance_step;
-      previous_transmittance = transmittance;
     } else {
       transmittance = previous_transmittance;
     };
@@ -193,34 +193,47 @@ void main()
       float s = (start_depth + 1 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity1 = t;
+      filled = 1;
     };
     if (previous_depth < start_depth + 2 * separation && depth >= start_depth + 2 * separation) {
       float s = (start_depth + 2 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity2 = t;
+      filled = 2;
     };
     if (previous_depth < start_depth + 3 * separation && depth >= start_depth + 3 * separation) {
       float s = (start_depth + 3 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity3 = t;
+      filled = 3;
     };
     if (previous_depth < start_depth + 4 * separation && depth >= start_depth + 4 * separation) {
       float s = (start_depth + 4 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity4 = t;
+      filled = 4;
     };
     if (previous_depth < start_depth + 5 * separation && depth >= start_depth + 5 * separation) {
       float s = (start_depth + 5 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity5 = t;
+      filled = 5;
     };
     if (previous_depth < start_depth + 6 * separation && depth >= start_depth + 6 * separation) {
       float s = (start_depth + 6 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity6 = t;
+      filled = 6;
     };
     previous_depth = depth;
+    previous_transmittance = transmittance;
   };
+  if (filled <= 0) opacity1 = previous_transmittance;
+  if (filled <= 1) opacity2 = previous_transmittance;
+  if (filled <= 2) opacity3 = previous_transmittance;
+  if (filled <= 3) opacity4 = previous_transmittance;
+  if (filled <= 4) opacity5 = previous_transmittance;
+  if (filled <= 5) opacity6 = previous_transmittance;
   opacity_shape = start_depth / depth;
 }")
 
@@ -293,7 +306,7 @@ void main()
       (.get buf data)
       {:width width :height height :data data})))
 
-(def img (texture->floats (result 0) 512 512 6 5))
+(def img (texture->floats (result 0) 512 512 6 0))
 (apply max (:data img))
 (show-floats img)
 
