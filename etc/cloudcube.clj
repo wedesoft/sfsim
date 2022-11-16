@@ -136,6 +136,7 @@ void main()
 uniform sampler3D worley;
 uniform vec3 light_vector;
 uniform float depth;
+uniform float separation;
 uniform float threshold;
 uniform float anisotropic;
 uniform float multiplier;
@@ -147,14 +148,13 @@ in VS_OUT
 {
   vec3 origin;
 } fs_in;
-layout (location = 0) out float color0;
-layout (location = 1) out float color1;
-layout (location = 2) out float color2;
-layout (location = 3) out float color3;
-layout (location = 4) out float color4;
-layout (location = 5) out float color5;
-layout (location = 6) out float color6;
-layout (location = 7) out float color7;
+layout (location = 0) out float opacity1;
+layout (location = 1) out float opacity2;
+layout (location = 2) out float opacity3;
+layout (location = 3) out float opacity4;
+layout (location = 4) out float opacity5;
+layout (location = 5) out float opacity6;
+layout (location = 6) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D table, vec3 point, vec3 box_min, vec3 box_max);
 float phase(float g, float mu);
@@ -171,43 +171,57 @@ void main()
   int steps = int(ceil(intersection.y / stepsize));
   stepsize = intersection.y / steps;
   float previous_transmittance = 1.0;
+  float previous_depth = intersection.x;
+  float start_depth = 0.0;
   for (int i=0; i<steps; i++) {
     float dist = intersection.x + (i + 0.5) * stepsize;
+    float depth = intersection.x + (i + 1) * stepsize;
     vec3 point = fs_in.origin - light_vector * dist;
     float density = cloud_density(point, 0.0);
-    float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
-    float transmittance = previous_transmittance * transmittance_step;
-    if (previous_transmittance > 6.0/7.0 && transmittance <= 6.0/7.0) {
-      float d = intersection.x + (i + (previous_transmittance - 6.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
-      color0 = d / depth;
+    float transmittance;
+    if (previous_transmittance == 1.0) {
+      start_depth = intersection.x + i * stepsize;
     };
-    if (previous_transmittance > 5.0/7.0 && transmittance <= 5.0/7.0) {
-      float d = intersection.x + (i + (previous_transmittance - 5.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
-      color1 = d / depth;
+    if (density > 0) {
+      float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
+      transmittance = previous_transmittance * transmittance_step;
+      previous_transmittance = transmittance;
+    } else {
+      transmittance = previous_transmittance;
     };
-    if (previous_transmittance > 4.0/7.0 && transmittance <= 4.0/7.0) {
-      float d = intersection.x + (i + (previous_transmittance - 4.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
-      color2 = d / depth;
+    if (previous_depth < start_depth + 1 * separation && depth >= start_depth + 1 * separation) {
+      float s = (start_depth + 1 * separation - previous_depth) / (depth - previous_depth);
+      float t = s * transmittance + (1 - s) * previous_transmittance;
+      opacity1 = t;
     };
-    if (previous_transmittance > 3.0/7.0 && transmittance <= 3.0/7.0) {
-      float d = intersection.x + (i + (previous_transmittance - 3.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
-      color3 = d / depth;
+    if (previous_depth < start_depth + 2 * separation && depth >= start_depth + 2 * separation) {
+      float s = (start_depth + 2 * separation - previous_depth) / (depth - previous_depth);
+      float t = s * transmittance + (1 - s) * previous_transmittance;
+      opacity2 = t;
     };
-    if (previous_transmittance > 2.0/7.0 && transmittance <= 2.0/7.0) {
-      float d = intersection.x + (i + (previous_transmittance - 2.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
-      color4 = d / depth;
+    if (previous_depth < start_depth + 3 * separation && depth >= start_depth + 3 * separation) {
+      float s = (start_depth + 3 * separation - previous_depth) / (depth - previous_depth);
+      float t = s * transmittance + (1 - s) * previous_transmittance;
+      opacity3 = t;
     };
-    if (previous_transmittance > 1.0/7.0 && transmittance <= 1.0/7.0) {
-      float d = intersection.x + (i + (previous_transmittance - 1.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
-      color5 = d / depth;
+    if (previous_depth < start_depth + 4 * separation && depth >= start_depth + 4 * separation) {
+      float s = (start_depth + 4 * separation - previous_depth) / (depth - previous_depth);
+      float t = s * transmittance + (1 - s) * previous_transmittance;
+      opacity4 = t;
     };
-    if (previous_transmittance > 0.0/7.0 && transmittance <= 0.0/7.0) {
-      float d = intersection.x + (i + (previous_transmittance - 0.0/7.0) / (previous_transmittance - transmittance)) * stepsize;
-      color6 = d / depth;
+    if (previous_depth < start_depth + 5 * separation && depth >= start_depth + 5 * separation) {
+      float s = (start_depth + 5 * separation - previous_depth) / (depth - previous_depth);
+      float t = s * transmittance + (1 - s) * previous_transmittance;
+      opacity5 = t;
     };
-    previous_transmittance = transmittance;
+    if (previous_depth < start_depth + 6 * separation && depth >= start_depth + 6 * separation) {
+      float s = (start_depth + 6 * separation - previous_depth) / (depth - previous_depth);
+      float t = s * transmittance + (1 - s) * previous_transmittance;
+      opacity6 = t;
+    };
+    previous_depth = depth;
   };
-  color7 = previous_transmittance;
+  opacity_shape = start_depth / depth;
 }")
 
 (def sprogram
@@ -222,23 +236,28 @@ void main()
 (def shadow-mat   (shadow-matrices projection transform light-vector 0))
 
 (def result
-  (let [indices      [0 1 3 2]
-        vertices     [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1]  ; quad near to light in NDCs
-        vao          (make-vertex-array-object sprogram indices vertices [:point 3])
-        fbo          (GL30/glGenFramebuffers)
-        tex          (GL11/glGenTextures)]
+  (let [indices       [0 1 3 2]
+        vertices      [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1]  ; quad near to light in NDCs
+        vao           (make-vertex-array-object sprogram indices vertices [:point 3])
+        fbo           (GL30/glGenFramebuffers)
+        opacity       (GL11/glGenTextures)
+        opacity-shape (GL11/glGenTextures)]
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
-    (GL11/glBindTexture GL30/GL_TEXTURE_2D_ARRAY tex)
-    (GL42/glTexStorage3D GL30/GL_TEXTURE_2D_ARRAY 1 GL30/GL_R32F 512 512 8)
-    (doseq [i (range 8)]
-           (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) tex 0 i))
-    (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 8)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
+    (GL11/glBindTexture GL12/GL_TEXTURE_3D opacity)
+    (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 6)
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D opacity-shape)
+    (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
+    (doseq [i (range 6)]
+           (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) opacity 0 i))
+    (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT6 GL11/GL_TEXTURE_2D opacity-shape 0)
+    (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 7)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
     (setup-rendering 512 512 false)
     (use-program sprogram)
     (use-textures worley)
     (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
     (uniform-vector3 sprogram :light_vector light-vector)
     (uniform-float sprogram :depth (:depth shadow-mat))
+    (uniform-float sprogram :separation 10.0)
     (uniform-float sprogram :threshold @threshold)
     (uniform-float sprogram :anisotropic @anisotropic)
     (uniform-float sprogram :multiplier (* 0.1 @multiplier))
@@ -250,8 +269,7 @@ void main()
     (destroy-vertex-array-object vao)
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
     (GL30/glDeleteFramebuffers fbo)
-    {:texture tex :target GL30/GL_TEXTURE_2D_ARRAY}))
-
+    [{:texture opacity :target GL12/GL_TEXTURE_3D} {:texture opacity-shape :target GL11/GL_TEXTURE_2D}]))
 
 (defn texture->floats
   "Extract floating-point depth map from texture"
@@ -260,14 +278,26 @@ void main()
     (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
           size (* width height)
           data (float-array (* width height depth))]
-      (GL11/glGetTexImage GL30/GL_TEXTURE_2D_ARRAY 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data (float-array (take size (drop (* layer size) data)))})))
 
-(def img (texture->floats result 512 512 8 0))
+(defn shape->floats
+  "Extract floating-point depth map from texture"
+  [texture width height]
+  (with-texture (:target texture) (:texture texture)
+    (let [buf  (BufferUtils/createFloatBuffer (* width height))
+          size (* width height)
+          data (float-array (* width height))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(def img (texture->floats (result 0) 512 512 6 5))
 (apply max (:data img))
 (show-floats img)
 
+(show-floats (shape->floats (result 1) 512 512))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
