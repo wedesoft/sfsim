@@ -53,9 +53,12 @@ void main()
 
 (def fragment-shader
 "#version 410 core
+uniform sampler3D worley;
+uniform sampler3D opacity;
+uniform sampler2D opacity_shape;
 uniform vec3 origin;
 uniform vec3 light_direction;
-uniform sampler3D worley;
+uniform mat4 shadow;
 uniform float threshold;
 uniform float multiplier;
 uniform int cloud_size;
@@ -76,10 +79,12 @@ float cloud_density(vec3 point, float lod)
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
-  vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), point, light_direction);
-  vec3 p = point + intersection.x * light_direction;
-  vec3 q = point + (intersection.x + intersection.y) * light_direction;
-  return cloud_track_base(point, light_direction, intersection.x, intersection.x + intersection.y, vec3(1, 1, 1), 0);
+  vec4 p = shadow * vec4(point, 1);
+  float offset = texture(opacity_shape, p.xy).r;
+  float z = (1 - p.z - offset);
+  vec3 idx = vec3(p.xy, z);
+  float o = texture(opacity, idx).r;
+  return vec3(o, o, o);
 }
 vec3 transmittance_track(vec3 p, vec3 q)
 {
@@ -115,6 +120,8 @@ void main()
 
 (use-program program)
 (uniform-sampler program :worley 0)
+(uniform-sampler program :opacity 1)
+(uniform-sampler program :opacity_shape 2)
 
 (def svertex-shader
 "#version 410 core
@@ -258,8 +265,13 @@ void main()
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
     (GL11/glBindTexture GL12/GL_TEXTURE_3D opacity)
     (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 6)
+    (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE)
     (GL11/glBindTexture GL11/GL_TEXTURE_2D opacity-shape)
     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
     (doseq [i (range 6)]
            (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) opacity 0 i))
     (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT6 GL11/GL_TEXTURE_2D opacity-shape 0)
@@ -283,6 +295,9 @@ void main()
     (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
     (GL30/glDeleteFramebuffers fbo)
     [{:texture opacity :target GL12/GL_TEXTURE_3D} {:texture opacity-shape :target GL11/GL_TEXTURE_2D}]))
+
+(def opacity (result 0))
+(def opacity-shape (result 1))
 
 (defn texture->floats
   "Extract floating-point depth map from texture"
@@ -344,9 +359,10 @@ void main()
        (onscreen-render (Display/getWidth) (Display/getHeight)
                  (clear (matrix [0 0 0]))
                  (use-program program)
-                 (use-textures worley)
+                 (use-textures worley opacity opacity-shape)
                  (uniform-matrix4 program :projection projection)
                  (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
+                 (uniform-matrix4 program :shadow (:shadow-map-matrix shadow-mat))
                  (uniform-vector3 program :origin @origin)
                  (uniform-float program :threshold @threshold)
                  (uniform-float program :anisotropic @anisotropic)
