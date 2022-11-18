@@ -31,9 +31,9 @@
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 75)))
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
-(def threshold (atom 0.1))
-(def anisotropic (atom 0.4))
-(def multiplier (atom 0.8))
+(def threshold (atom 0.5))
+(def anisotropic (atom 0.3))
+(def multiplier (atom 5.0))
 (def light (atom (/ PI 4)))
 (def keystates (atom {}))
 
@@ -141,7 +141,7 @@ void main()
 (def sfragment-shader
 "#version 410 core
 uniform sampler3D worley;
-uniform vec3 light_vector;
+uniform vec3 light_direction;
 uniform float depth;
 uniform float separation;
 uniform float threshold;
@@ -172,7 +172,7 @@ float cloud_density(vec3 point, float lod)
 }
 void main()
 {
-  vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_vector);
+  vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_direction);
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   float stepsize = 60.0 / cloud_base_samples;
   int steps = int(ceil(intersection.y / stepsize));
@@ -184,7 +184,7 @@ void main()
   for (int i=0; i<steps; i++) {
     float dist = intersection.x + (i + 0.5) * stepsize;
     float depth = intersection.x + (i + 1) * stepsize;
-    vec3 point = fs_in.origin - light_vector * dist;
+    vec3 point = fs_in.origin - light_direction * dist;
     float density = cloud_density(point, 0.0);
     float transmittance;
     if (previous_transmittance == 1.0) {
@@ -248,86 +248,28 @@ void main()
   (make-program :vertex [svertex-shader]
                 :fragment [sfragment-shader s/ray-box s/interpolate-3d phase-function s/convert-3d-index]))
 
-(use-program program)
-(uniform-sampler program :worley 0)
+(use-program sprogram)
+(uniform-sampler sprogram :worley 0)
 
-(def light-vector (matrix [0 (cos @light) (sin @light)]))
-(def transform    (transformation-matrix (quaternion->matrix @orientation) @origin))
-(def shadow-mat   (shadow-matrices projection transform light-vector 0))
+(def indices [0 1 3 2])
+(def vertices [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1])  ; quad near to light in NDCs
+(def vao2 (make-vertex-array-object sprogram indices vertices [:point 3]))
 
-(def result
-  (let [indices       [0 1 3 2]
-        vertices      [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1]  ; quad near to light in NDCs
-        vao           (make-vertex-array-object sprogram indices vertices [:point 3])
-        fbo           (GL30/glGenFramebuffers)
-        opacity       (GL11/glGenTextures)
-        opacity-shape (GL11/glGenTextures)]
-    (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
-    (GL11/glBindTexture GL12/GL_TEXTURE_3D opacity)
-    (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 6)
-    (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glBindTexture GL11/GL_TEXTURE_2D opacity-shape)
-    (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-    (doseq [i (range 6)]
-           (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) opacity 0 i))
-    (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT6 GL11/GL_TEXTURE_2D opacity-shape 0)
-    (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 7)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
-    (setup-rendering 512 512 false)
-    (use-program sprogram)
-    (use-textures worley)
-    (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
-    (uniform-vector3 sprogram :light_vector light-vector)
-    (uniform-float sprogram :depth (:depth shadow-mat))
-    (uniform-float sprogram :separation 10.0)
-    (uniform-float sprogram :threshold @threshold)
-    (uniform-float sprogram :anisotropic @anisotropic)
-    (uniform-float sprogram :multiplier (* 0.1 @multiplier))
-    (uniform-float sprogram :cloud_scatter_amount 1.0)
-    (uniform-int sprogram :cloud_base_samples 64)
-    (uniform-int sprogram :cloud_size size)
-    (uniform-float sprogram :cloud_scale 350)
-    (render-quads vao)
-    (destroy-vertex-array-object vao)
-    (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
-    (GL30/glDeleteFramebuffers fbo)
-    [{:texture opacity :target GL12/GL_TEXTURE_3D} {:texture opacity-shape :target GL11/GL_TEXTURE_2D}]))
-
-(def opacity (result 0))
-(def opacity-shape (result 1))
-
-(defn texture->floats
-  "Extract floating-point depth map from texture"
-  [texture width height depth layer]
-  (with-texture (:target texture) (:texture texture)
-    (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
-          size (* width height)
-          data (float-array (* width height depth))]
-      (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
-      (.get buf data)
-      {:width width :height height :data (float-array (take size (drop (* layer size) data)))})))
-
-(defn shape->floats
-  "Extract floating-point depth map from texture"
-  [texture width height]
-  (with-texture (:target texture) (:texture texture)
-    (let [buf  (BufferUtils/createFloatBuffer (* width height))
-          size (* width height)
-          data (float-array (* width height))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
-      (.get buf data)
-      {:width width :height height :data data})))
-
-(def img (texture->floats (result 0) 512 512 6 0))
-(apply max (:data img))
-(show-floats img)
-
-(show-floats (shape->floats (result 1) 512 512))
+(def opacity (GL11/glGenTextures))
+(def opacity-shape (GL11/glGenTextures))
+(GL11/glBindTexture GL12/GL_TEXTURE_3D opacity)
+(GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 6)
+(GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE)
+(GL11/glBindTexture GL11/GL_TEXTURE_2D opacity-shape)
+(GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 
 (def t0 (atom (System/currentTimeMillis)))
+(def tf @t0)
+(def n (atom 0))
 (while (not (Display/isCloseRequested))
        (while (Keyboard/next)
               (let [state     (Keyboard/getEventKeyState)
@@ -352,31 +294,63 @@ void main()
          (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
          (swap! light + (* l dt))
          (swap! t0 + dt)
+         (swap! n + 1)
          (print "\rthreshold" (format "%.3f" @threshold)
                 "anisotropic" (format "%.3f" @anisotropic)
                 "multiplier" (format "%.3f" @multiplier)
-                "dt" (format "%.3f" (* dt 0.001)) "              "))
-       (onscreen-render (Display/getWidth) (Display/getHeight)
-                 (clear (matrix [0 0 0]))
-                 (use-program program)
-                 (use-textures worley opacity opacity-shape)
-                 (uniform-matrix4 program :projection projection)
-                 (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @origin))
-                 (uniform-matrix4 program :shadow (:shadow-map-matrix shadow-mat))
-                 (uniform-vector3 program :origin @origin)
-                 (uniform-float program :threshold @threshold)
-                 (uniform-float program :anisotropic @anisotropic)
-                 (uniform-float program :cloud_scatter_amount 1.0)
-                 (uniform-int program :cloud_min_samples 1)
-                 (uniform-int program :cloud_max_samples 64)
-                 (uniform-int program :cloud_size size)
-                 (uniform-float program :cloud_scale 350)
-                 (uniform-float program :cloud_max_step 1.05)
-                 (uniform-int program :cloud_base_samples 64)
-                 (uniform-float program :multiplier (* 0.1 @multiplier))
-                 (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
-                 (render-quads vao)))
+                "fps" (format "%.3f" (/ (* @n 1000.0) (- t1 tf)))))
+       (let [light-direction (matrix [0 (cos @light) (sin @light)])
+             transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
+             shadow-mat      (shadow-matrices projection transform light-direction 0)]
+         (let [fbo (GL30/glGenFramebuffers)]
+           (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
+           (doseq [i (range 6)]
+                  (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) opacity 0 i))
+           (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT6 GL11/GL_TEXTURE_2D opacity-shape 0)
+           (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 7)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
+           (setup-rendering 512 512 false)
+           (use-program sprogram)
+           (use-textures worley)
+           (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
+           (uniform-vector3 sprogram :light_direction light-direction)
+           (uniform-float sprogram :depth (:depth shadow-mat))
+           (uniform-float sprogram :separation 10.0)
+           (uniform-float sprogram :threshold @threshold)
+           (uniform-float sprogram :anisotropic @anisotropic)
+           (uniform-float sprogram :multiplier (* 0.1 @multiplier))
+           (uniform-float sprogram :cloud_scatter_amount 1.0)
+           (uniform-int sprogram :cloud_base_samples 64)
+           (uniform-int sprogram :cloud_size size)
+           (uniform-float sprogram :cloud_scale 350)
+           (render-quads vao2)
+           (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0))
+         (onscreen-render (Display/getWidth) (Display/getHeight)
+                          (clear (matrix [0 0 0]))
+                          (use-program program)
+                          (use-textures worley
+                                        {:texture opacity :target GL12/GL_TEXTURE_3D}
+                                        {:texture opacity-shape :target GL11/GL_TEXTURE_2D})
+                          (uniform-matrix4 program :projection projection)
+                          (uniform-matrix4 program :transform transform)
+                          (uniform-matrix4 program :shadow (:shadow-map-matrix shadow-mat))
+                          (uniform-vector3 program :origin @origin)
+                          (uniform-float program :threshold @threshold)
+                          (uniform-float program :anisotropic @anisotropic)
+                          (uniform-float program :cloud_scatter_amount 1.0)
+                          (uniform-int program :cloud_min_samples 1)
+                          (uniform-int program :cloud_max_samples 64)
+                          (uniform-int program :cloud_size size)
+                          (uniform-float program :cloud_scale 350)
+                          (uniform-float program :cloud_max_step 1.05)
+                          (uniform-int program :cloud_base_samples 64)
+                          (uniform-float program :multiplier (* 0.1 @multiplier))
+                          (uniform-vector3 program :light_direction light-direction)
+                          (render-quads vao))))
 
+(destroy-texture {:texture opacity :target GL12/GL_TEXTURE_3D})
+(destroy-texture {:texture opacity-shape :target GL11/GL_TEXTURE_2D})
+(GL30/glDeleteFramebuffers fbo)
+(destroy-vertex-array-object vao2)
 (destroy-texture worley)
 (destroy-vertex-array-object vao)
 (destroy-program program)
