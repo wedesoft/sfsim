@@ -178,7 +178,7 @@ void main()
   int steps = int(ceil(intersection.y / stepsize));
   stepsize = intersection.y / steps;
   float previous_transmittance = 1.0;
-  float previous_depth = intersection.x;
+  float previous_depth = intersection.x - stepsize;
   float start_depth = 0.0;
   int filled = 0;
   for (int i=0; i<steps; i++) {
@@ -196,38 +196,36 @@ void main()
     } else {
       transmittance = previous_transmittance;
     };
-    if (previous_depth < start_depth + 1 * separation && depth >= start_depth + 1 * separation) {
-      float s = (start_depth + 1 * separation - previous_depth) / (depth - previous_depth);
-      float t = s * transmittance + (1 - s) * previous_transmittance;
-      opacity1 = t;
+    if (previous_depth < start_depth + 0 * separation && depth >= start_depth + 0 * separation) {
+      opacity1 = 1.0;
       filled = 1;
     };
-    if (previous_depth < start_depth + 2 * separation && depth >= start_depth + 2 * separation) {
-      float s = (start_depth + 2 * separation - previous_depth) / (depth - previous_depth);
+    if (previous_depth < start_depth + 1 * separation && depth >= start_depth + 1 * separation) {
+      float s = (start_depth + 1 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity2 = t;
       filled = 2;
     };
-    if (previous_depth < start_depth + 3 * separation && depth >= start_depth + 3 * separation) {
-      float s = (start_depth + 3 * separation - previous_depth) / (depth - previous_depth);
+    if (previous_depth < start_depth + 2 * separation && depth >= start_depth + 2 * separation) {
+      float s = (start_depth + 2 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity3 = t;
       filled = 3;
     };
-    if (previous_depth < start_depth + 4 * separation && depth >= start_depth + 4 * separation) {
-      float s = (start_depth + 4 * separation - previous_depth) / (depth - previous_depth);
+    if (previous_depth < start_depth + 3 * separation && depth >= start_depth + 3 * separation) {
+      float s = (start_depth + 3 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity4 = t;
       filled = 4;
     };
-    if (previous_depth < start_depth + 5 * separation && depth >= start_depth + 5 * separation) {
-      float s = (start_depth + 5 * separation - previous_depth) / (depth - previous_depth);
+    if (previous_depth < start_depth + 4 * separation && depth >= start_depth + 4 * separation) {
+      float s = (start_depth + 4 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity5 = t;
       filled = 5;
     };
-    if (previous_depth < start_depth + 6 * separation && depth >= start_depth + 6 * separation) {
-      float s = (start_depth + 6 * separation - previous_depth) / (depth - previous_depth);
+    if (previous_depth < start_depth + 5 * separation && depth >= start_depth + 5 * separation) {
+      float s = (start_depth + 5 * separation - previous_depth) / (depth - previous_depth);
       float t = s * transmittance + (1 - s) * previous_transmittance;
       opacity6 = t;
       filled = 6;
@@ -314,7 +312,7 @@ void main()
            (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
            (uniform-vector3 sprogram :light_direction light-direction)
            (uniform-float sprogram :depth (:depth shadow-mat))
-           (uniform-float sprogram :separation 10.0)
+           (uniform-float sprogram :separation 12.0)
            (uniform-float sprogram :threshold @threshold)
            (uniform-float sprogram :anisotropic @anisotropic)
            (uniform-float sprogram :multiplier (* 0.1 @multiplier))
