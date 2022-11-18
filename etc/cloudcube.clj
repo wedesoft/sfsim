@@ -63,6 +63,8 @@ uniform float threshold;
 uniform float multiplier;
 uniform int cloud_size;
 uniform float cloud_scale;
+uniform float depth;
+uniform float thickness;
 in VS_OUT
 {
   vec3 direction;
@@ -81,7 +83,7 @@ vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
   vec4 p = shadow * vec4(point, 1);
   float offset = texture(opacity_shape, p.xy).r;
-  float z = (1 - p.z - offset);
+  float z = (1 - p.z - offset) * depth / thickness;
   vec3 idx = vec3(p.xy, z);
   float o = texture(opacity, idx).r;
   return vec3(o, o, o);
@@ -268,10 +270,14 @@ void main()
 (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+(GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
 (GL11/glBindTexture GL11/GL_TEXTURE_2D opacity-shape)
 (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+(GL11/glTexParameteri GL12/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+(GL11/glTexParameteri GL12/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
 
 (def t0 (atom (System/currentTimeMillis)))
 (def tf @t0)
@@ -351,6 +357,8 @@ void main()
                           (uniform-int program :cloud_base_samples 64)
                           (uniform-float program :multiplier (* 0.1 @multiplier))
                           (uniform-vector3 program :light_direction light-direction)
+                          (uniform-float program :depth (:depth shadow-mat))
+                          (uniform-float program :thickness (* 7 10.0))
                           (render-quads vao))))
 
 (destroy-texture {:texture opacity :target GL12/GL_TEXTURE_3D})
