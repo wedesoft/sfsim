@@ -161,7 +161,8 @@ layout (location = 2) out float opacity3;
 layout (location = 3) out float opacity4;
 layout (location = 4) out float opacity5;
 layout (location = 5) out float opacity6;
-layout (location = 6) out float opacity_shape;
+layout (location = 6) out float opacity7;
+layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float interpolate_3d(sampler3D table, vec3 point, vec3 box_min, vec3 box_max);
 float phase(float g, float mu);
@@ -230,6 +231,12 @@ void main()
       opacity6 = t;
       filled = 6;
     };
+    if (previous_depth < start_depth + 6 * separation && depth >= start_depth + 6 * separation) {
+      float s = (start_depth + 6 * separation - previous_depth) / (depth - previous_depth);
+      float t = s * transmittance + (1 - s) * previous_transmittance;
+      opacity7 = t;
+      filled = 7;
+    };
     previous_depth = depth;
     previous_transmittance = transmittance;
   };
@@ -239,6 +246,7 @@ void main()
   if (filled <= 3) opacity4 = previous_transmittance;
   if (filled <= 4) opacity5 = previous_transmittance;
   if (filled <= 5) opacity6 = previous_transmittance;
+  if (filled <= 6) opacity7 = previous_transmittance;
   opacity_shape = start_depth / depth;
 }")
 
@@ -256,7 +264,7 @@ void main()
 (def opacity (GL11/glGenTextures))
 (def opacity-shape (GL11/glGenTextures))
 (GL11/glBindTexture GL12/GL_TEXTURE_3D opacity)
-(GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 6)
+(GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 7)
 (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
 (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE)
@@ -302,17 +310,17 @@ void main()
              shadow-mat      (shadow-matrices projection transform light-direction 0)]
          (let [fbo (GL30/glGenFramebuffers)]
            (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo)
-           (doseq [i (range 6)]
+           (doseq [i (range 7)]
                   (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER (+ GL30/GL_COLOR_ATTACHMENT0 i) opacity 0 i))
-           (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT6 GL11/GL_TEXTURE_2D opacity-shape 0)
-           (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 7)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
+           (GL30/glFramebufferTexture2D GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT7 GL11/GL_TEXTURE_2D opacity-shape 0)
+           (GL20/glDrawBuffers (make-int-buffer (int-array (for [i (range 8)] (+ GL30/GL_COLOR_ATTACHMENT0 i)))))
            (setup-rendering 512 512 false)
            (use-program sprogram)
            (use-textures worley)
            (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
            (uniform-vector3 sprogram :light_direction light-direction)
            (uniform-float sprogram :depth (:depth shadow-mat))
-           (uniform-float sprogram :separation 12.0)
+           (uniform-float sprogram :separation 10.0)
            (uniform-float sprogram :threshold @threshold)
            (uniform-float sprogram :anisotropic @anisotropic)
            (uniform-float sprogram :multiplier (* 0.1 @multiplier))
