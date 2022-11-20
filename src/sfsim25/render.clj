@@ -246,28 +246,39 @@
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target))))
 
+(defmacro create-texture-1d
+  "Macro to initialise 1D texture"
+  [& body]
+  `(create-texture GL11/GL_TEXTURE_1D texture# ~@body {:texture texture# :target GL11/GL_TEXTURE_1D}))
+
+(defmacro create-texture-2d
+  "Macro to initialise 2D texture"
+  [& body]
+  `(create-texture GL11/GL_TEXTURE_2D texture# ~@body {:texture texture# :target GL11/GL_TEXTURE_2D}))
+
+(defmacro create-texture-3d
+  "Macro to initialise 3D texture"
+  [& body]
+  `(create-texture GL12/GL_TEXTURE_3D texture# ~@body {:texture texture# :target GL12/GL_TEXTURE_3D}))
+
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
   [data]
-  (let [buffer  (make-float-buffer data)]
-    (GL13/glActiveTexture GL13/GL_TEXTURE0)
-    (create-texture GL11/GL_TEXTURE_1D texture
+  (let [buffer (make-float-buffer data)]
+    (create-texture-1d
       (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F (count data) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
       (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
       (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
-      {:texture texture :target GL11/GL_TEXTURE_1D})))
+      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))))
 
 (defn- make-texture-2d
   [image make-buffer internalformat format_ type_]
   "Initialise a 2D texture"
   (let [buffer (make-buffer (:data image))]
-    (GL13/glActiveTexture GL13/GL_TEXTURE0)
-    (create-texture GL11/GL_TEXTURE_2D texture
+    (create-texture-2d
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer)
       (texture-wrap-clamp-2d)
-      (texture-interpolate-linear-2d)
-      {:texture texture :target GL11/GL_TEXTURE_2D})))
+      (texture-interpolate-linear-2d))))
 
 (defn make-rgb-texture
   "Load RGB image into an OpenGL texture"
@@ -293,15 +304,13 @@
   "Load floating-point 3D data into red channel of an OpenGL texture"
   [image]
   (let [buffer (make-float-buffer (:data image))]
-    (GL13/glActiveTexture GL13/GL_TEXTURE0)
-    (create-texture GL12/GL_TEXTURE_3D texture
+    (create-texture-3d
       (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
       (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
       (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
       (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT)
       (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
-      {:texture texture :target GL12/GL_TEXTURE_3D})))
+      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))))
 
 (defn destroy-texture
   "Delete an OpenGL texture"
