@@ -324,6 +324,30 @@
     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
     (GL11/glBindTexture (:target texture) (:texture texture))))
 
+(defmacro framebuffer-render
+  "Macro to render to depth and color texture attachments"
+  [width height depth-texture color-textures & body]
+  `(let [fbo# (GL30/glGenFramebuffers)]
+     (try
+       (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
+       (GL20/glDrawBuffers
+         (make-int-buffer
+           (int-array
+             (map-indexed
+               (fn [index# color-texture#]
+                   (let [color-attachment# (+ GL30/GL_COLOR_ATTACHMENT0 index#)]
+                     (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER
+                                                color-attachment#
+                                                (:texture color-texture#)
+                                                0)
+                     color-attachment#))
+               ~color-textures))))
+       (setup-rendering ~width ~height false)
+       ~@body
+       (finally
+         (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
+         (GL30/glDeleteFramebuffers fbo#)))))
+
 (defmacro texture-render-color
   "Macro to render color image to a texture"
   [width height floating-point & body]
@@ -372,6 +396,16 @@
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
           data (float-array (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(defn float-texture->floats
+  "Extract floating-point floating-point data from texture"
+  [texture width height]
+  (with-texture (:target texture) (:texture texture)
+    (let [buf  (BufferUtils/createFloatBuffer (* width height))
+          data (float-array (* width height))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 

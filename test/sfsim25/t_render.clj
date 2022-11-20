@@ -7,19 +7,21 @@
             [sfsim25.util :refer :all]
             [sfsim25.matrix :refer :all]
             [sfsim25.render :refer :all])
-  (:import [org.lwjgl.opengl Display DisplayMode GL11]))
+  (:import [org.lwjgl.opengl Display DisplayMode GL11 GL30 GL42]))
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/render/red.png"))
 
-(def vertex-passthrough "#version 410 core
+(def vertex-passthrough
+"#version 410 core
 in vec3 point;
 void main()
 {
   gl_Position = vec4(point, 1);
 }")
 
-(def fragment-blue "#version 410 core
+(def fragment-blue
+"#version 410 core
 out vec3 fragColor;
 void main()
 {
@@ -38,7 +40,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
 
-(def vertex-color "#version 410 core
+(def vertex-color
+"#version 410 core
 in vec3 point;
 in vec2 uv;
 out vec3 color;
@@ -48,7 +51,8 @@ void main()
   color = vec3(uv.x, 0.5, uv.y);
 }")
 
-(def fragment-color "#version 410 core
+(def fragment-color
+"#version 410 core
 in vec3 color;
 out vec3 fragColor;
 void main()
@@ -81,7 +85,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quads.png"))
 
-(def fragment-red "#version 410 core
+(def fragment-red
+"#version 410 core
 out vec3 fragColor;
 void main()
 {
@@ -119,7 +124,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/lines.png"))
 
-(def fragment-uniform-floats "#version 410 core
+(def fragment-uniform-floats
+"#version 410 core
 out vec3 fragColor;
 uniform float red;
 uniform float green;
@@ -144,7 +150,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png"))
 
-(def fragment-uniform-ints "#version 410 core
+(def fragment-uniform-ints
+"#version 410 core
 out vec3 fragColor;
 uniform int red;
 uniform int green;
@@ -169,7 +176,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-ints.png"))
 
-(def fragment-uniform-vector3 "#version 410 core
+(def fragment-uniform-vector3
+"#version 410 core
 out vec3 fragColor;
 uniform vec3 color;
 void main()
@@ -190,7 +198,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png"))
 
-(def vertex-transform "#version 410 core
+(def vertex-transform
+"#version 410 core
 in vec3 point;
 uniform mat4 transform;
 void main()
@@ -211,7 +220,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
 
-(def vertex-texture "#version 410 core
+(def vertex-texture
+"#version 410 core
 in vec3 point;
 in vec2 uv;
 out vec3 color;
@@ -222,7 +232,8 @@ void main()
   uv_fragment = uv;
 }")
 
-(def fragment-texture-1d "#version 410 core
+(def fragment-texture-1d
+"#version 410 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler1D tex;
@@ -247,7 +258,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/floats-1d.png"))
 
-(def fragment-texture-2d "#version 410 core
+(def fragment-texture-2d
+"#version 410 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2D tex;
@@ -320,7 +332,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png"))
 
-(def fragment-texture-3d "#version 410 core
+(def fragment-texture-3d
+"#version 410 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler3D tex;
@@ -346,7 +359,8 @@ void main()
           (destroy-vertex-array-object vao)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/slice.png"))
 
-(def fragment-two-textures "#version 410 core
+(def fragment-two-textures
+"#version 410 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2D tex1;
@@ -378,7 +392,8 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/two-textures.png"))
 
-(def control-uniform "#version 410 core
+(def control-uniform
+"#version 410 core
 layout(vertices = 4) out;
 void main(void)
 {
@@ -393,7 +408,8 @@ void main(void)
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 }")
 
-(def evaluation-mix "#version 410 core
+(def evaluation-mix
+"#version 410 core
 layout(quads, equal_spacing, ccw) in;
 void main()
 {
@@ -402,7 +418,8 @@ void main()
   gl_Position = mix(a, b, gl_TessCoord.y);
 }")
 
-(def geometry-triangle "#version 410 core
+(def geometry-triangle
+"#version 410 core
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 void main(void)
@@ -429,14 +446,16 @@ void main(void)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/tessellation.png"))
 
-(def fragment-part1 "#version 410 core
+(def fragment-part1
+"#version 410 core
 vec3 fun()
 {
   return vec3(0.0, 0.0, 1.0);
 }
 ")
 
-(def fragment-part2 "#version 410 core
+(def fragment-part2
+"#version 410 core
 out vec3 fragColor;
 vec3 fun();
 void main()
@@ -469,7 +488,36 @@ void main()
           img => (is-image "test/sfsim25/fixtures/render/red.png")
           (destroy-texture tex))))
 
-(def lod-texture-1d "#version 410 core
+(def fragment-two-attachments
+"#version 410 core
+layout (location = 0) out float output1;
+layout (location = 1) out float output2;
+void main()
+{
+  output1 = 0.25;
+  output2 = 0.75;
+}")
+
+(facts "Using framebuffer to render to two color textures"
+       (offscreen-render 32 32
+         (let [tex1     (create-texture-2d (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
+               tex2     (create-texture-2d (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
+               indices  [0 1 3 2]
+               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
+               vao      (make-vertex-array-object program indices vertices [:point 3])]
+           (framebuffer-render 1 1 nil [tex1 tex2]
+                               (use-program program)
+                               (render-quads vao))
+           (get-scale (float-texture->floats tex1 1 1) 0 0) => 0.25
+           (get-scale (float-texture->floats tex2 1 1) 0 0) => 0.75
+           (destroy-vertex-array-object vao)
+           (destroy-program program)
+           (destroy-texture tex1)
+           (destroy-texture tex2))))
+
+(def lod-texture-1d
+"#version 410 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler1D tex;
@@ -505,7 +553,8 @@ void main()
          2.0  "lod-1d-2")
 
 (def alpha-probe
-  (template/fn [alpha] "#version 410 core
+  (template/fn [alpha]
+"#version 410 core
 out vec4 fragColor;
 void main()
 {

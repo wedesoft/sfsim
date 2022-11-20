@@ -1,7 +1,10 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* implement rendering to depth texture in framebuffer-render method
+* implement rendering to layers of 3D texture
 * function to render multiple attachments (generalise texture-render-color and texture-render-depth)
+* maybe rename get-scale
 * clouds: deep opacity maps (use 2D texture for depth map and parallel shapes with 3D interpolation), blue noise offsets for opacity map? use extra shadow map?
 * is it necessary to apply 0.5 pixel offset when reading out opacity map?
 * put deep opacity map functions under test
