@@ -349,22 +349,12 @@
          (GL30/glDeleteFramebuffers fbo#)))))
 
 (defmacro texture-render-color
-  "Macro to render color image to a texture"
+  "Macro to render to a 2D color texture"
   [width height floating-point & body]
-  `(let [fbo# (GL30/glGenFramebuffers)
-         tex# (GL11/glGenTextures)]
-     (try
-       (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
-       (GL11/glBindTexture GL11/GL_TEXTURE_2D tex#)
-       (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8) ~width ~height)
-       (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_COLOR_ATTACHMENT0 tex# 0)
-       (GL20/glDrawBuffers (make-int-buffer (int-array [GL30/GL_COLOR_ATTACHMENT0])))
-       (setup-rendering ~width ~height false)
-       ~@body
-       {:texture tex# :target GL11/GL_TEXTURE_2D}
-       (finally
-         (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
-         (GL30/glDeleteFramebuffers fbo#)))))
+  `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
+         texture#        (create-texture-2d (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat# ~width ~height))]
+     (framebuffer-render ~width ~height nil [texture#] ~@body)
+     texture#))
 
 (defmacro texture-render-depth
   "Macro to create shadow map"
