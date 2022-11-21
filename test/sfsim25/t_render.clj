@@ -257,7 +257,7 @@ void main()
                         (render-quads vao)
                         (destroy-texture tex)
                         (destroy-vertex-array-object vao)
-                        (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+                        (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
   ?interpolation ?boundary ?result
   :nearest       :clamp    "floats-1d-nearest-clamp"
   :linear        :clamp    "floats-1d-linear-clamp"
@@ -280,7 +280,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-rgb-texture (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
+          tex      (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
       (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
@@ -290,21 +290,28 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/texture.png"))
 
-(fact "Render 2D floating-point texture"
-  (offscreen-render 64 64
-    (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-          program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-float-texture-2d {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])})]
-      (clear (matrix [0.0 0.0 0.0]))
-      (use-program program)
-      (uniform-sampler program :tex 0)
-      (use-textures tex)
-      (render-quads vao)
-      (destroy-texture tex)
-      (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/floats.png"))
+(tabular "Render 2D floating-point texture"
+  (fact
+    (offscreen-render 64 64
+                      (let [indices  [0 1 3 2]
+                            vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
+                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
+                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                            img      {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])}
+                            tex      (make-float-texture-2d ?interpolation ?boundary img)]
+                        (clear (matrix [0.0 0.0 0.0]))
+                        (use-program program)
+                        (uniform-sampler program :tex 0)
+                        (use-textures tex)
+                        (render-quads vao)
+                        (destroy-texture tex)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+  ?interpolation ?boundary ?result
+  :nearest       :clamp    "floats-2d-nearest-clamp"
+  :linear        :clamp    "floats-2d-linear-clamp"
+  :nearest       :repeat   "floats-2d-nearest-repeat"
+  :linear        :repeat   "floats-2d-linear-repeat")
 
 (fact "Render 2D unsigned-byte texture"
   (offscreen-render 64 64
@@ -312,7 +319,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-ubyte-texture-2d {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
+          tex      (make-ubyte-texture-2d :linear :clamp {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
       (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
@@ -328,7 +335,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-vector-texture-2d {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
+          tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
       (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex 0)
@@ -385,8 +392,8 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-two-textures])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex1     (make-vector-texture-2d {:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
-          tex2     (make-vector-texture-2d {:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
+          tex1     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
+          tex2     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
       (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
       (uniform-sampler program :tex1 0)
@@ -506,8 +513,8 @@ void main()
 
 (facts "Using framebuffer to render to two color textures"
        (offscreen-render 32 32
-         (let [tex1     (create-texture-2d (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
-               tex2     (create-texture-2d (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
+         (let [tex1     (create-texture-2d :linear :clamp (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
+               tex2     (create-texture-2d :linear :clamp (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])

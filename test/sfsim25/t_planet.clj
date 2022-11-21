@@ -74,7 +74,8 @@ void main()
                                                              :fragment [fragment-white])
                                    variables   [:point 3 :heightcoord 2 :colorcoord 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
-                                   heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [1.0])})]
+                                   heightfield (make-float-texture-2d :linear :clamp
+                                                                      {:width 1 :height 1 :data (float-array [1.0])})]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-sampler program :heightfield 0)
@@ -125,7 +126,8 @@ void main()
                                                              :fragment [(texture-coordinates-probe ?selector)])
                                    variables   [:point 3 :heightcoord 2 :colorcoord 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
-                                   heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [?scale])})]
+                                   heightfield (make-float-texture-2d :linear :clamp
+                                                                      {:width 1 :height 1 :data (float-array [?scale])})]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-sampler program :heightfield 0)
@@ -159,7 +161,8 @@ void main()
                                                         :fragment [fragment-white])
                               variables   [:point 3 :heightcoord 2 :colorcoord 2]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [1.0])})]
+                              heightfield (make-float-texture-2d :linear :clamp
+                                                                 {:width 1 :height 1 :data (float-array [1.0])})]
                           (clear (matrix [0 0 0]))
                           (use-program program)
                           (uniform-sampler program :heightfield 0)
@@ -189,7 +192,8 @@ void main()
                                                         :fragment [fragment-white])
                               variables   [:point 3 :heightcoord 2 :colorcoord 2]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              heightfield (make-float-texture-2d {:width 1 :height 1 :data (float-array [1.0])})]
+                              heightfield (make-float-texture-2d :linear :clamp
+                                                                 {:width 1 :height 1 :data (float-array [1.0])})]
                           (clear (matrix [0 0 0]))
                           (use-program program)
                           (uniform-sampler program :heightfield 0)
@@ -219,7 +223,8 @@ void main()
                                                         :fragment [fragment-white])
                               variables   [:point 3 :heightcoord 2 :colorcoord 2]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              heightfield (make-float-texture-2d {:width 2 :height 2 :data (float-array [0.5 1.0 1.5 2.0])})]
+                              heightfield (make-float-texture-2d :linear :clamp
+                                                                 {:width 2 :height 2 :data (float-array [0.5 1.0 1.5 2.0])})]
                           (clear (matrix [0 0 0]))
                           (use-program program)
                           (uniform-sampler program :heightfield 0)
@@ -241,9 +246,9 @@ void main()
           (let [indices   [0 1 3 2]
                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 red-data  (flatten (repeat (* 17 17) [0 0 1]))
-                red       (make-vector-texture-2d {:width 17 :height 17 :data (float-array red-data)})
+                red       (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array red-data)})
                 blue-data (flatten (repeat (* 17 17) [1 0 0]))
-                blue      (make-vector-texture-2d {:width 17 :height 17 :data (float-array blue-data)})
+                blue      (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array blue-data)})
                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao       (make-vertex-array-object program indices vertices [:point 3])
                 tex       (texture-render-color
@@ -398,36 +403,37 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   (uniform-float program :cloud_max_step 0.1)
   (uniform-int program :cloud_base_samples 8))
 
+(def planet-indices [0 1 3 2])
+(def planet-vertices [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5
+                       0.5 -0.5 0.5 0.75 0.25 0.5 0.5
+                      -0.5  0.5 0.5 0.25 0.75 0.5 0.5
+                       0.5  0.5 0.5 0.75 0.75 0.5 0.5])
+
 (tabular "Fragment shader to render planetary surface"
          (fact
            (offscreen-render 256 256
-                             (let [indices       [0 1 3 2]
-                                   vertices      [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5
-                                                   0.5 -0.5 0.5 0.75 0.25 0.5 0.5
-                                                  -0.5  0.5 0.5 0.25 0.75 0.5 0.5
-                                                   0.5  0.5 0.5 0.75 0.75 0.5 0.5]
-                                   program       (make-planet-program)
+                             (let [program       (make-planet-program)
                                    variables     [:point 3 :colorcoord 2 :heightcoord 2]
-                                   vao           (make-vertex-array-object program indices vertices variables)
+                                   vao           (make-vertex-array-object program planet-indices planet-vertices variables)
                                    radius        6378000
                                    size          7
-                                   colors        (make-rgb-texture
+                                   colors        (make-rgb-texture :linear :clamp
                                                    (slurp-image (str "test/sfsim25/fixtures/planet/" ?colors ".png")))
-                                   normals       (make-vector-texture-2d
+                                   normals       (make-vector-texture-2d :linear :clamp
                                                    {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nz ?ny ?nx])))})
-                                   transmittance (make-vector-texture-2d
+                                   transmittance (make-vector-texture-2d :linear :clamp
                                                    {:width size :height size
                                                     :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})
-                                   ray-scatter   (make-vector-texture-2d
+                                   ray-scatter   (make-vector-texture-2d :linear :clamp
                                                    {:width (* size size) :height (* size size)
                                                     :data (float-array (repeat (* size size size size 3) ?s))})
-                                   mie-strength  (make-vector-texture-2d
+                                   mie-strength  (make-vector-texture-2d :linear :clamp
                                                    {:width (* size size) :height (* size size)
                                                     :data (float-array (repeat (* size size size size 3) 0))})
-                                   radiance      (make-vector-texture-2d
+                                   radiance      (make-vector-texture-2d :linear :clamp
                                                    {:width size :height size
                                                     :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
-                                   water         (make-ubyte-texture-2d
+                                   water         (make-ubyte-texture-2d :linear :clamp
                                                    {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
                                    worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})

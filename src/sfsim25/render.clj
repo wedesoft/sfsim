@@ -212,18 +212,6 @@
      ~@body
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
 
-(defn- texture-wrap-clamp-2d
-  "Set wrapping mode of active 2D texture"
-  []
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
-
-(defn- texture-interpolate-linear-2d
-  "Set interpolation of active 2D texture to linear interpolation"
-  []
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
-
 (defmacro with-texture
   "Macro to bind a texture and open a context with it"
   [target texture & body]
@@ -246,17 +234,17 @@
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target))))
 
-(defmulti setup-interpolation-1d identity)
+(defmulti setup-interpolation (comp second vector))
 
-(defmethod setup-interpolation-1d :nearest
-  [interpolation]
-  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
+(defmethod setup-interpolation :nearest
+  [target interpolation]
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
 
-(defmethod setup-interpolation-1d :linear
-  [interpolation]
-  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
+(defmethod setup-interpolation :linear
+  [target interpolation]
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
 (defmulti setup-boundary-1d identity)
 
@@ -272,15 +260,31 @@
   "Macro to initialise 1D texture"
   [interpolation boundary & body]
   `(create-texture GL11/GL_TEXTURE_1D texture#
-                   (setup-interpolation-1d ~interpolation)
+                   (setup-interpolation GL11/GL_TEXTURE_1D ~interpolation)
                    (setup-boundary-1d ~boundary)
                    ~@body
                    {:texture texture# :target GL11/GL_TEXTURE_1D}))
 
+(defmulti setup-boundary-2d identity)
+
+(defmethod setup-boundary-2d :clamp
+  [boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
+
+(defmethod setup-boundary-2d :repeat
+  [boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
+
 (defmacro create-texture-2d
   "Macro to initialise 2D texture"
-  [& body]
-  `(create-texture GL11/GL_TEXTURE_2D texture# ~@body {:texture texture# :target GL11/GL_TEXTURE_2D}))
+  [interpolation boundary & body]
+  `(create-texture GL11/GL_TEXTURE_2D texture#
+                   (setup-interpolation GL11/GL_TEXTURE_2D ~interpolation)
+                   (setup-boundary-2d ~boundary)
+                   ~@body
+                   {:texture texture# :target GL11/GL_TEXTURE_2D}))
 
 (defmacro create-texture-3d
   "Macro to initialise 3D texture"
@@ -295,33 +299,31 @@
       (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F (count data) 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
 
 (defn- make-texture-2d
-  [image make-buffer internalformat format_ type_]
+  [image make-buffer interpolation boundary internalformat format_ type_]
   "Initialise a 2D texture"
   (let [buffer (make-buffer (:data image))]
-    (create-texture-2d
-      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer)
-      (texture-wrap-clamp-2d)
-      (texture-interpolate-linear-2d))))
+    (create-texture-2d interpolation boundary
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer))))
 
 (defn make-rgb-texture
   "Load RGB image into an OpenGL texture"
-  [image]
-  (make-texture-2d image make-int-buffer GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE))
+  [interpolation boundary image]
+  (make-texture-2d image make-int-buffer interpolation boundary GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-float-texture-2d
   "Load floating-point 2D data into red channel of an OpenGL texture"
-  [image]
-  (make-texture-2d image make-float-buffer GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
+  [interpolation boundary image]
+  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
 
 (defn make-ubyte-texture-2d
   "Load unsigned-byte 2D data into red channel of an OpenGL texture (data needs to be 32-bit aligned!)"
-  [image]
-  (make-texture-2d image make-byte-buffer GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
+  [interpolation boundary image]
+  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
 
 (defn make-vector-texture-2d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
-  [image]
-  (make-texture-2d image make-float-buffer GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+  [interpolation boundary image]
+  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
 
 (defn make-float-texture-3d
   "Load floating-point 3D data into red channel of an OpenGL texture"
@@ -375,7 +377,8 @@
   "Macro to render to a 2D color texture"
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
-         texture#        (create-texture-2d (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat# ~width ~height))]
+         texture#        (create-texture-2d :linear :clamp
+                                            (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat# ~width ~height))]
      (framebuffer-render ~width ~height nil [texture#] ~@body)
      texture#))
 

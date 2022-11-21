@@ -88,7 +88,8 @@ void main()
                                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                                 data-2d   [[1 2] [3 4] [5 6]]
                                 data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
-                                table     (make-vector-texture-2d {:width 2 :height 3 :data (float-array data-flat)})
+                                table     (make-vector-texture-2d :linear :clamp
+                                                                  {:width 2 :height 3 :data (float-array data-flat)})
                                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                                 vao       (make-vertex-array-object program indices vertices [:point 3])
                                 tex       (texture-render-color
@@ -133,7 +134,7 @@ void main()
                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
                 data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
-                table     (make-vector-texture-2d {:width 4 :height 4 :data (float-array data-flat)})
+                table     (make-vector-texture-2d :linear :clamp {:width 4 :height 4 :data (float-array data-flat)})
                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao       (make-vertex-array-object program indices vertices [:point 3])
                 tex       (texture-render-color

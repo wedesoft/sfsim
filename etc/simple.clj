@@ -54,21 +54,16 @@
 (def P (make-float-texture-1d :linear :clamp data))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def T (make-vector-texture-2d {:width transmittance-elevation-size :height transmittance-height-size :data data}))
+(def T (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+(def S (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
 (def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def M (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+(def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
 (def data (slurp-floats "data/bluenoise.raw"))
-(def B (make-float-texture-2d {:width noise-size :height noise-size :data data}))
-(with-texture GL11/GL_TEXTURE_2D (:texture B)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
-  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
+(def B (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data data}))
 
 (def fragment
 "#version 410 core

@@ -55,16 +55,16 @@
 (def worley-size 128)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def E (make-vector-texture-2d {:width surface-sun-elevation-size :height surface-height-size :data data}))
+(def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def T (make-vector-texture-2d {:width transmittance-elevation-size :height transmittance-height-size :data data}))
+(def T (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data data}))
 
 (def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def S (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+(def S (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
 (def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def M (make-vector-texture-2d {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+(def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d {:width worley-size :height worley-size :depth worley-size :data data}))
@@ -134,10 +134,10 @@
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
-        color-tex  (make-rgb-texture (:colors tile))
-        height-tex (make-float-texture-2d {:width tilesize :height tilesize :data (:scales tile)})
-        normal-tex (make-vector-texture-2d {:width color-tilesize :height color-tilesize :data (:normals tile)})
-        water-tex  (make-ubyte-texture-2d {:width color-tilesize :height color-tilesize :data (:water tile)})]
+        color-tex  (make-rgb-texture :linear :clamp (:colors tile))
+        height-tex (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:scales tile)})
+        normal-tex (make-vector-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:normals tile)})
+        water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
     (assoc (dissoc tile :colors :scales :normals :water)
            :vao vao :color-tex color-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
 

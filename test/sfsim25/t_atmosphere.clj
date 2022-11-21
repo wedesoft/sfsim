@@ -503,7 +503,7 @@
         (offscreen-render 1 1
           (let [indices       [0 1 3 2]
                 vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                transmittance (make-vector-texture-2d {:width size :height size :data T})
+                transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
                 program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
                 tex           (texture-render-color
@@ -557,9 +557,9 @@ void main()
         (offscreen-render 1 1
           (let [indices       [0 1 3 2]
                 vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                transmittance (make-vector-texture-2d {:width size :height size :data T})
-                ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
-                mie-strength  (make-vector-texture-2d {:width (* size size) :height (* size size) :data M})
+                transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
+                ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
+                mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
                 program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
                 tex           (texture-render-color
@@ -684,9 +684,12 @@ void main()
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
                                                                           shaders/sun-angle-to-index])
                                    variables     [:point 3]
-                                   transmittance (make-vector-texture-2d {:width size :height size :data T})
-                                   ray-scatter   (make-vector-texture-2d {:width (* size size) :height (* size size) :data S})
-                                   mie-strength  (make-vector-texture-2d {:width (* size size) :height (* size size) :data M})
+                                   transmittance (make-vector-texture-2d :linear :clamp
+                                                                         {:width size :height size :data T})
+                                   ray-scatter   (make-vector-texture-2d :linear :clamp
+                                                                         {:width (* size size) :height (* size size) :data S})
+                                   mie-strength  (make-vector-texture-2d :linear :clamp
+                                                                         {:width (* size size) :height (* size size) :data M})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
                                    worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})
                                    profile-data  (float-array [0 1 1 1 1 1 1 0])
