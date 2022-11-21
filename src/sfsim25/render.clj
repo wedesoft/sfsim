@@ -246,10 +246,36 @@
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target))))
 
+(defmulti setup-interpolation-1d identity)
+
+(defmethod setup-interpolation-1d :nearest
+  [interpolation]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
+
+(defmethod setup-interpolation-1d :linear
+  [interpolation]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
+
+(defmulti setup-boundary-1d identity)
+
+(defmethod setup-boundary-1d :clamp
+  [boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE))
+
+(defmethod setup-boundary-1d :repeat
+  [boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
+
 (defmacro create-texture-1d
   "Macro to initialise 1D texture"
-  [& body]
-  `(create-texture GL11/GL_TEXTURE_1D texture# ~@body {:texture texture# :target GL11/GL_TEXTURE_1D}))
+  [interpolation boundary & body]
+  `(create-texture GL11/GL_TEXTURE_1D texture#
+                   (setup-interpolation-1d ~interpolation)
+                   (setup-boundary-1d ~boundary)
+                   ~@body
+                   {:texture texture# :target GL11/GL_TEXTURE_1D}))
 
 (defmacro create-texture-2d
   "Macro to initialise 2D texture"
@@ -263,13 +289,10 @@
 
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
-  [data]
+  [interpolation boundary data]
   (let [buffer (make-float-buffer data)]
-    (create-texture-1d
-      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F (count data) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
-      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-      (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))))
+    (create-texture-1d interpolation boundary
+      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F (count data) 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
 
 (defn- make-texture-2d
   [image make-buffer internalformat format_ type_]

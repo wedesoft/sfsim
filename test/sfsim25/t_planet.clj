@@ -432,7 +432,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
                                    worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})
                                    profile-data  (float-array [0 1 1 1 1 1 1 0])
-                                   profile       (make-float-texture-1d profile-data)]
+                                   profile       (make-float-texture-1d :linear :clamp profile-data)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (setup-static-uniforms program)

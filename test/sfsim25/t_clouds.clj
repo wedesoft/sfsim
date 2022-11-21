@@ -320,7 +320,7 @@ void main()
             worley-data  (cons density0 (repeat (dec (* 2 2 2)) density1))
             worley       (make-float-texture-3d {:width 2 :height 2 :depth 2 :data (float-array worley-data)})
             profile-data (cons profile0 (repeat 9 profile1))
-            profile      (make-float-texture-1d (float-array profile-data))
+            profile      (make-float-texture-1d :linear :clamp (float-array profile-data))
             tex          (texture-render-color
                            1 1 true
                            (use-program program)

@@ -242,21 +242,27 @@ void main()
   fragColor = texture(tex, uv_fragment.x).rgb;
 }")
 
-(fact "Render 1D floating-point texture"
-  (offscreen-render 64 64
-    (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-          program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-1d])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-float-texture-1d (float-array [0.0 1.0]))]
-      (clear (matrix [0.0 0.0 0.0]))
-      (use-program program)
-      (uniform-sampler program :tex 0)
-      (use-textures tex)
-      (render-quads vao)
-      (destroy-texture tex)
-      (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/floats-1d.png"))
+(tabular "Render 1D floating-point texture"
+  (fact
+    (offscreen-render 64 64
+                      (let [indices  [0 1 3 2]
+                            vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
+                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-1d])
+                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                            tex      (make-float-texture-1d ?interpolation ?boundary (float-array [0.0 1.0]))]
+                        (clear (matrix [0.0 0.0 0.0]))
+                        (use-program program)
+                        (uniform-sampler program :tex 0)
+                        (use-textures tex)
+                        (render-quads vao)
+                        (destroy-texture tex)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+  ?interpolation ?boundary ?result
+  :nearest       :clamp    "floats-1d-nearest-clamp"
+  :linear        :clamp    "floats-1d-linear-clamp"
+  :nearest       :repeat   "floats-1d-nearest-repeat"
+  :linear        :repeat   "floats-1d-linear-repeat")
 
 (def fragment-texture-2d
 "#version 410 core
@@ -536,7 +542,7 @@ void main()
                    program  (make-program :vertex [vertex-texture] :fragment [lod-texture-1d])
                    vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
                    data     (flatten (repeat 8 [0 0 1 1]))
-                   tex      (make-float-texture-1d (float-array data))]
+                   tex      (make-float-texture-1d :linear :clamp (float-array data))]
                (generate-mipmap tex)
                (clear (matrix [0.0 0.0 0.0]))
                (use-program program)

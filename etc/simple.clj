@@ -51,7 +51,7 @@
 (generate-mipmap W)
 
 (def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.3 0.0]))
-(def P (make-float-texture-1d data))
+(def P (make-float-texture-1d :linear :clamp data))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def T (make-vector-texture-2d {:width transmittance-elevation-size :height transmittance-height-size :data data}))
