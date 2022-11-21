@@ -118,7 +118,7 @@ void main()
 ;(def values (worley-noise 12 size true))
 ;(spit-floats "values.raw" (float-array values))
 (def values (slurp-floats "data/worley.raw"))
-(def worley (make-float-texture-3d {:width size :height size :depth size :data values}))
+(def worley (make-float-texture-3d :linear :repeat {:width size :height size :depth size :data values}))
 
 (use-program program)
 (uniform-sampler program :worley 0)

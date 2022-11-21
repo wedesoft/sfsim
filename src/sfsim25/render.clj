@@ -286,10 +286,28 @@
                    ~@body
                    {:texture texture# :target GL11/GL_TEXTURE_2D}))
 
+(defmulti setup-boundary-3d identity)
+
+(defmethod setup-boundary-3d :clamp
+  [boundary]
+  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
+
+(defmethod setup-boundary-3d :repeat
+  [boundary]
+  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
+  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))
+
 (defmacro create-texture-3d
   "Macro to initialise 3D texture"
-  [& body]
-  `(create-texture GL12/GL_TEXTURE_3D texture# ~@body {:texture texture# :target GL12/GL_TEXTURE_3D}))
+  [interpolation boundary & body]
+  `(create-texture GL12/GL_TEXTURE_3D texture#
+                   (setup-interpolation GL12/GL_TEXTURE_3D ~interpolation)
+                   (setup-boundary-3d ~boundary)
+                   ~@body
+                   {:texture texture# :target GL12/GL_TEXTURE_3D}))
 
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
@@ -327,15 +345,10 @@
 
 (defn make-float-texture-3d
   "Load floating-point 3D data into red channel of an OpenGL texture"
-  [image]
+  [interpolation boundary image]
   (let [buffer (make-float-buffer (:data image))]
-    (create-texture-3d
-      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer)
-      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
-      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
-      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT)
-      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
-      (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))))
+    (create-texture-3d interpolation boundary
+      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
 
 (defn destroy-texture
   "Delete an OpenGL texture"

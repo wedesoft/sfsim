@@ -355,22 +355,29 @@ void main()
   fragColor = texture(tex, vec3(uv_fragment, 1.0)).rgb;
 }")
 
-(fact "Render 3D floating-point texture"
-      (offscreen-render 64 64
-        (let [indices  [0 1 3 2]
-              vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-              program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-3d])
-              vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-              data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
-              tex      (make-float-texture-3d {:width 2 :height 2 :depth 2 :data (float-array data)})]
-          (clear (matrix [0.0 0.0 0.0]))
-          (use-program program)
-          (uniform-sampler program :tex 0)
-          (use-textures tex)
-          (render-quads vao)
-          (destroy-texture tex)
-          (destroy-vertex-array-object vao)
-          (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/slice.png"))
+(tabular "Render 3D floating-point texture"
+  (fact
+    (offscreen-render 64 64
+                      (let [indices  [0 1 3 2]
+                            vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
+                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-3d])
+                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                            data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
+                            tex      (make-float-texture-3d ?interpolation ?boundary
+                                                            {:width 2 :height 2 :depth 2 :data (float-array data)})]
+                        (clear (matrix [0.0 0.0 0.0]))
+                        (use-program program)
+                        (uniform-sampler program :tex 0)
+                        (use-textures tex)
+                        (render-quads vao)
+                        (destroy-texture tex)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+  ?interpolation ?boundary ?result
+  :nearest       :clamp    "floats-3d-nearest-clamp"
+  :linear        :clamp    "floats-3d-linear-clamp"
+  :nearest       :repeat   "floats-3d-nearest-repeat"
+  :linear        :repeat   "floats-3d-linear-repeat")
 
 (def fragment-two-textures
 "#version 410 core

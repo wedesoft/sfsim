@@ -691,7 +691,8 @@ void main()
                                    mie-strength  (make-vector-texture-2d :linear :clamp
                                                                          {:width (* size size) :height (* size size) :data M})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
-                                   worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})
+                                   worley        (make-float-texture-3d :linear :repeat
+                                                                        {:width 2 :height 2 :depth 2 :data worley-data})
                                    profile-data  (float-array [0 1 1 1 1 1 1 0])
                                    profile       (make-float-texture-1d :linear :clamp profile-data)
                                    vao           (make-vertex-array-object program indices vertices variables)]

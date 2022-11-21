@@ -436,7 +436,8 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                                    water         (make-ubyte-texture-2d :linear :clamp
                                                    {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
-                                   worley        (make-float-texture-3d {:width 2 :height 2 :depth 2 :data worley-data})
+                                   worley        (make-float-texture-3d :linear :repeat
+                                                                        {:width 2 :height 2 :depth 2 :data worley-data})
                                    profile-data  (float-array [0 1 1 1 1 1 1 0])
                                    profile       (make-float-texture-1d :linear :clamp profile-data)]
                                (clear (matrix [0 0 0]))

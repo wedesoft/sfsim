@@ -1,7 +1,6 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* make interpolation and boundary mode for textures configurable
 * implement rendering to depth texture in framebuffer-render method, refactor texture-render-depth to use this method
 * implement rendering to layers of 3D texture
 * function to render multiple attachments (generalise texture-render-color and texture-render-depth)

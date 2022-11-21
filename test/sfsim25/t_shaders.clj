@@ -227,7 +227,8 @@ void main()
                                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                                 data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
                                 data-flat (flatten data-3d)
-                                table     (make-float-texture-3d {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+                                table     (make-float-texture-3d :linear :repeat
+                                                                 {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
                                 program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
                                 vao       (make-vertex-array-object program indices vertices [:point 3])
                                 tex       (texture-render-color
