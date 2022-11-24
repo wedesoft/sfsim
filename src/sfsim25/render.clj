@@ -286,6 +286,14 @@
                    ~@body
                    {:texture texture# :target GL11/GL_TEXTURE_2D}))
 
+(defmacro create-depth-texture
+  "Macro to initialise shadow map"
+  [interpolation boundary & body]
+  `(create-texture-2d ~interpolation ~boundary
+                      (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL14/GL_COMPARE_R_TO_TEXTURE)
+                      (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL)
+                      ~@body))
+
 (defmulti setup-boundary-3d identity)
 
 (defmethod setup-boundary-3d :clamp
@@ -327,6 +335,13 @@
   "Load RGB image into an OpenGL texture"
   [interpolation boundary image]
   (make-texture-2d image make-int-buffer interpolation boundary GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE))
+
+(defn make-depth-texture
+  "Load floating-point values into a shadow map"
+  [interpolation boundary image]
+  (create-depth-texture interpolation boundary
+                        (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F (:width image) (:height image) 0
+                                           GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (make-float-buffer (:data image)))))
 
 (defn make-float-texture-2d
   "Load floating-point 2D data into red channel of an OpenGL texture"

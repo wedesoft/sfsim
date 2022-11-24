@@ -345,6 +345,44 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png"))
 
+(def vertex-interpolate
+"#version 410 core
+in vec3 point;
+out vec3 pos;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  pos = vec3(0.5 + 0.5 * point.xy, point.z);
+}")
+
+(def fragment-sample-shadow
+"#version 410 core
+uniform sampler2DShadow shadow_map;
+in vec3 pos;
+out vec3 fragColor;
+void main(void)
+{
+  float result = texture(shadow_map, pos);
+  fragColor = vec3(result, result, result);
+}")
+
+(fact "Perform shadow sampling using 2D depth texture"
+  (offscreen-render 64 64
+                    (let [indices  [0 1 3 2]
+                          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                          program  (make-program :vertex [vertex-interpolate] :fragment [fragment-sample-shadow])
+                          vao      (make-vertex-array-object program indices vertices [:point 3])
+                          data     [0.4 0.4 0.4 0.4, 0.4 0.6 0.6 0.4, 0.4 0.6 0.6 0.4, 0.4 0.4 0.4 0.4]
+                          depth    (make-depth-texture :linear :clamp {:width 4 :height 4 :data (float-array data)})]
+                      (clear (matrix [1.0 0.0 0.0]))
+                      (use-program program)
+                      (uniform-sampler program :shadow_map 0)
+                      (use-textures depth)
+                      (render-quads vao)
+                      (destroy-texture depth)
+                      (destroy-vertex-array-object vao)
+                      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/shadow-sample.png"))
+
 (def fragment-texture-3d
 "#version 410 core
 in vec2 uv_fragment;
