@@ -379,7 +379,7 @@
 
 (defmacro framebuffer-render
   "Macro to render to depth and color texture attachments"
-  [width height depth-texture color-textures & body]
+  [width height cull-front depth-texture color-textures & body]
   `(let [fbo# (GL30/glGenFramebuffers)]
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
@@ -395,7 +395,7 @@
                                                 0)
                      color-attachment#))
                ~color-textures))))
-       (setup-rendering ~width ~height false)
+       (setup-rendering ~width ~height ~cull-front)
        ~@body
        (finally
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
@@ -407,7 +407,7 @@
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
          texture#        (create-texture-2d :linear :clamp
                                             (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat# ~width ~height))]
-     (framebuffer-render ~width ~height nil [texture#] ~@body)
+     (framebuffer-render ~width ~height false nil [texture#] ~@body)
      texture#))
 
 (defmacro texture-render-depth

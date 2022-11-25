@@ -564,7 +564,7 @@ void main()
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
                vao      (make-vertex-array-object program indices vertices [:point 3])]
-           (framebuffer-render 1 1 nil [tex1 tex2]
+           (framebuffer-render 1 1 false nil [tex1 tex2]
                                (use-program program)
                                (render-quads vao))
            (get-scale (float-texture->floats tex1 1 1) 0 0) => 0.25
