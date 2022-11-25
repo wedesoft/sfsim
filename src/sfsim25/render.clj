@@ -415,8 +415,7 @@
 (defmacro texture-render-depth
   "Macro to create shadow map"
   [width height & body]
-  `(let [fbo# (GL30/glGenFramebuffers)
-         tex# (create-depth-texture :linear :clamp
+  `(let [tex# (create-depth-texture :linear :clamp
                                     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F ~width ~height))]
      (framebuffer-render ~width ~height true tex# []
                          ~@body
