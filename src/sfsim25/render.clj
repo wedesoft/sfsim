@@ -418,15 +418,9 @@
   `(let [fbo# (GL30/glGenFramebuffers)
          tex# (create-depth-texture :linear :clamp
                                     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F ~width ~height))]
-     (try
-       (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
-       (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT (:texture tex#) 0)
-       (setup-rendering ~width ~height true)
-       ~@body
-       tex#
-       (finally
-         (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
-         (GL30/glDeleteFramebuffers fbo#)))))
+     (framebuffer-render ~width ~height true tex# []
+                         ~@body
+                         tex#)))
 
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
