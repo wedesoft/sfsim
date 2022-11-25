@@ -574,6 +574,29 @@ void main()
            (destroy-texture tex1)
            (destroy-texture tex2))))
 
+(def fragment-noop
+"#version 410 core
+void main(void)
+{
+}")
+
+(facts "Using framebuffer to render to depth texture"
+       (offscreen-render 32 32
+         (let [depth    (create-depth-texture :linear :clamp
+                                              (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F 1 1))
+               indices  [2 3 1 0]
+               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
+               vao      (make-vertex-array-object program indices vertices [:point 3])]
+           (framebuffer-render 1 1 true depth []
+                               (use-program program)
+                               (clear)
+                               (render-quads vao))
+           (get-scale (depth-texture->floats depth 1 1) 0 0) => 0.5
+           (destroy-vertex-array-object vao)
+           (destroy-program program)
+           (destroy-texture depth))))
+
 (def lod-texture-1d
 "#version 410 core
 in vec2 uv_fragment;
@@ -642,12 +665,6 @@ void main()
       (offscreen-render 32 32
         (let [tex (texture-render-depth 10 10 (clear))]
           (get-scale (depth-texture->floats tex 10 10) 0 0) => 0.0)))
-
-(def fragment-noop
-"#version 410 core
-void main(void)
-{
-}")
 
 (tabular "Render back face of quad into shadow map"
          (offscreen-render 32 32

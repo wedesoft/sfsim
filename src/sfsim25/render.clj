@@ -383,6 +383,8 @@
   `(let [fbo# (GL30/glGenFramebuffers)]
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
+       (when ~depth-texture
+         (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT (:texture ~depth-texture) 0))
        (GL20/glDrawBuffers
          (make-int-buffer
            (int-array
