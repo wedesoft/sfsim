@@ -740,11 +740,11 @@ void main(void)
               program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene])
               vao (make-vertex-array-object program-main indices vertices [:point 3])
               shadow-map (texture-render-depth
-                256 256
-                (clear)
-                (use-program program-shadow)
-                (uniform-matrix4 program-shadow :shadow_ndc_matrix (:shadow-ndc-matrix shadow))
-                (render-quads vao))]
+                           256 256
+                           (clear)
+                           (use-program program-shadow)
+                           (uniform-matrix4 program-shadow :shadow_ndc_matrix (:shadow-ndc-matrix shadow))
+                           (render-quads vao))]
           (setup-rendering 320 240 false); Need to set it up again because texture-render-depth has overriden the settings
           (clear (matrix [0 0 0]))
           (use-program program-main)
