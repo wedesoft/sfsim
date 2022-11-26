@@ -621,7 +621,7 @@ void main(void)
                                (use-program program)
                                (clear)
                                (render-quads vao))
-           (get-scale (depth-texture->floats depth 1 1) 0 0) => 0.5
+           (get-scale (depth-texture->floats depth) 0 0) => 0.5
            (destroy-vertex-array-object vao)
            (destroy-program program)
            (destroy-texture depth))))
@@ -693,7 +693,7 @@ void main()
 (fact "Render empty depth map"
       (offscreen-render 32 32
         (let [tex (texture-render-depth 10 10 (clear))]
-          (get-scale (depth-texture->floats tex 10 10) 0 0) => 0.0
+          (get-scale (depth-texture->floats tex) 0 0) => 0.0
           (destroy-texture tex))))
 
 (tabular "Render back face of quad into shadow map"
@@ -703,7 +703,7 @@ void main()
                  program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
                  vao      (make-vertex-array-object program indices vertices [:point 3])
                  tex      (texture-render-depth 10 10 (clear) (use-program program) (render-quads vao))]
-             (get-scale (depth-texture->floats tex 10 10) 5 5) => ?z
+             (get-scale (depth-texture->floats tex) 5 5) => ?z
              (destroy-texture tex)
              (destroy-vertex-array-object vao)
              (destroy-program program)))

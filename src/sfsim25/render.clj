@@ -424,8 +424,8 @@
 
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
-  [texture width height]
-  (with-texture (:target texture) (:texture texture)
+  [{:keys [target texture width height]}]
+  (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
           data (float-array (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT buf)
