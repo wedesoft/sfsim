@@ -565,7 +565,7 @@ void main()
 (fact "Render to floating-point texture (needs active OpenGL context)"
       (offscreen-render 32 32
         (let [tex (texture-render-color 8 8 true (clear (matrix [1.0 2.0 3.0])))]
-          (get-vector3 (rgb-texture->vectors3 tex 32 32) 0 0) => (matrix [1.0 2.0 3.0])
+          (get-vector3 (rgb-texture->vectors3 tex) 0 0) => (matrix [1.0 2.0 3.0])
           (destroy-texture tex))))
 
 (fact "Render to image texture (needs active OpenGL context)"

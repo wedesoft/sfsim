@@ -444,8 +444,8 @@
 
 (defn rgb-texture->vectors3
   "Extract floating-point BGR vectors from texture"
-  [texture width height]
-  (with-texture (:target texture) (:texture texture)
+  [{:keys [target texture width height]}]
+  (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGR GL11/GL_FLOAT buf)
