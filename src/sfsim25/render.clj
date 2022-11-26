@@ -454,8 +454,8 @@
 
 (defn rgba-texture->vectors4
   "Extract floating-point BGRA vectors from texture"
-  [texture width height]
-  (with-texture (:target texture) (:texture texture)
+  [{:keys [target texture width height]}]
+  (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
           data (float-array (* width height 4))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_FLOAT buf)
@@ -464,8 +464,8 @@
 
 (defn texture->image
   "Convert texture to RGB image"
-  [texture width height]
-  (with-texture (:target texture) (:texture texture)
+  [{:keys [target texture width height]}]
+  (with-texture target texture
     (let [buf  (BufferUtils/createIntBuffer (* width height))
           data (int-array (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buf)
