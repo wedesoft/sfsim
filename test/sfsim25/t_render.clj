@@ -596,8 +596,8 @@ void main()
            (framebuffer-render 1 1 false nil [tex1 tex2]
                                (use-program program)
                                (render-quads vao))
-           (get-scale (float-texture->floats tex1 1 1) 0 0) => 0.25
-           (get-scale (float-texture->floats tex2 1 1) 0 0) => 0.75
+           (get-scale (float-texture->floats tex1) 0 0) => 0.25
+           (get-scale (float-texture->floats tex2) 0 0) => 0.75
            (destroy-vertex-array-object vao)
            (destroy-program program)
            (destroy-texture tex1)
