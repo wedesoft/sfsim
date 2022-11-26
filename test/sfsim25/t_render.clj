@@ -270,6 +270,13 @@ void main()
   :nearest       :repeat   "floats-1d-nearest-repeat"
   :linear        :repeat   "floats-1d-linear-repeat")
 
+(fact "Size of 2D RGB texture"
+      (offscreen-render 64 64
+                        (let [tex (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
+                          (:width tex) => 2
+                          (:height tex) => 2
+                          (destroy-texture tex))))
+
 (def fragment-texture-2d
 "#version 410 core
 in vec2 uv_fragment;
@@ -350,6 +357,13 @@ void main()
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png"))
+
+(fact "Size of 2D depth texture"
+      (offscreen-render 64 64
+                        (let [tex (make-depth-texture :linear :clamp {:width 2 :height 1 :data (float-array [0 0])})]
+                          (:width tex) => 2
+                          (:height tex) => 1
+                          (destroy-texture tex))))
 
 (def vertex-interpolate
 "#version 410 core
@@ -564,8 +578,8 @@ void main()
 
 (facts "Using framebuffer to render to two color textures"
        (offscreen-render 32 32
-         (let [tex1     (create-texture-2d :linear :clamp (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
-               tex2     (create-texture-2d :linear :clamp (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
+         (let [tex1     (create-texture-2d :linear :clamp 1 1 (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
+               tex2     (create-texture-2d :linear :clamp 1 1 (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 1 1))
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
@@ -588,7 +602,7 @@ void main(void)
 
 (facts "Using framebuffer to render to depth texture"
        (offscreen-render 32 32
-         (let [depth    (create-depth-texture :linear :clamp
+         (let [depth    (create-depth-texture :linear :clamp 1 1
                                               (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F 1 1))
                indices  [2 3 1 0]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]

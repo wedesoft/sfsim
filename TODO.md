@@ -1,7 +1,7 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* add methods to create empty textures as required
+* add methods to create empty textures and use in tests as well
 * implement rendering to layers of 3D texture
 * function to render multiple attachments (generalise texture-render-color and texture-render-depth)
 * maybe rename get-scale

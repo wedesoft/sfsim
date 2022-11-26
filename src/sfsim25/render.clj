@@ -279,17 +279,17 @@
 
 (defmacro create-texture-2d
   "Macro to initialise 2D texture"
-  [interpolation boundary & body]
+  [interpolation boundary width height & body]
   `(create-texture GL11/GL_TEXTURE_2D texture#
                    (setup-interpolation GL11/GL_TEXTURE_2D ~interpolation)
                    (setup-boundary-2d ~boundary)
                    ~@body
-                   {:texture texture# :target GL11/GL_TEXTURE_2D}))
+                   {:texture texture# :target GL11/GL_TEXTURE_2D :width ~width :height ~height}))
 
 (defmacro create-depth-texture
   "Macro to initialise shadow map"
-  [interpolation boundary & body]
-  `(create-texture-2d ~interpolation ~boundary
+  [interpolation boundary width height & body]
+  `(create-texture-2d ~interpolation ~boundary ~width ~height
                       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL14/GL_COMPARE_R_TO_TEXTURE)
                       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL)
                       ~@body))
@@ -329,7 +329,7 @@
   [image make-buffer interpolation boundary internalformat format_ type_]
   "Initialise a 2D texture"
   (let [buffer (make-buffer (:data image))]
-    (create-texture-2d interpolation boundary
+    (create-texture-2d interpolation boundary (:width image) (:height image)
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer))))
 
 (defn make-rgb-texture
@@ -340,7 +340,7 @@
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
   [interpolation boundary image]
-  (create-depth-texture interpolation boundary
+  (create-depth-texture interpolation boundary (:width image) (:height image)
                         (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F (:width image) (:height image) 0
                                            GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (make-float-buffer (:data image)))))
 
@@ -408,7 +408,7 @@
   "Macro to render to a 2D color texture"
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
-         texture#        (create-texture-2d :linear :clamp
+         texture#        (create-texture-2d :linear :clamp ~width ~height
                                             (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat# ~width ~height))]
      (framebuffer-render ~width ~height false nil [texture#] ~@body)
      texture#))
@@ -416,7 +416,7 @@
 (defmacro texture-render-depth
   "Macro to create shadow map"
   [width height & body]
-  `(let [tex# (create-depth-texture :linear :clamp
+  `(let [tex# (create-depth-texture :linear :clamp ~width ~height
                                     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F ~width ~height))]
      (framebuffer-render ~width ~height true tex# []
                          ~@body
