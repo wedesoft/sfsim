@@ -403,6 +403,15 @@ void main(void)
                       (destroy-vertex-array-object vao)
                       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/shadow-sample.png"))
 
+(fact "Size of 3D texture"
+      (offscreen-render 64 64
+                        (let [tex (make-float-texture-3d :linear :clamp
+                                                         {:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
+                          (:width tex) => 3
+                          (:height tex) => 2
+                          (:depth tex) => 1
+                          (destroy-texture tex))))
+
 (def fragment-texture-3d
 "#version 410 core
 in vec2 uv_fragment;

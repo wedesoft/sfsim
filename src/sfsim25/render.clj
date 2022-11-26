@@ -310,12 +310,12 @@
 
 (defmacro create-texture-3d
   "Macro to initialise 3D texture"
-  [interpolation boundary & body]
+  [interpolation boundary width height depth & body]
   `(create-texture GL12/GL_TEXTURE_3D texture#
                    (setup-interpolation GL12/GL_TEXTURE_3D ~interpolation)
                    (setup-boundary-3d ~boundary)
                    ~@body
-                   {:texture texture# :target GL12/GL_TEXTURE_3D}))
+                   {:texture texture# :target GL12/GL_TEXTURE_3D :width ~width :height ~height :depth ~depth}))
 
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
@@ -363,7 +363,7 @@
   "Load floating-point 3D data into red channel of an OpenGL texture"
   [interpolation boundary image]
   (let [buffer (make-float-buffer (:data image))]
-    (create-texture-3d interpolation boundary
+    (create-texture-3d interpolation boundary (:width image) (:height image) (:depth image)
       (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
 
 (defn destroy-texture
