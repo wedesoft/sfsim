@@ -258,12 +258,12 @@
 
 (defmacro create-texture-1d
   "Macro to initialise 1D texture"
-  [interpolation boundary & body]
+  [interpolation boundary width & body]
   `(create-texture GL11/GL_TEXTURE_1D texture#
                    (setup-interpolation GL11/GL_TEXTURE_1D ~interpolation)
                    (setup-boundary-1d ~boundary)
                    ~@body
-                   {:texture texture# :target GL11/GL_TEXTURE_1D}))
+                   {:texture texture# :target GL11/GL_TEXTURE_1D :width ~width}))
 
 (defmulti setup-boundary-2d identity)
 
@@ -320,9 +320,10 @@
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
   [interpolation boundary data]
-  (let [buffer (make-float-buffer data)]
-    (create-texture-1d interpolation boundary
-      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F (count data) 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
+  (let [buffer (make-float-buffer data)
+        width  (count data) ]
+    (create-texture-1d interpolation boundary width
+      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
 
 (defn- make-texture-2d
   [image make-buffer interpolation boundary internalformat format_ type_]

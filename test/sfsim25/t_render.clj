@@ -220,6 +220,12 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
 
+(fact "Size of 1D texture"
+      (offscreen-render 64 64
+                        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
+                          (:width tex) => 4
+                          (destroy-texture tex))))
+
 (def vertex-texture
 "#version 410 core
 in vec3 point;
