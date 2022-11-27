@@ -378,6 +378,31 @@
     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
     (GL11/glBindTexture (:target texture) (:texture texture))))
 
+(defn- list-texture-layers
+  "Return 2D textures and each layer of 3D textures"
+  [textures]
+  (flatten
+    (map (fn [texture]
+             (if (:depth texture)
+               (map (fn [layer] (assoc texture :layer layer)) (range (:depth texture)))
+               texture))
+         textures)))
+
+(defn setup-color-attachments
+  "Setup color attachments with 2D and 3D textures"
+  [textures]
+  (GL20/glDrawBuffers
+    (make-int-buffer
+      (int-array
+        (map-indexed
+          (fn [index texture]
+              (let [color-attachment (+ GL30/GL_COLOR_ATTACHMENT0 index)]
+                (if (:layer texture)
+                  (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:texture texture) 0 (:layer texture))
+                  (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER color-attachment (:texture texture) 0))
+                color-attachment))
+          (list-texture-layers textures))))))
+
 (defmacro framebuffer-render
   "Macro to render to depth and color texture attachments"
   [width height cull-front depth-texture color-textures & body]
@@ -386,18 +411,7 @@
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
        (when ~depth-texture
          (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT (:texture ~depth-texture) 0))
-       (GL20/glDrawBuffers
-         (make-int-buffer
-           (int-array
-             (map-indexed
-               (fn [index# color-texture#]
-                   (let [color-attachment# (+ GL30/GL_COLOR_ATTACHMENT0 index#)]
-                     (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER
-                                                color-attachment#
-                                                (:texture color-texture#)
-                                                0)
-                     color-attachment#))
-               ~color-textures))))
+       (setup-color-attachments ~color-textures)
        (setup-rendering ~width ~height ~cull-front)
        ~@body
        (finally

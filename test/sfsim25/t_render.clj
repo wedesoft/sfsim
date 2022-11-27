@@ -7,7 +7,8 @@
             [sfsim25.util :refer :all]
             [sfsim25.matrix :refer :all]
             [sfsim25.render :refer :all])
-  (:import [org.lwjgl.opengl Display DisplayMode GL11 GL30 GL42]))
+  (:import [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL30 GL42]
+           [org.lwjgl BufferUtils]))
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/render/red.png"))
@@ -602,6 +603,26 @@ void main()
            (destroy-program program)
            (destroy-texture tex1)
            (destroy-texture tex2))))
+
+(facts "Using framebuffer to render to layers of 3D texture"
+       (offscreen-render 32 32
+         (let [tex      (create-texture-3d :linear :clamp 1 1 2 (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 1 1 2))
+               indices  [0 1 3 2]
+               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
+               vao      (make-vertex-array-object program indices vertices [:point 3])]
+           (framebuffer-render 1 1 false nil [tex]
+                               (use-program program)
+                               (render-quads vao))
+           (with-texture (:target tex) (:texture tex)
+             (let [buf  (BufferUtils/createFloatBuffer 2)
+                   data (float-array 2)]
+               (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
+               (.get buf data)
+               (seq data) => [0.25 0.75]))
+           (destroy-vertex-array-object vao)
+           (destroy-program program)
+           (destroy-texture tex))))
 
 (def fragment-noop
 "#version 410 core
