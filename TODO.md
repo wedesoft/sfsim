@@ -2,12 +2,13 @@
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * replace boolean with :cullfront and :cullback
-* introduce :mipmap interpolation option
-* maybe rename get-scale
+* maybe rename get-scale, get-elevation, get-water, ... to get-float, get-short, get-byte, ...
 * introduce 3D float value lookup and replace in test
-* clouds: deep opacity maps (use 2D texture for depth map and parallel shapes with 3D interpolation), blue noise offsets for opacity map? use extra shadow map?
 * is it necessary to apply 0.5 pixel offset when reading out opacity map?
 * put deep opacity map functions under test
+* planetary cloud rendering using single deep opacity map (tested?)
+* planetary cloud rendering using cascaded deep opacity maps (tested?)
+* clouds: blue noise offsets for opacity map? use extra shadow map?
 * write article about it
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
