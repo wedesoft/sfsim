@@ -344,11 +344,22 @@
                         (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F (:width image) (:height image) 0
                                            GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (make-float-buffer (:data image)))))
 
+(defn make-empty-texture-2d
+  "Create 2D texture with specified format and allocate storage"
+  [interpolation boundary internalformat width height]
+  (create-texture-2d interpolation boundary width height
+                     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat width height)))
+
 (defn make-empty-float-texture-2d
   "Create 2D floating-point texture and allocate storage"
   [interpolation boundary width height]
-  (create-texture-2d interpolation boundary width height
-                     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F width height)))
+  (make-empty-texture-2d interpolation boundary GL30/GL_R32F width height))
+
+(defn make-empty-depth-texture-2d
+  "Create 2D depth texture and allocate storage"
+  [interpolation boundary width height]
+  (create-depth-texture interpolation boundary width height
+                        (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F width height)))
 
 (defn make-float-texture-2d
   "Load floating-point 2D data into red channel of an OpenGL texture"
@@ -428,16 +439,14 @@
   "Macro to render to a 2D color texture"
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
-         texture#        (create-texture-2d :linear :clamp ~width ~height
-                                            (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat# ~width ~height))]
+         texture#        (make-empty-texture-2d :linear :clamp internalformat# ~width ~height)]
      (framebuffer-render ~width ~height false nil [texture#] ~@body)
      texture#))
 
 (defmacro texture-render-depth
   "Macro to create shadow map"
   [width height & body]
-  `(let [tex# (create-depth-texture :linear :clamp ~width ~height
-                                    (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F ~width ~height))]
+  `(let [tex# (make-empty-depth-texture-2d :linear :clamp ~width ~height)]
      (framebuffer-render ~width ~height true tex# []
                          ~@body
                          tex#)))

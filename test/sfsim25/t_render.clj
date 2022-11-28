@@ -632,8 +632,7 @@ void main(void)
 
 (facts "Using framebuffer to render to depth texture"
        (offscreen-render 32 32
-         (let [depth    (create-depth-texture :linear :clamp 1 1
-                                              (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F 1 1))
+         (let [depth    (make-empty-depth-texture-2d :linear :clamp 1 1)
                indices  [2 3 1 0]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
