@@ -264,7 +264,7 @@ void main()
 (def vao2 (make-vertex-array-object sprogram indices vertices [:point 3]))
 
 (def opacity (create-texture-3d :linear :clamp 512 512 7 (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 7)))
-(def opacity-shape (create-texture-2d :linear :clamp 512 512 (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F 512 512)))
+(def opacity-shape (make-empty-float-texture-2d :linear :clamp 512 512))
 
 (def t0 (atom (System/currentTimeMillis)))
 (def tf @t0)

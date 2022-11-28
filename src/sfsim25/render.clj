@@ -344,6 +344,12 @@
                         (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F (:width image) (:height image) 0
                                            GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (make-float-buffer (:data image)))))
 
+(defn make-empty-float-texture-2d
+  "Create 2D floating-point texture and allocate storage"
+  [interpolation boundary width height]
+  (create-texture-2d interpolation boundary width height
+                     (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_R32F width height)))
+
 (defn make-float-texture-2d
   "Load floating-point 2D data into red channel of an OpenGL texture"
   [interpolation boundary image]
