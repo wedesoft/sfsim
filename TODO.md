@@ -1,7 +1,6 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* add methods to create empty textures and use in tests as well as prototypes
 * replace boolean with :cullfront and :cullback
 * introduce :mipmap interpolation option
 * maybe rename get-scale
