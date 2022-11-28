@@ -606,7 +606,7 @@ void main()
 
 (facts "Using framebuffer to render to layers of 3D texture"
        (offscreen-render 32 32
-         (let [tex      (create-texture-3d :linear :clamp 1 1 2 (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 1 1 2))
+         (let [tex      (make-empty-float-texture-3d :linear :clamp 1 1 2)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])

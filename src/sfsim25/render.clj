@@ -383,6 +383,12 @@
     (create-texture-3d interpolation boundary (:width image) (:height image) (:depth image)
       (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
 
+(defn make-empty-float-texture-3d
+  "Create empty 3D floating-point texture"
+  [interpolation boundary width height depth]
+  (create-texture-3d interpolation boundary width height depth
+                     (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F width height depth)))
+
 (defn destroy-texture
   "Delete an OpenGL texture"
   [texture]
