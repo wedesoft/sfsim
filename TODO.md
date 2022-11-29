@@ -1,7 +1,6 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* replace boolean with :cullfront and :cullback
 * maybe rename get-scale, get-elevation, get-water, ... to get-float, get-short, get-byte, ...
 * introduce 3D float value lookup and replace in test
 * is it necessary to apply 0.5 pixel offset when reading out opacity map?

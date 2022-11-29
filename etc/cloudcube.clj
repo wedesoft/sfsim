@@ -301,7 +301,7 @@ void main()
        (let [light-direction (matrix [0 (cos @light) (sin @light)])
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
              shadow-mat      (shadow-matrices projection transform light-direction 0)]
-         (framebuffer-render 512 512 false nil [opacity opacity-shape]
+         (framebuffer-render 512 512 :cullback nil [opacity opacity-shape]
                              (use-program sprogram)
                              (use-textures worley)
                              (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))

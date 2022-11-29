@@ -594,7 +594,7 @@ void main()
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
                vao      (make-vertex-array-object program indices vertices [:point 3])]
-           (framebuffer-render 1 1 false nil [tex1 tex2]
+           (framebuffer-render 1 1 :cullback nil [tex1 tex2]
                                (use-program program)
                                (render-quads vao))
            (get-scale (float-texture->floats tex1) 0 0) => 0.25
@@ -611,7 +611,7 @@ void main()
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
                vao      (make-vertex-array-object program indices vertices [:point 3])]
-           (framebuffer-render 1 1 false nil [tex]
+           (framebuffer-render 1 1 :cullback nil [tex]
                                (use-program program)
                                (render-quads vao))
            (with-texture (:target tex) (:texture tex)
@@ -637,7 +637,7 @@ void main(void)
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
                vao      (make-vertex-array-object program indices vertices [:point 3])]
-           (framebuffer-render 1 1 true depth []
+           (framebuffer-render 1 1 :cullfront depth []
                                (use-program program)
                                (clear)
                                (render-quads vao))
@@ -794,7 +794,7 @@ void main(void)
                            (use-program program-shadow)
                            (uniform-matrix4 program-shadow :shadow_ndc_matrix (:shadow-ndc-matrix shadow))
                            (render-quads vao))]
-          (setup-rendering 320 240 false); Need to set it up again because texture-render-depth has overriden the settings
+          (setup-rendering 320 240 :cullback); Need to set it up again because texture-render-depth has overriden the settings
           (clear (matrix [0 0 0]))
           (use-program program-main)
           (uniform-sampler program-main :shadow_map 0)

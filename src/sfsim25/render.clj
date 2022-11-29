@@ -8,11 +8,11 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
-  [width height cull-front]
+  [width height culling]
   (GL11/glViewport 0 0 width height)
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace (if cull-front GL11/GL_FRONT GL11/GL_BACK))
+  (GL11/glCullFace ({:cullfront GL11/GL_FRONT :cullback GL11/GL_BACK} culling))
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
@@ -23,7 +23,7 @@
          pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 24 0 0) nil nil)
          data#    (int-array (* ~width ~height))]
      (.makeCurrent pbuffer#)
-     (setup-rendering ~width ~height false)
+     (setup-rendering ~width ~height :cullback)
      (try
        ~@body
        (GL11/glReadPixels 0 0 ~width ~height GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixels#)
@@ -38,7 +38,7 @@
   [width height & body]
   `(do
      (Display/makeCurrent)
-     (setup-rendering ~width ~height false)
+     (setup-rendering ~width ~height :cullback)
      ~@body
      (Display/update)))
 
@@ -428,14 +428,14 @@
 
 (defmacro framebuffer-render
   "Macro to render to depth and color texture attachments"
-  [width height cull-front depth-texture color-textures & body]
+  [width height culling depth-texture color-textures & body]
   `(let [fbo# (GL30/glGenFramebuffers)]
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
        (when ~depth-texture
          (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT (:texture ~depth-texture) 0))
        (setup-color-attachments ~color-textures)
-       (setup-rendering ~width ~height ~cull-front)
+       (setup-rendering ~width ~height ~culling)
        ~@body
        (finally
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
@@ -446,16 +446,14 @@
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
          texture#        (make-empty-texture-2d :linear :clamp internalformat# ~width ~height)]
-     (framebuffer-render ~width ~height false nil [texture#] ~@body)
+     (framebuffer-render ~width ~height :cullback nil [texture#] ~@body)
      texture#))
 
 (defmacro texture-render-depth
   "Macro to create shadow map"
   [width height & body]
   `(let [tex# (make-empty-depth-texture-2d :linear :clamp ~width ~height)]
-     (framebuffer-render ~width ~height true tex# []
-                         ~@body
-                         tex#)))
+     (framebuffer-render ~width ~height :cullfront tex# [] ~@body tex#)))
 
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
