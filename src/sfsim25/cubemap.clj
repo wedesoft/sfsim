@@ -5,7 +5,7 @@
             [clojure.core.matrix.linear :refer (norm)]
             [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
             [sfsim25.matrix :refer :all]
-            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-elevation sqr)])
+            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-short sqr)])
   (:import [mikera.vectorz Vector]))
 
 (set! *unchecked-math* true)
@@ -215,7 +215,7 @@
         py  (mod dy width)
         px  (mod dx width)
         img (elevation-tile in-level ty tx)]
-    (get-elevation img py px)))
+    (get-short img py px)))
 
 (defn map-interpolation
   "Interpolate world map values"

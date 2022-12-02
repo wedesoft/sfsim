@@ -162,38 +162,48 @@
                                   (bit-shift-left (round (mget c 1)) 8)
                                   (round (mget c 2))))))
 
-(defn get-elevation
-  "Read elevation value from an elevation tile"
+(defn get-short
+  "Read value from a short integer tile"
   [{:keys [width height data]} ^long y ^long x]
   (aget data (+ (* width y) x)))
 
-(defn set-elevation!
-  "Write elevation value to an elevation tile"
+(defn set-short!
+  "Write value to a short integer tile"
   [{:keys [width height data]} ^long y ^long x ^long value]
   (aset-short data (+ (* width y) x) value))
 
-(defn get-scale
-  "Read scale value from a scale tile"
+(defn get-float
+  "Read value from a floating-point tile"
   ^double [{:keys [width height data]} ^long y ^long x]
   (aget data (+ (* width y) x)))
 
-(defn set-scale!
-  "Write scale value to a scale tile"
+(defn set-float!
+  "Write value to a floating-point tile"
   [{:keys [width height data]} ^long y ^long x ^double value]
   (aset-float data (+ (* width y) x) value))
 
-(defn get-water
-  "Read water value from a water tile"
+(defn get-float-3d
+  "Read floating-point value from a 3D cube"
+  ^double [{:keys [width height depth data]} ^long z ^long y ^long x]
+  (aget data (+ (* width (+ (* height z) y)) x)))
+
+(defn set-float-3d!
+  "Write floating-point value to a 3D cube"
+  [{:keys [width height depth data]} z y x value]
+  (aset-float data (+ (* width (+ (* height z) y)) x) value))
+
+(defn get-byte
+  "Read byte value from a tile"
   ^long [{:keys [width height data]} ^long y ^long x]
   (byte->ubyte (aget data (+ (* width y) x))))
 
-(defn set-water!
-  "Write water value to a water tile"
+(defn set-byte!
+  "Write byte value to a tile"
   [{:keys [width height data]} ^long y ^long x ^long value]
   (aset-byte data (+ (* width y) x) (ubyte->byte value)))
 
 (defn get-vector3
-  "read BGR vector from a vectors tile"
+  "Read BGR vector from a vectors tile"
   ^Vector [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
     (matrix [(aget data (+ offset 2))

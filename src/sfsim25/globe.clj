@@ -38,7 +38,7 @@
                 p                (cube-map k j i)
                 point            (project-onto-globe p (min 4 in-level) width radius1 radius2)
                 [lon lat height] (cartesian->geodetic point radius1 radius2)]
-            (set-scale! scale v u (/ (norm point) (norm p)))))
+            (set-float! scale v u (/ (norm point) (norm p)))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
           (let [j                (cube-coordinate out-level color-tilesize b v)
                 i                (cube-coordinate out-level color-tilesize a u)
@@ -50,7 +50,7 @@
                 wet              (water-geodetic (min 4 (+ in-level sublevel)) width lon lat)]
             (set-vector3! normals v u normal)
             (set-pixel! tile v u color)
-            (set-water! water v u wet)))
+            (set-byte! water v u wet)))
         (.mkdirs (File. (cube-dir "globe" k out-level a)))
         (spit-image (cube-path "globe" k out-level b a ".png") tile)
         (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))

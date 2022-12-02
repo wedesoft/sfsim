@@ -85,23 +85,29 @@
     (set-pixel! img 1 2 (matrix [253 254 255])) => anything
     (get-pixel img 1 2) => (matrix [253 254 255])))
 
-(facts "Reading and writing of elevation pixels"
+(facts "Reading and writing of short integer values in 2D array"
   (let [elevation {:width 4 :height 2 :data (short-array (range 8))}]
-    (get-elevation elevation 1 2) => 6
-    (set-elevation! elevation 1 2 8) => anything
-    (get-elevation elevation 1 2) => 8))
+    (get-short elevation 1 2) => 6
+    (set-short! elevation 1 2 8) => anything
+    (get-short elevation 1 2) => 8))
 
-(facts "Reading and writing of scale factors"
+(facts "Reading and writing of float values in 2D array"
   (let [scale {:width 4 :height 2 :data (float-array (range 8))}]
-    (get-scale scale 1 2) => 6.0
-    (set-scale! scale 1 2 8.5) => anything
-    (get-scale scale 1 2) => 8.5))
+    (get-float scale 1 2) => 6.0
+    (set-float! scale 1 2 8.5) => anything
+    (get-float scale 1 2) => 8.5))
 
-(facts "Reading and writing of water values"
+(facts "Reading and writing of float values in 3D array"
+  (let [scale {:width 5 :height 3 :depth 2 :data (float-array (range 30))}]
+    (get-float-3d scale 1 2 3) => 28.0
+    (set-float-3d! scale 1 2 3 8.5) => anything
+    (get-float-3d scale 1 2 3) => 8.5))
+
+(facts "Reading and writing of bytes in 2D array"
   (let [water {:width 4 :height 2 :data (byte-array (range 8))}]
-    (get-water water 1 2) => 6
-    (set-water! water 1 2 136) => anything
-    (get-water water 1 2) => 136))
+    (get-byte water 1 2) => 6
+    (set-byte! water 1 2 136) => anything
+    (get-byte water 1 2) => 136))
 
 (facts "Reading and writing of BGR vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
