@@ -1,11 +1,16 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* is it necessary to apply 0.5 pixel offset when reading out opacity map?
-* put deep opacity map functions under test
+* analytical scattering integration for samples s2016-pbs-frostbite-sky-clouds-new.pdf page 38
+* test opacity offsets with constant density cloud, use clip\_shell\_intersections
+* put deep opacity map functions under test, use maximum possible cloud self-shadow length
+* apply 0.5 pixel offset when reading out opacity map
+* clouds: blue noise offsets for opacity map? use extra shadow map?
+* integral of cloud scatter to improve sampling
 * planetary cloud rendering using single deep opacity map (tested?)
 * planetary cloud rendering using cascaded deep opacity maps (tested?)
-* clouds: blue noise offsets for opacity map? use extra shadow map?
+* use rgb for scattering and a for transmittance when creating low-resolution cloud image?
+* delete cloud-track-base
 * write article about it
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
@@ -28,6 +33,7 @@
   * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
   * global cloud map (skybox?)
   * article about atmosphere rendering with clouds
+* appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * shadows
   * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
   * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
