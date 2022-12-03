@@ -1,8 +1,8 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* analytical scattering integration for samples s2016-pbs-frostbite-sky-clouds-new.pdf page 38
 * test opacity offsets with constant density cloud, use clip\_shell\_intersections
+* analytical scattering integration for samples s2016-pbs-frostbite-sky-clouds-new.pdf page 38
 * put deep opacity map functions under test, use maximum possible cloud self-shadow length
 * apply 0.5 pixel offset when reading out opacity map
 * clouds: blue noise offsets for opacity map? use extra shadow map?

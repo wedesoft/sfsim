@@ -110,10 +110,32 @@
              [                   0                    0 (/ 1 (- far near))                  (/ far (- far near))]
              [                   0                    0                  0                                     1]])))
 
+(defn shadow-ndc-adapter
+  "Adapter matrix to exclude texture clamping region from output NDC domain"
+  [width height]
+  (let [x-scale (/ (dec width) width)
+        y-scale (/ (dec height) height)]
+    (matrix [[x-scale 0       0 0]
+             [0       y-scale 0 0]
+             [0       0       1 0]
+             [0       0       0 1]])))
+
 (defn shadow-box-to-map
   "Scale and translate light box coordinates to shadow map texture coordinates"
   [bounding-box]
   (mmul (matrix [[0.5 0 0 0.5] [0 0.5 0 0.5] [0 0 1 0] [0 0 0 1]]) (shadow-box-to-ndc bounding-box)))
+
+(defn shadow-map-adapter
+  "Adapter matrix to exclude texture clamping region from output texture domain"
+  [width height]
+  (let [x-scale  (/ (dec width) width)
+        y-scale  (/ (dec height) height)
+        x-offset (/ 0.5 width)
+        y-offset (/ 0.5 height)]
+    (matrix [[x-scale 0       0 x-offset]
+             [0       y-scale 0 y-offset]
+             [0       0       1 0       ]
+             [0       0       0 1       ]])))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"
@@ -138,15 +160,19 @@
              [           0            0            0 1]])))
 
 (defn shadow-matrices
-  "Choose NDC and texture coordinate matrices for shadow mapping"
-  [projection-matrix transform light-vector longest-shadow]
+  "Choose NDC and texture coordinate matrices for shadow mapping (specify width and height of shadow map)"
+  [width height projection-matrix transform light-vector longest-shadow]
   (let [points       (map #(mmul transform %) (frustum-corners projection-matrix))
         light-matrix (orient-to-light light-vector)
         bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)
         shadow-ndc   (shadow-box-to-ndc bbox)
         shadow-map   (shadow-box-to-map bbox)
+        ndc-adapter  (shadow-ndc-adapter width height)
+        map-adapter  (shadow-map-adapter width height)
         depth        (- (mget (:bottomleftnear bbox) 2) (mget (:toprightfar bbox) 2))]
-    {:shadow-ndc-matrix (mmul shadow-ndc light-matrix) :shadow-map-matrix (mmul shadow-map light-matrix) :depth depth}))
+    {:shadow-ndc-matrix (mmul ndc-adapter shadow-ndc light-matrix)
+     :shadow-map-matrix (mmul map-adapter shadow-map light-matrix)
+     :depth depth}))
 
 (defn pack-matrices
   "Pack nested vector of matrices into float array"

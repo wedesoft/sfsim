@@ -6,7 +6,7 @@
               [clojure.core.matrix :refer (mget matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
-              [sfsim25.util :refer (get-vector3)]
+              [sfsim25.util :refer (get-vector3 get-float)]
               [sfsim25.clouds :refer :all]))
 
 (def cloud-track-probe
@@ -420,3 +420,43 @@ void main()
          "initial_lod(3, 7, 2.0)"                1
          "lod_increment(1.0)"                    0
          "lod_increment(2.0)"                    1)
+
+(def vertex-copy
+"#version 410 core
+in vec3 point;
+out VS_OUT
+{
+  vec3 origin;
+} vs_out;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  vs_out.origin = point;
+}")
+
+(def opacity-fragment
+"#version 410 core
+in VS_OUT
+{
+  vec3 origin;
+} fs_in;
+layout (location = 0) out float opacity_offset;
+void main()
+{
+  opacity_offset = fs_in.origin.x;
+}")
+
+(fact "Compute deep opacity map offsets"
+  (offscreen-render 1 1
+    (let [indices         [0 1 3 2]
+          vertices        [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
+          program         (make-program :vertex [vertex-copy] :fragment [opacity-fragment])
+          vao             (make-vertex-array-object program indices vertices [:point 3])
+          opacity-offsets (make-empty-float-texture-2d :linear :clamp 2 2)]
+      (framebuffer-render 2 2 :cullback nil [opacity-offsets]
+                          (use-program program)
+                          (render-quads vao))
+      (get-float (float-texture->floats opacity-offsets) 0 0) => -0.5
+      (destroy-texture opacity-offsets)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))))

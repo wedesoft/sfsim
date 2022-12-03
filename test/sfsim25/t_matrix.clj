@@ -70,12 +70,26 @@
          (project (mmul m (matrix [2 11  -5 1]))) => (roughly-matrix (matrix [-1  1 1]) 1e-6)
          (project (mmul m (matrix [2  3 -13 1]))) => (roughly-matrix (matrix [-1 -1 0]) 1e-6)))
 
+(facts "Adapter matrix to exclude texture clamping region from output domain"
+       (let [m (shadow-ndc-adapter 4 2)]
+         (mmul m (matrix [-1.0 -1.0 0 1])) => (roughly-matrix (matrix [-0.75 -0.5 0 1]) 1e-6)
+         (mmul m (matrix [ 1.0 -1.0 0 1])) => (roughly-matrix (matrix [ 0.75 -0.5 0 1]) 1e-6)
+         (mmul m (matrix [-1.0  1.0 0 1])) => (roughly-matrix (matrix [-0.75  0.5 0 1]) 1e-6)
+         (mmul m (matrix [-1.0 -1.0 1 1])) => (roughly-matrix (matrix [-0.75 -0.5 1 1]) 1e-6)))
+
 (facts "Scale and translate light box coordinates to shadow map coordinates"
        (let [m (shadow-box-to-map {:bottomleftnear (matrix [2 3 -5]) :toprightfar (matrix [7 11 -13])})]
          (project (mmul m (matrix [2  3  -5 1]))) => (roughly-matrix (matrix [ 0  0 1]) 1e-6)
          (project (mmul m (matrix [7  3  -5 1]))) => (roughly-matrix (matrix [ 1  0 1]) 1e-6)
          (project (mmul m (matrix [2 11  -5 1]))) => (roughly-matrix (matrix [ 0  1 1]) 1e-6)
          (project (mmul m (matrix [2  3 -13 1]))) => (roughly-matrix (matrix [ 0  0 0]) 1e-6)))
+
+(facts "Adapter matrix to exclude texture clamping region from output domain"
+       (let [m (shadow-map-adapter 4 2)]
+         (mmul m (matrix [0.0 0.0 0 1])) => (roughly-matrix (matrix [0.125 0.25 0 1]) 1e-6)
+         (mmul m (matrix [1.0 0.0 0 1])) => (roughly-matrix (matrix [0.875 0.25 0 1]) 1e-6)
+         (mmul m (matrix [0.0 1.0 0 1])) => (roughly-matrix (matrix [0.125 0.75 0 1]) 1e-6)
+         (mmul m (matrix [0.0 0.0 1 1])) => (roughly-matrix (matrix [0.125 0.25 1 1]) 1e-6)))
 
 (facts "Generate orthogonal vector"
   (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0
@@ -103,19 +117,21 @@
              transform1 (identity-matrix 4)
              transform2 (transformation-matrix (rotation-x (/ PI 2)) (matrix [0 0 0]))
              light_direction (matrix [0 1 0])]
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light_direction 0)) (matrix [0 750 -1000 1]))
-         => (roughly-matrix (matrix [1 0 1 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light_direction 0)) (matrix [0 -750 -1000 1]))
-         => (roughly-matrix (matrix [1 0 0 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices 640 480 projection transform1 light_direction 0)) (matrix [0 750 -1000 1]))
+         => (roughly-matrix (matrix [0.9984375 0 1 1]) 1e-6)
+         (mmul (:shadow-ndc-matrix (shadow-matrices 640 480 projection transform1 light_direction 0)) (matrix [0 -750 -1000 1]))
+         => (roughly-matrix (matrix [0.9984375 0 0 1]) 1e-6)
+         (mmul (:shadow-ndc-matrix (shadow-matrices 640 480 projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
          => (roughly-matrix (matrix [0 0 1 1]) 1e-6)
-         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform2 light_direction 0)) (matrix [0 5 0 1]))
+         (mmul (:shadow-ndc-matrix (shadow-matrices 640 480 projection transform2 light_direction 0)) (matrix [0 5 0 1]))
          => (roughly-matrix (matrix [0 0 0 1]) 1e-6)
-         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
+         (mmul (:shadow-map-matrix (shadow-matrices 640 480 projection transform1 light_direction 0)) (matrix [0 750 -1000 1]))
+         => (roughly-matrix (matrix [0.99921875 0.5 1 1]) 1e-6)
+         (mmul (:shadow-map-matrix (shadow-matrices 640 480 projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
          => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)
-         (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light_direction 500)) (matrix [0 1500 0 1]))
+         (mmul (:shadow-map-matrix (shadow-matrices 640 480 projection transform2 light_direction 500)) (matrix [0 1500 0 1]))
          => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)
-         (:depth (shadow-matrices projection transform1 light_direction 0))
+         (:depth (shadow-matrices 640 480 projection transform1 light_direction 0))
          => (roughly 1500 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"
