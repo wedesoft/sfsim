@@ -129,10 +129,10 @@ void main()
   (template/fn [x y] "#version 410 core
 out vec3 fragColor;
 uniform sampler2D table;
-vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
+vec3 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 void main()
 {
-  fragColor = interpolate_2d(table, 3, 2, vec2(<%= x %>, <%= y %>)).rgb;
+  fragColor = interpolate_2d(table, 3, 2, vec2(<%= x %>, <%= y %>));
 }"))
 
 (def interpolate-2d-test (lookup-2d-test interpolate-2d-probe interpolate-2d convert-2d-index))
