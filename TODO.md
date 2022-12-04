@@ -1,7 +1,6 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* create 3d index from sample
 * interpolate\_2d should return vec3
 * convert\_1d\_index
 * test opacity offsets with constant density cloud, use clip\_shell\_intersections
