@@ -1,7 +1,10 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* shadow sampling: use 2d index sampling
 * convert\_1d\_index
+* shadow lookup: use convert 2d index
+* opacity lookup: use convert 2d index and convert 1d index
 * test opacity offsets with constant density cloud, use clip\_shell\_intersections
 * analytical scattering integration for samples s2016-pbs-frostbite-sky-clouds-new.pdf page 38
 * put deep opacity map functions under test, use maximum possible cloud self-shadow length

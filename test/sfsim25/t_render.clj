@@ -6,6 +6,7 @@
             [comb.template :as template]
             [sfsim25.util :refer :all]
             [sfsim25.matrix :refer :all]
+            [sfsim25.shaders :as s]
             [sfsim25.render :refer :all])
   (:import [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL30 GL42]
            [org.lwjgl BufferUtils]))
@@ -768,9 +769,10 @@ uniform sampler2DShadow shadow_map;
 in vec4 shadow_pos;
 in float ambient;
 out vec3 fragColor;
+vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
-  float shade = textureProj(shadow_map, shadow_pos);
+  float shade = textureProj(shadow_map, convert_shadow_index(shadow_pos, 256, 256));
   float brightness = 0.7 * shade + 0.1 * ambient + 0.1;
   fragColor = vec3(brightness, brightness, brightness);
 }")
@@ -786,7 +788,7 @@ void main(void)
                         -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
                         -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
               program-shadow (make-program :vertex [vertex-shadow] :fragment [fragment-shadow])
-              program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene])
+              program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene s/convert-shadow-index])
               vao (make-vertex-array-object program-main indices vertices [:point 3])
               shadow-map (texture-render-depth
                            256 256

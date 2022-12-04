@@ -74,6 +74,25 @@ void main()
           0   1   0  0.5 16.5  0.5
           0   0   1  0.5  0.5 18.5)
 
+(def convert-shadow-index-probe
+  (template/fn [x y z] "#version 410 core
+out vec3 fragColor;
+vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
+void main()
+{
+  fragColor = convert_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 4, 6).rgb;
+}"))
+
+(def convert-shadow-index-test (shader-test (fn [program]) convert-shadow-index-probe convert-shadow-index))
+
+(tabular "Move shadow index out of clamping region"
+         (fact (convert-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (div (matrix [?r ?g ?b]) (matrix [6 4 1])) 1e-6))
+         ?x  ?y  ?z  ?r   ?g   ?b
+          0   0   0  0.5  0.5  0.0
+          1   0   0  5.5  0.5  0.0
+          0   1   0  0.5  3.5  0.0
+          0   0   1  0.5  0.5  1.0)
+
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core
 out vec3 fragColor;
