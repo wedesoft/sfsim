@@ -52,8 +52,8 @@ void main()
          (fact (convert-2d-index-test [] [?x ?y]) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1])) 1e-6))
          ?x  ?y  ?r   ?g
           0   0   0.5  0.5
-         14   0  14.5  0.5
-          0  16   0.5 16.5)
+          1   0  14.5  0.5
+          0   1   0.5 16.5)
 
 (def convert-4d-index-probe
   (template/fn [x y z w selector] "#version 410 core
