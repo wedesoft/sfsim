@@ -199,26 +199,6 @@ void main()
          0   0   0   1   1   1   1.5  0.5  0.5  1  0   0   0   0
          0   0   0   1   1   1   0.5  1.5  0.5  1  0   0   0   0)
 
-(def convert-3d-index-probe
-  (template/fn [x y z]
-"#version 410 core
-out vec3 fragColor;
-vec3 convert_3d_index(vec3 point, vec3 box_min, vec3 box_max);
-void main()
-{
-  fragColor = convert_3d_index(vec3(<%= x %>, <%= y %>, <%= z %>), vec3(-30, -20, -10), vec3(10, 0, 5));
-}"))
-
-(def convert-3d-index-test (shader-test (fn [program]) convert-3d-index-probe convert-3d-index))
-
-(tabular "Convert 3D point to 3D texture lookup index"
-         (fact (convert-3d-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
-         ?x  ?y  ?z ?r ?g ?b
-        -30 -20 -10 0  0  0
-         10 -20 -10 1  0  0
-        -30   0 -10 0  1  0
-        -30 -20   5 0  0  1)
-
 (defn lookup-3d-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
@@ -245,19 +225,19 @@ void main()
                             (destroy-program program)))
         @result)))
 
-(def interpolate-3d-probe
+(def lookup-3d-probe
   (template/fn [x y z]
 "#version 410 core
 out vec3 fragColor;
 uniform sampler3D table;
-float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
+float lookup_3d(sampler3D tex, vec3 point);
 void main()
 {
-  float result = interpolate_3d(table, vec3(<%= x %>, <%= y %>, <%= z %>), vec3 (0, 0, 0), vec3(1, 1, 1));
+  float result = lookup_3d(table, vec3(<%= x %>, <%= y %>, <%= z %>));
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def interpolate-3d-test (lookup-3d-test interpolate-3d-probe interpolate-3d convert-3d-index))
+(def interpolate-3d-test (lookup-3d-test lookup-3d-probe lookup-3d))
 
 (tabular "Perform 3d interpolation"
          (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)

@@ -61,7 +61,6 @@ uniform vec3 light_direction;
 uniform mat4 shadow;
 uniform float threshold;
 uniform float multiplier;
-uniform int cloud_size;
 uniform float cloud_scale;
 uniform float depth;
 uniform float thickness;
@@ -71,12 +70,12 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float interpolate_3d(sampler3D tex, vec3 point, vec3 box_min, vec3 box_max);
+float lookup_3d(sampler3D tex, vec3 point);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
 float cloud_density(vec3 point, float lod)
 {
-  float s = interpolate_3d(worley, point * cloud_size / cloud_scale, vec3(-30, -30, -30), vec3(30, 30, 30));
+  float s = lookup_3d(worley, point / cloud_scale);
   return max((s - threshold) * multiplier, 0);
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
@@ -107,7 +106,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box s/convert-3d-index s/interpolate-3d phase-function cloud-track-base
+                :fragment [fragment-shader s/ray-box s/lookup-3d phase-function cloud-track-base
                            cloud-track exponential-sampling s/is-above-horizon]))
 
 (def indices [0 1 3 2])
@@ -149,7 +148,6 @@ uniform float separation;
 uniform float threshold;
 uniform float anisotropic;
 uniform float multiplier;
-uniform int cloud_size;
 uniform float cloud_scale;
 uniform int cloud_base_samples;
 uniform float cloud_scatter_amount;
@@ -166,11 +164,11 @@ layout (location = 5) out float opacity6;
 layout (location = 6) out float opacity7;
 layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float interpolate_3d(sampler3D table, vec3 point, vec3 box_min, vec3 box_max);
+float lookup_3d(sampler3D table, vec3 point);
 float phase(float g, float mu);
 float cloud_density(vec3 point, float lod)
 {
-  float s = interpolate_3d(worley, point * cloud_size / cloud_scale, vec3(-30, -30, -30), vec3(30, 30, 30));
+  float s = lookup_3d(worley, point / cloud_scale);
   return max((s - threshold) * multiplier, 0);
 }
 void main()
@@ -254,7 +252,7 @@ void main()
 
 (def sprogram
   (make-program :vertex [svertex-shader]
-                :fragment [sfragment-shader s/ray-box s/interpolate-3d phase-function s/convert-3d-index]))
+                :fragment [sfragment-shader s/ray-box s/lookup-3d phase-function]))
 
 (use-program sprogram)
 (uniform-sampler sprogram :worley 0)
@@ -300,7 +298,7 @@ void main()
                 "fps" (format "%.3f" (/ (* @n 1000.0) (- t1 tf)))))
        (let [light-direction (matrix [0 (cos @light) (sin @light)])
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
-             shadow-mat      (shadow-matrices projection transform light-direction 0)]
+             shadow-mat      (shadow-matrices 512 512 projection transform light-direction 0)]
          (framebuffer-render 512 512 :cullback nil [opacity opacity-shape]
                              (use-program sprogram)
                              (use-textures worley)
@@ -313,8 +311,7 @@ void main()
                              (uniform-float sprogram :multiplier (* 0.1 @multiplier))
                              (uniform-float sprogram :cloud_scatter_amount 1.0)
                              (uniform-int sprogram :cloud_base_samples 64)
-                             (uniform-int sprogram :cloud_size size)
-                             (uniform-float sprogram :cloud_scale 350)
+                             (uniform-float sprogram :cloud_scale 200)
                              (render-quads vao2))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 0 0]))
@@ -329,8 +326,7 @@ void main()
                           (uniform-float program :cloud_scatter_amount 1.0)
                           (uniform-int program :cloud_min_samples 1)
                           (uniform-int program :cloud_max_samples 64)
-                          (uniform-int program :cloud_size size)
-                          (uniform-float program :cloud_scale 350)
+                          (uniform-float program :cloud_scale 200)
                           (uniform-float program :cloud_max_step 1.05)
                           (uniform-int program :cloud_base_samples 64)
                           (uniform-float program :multiplier (* 0.1 @multiplier))

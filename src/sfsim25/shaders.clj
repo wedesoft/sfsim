@@ -29,13 +29,9 @@
   "Shader function for computing intersection of ray with box"
   (slurp "resources/shaders/core/ray-box.glsl"))
 
-(def convert-3d-index
-  "Convert 3D point to 3D texture lookup index"
-  (slurp "resources/shaders/core/convert-3d-index.glsl"))
-
-(def interpolate-3d
-  "Perform 3D interpolation"
-  (slurp "resources/shaders/core/interpolate-3d.glsl"))
+(def lookup-3d
+  "Perform lookup on wrapping 3D texture"
+  (slurp "resources/shaders/core/lookup-3d.glsl"))
 
 (def ray-shell
   "Shader function for computing intersections of ray with a shell"
