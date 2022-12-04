@@ -205,7 +205,7 @@ void main()
                 :fragment [fragment shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections phase-function
                            attenuation-track attenuation-outer transmittance-track transmittance-outer
                            ray-scatter-track ray-scatter-outer shaders/ray-scatter-forward shaders/interpolate-4d
-                           shaders/transmittance-forward shaders/convert-4d-index shaders/elevation-to-index
+                           shaders/transmittance-forward shaders/make-2d-index-from-4d shaders/elevation-to-index
                            shaders/interpolate-2d shaders/is-above-horizon shaders/convert-2d-index shaders/height-to-index
                            shaders/horizon-distance shaders/sun-elevation-to-index shaders/limit-quot shaders/sun-angle-to-index]))
 

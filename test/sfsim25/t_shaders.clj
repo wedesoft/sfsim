@@ -55,21 +55,21 @@ void main()
           1   0  14.5  0.5
           0   1   0.5 16.5)
 
-(def convert-4d-index-probe
+(def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core
 out vec3 fragColor;
-vec4 convert_4d_index(vec4 idx, int size_w, int size_z, int size_y, int size_x);
+vec4 make_2d_index_from_4d(vec4 idx, int size_w, int size_z, int size_y, int size_x);
 void main()
 {
-  vec4 result = convert_4d_index(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 3, 5, 7, 11);
+  vec4 result = make_2d_index_from_4d(vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>), 3, 5, 7, 11);
   fragColor.rg = result.<%= selector %>;
   fragColor.b = 0;
 }"))
 
-(def convert-4d-index-test (shader-test (fn [program]) convert-4d-index-probe convert-4d-index))
+(def make-2d-index-from-4d-test (shader-test (fn [program]) make-2d-index-from-4d-probe make-2d-index-from-4d))
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
-         (fact (convert-4d-index-test [] [?x ?y ?z ?w ?selector]) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1) 1e-6))
+         (fact (make-2d-index-from-4d-test [] [?x ?y ?z ?w ?selector]) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1) 1e-6))
          ?x ?y ?z     ?w     ?s2 ?s1 ?selector ?r               ?g
          0  0   0.123  0.123 11  5   "st"      0.5              (+ 0.5 11)
          1  0   0.123  0.123 11  5   "st"      1.5              (+ 1.5 11)
@@ -161,7 +161,7 @@ void main()
   fragColor = interpolate_4d(table, 2, 2, 2, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
 }"))
 
-(def interpolate-4d-test (lookup-4d-test interpolate-4d-probe interpolate-4d convert-4d-index))
+(def interpolate-4d-test (lookup-4d-test interpolate-4d-probe interpolate-4d make-2d-index-from-4d))
 
 (tabular "Perform 4D interpolation"
          (fact (mget (interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)

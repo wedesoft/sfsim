@@ -604,9 +604,9 @@ void main()
         (uniform-float program :radius radius)
         (uniform-float program :max_height max-height))
     ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
-    shaders/convert-4d-index transmittance-track shaders/transmittance-forward shaders/interpolate-2d shaders/convert-2d-index
-    shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
-    shaders/sun-angle-to-index phase-function))
+    shaders/make-2d-index-from-4d transmittance-track shaders/transmittance-forward shaders/interpolate-2d
+    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
+    shaders/sun-elevation-to-index shaders/sun-angle-to-index phase-function))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact (mget (ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)
@@ -673,7 +673,7 @@ void main()
                                                                           shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
                                                                           shaders/interpolate-2d shaders/convert-2d-index
-                                                                          shaders/interpolate-4d shaders/convert-4d-index
+                                                                          shaders/interpolate-4d shaders/make-2d-index-from-4d
                                                                           shaders/is-above-horizon clouds/sky-outer
                                                                           shaders/ray-shell clouds/cloud-track
                                                                           clouds/cloud-track-base clouds/cloud-density

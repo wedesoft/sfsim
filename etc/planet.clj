@@ -78,10 +78,10 @@
                 :fragment [fragment-atmosphere attenuation-outer ray-scatter-outer transmittance-outer shaders/ray-sphere
                            shaders/transmittance-forward shaders/ray-scatter-forward shaders/elevation-to-index
                            shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
-                           shaders/sun-angle-to-index shaders/convert-4d-index shaders/interpolate-2d shaders/convert-2d-index
-                           shaders/interpolate-4d shaders/is-above-horizon sky-outer shaders/ray-shell cloud-track
-                           attenuation-track cloud-density transmittance-track cloud-shadow ray-scatter-track cloud-track-base
-                           exponential-sampling phase-function]))
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d shaders/interpolate-2d
+                           shaders/convert-2d-index shaders/interpolate-4d shaders/is-above-horizon sky-outer shaders/ray-shell
+                           cloud-track attenuation-track cloud-density transmittance-track cloud-shadow ray-scatter-track
+                           cloud-track-base exponential-sampling phase-function]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -113,7 +113,7 @@
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
-                           shaders/convert-4d-index shaders/is-above-horizon sky-track shaders/ray-shell
+                           shaders/make-2d-index-from-4d shaders/is-above-horizon sky-track shaders/ray-shell
                            shaders/clip-shell-intersections cloud-track cloud-density cloud-shadow cloud-track-base
                            exponential-sampling phase-function shaders/surface-radiance-forward]))
 

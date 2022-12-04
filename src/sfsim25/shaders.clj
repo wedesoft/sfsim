@@ -9,9 +9,9 @@
   "Convert 2D index to 2D texture lookup index"
   (slurp "resources/shaders/core/convert-2d-index.glsl"))
 
-(def convert-4d-index
+(def make-2d-index-from-4d
   "Convert 4D index to 2D indices for part-manual interpolation"
-  (slurp "resources/shaders/core/convert-4d-index.glsl"))
+  (slurp "resources/shaders/core/make-2d-index-from-4d.glsl"))
 
 (def interpolate-2d
   "Perform 2D interpolation"
