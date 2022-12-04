@@ -120,7 +120,6 @@ vec3 transmittance_track(vec3 p, vec3 q);
 bool is_above_horizon(vec3 point, vec3 direction);
 float phase(float g, float mu);
 vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
-vec4 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);

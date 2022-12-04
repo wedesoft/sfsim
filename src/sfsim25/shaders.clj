@@ -18,11 +18,15 @@
   (slurp "resources/shaders/core/make-2d-index-from-4d.glsl"))
 
 (def interpolate-2d
-  "Perform 2D interpolation"
+  "Perform 2D color interpolation"
   (slurp "resources/shaders/core/interpolate-2d.glsl"))
 
+(def interpolate-3d
+  "Perform 3D float interpolation"
+  (slurp "resources/shaders/core/interpolate-3d.glsl"))
+
 (def interpolate-4d
-  "Perform 4D interpolation"
+  "Perform 4D float interpolation"
   (slurp "resources/shaders/core/interpolate-4d.glsl"))
 
 (def is-above-horizon

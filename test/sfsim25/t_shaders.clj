@@ -145,6 +145,54 @@ void main()
          0    1  5.0
          1    1  6.0)
 
+(defn lookup-3d-test [probe & shaders]
+  (fn [& args]
+      (let [result (promise)]
+        (offscreen-render 1 1
+                          (let [indices   [0 1 3 2]
+                                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                                data-3d   (range (* 2 3 4))
+                                table     (make-float-texture-3d :linear :clamp
+                                                                 {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
+                                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                                vao       (make-vertex-array-object program indices vertices [:point 3])
+                                tex       (texture-render-color
+                                            1 1 true
+                                            (use-program program)
+                                            (uniform-sampler program :table 0)
+                                            (use-textures table)
+                                            (render-quads vao))
+                                img       (rgb-texture->vectors3 tex)]
+                            (deliver result (get-vector3 img 0 0))
+                            (destroy-texture tex)
+                            (destroy-texture table)
+                            (destroy-vertex-array-object vao)
+                            (destroy-program program)))
+        @result)))
+
+(def interpolate-3d-probe
+  (template/fn [x y z] "#version 410 core
+out vec3 fragColor;
+uniform sampler3D table;
+float interpolate_3d(sampler3D table, int size_z, int size_y, int size_x, vec3 idx);
+void main()
+{
+  float result = interpolate_3d(table, 2, 3, 4, vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, result, result);
+}"))
+
+(def interpolate-3d-test (lookup-3d-test interpolate-3d-probe interpolate-3d convert-3d-index))
+
+(tabular "Perform 3d interpolation"
+         (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)
+         ?x   ?y ?z ?result
+         0    0  0   0.0
+         0.25 0  0   0.75
+         1    0  0   3.0
+         0    1  0   8.0
+         0    0  1  12.0
+         3    2  1  23.0)
+
 (defn lookup-4d-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
