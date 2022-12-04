@@ -93,6 +93,25 @@ void main()
           0   1   0  0.5  3.5  0.0
           0   0   1  0.5  0.5  1.0)
 
+(def sample-shadow-index-probe
+  (template/fn [x y z] "#version 410 core
+out vec3 fragColor;
+vec4 sample_shadow_index(vec4 idx, int size_y, int size_x);
+void main()
+{
+  fragColor = sample_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 2, 4).rgb;
+}"))
+
+(def sample-shadow-index-test (shader-test (fn [program]) sample-shadow-index-probe sample-shadow-index))
+
+(tabular "Expand sampling index to expand to full NDC space"
+         (fact (sample-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+          ?x    ?y  ?z  ?r ?g ?b
+         -0.75 -0.5  0  -1 -1 0
+          0.75 -0.5  0   1 -1 0
+         -0.75  0.5  0  -1  1 0
+         -0.75 -0.5  1  -1 -1 1)
+
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core
 out vec3 fragColor;

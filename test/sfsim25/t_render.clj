@@ -737,9 +737,10 @@ void main()
 "#version 410 core
 uniform mat4 shadow_ndc_matrix;
 in vec3 point;
+vec4 sample_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
-  gl_Position = shadow_ndc_matrix * vec4(point, 1);
+  gl_Position = sample_shadow_index(shadow_ndc_matrix * vec4(point, 1), 256, 256);
 }
 ")
 
@@ -787,7 +788,7 @@ void main(void)
               vertices [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
                         -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
                         -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
-              program-shadow (make-program :vertex [vertex-shadow] :fragment [fragment-shadow])
+              program-shadow (make-program :vertex [vertex-shadow s/sample-shadow-index] :fragment [fragment-shadow])
               program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene s/convert-shadow-index])
               vao (make-vertex-array-object program-main indices vertices [:point 3])
               shadow-map (texture-render-depth
