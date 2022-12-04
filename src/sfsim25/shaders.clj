@@ -6,8 +6,12 @@
   (slurp "resources/shaders/core/ray-sphere.glsl"))
 
 (def convert-2d-index
-  "Convert 2D index to 2D texture lookup index"
+  "Convert 2D index to 2D texture lookup index avoiding clamping region"
   (slurp "resources/shaders/core/convert-2d-index.glsl"))
+
+(def convert-3d-index
+  "Convert 3D index to 3D texture lookup index avoiding clamping region"
+  (slurp "resources/shaders/core/convert-3d-index.glsl"))
 
 (def make-2d-index-from-4d
   "Convert 4D index to 2D indices for part-manual interpolation"

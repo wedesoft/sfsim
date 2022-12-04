@@ -55,6 +55,25 @@ void main()
           1   0  14.5  0.5
           0   1   0.5 16.5)
 
+(def convert-3d-index-probe
+  (template/fn [x y z] "#version 410 core
+out vec3 fragColor;
+vec3 convert_3d_index(vec3 idx, int size_z, int size_y, int size_x);
+void main()
+{
+  fragColor = convert_3d_index(vec3(<%= x %>, <%= y %>, <%= z %>), 19, 17, 15);
+}"))
+
+(def convert-3d-index-test (shader-test (fn [program]) convert-3d-index-probe convert-3d-index))
+
+(tabular "Convert 2D index to 2D texture lookup index"
+         (fact (convert-3d-index-test [] [?x ?y ?z]) => (roughly-matrix (div (matrix [?r ?g ?b]) (matrix [15 17 19])) 1e-6))
+         ?x  ?y  ?z  ?r   ?g   ?b
+          0   0   0  0.5  0.5  0.5
+          1   0   0 14.5  0.5  0.5
+          0   1   0  0.5 16.5  0.5
+          0   0   1  0.5  0.5 18.5)
+
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core
 out vec3 fragColor;
