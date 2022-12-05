@@ -73,6 +73,7 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float lookup_3d(sampler3D tex, vec3 point);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
+vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 float cloud_density(vec3 point, float lod)
 {
   float s = lookup_3d(worley, point / cloud_scale);
@@ -80,7 +81,7 @@ float cloud_density(vec3 point, float lod)
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
-  vec4 p = shadow * vec4(point, 1);
+  vec4 p = convert_shadow_index(shadow * vec4(point, 1), 512, 512);
   float offset = texture(opacity_shape, p.xy).r;
   float z = (1 - p.z - offset) * depth / thickness;
   vec3 idx = vec3(p.xy, z);
@@ -107,7 +108,7 @@ void main()
 (def program
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box s/lookup-3d phase-function cloud-track-base
-                           cloud-track exponential-sampling s/is-above-horizon]))
+                           cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -132,11 +133,12 @@ out VS_OUT
 {
   vec3 origin;
 } vs_out;
+vec4 sample_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
   gl_Position = vec4(point, 1);
-  vec4 point = iprojection * vec4(point, 1);
-  vs_out.origin = point.xyz / point.w;
+  vec4 origin = iprojection * sample_shadow_index(vec4(point, 1), 512, 512);
+  vs_out.origin = origin.xyz;
 }")
 
 (def sfragment-shader
@@ -251,7 +253,7 @@ void main()
 }")
 
 (def sprogram
-  (make-program :vertex [svertex-shader]
+  (make-program :vertex [svertex-shader s/sample-shadow-index]
                 :fragment [sfragment-shader s/ray-box s/lookup-3d phase-function]))
 
 (use-program sprogram)

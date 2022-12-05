@@ -106,11 +106,11 @@ void main()
 
 (tabular "Expand sampling index to expand to full NDC space"
          (fact (sample-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
-          ?x    ?y  ?z  ?r ?g ?b
-         -0.75 -0.5  0  -1 -1 0
-          0.75 -0.5  0   1 -1 0
-         -0.75  0.5  0  -1  1 0
-         -0.75 -0.5  1  -1 -1 1)
+          ?x ?y ?z ?r    ?g   ?b
+          -1 -1  0 -0.75 -0.5  0
+           1 -1  0  0.75 -0.5  0
+          -1  1  0 -0.75  0.5  0
+          -1 -1  1 -0.75 -0.5  1)
 
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core
