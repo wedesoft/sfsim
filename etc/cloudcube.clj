@@ -133,11 +133,11 @@ out VS_OUT
 {
   vec3 origin;
 } vs_out;
-vec4 sample_shadow_index(vec4 idx, int size_y, int size_x);
+vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
   gl_Position = vec4(point, 1);
-  vec4 origin = iprojection * sample_shadow_index(vec4(point, 1), 512, 512);
+  vec4 origin = iprojection * grow_shadow_index(vec4(point, 1), 512, 512);
   vs_out.origin = origin.xyz;
 }")
 
@@ -253,7 +253,7 @@ void main()
 }")
 
 (def sprogram
-  (make-program :vertex [svertex-shader s/sample-shadow-index]
+  (make-program :vertex [svertex-shader s/grow-shadow-index]
                 :fragment [sfragment-shader s/ray-box s/lookup-3d phase-function]))
 
 (use-program sprogram)

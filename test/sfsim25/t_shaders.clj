@@ -93,24 +93,43 @@ void main()
           0   1   0  0.5  3.5  0.0
           0   0   1  0.5  0.5  1.0)
 
-(def sample-shadow-index-probe
+(def shrink-shadow-index-probe
   (template/fn [x y z] "#version 410 core
 out vec3 fragColor;
-vec4 sample_shadow_index(vec4 idx, int size_y, int size_x);
+vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
-  fragColor = sample_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 2, 4).rgb;
+  fragColor = shrink_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 2, 4).rgb;
 }"))
 
-(def sample-shadow-index-test (shader-test (fn [program]) sample-shadow-index-probe sample-shadow-index))
+(def shrink-shadow-index-test (shader-test (fn [program]) shrink-shadow-index-probe shrink-shadow-index))
 
-(tabular "Expand sampling index to expand to full NDC space"
-         (fact (sample-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+(tabular "Shrink sampling index to cover full NDC space"
+         (fact (shrink-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
           ?x ?y ?z ?r    ?g   ?b
           -1 -1  0 -0.75 -0.5  0
            1 -1  0  0.75 -0.5  0
           -1  1  0 -0.75  0.5  0
           -1 -1  1 -0.75 -0.5  1)
+
+(def grow-shadow-index-probe
+  (template/fn [x y z] "#version 410 core
+out vec3 fragColor;
+vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
+void main()
+{
+  fragColor = grow_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 2, 4).rgb;
+}"))
+
+(def grow-shadow-index-test (shader-test (fn [program]) grow-shadow-index-probe grow-shadow-index))
+
+(tabular "grow sampling index to cover full NDC space"
+         (fact (grow-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+          ?x    ?y  ?z ?r ?g ?b
+         -0.75 -0.5  0 -1 -1  0
+          0.75 -0.5  0  1 -1  0
+         -0.75  0.5  0 -1  1  0
+         -0.75 -0.5  1 -1 -1  1)
 
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core

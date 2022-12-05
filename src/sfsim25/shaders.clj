@@ -17,9 +17,13 @@
   "Move shadow index out of clamping region"
   (slurp "resources/shaders/core/convert-shadow-index.glsl"))
 
-(def sample-shadow-index
-  "Expand sampling index to expand to full NDC space"
-  (slurp "resources/shaders/core/sample-shadow-index.glsl"))
+(def shrink-shadow-index
+  "Shrink sampling index to cover full NDC space"
+  (slurp "resources/shaders/core/shrink-shadow-index.glsl"))
+
+(def grow-shadow-index
+  "Grow sampling index to cover full NDC space"
+  (slurp "resources/shaders/core/grow-shadow-index.glsl"))
 
 (def make-2d-index-from-4d
   "Convert 4D index to 2D indices for part-manual interpolation"
