@@ -3,9 +3,10 @@
               [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
-              [clojure.core.matrix :refer (mget matrix)]
+              [clojure.core.matrix :refer (mget matrix identity-matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
+              [sfsim25.matrix :refer :all]
               [sfsim25.util :refer (get-vector3 get-float)]
               [sfsim25.clouds :refer :all]))
 
@@ -423,6 +424,7 @@ void main()
 
 (def vertex-copy
 "#version 410 core
+uniform mat4 ndc_to_shadow;
 in vec3 point;
 out VS_OUT
 {
@@ -431,11 +433,16 @@ out VS_OUT
 void main()
 {
   gl_Position = vec4(point, 1);
-  vs_out.origin = point;
+  vs_out.origin = (ndc_to_shadow * vec4(point, 1)).xyz;
 }")
 
 (def opacity-fragment
 "#version 410 core
+uniform vec3 light_direction;
+uniform float radius;
+uniform float cloud_bottom;
+uniform float cloud_top;
+uniform float depth;
 in VS_OUT
 {
   vec3 origin;
@@ -443,20 +450,32 @@ in VS_OUT
 layout (location = 0) out float opacity_offset;
 void main()
 {
-  opacity_offset = fs_in.origin.x;
+  opacity_offset = (fs_in.origin.x - (radius + cloud_top)) / depth;
 }")
 
-(fact "Compute deep opacity map offsets"
-  (offscreen-render 1 1
-    (let [indices         [0 1 3 2]
-          vertices        [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-          program         (make-program :vertex [vertex-copy] :fragment [opacity-fragment])
-          vao             (make-vertex-array-object program indices vertices [:point 3])
-          opacity-offsets (make-empty-float-texture-2d :linear :clamp 2 2)]
-      (framebuffer-render 2 2 :cullback nil [opacity-offsets]
-                          (use-program program)
-                          (render-quads vao))
-      (get-float (float-texture->floats opacity-offsets) 0 0) => -0.5
-      (destroy-texture opacity-offsets)
-      (destroy-vertex-array-object vao)
-      (destroy-program program))))
+(tabular "Compute deep opacity map offsets"
+  (fact
+    (offscreen-render 1 1
+      (let [indices         [0 1 3 2]
+            vertices        [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
+            ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [?x 0 0]))
+            light-direction (matrix [1 0 0])
+            program         (make-program :vertex [vertex-copy] :fragment [opacity-fragment])
+            vao             (make-vertex-array-object program indices vertices [:point 3])
+            opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)]
+        (framebuffer-render 3 3 :cullback nil [opacity-offsets]
+                            (use-program program)
+                            (uniform-matrix4 program :ndc_to_shadow ndc-to-shadow)
+                            (uniform-vector3 program :light_direction light-direction)
+                            (uniform-float program :radius 1000)
+                            (uniform-float program :cloud_bottom 100)
+                            (uniform-float program :cloud_top 200)
+                            (uniform-float program :depth 1000)
+                            (render-quads vao))
+        (get-float (float-texture->floats opacity-offsets) 1 1) => (roughly ?result 1e-6)
+        (destroy-texture opacity-offsets)
+        (destroy-vertex-array-object vao)
+        (destroy-program program))))
+  ?x   ?result
+  1200 0
+  1400 0.2)
