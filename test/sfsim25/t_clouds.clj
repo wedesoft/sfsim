@@ -425,6 +425,7 @@ void main()
 (def opacity-vertex
 "#version 410 core
 uniform mat4 ndc_to_shadow;
+uniform int shadow_size;
 in vec3 point;
 out VS_OUT
 {
@@ -434,7 +435,7 @@ vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
   gl_Position = vec4(point, 1);
-  vs_out.origin = (ndc_to_shadow * grow_shadow_index(vec4(point, 1), 3, 3)).xyz;
+  vs_out.origin = (ndc_to_shadow * grow_shadow_index(vec4(point, 1), shadow_size, shadow_size)).xyz;
 }")
 
 (def ray-shell-mock
@@ -442,6 +443,18 @@ void main()
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
   return vec4(origin.x - outer_radius + abs(origin.y), outer_radius - inner_radius, 0, 0);
+}")
+
+(def cloud-density-mock
+"#version 410 core
+uniform float radius;
+uniform float density_start;
+float cloud_density(vec3 point, float lod)
+{
+  if (point.x - radius <= density_start)
+    return 1.0;
+  else
+    return 0.0;
 }")
 
 (def opacity-fragment
@@ -457,6 +470,7 @@ in VS_OUT
 } fs_in;
 layout (location = 0) out float opacity_offset;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
+float cloud_density(vec3 point, float lod);
 void main()
 {
   vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
@@ -471,23 +485,27 @@ void main()
             ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [?x 0 0]))
             light-direction (matrix [1 0 0])
             program         (make-program :vertex [opacity-vertex grow-shadow-index]
-                                          :fragment [opacity-fragment ray-shell-mock])
+                                          :fragment [opacity-fragment ray-shell-mock cloud-density-mock])
             vao             (make-vertex-array-object program indices vertices [:point 3])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)]
         (framebuffer-render 3 3 :cullback nil [opacity-offsets]
                             (use-program program)
                             (uniform-matrix4 program :ndc_to_shadow ndc-to-shadow)
                             (uniform-vector3 program :light_direction light-direction)
+                            (uniform-int program :shadow_size 3)
                             (uniform-float program :radius 1000)
                             (uniform-float program :cloud_bottom 100)
                             (uniform-float program :cloud_top 200)
                             (uniform-float program :depth 1000)
+                            (uniform-float program :cloud_max_step 50)
+                            (uniform-float program :density_start ?start)
                             (render-quads vao))
         (get-float (float-texture->floats opacity-offsets) ?px 1) => (roughly ?result 1e-6)
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?px ?x   ?result
-  1   1200 0
-  1   1400 0.2
-  0   1400 0.201)
+  ?px ?start ?x   ?result
+  1   200    1200 0
+  1   200    1400 0.2
+  0   200    1400 0.201
+  1   150    1200 0.05)

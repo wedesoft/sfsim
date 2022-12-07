@@ -2,6 +2,7 @@
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * convert\_1d\_index
+* does lookup\_3d need to use textureLod?
 * shadow lookup: use convert 2d index
 * opacity lookup: use convert 2d index and convert 1d index
 * test opacity offsets with constant density cloud, use clip\_shell\_intersections
