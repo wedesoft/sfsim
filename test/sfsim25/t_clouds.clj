@@ -436,6 +436,13 @@ void main()
   vs_out.origin = (ndc_to_shadow * vec4(point, 1)).xyz;
 }")
 
+(def ray-shell-mock
+"#version 410 core
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  return vec4(origin.x - outer_radius, outer_radius - inner_radius, 0, 0);
+}")
+
 (def opacity-fragment
 "#version 410 core
 uniform vec3 light_direction;
@@ -447,10 +454,12 @@ in VS_OUT
 {
   vec3 origin;
 } fs_in;
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 layout (location = 0) out float opacity_offset;
 void main()
 {
-  opacity_offset = (fs_in.origin.x - (radius + cloud_top)) / depth;
+  vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
+  opacity_offset = intersections.x / depth;
 }")
 
 (tabular "Compute deep opacity map offsets"
@@ -460,7 +469,7 @@ void main()
             vertices        [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
             ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [?x 0 0]))
             light-direction (matrix [1 0 0])
-            program         (make-program :vertex [vertex-copy] :fragment [opacity-fragment])
+            program         (make-program :vertex [vertex-copy] :fragment [opacity-fragment ray-shell-mock])
             vao             (make-vertex-array-object program indices vertices [:point 3])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)]
         (framebuffer-render 3 3 :cullback nil [opacity-offsets]
