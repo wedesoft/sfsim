@@ -422,7 +422,7 @@ void main()
          "lod_increment(1.0)"                    0
          "lod_increment(2.0)"                    1)
 
-(def vertex-copy
+(def opacity-vertex
 "#version 410 core
 uniform mat4 ndc_to_shadow;
 in vec3 point;
@@ -430,17 +430,18 @@ out VS_OUT
 {
   vec3 origin;
 } vs_out;
+vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
   gl_Position = vec4(point, 1);
-  vs_out.origin = (ndc_to_shadow * vec4(point, 1)).xyz;
+  vs_out.origin = (ndc_to_shadow * grow_shadow_index(vec4(point, 1), 3, 3)).xyz;
 }")
 
 (def ray-shell-mock
 "#version 410 core
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
-  return vec4(origin.x - outer_radius, outer_radius - inner_radius, 0, 0);
+  return vec4(origin.x - outer_radius + abs(origin.y), outer_radius - inner_radius, 0, 0);
 }")
 
 (def opacity-fragment
@@ -454,8 +455,8 @@ in VS_OUT
 {
   vec3 origin;
 } fs_in;
-vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 layout (location = 0) out float opacity_offset;
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 void main()
 {
   vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
@@ -469,7 +470,8 @@ void main()
             vertices        [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
             ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [?x 0 0]))
             light-direction (matrix [1 0 0])
-            program         (make-program :vertex [vertex-copy] :fragment [opacity-fragment ray-shell-mock])
+            program         (make-program :vertex [opacity-vertex grow-shadow-index]
+                                          :fragment [opacity-fragment ray-shell-mock])
             vao             (make-vertex-array-object program indices vertices [:point 3])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)]
         (framebuffer-render 3 3 :cullback nil [opacity-offsets]
@@ -481,10 +483,11 @@ void main()
                             (uniform-float program :cloud_top 200)
                             (uniform-float program :depth 1000)
                             (render-quads vao))
-        (get-float (float-texture->floats opacity-offsets) 1 1) => (roughly ?result 1e-6)
+        (get-float (float-texture->floats opacity-offsets) ?px 1) => (roughly ?result 1e-6)
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?x   ?result
-  1200 0
-  1400 0.2)
+  ?px ?x   ?result
+  1   1200 0
+  1   1400 0.2
+  0   1400 0.201)
