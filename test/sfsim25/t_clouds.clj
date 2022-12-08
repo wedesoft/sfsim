@@ -463,6 +463,7 @@ uniform vec3 light_direction;
 uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
+uniform float cloud_max_step;
 uniform float depth;
 in VS_OUT
 {
@@ -474,7 +475,17 @@ float cloud_density(vec3 point, float lod);
 void main()
 {
   vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
-  opacity_offset = intersections.x / depth;
+  int steps = int(ceil(intersections.y / cloud_max_step));
+  float stepsize = intersections.y / steps;
+  float previous_transmittance = 1.0;
+  for (int i=0; i<steps; i++) {
+    vec3 sample_point = fs_in.origin - (intersections.x + (i + 0.5) * stepsize) * light_direction;
+    float density = cloud_density(sample_point, 0.0);
+    if (previous_transmittance == 1.0)
+      opacity_offset = (intersections.x + i * stepsize) / depth;
+    if (density > 0)
+      previous_transmittance = 0.5;
+  };
 }")
 
 (tabular "Compute deep opacity map offsets"
