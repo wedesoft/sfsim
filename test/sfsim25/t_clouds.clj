@@ -442,7 +442,10 @@ void main()
 "#version 410 core
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
-  return vec4(origin.x - outer_radius + abs(origin.y), outer_radius - inner_radius, 0, 0);
+  return vec4(origin.x - outer_radius + abs(origin.y),
+              outer_radius - inner_radius,
+              origin.x + inner_radius,
+              outer_radius - inner_radius);
 }")
 
 (def cloud-density-mock
@@ -451,7 +454,7 @@ uniform float radius;
 uniform float density_start;
 float cloud_density(vec3 point, float lod)
 {
-  if (point.x - radius <= density_start)
+  if (point.x <= density_start)
     return 1.0;
   else
     return 0.0;
@@ -486,6 +489,18 @@ void main()
     if (density > 0)
       previous_transmittance = 0.5;
   };
+  steps = int(ceil(intersections.w / cloud_max_step));
+  stepsize = intersections.w / steps;
+  for (int i=0; i<steps; i++) {
+    vec3 sample_point = fs_in.origin - (intersections.z + (i + 0.5) * stepsize) * light_direction;
+    float density = cloud_density(sample_point, 0.0);
+    if (previous_transmittance == 1.0)
+      opacity_offset = (intersections.z + i * stepsize) / depth;
+    if (density > 0)
+      previous_transmittance = 0.5;
+  };
+  if (previous_transmittance == 1.0)
+    opacity_offset = 1.0;
 }")
 
 (tabular "Compute deep opacity map offsets"
@@ -507,7 +522,7 @@ void main()
                             (uniform-float program :radius 1000)
                             (uniform-float program :cloud_bottom 100)
                             (uniform-float program :cloud_top 200)
-                            (uniform-float program :depth 1000)
+                            (uniform-float program :depth ?depth)
                             (uniform-float program :cloud_max_step 50)
                             (uniform-float program :density_start ?start)
                             (render-quads vao))
@@ -515,8 +530,10 @@ void main()
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?px ?start ?x   ?result
-  1   200    1200 0
-  1   200    1400 0.2
-  0   200    1400 0.201
-  1   150    1200 0.05)
+  ?px ?depth ?start ?x   ?result
+  1    1000  1200   1200 0
+  1    1000  1200   1400 0.2
+  0    1000  1200   1400 0.201
+  1    1000  1150   1200 0.05
+  1   10000     0   1200 0.23
+  1   10000 -9999   1200 1.0)
