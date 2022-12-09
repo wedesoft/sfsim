@@ -7,7 +7,7 @@
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
               [sfsim25.matrix :refer :all]
-              [sfsim25.util :refer (get-vector3 get-float)]
+              [sfsim25.util :refer (get-vector3 get-float get-float-3d)]
               [sfsim25.clouds :refer :all]))
 
 (def cloud-track-probe
@@ -478,26 +478,20 @@ float cloud_density(vec3 point, float lod);
 void main()
 {
   vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
-  int steps = int(ceil(intersections.y / cloud_max_step));
-  float stepsize = intersections.y / steps;
   float previous_transmittance = 1.0;
-  for (int i=0; i<steps; i++) {
-    vec3 sample_point = fs_in.origin - (intersections.x + (i + 0.5) * stepsize) * light_direction;
-    float density = cloud_density(sample_point, 0.0);
-    if (previous_transmittance == 1.0)
-      opacity_offset = (intersections.x + i * stepsize) / depth;
-    if (density > 0)
-      previous_transmittance = 0.5;
-  };
-  steps = int(ceil(intersections.w / cloud_max_step));
-  stepsize = intersections.w / steps;
-  for (int i=0; i<steps; i++) {
-    vec3 sample_point = fs_in.origin - (intersections.z + (i + 0.5) * stepsize) * light_direction;
-    float density = cloud_density(sample_point, 0.0);
-    if (previous_transmittance == 1.0)
-      opacity_offset = (intersections.z + i * stepsize) / depth;
-    if (density > 0)
-      previous_transmittance = 0.5;
+  for (int segment=0; segment<2; segment++) {
+    float start_segment = segment == 0 ? intersections.x : intersections.z;
+    float extent_segment = segment == 0 ? intersections.y : intersections.w;
+    int steps = int(ceil(extent_segment / cloud_max_step));
+    float stepsize = extent_segment / steps;
+    for (int i=0; i<steps; i++) {
+      vec3 sample_point = fs_in.origin - (start_segment + (i + 0.5) * stepsize) * light_direction;
+      float density = cloud_density(sample_point, 0.0);
+      if (previous_transmittance == 1.0)
+        opacity_offset = (start_segment + i * stepsize) / depth;
+      if (density > 0)
+        previous_transmittance = 0.5;
+    };
   };
   if (previous_transmittance == 1.0)
     opacity_offset = 1.0;
@@ -513,8 +507,9 @@ void main()
             program         (make-program :vertex [opacity-vertex grow-shadow-index]
                                           :fragment [opacity-fragment ray-shell-mock cloud-density-mock])
             vao             (make-vertex-array-object program indices vertices [:point 3])
-            opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)]
-        (framebuffer-render 3 3 :cullback nil [opacity-offsets]
+            opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)
+            opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 7)]
+        (framebuffer-render 3 3 :cullback nil [opacity-offsets opacity-layers]
                             (use-program program)
                             (uniform-matrix4 program :ndc_to_shadow ndc-to-shadow)
                             (uniform-vector3 program :light_direction light-direction)
@@ -526,14 +521,16 @@ void main()
                             (uniform-float program :cloud_max_step 50)
                             (uniform-float program :density_start ?start)
                             (render-quads vao))
-        (get-float (float-texture->floats opacity-offsets) ?px 1) => (roughly ?result 1e-6)
+        ({:offset (get-float (float-texture-2d->floats opacity-offsets) ?px 1)
+          :layer (get-float-3d (float-texture-3d->floats opacity-layers) ?px 1 ?layer)} ?selector) => (roughly ?result 1e-6)
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?px ?depth ?start ?x   ?result
-  1    1000  1200   1200 0
-  1    1000  1200   1400 0.2
-  0    1000  1200   1400 0.201
-  1    1000  1150   1200 0.05
-  1   10000     0   1200 0.23
-  1   10000 -9999   1200 1.0)
+  ?px ?depth ?start ?x   ?selector ?layer ?result
+  1    1000  1200   1200 :offset   0      0
+  1    1000  1200   1400 :offset   0      0.2
+  0    1000  1200   1400 :offset   0      0.201
+  1    1000  1150   1200 :offset   0      0.05
+  1   10000     0   1200 :offset   0      0.23
+  1   10000 -9999   1200 :offset   0      1.0
+  1    1000  1200   1200 :layer    0      1.0)

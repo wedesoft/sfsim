@@ -598,8 +598,8 @@ void main()
            (framebuffer-render 1 1 :cullback nil [tex1 tex2]
                                (use-program program)
                                (render-quads vao))
-           (get-float (float-texture->floats tex1) 0 0) => 0.25
-           (get-float (float-texture->floats tex2) 0 0) => 0.75
+           (get-float (float-texture-2d->floats tex1) 0 0) => 0.25
+           (get-float (float-texture-2d->floats tex2) 0 0) => 0.75
            (destroy-vertex-array-object vao)
            (destroy-program program)
            (destroy-texture tex1)

@@ -465,7 +465,7 @@
       (.get buf data)
       {:width width :height height :data data})))
 
-(defn float-texture->floats
+(defn float-texture-2d->floats
   "Extract floating-point floating-point data from texture"
   [{:keys [target texture width height]}]
   (with-texture target texture
@@ -474,6 +474,16 @@
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
+
+(defn float-texture-3d->floats
+  "Extract floating-point floating-point data from texture"
+  [{:keys [target texture width height depth]}]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
+          data (float-array (* width height depth))]
+      (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :depth depth :data data})))
 
 (defn rgb-texture->vectors3
   "Extract floating-point BGR vectors from texture"
