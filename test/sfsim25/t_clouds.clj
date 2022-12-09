@@ -473,12 +473,20 @@ in VS_OUT
   vec3 origin;
 } fs_in;
 layout (location = 0) out float opacity_offset;
+layout (location = 1) out float opacity_layer_1;
+layout (location = 2) out float opacity_layer_2;
+layout (location = 3) out float opacity_layer_3;
+layout (location = 4) out float opacity_layer_4;
+layout (location = 5) out float opacity_layer_5;
+layout (location = 6) out float opacity_layer_6;
+layout (location = 7) out float opacity_layer_7;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
 void main()
 {
   vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
   float previous_transmittance = 1.0;
+  float start_depth = 0.0;
   for (int segment=0; segment<2; segment++) {
     float start_segment = segment == 0 ? intersections.x : intersections.z;
     float extent_segment = segment == 0 ? intersections.y : intersections.w;
@@ -488,13 +496,14 @@ void main()
       vec3 sample_point = fs_in.origin - (start_segment + (i + 0.5) * stepsize) * light_direction;
       float density = cloud_density(sample_point, 0.0);
       if (previous_transmittance == 1.0)
-        opacity_offset = (start_segment + i * stepsize) / depth;
+        start_depth = start_segment + i * stepsize;
       if (density > 0)
         previous_transmittance = 0.5;
     };
   };
   if (previous_transmittance == 1.0)
-    opacity_offset = 1.0;
+    start_depth = depth;
+  opacity_offset = start_depth / depth;
 }")
 
 (tabular "Compute deep opacity map offsets"
