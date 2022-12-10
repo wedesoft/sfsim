@@ -442,9 +442,9 @@ void main()
 "#version 410 core
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
-  return vec4(origin.x - outer_radius + abs(origin.y),
+  return vec4(-origin.z - outer_radius + abs(origin.x),
               outer_radius - inner_radius,
-              origin.x + inner_radius,
+              -origin.z + inner_radius,
               outer_radius - inner_radius);
 }")
 
@@ -454,7 +454,7 @@ uniform float radius;
 uniform float density_start;
 float cloud_density(vec3 point, float lod)
 {
-  if (point.x <= density_start)
+  if (-point.z <= density_start)
     return 1.0;
   else
     return 0.0;
@@ -482,11 +482,17 @@ layout (location = 6) out float opacity_layer_6;
 layout (location = 7) out float opacity_layer_7;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
+void interpolate_opacity(float opacity_interval_begin, float opacity_interval_end, float previous_transmittance, float transmittance)
+{
+  opacity_layer_1 = 1.0;
+}
 void main()
 {
   vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
   float previous_transmittance = 1.0;
   float start_depth = 0.0;
+  float previous_opacity_depth = 0.0;
+  float opacity_depth = 0.0;
   for (int segment=0; segment<2; segment++) {
     float start_segment = segment == 0 ? intersections.x : intersections.z;
     float extent_segment = segment == 0 ? intersections.y : intersections.w;
@@ -495,15 +501,26 @@ void main()
     for (int i=0; i<steps; i++) {
       vec3 sample_point = fs_in.origin - (start_segment + (i + 0.5) * stepsize) * light_direction;
       float density = cloud_density(sample_point, 0.0);
-      if (previous_transmittance == 1.0)
-        start_depth = start_segment + i * stepsize;
+      float transmittance;
       if (density > 0)
-        previous_transmittance = 0.5;
+        transmittance = 0.5 * previous_transmittance;
+      else
+        transmittance = 1.0 * previous_transmittance;
+      if (previous_transmittance == 1.0) {
+        start_depth = start_segment + i * stepsize;
+      };
+      if (transmittance < 1.0) {
+        opacity_depth += stepsize;
+        interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, transmittance);
+      };
+      previous_transmittance = transmittance;
+      previous_opacity_depth = opacity_depth;
     };
   };
   if (previous_transmittance == 1.0)
     start_depth = depth;
   opacity_offset = start_depth / depth;
+  opacity_layer_1 = 1.0;
 }")
 
 (tabular "Compute deep opacity map offsets"
@@ -511,8 +528,8 @@ void main()
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-            ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [?x 0 0]))
-            light-direction (matrix [1 0 0])
+            ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [0 0 (- ?z)]))
+            light-direction (matrix [0 0 -1])
             program         (make-program :vertex [opacity-vertex grow-shadow-index]
                                           :fragment [opacity-fragment ray-shell-mock cloud-density-mock])
             vao             (make-vertex-array-object program indices vertices [:point 3])
@@ -527,19 +544,19 @@ void main()
                             (uniform-float program :cloud_bottom 100)
                             (uniform-float program :cloud_top 200)
                             (uniform-float program :depth ?depth)
-                            (uniform-float program :cloud_max_step 50)
+                            (uniform-float program :cloud_max_step ?cloudstep)
                             (uniform-float program :density_start ?start)
                             (render-quads vao))
-        ({:offset (get-float (float-texture-2d->floats opacity-offsets) ?px 1)
-          :layer (get-float-3d (float-texture-3d->floats opacity-layers) ?px 1 ?layer)} ?selector) => (roughly ?result 1e-6)
+        ({:offset (get-float (float-texture-2d->floats opacity-offsets) 1 ?px)
+          :layer (get-float-3d (float-texture-3d->floats opacity-layers) ?layer 1 ?px)} ?selector) => (roughly ?result 1e-6)
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?px ?depth ?start ?x   ?selector ?layer ?result
-  1    1000  1200   1200 :offset   0      0
-  1    1000  1200   1400 :offset   0      0.2
-  0    1000  1200   1400 :offset   0      0.201
-  1    1000  1150   1200 :offset   0      0.05
-  1   10000     0   1200 :offset   0      0.23
-  1   10000 -9999   1200 :offset   0      1.0
-  1    1000  1200   1200 :layer    0      1.0)
+  ?px ?depth ?cloudstep ?start ?z   ?selector ?layer ?result
+  1    1000   50         1200  1200 :offset   0      0
+  1    1000   50         1200  1400 :offset   0      0.2
+  0    1000   50         1200  1400 :offset   0      0.201
+  1    1000   50         1150  1200 :offset   0      0.05
+  1   10000   50            0  1200 :offset   0      0.23
+  1   10000   50        -9999  1200 :offset   0      1.0
+  1    1000   50         1200  1200 :layer    0      1.0)
