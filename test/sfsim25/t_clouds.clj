@@ -520,7 +520,6 @@ void main()
   if (previous_transmittance == 1.0)
     start_depth = depth;
   opacity_offset = start_depth / depth;
-  opacity_layer_1 = 1.0;
 }")
 
 (tabular "Compute deep opacity map offsets"
