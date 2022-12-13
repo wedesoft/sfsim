@@ -452,10 +452,11 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 "#version 410 core
 uniform float radius;
 uniform float density_start;
+uniform float cloud_multiplier;
 float cloud_density(vec3 point, float lod)
 {
   if (-point.z <= density_start)
-    return 1.0;
+    return cloud_multiplier;
   else
     return 0.0;
 }")
@@ -467,6 +468,7 @@ uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float cloud_max_step;
+uniform float opacity_step;
 uniform float depth;
 in VS_OUT
 {
@@ -484,7 +486,12 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 float cloud_density(vec3 point, float lod);
 void interpolate_opacity(float opacity_interval_begin, float opacity_interval_end, float previous_transmittance, float transmittance)
 {
-  opacity_layer_1 = 1.0;
+  float stepsize = opacity_interval_end - opacity_interval_begin;
+  if (opacity_interval_begin == 0.0)
+    opacity_layer_1 = 1.0;
+  if (opacity_interval_begin < opacity_step && opacity_interval_end >= opacity_step) {
+    opacity_layer_2 = mix(previous_transmittance, transmittance, (opacity_step - opacity_interval_begin) / stepsize);
+  };
 }
 void main()
 {
@@ -501,11 +508,8 @@ void main()
     for (int i=0; i<steps; i++) {
       vec3 sample_point = fs_in.origin - (start_segment + (i + 0.5) * stepsize) * light_direction;
       float density = cloud_density(sample_point, 0.0);
-      float transmittance;
-      if (density > 0)
-        transmittance = 0.5 * previous_transmittance;
-      else
-        transmittance = 1.0 * previous_transmittance;
+      float transmittance_step = exp(-density * stepsize);
+      float transmittance = previous_transmittance * transmittance_step;
       if (previous_transmittance == 1.0) {
         start_depth = start_segment + i * stepsize;
       };
@@ -542,8 +546,10 @@ void main()
                             (uniform-float program :radius 1000)
                             (uniform-float program :cloud_bottom 100)
                             (uniform-float program :cloud_top 200)
+                            (uniform-float program :cloud_multiplier ?multiplier)
                             (uniform-float program :depth ?depth)
                             (uniform-float program :cloud_max_step ?cloudstep)
+                            (uniform-float program :opacity_step ?opacitystep)
                             (uniform-float program :density_start ?start)
                             (render-quads vao))
         ({:offset (get-float (float-texture-2d->floats opacity-offsets) 1 ?px)
@@ -551,11 +557,13 @@ void main()
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?px ?depth ?cloudstep ?start ?z   ?selector ?layer ?result
-  1    1000   50         1200  1200 :offset   0      0
-  1    1000   50         1200  1400 :offset   0      0.2
-  0    1000   50         1200  1400 :offset   0      0.201
-  1    1000   50         1150  1200 :offset   0      0.05
-  1   10000   50            0  1200 :offset   0      0.23
-  1   10000   50        -9999  1200 :offset   0      1.0
-  1    1000   50         1200  1200 :layer    0      1.0)
+  ?px ?depth ?cloudstep ?opacitystep ?start ?multiplier ?z   ?selector ?layer ?result
+  1    1000   50         50           1200  0.02        1200 :offset   0      0
+  1    1000   50         50           1200  0.02        1400 :offset   0      0.2
+  0    1000   50         50           1200  0.02        1400 :offset   0      0.201
+  1    1000   50         50           1150  0.02        1200 :offset   0      0.05
+  1   10000   50         50              0  0.02        1200 :offset   0      0.23
+  1   10000   50         50          -9999  0.02        1200 :offset   0      1.0
+  1    1000   50         50           1200  0.02        1200 :layer    0      1.0
+  1    1000   50         50           1200  0.02        1200 :layer    1      (exp -1)
+  1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2))
