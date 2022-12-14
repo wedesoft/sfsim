@@ -461,7 +461,20 @@ float cloud_density(vec3 point, float lod)
     return 0.0;
 }")
 
+(def declare-opacity-layer
+  (template/fn [layer]
+"layout (location = <%= (inc layer) %>) out float opacity_layer_<%= layer %>;
+"))
+
+(def opacity-layer-update
+  (template/fn [layer]
+"  if (opacity_interval_begin < <%= layer %> * opacity_step && opacity_interval_end >= <%= layer %> * opacity_step) {
+    opacity_layer_<%= layer %> = mix(previous_transmittance, transmittance, (<%= layer %> * opacity_step - opacity_interval_begin) / stepsize);
+  };
+"))
+
 (def opacity-fragment
+  (template/fn [num-layers]
 "#version 410 core
 uniform vec3 light_direction;
 uniform float radius;
@@ -475,23 +488,15 @@ in VS_OUT
   vec3 origin;
 } fs_in;
 layout (location = 0) out float opacity_offset;
-layout (location = 1) out float opacity_layer_1;
-layout (location = 2) out float opacity_layer_2;
-layout (location = 3) out float opacity_layer_3;
-layout (location = 4) out float opacity_layer_4;
-layout (location = 5) out float opacity_layer_5;
-layout (location = 6) out float opacity_layer_6;
-layout (location = 7) out float opacity_layer_7;
+<%= (apply str (for [i (range num-layers)] (declare-opacity-layer i))) %>
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
 void interpolate_opacity(float opacity_interval_begin, float opacity_interval_end, float previous_transmittance, float transmittance)
 {
   float stepsize = opacity_interval_end - opacity_interval_begin;
   if (opacity_interval_begin == 0.0)
-    opacity_layer_1 = 1.0;
-  if (opacity_interval_begin < opacity_step && opacity_interval_end >= opacity_step) {
-    opacity_layer_2 = mix(previous_transmittance, transmittance, (opacity_step - opacity_interval_begin) / stepsize);
-  };
+    opacity_layer_0 = 1.0;
+  <%= (apply str (for [i (range 1 num-layers)] (opacity-layer-update i))) %>
 }
 void main()
 {
@@ -524,7 +529,7 @@ void main()
   if (previous_transmittance == 1.0)
     start_depth = depth;
   opacity_offset = start_depth / depth;
-}")
+}"))
 
 (tabular "Compute deep opacity map offsets"
   (fact
@@ -534,7 +539,7 @@ void main()
             ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [0 0 (- ?z)]))
             light-direction (matrix [0 0 -1])
             program         (make-program :vertex [opacity-vertex grow-shadow-index]
-                                          :fragment [opacity-fragment ray-shell-mock cloud-density-mock])
+                                          :fragment [(opacity-fragment 7) ray-shell-mock cloud-density-mock])
             vao             (make-vertex-array-object program indices vertices [:point 3])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 7)]
@@ -566,4 +571,5 @@ void main()
   1   10000   50         50          -9999  0.02        1200 :offset   0      1.0
   1    1000   50         50           1200  0.02        1200 :layer    0      1.0
   1    1000   50         50           1200  0.02        1200 :layer    1      (exp -1)
-  1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2))
+  1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2)
+  1    1000   50         50           1200  0.02        1200 :layer    2      (exp -2))
