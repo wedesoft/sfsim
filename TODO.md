@@ -1,7 +1,6 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* light z coordinates should be zero at object and near one at light source, shadow vertices need to be zero, but light origin different,
 * convert\_1d\_index
 * does lookup\_3d need to use textureLod?
 * implement Clojure function for computing scatter amount for clouds

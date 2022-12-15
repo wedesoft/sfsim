@@ -3,7 +3,7 @@
               [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
-              [clojure.core.matrix :refer (mget matrix identity-matrix)]
+              [clojure.core.matrix :refer (mget matrix identity-matrix diagonal-matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :refer :all]
               [sfsim25.matrix :refer :all]
@@ -426,7 +426,7 @@ void main()
 "#version 410 core
 uniform mat4 ndc_to_shadow;
 uniform int shadow_size;
-in vec3 point;
+in vec2 point;
 out VS_OUT
 {
   vec3 origin;
@@ -434,17 +434,17 @@ out VS_OUT
 vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
-  gl_Position = vec4(point, 1);
-  vs_out.origin = (ndc_to_shadow * grow_shadow_index(vec4(point, 1), shadow_size, shadow_size)).xyz;
+  gl_Position = vec4(point, 0, 1);
+  vs_out.origin = (ndc_to_shadow * grow_shadow_index(vec4(point, 1, 1), shadow_size, shadow_size)).xyz;
 }")
 
 (def ray-shell-mock
 "#version 410 core
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
-  return vec4(-origin.z - outer_radius + abs(origin.x),
+  return vec4(origin.z - outer_radius + abs(origin.x),
               outer_radius - inner_radius,
-              -origin.z + inner_radius,
+              origin.z + inner_radius,
               outer_radius - inner_radius);
 }")
 
@@ -455,7 +455,7 @@ uniform float density_start;
 uniform float cloud_multiplier;
 float cloud_density(vec3 point, float lod)
 {
-  if (-point.z <= density_start)
+  if (point.z <= density_start)
     return cloud_multiplier;
   else
     return 0.0;
@@ -528,19 +528,19 @@ void main()
   };
   if (previous_transmittance == 1.0)
     start_depth = depth;
-  opacity_offset = start_depth / depth;
+  opacity_offset = 1.0 - start_depth / depth;
 }"))
 
 (tabular "Compute deep opacity map offsets"
   (fact
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
-            vertices        [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-            ndc-to-shadow   (transformation-matrix (identity-matrix 3) (matrix [0 0 (- ?z)]))
-            light-direction (matrix [0 0 -1])
+            vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+            ndc-to-shadow   (transformation-matrix (diagonal-matrix [1 1 ?depth]) (matrix [0 0 (- ?z ?depth)]))
+            light-direction (matrix [0 0 1])
             program         (make-program :vertex [opacity-vertex grow-shadow-index]
                                           :fragment [(opacity-fragment 7) ray-shell-mock cloud-density-mock])
-            vao             (make-vertex-array-object program indices vertices [:point 3])
+            vao             (make-vertex-array-object program indices vertices [:point 2])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 7)]
         (framebuffer-render 3 3 :cullback nil [opacity-offsets opacity-layers]
@@ -563,12 +563,12 @@ void main()
         (destroy-vertex-array-object vao)
         (destroy-program program))))
   ?px ?depth ?cloudstep ?opacitystep ?start ?multiplier ?z   ?selector ?layer ?result
-  1    1000   50         50           1200  0.02        1200 :offset   0      0
-  1    1000   50         50           1200  0.02        1400 :offset   0      0.2
-  0    1000   50         50           1200  0.02        1400 :offset   0      0.201
-  1    1000   50         50           1150  0.02        1200 :offset   0      0.05
-  1   10000   50         50              0  0.02        1200 :offset   0      0.23
-  1   10000   50         50          -9999  0.02        1200 :offset   0      1.0
+  1    1000   50         50           1200  0.02        1200 :offset   0      1
+  1    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.2)
+  0    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.201)
+  1    1000   50         50           1150  0.02        1200 :offset   0      (- 1 0.05)
+  1   10000   50         50              0  0.02        1200 :offset   0      (- 1 0.23)
+  1   10000   50         50          -9999  0.02        1200 :offset   0      0.0
   1    1000   50         50           1200  0.02        1200 :layer    0      1.0
   1    1000   50         50           1200  0.02        1200 :layer    1      (exp -1)
   1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2)
