@@ -525,7 +525,7 @@ void main()
       previous_transmittance = transmittance;
       previous_opacity_depth = opacity_depth;
     };
-    // TODO: only do this if previous_transmittance is lower than 1.0
+    // TODO: only do this if previous_transmittance is lower than 1.0 and segment is zero.
     interpolate_opacity(previous_opacity_depth, previous_opacity_depth + opacity_step, previous_transmittance, previous_transmittance);
     previous_opacity_depth = previous_opacity_depth + intersections.z - intersections.x - intersections.y;
   };
