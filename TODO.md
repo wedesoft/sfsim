@@ -1,6 +1,9 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* shadow map shader for opacity framebuffer rendering
+* opacity lookup shader
+* cascaded opacity lookup shader
 * convert\_1d\_index
 * does lookup\_3d need to use textureLod?
 * implement Clojure function for computing scatter amount for clouds

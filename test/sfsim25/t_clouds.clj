@@ -525,9 +525,11 @@ void main()
       previous_transmittance = transmittance;
       previous_opacity_depth = opacity_depth;
     };
-    // TODO: only do this if previous_transmittance is lower than 1.0 and segment is zero.
-    interpolate_opacity(previous_opacity_depth, previous_opacity_depth + opacity_step, previous_transmittance, previous_transmittance);
-    previous_opacity_depth = previous_opacity_depth + intersections.z - intersections.x - intersections.y;
+    if (segment == 0 && previous_transmittance < 1.0) {
+      opacity_depth += intersections.z - intersections.x - intersections.y;
+      interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, previous_transmittance);
+      previous_opacity_depth = opacity_depth;
+    };
   };
   if (previous_transmittance == 1.0)
     start_depth = depth;
@@ -570,11 +572,15 @@ void main()
   1    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.2)
   0    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.201)
   1    1000   50         50           1150  0.02        1200 :offset   0      (- 1 0.05)
-  1   10000   50         50              0  0.02        1200 :offset   0      (- 1 0.23)
   1   10000   50         50          -9999  0.02        1200 :offset   0      0.0
   1    1000   50         50           1200  0.02        1200 :layer    0      1.0
   1    1000   50         50           1200  0.02        1200 :layer    1      (exp -1)
   1    1000   50         50           1200  0.02        1400 :layer    1      (exp -1)
   1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2)
   1    1000   50         50           1200  0.02        1200 :layer    2      (exp -2)
-  1    1000   50         50           1200  0.02        1200 :layer    3      (exp -2))
+  1    1000   50         50           1200  0.02        1200 :layer    3      (exp -2)
+  1   10000   50         50              0  0.02        1200 :offset   0      (- 1 0.23)
+  1   10000   50         50              0  0.02        1200 :layer    0      1.0
+  1   10000   50         50              0  0.02        1200 :layer    1      (exp -1)
+  1   10000   50         50              0  0.02        1200 :layer    2      (exp -2)
+  )
