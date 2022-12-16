@@ -1,6 +1,8 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* opacity layers behind second cloud shell intersection
+* handle case of one cloud shell intersection
 * shadow map shader for opacity framebuffer rendering
 * opacity lookup shader
 * cascaded opacity lookup shader
