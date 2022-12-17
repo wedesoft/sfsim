@@ -440,12 +440,19 @@ void main()
 
 (def ray-shell-mock
 "#version 410 core
+uniform int num_shell_intersections;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
-  return vec4(origin.z - outer_radius + abs(origin.x),
-              outer_radius - inner_radius,
-              origin.z + inner_radius,
-              outer_radius - inner_radius);
+  if (num_shell_intersections > 1)
+    return vec4(origin.z - outer_radius + abs(origin.x),
+                outer_radius - inner_radius,
+                origin.z + inner_radius,
+                outer_radius - inner_radius);
+  else
+    return vec4(origin.z - outer_radius,
+                2 * outer_radius,
+                0,
+                0);
 }")
 
 (def cloud-density-mock
@@ -508,27 +515,29 @@ void main()
   for (int segment=0; segment<2; segment++) {
     float start_segment = segment == 0 ? intersections.x : intersections.z;
     float extent_segment = segment == 0 ? intersections.y : intersections.w;
-    int steps = int(ceil(extent_segment / cloud_max_step));
-    float stepsize = extent_segment / steps;
-    for (int i=0; i<steps; i++) {
-      vec3 sample_point = fs_in.origin - (start_segment + (i + 0.5) * stepsize) * light_direction;
-      float density = cloud_density(sample_point, 0.0);
-      float transmittance_step = exp(-density * stepsize);
-      float transmittance = previous_transmittance * transmittance_step;
-      if (previous_transmittance == 1.0) {
-        start_depth = start_segment + i * stepsize;
+    if (extent_segment > 0) {
+      int steps = int(ceil(extent_segment / cloud_max_step));
+      float stepsize = extent_segment / steps;
+      for (int i=0; i<steps; i++) {
+        vec3 sample_point = fs_in.origin - (start_segment + (i + 0.5) * stepsize) * light_direction;
+        float density = cloud_density(sample_point, 0.0);
+        float transmittance_step = exp(-density * stepsize);
+        float transmittance = previous_transmittance * transmittance_step;
+        if (previous_transmittance == 1.0) {
+          start_depth = start_segment + i * stepsize;
+        };
+        if (transmittance < 1.0) {
+          opacity_depth += stepsize;
+          interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, transmittance);
+        };
+        previous_transmittance = transmittance;
+        previous_opacity_depth = opacity_depth;
       };
-      if (transmittance < 1.0) {
-        opacity_depth += stepsize;
-        interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, transmittance);
+      if (segment == 0 && intersections.w > 0 && previous_transmittance < 1.0) {
+        opacity_depth += intersections.z - intersections.x - intersections.y;
+        interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, previous_transmittance);
+        previous_opacity_depth = opacity_depth;
       };
-      previous_transmittance = transmittance;
-      previous_opacity_depth = opacity_depth;
-    };
-    if (segment == 0 && previous_transmittance < 1.0) {
-      opacity_depth += intersections.z - intersections.x - intersections.y;
-      interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, previous_transmittance);
-      previous_opacity_depth = opacity_depth;
     };
   };
   opacity_depth = <%= num-layers %> * opacity_step;
@@ -558,6 +567,7 @@ void main()
                             (uniform-float program :radius 1000)
                             (uniform-float program :cloud_bottom 100)
                             (uniform-float program :cloud_top 200)
+                            (uniform-int program :num_shell_intersections ?shells)
                             (uniform-float program :cloud_multiplier ?multiplier)
                             (uniform-float program :depth ?depth)
                             (uniform-float program :cloud_max_step ?cloudstep)
@@ -569,22 +579,23 @@ void main()
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?px ?depth ?cloudstep ?opacitystep ?start ?multiplier ?z   ?selector ?layer ?result
-  1    1000   50         50           1200  0.02        1200 :offset   0      1
-  1    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.2)
-  0    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.201)
-  1    1000   50         50           1150  0.02        1200 :offset   0      (- 1 0.05)
-  1   10000   50         50          -9999  0.02        1200 :offset   0      0.0
-  1    1000   50         50           1200  0.02        1200 :layer    0      1.0
-  1    1000   50         50           1200  0.02        1200 :layer    1      (exp -1)
-  1    1000   50         50           1200  0.02        1400 :layer    1      (exp -1)
-  1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2)
-  1    1000   50         50           1200  0.02        1200 :layer    2      (exp -2)
-  1    1000   50         50           1200  0.02        1200 :layer    3      (exp -2)
-  1   10000   50         50              0  0.02        1200 :offset   0      (- 1 0.23)
-  1   10000   50         50              0  0.02        1200 :layer    0      1.0
-  1   10000   50         50              0  0.02        1200 :layer    1      (exp -1)
-  1   10000   50         50              0  0.02        1200 :layer    2      (exp -2)
-  1   10000   50         50              0  0.02        1200 :layer    3      (exp -2)
-  1   10000   50         50              0  0.02        1200 :layer    6      (exp -2)
-  1   10000   50         50          -9999  0.02        1200 :layer    6      1.0)
+  ?shells ?px ?depth ?cloudstep ?opacitystep ?start ?multiplier ?z   ?selector ?layer ?result
+  2       1    1000   50         50           1200  0.02        1200 :offset   0      1
+  2       1    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.2)
+  2       0    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.201)
+  2       1    1000   50         50           1150  0.02        1200 :offset   0      (- 1 0.05)
+  2       1   10000   50         50          -9999  0.02        1200 :offset   0      0.0
+  2       1    1000   50         50           1200  0.02        1200 :layer    0      1.0
+  2       1    1000   50         50           1200  0.02        1200 :layer    1      (exp -1)
+  2       1    1000   50         50           1200  0.02        1400 :layer    1      (exp -1)
+  2       1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2)
+  2       1    1000   50         50           1200  0.02        1200 :layer    2      (exp -2)
+  2       1    1000   50         50           1200  0.02        1200 :layer    3      (exp -2)
+  2       1   10000   50         50              0  0.02        1200 :offset   0      (- 1 0.23)
+  2       1   10000   50         50              0  0.02        1200 :layer    0      1.0
+  2       1   10000   50         50              0  0.02        1200 :layer    1      (exp -1)
+  2       1   10000   50         50              0  0.02        1200 :layer    2      (exp -2)
+  2       1   10000   50         50              0  0.02        1200 :layer    3      (exp -2)
+  2       1   10000   50         50              0  0.02        1200 :layer    6      (exp -2)
+  2       1   10000   50         50          -9999  0.02        1200 :layer    6      1.0
+  1       1   10000   50         50          -1000  0.02        1200 :offset   0      (- 1 0.22))
