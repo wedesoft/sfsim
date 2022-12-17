@@ -531,6 +531,8 @@ void main()
       previous_opacity_depth = opacity_depth;
     };
   };
+  opacity_depth = <%= num-layers %> * opacity_step;
+  interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, previous_transmittance);
   if (previous_transmittance == 1.0)
     start_depth = depth;
   opacity_offset = 1.0 - start_depth / depth;
@@ -582,4 +584,7 @@ void main()
   1   10000   50         50              0  0.02        1200 :offset   0      (- 1 0.23)
   1   10000   50         50              0  0.02        1200 :layer    0      1.0
   1   10000   50         50              0  0.02        1200 :layer    1      (exp -1)
-  1   10000   50         50              0  0.02        1200 :layer    2      (exp -2))
+  1   10000   50         50              0  0.02        1200 :layer    2      (exp -2)
+  1   10000   50         50              0  0.02        1200 :layer    3      (exp -2)
+  1   10000   50         50              0  0.02        1200 :layer    6      (exp -2)
+  1   10000   50         50          -9999  0.02        1200 :layer    6      1.0)
