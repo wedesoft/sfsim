@@ -1,5 +1,6 @@
 (ns sfsim25.clouds
-    "Rendering of clouds")
+    "Rendering of clouds"
+    (:require [comb.template :as template]))
 
 (def cloud-track
   "Shader for putting volumetric clouds into the atmosphere"
@@ -36,3 +37,19 @@
 (def opacity-vertex
   "Vertex shader for rendering deep opacity map"
   (slurp "resources/shaders/clouds/opacity-vertex.glsl"))
+
+(def declare-opacity-layer
+  (template/fn [layer]
+"layout (location = <%= (inc layer) %>) out float opacity_layer_<%= layer %>;
+"))
+
+(def opacity-layer-update
+  (template/fn [layer]
+"  if (opacity_interval_begin < <%= layer %> * opacity_step && opacity_interval_end >= <%= layer %> * opacity_step) {
+    opacity_layer_<%= layer %> = mix(previous_transmittance, transmittance, (<%= layer %> * opacity_step - opacity_interval_begin) / stepsize);
+  };
+"))
+
+(def opacity-fragment
+  (template/fn [num-layers]
+    (slurp "resources/shaders/clouds/opacity-fragment.glsl")))
