@@ -505,3 +505,58 @@ float cloud_density(vec3 point, float lod)
   2       1   10000   50         50              0  0.02        1200 :layer    6      (exp -2)
   2       1   10000   50         50          -9999  0.02        1200 :layer    6      1.0
   1       1   10000   50         50          -1000  0.02        1200 :offset   0      (- 1 0.22))
+
+(def opacity-lookup-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+uniform sampler2D opacity_offsets;
+uniform sampler3D opacity_layers;
+float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x);
+void main()
+{
+  vec3 opacity_map_coords = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = opacity_lookup(opacity_offsets, opacity_layers, opacity_map_coords, 7, 2, 2);
+  fragColor = vec3(result, result, result);
+}"))
+
+(defn opacity-lookup-test [offset step x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices         [0 1 3 2]
+            vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            program         (make-program :vertex [vertex-passthrough]
+                                          :fragment (vector (opacity-lookup-probe x y z) opacity-lookup convert-2d-index
+                                                            convert-3d-index))
+            vao             (make-vertex-array-object program indices vertices [:point 3])
+            zeropad         (fn [x] [0 x 0 0])
+            opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
+            opacity-layers  (make-float-texture-3d :linear :clamp {:width 2 :height 2 :depth 7
+                                                                   :data (float-array opacity-data)})
+            offset-data     (zeropad offset)
+            opacity-offsets (make-float-texture-2d :linear :clamp {:width 2 :height 2
+                                                                   :data (float-array offset-data)})
+            tex             (texture-render-color 1 1 true
+                                                  (use-program program)
+                                                  (uniform-sampler program :opacity_offsets 0)
+                                                  (uniform-sampler program :opacity_layers 1)
+                                                  (uniform-float program :opacity_step step)
+                                                  (use-textures opacity-offsets opacity-layers)
+                                                  (render-quads vao))
+            img             (rgb-texture->vectors3 tex)]
+        (deliver result (get-vector3 img 0 0))
+        (destroy-texture opacity-offsets)
+        (destroy-texture opacity-layers)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)))
+    @result))
+
+(tabular "Lookup values from deep opacity map taking into account offsets"
+  (fact (mget (opacity-lookup-test ?offset ?step ?x ?y ?z) 0) => (roughly ?result 1e-6))
+  ?offset ?step      ?x    ?y ?z        ?result
+  1.0     (/ 1.0 6)  1     0  1         1.0
+  1.0     (/ 1.0 6)  1     0  0         0.4
+  0.0     (/ 1.0 6)  1     0  0         1.0
+  1.0     (/ 1.0 12) 1     0  0.5       0.4
+  1.0     (/ 1.0 6)  1     0  (/ 5.0 6) 0.9
+  1.0     (/ 1.0 6)  0.75  0  0.5       0.85)

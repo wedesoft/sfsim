@@ -1,7 +1,6 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* opacity lookup shader: convert to NDC and then use convert 3d index
 * cascaded opacity lookup shader
 * use shadow map for terrain and clouds
 * convert\_1d\_index

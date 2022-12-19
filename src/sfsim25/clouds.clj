@@ -39,11 +39,13 @@
   (slurp "resources/shaders/clouds/opacity-vertex.glsl"))
 
 (def declare-opacity-layer
+  "Code template to declare a floating-point output layer"
   (template/fn [layer]
 "layout (location = <%= (inc layer) %>) out float opacity_layer_<%= layer %>;
 "))
 
 (def opacity-layer-update
+  "Code template to update a particular opacity layer with an interpolated value"
   (template/fn [layer]
 "  if (opacity_interval_begin < <%= layer %> * opacity_step && opacity_interval_end >= <%= layer %> * opacity_step) {
     opacity_layer_<%= layer %> = mix(previous_transmittance, transmittance, (<%= layer %> * opacity_step - opacity_interval_begin) / stepsize);
@@ -51,5 +53,10 @@
 "))
 
 (def opacity-fragment
+  "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
   (template/fn [num-layers]
     (slurp "resources/shaders/clouds/opacity-fragment.glsl")))
+
+(def opacity-lookup
+  "Shader function for looking up transmittance value from deep opacity map"
+  (slurp "resources/shaders/clouds/opacity-lookup.glsl"))
