@@ -316,7 +316,7 @@ void main()
       (let [indices      [0 1 3 2]
             vertices     [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program      (make-program :vertex [vertex-passthrough]
-                                       :fragment (list (cloud-density-probe x y z) cloud-density))
+                                       :fragment (vector (cloud-density-probe x y z) cloud-density))
             vao          (make-vertex-array-object program indices vertices [:point 3])
             worley-data  (cons density0 (repeat (dec (* 2 2 2)) density1))
             worley       (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array worley-data)})
@@ -481,6 +481,7 @@ float cloud_density(vec3 point, float lod)
                             (render-quads vao))
         ({:offset (get-float (float-texture-2d->floats opacity-offsets) 1 ?px)
           :layer (get-float-3d (float-texture-3d->floats opacity-layers) ?layer 1 ?px)} ?selector) => (roughly ?result 1e-6)
+        (destroy-texture opacity-layers)
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))

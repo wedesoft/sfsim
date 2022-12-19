@@ -111,6 +111,8 @@
          => (roughly-matrix (matrix [0 0 1 1]) 1e-6)
          (mmul (:shadow-ndc-matrix (shadow-matrices 512 512 projection transform2 light_direction 0)) (matrix [0 5 0 1]))
          => (roughly-matrix (matrix [0 0 0 1]) 1e-6)
+         (mmul (:shadow-map-matrix (shadow-matrices 512 512 projection transform1 light_direction 0)) (matrix [0 -750 -1000 1]))
+         => (roughly-matrix (matrix [1 0.5 0 1]) 1e-6)
          (mmul (:shadow-map-matrix (shadow-matrices 512 512 projection transform1 light_direction 0)) (matrix [0 750 -1000 1]))
          => (roughly-matrix (matrix [1 0.5 1 1]) 1e-6)
          (mmul (:shadow-map-matrix (shadow-matrices 512 512 projection transform2 light_direction 0)) (matrix [0 1000 0 1]))
