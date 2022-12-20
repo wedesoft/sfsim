@@ -2,20 +2,18 @@
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * cascaded opacity lookup shader
+* planetary cloud rendering using single deep opacity map (tested?)
+* planetary cloud rendering using cascaded deep opacity maps (tested?)
 * use shadow map for terrain and clouds
 * convert\_1d\_index
 * does lookup\_3d need to use textureLod?
 * implement Clojure function for computing scatter amount for clouds
 * shadow lookup: use convert 2d index
-* opacity lookup: use convert 2d index and convert 1d index
 * test opacity offsets with constant density cloud, use clip\_shell\_intersections
 * analytical scattering integration for samples s2016-pbs-frostbite-sky-clouds-new.pdf page 38
-* put deep opacity map functions under test, use maximum possible cloud self-shadow length
-* apply 0.5 pixel offset when reading out opacity map
+* use maximum possible cloud self-shadow length?
 * clouds: blue noise offsets for opacity map? use extra shadow map?
 * integral of cloud scatter to improve sampling
-* planetary cloud rendering using single deep opacity map (tested?)
-* planetary cloud rendering using cascaded deep opacity maps (tested?)
 * use rgb for scattering and a for transmittance when creating low-resolution cloud image?
 * delete cloud-track-base
 * write article about it
