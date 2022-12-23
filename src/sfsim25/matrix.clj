@@ -1,7 +1,7 @@
 (ns sfsim25.matrix
   "Matrix and vector operations"
   (:require [clojure.core.matrix :refer (matrix mget mmul inverse eseq transpose div dot identity-matrix normalise cross add)]
-            [clojure.math :refer (cos sin tan)]
+            [clojure.math :refer (cos sin tan pow)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.util :refer :all]
             [sfsim25.quaternion :refer (rotate-vector)])
@@ -154,6 +154,21 @@
   "Pack nested vector of matrices into float array"
   [array]
   (float-array (flatten (map (comp reverse eseq) (flatten array)))))
+
+(defn split-linear
+  "Perform linear z-split for frustum"
+  [near far num-steps step]
+  (+ near (/ (* (- far near) step) num-steps)))
+
+(defn split-exponential
+  "Perform exponential z-split for frustum"
+  [near far num-steps step]
+  (* near (pow (/ far near) (/ step num-steps))))
+
+(defn split-mixed
+  "Mixed linear and exponential split"
+  [mix near far num-steps step]
+  (+ (* (- 1 mix) (split-linear near far num-steps step)) (* mix (split-exponential near far num-steps step))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

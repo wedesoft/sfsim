@@ -101,7 +101,6 @@ uniform sampler2D ray_scatter;
 uniform int light_elevation_size;
 uniform int heading_size;
 
-
 in VS_OUT
 {
   vec3 direction;
@@ -216,7 +215,7 @@ void main()
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
-(uniform-float program :cloud_step 500)
+(uniform-float program :cloud_step 200)
 (uniform-float program :cloud_step2 100)
 (uniform-float program :cloud_bottom 1500)
 (uniform-float program :cloud_top 3000)

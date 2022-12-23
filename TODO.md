@@ -1,6 +1,8 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
+* compute list of shadow matrices using frustum split
+* select opacity map depending on depth in frustum
 * cascaded opacity lookup shader
 * planetary cloud rendering using single deep opacity map (tested?)
 * planetary cloud rendering using cascaded deep opacity maps (tested?)

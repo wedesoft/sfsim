@@ -122,5 +122,19 @@
          (:depth (shadow-matrices 512 512 projection transform1 light_direction 0))
          => (roughly 1500 1e-6)))
 
+(facts "Linear frustum split"
+       (split-linear 10 40 2 0) => 10
+       (split-linear 10 40 2 2) => 40
+       (split-linear 10 40 2 1) => 25)
+
+(facts "Exponential frustum split"
+       (split-exponential 10 40 2 0) => 10.0
+       (split-exponential 10 40 2 2) => 40.0
+       (split-exponential 10 40 2 1) => 20.0)
+
+(facts "Mixed linear and exponential split"
+       (split-mixed 0 10 40 2 1) => 25.0
+       (split-mixed 1 10 40 2 1) => 20.0)
+
 (fact "Pack nested vector of matrices into float array"
       (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])
