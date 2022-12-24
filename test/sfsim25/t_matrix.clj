@@ -138,3 +138,8 @@
 (facts "Mixed linear and exponential split"
        (split-mixed 0 10 40 2 1) => 25.0
        (split-mixed 1 10 40 2 1) => 20.0)
+
+(facts "Convert z-coordinate to normalised device coordinate"
+       (z-to-ndc 10 40 40) => (roughly 0.0 1e-6)
+       (z-to-ndc 10 40 10) => (roughly 1.0 1e-6)
+       (z-to-ndc 10 40 20) => (roughly (/ 1 3) 1e-6))

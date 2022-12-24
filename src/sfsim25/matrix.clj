@@ -170,5 +170,12 @@
   [mix near far num-steps step]
   (+ (* (- 1 mix) (split-linear near far num-steps step)) (* mix (split-exponential near far num-steps step))))
 
+(defn z-to-ndc
+  "Convert (flipped to positive) z-coordinate to normalised device coordinate"
+  [near far z]
+  (let [a (/ (* far near) (- far near))
+        b (/ near (- far near))]
+    (/ (- a (* z b)) z)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
