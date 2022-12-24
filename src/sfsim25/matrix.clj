@@ -68,6 +68,11 @@
              [ 0  0  b  a]
              [ 0  0 -1  0]])))
 
+(defn pack-matrices
+  "Pack nested vector of matrices into float array"
+  [array]
+  (float-array (flatten (map (comp reverse eseq) (flatten array)))))
+
 (defn frustum-corners
   "Determine corners of OpenGL frustum"
   [projection-matrix]
@@ -149,11 +154,6 @@
     {:shadow-ndc-matrix (mmul shadow-ndc light-matrix)
      :shadow-map-matrix (mmul shadow-map light-matrix)
      :depth depth}))
-
-(defn pack-matrices
-  "Pack nested vector of matrices into float array"
-  [array]
-  (float-array (flatten (map (comp reverse eseq) (flatten array)))))
 
 (defn split-linear
   "Perform linear z-split for frustum"

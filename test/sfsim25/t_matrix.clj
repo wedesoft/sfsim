@@ -39,6 +39,9 @@
     (project (mmul m (matrix [   5    0    -5 1]))) => (roughly-matrix (matrix [1 0 1]) 1e-6)
     (project (mmul m (matrix [   0 3.75    -5 1]))) => (roughly-matrix (matrix [0 1 1]) 1e-6)))
 
+(fact "Pack nested vector of matrices into float array"
+      (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])
+
 (facts "Corners of OpenGL frustum"
        (let [m       (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
              corners (frustum-corners m)]
@@ -135,6 +138,3 @@
 (facts "Mixed linear and exponential split"
        (split-mixed 0 10 40 2 1) => 25.0
        (split-mixed 1 10 40 2 1) => 20.0)
-
-(fact "Pack nested vector of matrices into float array"
-      (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])
