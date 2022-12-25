@@ -81,7 +81,7 @@
     (/ (- a (* z b)) z)))
 
 (defn frustum-corners
-  "Determine corners of OpenGL frustum"
+  "Determine corners of OpenGL frustum (or part of frustum)"
   ([projection-matrix] (frustum-corners projection-matrix 1.0 0.0))
   ([projection-matrix ndc1 ndc2]
    (let [minv (inverse projection-matrix)]
