@@ -73,19 +73,27 @@
   [array]
   (float-array (flatten (map (comp reverse eseq) (flatten array)))))
 
+(defn z-to-ndc
+  "Convert (flipped to positive) z-coordinate to normalised device coordinate"
+  [near far z]
+  (let [a (/ (* far near) (- far near))
+        b (/ near (- far near))]
+    (/ (- a (* z b)) z)))
+
 (defn frustum-corners
   "Determine corners of OpenGL frustum"
-  [projection-matrix]
-  (let [minv (inverse projection-matrix)]
-    (mapv #(mmul minv %)
-          [(matrix [-1 -1 1 1])
-           (matrix [ 1 -1 1 1])
-           (matrix [-1  1 1 1])
-           (matrix [ 1  1 1 1])
-           (matrix [-1 -1 0 1])
-           (matrix [ 1 -1 0 1])
-           (matrix [-1  1 0 1])
-           (matrix [ 1  1 0 1])])))
+  ([projection-matrix] (frustum-corners projection-matrix 1.0 0.0))
+  ([projection-matrix ndc1 ndc2]
+   (let [minv (inverse projection-matrix)]
+     (mapv #(mmul minv %)
+           [(matrix [-1 -1 ndc1 1])
+            (matrix [ 1 -1 ndc1 1])
+            (matrix [-1  1 ndc1 1])
+            (matrix [ 1  1 ndc1 1])
+            (matrix [-1 -1 ndc2 1])
+            (matrix [ 1 -1 ndc2 1])
+            (matrix [-1  1 ndc2 1])
+            (matrix [ 1  1 ndc2 1])]))))
 
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
@@ -169,13 +177,6 @@
   "Mixed linear and exponential split"
   [mix near far num-steps step]
   (+ (* (- 1 mix) (split-linear near far num-steps step)) (* mix (split-exponential near far num-steps step))))
-
-(defn z-to-ndc
-  "Convert (flipped to positive) z-coordinate to normalised device coordinate"
-  [near far z]
-  (let [a (/ (* far near) (- far near))
-        b (/ near (- far near))]
-    (/ (- a (* z b)) z)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

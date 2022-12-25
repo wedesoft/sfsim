@@ -42,6 +42,11 @@
 (fact "Pack nested vector of matrices into float array"
       (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])
 
+(facts "Convert z-coordinate to normalised device coordinate"
+       (z-to-ndc 10 40 40) => (roughly 0.0 1e-6)
+       (z-to-ndc 10 40 10) => (roughly 1.0 1e-6)
+       (z-to-ndc 10 40 20) => (roughly (/ 1 3) 1e-6))
+
 (facts "Corners of OpenGL frustum"
        (let [m       (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
              corners (frustum-corners m)]
@@ -53,6 +58,18 @@
          (project (mmul m (nth corners 5))) => (roughly-matrix (matrix [ 1 -1 0]) 1e-6)
          (project (mmul m (nth corners 6))) => (roughly-matrix (matrix [-1  1 0]) 1e-6)
          (project (mmul m (nth corners 7))) => (roughly-matrix (matrix [ 1  1 0]) 1e-6)))
+
+(facts "Corners of part of frustum"
+       (let [m       (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
+             corners (frustum-corners m 0.6 0.4)]
+         (project (mmul m (nth corners 0))) => (roughly-matrix (matrix [-1 -1 0.6]) 1e-6)
+         (project (mmul m (nth corners 1))) => (roughly-matrix (matrix [ 1 -1 0.6]) 1e-6)
+         (project (mmul m (nth corners 2))) => (roughly-matrix (matrix [-1  1 0.6]) 1e-6)
+         (project (mmul m (nth corners 3))) => (roughly-matrix (matrix [ 1  1 0.6]) 1e-6)
+         (project (mmul m (nth corners 4))) => (roughly-matrix (matrix [-1 -1 0.4]) 1e-6)
+         (project (mmul m (nth corners 5))) => (roughly-matrix (matrix [ 1 -1 0.4]) 1e-6)
+         (project (mmul m (nth corners 6))) => (roughly-matrix (matrix [-1  1 0.4]) 1e-6)
+         (project (mmul m (nth corners 7))) => (roughly-matrix (matrix [ 1  1 0.4]) 1e-6)))
 
 (facts "3D bounding box for set of points"
        (:bottomleftnear (bounding-box [(matrix [2 3 -5 1])])) => (matrix [2 3 -5])
@@ -138,8 +155,3 @@
 (facts "Mixed linear and exponential split"
        (split-mixed 0 10 40 2 1) => 25.0
        (split-mixed 1 10 40 2 1) => 20.0)
-
-(facts "Convert z-coordinate to normalised device coordinate"
-       (z-to-ndc 10 40 40) => (roughly 0.0 1e-6)
-       (z-to-ndc 10 40 10) => (roughly 1.0 1e-6)
-       (z-to-ndc 10 40 20) => (roughly (/ 1 3) 1e-6))
