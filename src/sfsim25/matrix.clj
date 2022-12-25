@@ -151,8 +151,8 @@
              [           0            0            0 1]])))
 
 (defn shadow-matrices
-  "Choose NDC and texture coordinate matrices for shadow mapping (specify width and height of shadow map)"
-  [width height projection-matrix transform light-vector longest-shadow]
+  "Choose NDC and texture coordinate matrices for shadow mapping"
+  [projection-matrix transform light-vector longest-shadow]
   (let [points       (map #(mmul transform %) (frustum-corners projection-matrix))
         light-matrix (orient-to-light light-vector)
         bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)

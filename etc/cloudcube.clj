@@ -301,7 +301,7 @@ void main()
                 "fps" (format "%.3f" (/ (* @n 1000.0) (- t1 tf)))))
        (let [light-direction (matrix [0 (cos @light) (sin @light)])
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
-             shadow-mat      (shadow-matrices 512 512 projection transform light-direction 0)]
+             shadow-mat      (shadow-matrices projection transform light-direction 0)]
          (framebuffer-render 512 512 :cullback nil [opacity opacity-shape]
                              (use-program sprogram)
                              (use-textures worley)

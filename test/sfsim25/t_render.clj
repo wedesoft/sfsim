@@ -783,7 +783,7 @@ void main(void)
         (let [projection (projection-matrix 320 240 2 5 (to-radians 90))
               transform (identity-matrix 4)
               light-vector (normalize (matrix [1 1 2]))
-              shadow (shadow-matrices 256 256 projection transform light-vector 1)
+              shadow (shadow-matrices projection transform light-vector 1)
               indices [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
                         -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
