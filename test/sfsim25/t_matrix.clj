@@ -140,7 +140,15 @@
          (mmul (:shadow-map-matrix (shadow-matrices projection transform2 light_direction 500)) (matrix [0 1500 0 1]))
          => (roughly-matrix (matrix [0.5 0.5 1 1]) 1e-6)
          (:depth (shadow-matrices projection transform1 light_direction 0))
-         => (roughly 1500 1e-6)))
+         => (roughly 1500 1e-6)
+         (:depth (shadow-matrices projection transform1 light_direction 1000))
+         => (roughly 2500 1e-6)
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light_direction 0 (/ 99 199) (/ 9 199)))
+               (matrix [0 0 -10 1]))
+         => (roughly-matrix (matrix [-1 0 0.5 1]) 1e-6)
+         (mmul (:shadow-ndc-matrix (shadow-matrices projection transform1 light_direction 0 (/ 99 199) (/ 9 199)))
+               (matrix [0 0 -100 1]))
+         => (roughly-matrix (matrix [1 0 0.5 1]) 1e-6)))
 
 (facts "Linear frustum split"
        (split-linear 10 40 2 0) => 10

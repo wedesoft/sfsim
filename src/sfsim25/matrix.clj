@@ -82,7 +82,8 @@
 
 (defn frustum-corners
   "Determine corners of OpenGL frustum (or part of frustum)"
-  ([projection-matrix] (frustum-corners projection-matrix 1.0 0.0))
+  ([projection-matrix]
+   (frustum-corners projection-matrix 1.0 0.0))
   ([projection-matrix ndc1 ndc2]
    (let [minv (inverse projection-matrix)]
      (mapv #(mmul minv %)
@@ -152,16 +153,18 @@
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
-  [projection-matrix transform light-vector longest-shadow]
-  (let [points       (map #(mmul transform %) (frustum-corners projection-matrix))
-        light-matrix (orient-to-light light-vector)
-        bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)
-        shadow-ndc   (shadow-box-to-ndc bbox)
-        shadow-map   (shadow-box-to-map bbox)
-        depth        (- (mget (:bottomleftnear bbox) 2) (mget (:toprightfar bbox) 2))]
-    {:shadow-ndc-matrix (mmul shadow-ndc light-matrix)
-     :shadow-map-matrix (mmul shadow-map light-matrix)
-     :depth depth}))
+  ([projection-matrix transform light-vector longest-shadow]
+   (shadow-matrices projection-matrix transform light-vector longest-shadow 1.0 0.0))
+  ([projection-matrix transform light-vector longest-shadow ndc1 ndc2]
+   (let [points       (map #(mmul transform %) (frustum-corners projection-matrix ndc1 ndc2))
+         light-matrix (orient-to-light light-vector)
+         bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)
+         shadow-ndc   (shadow-box-to-ndc bbox)
+         shadow-map   (shadow-box-to-map bbox)
+         depth        (- (mget (:bottomleftnear bbox) 2) (mget (:toprightfar bbox) 2))]
+     {:shadow-ndc-matrix (mmul shadow-ndc light-matrix)
+      :shadow-map-matrix (mmul shadow-map light-matrix)
+      :depth depth})))
 
 (defn split-linear
   "Perform linear z-split for frustum"
