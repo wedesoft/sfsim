@@ -181,5 +181,14 @@
   [mix near far num-steps step]
   (+ (* (- 1 mix) (split-linear near far num-steps step)) (* mix (split-exponential near far num-steps step))))
 
+(defn shadow-matrix-cascade
+  "Compute cascade of shadow matrices"
+  [projection-matrix transform light-vector longest-shadow mix near far num-steps]
+  (mapv (fn [idx]
+            (let [ndc1 (z-to-ndc near far (split-mixed mix near far num-steps idx))
+                  ndc2 (z-to-ndc near far (split-mixed mix near far num-steps (inc idx)))]
+              (shadow-matrices projection-matrix transform light-vector longest-shadow ndc1 ndc2)))
+        (range num-steps)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
