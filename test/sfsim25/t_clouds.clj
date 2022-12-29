@@ -526,8 +526,8 @@ void main()
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program         (make-program :vertex [vertex-passthrough]
-                                          :fragment (vector (opacity-lookup-probe x y z) opacity-lookup convert-2d-index
-                                                            convert-3d-index))
+                                          :fragment [(opacity-lookup-probe x y z) opacity-lookup convert-2d-index
+                                                     convert-3d-index])
             vao             (make-vertex-array-object program indices vertices [:point 3])
             zeropad         (fn [x] [0 x 0 0])
             opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
@@ -560,3 +560,59 @@ void main()
   1.0     (/ 1.0 12) 1     0  0.5       0.4
   1.0     (/ 1.0 6)  1     0  (/ 5.0 6) 0.9
   1.0     (/ 1.0 6)  0.75  0  0.5       0.85)
+
+(def opacity-lookup-mock
+"#version 410 core
+float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x)
+{
+  return texture(layers, vec3(0.5, 0.5, 0.5)).r;
+}")
+
+(def opacity-cascade-lookup
+"#version 410 core
+float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x)
+{
+  return 1.0;
+}")
+
+(def opacity-cascade-lookup-probe
+  (template/fn [z]
+"#version 410 core
+out vec3 fragColor;
+float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x);
+void main()
+{
+  vec3 point = vec3(0, 0, z);
+  opacity_cascade_lookup(point, 1, 1, 1);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn opacity-cascade-lookup-test [n z opacities offsets]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices         [0 1 3 2]
+            vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            program         (make-program :vertex [vertex-passthrough]
+                                          :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n)
+                                                     opacity-lookup-mock])
+            vao             (make-vertex-array-object program indices vertices [:point 3])
+            opacity-data    [(first opacities)]
+            offset-data     [(first offsets)]
+            opacity         (make-float-texture-3d :linear :clamp {:width 1 :height 1 :depth 1
+                                                                   :data (float-array opacity-data)})
+            offset          (make-float-texture-2d :linear :clamp {:width 1 :height 1 :data (float-array offset-data)})
+            tex             (texture-render-color 1 1 true
+                                                  (use-program program)
+                                                  (uniform-sampler program :opacity0 0)
+                                                  (uniform-sampler program :offset0 1)
+                                                  (uniform-float program :split0 10.0)
+                                                  (uniform-float program :split1 40.0)
+                                                  (use-textures opacity offset)
+                                                  (render-quads vao))
+            img             (rgb-texture->vectors3 tex)]
+        (deliver result (get-vector3 img 0 0))
+        (destroy-texture offset)
+        (destroy-texture opacity)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)))
+    @result))
