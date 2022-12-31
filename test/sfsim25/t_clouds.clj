@@ -569,11 +569,12 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
 }")
 
 (def opacity-cascade-lookup
+(template/fn [n]
 "#version 410 core
 float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x)
 {
   return 1.0;
-}")
+}"))
 
 (def opacity-cascade-lookup-probe
   (template/fn [z]
@@ -582,8 +583,8 @@ out vec3 fragColor;
 float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x);
 void main()
 {
-  vec3 point = vec3(0, 0, z);
-  opacity_cascade_lookup(point, 1, 1, 1);
+  vec3 point = vec3(0, 0, <%= z %>);
+  float result = opacity_cascade_lookup(point, 1, 1, 1);
   fragColor = vec3(result, 0, 0);
 }"))
 
@@ -616,3 +617,8 @@ void main()
         (destroy-vertex-array-object vao)
         (destroy-program program)))
     @result))
+
+(tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
+         (fact (mget (opacity-cascade-lookup-test ?n ?z ?opacities ?offsets) 0) => (roughly ?result 1e-6))
+         ?n ?z ?opacities ?offsets  ?result
+         1  10 [1.0]      [0.0] 1.0)
