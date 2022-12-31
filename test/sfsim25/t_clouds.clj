@@ -568,11 +568,15 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
   return texture(layers, vec3(0.5, 0.5, 0.5)).r;
 }")
 
+(def declare-opacity-map
+  (template/fn [idx]
+"uniform sampler3D opacity<%= idx %>;
+uniform sampler2D offset<%= idx %>;"))
+
 (def opacity-cascade-lookup
 (template/fn [n]
 "#version 410 core
-uniform sampler3D opacity0;
-uniform sampler2D offset0;
+<%= (apply str (for [i (range n)] (declare-opacity-map i))) %>
 float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x);
 float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x)
 {
@@ -606,16 +610,18 @@ void main()
                                  offsets)
             tex             (texture-render-color 1 1 true
                                                   (use-program program)
-                                                  (uniform-sampler program :opacity0 0)
-                                                  (uniform-sampler program :offset0 1)
-                                                  (uniform-float program :split0 10.0)
-                                                  (uniform-float program :split1 40.0)
-                                                  (use-textures (first opacity-texs) (first offset-texs))
+                                                  (doseq [idx (range n)]
+                                                         (uniform-sampler program (keyword (str "opacity" idx)) (* 2 idx))
+                                                         (uniform-sampler program (keyword (str "offset" idx)) (inc (* 2 idx))))
+                                                  (doseq [idx (range (inc n))]
+                                                         (uniform-float program (keyword (str "split" idx))
+                                                                        (+ 10.0 (/ (* 30.0 idx) n))))
+                                                  (apply use-textures (interleave opacity-texs offset-texs))
                                                   (render-quads vao))
             img             (rgb-texture->vectors3 tex)]
         (deliver result (get-vector3 img 0 0))
-        (for [tex offset-texs] (destroy-texture tex))
-        (for [tex opacity-texs] (destroy-texture tex))
+        (doseq [tex offset-texs] (destroy-texture tex))
+        (doseq [tex opacity-texs] (destroy-texture tex))
         (destroy-vertex-array-object vao)
         (destroy-program program)))
     @result))
@@ -623,4 +629,5 @@ void main()
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
          (fact (mget (opacity-cascade-lookup-test ?n ?z ?opacities ?offsets) 0) => (roughly ?result 1e-6))
          ?n ?z ?opacities ?offsets ?result
-         1  10 [1.0]      [0.0]    1.0)
+         1  10 [1.0]      [0]      1.0
+         2  40 [1.0 0.5]  [0 0]    0.5)
