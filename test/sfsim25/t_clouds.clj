@@ -563,9 +563,13 @@ void main()
 
 (def opacity-lookup-mock
 "#version 410 core
+uniform int select;
 float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x)
 {
-  return texture(layers, vec3(0.5, 0.5, 0.5)).r;
+  if (select == 0)
+    return texture(layers, vec3(0.5, 0.5, 0.5)).r;
+  else
+    return opacity_map_coords.x;
 }")
 
 (def declare-opacity-map
@@ -579,10 +583,16 @@ uniform sampler2D offset<%= idx %>;
 "uniform float split<%= idx %>;
 "))
 
+(def declare-shadow-matrix
+  (template/fn [idx]
+"uniform mat4 shadow_map_matrix<%= idx %>;
+"))
+
 (def process-split
   (template/fn [idx]
 "  if (z >= split<%= idx %> && z <= split<%= (inc idx) %>) {
-    return opacity_lookup(offset<%= idx %>, opacity<%= idx %>, point, size_z, size_y, size_x);
+    vec4 map_coords = shadow_map_matrix<%= idx %> * point;
+    return opacity_lookup(offset<%= idx %>, opacity<%= idx %>, map_coords.xyz, size_z, size_y, size_x);
   };
 "))
 
@@ -590,9 +600,10 @@ uniform sampler2D offset<%= idx %>;
 (template/fn [n]
 "#version 410 core
 <%= (apply str (for [i (range n)] (declare-opacity-map i))) %>
-; <%= (apply str (for [i (range (inc n))] (declare-split i))) %>
+<%= (apply str (for [i (range (inc n))] (declare-split i))) %>
+<%= (apply str (for [i (range (inc n))] (declare-shadow-matrix i))) %>
 float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x);
-float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x)
+float opacity_cascade_lookup(vec4 point, int size_z, int size_y, int size_x)
 {
   float z = point.z;
 <%= (apply str (for [i (range n)] (process-split i))) %>
@@ -603,15 +614,15 @@ float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x)
   (template/fn [z]
 "#version 410 core
 out vec3 fragColor;
-float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x);
+float opacity_cascade_lookup(vec4 point, int size_z, int size_y, int size_x);
 void main()
 {
-  vec3 point = vec3(0, 0, <%= z %>);
+  vec4 point = vec4(0, 0, <%= z %>, 1);
   float result = opacity_cascade_lookup(point, 1, 1, 1);
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn opacity-cascade-lookup-test [n z opacities offsets]
+(defn opacity-cascade-lookup-test [n z opacities offsets select]
   (let [result (promise)]
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
@@ -629,9 +640,14 @@ void main()
                                                   (doseq [idx (range n)]
                                                          (uniform-sampler program (keyword (str "opacity" idx)) (* 2 idx))
                                                          (uniform-sampler program (keyword (str "offset" idx)) (inc (* 2 idx))))
+                                                  (doseq [idx (range n)]
+                                                         (uniform-matrix4 program (keyword (str "shadow_map_matrix" idx))
+                                                                          (transformation-matrix (identity-matrix 3)
+                                                                                                 (matrix [(inc idx) 0 0]))))
                                                   (doseq [idx (range (inc n))]
                                                          (uniform-float program (keyword (str "split" idx))
                                                                         (+ 10.0 (/ (* 30.0 idx) n))))
+                                                  (uniform-int program :select ({:opacity 0 :coord 1} select))
                                                   (apply use-textures (interleave opacity-texs offset-texs))
                                                   (render-quads vao))
             img             (rgb-texture->vectors3 tex)]
@@ -643,7 +659,12 @@ void main()
     @result))
 
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
-         (fact (mget (opacity-cascade-lookup-test ?n ?z ?opacities ?offsets) 0) => (roughly ?result 1e-6))
-         ?n ?z ?opacities ?offsets ?result
-         1  10 [1.0]      [0]      1.0
-         2  40 [1.0 0.5]  [0 0]    0.5)
+         (fact (mget (opacity-cascade-lookup-test ?n ?z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
+         ?n ?z ?opacities ?offsets ?select  ?result
+         1  10 [1.0]      [0]      :opacity 1.0
+         2  40 [1.0 0.5]  [0 0]    :opacity 0.5
+         1  10 [1.0]      [0]      :coord   1.0
+         2  10 [1.0]      [0]      :coord   1.0
+         2  40 [1.0]      [0]      :coord   2.0)
+
+; TODO: use <% ... %>
