@@ -571,16 +571,32 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
 (def declare-opacity-map
   (template/fn [idx]
 "uniform sampler3D opacity<%= idx %>;
-uniform sampler2D offset<%= idx %>;"))
+uniform sampler2D offset<%= idx %>;
+"))
+
+(def declare-split
+  (template/fn [idx]
+"uniform float split<%= idx %>;
+"))
+
+(def process-split
+  (template/fn [idx]
+"  if (z >= split<%= idx %> && z <= split<%= (inc idx) %>) {
+    return opacity_lookup(offset<%= idx %>, opacity<%= idx %>, point, size_z, size_y, size_x);
+  };
+"))
 
 (def opacity-cascade-lookup
 (template/fn [n]
 "#version 410 core
 <%= (apply str (for [i (range n)] (declare-opacity-map i))) %>
+; <%= (apply str (for [i (range (inc n))] (declare-split i))) %>
 float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x);
 float opacity_cascade_lookup(vec3 point, int size_z, int size_y, int size_x)
 {
-  return opacity_lookup(offset0, opacity0, point, 1, 1, 1);
+  float z = point.z;
+<%= (apply str (for [i (range n)] (process-split i))) %>
+  return 0.0;
 }"))
 
 (def opacity-cascade-lookup-probe
