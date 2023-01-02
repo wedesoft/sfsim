@@ -590,7 +590,7 @@ float opacity_cascade_lookup(vec4 point, int size_z, int size_y, int size_x)
     return opacity_lookup(offset<%= i %>, opacity<%= i %>, map_coords.xyz, size_z, size_y, size_x);
   };
 <% ) %>
-  return 0.0;
+  return 1.0;
 }"))
 
 (def opacity-cascade-lookup-probe
@@ -646,6 +646,7 @@ void main()
          ?n ?z ?opacities ?offsets ?select  ?result
          1  10 [1.0]      [0]      :opacity 1.0
          2  40 [1.0 0.5]  [0 0]    :opacity 0.5
+         2  50 [1.0 0.5]  [0 0]    :opacity 1.0
          1  10 [1.0]      [0]      :coord   1.0
          2  10 [1.0]      [0]      :coord   1.0
          2  40 [1.0]      [0]      :coord   2.0)
