@@ -644,9 +644,9 @@ void main()
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
          (fact (mget (opacity-cascade-lookup-test ?n ?z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
          ?n ?z ?opacities ?offsets ?select  ?result
-         1  10 [1.0]      [0]      :opacity 1.0
-         2  40 [1.0 0.5]  [0 0]    :opacity 0.5
-         2  50 [1.0 0.5]  [0 0]    :opacity 1.0
+         1  10 [0.75]     [0]      :opacity 0.75
+         2  40 [0.75 0.5] [0 0]    :opacity 0.5
+         2  50 [0.75 0.5] [0 0]    :opacity 1.0
          1  10 [1.0]      [0]      :coord   1.0
          2  10 [1.0]      [0]      :coord   1.0
          2  40 [1.0]      [0]      :coord   2.0)
