@@ -14,7 +14,8 @@ in VS_OUT
 } fs_in;
 
 layout (location = 0) out float opacity_offset;
-<%= (apply str (for [i (range num-layers)] (declare-opacity-layer i))) %>
+<% (doseq [i (range num-layers)] %>layout (location = <%= (inc i) %>) out float opacity_layer_<%= i %>;
+<% ) %>
 
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
@@ -24,7 +25,11 @@ void interpolate_opacity(float opacity_interval_begin, float opacity_interval_en
   float stepsize = opacity_interval_end - opacity_interval_begin;
   if (opacity_interval_begin == 0.0)
     opacity_layer_0 = 1.0;
-  <%= (apply str (for [i (range 1 num-layers)] (opacity-layer-update i))) %>
+<% (doseq [i (range 1 num-layers)] %>
+  if (opacity_interval_begin < <%= i %> * opacity_step && opacity_interval_end >= <%= i %> * opacity_step) {
+    opacity_layer_<%= i %> = mix(previous_transmittance, transmittance, (<%= i %> * opacity_step - opacity_interval_begin) / stepsize);
+  };
+<% ) %>
 }
 
 void main()
