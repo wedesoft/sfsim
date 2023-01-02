@@ -40,9 +40,12 @@
 
 (def opacity-fragment
   "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
-  (template/fn [num-layers]
-    (slurp "resources/shaders/clouds/opacity-fragment.glsl")))
+  (template/fn [num-layers] (slurp "resources/shaders/clouds/opacity-fragment.glsl")))
 
 (def opacity-lookup
   "Shader function for looking up transmittance value from deep opacity map"
   (slurp "resources/shaders/clouds/opacity-lookup.glsl"))
+
+(def opacity-cascade-lookup
+  "Perform opacity (transparency) lookup in cascade of deep opacity maps"
+  (template/fn [n] (slurp "resources/shaders/clouds/opacity-cascade-lookup.glsl")))
