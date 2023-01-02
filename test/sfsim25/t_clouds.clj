@@ -572,11 +572,6 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
     return opacity_map_coords.x;
 }")
 
-(def declare-shadow-matrix
-  (template/fn [idx]
-"uniform mat4 shadow_map_matrix<%= idx %>;
-"))
-
 (def process-split
   (template/fn [idx]
 "  if (z >= split<%= idx %> && z <= split<%= (inc idx) %>) {
@@ -590,10 +585,10 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
 "#version 410 core
 <% (doseq [i (range n)] %>uniform sampler3D opacity<%= i %>;
 uniform sampler2D offset<%= i %>;
+uniform mat4 shadow_map_matrix<%= i %>;
 <% ) %>
 <% (doseq [i (range (inc n))] %>uniform float split<%= i %>;
 <% ) %>
-<%= (apply str (for [i (range (inc n))] (declare-shadow-matrix i))) %>
 float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x);
 float opacity_cascade_lookup(vec4 point, int size_z, int size_y, int size_x)
 {
