@@ -572,14 +572,6 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
     return opacity_map_coords.x;
 }")
 
-(def process-split
-  (template/fn [idx]
-"  if (z >= split<%= idx %> && z <= split<%= (inc idx) %>) {
-    vec4 map_coords = shadow_map_matrix<%= idx %> * point;
-    return opacity_lookup(offset<%= idx %>, opacity<%= idx %>, map_coords.xyz, size_z, size_y, size_x);
-  };
-"))
-
 (def opacity-cascade-lookup
 (template/fn [n]
 "#version 410 core
@@ -593,7 +585,11 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
 float opacity_cascade_lookup(vec4 point, int size_z, int size_y, int size_x)
 {
   float z = point.z;
-<%= (apply str (for [i (range n)] (process-split i))) %>
+<% (doseq [i (range n)] %>if (z >= split<%= i %> && z <= split<%= (inc i) %>) {
+    vec4 map_coords = shadow_map_matrix<%= i %> * point;
+    return opacity_lookup(offset<%= i %>, opacity<%= i %>, map_coords.xyz, size_z, size_y, size_x);
+  };
+<% ) %>
   return 0.0;
 }"))
 
@@ -653,5 +649,3 @@ void main()
          1  10 [1.0]      [0]      :coord   1.0
          2  10 [1.0]      [0]      :coord   1.0
          2  40 [1.0]      [0]      :coord   2.0)
-
-; TODO: use <% ... %>
