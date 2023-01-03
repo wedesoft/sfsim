@@ -1,7 +1,7 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* cloud\_track with analytical scattering integration for samples s2016-pbs-frostbite-sky-clouds-new.pdf page 38
+* cloud\_track with scatter\_amount and analytical scattering integration for samples s2016-pbs-frostbite-sky-clouds-new.pdf page 38
 * planetary cloud rendering using single deep opacity map (tested?)
 * planetary cloud rendering using cascaded deep opacity maps (tested?)
 * use shadow map for terrain and clouds

@@ -452,6 +452,13 @@ float cloud_density(vec3 point, float lod)
     return 0.0;
 }")
 
+(defn setup-opacity-fragment-static-uniforms
+  [program]
+  (uniform-int program :shadow_size 3)
+  (uniform-float program :radius 1000)
+  (uniform-float program :cloud_bottom 100)
+  (uniform-float program :cloud_top 200))
+
 (tabular "Compute deep opacity map offsets and layers"
   (fact
     (offscreen-render 1 1
@@ -466,14 +473,12 @@ float cloud_density(vec3 point, float lod)
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 7)]
         (framebuffer-render 3 3 :cullback nil [opacity-offsets opacity-layers]
                             (use-program program)
+                            (setup-opacity-fragment-static-uniforms program)
                             (uniform-matrix4 program :ndc_to_shadow ndc-to-shadow)
                             (uniform-vector3 program :light_direction light-direction)
-                            (uniform-int program :shadow_size 3)
-                            (uniform-float program :radius 1000)
-                            (uniform-float program :cloud_bottom 100)
-                            (uniform-float program :cloud_top 200)
                             (uniform-int program :num_shell_intersections ?shells)
                             (uniform-float program :cloud_multiplier ?multiplier)
+                            (uniform-float program :scatter_amount ?scatter-amount)
                             (uniform-float program :depth ?depth)
                             (uniform-float program :cloud_max_step ?cloudstep)
                             (uniform-float program :opacity_step ?opacitystep)
@@ -485,26 +490,27 @@ float cloud_density(vec3 point, float lod)
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?shells ?px ?depth ?cloudstep ?opacitystep ?start ?multiplier ?z   ?selector ?layer ?result
-  2       1    1000   50         50           1200  0.02        1200 :offset   0      1
-  2       1    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.2)
-  2       0    1000   50         50           1200  0.02        1400 :offset   0      (- 1 0.201)
-  2       1    1000   50         50           1150  0.02        1200 :offset   0      (- 1 0.05)
-  2       1   10000   50         50          -9999  0.02        1200 :offset   0      0.0
-  2       1    1000   50         50           1200  0.02        1200 :layer    0      1.0
-  2       1    1000   50         50           1200  0.02        1200 :layer    1      (exp -1)
-  2       1    1000   50         50           1200  0.02        1400 :layer    1      (exp -1)
-  2       1    1000   50         25           1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2)
-  2       1    1000   50         50           1200  0.02        1200 :layer    2      (exp -2)
-  2       1    1000   50         50           1200  0.02        1200 :layer    3      (exp -2)
-  2       1   10000   50         50              0  0.02        1200 :offset   0      (- 1 0.23)
-  2       1   10000   50         50              0  0.02        1200 :layer    0      1.0
-  2       1   10000   50         50              0  0.02        1200 :layer    1      (exp -1)
-  2       1   10000   50         50              0  0.02        1200 :layer    2      (exp -2)
-  2       1   10000   50         50              0  0.02        1200 :layer    3      (exp -2)
-  2       1   10000   50         50              0  0.02        1200 :layer    6      (exp -2)
-  2       1   10000   50         50          -9999  0.02        1200 :layer    6      1.0
-  1       1   10000   50         50          -1000  0.02        1200 :offset   0      (- 1 0.22))
+  ?shells ?px ?depth ?cloudstep ?opacitystep ?scatter-amount ?start ?multiplier ?z   ?selector ?layer ?result
+  2       1    1000   50         50          0                1200  0.02        1200 :offset   0      1
+  2       1    1000   50         50          0                1200  0.02        1400 :offset   0      (- 1 0.2)
+  2       0    1000   50         50          0                1200  0.02        1400 :offset   0      (- 1 0.201)
+  2       1    1000   50         50          0                1150  0.02        1200 :offset   0      (- 1 0.05)
+  2       1   10000   50         50          0               -9999  0.02        1200 :offset   0      0.0
+  2       1    1000   50         50          0                1200  0.02        1200 :layer    0      1.0
+  2       1    1000   50         50          0                1200  0.02        1200 :layer    1      (exp -1)
+  2       1    1000   50         50          0.5              1200  0.02        1200 :layer    1      (exp -0.5)
+  2       1    1000   50         50          0                1200  0.02        1400 :layer    1      (exp -1)
+  2       1    1000   50         25          0                1200  0.02        1200 :layer    1      (/ (+ 1 (exp -1)) 2)
+  2       1    1000   50         50          0                1200  0.02        1200 :layer    2      (exp -2)
+  2       1    1000   50         50          0                1200  0.02        1200 :layer    3      (exp -2)
+  2       1   10000   50         50          0                   0  0.02        1200 :offset   0      (- 1 0.23)
+  2       1   10000   50         50          0                   0  0.02        1200 :layer    0      1.0
+  2       1   10000   50         50          0                   0  0.02        1200 :layer    1      (exp -1)
+  2       1   10000   50         50          0                   0  0.02        1200 :layer    2      (exp -2)
+  2       1   10000   50         50          0                   0  0.02        1200 :layer    3      (exp -2)
+  2       1   10000   50         50          0                   0  0.02        1200 :layer    6      (exp -2)
+  2       1   10000   50         50          0               -9999  0.02        1200 :layer    6      1.0
+  1       1   10000   50         50          0               -1000  0.02        1200 :offset   0      (- 1 0.22))
 
 (def opacity-lookup-probe
   (template/fn [x y z]
