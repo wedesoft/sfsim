@@ -14,9 +14,26 @@
 
 (def anisotropic 0.3)
 (def cloud-scatter-amount 1.0)
-(def scatter-amount (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount))
+(defn scatter-amount [mu] (* (+ (* anisotropic (phase 0.76 mu)) (- 1 anisotropic)) cloud-scatter-amount))
 (def cloud-multiplier 0.001)
 (def density cloud-multiplier)
 
 (defn testshadow [n stepsize]
-  (pow (exp (* (- scatter-amount 1) density stepsize)) n))
+  (pow (exp (* (- (scatter-amount -1) 1) density stepsize)) n))
+
+(testshadow 1 200.0)
+(testshadow 2 100.0)
+(testshadow 10 20.0)
+
+(defn testcloud [n stepsize mu]
+  (if (zero? n)
+    0.0
+    (let [scatter       (scatter-amount mu)
+          transmittance (exp (- (* density stepsize)))
+          intensity     1.0
+          cloud         (* (- 1 transmittance) scatter intensity)]
+      (+ (* (testcloud (dec n) stepsize mu) transmittance) cloud))))
+
+(testcloud 1 200.0 0.3)
+(testcloud 2 100.0 0.3)
+(testcloud 10 20.0 0.3)
