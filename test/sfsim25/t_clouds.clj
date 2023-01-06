@@ -256,14 +256,19 @@ void main()
   (template/fn [x y z lx ly lz]
 "#version 410 core
 out vec3 fragColor;
+uniform float radius;
+uniform float max_height;
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+vec3 transmittance_outer(vec3 point, vec3 direction)
 {
-  return vec3(incoming.r - abs(b - a) * 0.01, incoming.g, abs(b - a) * 0.01);
+  if (point.y == 0)
+    return vec3(1, 1, 1) * (point.x - radius) / max_height;
+  else
+    return vec3(1, 1, 1) * abs(point.x) / (radius + max_height);
 }
-vec3 cloud_track_base(vec3 origin, vec3 direction, float a, float b, vec3 incoming, float lod)
+float opacity_cascade_lookup(vec4 point)
 {
-  return vec3(incoming.r, incoming.g - abs(b - a) * 0.01, incoming.b);
+  return length(point) < 110 ? 0.5 : 1.0;
 }
 void main()
 {
@@ -274,29 +279,23 @@ void main()
 
 (def cloud-shadow-test
   (shader-test
-    (fn [program radius max-height cloud-bottom cloud-top]
+    (fn [program radius max-height]
         (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height)
-        (uniform-float program :cloud_bottom cloud-bottom)
-        (uniform-float program :cloud_top cloud-top))
+        (uniform-float program :max_height max-height))
     cloud-shadow-probe
     cloud-shadow
     ray-sphere
     ray-shell))
 
 (tabular "Shader for determining illumination of clouds"
-         (fact (cloud-shadow-test [?radius ?h ?h1 ?h2] [?x ?y ?z ?lx ?ly ?lz])
-               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
-         ?x  ?y ?z ?lx ?ly ?lz ?radius ?h  ?h1 ?h2  ?or  ?og ?ob
-         100 0  0  1   0   0   60       40   0   0  1    1   1
-          80 0  0  1   0   0   60       40   0   0  0.8  1   0.2
-          80 0  0 -1   0   0   60       40   0   0 -0.2  0   0.2
-         120 0  0 -1   0   0   60       40   0   0 -0.4  0   0.4
-          80 0  0  1   0   0   60       40  20  30  0.9  0.9 0.0
-          70 0  0  1   0   0   60       40  20  30  0.8  0.9 0.1
-        -100 0  0  1   0   0    0      100  80  90 -0.8  0.8 0.1
-        -200 0  0  1   0   0    0      100  80  90 -0.8  0.8 0.1
-        -100 0  0  1   0   0   60       40  20  30 -0.3 -0.1 0.1)
+         (fact (cloud-shadow-test [?radius ?h] [?x ?y ?z ?lx ?ly ?lz])
+               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
+         ?radius ?h  ?x   ?y ?z ?lx ?ly ?lz ?or   ?og   ?ob
+         100     20  120   0  0  1   0   0   1     1     1
+         100     20 -120   0  0  1   0   0   0     0     0
+         100     20 -120 110  0  1   0   0   0.4   0.4   0.4
+         100     20  110   0  0  1   0   0   0.5   0.5   0.5
+         100     20  105   0  0  1   0   0   0.125 0.125 0.125)
 
 (def cloud-density-probe
   (template/fn [x y z]
