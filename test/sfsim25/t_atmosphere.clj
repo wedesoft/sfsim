@@ -657,6 +657,13 @@ void main()
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
 
+(def opacity-lookup-mock
+"#version 410 core
+float opacity_cascade_lookup(vec4 point)
+{
+  return 1.0;
+}")
+
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
            (offscreen-render 256 256
@@ -682,7 +689,7 @@ void main()
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
-                                                                          shaders/sun-angle-to-index])
+                                                                          shaders/sun-angle-to-index opacity-lookup-mock])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})

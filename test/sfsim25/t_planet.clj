@@ -345,6 +345,13 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
   return scatter;
 }")
 
+(def opacity-lookup-mock
+"#version 410 core
+float opacity_cascade_lookup(vec4 point)
+{
+  return 1.0;
+}")
+
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
                 :fragment [fragment-planet fake-transmittance
@@ -352,6 +359,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                            shaders/transmittance-forward shaders/elevation-to-index
                            shaders/ray-sphere shaders/is-above-horizon
                            fake-ray-scatter atmosphere/attenuation-track
+                           atmosphere/transmittance-outer
                            ground-radiance clouds/sky-track shaders/ray-shell
                            clouds/cloud-track clouds/cloud-track-base
                            clouds/cloud-density clouds/cloud-shadow
@@ -360,7 +368,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
                            shaders/ray-scatter-forward shaders/height-to-index
                            shaders/horizon-distance shaders/limit-quot
                            shaders/surface-radiance-forward
-                           shaders/sun-elevation-to-index]))
+                           shaders/sun-elevation-to-index opacity-lookup-mock]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
