@@ -518,11 +518,11 @@ float cloud_density(vec3 point, float lod)
 out vec3 fragColor;
 uniform sampler2D opacity_offsets;
 uniform sampler3D opacity_layers;
-float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x);
+float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords);
 void main()
 {
   vec3 opacity_map_coords = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = opacity_lookup(opacity_offsets, opacity_layers, opacity_map_coords, 7, 2, 2);
+  float result = opacity_lookup(opacity_offsets, opacity_layers, opacity_map_coords);
   fragColor = vec3(result, result, result);
 }"))
 
@@ -547,6 +547,9 @@ void main()
                                                   (uniform-sampler program :opacity_offsets 0)
                                                   (uniform-sampler program :opacity_layers 1)
                                                   (uniform-float program :opacity_step step)
+                                                  (uniform-int program :opacity_size_z 7)
+                                                  (uniform-int program :opacity_size_y 2)
+                                                  (uniform-int program :opacity_size_x 2)
                                                   (use-textures opacity-offsets opacity-layers)
                                                   (render-quads vao))
             img             (rgb-texture->vectors3 tex)]
@@ -570,7 +573,7 @@ void main()
 (def opacity-lookup-mock
 "#version 410 core
 uniform int select;
-float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords, int size_z, int size_y, int size_x)
+float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coords)
 {
   if (select == 0)
     return texture(layers, vec3(0.5, 0.5, 0.5)).r;
@@ -582,11 +585,11 @@ float opacity_lookup(sampler2D offsets, sampler3D layers, vec3 opacity_map_coord
   (template/fn [z]
 "#version 410 core
 out vec3 fragColor;
-float opacity_cascade_lookup(vec4 point, int size_z, int size_y, int size_x);
+float opacity_cascade_lookup(vec4 point);
 void main()
 {
   vec4 point = vec4(0, 0, <%= z %>, 1);
-  float result = opacity_cascade_lookup(point, 1, 1, 1);
+  float result = opacity_cascade_lookup(point);
   fragColor = vec3(result, 0, 0);
 }"))
 
