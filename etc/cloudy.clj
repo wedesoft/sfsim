@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (to-radians)]
+(require '[clojure.math :refer (to-radians cos sin)]
          '[clojure.core.matrix :refer (matrix add mul)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.render :refer :all]
@@ -36,6 +36,7 @@
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians fov)))
 
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 1000)])))
+(def light (atom 0.041))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def keystates (atom {}))
 
@@ -61,6 +62,7 @@
 uniform mat4 projection;
 uniform mat4 transform;
 uniform vec3 origin;
+uniform vec3 light_direction;
 uniform float radius;
 
 in VS_OUT
@@ -77,7 +79,11 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
   if (planet.y > 0) {
-    fragColor = vec3(1, 1, 1);
+    vec3 pos = origin + direction * planet.x;
+    vec3 normal = normalize(pos);
+    float cos_incidence = dot(normal, light_direction);
+    float bright = max(cos_incidence, 0.1);
+    fragColor = vec3(bright, bright, bright);
   } else {
     fragColor = vec3(0, 0, 0);
   };
@@ -105,16 +111,19 @@ void main()
              ra        (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb        (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc        (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-             v         (if (@keystates Keyboard/KEY_PRIOR) 5 (if (@keystates Keyboard/KEY_NEXT) -5 0))]
+             v         (if (@keystates Keyboard/KEY_PRIOR) 5 (if (@keystates Keyboard/KEY_NEXT) -5 0))
+             l         (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (swap! light + (* l 0.1 dt))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           (use-program program)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
+                          (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
                           (render-quads vao))
          (print "\rheight" (format "%.3f" (- (norm @position) radius))
                 "dt" (format "%.3f" (* dt 0.001))
