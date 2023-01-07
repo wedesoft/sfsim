@@ -1,8 +1,8 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* planetary cloud rendering using single deep opacity map (tested?)
-* planetary cloud rendering using cascaded deep opacity maps (tested?)
+* prototype planetary cloud rendering using cascaded deep opacity maps
+* integration test for cascaded deep opacity map
 * use shadow map for terrain and clouds
 * convert\_1d\_index
 * does lookup\_3d need to use textureLod?
