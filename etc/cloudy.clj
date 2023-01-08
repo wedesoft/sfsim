@@ -3,6 +3,7 @@
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.clouds :refer :all]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.quaternion :as q]
          '[sfsim25.util :refer :all]
@@ -24,7 +25,7 @@
 (def max-height 35000.0)
 (def worley-size 128)
 (def z-near 1000.0)
-(def z-far 125000.0)
+(def z-far 120000.0)
 (def fov 45.0)
 (def height-size 32)
 (def elevation-size 127)
@@ -33,7 +34,7 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 
-(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians fov)))
+(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 1000)])))
 (def light (atom 0.041))
@@ -64,6 +65,7 @@ uniform mat4 transform;
 uniform vec3 origin;
 uniform vec3 light_direction;
 uniform float radius;
+uniform float max_height;
 
 in VS_OUT
 {
@@ -73,32 +75,64 @@ in VS_OUT
 out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec3 sky_outer(vec3 light_direction, vec3 origin, vec3 direction, vec3 incoming);
 
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
-  vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
-  if (planet.y > 0) {
-    vec3 pos = origin + direction * planet.x;
-    vec3 normal = normalize(pos);
-    float cos_incidence = dot(normal, light_direction);
-    float bright = max(cos_incidence, 0.1);
-    fragColor = vec3(bright, bright, bright);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  if (atmosphere.y > 0) {
+    vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
+    if (planet.y > 0) {
+      vec3 pos = origin + direction * planet.x;
+      vec3 normal = normalize(pos);
+      float cos_incidence = dot(normal, light_direction);
+      float bright = max(cos_incidence, 0.1);
+      fragColor = vec3(bright, bright, bright);
+    } else {
+      // fragColor = sky_outer(light_direction, origin, direction, vec3(0, 0, 0));
+      fragColor = vec3(0, 0, 0);
+    };
   } else {
     fragColor = vec3(0, 0, 0);
   };
 }
 ")
 
-(def program (make-program :vertex [vertex-atmosphere] :fragment [fragment shaders/ray-sphere]))
+(def opacity-cascade-mock
+"#version 410 core
+float opacity_cascade_lookup(vec4 point)
+{
+  return 1.0;
+}")
+
+(def program
+  (make-program :vertex [vertex-atmosphere]
+                :fragment [fragment shaders/ray-sphere shaders/ray-shell
+                           sky-outer attenuation-outer ray-scatter-outer
+                           shaders/ray-scatter-forward shaders/height-to-index shaders/interpolate-4d transmittance-outer
+                           shaders/horizon-distance shaders/elevation-to-index shaders/make-2d-index-from-4d
+                           shaders/limit-quot shaders/sun-elevation-to-index phase-function shaders/sun-angle-to-index
+                           shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
+                           ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
+                           cloud-density cloud-shadow attenuation-track opacity-cascade-mock
+                           ]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
 (use-program program)
+(uniform-sampler program :transmittance 0)
+(uniform-sampler program :ray_scatter 1)
+(uniform-sampler program :mie_strength 2)
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
+(uniform-float program :max_height max-height)
+(uniform-float program :cloud_bottom 0)
+(uniform-float program :cloud_top -1)
+(uniform-float program :cloud_bottom 1500)
+(uniform-float program :cloud_top 3000)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -121,6 +155,8 @@ void main()
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 1 0]))
                           (use-program program)
+                          (GL11/glDepthFunc GL11/GL_ALWAYS)
+                          (use-textures T S M)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
                           (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
