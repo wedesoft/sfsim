@@ -90,8 +90,8 @@ void main()
       float bright = max(cos_incidence, 0.1);
       fragColor = vec3(bright, bright, bright);
     } else {
-      // fragColor = sky_outer(light_direction, origin, direction, vec3(0, 0, 0));
-      fragColor = vec3(0, 0, 0);
+      fragColor = sky_outer(light_direction, origin, direction, vec3(0, 0, 0));
+      // fragColor = vec3(0, 0, 0);
     };
   } else {
     fragColor = vec3(0, 0, 0);
@@ -126,13 +126,29 @@ float opacity_cascade_lookup(vec4 point)
 (uniform-sampler program :transmittance 0)
 (uniform-sampler program :ray_scatter 1)
 (uniform-sampler program :mie_strength 2)
+(uniform-sampler program-atmosphere :worley 3)
+(uniform-sampler program-atmosphere :cloud_profile 4)
 (uniform-matrix4 program :projection projection)
 (uniform-float program :radius radius)
 (uniform-float program :max_height max-height)
+(uniform-int program :height_size height-size)
+(uniform-int program :elevation_size elevation-size)
+(uniform-int program :light_elevation_size light-elevation-size)
+(uniform-int program :heading_size heading-size)
+(uniform-int program :transmittance_height_size transmittance-height-size)
+(uniform-int program :transmittance_elevation_size transmittance-elevation-size)
 (uniform-float program :cloud_bottom 0)
 (uniform-float program :cloud_top -1)
-(uniform-float program :cloud_bottom 1500)
-(uniform-float program :cloud_top 3000)
+(uniform-float program :anisotropic 0.15)
+(uniform-int program :cloud_min_samples 5)
+(uniform-int program :cloud_max_samples 64)
+(uniform-float program :cloud_scatter_amount 0.2)
+(uniform-float program :cloud_max_step 1.06)
+(uniform-float program :transparency_cutoff 0.1)
+(uniform-float program-atmosphere :cloud_scale 5000)
+(uniform-int program-atmosphere :cloud_size worley-size)
+; (uniform-float program :cloud_bottom 1500)
+; (uniform-float program :cloud_top 3000)
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -156,7 +172,7 @@ float opacity_cascade_lookup(vec4 point)
                           (clear (matrix [0 1 0]))
                           (use-program program)
                           (GL11/glDepthFunc GL11/GL_ALWAYS)
-                          (use-textures T S M)
+                          (use-textures T S M W P)
                           (uniform-matrix4 program :transform (transformation-matrix (quaternion->matrix @orientation) @position))
                           (uniform-vector3 program :origin @position)
                           (uniform-vector3 program :light_direction (matrix [0 (cos @light) (sin @light)]))
