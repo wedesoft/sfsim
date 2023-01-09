@@ -15,7 +15,7 @@ vec3 sky_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float
 {
   if (cloud_top > cloud_bottom) {
     vec4 cloud_intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
-    cloud_intersections = clip_shell_intersections(cloud_intersections, b - a);
+    cloud_intersections = clip_shell_intersections(cloud_intersections, b);
     if (cloud_intersections.y > 0) {
       float c = cloud_intersections.x;
       float d = cloud_intersections.x + cloud_intersections.y;
