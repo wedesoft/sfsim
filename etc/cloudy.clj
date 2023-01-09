@@ -77,6 +77,7 @@ out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 sky_outer(vec3 light_direction, vec3 origin, vec3 direction, vec3 incoming);
+vec3 sky_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 
 void main()
 {
@@ -89,10 +90,10 @@ void main()
       vec3 normal = normalize(pos);
       float cos_incidence = dot(normal, light_direction);
       float bright = max(cos_incidence, 0.1);
-      fragColor = vec3(bright, bright, bright);
+      vec3 background = vec3(bright, bright, bright);
+      fragColor = sky_track(light_direction, origin, direction, atmosphere.x, planet.x, background / amplification) * amplification;
     } else {
       fragColor = sky_outer(light_direction, origin, direction, vec3(0, 0, 0)) * amplification;
-      // fragColor = vec3(0, 0, 0);
     };
   } else {
     fragColor = vec3(0, 0, 0);
@@ -116,8 +117,8 @@ float opacity_cascade_lookup(vec4 point)
                            shaders/limit-quot shaders/sun-elevation-to-index phase-function shaders/sun-angle-to-index
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
-                           cloud-density cloud-shadow attenuation-track opacity-cascade-mock
-                           ]))
+                           cloud-density cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
+                           opacity-cascade-mock]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -146,8 +147,8 @@ float opacity_cascade_lookup(vec4 point)
 (uniform-int program :cloud_min_samples 5)
 (uniform-int program :cloud_max_samples 64)
 (uniform-float program :cloud_scatter_amount 0.2)
-(uniform-float program :cloud_max_step 1.06)
-(uniform-float program :transparency_cutoff 0.1)
+(uniform-float program :cloud_max_step 1.04)
+(uniform-float program :transparency_cutoff 0.05)
 (uniform-float program :cloud_scale 5000)
 (uniform-int program :cloud_size worley-size)
 (uniform-float program :cloud_multiplier (* 0.01 1.2))
