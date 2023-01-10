@@ -90,7 +90,7 @@ void main()
       vec3 normal = normalize(pos);
       float cos_incidence = dot(normal, light_direction);
       float bright = max(cos_incidence, 0.1);
-      vec3 background = vec3(bright, bright, bright);
+      vec3 background = vec3(bright, bright * 0.5, bright * 0.5);
       fragColor = sky_track(light_direction, origin, direction, atmosphere.x, planet.x, background / amplification) * amplification;
     } else {
       fragColor = sky_outer(light_direction, origin, direction, vec3(0, 0, 0)) * amplification;
@@ -139,8 +139,6 @@ float opacity_cascade_lookup(vec4 point)
 (uniform-int program :heading_size heading-size)
 (uniform-int program :transmittance_height_size transmittance-height-size)
 (uniform-int program :transmittance_elevation_size transmittance-elevation-size)
-; (uniform-float program :cloud_bottom 0)
-; (uniform-float program :cloud_top -1)
 (uniform-float program :cloud_bottom 1500)
 (uniform-float program :cloud_top 3000)
 (uniform-float program :anisotropic 0.15)
