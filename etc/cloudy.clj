@@ -1,5 +1,5 @@
 (require '[clojure.math :refer (to-radians cos sin)]
-         '[clojure.core.matrix :refer (matrix add mul)]
+         '[clojure.core.matrix :refer (matrix add mul inverse)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
@@ -23,6 +23,8 @@
 
 (def radius 6378000.0)
 (def max-height 35000.0)
+(def cloud-bottom 1500)
+(def cloud-top 3000)
 (def worley-size 128)
 (def z-near 1000.0)
 (def z-far 120000.0)
@@ -33,6 +35,8 @@
 (def heading-size 8)
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
+(def shadow-size 256)
+(def num-opacity-layers 7)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
@@ -121,8 +125,8 @@ float opacity_cascade_lookup(vec4 point)
                            opacity-cascade-mock]))
 
 (def indices [0 1 3 2])
-(def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
-(def vao (make-vertex-array-object program-atmosphere indices vertices [:point 3]))
+(def atmosphere-vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
+(def atmosphere-vao (make-vertex-array-object program-atmosphere indices atmosphere-vertices [:point 3]))
 
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere :transmittance 0)
@@ -139,8 +143,8 @@ float opacity_cascade_lookup(vec4 point)
 (uniform-int program-atmosphere :heading_size heading-size)
 (uniform-int program-atmosphere :transmittance_height_size transmittance-height-size)
 (uniform-int program-atmosphere :transmittance_elevation_size transmittance-elevation-size)
-(uniform-float program-atmosphere :cloud_bottom 1500)
-(uniform-float program-atmosphere :cloud_top 3000)
+(uniform-float program-atmosphere :cloud_bottom cloud-bottom)
+(uniform-float program-atmosphere :cloud_top cloud-top)
 (uniform-float program-atmosphere :anisotropic 0.15)
 (uniform-int program-atmosphere :cloud_min_samples 5)
 (uniform-int program-atmosphere :cloud_max_samples 64)
@@ -151,6 +155,36 @@ float opacity_cascade_lookup(vec4 point)
 (uniform-int program-atmosphere :cloud_size worley-size)
 (uniform-float program-atmosphere :cloud_multiplier (* 0.01 1.2))
 (uniform-float program-atmosphere :amplification 6.0)
+
+(def program-shadow
+  (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
+                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/ray-sphere]))
+
+(def indices [0 1 3 2])
+(def shadow-vertices (map #(* % z-far) [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]))
+(def shadow-vao (make-vertex-array-object program-shadow indices shadow-vertices [:point 3]))
+
+(map
+  (fn [{:keys [shadow-ndc-matrix depth]}]
+      (let [opacity-offsets (make-empty-float-texture-2d :linear :clamp shadow-size shadow-size)
+            opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size num-opacity-layers)]
+        (framebuffer-render shadow-size shadow-size :cullback nil [opacity-offsets opacity-layers]
+                            (use-program program-shadow)
+                            (uniform-int program-shadow :shadow_size shadow-size)
+                            (uniform-float program-shadow :radius radius)
+                            (uniform-float program-shadow :cloud_bottom cloud-bottom)
+                            (uniform-float program-shadow :cloud_top cloud-top)
+                            (uniform-matrix4 program-shadow :ndc_to_shadow (inverse shadow-ndc-matrix))
+                            (uniform-vector3 program-shadow :light_direction light-direction)
+                            ; TODO: num-shell-intersections?
+                            (uniform-float program-shadow :cloud_multiplier (* 0.01 1.2))
+                            ; TODO: scatter-amount to be computed?
+                            (uniform-float program-shadow :depth depth)
+                            (uniform-float program-shadow :cloud_max_step 200) ; TODO: rename or use sampling shader functions
+                            (uniform-float program-shadow :opacity_step 500)
+                            (render-quads shadow-vao))
+        {:offset opacity-offsets :layer opacity-layers}))
+  (shadow-matrix-cascade projection transform light-direction (/ z-far 2) 0.5 z-near z-far num-opacity-layers))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -170,15 +204,17 @@ float opacity_cascade_lookup(vec4 point)
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
          (swap! light + (* l 0.1 dt))
-         (onscreen-render (Display/getWidth) (Display/getHeight)
-                          (clear (matrix [0 1 0]))
-                          (use-program program-atmosphere)
-                          (GL11/glDepthFunc GL11/GL_ALWAYS)
-                          (use-textures T S M W P)
-                          (uniform-matrix4 program-atmosphere :transform (transformation-matrix (quaternion->matrix @orientation) @position))
-                          (uniform-vector3 program-atmosphere :origin @position)
-                          (uniform-vector3 program-atmosphere :light_direction (matrix [0 (cos @light) (sin @light)]))
-                          (render-quads vao))
+         (let [transform       (transformation-matrix (quaternion->matrix @orientation) @position)
+               light-direction (matrix [0 (cos @light) (sin @light)])]
+           (onscreen-render (Display/getWidth) (Display/getHeight)
+                            (clear (matrix [0 1 0]))
+                            (use-program program-atmosphere)
+                            (GL11/glDepthFunc GL11/GL_ALWAYS)
+                            (use-textures T S M W P)
+                            (uniform-matrix4 program-atmosphere :transform transform)
+                            (uniform-vector3 program-atmosphere :origin @position)
+                            (uniform-vector3 program-atmosphere :light_direction light-direction)
+                            (render-quads atmosphere-vao)))
          (print "\rheight" (format "%.3f" (- (norm @position) radius))
                 "dt" (format "%.3f" (* dt 0.001))
                 "      ")
