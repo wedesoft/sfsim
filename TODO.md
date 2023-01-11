@@ -1,7 +1,7 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* opacity lookup is not correct (offsets and opacity\_map\_coords are already scaled)
+* opacity lookup is not correct (offsets and opacity\_map\_coords need to be scaled using opacity\_step and depth)
 * prototype planetary cloud rendering using cascaded deep opacity maps
 * integration test for cascaded deep opacity map
 * use shadow map for terrain and clouds
