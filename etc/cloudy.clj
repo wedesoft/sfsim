@@ -25,6 +25,10 @@
 (def max-height 35000.0)
 (def cloud-bottom 1500)
 (def cloud-top 3000)
+(def cloud-scale 5000)
+(def anisotropic 0.15)
+(def cloud-scatter-amount 0.2)
+(def cloud-multiplier (* 0.01 1.2))
 (def worley-size 128)
 (def z-near 1000.0)
 (def z-far 120000.0)
@@ -145,15 +149,15 @@ float opacity_cascade_lookup(vec4 point)
 (uniform-int program-atmosphere :transmittance_elevation_size transmittance-elevation-size)
 (uniform-float program-atmosphere :cloud_bottom cloud-bottom)
 (uniform-float program-atmosphere :cloud_top cloud-top)
-(uniform-float program-atmosphere :anisotropic 0.15)
+(uniform-float program-atmosphere :anisotropic anisotropic)
 (uniform-int program-atmosphere :cloud_min_samples 5)
 (uniform-int program-atmosphere :cloud_max_samples 64)
-(uniform-float program-atmosphere :cloud_scatter_amount 0.2)
+(uniform-float program-atmosphere :cloud_scatter_amount cloud-scatter-amount)
 (uniform-float program-atmosphere :cloud_max_step 1.04)
 (uniform-float program-atmosphere :transparency_cutoff 0.05)
-(uniform-float program-atmosphere :cloud_scale 5000)
+(uniform-float program-atmosphere :cloud_scale cloud-scale)
 (uniform-int program-atmosphere :cloud_size worley-size)
-(uniform-float program-atmosphere :cloud_multiplier (* 0.01 1.2))
+(uniform-float program-atmosphere :cloud_multiplier cloud-multiplier)
 (uniform-float program-atmosphere :amplification 6.0)
 
 (def program-shadow
@@ -164,27 +168,31 @@ float opacity_cascade_lookup(vec4 point)
 (def shadow-vertices (map #(* % z-far) [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]))
 (def shadow-vao (make-vertex-array-object program-shadow indices shadow-vertices [:point 3]))
 
-(map
-  (fn [{:keys [shadow-ndc-matrix depth]}]
-      (let [opacity-offsets (make-empty-float-texture-2d :linear :clamp shadow-size shadow-size)
-            opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size num-opacity-layers)]
-        (framebuffer-render shadow-size shadow-size :cullback nil [opacity-offsets opacity-layers]
-                            (use-program program-shadow)
-                            (uniform-int program-shadow :shadow_size shadow-size)
-                            (uniform-float program-shadow :radius radius)
-                            (uniform-float program-shadow :cloud_bottom cloud-bottom)
-                            (uniform-float program-shadow :cloud_top cloud-top)
-                            (uniform-matrix4 program-shadow :ndc_to_shadow (inverse shadow-ndc-matrix))
-                            (uniform-vector3 program-shadow :light_direction light-direction)
-                            ; TODO: num-shell-intersections?
-                            (uniform-float program-shadow :cloud_multiplier (* 0.01 1.2))
-                            ; TODO: scatter-amount to be computed?
-                            (uniform-float program-shadow :depth depth)
-                            (uniform-float program-shadow :cloud_max_step 200) ; TODO: rename or use sampling shader functions
-                            (uniform-float program-shadow :opacity_step 500)
-                            (render-quads shadow-vao))
-        {:offset opacity-offsets :layer opacity-layers}))
-  (shadow-matrix-cascade projection transform light-direction (/ z-far 2) 0.5 z-near z-far num-opacity-layers))
+(defn shadow-cascade [matrix-cascade light-direction scatter-amount]
+  (map
+    (fn [{:keys [shadow-ndc-matrix depth]}]
+        (let [opacity-offsets (make-empty-float-texture-2d :linear :clamp shadow-size shadow-size)
+              opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size num-opacity-layers)]
+          (framebuffer-render shadow-size shadow-size :cullback nil [opacity-offsets opacity-layers]
+                              (use-program program-shadow)
+                              (uniform-sampler program-shadow :worley 0)
+                              (uniform-sampler program-shadow :cloud_profile 1)
+                              (uniform-int program-shadow :shadow_size shadow-size)
+                              (uniform-float program-shadow :radius radius)
+                              (uniform-float program-shadow :cloud_bottom cloud-bottom)
+                              (uniform-float program-shadow :cloud_top cloud-top)
+                              (uniform-float program-shadow :cloud_scale cloud-scale)
+                              (uniform-matrix4 program-shadow :ndc_to_shadow (inverse shadow-ndc-matrix))
+                              (uniform-vector3 program-shadow :light_direction light-direction)
+                              (uniform-float program-shadow :cloud_multiplier cloud-multiplier)
+                              (uniform-float program-shadow :scatter_amount scatter-amount)
+                              (uniform-float program-shadow :depth depth)
+                              (uniform-float program-shadow :cloud_max_step 200) ; TODO: rename or use sampling shader functions
+                              (uniform-float program-shadow :opacity_step 500)
+                              (use-textures W P)
+                              (render-quads shadow-vao))
+          {:offset opacity-offsets :layer opacity-layers}))
+    matrix-cascade))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -205,7 +213,11 @@ float opacity_cascade_lookup(vec4 point)
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
          (swap! light + (* l 0.1 dt))
          (let [transform       (transformation-matrix (quaternion->matrix @orientation) @position)
-               light-direction (matrix [0 (cos @light) (sin @light)])]
+               light-direction (matrix [0 (cos @light) (sin @light)])
+               matrix-cascade  (shadow-matrix-cascade projection transform light-direction (/ z-far 2) 0.5 z-near z-far
+                                                      num-opacity-layers)
+               scatter-amount  (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
+               tex-cascase     (shadow-cascade matrix-cascade light-direction scatter-amount)]
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 1 0]))
                             (use-program program-atmosphere)
@@ -214,7 +226,10 @@ float opacity_cascade_lookup(vec4 point)
                             (uniform-matrix4 program-atmosphere :transform transform)
                             (uniform-vector3 program-atmosphere :origin @position)
                             (uniform-vector3 program-atmosphere :light_direction light-direction)
-                            (render-quads atmosphere-vao)))
+                            (render-quads atmosphere-vao))
+           (doseq [{:keys [offset layer]} tex-cascase]
+                  (destroy-texture offset)
+                  (destroy-texture layer)))
          (print "\rheight" (format "%.3f" (- (norm @position) radius))
                 "dt" (format "%.3f" (* dt 0.001))
                 "      ")
