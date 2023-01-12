@@ -32,6 +32,7 @@
 (def worley-size 128)
 (def z-near 1000.0)
 (def z-far 120000.0)
+(def depth (/ z-far 2))
 (def fov 45.0)
 (def height-size 32)
 (def elevation-size 127)
@@ -41,6 +42,7 @@
 (def transmittance-elevation-size 255)
 (def shadow-size 256)
 (def num-opacity-layers 7)
+(def opacity-step 500)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
@@ -109,13 +111,6 @@ void main()
 }
 ")
 
-(def opacity-cascade-mock
-"#version 410 core
-float opacity_cascade_lookup(vec4 point)
-{
-  return 1.0;
-}")
-
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment shaders/ray-sphere shaders/ray-shell
@@ -126,7 +121,7 @@ float opacity_cascade_lookup(vec4 point)
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
                            cloud-density cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
-                           opacity-cascade-mock]))
+                           (opacity-cascade-lookup num-opacity-layers) opacity-lookup shaders/convert-3d-index]))
 
 (def indices [0 1 3 2])
 (def atmosphere-vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -158,6 +153,8 @@ float opacity_cascade_lookup(vec4 point)
 (uniform-float program-atmosphere :cloud_scale cloud-scale)
 (uniform-int program-atmosphere :cloud_size worley-size)
 (uniform-float program-atmosphere :cloud_multiplier cloud-multiplier)
+(uniform-float program-atmosphere :depth depth)
+(uniform-float program-atmosphere :opacity_step opacity-step)
 (uniform-float program-atmosphere :amplification 6.0)
 
 (def program-shadow
@@ -187,8 +184,8 @@ float opacity_cascade_lookup(vec4 point)
                               (uniform-float program-shadow :cloud_multiplier cloud-multiplier)
                               (uniform-float program-shadow :scatter_amount scatter-amount)
                               (uniform-float program-shadow :depth depth)
+                              (uniform-float program-shadow :opacity_step opacity-step)
                               (uniform-float program-shadow :cloud_max_step 200) ; TODO: rename or use sampling shader functions
-                              (uniform-float program-shadow :opacity_step 500)
                               (use-textures W P)
                               (render-quads shadow-vao))
           {:offset opacity-offsets :layer opacity-layers}))
@@ -214,7 +211,7 @@ float opacity_cascade_lookup(vec4 point)
          (swap! light + (* l 0.1 dt))
          (let [transform       (transformation-matrix (quaternion->matrix @orientation) @position)
                light-direction (matrix [0 (cos @light) (sin @light)])
-               matrix-cascade  (shadow-matrix-cascade projection transform light-direction (/ z-far 2) 0.5 z-near z-far
+               matrix-cascade  (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far
                                                       num-opacity-layers)
                scatter-amount  (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
                tex-cascase     (shadow-cascade matrix-cascade light-direction scatter-amount)]
@@ -226,6 +223,10 @@ float opacity_cascade_lookup(vec4 point)
                             (uniform-matrix4 program-atmosphere :transform transform)
                             (uniform-vector3 program-atmosphere :origin @position)
                             (uniform-vector3 program-atmosphere :light_direction light-direction)
+                            (doseq [[idx item] (map-indexed vector matrix-cascade)]
+                                   (uniform-matrix4 program-atmosphere
+                                                    (keyword (str "shadow_map_matrix" idx))
+                                                    (:shadow-map-matrix item)))
                             (render-quads atmosphere-vao))
            (doseq [{:keys [offset layer]} tex-cascase]
                   (destroy-texture offset)
