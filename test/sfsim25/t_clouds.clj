@@ -525,7 +525,7 @@ void main()
   fragColor = vec3(result, result, result);
 }"))
 
-(defn opacity-lookup-test [offset step x y z]
+(defn opacity-lookup-test [offset step depth x y z]
   (let [result (promise)]
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
@@ -546,6 +546,7 @@ void main()
                                                   (uniform-sampler program :opacity_offsets 0)
                                                   (uniform-sampler program :opacity_layers 1)
                                                   (uniform-float program :opacity_step step)
+                                                  (uniform-float program :depth depth)
                                                   (uniform-int program :num_opacity_layers 7)
                                                   (uniform-int program :shadow_size 2)
                                                   (use-textures opacity-offsets opacity-layers)
@@ -559,14 +560,15 @@ void main()
     @result))
 
 (tabular "Lookup values from deep opacity map taking into account offsets"
-  (fact (mget (opacity-lookup-test ?offset ?step ?x ?y ?z) 0) => (roughly ?result 1e-6))
-  ?offset ?step      ?x    ?y ?z        ?result
-  1.0     (/ 1.0 6)  1     0  1         1.0
-  1.0     (/ 1.0 6)  1     0  0         0.4
-  0.0     (/ 1.0 6)  1     0  0         1.0
-  1.0     (/ 1.0 12) 1     0  0.5       0.4
-  1.0     (/ 1.0 6)  1     0  (/ 5.0 6) 0.9
-  1.0     (/ 1.0 6)  0.75  0  0.5       0.85)
+  (fact (mget (opacity-lookup-test ?offset ?step ?depth ?x ?y ?z) 0) => (roughly ?result 1e-6))
+  ?offset ?step ?depth ?x    ?y ?z        ?result
+  1.0     1.0    6      1     0  1         1.0
+  1.0     1.0    6      1     0  0         0.4
+  0.0     1.0    6      1     0  0         1.0
+  1.0     1.0    12     1     0  0.5       0.4
+  1.0     1.0    6      1     0  (/ 5.0 6) 0.9
+  1.0     2.0    12     1     0  (/ 5.0 6) 0.9
+  1.0     1.0    6      0.75  0  0.5       0.85)
 
 (def opacity-lookup-mock
 "#version 410 core
