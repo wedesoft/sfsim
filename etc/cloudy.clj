@@ -213,6 +213,7 @@ void main()
                light-direction (matrix [0 (cos @light) (sin @light)])
                matrix-cascade  (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far
                                                       num-opacity-layers)
+               splits          (map #(split-mixed 0.5 z-near z-far num-opacity-layers %) (range (inc num-opacity-layers)))
                scatter-amount  (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
                tex-cascase     (shadow-cascade matrix-cascade light-direction scatter-amount)]
            (onscreen-render (Display/getWidth) (Display/getHeight)
@@ -223,6 +224,8 @@ void main()
                             (uniform-matrix4 program-atmosphere :transform transform)
                             (uniform-vector3 program-atmosphere :origin @position)
                             (uniform-vector3 program-atmosphere :light_direction light-direction)
+                            (doseq [[idx item] (map-indexed vector splits)]
+                                   (uniform-float program-atmosphere (keyword (str "split" idx)) item))
                             (doseq [[idx item] (map-indexed vector matrix-cascade)]
                                    (uniform-matrix4 program-atmosphere
                                                     (keyword (str "shadow_map_matrix" idx))
