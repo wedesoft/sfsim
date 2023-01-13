@@ -133,6 +133,9 @@ void main()
 (uniform-sampler program-atmosphere :mie_strength 2)
 (uniform-sampler program-atmosphere :worley 3)
 (uniform-sampler program-atmosphere :cloud_profile 4)
+(doseq [i (range num-opacity-layers)]
+       (uniform-sampler program-atmosphere (keyword (str "offset" i)) (+ (* 2 i) 5))
+       (uniform-sampler program-atmosphere (keyword (str "opacity" i)) (+ (* 2 i) 6)))
 (uniform-matrix4 program-atmosphere :projection projection)
 (uniform-float program-atmosphere :radius radius)
 (uniform-float program-atmosphere :max_height max-height)
@@ -165,15 +168,17 @@ void main()
 (def shadow-vertices (map #(* % z-far) [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]))
 (def shadow-vao (make-vertex-array-object program-shadow indices shadow-vertices [:point 3]))
 
+(use-program program-shadow)
+(uniform-sampler program-shadow :worley 0)
+(uniform-sampler program-shadow :cloud_profile 1)
+
 (defn shadow-cascade [matrix-cascade light-direction scatter-amount]
-  (map
+  (mapv
     (fn [{:keys [shadow-ndc-matrix depth]}]
         (let [opacity-offsets (make-empty-float-texture-2d :linear :clamp shadow-size shadow-size)
               opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size num-opacity-layers)]
           (framebuffer-render shadow-size shadow-size :cullback nil [opacity-offsets opacity-layers]
                               (use-program program-shadow)
-                              (uniform-sampler program-shadow :worley 0)
-                              (uniform-sampler program-shadow :cloud_profile 1)
                               (uniform-int program-shadow :shadow_size shadow-size)
                               (uniform-float program-shadow :radius radius)
                               (uniform-float program-shadow :cloud_bottom cloud-bottom)
@@ -215,12 +220,14 @@ void main()
                                                       num-opacity-layers)
                splits          (map #(split-mixed 0.5 z-near z-far num-opacity-layers %) (range (inc num-opacity-layers)))
                scatter-amount  (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
-               tex-cascase     (shadow-cascade matrix-cascade light-direction scatter-amount)]
+               tex-cascade     (shadow-cascade matrix-cascade light-direction scatter-amount)]
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 1 0]))
                             (use-program program-atmosphere)
-                            (GL11/glDepthFunc GL11/GL_ALWAYS)
-                            (use-textures T S M W P)
+                            ;(GL11/glDepthFunc GL11/GL_ALWAYS)
+                            (apply use-textures
+                                   T S M W P
+                                   (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cascade))
                             (uniform-matrix4 program-atmosphere :transform transform)
                             (uniform-vector3 program-atmosphere :origin @position)
                             (uniform-vector3 program-atmosphere :light_direction light-direction)
@@ -231,7 +238,7 @@ void main()
                                                     (keyword (str "shadow_map_matrix" idx))
                                                     (:shadow-map-matrix item)))
                             (render-quads atmosphere-vao))
-           (doseq [{:keys [offset layer]} tex-cascase]
+           (doseq [{:keys [offset layer]} tex-cascade]
                   (destroy-texture offset)
                   (destroy-texture layer)))
          (print "\rheight" (format "%.3f" (- (norm @position) radius))
