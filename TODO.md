@@ -1,7 +1,9 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* opacity lookup is not correct (offsets and opacity\_map\_coords need to be scaled using opacity\_step and depth)
+* opacity lookup needs to use z coordinate relative to camera and absolute point?
+  Also shadow matrices are relative to camera and light vector is therefore not correct.
+* does opacity fragment shader need to limit offsets to bounding box?
 * prototype planetary cloud rendering using cascaded deep opacity maps
 * integration test for cascaded deep opacity map
 * use shadow map for terrain and clouds

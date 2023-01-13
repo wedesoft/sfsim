@@ -30,7 +30,7 @@
 (def cloud-scatter-amount 0.2)
 (def cloud-multiplier (atom 0.001))
 (def worley-size 128)
-(def z-near 1000.0)
+(def z-near 100.0)
 (def z-far 120000.0)
 (def depth (/ z-far 2))
 (def fov 45.0)
