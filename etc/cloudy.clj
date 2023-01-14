@@ -231,6 +231,7 @@ void main()
                                    T S M W P
                                    (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cascade))
                             (uniform-matrix4 program-atmosphere :transform transform)
+                            (uniform-matrix4 program-atmosphere :inverse_transform (inverse transform))
                             (uniform-vector3 program-atmosphere :origin @position)
                             (uniform-vector3 program-atmosphere :light_direction light-direction)
                             (doseq [[idx item] (map-indexed vector splits)]

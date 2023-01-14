@@ -593,11 +593,12 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn opacity-cascade-lookup-test [n z opacities offsets select]
+(defn opacity-cascade-lookup-test [n z shift-z opacities offsets select]
   (let [result (promise)]
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            inv-transform   (transformation-matrix (identity-matrix 3) (matrix [0 0 shift-z]))
             program         (make-program :vertex [vertex-passthrough]
                                           :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n)
                                                      opacity-lookup-mock])
@@ -608,6 +609,7 @@ void main()
                                  offsets)
             tex             (texture-render-color 1 1 true
                                                   (use-program program)
+                                                  (uniform-matrix4 program :inverse_transform inv-transform)
                                                   (doseq [idx (range n)]
                                                          (uniform-sampler program (keyword (str "opacity" idx)) (* 2 idx))
                                                          (uniform-sampler program (keyword (str "offset" idx)) (inc (* 2 idx))))
@@ -630,11 +632,12 @@ void main()
     @result))
 
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
-         (fact (mget (opacity-cascade-lookup-test ?n ?z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
-         ?n ?z ?opacities ?offsets ?select  ?result
-         1  -10 [0.75]     [0]      :opacity 0.75
-         2  -40 [0.75 0.5] [0 0]    :opacity 0.5
-         2  -50 [0.75 0.5] [0 0]    :opacity 1.0
-         1  -10 [1.0]      [0]      :coord   1.0
-         2  -10 [1.0]      [0]      :coord   1.0
-         2  -40 [1.0]      [0]      :coord   2.0)
+         (fact (mget (opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
+         ?n ?z  ?shift-z ?opacities ?offsets ?select  ?result
+         1  -10  0       [0.75]     [0]      :opacity 0.75
+         2  -40  0       [0.75 0.5] [0 0]    :opacity 0.5
+         2  -50 10       [0.75 0.5] [0 0]    :opacity 0.5
+         2  -50  0       [0.75 0.5] [0 0]    :opacity 1.0
+         1  -10  0       [1.0]      [0]      :coord   1.0
+         2  -10  0       [1.0]      [0]      :coord   1.0
+         2  -40  0       [1.0]      [0]      :coord   2.0)
