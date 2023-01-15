@@ -42,7 +42,7 @@
 (def transmittance-elevation-size 255)
 (def shadow-size 256)
 (def num-opacity-layers 5)
-(def opacity-step 500)
+(def opacity-step 100)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
@@ -111,6 +111,20 @@ void main()
 }
 ")
 
+(def cloud-density-mock
+"#version 410 core
+uniform float radius;
+uniform float cloud_bottom;
+uniform float cloud_top;
+uniform float cloud_scale;
+uniform float cloud_multiplier;
+uniform sampler3D worley;
+uniform sampler1D cloud_profile;
+float cloud_density(vec3 point, float lod)
+{
+  return cloud_multiplier;
+}")
+
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment shaders/ray-sphere shaders/ray-shell
@@ -120,7 +134,7 @@ void main()
                            shaders/limit-quot shaders/sun-elevation-to-index phase-function shaders/sun-angle-to-index
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
-                           cloud-density cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
+                           cloud-density-mock cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
                            (opacity-cascade-lookup num-opacity-layers) opacity-lookup shaders/convert-3d-index]))
 
 (def indices [0 1 3 2])
@@ -161,7 +175,7 @@ void main()
 
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/ray-sphere]))
+                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density-mock shaders/ray-sphere]))
 
 (def indices [0 1 3 2])
 (def shadow-vertices (map #(* % z-far) [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]))
