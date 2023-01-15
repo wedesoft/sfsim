@@ -41,7 +41,7 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 (def shadow-size 256)
-(def num-opacity-layers 7)
+(def num-opacity-layers 5)
 (def opacity-step 500)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
