@@ -269,6 +269,7 @@ float cloud_density(vec3 point, float lod)
 (destroy-texture P)
 (destroy-texture T)
 (destroy-texture S)
+(destroy-texture M)
 (destroy-vertex-array-object vao)
 (destroy-program program-atmosphere)
 
