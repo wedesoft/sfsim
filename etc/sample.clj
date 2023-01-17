@@ -1,5 +1,5 @@
 (require '[clojure.math :refer (to-radians cos sin PI)]
-         '[clojure.core.matrix :refer (matrix add mul inverse)]
+         '[clojure.core.matrix :refer (matrix add mul inverse mmul mget)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[comb.template :as template]
          '[sfsim25.render :refer :all]
@@ -71,8 +71,8 @@ float cloud_density(vec3 point, float lod)
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density-mock shaders/ray-sphere]))
 
 (def indices [0 1 3 2])
-(def shadow-vertices (map #(* % z-far) [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]))
-(def shadow-vao (make-vertex-array-object program-shadow indices shadow-vertices [:point 3]))
+(def shadow-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
+(def shadow-vao (make-vertex-array-object program-shadow indices shadow-vertices [:point 2]))
 
 (defn shadow-cascade [matrix-cascade light-direction scatter-amount]
   (mapv
@@ -185,8 +185,26 @@ void main()
 
 (probe 0 100 (+ radius 3050))
 
+(def light-direction (matrix [0 (cos light) (sin light)]))
+(def transform (transformation-matrix (quaternion->matrix orientation) position))
+(def matrix-cascade (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far num-opacity-layers))
+(def splits (map #(split-mixed 0.5 z-near z-far num-opacity-layers %) (range (inc num-opacity-layers))))
+(def point (matrix [0 100 (+ radius 3050) 1]))
+
+(def z (- (mget (mmul (inverse transform) point) 2)))
+(def map-coords (mmul (:shadow-map-matrix (nth matrix-cascade 0)) point))
+(def scatter-amount (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount))
+(def tex-cascade (shadow-cascade matrix-cascade light-direction scatter-amount))
+
+(get-float (float-texture-2d->floats (:offset (nth tex-cascade 0))) 127 0)
+(apply max (:data (float-texture-3d->floats (:layer (nth tex-cascade 0)))))
+
 (destroy-texture T)
 (destroy-texture S)
 (destroy-texture M)
+(destroy-vertex-array-object shadow-vao)
+(destroy-program program-shadow)
+
+; 1 at light source, 0 at object
 
 (Display/destroy)

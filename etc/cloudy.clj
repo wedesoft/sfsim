@@ -178,7 +178,7 @@ float cloud_density(vec3 point, float lod)
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density-mock shaders/ray-sphere]))
 
 (def indices [0 1 3 2])
-(def shadow-vertices (map #(* % z-far) [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]))
+(def shadow-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
 (def shadow-vao (make-vertex-array-object program-shadow indices shadow-vertices [:point 3]))
 
 (use-program program-shadow)
