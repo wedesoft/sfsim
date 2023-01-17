@@ -183,7 +183,7 @@ void main()
     (destroy-program program)
     @result))
 
-(probe 0 100 (+ radius 3050))
+(for [i (range cloud-bottom (+ cloud-top 100) 100)] (mget (probe 0 100 (+ radius i)) 0))
 
 (def light-direction (matrix [0 (cos light) (sin light)]))
 (def transform (transformation-matrix (quaternion->matrix orientation) position))
