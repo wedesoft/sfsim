@@ -37,7 +37,8 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 (def shadow-size 256)
-(def num-opacity-layers 5)
+(def num-opacity-layers 6)
+(def num-steps 5)
 (def opacity-step 100)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
@@ -119,14 +120,14 @@ void main()
   (let [result          (promise)
         transform       (transformation-matrix (quaternion->matrix orientation) position)
         light-direction (matrix [0 (cos light) (sin light)])
-        matrix-cascade  (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far num-opacity-layers)
-        splits          (map #(split-mixed 0.5 z-near z-far num-opacity-layers %) (range (inc num-opacity-layers)))
+        matrix-cascade  (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far num-steps)
+        splits          (map #(split-mixed 0.5 z-near z-far num-opacity-layers %) (range (inc num-steps)))
         scatter-amount  (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
         tex-cascade     (shadow-cascade matrix-cascade light-direction scatter-amount)
         indices         [0 1 3 2]
         vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         program         (make-program :vertex [vertex-passthrough]
-                                      :fragment [(probe-shader x y z) (opacity-cascade-lookup num-opacity-layers)
+                                      :fragment [(probe-shader x y z) (opacity-cascade-lookup num-steps)
                                                  opacity-lookup shaders/convert-2d-index shaders/convert-3d-index])
         vao             (make-vertex-array-object program indices vertices [:point 3])
         tex             (texture-render-color 1 1 true
@@ -135,7 +136,7 @@ void main()
                                               (uniform-sampler program :transmittance 0)
                                               (uniform-sampler program :ray_scatter 1)
                                               (uniform-sampler program :mie_strength 2)
-                                              (doseq [i (range num-opacity-layers)]
+                                              (doseq [i (range num-steps)]
                                                      (uniform-sampler program (keyword (str "offset" i)) (+ (* 2 i) 3))
                                                      (uniform-sampler program (keyword (str "opacity" i)) (+ (* 2 i) 4)))
                                               (doseq [[idx item] (map-indexed vector splits)]
@@ -187,8 +188,8 @@ void main()
 
 (def light-direction (matrix [0 (cos light) (sin light)]))
 (def transform (transformation-matrix (quaternion->matrix orientation) position))
-(def matrix-cascade (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far num-opacity-layers))
-(def splits (map #(split-mixed 0.5 z-near z-far num-opacity-layers %) (range (inc num-opacity-layers))))
+(def matrix-cascade (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far num-steps))
+(def splits (map #(split-mixed 0.5 z-near z-far num-steps %) (range (inc num-steps))))
 (def point (matrix [0 100 (+ radius 3050) 1]))
 
 (def z (- (mget (mmul (inverse transform) point) 2)))
@@ -197,7 +198,7 @@ void main()
 (def tex-cascade (shadow-cascade matrix-cascade light-direction scatter-amount))
 
 (get-float (float-texture-2d->floats (:offset (nth tex-cascade 0))) 127 0)
-(apply max (:data (float-texture-3d->floats (:layer (nth tex-cascade 0)))))
+(set (:data (float-texture-3d->floats (:layer (nth tex-cascade 0)))))
 
 (destroy-texture T)
 (destroy-texture S)

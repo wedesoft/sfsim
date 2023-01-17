@@ -41,6 +41,7 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 (def shadow-size 256)
+(def num-steps 6)
 (def num-opacity-layers 5)
 (def opacity-step 100)
 
@@ -135,7 +136,7 @@ float cloud_density(vec3 point, float lod)
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
                            cloud-density-mock cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
-                           (opacity-cascade-lookup num-opacity-layers) opacity-lookup shaders/convert-3d-index]))
+                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
 
 (def indices [0 1 3 2])
 (def atmosphere-vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -147,7 +148,7 @@ float cloud_density(vec3 point, float lod)
 (uniform-sampler program-atmosphere :mie_strength 2)
 (uniform-sampler program-atmosphere :worley 3)
 (uniform-sampler program-atmosphere :cloud_profile 4)
-(doseq [i (range num-opacity-layers)]
+(doseq [i (range num-steps)]
        (uniform-sampler program-atmosphere (keyword (str "offset" i)) (+ (* 2 i) 5))
        (uniform-sampler program-atmosphere (keyword (str "opacity" i)) (+ (* 2 i) 6)))
 (uniform-matrix4 program-atmosphere :projection projection)
@@ -232,8 +233,8 @@ float cloud_density(vec3 point, float lod)
          (let [transform       (transformation-matrix (quaternion->matrix @orientation) @position)
                light-direction (matrix [0 (cos @light) (sin @light)])
                matrix-cascade  (shadow-matrix-cascade projection transform light-direction depth 0.5 z-near z-far
-                                                      num-opacity-layers)
-               splits          (map #(split-mixed 0.5 z-near z-far num-opacity-layers %) (range (inc num-opacity-layers)))
+                                                      num-steps)
+               splits          (map #(split-mixed 0.5 z-near z-far num-steps %) (range (inc num-steps)))
                scatter-amount  (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
                tex-cascade     (shadow-cascade matrix-cascade light-direction scatter-amount)]
            (onscreen-render (Display/getWidth) (Display/getHeight)
