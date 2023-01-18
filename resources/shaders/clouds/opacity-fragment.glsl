@@ -68,6 +68,8 @@ void main()
         previous_opacity_depth = opacity_depth;
       };
     };
+    if (previous_opacity_depth > <%= num-layers %> * opacity_step)
+      break;
   };
   opacity_depth = <%= num-layers %> * opacity_step;
   interpolate_opacity(previous_opacity_depth, opacity_depth, previous_transmittance, previous_transmittance);
