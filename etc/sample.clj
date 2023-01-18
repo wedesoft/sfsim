@@ -152,6 +152,7 @@ void main()
                                               (uniform-vector3 program :light_direction light-direction)
                                               (uniform-float program :radius radius)
                                               (uniform-float program :max_height max-height)
+                                              (uniform-int program :num_opacity_layers num-opacity-layers)
                                               (uniform-int program :height_size height-size)
                                               (uniform-int program :elevation_size elevation-size)
                                               (uniform-int program :light_elevation_size light-elevation-size)
@@ -193,12 +194,17 @@ void main()
 (def point (matrix [0 100 (+ radius 3050) 1]))
 
 (def z (- (mget (mmul (inverse transform) point) 2)))
-(def map-coords (mmul (:shadow-map-matrix (nth matrix-cascade 0)) point))
+(def map-coords (map (fn [h] (let [point (matrix [0 100 (+ radius h) 1])] (mmul (:shadow-map-matrix (nth matrix-cascade 0)) point))) (range cloud-bottom (+ cloud-top 100) 100)))
 (def scatter-amount (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount))
 (def tex-cascade (shadow-cascade matrix-cascade light-direction scatter-amount))
 
 (get-float (float-texture-2d->floats (:offset (nth tex-cascade 0))) 127 0)
-(set (:data (float-texture-3d->floats (:layer (nth tex-cascade 0)))))
+(for [i (range num-opacity-layers)] (get-float-3d (float-texture-3d->floats (:layer (nth tex-cascade 0))) i 127 0))
+
+(map (fn [map-coord]
+         (let [offset (- (get-float (float-texture-2d->floats (:offset (nth tex-cascade 0))) 127 0) (mget map-coord 2))]
+           (/ (* offset depth) (* opacity-step (dec num-opacity-layers)))))
+     map-coords)
 
 (destroy-texture T)
 (destroy-texture S)
