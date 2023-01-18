@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (to-radians cos sin)]
+(require '[clojure.math :refer (to-radians cos sin PI)]
          '[clojure.core.matrix :refer (matrix add mul inverse)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.render :refer :all]
@@ -41,14 +41,14 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 (def shadow-size 256)
-(def num-steps 6)
-(def num-opacity-layers 5)
-(def opacity-step 100)
+(def num-steps 5)
+(def num-opacity-layers 5); TODO: set to 6
+(def opacity-step 200)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 1000)])))
-(def light (atom 0.041))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 3050)])))
+(def light (atom (* 0.5 PI)))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def keystates (atom {}))
 
