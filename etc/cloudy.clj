@@ -50,7 +50,7 @@
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 9780)])))
 ; (def light (atom 0.1478))
 (def light (atom (* 0.5 PI)))
-(def orientation (atom (q/rotation (to-radians 75) (matrix [1 0 0]))))
+(def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def keystates (atom {}))
 
 (def data (slurp-floats "data/worley.raw"))
