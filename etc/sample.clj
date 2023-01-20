@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (to-radians cos sin PI)]
+(require '[clojure.math :refer (to-radians cos sin PI round)]
          '[clojure.core.matrix :refer (matrix add mul inverse mmul mget)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[comb.template :as template]
@@ -199,11 +199,11 @@ void main()
 (def scatter-amount (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount))
 (def tex-cascade (shadow-cascade matrix-cascade light-direction scatter-amount))
 
-(def y (int (* (dec shadow-size) (mget map-coord 1))))
-(def x (int (* (dec shadow-size) (mget map-coord 0))))
+(def y (int (round (* (dec shadow-size) (mget map-coord 1)))))
+(def x (int (round (* (dec shadow-size) (mget map-coord 0)))))
 (def offset (get-float (float-texture-2d->floats (:offset (nth tex-cascade 0))) y x))
 (* (:depth (nth matrix-cascade 0) depth) (- offset (mget map-coord 2)))
-(def z (int (/ (* (:depth (nth matrix-cascade 0) depth) (- offset (mget map-coord 2))) opacity-step)))
+(def z (int (round (/ (* (:depth (nth matrix-cascade 0) depth) (- offset (mget map-coord 2))) opacity-step))))
 (get-float-3d (float-texture-3d->floats (:layer (nth tex-cascade 0))) z y x)
 
 (map (fn [map-coord]

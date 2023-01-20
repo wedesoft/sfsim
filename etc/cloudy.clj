@@ -172,7 +172,6 @@ float cloud_density(vec3 point, float lod)
 (uniform-float program-atmosphere :transparency_cutoff 0.05)
 (uniform-float program-atmosphere :cloud_scale cloud-scale)
 (uniform-int program-atmosphere :cloud_size worley-size)
-(uniform-float program-atmosphere :depth depth)
 (uniform-float program-atmosphere :opacity_step opacity-step)
 (uniform-float program-atmosphere :amplification 6.0)
 
@@ -257,6 +256,7 @@ float cloud_density(vec3 point, float lod)
                                    (uniform-matrix4 program-atmosphere
                                                     (keyword (str "shadow_map_matrix" idx))
                                                     (:shadow-map-matrix item)))
+                            (uniform-float program-atmosphere :depth (:depth (first matrix-cascade)))
                             (render-quads atmosphere-vao))
            (doseq [{:keys [offset layer]} tex-cascade]
                   (destroy-texture offset)
