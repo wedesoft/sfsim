@@ -172,6 +172,7 @@ float cloud_density(vec3 point, float lod)
 (uniform-float program-atmosphere :transparency_cutoff 0.05)
 (uniform-float program-atmosphere :cloud_scale cloud-scale)
 (uniform-int program-atmosphere :cloud_size worley-size)
+(uniform-int program-atmosphere :shadow_size shadow-size)
 (uniform-float program-atmosphere :opacity_step opacity-step)
 (uniform-float program-atmosphere :amplification 6.0)
 

@@ -168,6 +168,7 @@ void main()
                                               (uniform-float program :cloud_max_step 1.04)
                                               (uniform-float program :transparency_cutoff 0.05)
                                               (uniform-float program :depth (:depth (first matrix-cascade))); TODO: multiple d.
+                                              (uniform-int program :shadow_size shadow-size)
                                               (uniform-float program :opacity_step opacity-step)
                                               (uniform-float program :amplification 6.0)
                                               (uniform-float program :cloud_multiplier cloud-multiplier)
