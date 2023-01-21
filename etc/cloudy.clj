@@ -43,7 +43,7 @@
 (def shadow-size 256)
 (def num-steps 1)
 (def num-opacity-layers 7)
-(def opacity-step 50)
+(def opacity-step 200)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
@@ -136,7 +136,7 @@ float cloud_density(vec3 point, float lod)
                            shaders/limit-quot shaders/sun-elevation-to-index phase-function shaders/sun-angle-to-index
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
-                           cloud-density-mock cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
+                           cloud-density cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
                            (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
 
 (def indices [0 1 3 2])
@@ -178,7 +178,7 @@ float cloud_density(vec3 point, float lod)
 
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density-mock shaders/ray-sphere]))
+                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/ray-sphere]))
 
 (def indices [0 1 3 2])
 (def shadow-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
