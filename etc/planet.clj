@@ -304,7 +304,7 @@
 (destroy-program program-planet)
 (destroy-program program-atmosphere)
 (destroy-texture W)
-(destroy-texture P)
+(destroy-texture @P)
 (destroy-texture S)
 (destroy-texture T)
 (destroy-texture E)
