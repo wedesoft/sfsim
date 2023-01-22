@@ -28,7 +28,6 @@
 (def cloud-scale 3000)
 (def anisotropic 0.15)
 (def cloud-scatter-amount 0.2)
-(def cloud-multiplier (atom 0.001))
 (def worley-size 128)
 (def z-near 20.0)
 (def z-far 120000.0)
@@ -51,7 +50,8 @@
 ; (def light (atom 0.1478))
 (def light (atom (* 0.072 PI)))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
-(def threshold (atom 0.15))
+(def cloud-multiplier (atom 0.015))
+(def threshold (atom -0.04))
 (def keystates (atom {}))
 
 (def data (slurp-floats "data/worley.raw"))
