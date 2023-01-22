@@ -15,7 +15,7 @@
 (set! *unchecked-math* true)
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. (/ 1920 4) (/ 1080 4)))
+(Display/setDisplayMode (DisplayMode. (/ 1920 2) (/ 1080 2)))
 ;(Display/setDisplayMode (DisplayMode. 1280 720))
 (Display/create)
 
@@ -41,9 +41,9 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 (def shadow-size 256)
-(def num-steps 1)
+(def num-steps 5)
 (def num-opacity-layers 7)
-(def opacity-step 200)
+(def opacity-step 400)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
@@ -256,7 +256,10 @@ float cloud_density(vec3 point, float lod)
                             (doseq [[idx item] (map-indexed vector matrix-cascade)]
                                    (uniform-matrix4 program-atmosphere
                                                     (keyword (str "shadow_map_matrix" idx))
-                                                    (:shadow-map-matrix item)))
+                                                    (:shadow-map-matrix item))
+                                   (uniform-float program-atmosphere
+                                                  (keyword (str "depth" idx))
+                                                  (:depth item)))
                             (uniform-float program-atmosphere :depth (:depth (first matrix-cascade)))
                             (render-quads atmosphere-vao))
            (doseq [{:keys [offset layer]} tex-cascade]

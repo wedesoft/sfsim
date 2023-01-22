@@ -144,7 +144,10 @@ void main()
                                               (doseq [[idx item] (map-indexed vector matrix-cascade)]
                                                      (uniform-matrix4 program
                                                                       (keyword (str "shadow_map_matrix" idx))
-                                                                      (:shadow-map-matrix item)))
+                                                                      (:shadow-map-matrix item))
+                                                     (uniform-float program
+                                                                    (keyword (str "depth" idx))
+                                                                    (:depth item)))
                                               (uniform-matrix4 program :projection projection)
                                               (uniform-matrix4 program :transform transform)
                                               (uniform-matrix4 program :inverse_transform (inverse transform))
@@ -167,7 +170,6 @@ void main()
                                               (uniform-float program :cloud_scatter_amount cloud-scatter-amount)
                                               (uniform-float program :cloud_max_step 1.04)
                                               (uniform-float program :transparency_cutoff 0.05)
-                                              (uniform-float program :depth (:depth (first matrix-cascade))); TODO: multiple d.
                                               (uniform-int program :shadow_size shadow-size)
                                               (uniform-float program :opacity_step opacity-step)
                                               (uniform-float program :amplification 6.0)
@@ -207,17 +209,12 @@ void main()
 (def z (int (round (/ (* (:depth (nth matrix-cascade 0) depth) (- offset (mget map-coord 2))) opacity-step))))
 (get-float-3d (float-texture-3d->floats (:layer (nth tex-cascade 0))) z y x)
 
-(map (fn [map-coord]
-         (let [offset (- (get-float (float-texture-2d->floats (:offset (nth tex-cascade 0))) 127 0) (mget map-coord 2))]
-           (/ (* offset depth) (* opacity-step (dec num-opacity-layers)))))
-     map-coords)
-
 (destroy-texture T)
 (destroy-texture S)
 (destroy-texture M)
 (destroy-vertex-array-object shadow-vao)
 (destroy-program program-shadow)
 
-; 1 at light source, 0 at object
+; NDC z is 1 at light source, 0 at object
 
 (Display/destroy)
