@@ -43,7 +43,7 @@
 (def shadow-size 256)
 (def num-steps 5)
 (def num-opacity-layers 7)
-(def opacity-step 400)
+(def opacity-step 300)
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
