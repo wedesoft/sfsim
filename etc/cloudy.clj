@@ -25,7 +25,7 @@
 (def max-height 35000.0)
 (def cloud-bottom 1500)
 (def cloud-top 4000)
-(def cloud-scale 3000)
+(def cloud-scale 10000)
 (def anisotropic 0.15)
 (def cloud-scatter-amount 0.2)
 (def worley-size 128)
