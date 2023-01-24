@@ -2,8 +2,10 @@
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * at least 16 textures supported
-* use blue nois offsets
+* use blue noise offsets
 * use Worley octaves
+* integrate with planetary prototype
+* global cloud cover
 * does opacity fragment shader need to limit offsets to bounding box?
 * prototype planetary cloud rendering using cascaded deep opacity maps
 * integration test for cascaded deep opacity map
