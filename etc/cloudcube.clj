@@ -72,7 +72,6 @@ out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float lookup_3d(sampler3D tex, vec3 point);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-vec3 cloud_track_base(vec3 origin, vec3 light_direction, float a, float b, vec3 incoming, float lod);
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 float cloud_density(vec3 point, float lod)
 {
@@ -107,7 +106,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box s/lookup-3d phase-function cloud-track-base
+                :fragment [fragment-shader s/ray-box s/lookup-3d phase-function
                            cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index]))
 
 (def indices [0 1 3 2])

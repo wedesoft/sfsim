@@ -683,7 +683,7 @@ float opacity_cascade_lookup(vec4 point)
                                                                           shaders/interpolate-4d shaders/make-2d-index-from-4d
                                                                           shaders/is-above-horizon clouds/sky-outer
                                                                           shaders/ray-shell clouds/cloud-track
-                                                                          clouds/cloud-track-base clouds/cloud-density
+                                                                          clouds/cloud-density
                                                                           clouds/cloud-shadow clouds/linear-sampling
                                                                           attenuation-track transmittance-track
                                                                           ray-scatter-track phase-function

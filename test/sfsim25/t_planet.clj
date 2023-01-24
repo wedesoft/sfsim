@@ -361,7 +361,7 @@ float opacity_cascade_lookup(vec4 point)
                            fake-ray-scatter atmosphere/attenuation-track
                            atmosphere/transmittance-outer
                            ground-radiance clouds/sky-track shaders/ray-shell
-                           clouds/cloud-track clouds/cloud-track-base
+                           clouds/cloud-track
                            clouds/cloud-density clouds/cloud-shadow
                            clouds/linear-sampling atmosphere/phase-function
                            shaders/clip-shell-intersections

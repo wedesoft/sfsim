@@ -6,10 +6,6 @@
   "Shader for putting volumetric clouds into the atmosphere"
   (slurp "resources/shaders/clouds/cloud-track.glsl"))
 
-(def cloud-track-base
-  "Shader for determining shadowing (or lack of shadowing) by clouds"
-  (slurp "resources/shaders/clouds/cloud-track-base.glsl"))
-
 (def sky-outer
   "Shader for determining lighting of atmosphere including clouds coming from space"
   (slurp "resources/shaders/clouds/sky-outer.glsl"))
