@@ -15,7 +15,7 @@ float phase(float g, float mu);
 int number_of_steps(float a, float b, int min_samples, int max_samples, float max_step);
 float scaling_offset(float a, float b, int samples, float min_step);
 float step_size(float a, float b, float scaling_offset, int num_steps);
-float next_point(float p, float scaling_offset, float step_size);
+float sample_point(float a, float scaling_offset, int idx, float step_size);
 float initial_lod(float a, float scaling_offset, float step_size);
 float lod_increment(float step_size);
 
@@ -38,7 +38,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     float b_step = a;
     for (int i=0; i<samples; i++) {
       float a_step = b_step;
-      b_step = next_point(b_step, scale_offset, stepping);
+      b_step = sample_point(a, scale_offset, i + 1, stepping);
       vec3 c = origin + 0.5 * (a_step + b_step) * direction;
       float density = cloud_density(c, lod);
       if (density > 0) {

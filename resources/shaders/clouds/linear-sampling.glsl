@@ -21,9 +21,9 @@ float step_size(float a, float b, float scaling_offset, int num_steps)
   return dist / num_steps;
 }
 
-float next_point(float p, float scaling_offset, float step_size)
+float sample_point(float a, float scaling_offset, int idx, float step_size)
 {
-  return p + step_size;
+  return a + idx * step_size;
 }
 
 float initial_lod(float a, float scaling_offset, float step_size)

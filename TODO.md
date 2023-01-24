@@ -2,7 +2,8 @@
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * at least 16 textures supported
-* linear sampling and exponential sampling with blue noise offsets, does next\_point not have numerical problems?
+* lod computation without stepping
+* linear sampling and exponential sampling with blue noise offsets?
   rather use index of sample
 * use Worley octaves
 * integrate with planetary prototype

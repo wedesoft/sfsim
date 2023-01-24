@@ -295,7 +295,7 @@ void main()
 out vec3 fragColor;
 int number_of_steps(float a, float b, int min_samples, int max_samples, float max_step);
 float step_size(float a, float b, float scaling_offset, int num_steps);
-float next_point(float p, float scaling_offset, float step_size);
+float sample_point(float a, float scaling_offset, int idx, float step_size);
 float scaling_offset(float a, float b, int samples, float max_step);
 float initial_lod(float a, float scaling_offset, float step_size);
 float lod_increment(float step_size);
@@ -320,7 +320,7 @@ void main()
          "number_of_steps(10, 20, 1, 10, 2.1)"  5
          "number_of_steps(10, 20, 6, 10, 2.1)"  6
          "step_size(10, 20, 0, 5)"              2
-         "next_point(26, 0, 2)"                28
+         "sample_point(20, 0, 4, 2)"           28
          "scaling_offset(10, 20, 10, 2.0)"      0
          "initial_lod(10, 0, 5)"                0
          "initial_lod(10, 0, 10)"               1
@@ -347,8 +347,8 @@ void main()
          "step_size(10, 20, 0, 1)"               2
          "step_size(10, 40, 0, 2)"               2
          "step_size(10, 30, 10, 1)"              2
-         "next_point(10, 0, 2)"                 20
-         "next_point(10, 10, 2)"                30
+         "sample_point(10, 0, 1, 2)"            20
+         "sample_point(10, 10, 1, 2)"           30
          "initial_lod(10, 0, 1.5)"               0
          "initial_lod(10, 0, 2.0)"               1
          "initial_lod(3, 7, 2.0)"                1
