@@ -29,6 +29,7 @@
 (def anisotropic 0.15)
 (def cloud-scatter-amount 0.2)
 (def worley-size 128)
+(def noise-size 64)
 (def z-near 20.0)
 (def z-far 120000.0)
 (def depth 120000.0)
@@ -71,6 +72,9 @@
 
 (def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
 (def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+
+(def data (slurp-floats "data/bluenoise.raw"))
+(def B (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data data}))
 
 (def fragment
 "#version 410 core
