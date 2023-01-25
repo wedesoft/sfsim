@@ -1,7 +1,7 @@
 # TODO
 * "State is a value of an identity at a time." - Rich Hickey
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
-* at least 16 textures supported
+* at least 16 textures supported, at least 8 color attachments supported
 * lod computation without stepping
 * linear sampling and exponential sampling with blue noise offsets?
   rather use index of sample

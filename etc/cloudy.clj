@@ -61,7 +61,7 @@
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 
-(def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.3 0.0]))
+(def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.5 0.3 0.0]))
 (def P (atom (make-float-texture-1d :linear :clamp data)))
 
 (def data (slurp-floats "data/atmosphere/transmittance.scatter"))
@@ -245,7 +245,7 @@ float cloud_density(vec3 point, float lod)
          (swap! opacity-step + (* dt to))
          (swap! mix #(min 1.0 (max 0.0 (+ %1 %2))) (* dt tx))
          (swap! cms #(min 2.0 (max 1.001 (+ %1 %2))) (* dt ts))
-         (let [data (float-array (map #(+ @threshold %) [0.0 0.1 0.2 0.3 0.4 0.5 0.5 0.4 0.3 0.2 0.1 0.0]))]
+         (let [data (float-array (map #(+ @threshold %) [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.5 0.3 0.0]))]
            (destroy-texture @P)
            (reset! P (make-float-texture-1d :linear :clamp data)))
          (let [transform       (transformation-matrix (quaternion->matrix @orientation) @position)
