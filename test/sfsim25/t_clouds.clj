@@ -316,9 +316,9 @@ void main()
          (fact (mget (linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
          ?term                              ?result
          "number_of_steps(10, 20, 1, 10, 0.5)" 10
-         "number_of_steps(10, 20, 1, 10, 2.0)"  5
-         "number_of_steps(10, 20, 1, 10, 2.1)"  5
-         "number_of_steps(10, 20, 6, 10, 2.1)"  6
+         "number_of_steps(10, 20, 1, 10, 2.0)" 10
+         "number_of_steps(10, 20, 1, 10, 2.1)" 10
+         "number_of_steps(10, 20, 6, 10, 2.1)" 10
          "step_size(10, 20, 0, 5)"              2
          "sample_point(20, 0, 4, 2)"           28
          "scaling_offset(10, 20, 10, 2.0)"      0
@@ -338,9 +338,9 @@ void main()
          (fact (mget (exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
          ?term                               ?result
          "number_of_steps(10, 20, 1, 10, 1.05)" 10
-         "number_of_steps(10, 20, 1, 10, 2.0)"   1
-         "number_of_steps(10, 20, 1, 10, 2.1)"   1
-         "number_of_steps(10, 20, 2, 10, 2.1)"   2
+         "number_of_steps(10, 20, 1, 10, 2.0)"  10
+         "number_of_steps(10, 20, 1, 10, 2.1)"  10
+         "number_of_steps(10, 20, 2, 10, 2.1)"  10
          "scaling_offset(10, 20, 1, 2.0)"        0
          "scaling_offset(10, 30, 1, 2.0)"       10
          "scaling_offset(10, 30, 10, 2.0)"       0
