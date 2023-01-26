@@ -52,7 +52,7 @@
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def cloud-multiplier (atom 0.015))
 (def threshold (atom 0.4))
-(def mix (atom 0.7))
+(def mix (atom 0.4))
 (def opacity-step (atom 300.0))
 (def cms (atom 1.1))
 (def keystates (atom {}))
