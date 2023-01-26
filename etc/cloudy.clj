@@ -31,7 +31,7 @@
 (def worley-size 128)
 (def noise-size 64)
 (def z-near 20.0)
-(def z-far 120000.0)
+(def z-far 240000.0)
 (def depth 120000.0)
 (def fov 45.0)
 (def height-size 32)
