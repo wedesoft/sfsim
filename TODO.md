@@ -7,6 +7,7 @@
 * linear sampling and exponential sampling with blue noise offsets?
 * use Worley octaves
 * integrate with planetary prototype
+* dynamic z-near and z-far
 * look at boot and deps.edn
 * global cloud cover
 * does opacity fragment shader need to limit offsets to bounding box?
