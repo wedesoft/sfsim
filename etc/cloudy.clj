@@ -267,7 +267,7 @@ float cloud_density(vec3 point, float lod)
                             (uniform-vector3 program-atmosphere :origin @position)
                             (uniform-vector3 program-atmosphere :light_direction light-direction)
                             (uniform-float program-atmosphere :opacity_step @opacity-step)
-                            (uniform-float program-atmosphere :clip 20000)
+                            (uniform-float program-atmosphere :clip 10000)
                             (uniform-float program-atmosphere :cloud_max_step @cms)
                             (doseq [[idx item] (map-indexed vector splits)]
                                    (uniform-float program-atmosphere (keyword (str "split" idx)) item))
