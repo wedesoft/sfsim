@@ -3,7 +3,8 @@
 * "No prototypes. Just make the game. Polish as you go. Don't depend on polish happening later. Always maintain constantly shippable code." - John Romero
 * at least 16 textures supported, at least 8 color attachments supported
 * lod computation without stepping (using index of sample)
-* mixed linear and exponential sampling
+* reimplement number of steps method
+* mixed linear and exponential sampling?
 * linear sampling and exponential sampling with blue noise offsets?
 * use Worley octaves
 * integrate with planetary prototype
