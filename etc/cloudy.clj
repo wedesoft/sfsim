@@ -46,10 +46,9 @@
 
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 3000)])))
-; (def light (atom 0.1478))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 50000)])))
 (def light (atom (* 0.072 PI)))
-(def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
+(def orientation (atom (q/rotation (to-radians 80) (matrix [1 0 0]))))
 (def cloud-multiplier (atom 0.015))
 (def threshold (atom 0.4))
 (def mix (atom 0.4))
