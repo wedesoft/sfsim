@@ -6,6 +6,7 @@ uniform int cloud_max_samples;
 uniform float cloud_scatter_amount;
 uniform float cloud_max_step;
 uniform float transparency_cutoff;
+uniform float clip;
 
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
@@ -29,6 +30,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     vec3 transmittance_atmosphere = transmittance_track(p, q);
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
     float transparency = 1.0;
+    b = min(b, a + clip);
     int samples = number_of_steps(a, b, cloud_min_samples, cloud_max_samples, cloud_max_step);
     float scale_offset = scaling_offset(a, b, samples, cloud_max_step);
     float stepping = step_size(a, b, scale_offset, samples);
