@@ -42,9 +42,9 @@
 (def num-steps 5)
 (def num-opacity-layers 7)
 
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 50000)])))
+(def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 5000)])))
 (def light (atom (* 0.03 PI)))
-(def orientation (atom (q/rotation (to-radians 80) (matrix [1 0 0]))))
+(def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def cloud-multiplier (atom 0.002))
 (def threshold (atom 0.4))
 (def mix (atom 0.4))
