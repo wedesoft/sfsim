@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (to-radians cos sin PI)]
+(require '[clojure.math :refer (to-radians cos sin PI sqrt)]
          '[clojure.core.matrix :refer (matrix add mul inverse mget)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.render :refer :all]
@@ -30,8 +30,6 @@
 (def cloud-scatter-amount 0.2)
 (def worley-size 128)
 (def noise-size 64)
-(def z-near 50000.0)
-(def z-far 600000.0)
 (def depth 120000.0)
 (def fov 45.0)
 (def height-size 32)
@@ -40,11 +38,9 @@
 (def heading-size 8)
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
-(def shadow-size 256)
+(def shadow-size 128)
 (def num-steps 5)
 (def num-opacity-layers 7)
-
-(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
 
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 50000)])))
 (def light (atom (* 0.03 PI)))
@@ -145,10 +141,6 @@ float cloud_density(vec3 point, float lod)
                            cloud-density cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
                            (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
 
-(def indices [0 1 3 2])
-(def atmosphere-vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
-(def atmosphere-vao (make-vertex-array-object program-atmosphere indices atmosphere-vertices [:point 3]))
-
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere :transmittance 0)
 (uniform-sampler program-atmosphere :ray_scatter 1)
@@ -158,7 +150,6 @@ float cloud_density(vec3 point, float lod)
 (doseq [i (range num-steps)]
        (uniform-sampler program-atmosphere (keyword (str "offset" i)) (+ (* 2 i) 5))
        (uniform-sampler program-atmosphere (keyword (str "opacity" i)) (+ (* 2 i) 6)))
-(uniform-matrix4 program-atmosphere :projection projection)
 (uniform-float program-atmosphere :radius radius)
 (uniform-float program-atmosphere :max_height max-height)
 (uniform-int program-atmosphere :num_opacity_layers num-opacity-layers)
@@ -247,16 +238,26 @@ float cloud_density(vec3 point, float lod)
          (let [data (float-array (map #(+ @threshold %) [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.5 0.3 0.0]))]
            (destroy-texture @P)
            (reset! P (make-float-texture-1d :linear :clamp data)))
-         (let [transform       (transformation-matrix (quaternion->matrix @orientation) @position)
-               light-direction (matrix [0 (cos @light) (sin @light)])
-               matrix-cascade  (shadow-matrix-cascade projection transform light-direction depth @mix z-near z-far
-                                                      num-steps)
-               splits          (map #(split-mixed @mix z-near z-far num-steps %) (range (inc num-steps)))
-               scatter-amount  (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
-               tex-cascade     (shadow-cascade matrix-cascade light-direction scatter-amount)]
+         (let [norm-position       (norm @position)
+               dist                (- norm-position radius cloud-top)
+               z-near              (max 10.0 dist)
+               z-far               (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
+                                      (sqrt (- (sqr norm-position) (sqr radius))))
+               projection          (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov))
+               indices             [0 1 3 2]
+               atmosphere-vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+               atmosphere-vao      (make-vertex-array-object program-atmosphere indices atmosphere-vertices [:point 3])
+               transform           (transformation-matrix (quaternion->matrix @orientation) @position)
+               light-direction     (matrix [0 (cos @light) (sin @light)])
+               matrix-cascade      (shadow-matrix-cascade projection transform light-direction depth @mix z-near z-far
+                                                          num-steps)
+               splits              (map #(split-mixed @mix z-near z-far num-steps %) (range (inc num-steps)))
+               scatter-amount      (* (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic)) cloud-scatter-amount)
+               tex-cascade         (shadow-cascade matrix-cascade light-direction scatter-amount)]
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 1 0]))
                             (use-program program-atmosphere)
+                            (uniform-matrix4 program-atmosphere :projection projection)
                             (uniform-float program-atmosphere :cloud_multiplier @cloud-multiplier)
                             (apply use-textures
                                    T S M W @P
@@ -277,10 +278,12 @@ float cloud_density(vec3 point, float lod)
                                                   (keyword (str "depth" idx))
                                                   (:depth item)))
                             (uniform-float program-atmosphere :depth (:depth (first matrix-cascade)))
+                            (GL11/glDepthFunc GL11/GL_ALWAYS)
                             (render-quads atmosphere-vao))
            (doseq [{:keys [offset layer]} tex-cascade]
                   (destroy-texture offset)
-                  (destroy-texture layer)))
+                  (destroy-texture layer))
+           (destroy-vertex-array-object atmosphere-vao))
          (print "\rheight" (format "%.3f" (- (norm @position) radius))
                 "thresh (q/a)" (format "%.3f" @threshold)
                 "mult (e/d)" (format "%.3f" @cloud-multiplier)
@@ -297,7 +300,6 @@ float cloud_density(vec3 point, float lod)
 (destroy-texture T)
 (destroy-texture S)
 (destroy-texture M)
-(destroy-vertex-array-object atmosphere-vao)
 (destroy-program program-atmosphere)
 (destroy-vertex-array-object shadow-vao)
 (destroy-program program-shadow)
