@@ -1,5 +1,5 @@
 # TODO
-* anisotropic doesn't seem to work properly in cloudy.clj
+* step in atmosphere when passing cloud-top
 * linear sampling and exponential sampling with blue noise offsets?
 * seapare transmittance\_outer call from cloud\_shadow
 * generate cubemap for global cloud cover
