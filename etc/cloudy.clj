@@ -48,7 +48,7 @@
 (def threshold (atom -0.4))
 (def mix (atom 0.8))
 (def opacity-step (atom 200.0))
-(def cms (atom 1.04))
+(def cms (atom 1.05))
 (def anisotropic (atom 0.3))
 (def keystates (atom {}))
 
