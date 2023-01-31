@@ -3,11 +3,6 @@
 uniform float cloud_scale;
 uniform int cloud_size;
 
-int number_of_steps(float a, float b, int min_samples, int max_samples, float max_step)
-{
-  return max_samples;
-}
-
 float scaling_offset(float a, float b, int samples, float max_step)
 {
   float final_scale = pow(max_step, samples);
