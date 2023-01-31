@@ -4,6 +4,7 @@
 * horizon under the cloud should be dark
 * render to texture with alpha channel
 * integrate with planetary prototype
+* use shadow map of planet in cloud\_shadow?
 * reimplement/remove number\_of\_steps method
 * use Worley octaves
 * look at boot and deps.edn
