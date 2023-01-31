@@ -38,7 +38,9 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 (def shadow-size 128)
+; check use-textures below; at least 16 textures are supported.
 (def num-steps 5)
+; at least 8 color attachments supported minus one offset layer.
 (def num-opacity-layers 7)
 
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 5000)])))
