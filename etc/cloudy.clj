@@ -4,6 +4,7 @@
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.clouds :refer :all]
+         '[sfsim25.bluenoise :as bluenoise]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.quaternion :as q]
          '[sfsim25.util :refer :all]
@@ -141,7 +142,8 @@ float cloud_density(vec3 point, float lod)
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
                            cloud-density cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
-                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
+                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index
+                           bluenoise/sampling-offset]))
 
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere :transmittance 0)
@@ -149,9 +151,10 @@ float cloud_density(vec3 point, float lod)
 (uniform-sampler program-atmosphere :mie_strength 2)
 (uniform-sampler program-atmosphere :worley 3)
 (uniform-sampler program-atmosphere :cloud_profile 4)
+(uniform-sampler program-atmosphere :bluenoise 5)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-atmosphere (keyword (str "offset" i)) (+ (* 2 i) 5))
-       (uniform-sampler program-atmosphere (keyword (str "opacity" i)) (+ (* 2 i) 6)))
+       (uniform-sampler program-atmosphere (keyword (str "offset" i)) (+ (* 2 i) 6))
+       (uniform-sampler program-atmosphere (keyword (str "opacity" i)) (+ (* 2 i) 7)))
 (uniform-float program-atmosphere :radius radius)
 (uniform-float program-atmosphere :max_height max-height)
 (uniform-int program-atmosphere :num_opacity_layers num-opacity-layers)
@@ -169,6 +172,7 @@ float cloud_density(vec3 point, float lod)
 (uniform-float program-atmosphere :cloud_scale cloud-scale)
 (uniform-int program-atmosphere :cloud_size worley-size)
 (uniform-int program-atmosphere :shadow_size shadow-size)
+(uniform-int program-atmosphere :noise_size noise-size)
 (uniform-float program-atmosphere :amplification 6.0)
 
 (def program-shadow
@@ -263,7 +267,7 @@ float cloud_density(vec3 point, float lod)
                             (uniform-float program-atmosphere :cloud_multiplier @cloud-multiplier)
                             (uniform-float program-atmosphere :anisotropic @anisotropic)
                             (apply use-textures
-                                   T S M W @P
+                                   T S M W @P B
                                    (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cascade))
                             (uniform-matrix4 program-atmosphere :transform transform)
                             (uniform-matrix4 program-atmosphere :inverse_transform (inverse transform))
