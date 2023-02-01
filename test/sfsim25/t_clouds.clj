@@ -11,9 +11,13 @@
               [sfsim25.clouds :refer :all]))
 
 (def cloud-track-probe
-  (template/fn [a b decay scatter density lx ly lz ir ig ib]
+  (template/fn [a b decay scatter offset density gradient lx ly lz ir ig ib]
 "#version 410 core
 out vec3 fragColor;
+float sampling_offset()
+{
+  return <%= offset %>;
+}
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dp = 10 - p.x;
@@ -32,7 +36,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 }
 float cloud_density(vec3 point, float lod)
 {
-  return <%= density %>;
+  return <%= density %> + <%= gradient %> * point.x;
 }
 vec3 cloud_shadow(vec3 point, vec3 light, float lod)
 {
@@ -68,23 +72,24 @@ void main()
     linear-sampling))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test [?anisotropic ?n ?amnt] [?a ?b ?decay ?scatter ?density ?lx ?ly ?lz ?ir ?ig ?ib])
+         (fact (cloud-track-test [?aniso ?n ?amnt] [?a ?b ?decay ?scatter ?offs ?dens ?grad ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
-         ?a  ?b  ?n ?amnt ?decay  ?scatter ?density ?anisotropic ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
-         0    1  1  1     0       0        0.0      1            0   0   1   0   0   0   0        0                      0
-         0    0  1  1     0       0        0.0      1            0   0   1   1   1   1   1        1                      1
-         0    1  1  1     0       0        0.0      1            0   0   1   1   1   1   1        1                      1
-         0    1  1  1     1       0        0.0      1            0   0   1   1   0   0   (exp -1) 0                      0
-         9   10  1  1     0       1        0.0      1            0   0   1   0   0   0   0        0                      0.5
-         8    9  1  1     0       1        0.0      1            0   0   1   0   0   0   0        0                      0.25
-         8    9  1  1     (log 2) 1        0.0      1            0   0   1   0   0   0   0        0                      0.5
-         8    9  2  1     (log 2) 1        0.0      1            0   0   1   0   0   0   0        0                      0.5
-         0    1  1  1     0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -1))         0
-         0    1  1  0.5   0       0        1.0      1            0   0   1   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
-         0    2  1  1     0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    2  2  1     0       0        1.0      1            0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    1  1  1     0       0        1.0      1            1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
-         0    1  1  1     0       0        1.0      0            1   0   0   0   0   0   0        (- 1 (exp -1))         0)
+         ?a  ?b  ?n ?amnt ?decay  ?scatter ?offs ?dens ?grad ?aniso ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
+         0    1  1  1     0       0        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0
+         0    0  1  1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
+         0    1  1  1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
+         0    1  1  1     1       0        0.5   0.0   0     1      0   0   1   1   0   0   (exp -1) 0                      0
+         9   10  1  1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
+         8    9  1  1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.25
+         8    9  1  1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
+         8    9  2  1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
+         0    1  1  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -1))         0
+         0    1  1  0.5   0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
+         0    2  1  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
+         0    2  2  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
+         0    1  1  1     0       0        0.5   1.0   0     1      1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
+         0    1  1  1     0       0        0.5   1.0   0     0      1   0   0   0   0   0   0        (- 1 (exp -1))         0
+         0    1  1  1     0       0        0.5   0.0   2.0   0      0   0   1   0   0   0   0        (- 1 (exp -1))         0)
 
 (def sky-outer-probe
   (template/fn [x y z dx dy dz lx ly lz ir ig ib]

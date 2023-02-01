@@ -664,6 +664,13 @@ float opacity_cascade_lookup(vec4 point)
   return 1.0;
 }")
 
+(def sampling-offset-mock
+"#version 410 core
+float sampling_offset()
+{
+  return 0.5;
+}")
+
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
            (offscreen-render 256 256
@@ -689,7 +696,8 @@ float opacity_cascade_lookup(vec4 point)
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
-                                                                          shaders/sun-angle-to-index opacity-lookup-mock])
+                                                                          shaders/sun-angle-to-index opacity-lookup-mock
+                                                                          sampling-offset-mock])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})

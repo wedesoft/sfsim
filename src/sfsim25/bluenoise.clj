@@ -126,6 +126,10 @@
         dither        (dither-phase3 half m (quot (* m m) 2) dither f)]
     dither))
 
+(def sampling-offset
+  "Shader for sampling blue noise texture"
+  (slurp "resources/shaders/bluenoise/sampling-offset.glsl"))
+
 (defn -main
   "Program to generate blue noise tile"
   [& args]

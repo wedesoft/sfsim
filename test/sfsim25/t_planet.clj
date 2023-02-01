@@ -352,6 +352,13 @@ float opacity_cascade_lookup(vec4 point)
   return 1.0;
 }")
 
+(def sampling-offset-mock
+"#version 410 core
+float sampling_offset()
+{
+  return 0.5;
+}")
+
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
                 :fragment [fragment-planet fake-transmittance
@@ -368,7 +375,8 @@ float opacity_cascade_lookup(vec4 point)
                            shaders/ray-scatter-forward shaders/height-to-index
                            shaders/horizon-distance shaders/limit-quot
                            shaders/surface-radiance-forward
-                           shaders/sun-elevation-to-index opacity-lookup-mock]))
+                           shaders/sun-elevation-to-index opacity-lookup-mock
+                           sampling-offset-mock]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
