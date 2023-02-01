@@ -1,5 +1,4 @@
 # TODO
-* mix a\_step and b\_step using blue noise offset
 * use blue noise in shadow map generating code?
 * step in atmosphere when passing cloud-top
 * seapare transmittance\_outer call from cloud\_shadow
