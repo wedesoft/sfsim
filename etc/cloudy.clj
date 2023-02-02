@@ -177,7 +177,8 @@ float cloud_density(vec3 point, float lod)
 
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/ray-sphere]))
+                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/ray-sphere
+                           bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])
 (def shadow-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
@@ -186,6 +187,8 @@ float cloud_density(vec3 point, float lod)
 (use-program program-shadow)
 (uniform-sampler program-shadow :worley 0)
 (uniform-sampler program-shadow :cloud_profile 1)
+(uniform-sampler program-shadow :bluenoise 2)
+(uniform-int program-shadow :noise_size noise-size)
 
 (defn shadow-cascade [matrix-cascade light-direction scatter-amount]
   (mapv
@@ -206,7 +209,7 @@ float cloud_density(vec3 point, float lod)
                               (uniform-float program-shadow :depth depth)
                               (uniform-float program-shadow :opacity_step @opacity-step)
                               (uniform-float program-shadow :cloud_max_step 50) ; TODO: rename or use sampling shader functions
-                              (use-textures W @P)
+                              (use-textures W @P B)
                               (render-quads shadow-vao))
           {:offset opacity-offsets :layer opacity-layers}))
     matrix-cascade))

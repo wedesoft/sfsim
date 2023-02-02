@@ -1,5 +1,5 @@
 # TODO
-* use blue noise in shadow map generating code?
+* better computation of lod, how is cloud\_max\_step (cms) still used?
 * step in atmosphere when passing cloud-top
 * seapare transmittance\_outer call from cloud\_shadow
 * generate cubemap for global cloud cover
