@@ -5,7 +5,7 @@
 * step in atmosphere when passing cloud-top
 * seapare transmittance\_outer call from cloud\_shadow
 * generate cubemap for global cloud cover
-* horizon under the cloud should be dark
+* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * render to texture with alpha channel
 * integrate with planetary prototype
 * use shadow map of planet in cloud\_shadow?
@@ -18,7 +18,6 @@
 * use shadow map for terrain and clouds
 * convert\_1d\_index
 * does lookup\_3d need to use textureLod?
-* implement Clojure function for computing scatter amount for clouds
 * shadow lookup: use convert 2d index
 * test opacity offsets with constant density cloud, use clip\_shell\_intersections
 * use maximum possible cloud self-shadow length?
@@ -32,22 +31,18 @@
   * add clouds to atmospheric and planetary shader
   * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
   * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
-  * use integral to compute proper transmittance and scattering within sampling interval
   * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
-  * determine and increment level of detail index for mipmaps in cloud\_track and cloud\_track\_base
-  * check clouds don't disappear when going to space
-  * multiple octaves of Worley noise
-  * use 2d blue noise for sampling offsets
+  * determine and increment level of detail index for mipmaps in cloud\_track
   * increase stepsize between clouds (also only sample low-resolution noise)
   * multiple levels of Worley and Perlin noise in channels of 3D texture
   * offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur
   * apply cloud texture to higher resolution picture (upscale and alpha-blend)
   * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
-  * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
   * global cloud map (skybox?)
   * article about atmosphere rendering with clouds
 * appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
+* deferred decals for rendering runway
 * shadows
   * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
   * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
