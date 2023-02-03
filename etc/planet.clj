@@ -52,7 +52,7 @@
 (def transmittance-elevation-size 255)
 (def surface-height-size 16)
 (def surface-sun-elevation-size 63)
-(def worley-size 128)
+(def worley-size 64)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data data}))

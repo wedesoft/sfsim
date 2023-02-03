@@ -30,7 +30,7 @@
 (def anisotropic (atom 0.15))
 (def z-near 1000)
 (def z-far (* 2.0 radius))
-(def worley-size 128)
+(def worley-size 64)
 (def noise-size 64)
 (def keystates (atom {}))
 (def fov 60.0)

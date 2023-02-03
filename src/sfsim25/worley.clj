@@ -75,8 +75,8 @@
 (defn -main
   "Program to generate worley noise"
   [& args]
-  (let [size      128
-        divisions 12
+  (let [size      64
+        divisions 8
         noise     (worley-noise divisions size true)]
     (spit-floats "data/worley.raw" (float-array noise))
     (System/exit 0)))
