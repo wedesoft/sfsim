@@ -26,9 +26,10 @@
 (def max-height 35000.0)
 (def cloud-bottom 1500)
 (def cloud-top 4000)
-(def cloud-scale 10000)
+(def cloud-scale 2500)
 (def cloud-scatter-amount 0.2)
 (def worley-size 64)
+(def octaves [0.7 0.7 -0.4])
 (def noise-size 64)
 (def depth 120000.0)
 (def fov 45.0)
@@ -118,20 +119,6 @@ void main()
 }
 ")
 
-(def cloud-density-mock
-"#version 410 core
-uniform float radius;
-uniform float cloud_bottom;
-uniform float cloud_top;
-uniform float cloud_scale;
-uniform float cloud_multiplier;
-uniform sampler3D worley;
-uniform sampler1D cloud_profile;
-float cloud_density(vec3 point, float lod)
-{
-  return cloud_multiplier;
-}")
-
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment shaders/ray-sphere shaders/ray-shell
@@ -141,9 +128,9 @@ float cloud_density(vec3 point, float lod)
                            shaders/limit-quot shaders/sun-elevation-to-index phase-function shaders/sun-angle-to-index
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
-                           cloud-density cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
-                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index
-                           bluenoise/sampling-offset]))
+                           (cloud-density octaves) cloud-shadow attenuation-track sky-track
+                           shaders/clip-shell-intersections (opacity-cascade-lookup num-steps) opacity-lookup
+                           shaders/convert-3d-index bluenoise/sampling-offset]))
 
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere :transmittance 0)
@@ -177,7 +164,7 @@ float cloud_density(vec3 point, float lod)
 
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/ray-sphere
+                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell (cloud-density octaves) shaders/ray-sphere
                            bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])

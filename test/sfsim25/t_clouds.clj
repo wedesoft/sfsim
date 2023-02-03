@@ -247,13 +247,14 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn cloud-density-test [radius cloud-bottom cloud-top density0 density1 cloud-size profile0 profile1 cloud-multiplier x y z]
+(defn cloud-density-test [radius cloud-bottom cloud-top density0 density1 cloud-size profile0 profile1 cloud-multiplier octaves
+                          x y z]
   (let [result (promise)]
     (offscreen-render 1 1
       (let [indices      [0 1 3 2]
             vertices     [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program      (make-program :vertex [vertex-passthrough]
-                                       :fragment (vector (cloud-density-probe x y z) cloud-density))
+                                       :fragment (vector (cloud-density-probe x y z) (cloud-density octaves)))
             vao          (make-vertex-array-object program indices vertices [:point 3])
             worley-data  (cons density0 (repeat (dec (* 2 2 2)) density1))
             worley       (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array worley-data)})
@@ -281,17 +282,20 @@ void main()
     @result))
 
 (tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-density-test 60 ?h1 ?h2 ?d0 ?d1 ?size ?prof0 ?prof1 ?mult ?x ?y ?z) 0) => (roughly ?result 1e-5))
-         ?h1 ?h2 ?d0 ?d1 ?size ?prof0 ?prof1 ?mult ?x    ?y   ?z   ?result
-         20  30  0   0   1     1      1      1      0    0    0    0
-         20  30  1   1   1     1      1      1     85    0    0    1
-         20  30  1   2   1     1      1      1     80.25 0.25 0.25 1
-         20  30  1   2   4     1      1      1     81    1    1    1
-         20  30  1   1   1     1      1      3     85    0    0    3
-         20  30  1   1   1     0      0      1     85    0    0    0
-         20  30  1   1   1     0      0      1     85    0    0    0
-         20  30  1   1   1     1      0      1     80.5  0    0    1
-         20  30  1   1   1     1      0      1     85    0    0    0)
+         (fact (mget (cloud-density-test 60 ?h1 ?h2 ?d0 ?d1 ?size ?prof0 ?prof1 ?mult ?octaves ?x ?y ?z) 0)
+               => (roughly ?result 1e-5))
+         ?h1 ?h2 ?d0 ?d1 ?size ?prof0 ?prof1 ?mult ?octaves  ?x    ?y   ?z   ?result
+         20  30  0   0   1     1      1      1     [1.0]      0    0    0    0
+         20  30  1   1   1     1      1      1     [1.0]     85    0    0    1
+         20  30  1   2   1     1      1      1     [1.0]     80.25 0.25 0.25 1
+         20  30  1   2   4     1      1      1     [1.0]     81    1    1    1
+         20  30  1   1   1     1      1      3     [1.0]     85    0    0    3
+         20  30  1   1   1     0      0      1     [1.0]     85    0    0    0
+         20  30  1   1   1     0      0      1     [1.0]     85    0    0    0
+         20  30  1   1   1     1      0      1     [1.0]     80.5  0    0    1
+         20  30  1   1   1     1      0      1     [1.0]     85    0    0    0
+         20  30  1   2   1     1      1      1     [1.0 0.0] 80.25 0.25 0.25 1
+         20  30  1   2   1     1      1      1     [0.0 1.0] 80.5  0.5  0.5  1)
 
 (def sampling-probe
   (template/fn [term]

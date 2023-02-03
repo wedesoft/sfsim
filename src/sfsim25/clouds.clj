@@ -20,7 +20,7 @@
 
 (def cloud-density
   "Shader for determining cloud density at specified point"
-  (slurp "resources/shaders/clouds/cloud-density.glsl"))
+  (template/fn [octaves] (slurp "resources/shaders/clouds/cloud-density.glsl")))
 
 (def linear-sampling
   "Shader functions for defining linear sampling"

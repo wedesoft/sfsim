@@ -369,7 +369,7 @@ float sampling_offset()
                            atmosphere/transmittance-outer
                            ground-radiance clouds/sky-track shaders/ray-shell
                            clouds/cloud-track
-                           clouds/cloud-density clouds/cloud-shadow
+                           (clouds/cloud-density [1.0]) clouds/cloud-shadow
                            clouds/linear-sampling atmosphere/phase-function
                            shaders/clip-shell-intersections
                            shaders/ray-scatter-forward shaders/height-to-index

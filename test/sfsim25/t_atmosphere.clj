@@ -690,7 +690,7 @@ float sampling_offset()
                                                                           shaders/interpolate-4d shaders/make-2d-index-from-4d
                                                                           shaders/is-above-horizon clouds/sky-outer
                                                                           shaders/ray-shell clouds/cloud-track
-                                                                          clouds/cloud-density
+                                                                          (clouds/cloud-density [1.0])
                                                                           clouds/cloud-shadow clouds/linear-sampling
                                                                           attenuation-track transmittance-track
                                                                           ray-scatter-track phase-function
