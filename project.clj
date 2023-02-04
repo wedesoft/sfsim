@@ -4,11 +4,11 @@
   :license {:name "GPL-3.0-or-later"
             :url "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure       "1.11.1"]
-                 [org.clojure/core.memoize "1.0.236"]
-                 [org.clojure/core.async   "1.3.618"]
-                 [com.climate/claypoole      "1.1.4"]
+                 [org.clojure/core.memoize "1.0.257"]
+                 [org.clojure/core.async   "1.6.673"]
+                 [org.clj-commons/claypoole  "1.2.2"]
                  [progrock                   "0.1.2"]
-                 [net.mikera/core.matrix    "0.62.0"]
+                 [net.mikera/core.matrix    "0.63.0"]
                  [net.mikera/vectorz-clj    "0.48.0"]
                  [comb                       "0.1.1"]
                  [gnuplot                    "0.1.3"]]
