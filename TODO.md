@@ -1,6 +1,4 @@
 # TODO
-* multiple octaves of noise
-  float noise = -0.4 * textureLod(worley, idx, lod).r + 0.7 * textureLod(worley, idx * 2, lod - 1).r + 0.7 * textureLod(worley, idx * 4, lod - 2).r;
 * better computation of lod, how is cloud\_max\_step (cms) still used?
 * step in atmosphere when passing cloud-top
 * seapare transmittance\_outer call from cloud\_shadow
