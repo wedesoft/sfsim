@@ -43,6 +43,7 @@
   * article about atmosphere rendering with clouds
 * appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * deferred decals for rendering runway
+  https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/
 * shadows
   * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
   * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
