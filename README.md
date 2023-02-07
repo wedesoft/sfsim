@@ -3,8 +3,8 @@
 This is a work in progress. Requires OpenGL 4.5.
 
 ```
-sudo apt-get install openjdk-17-jre liblwjgl-java libij-java leiningen
-lein midje
+sudo apt-get install openjdk-17-jre liblwjgl-java libij-java
+clj -Mtest
 ```
 
 # External Links
