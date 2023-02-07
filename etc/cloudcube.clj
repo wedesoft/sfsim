@@ -2,7 +2,6 @@
          '[clojure.core.matrix.linear :refer (norm)]
          '[clojure.math :refer (PI sqrt pow cos sin to-radians)]
          '[com.climate.claypoole :as cp]
-         '[gnuplot.core :as g]
          '[sfsim25.quaternion :as q]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.clouds :refer :all]
