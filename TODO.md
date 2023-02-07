@@ -1,4 +1,7 @@
 # TODO
+* use deps.edn and tools.build
+  https://betweentwoparens.com/blog/what-are-the-clojure-tools/
+* limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
 * step in atmosphere when passing cloud-top
 * seapare transmittance\_outer call from cloud\_shadow
@@ -8,7 +11,6 @@
 * integrate with planetary prototype
 * use shadow map of planet in cloud\_shadow?
 * use Worley octaves
-* look at boot and deps.edn
 * global cloud cover
 * does opacity fragment shader need to limit offsets to bounding box?
 * prototype planetary cloud rendering using cascaded deep opacity maps
