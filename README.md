@@ -2,12 +2,15 @@
 
 This is a work in progress. Requires OpenGL 4.5.
 
-```
-sudo apt-get install openjdk-17-jre liblwjgl-java libij-java
-clj -Mtest
-```
+# Installation
 
-* to run the cloud prototype do: `clj -M etc/cloudy.clj`
+* Install Java, LWJGL2, and ImageJ: `sudo apt-get install openjdk-17-jre liblwjgl-java libij-java`
+* [Install Clojure](https://clojure.org/guides/install_clojure)
+
+# Run
+
+* Run tests: `clj -Mtest`
+* Run the cloud prototype: `clj -M etc/cloudy.clj`
 
 # External Links
 
