@@ -65,7 +65,7 @@
    (worley-noise divisions size false))
   ([divisions size progress]
    (let [grid (random-point-grid divisions size)
-         bar  (if progress (agent (make-progress-bar (* size size size) 1)))]
+         bar  (if progress (agent (make-progress-bar (* size size size) size)))]
      (invert-vector
        (normalise-vector
          (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
