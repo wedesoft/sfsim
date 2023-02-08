@@ -5,6 +5,7 @@ elevation
 globe
 world.*.png
 elevation*.raw
+.cpcache
 .eastwood
 .lein-*
 .nrepl-port
