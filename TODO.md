@@ -1,6 +1,7 @@
 # TODO
 * use deps.edn and tools.build
   https://betweentwoparens.com/blog/what-are-the-clojure-tools/
+* try to install and use LWJGL3 from Maven
 * limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
 * step in atmosphere when passing cloud-top

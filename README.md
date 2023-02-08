@@ -7,6 +7,8 @@ sudo apt-get install openjdk-17-jre liblwjgl-java libij-java
 clj -Mtest
 ```
 
+* to run the cloud prototype do: `clj -M etc/cloudy.clj`
+
 # External Links
 
 * [Orbiter 2016](https://github.com/mschweiger/orbiter)

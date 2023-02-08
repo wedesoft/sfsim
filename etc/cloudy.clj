@@ -275,7 +275,7 @@ void main()
                                                   (keyword (str "depth" idx))
                                                   (:depth item)))
                             (uniform-float program-atmosphere :depth (:depth (first matrix-cascade)))
-                            (GL11/glDepthFunc GL11/GL_ALWAYS)
+                            ; (GL11/glDepthFunc GL11/GL_ALWAYS)
                             (render-quads atmosphere-vao))
            (doseq [{:keys [offset layer]} tex-cascade]
                   (destroy-texture offset)
