@@ -9,7 +9,8 @@ This is a work in progress. Requires OpenGL 4.5.
 
 # Run
 
-* Run tests: `clj -Mtest`
+* Run tests: `clj -M:test`
+* Build Worley noise: `clj -T:build worley`
 * Run the cloud prototype: `clj -M etc/cloudy.clj`
 
 # External Links
