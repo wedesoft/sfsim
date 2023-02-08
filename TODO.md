@@ -1,4 +1,5 @@
 # TODO
+* test util and worley build module
 * use deps.edn and tools.build
   https://betweentwoparens.com/blog/what-are-the-clojure-tools/
 * try to install and use LWJGL3 from Maven

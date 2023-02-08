@@ -2,7 +2,7 @@
     "Functions and main program for generating blue noise"
     (:require [clojure.math :refer (exp)]
               [com.climate.claypoole :refer (pfor ncpus)]
-              [sfsim25.util :refer :all]))
+              [build.util :refer (spit-floats)]))
 
 ; http://cv.ulichney.com/papers/1993-void-cluster.pdf
 

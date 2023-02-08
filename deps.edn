@@ -1,16 +1,21 @@
 {:deps {org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/core.memoize {:mvn/version "1.0.257"}
         org.clojure/core.async {:mvn/version "1.6.673"}
-        org.clj-commons/claypoole {:mvn/version "1.2.2"}
-        progrock/progrock {:mvn/version "0.1.2"}
         net.mikera/core.matrix {:mvn/version "0.63.0"}
         net.mikera/vectorz-clj {:mvn/version "0.48.0"}
         comb/comb {:mvn/version "0.1.1"}
+        progrock/progrock {:mvn/version "0.1.2"}
+        org.clj-commons/claypoole {:mvn/version "1.2.2"}
         lwjgl/lwjgl {:local/root "/usr/share/java/lwjgl.jar"}
         imagej/imagej {:local/root "/usr/share/java/ij.jar"}}
- :paths ["src"]
+ :paths ["." "src"]
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3"
-                                                         :git/sha "e537cd1f3ac65c4cbc5001dce00a636d0006da39"}}
+                                                         :git/sha "e537cd1f3ac65c4cbc5001dce00a636d0006da39"}
+                          net.mikera/core.matrix {:mvn/version "0.63.0"}
+                          net.mikera/vectorz-clj {:mvn/version "0.48.0"}
+                          progrock/progrock {:mvn/version "0.1.2"}
+                          org.clj-commons/claypoole {:mvn/version "1.2.2"}}
+
                    :ns-default build}
            :test {:extra-deps {midje/midje {:mvn/version "1.10.9"}
                                midje-runner/midje-runner {:git/url "git@github.com:wedesoft/midje-runner"

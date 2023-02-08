@@ -54,4 +54,3 @@
          (nth (worley-noise 1 2) 0) => 1.0
          (count (worley-noise 1 2)) => 8
          (apply min (worley-noise 1 2)) => 0.0))
-
