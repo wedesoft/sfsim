@@ -34,4 +34,9 @@
 
 (defn clean [_]
   "Clean secondary files"
-  (b/delete {:path "data"}))
+  (b/delete {:path "data/worley.raw"})
+  (b/delete {:path "data/bluenoise.raw"})
+  (b/delete {:path "data/atmosphere/mie-strength.scatter"})
+  (b/delete {:path "data/atmosphere/ray-scatter.scatter"})
+  (b/delete {:path "data/atmosphere/surface-radiance.scatter"})
+  (b/delete {:path "data/atmosphere/transmittance.scatter"}))
