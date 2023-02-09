@@ -13,24 +13,12 @@
                  [comb                       "0.1.1"]
                  [gnuplot                    "0.1.3"]]
   :main ^:skip-aot sfsim25.core
-  :profiles {:run-scale-image     {:main sfsim25.scale-image}
-             :run-map-tiles       {:main sfsim25.map-tiles}
-             :run-scale-elevation {:main sfsim25.scale-elevation}
-             :run-elevation-tiles {:main sfsim25.elevation-tiles}
+  :profiles {:run-elevation-tiles {:main sfsim25.elevation-tiles}
              :run-globe           {:main sfsim25.globe}
-             :run-atmosphere-lut  {:main sfsim25.atmosphere-lut}
-             :run-worley          {:main sfsim25.worley}
-             :run-bluenoise       {:main sfsim25.bluenoise}
              :uberjar             {:aot :all}
              :dev                 {:dependencies [[midje "1.9.10"]]}}
-  :aliases {"run-scale-image"     ["with-profile" "run-scale-image"     "run"]
-            "run-map-tiles"       ["with-profile" "run-map-tiles"       "run"]
-            "run-scale-elevation" ["with-profile" "run-scale-elevation" "run"]
-            "run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
-            "run-globe"           ["with-profile" "run-globe"           "run"]
-            "run-atmosphere-lut"  ["with-profile" "run-atmosphere-lut"  "run"]
-            "run-worley"          ["with-profile" "run-worley"          "run"]
-            "run-bluenoise"       ["with-profile" "run-bluenoise"       "run"]}
+  :aliases {"run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
+            "run-globe"           ["with-profile" "run-globe"           "run"]}
   :resource-paths ["/usr/share/java/lwjgl.jar"
                    "/usr/share/java/ij.jar"]
   :plugins [[lein-midje "3.2.1"]

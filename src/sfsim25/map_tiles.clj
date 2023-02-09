@@ -3,21 +3,13 @@
   (:import [java.io File]
            [ij ImagePlus]
            [ij.io Opener FileSaver])
-  (:require [sfsim25.util :refer (tile-dir tile-path)])
-  (:gen-class))
+  (:require [sfsim25.util :refer (tile-dir tile-path)]))
 
-(defn -main
+(defn make-map-tiles
   "Program to generate map tiles"
-  [& args]
-  (when-not (== (count args) 6)
-    (.println *err* "Syntax: lein run-map-tiles [image] [tilesize] [level] [prefix] [y offset] [x offset]")
-    (System/exit 1))
-  (let [input-image  (nth args 0)
-        tilesize    (Integer/parseInt (nth args 1))
-        level       (Integer/parseInt (nth args 2))
-        prefix      (nth args 3)
-        dy          (bit-shift-left (Integer/parseInt (nth args 4)) level)
-        dx          (bit-shift-left (Integer/parseInt (nth args 5)) level)
+  [input-image tilesize level prefix y-offset x-offset]
+  (let [dy          (bit-shift-left y-offset level)
+        dx          (bit-shift-left x-offset level)
         img         (.openImage (Opener.) input-image)
         [w h]       [(.getWidth img) (.getHeight img)]
         processor   (.getProcessor img)]
