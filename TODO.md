@@ -1,7 +1,13 @@
 # TODO
-* test util and worley build module
 * use deps.edn and tools.build
   https://betweentwoparens.com/blog/what-are-the-clojure-tools/
+  - scale elevation
+  - blue noise
+  - map tiles
+  - elevation tiles
+  - globe (to generate cube map)
+  - atmosphere-lut
+* fix globe/planet, cloudcube
 * try to install and use LWJGL3 from Maven
 * limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
