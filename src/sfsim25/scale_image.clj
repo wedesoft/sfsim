@@ -4,14 +4,10 @@
            [ij.io Opener FileSaver])
   (:gen-class))
 
-(defn -main
+(defn scale-image
   "Program to scale image"
-  [& args]
-  (when-not (= (count args) 2)
-    (.println *err* "Syntax: lein run-scale-image [input image] [output image]")
-    (System/exit 1))
-  (let [[input-image output-image] args
-        img                        (.openImage (Opener.) input-image)
+  [input-image output-image]
+  (let [img                        (.openImage (Opener.) input-image)
         [w h]                      [(.getWidth img) (.getHeight img)]
         processor                  (.getProcessor img)
         resized                    (.resize processor (/ w 2) (/ h 2))

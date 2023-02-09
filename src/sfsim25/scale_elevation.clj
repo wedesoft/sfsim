@@ -4,15 +4,10 @@
             [sfsim25.util :refer (slurp-shorts spit-shorts)])
   (:gen-class))
 
-(defn -main
+(defn scale-elevation
   "Program to scale elevation images"
-  [& args]
-  (when-not (== (count args) 2)
-    (.println *err* "Syntax: lein run-scale-elevation [input data] [output data]")
-    (System/exit 1))
-  (let [[input-data
-         output-data] args
-        data          (slurp-shorts input-data)
+  [input-data output-data]
+  (let [data          (slurp-shorts input-data)
         n             (alength data)
         w             (int (round (sqrt n)))
         size          (/ w 2)
