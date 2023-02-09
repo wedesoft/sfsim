@@ -1,9 +1,12 @@
 (ns build
     (:require [clojure.tools.build.api :as b]
-              [build.worley :as w]))
+              [sfsim25.worley :as w]
+              [sfsim25.util :as u]))
 
 (defn worley [& {:keys [size divisions] :or {size 64 divisions 8}}]
-  (w/generate-worley-noise size divisions))
+  [size divisions]
+  (let [noise     (w/worley-noise divisions size true)]
+    (u/spit-floats "data/worley.raw" (float-array noise))))
 
 (defn clean [_]
   (b/delete {:path "data"}))

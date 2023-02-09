@@ -1,8 +1,8 @@
-(ns build.worley
+(ns sfsim25.worley
     "Create Worley noise"
     (:require [clojure.core.matrix :refer (matrix array add sub dimension-count slice-view eseq)]
               [clojure.core.matrix.linear :refer (norm)]
-              [build.util :refer (make-progress-bar tick-and-print spit-floats)]
+              [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]
               [com.climate.claypoole :refer (pfor ncpus)]))
 
 (set! *unchecked-math* true)
@@ -72,11 +72,5 @@
                (do
                  (if progress (send bar tick-and-print))
                  (closest-distance-to-point-in-grid grid divisions size (matrix [(+ k 0.5) (+ j 0.5) (+ i 0.5)])))))))))
-
-(defn generate-worley-noise
-  "Program to generate worley noise"
-  [size divisions]
-  (let [noise     (worley-noise divisions size true)]
-    (spit-floats "data/worley.raw" (float-array noise))))
 
 (set! *unchecked-math* false)
