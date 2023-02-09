@@ -4,7 +4,6 @@
   - map tiles
   - elevation tiles
   - globe (to generate cube map)
-  - atmosphere-lut
 * fix globe/planet, cloudcube
 * try to install and use LWJGL3 from Maven
 * limit sampled interval depending on start of interval

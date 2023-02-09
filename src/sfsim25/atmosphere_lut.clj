@@ -20,9 +20,9 @@
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
                                    :scatter-scale 8000})
 
-(defn -main
+(defn generate-atmosphere-luts
   "Program to generate lookup tables for atmospheric scattering"
-  [& args]
+  []
   (.println *err* (str "Initialization " (.toString (java.time.LocalDateTime/now))))
   (let [height-size                   32
         elevation-size                127
@@ -79,5 +79,4 @@
       (spit-floats "data/atmosphere/transmittance.scatter"    (pack-matrices lookup-table-transmittance))
       (spit-floats "data/atmosphere/surface-radiance.scatter" (pack-matrices lookup-table-surface-radiance))
       (spit-floats "data/atmosphere/ray-scatter.scatter"      (pack-matrices (convert-4d-to-2d lookup-table-ray-scatter)))
-      (spit-floats "data/atmosphere/mie-strength.scatter"     (pack-matrices (convert-4d-to-2d lookup-table-mie-strength))))
-    (System/exit 0)))
+      (spit-floats "data/atmosphere/mie-strength.scatter"     (pack-matrices (convert-4d-to-2d lookup-table-mie-strength))))))

@@ -4,6 +4,7 @@
               [sfsim25.scale-image :as si]
               [sfsim25.scale-elevation :as se]
               [sfsim25.bluenoise :as bn]
+              [sfsim25.atmosphere-lut :as al]
               [sfsim25.util :as u]))
 
 (defn worley [& {:keys [size divisions] :or {size 64 divisions 8}}]
@@ -26,6 +27,10 @@
         sigma  1.5
         dither (bn/blue-noise size n sigma)]
     (u/spit-floats "data/bluenoise.raw" (float-array (map #(/ % size size) dither)))))
+
+(defn atmosphere-lut [_]
+  "Generate atmospheric lookup tables"
+  (al/generate-atmosphere-luts))
 
 (defn clean [_]
   "Clean secondary files"
