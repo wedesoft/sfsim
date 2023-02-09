@@ -1,8 +1,6 @@
 # TODO
 * use deps.edn and tools.build
   https://betweentwoparens.com/blog/what-are-the-clojure-tools/
-  - scale elevation
-  - blue noise
   - map tiles
   - elevation tiles
   - globe (to generate cube map)

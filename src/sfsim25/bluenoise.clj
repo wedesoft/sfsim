@@ -130,14 +130,4 @@
   "Shader for sampling blue noise texture"
   (slurp "resources/shaders/bluenoise/sampling-offset.glsl"))
 
-(defn -main
-  "Program to generate blue noise tile"
-  [& args]
-  (let [m             64
-        n             (quot (* m m) 10)
-        sigma         1.5
-        dither        (blue-noise m n sigma)]
-    (spit-floats "data/bluenoise.raw" (float-array (map #(/ % m m) dither)))
-    (System/exit 0)))
-
 (set! *unchecked-math* false)
