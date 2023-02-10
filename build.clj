@@ -142,4 +142,7 @@
   (b/delete {:path "data/atmosphere/mie-strength.scatter"})
   (b/delete {:path "data/atmosphere/ray-scatter.scatter"})
   (b/delete {:path "data/atmosphere/surface-radiance.scatter"})
-  (b/delete {:path "data/atmosphere/transmittance.scatter"}))
+  (b/delete {:path "data/atmosphere/transmittance.scatter"})
+  (b/delete {:path "world"})
+  (b/delete {:path "elevation"})
+  (b/delete {:path "globe"}))
