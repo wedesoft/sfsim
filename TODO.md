@@ -2,6 +2,7 @@
 * use deps.edn and tools.build
   https://betweentwoparens.com/blog/what-are-the-clojure-tools/
   - downloading (and unpacking and concatenating) of tiles
+  - create "all" target
 * fix globe/planet, cloudcube
 * profiling mode
 * try to install and use LWJGL3 from Maven
