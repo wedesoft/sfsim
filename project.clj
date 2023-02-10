@@ -13,8 +13,7 @@
                  [comb                       "0.1.1"]
                  [gnuplot                    "0.1.3"]]
   :main ^:skip-aot sfsim25.core
-  :profiles {:run-elevation-tiles {:main sfsim25.elevation-tiles}
-             :run-globe           {:main sfsim25.globe}
+  :profiles {:run-globe           {:main sfsim25.globe}
              :uberjar             {:aot :all}
              :dev                 {:dependencies [[midje "1.9.10"]]}}
   :aliases {"run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]

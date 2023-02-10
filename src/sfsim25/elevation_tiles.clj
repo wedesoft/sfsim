@@ -5,18 +5,11 @@
             [sfsim25.util :refer (slurp-shorts spit-shorts tile-dir tile-path)])
   (:gen-class))
 
-(defn -main
+(defn make-elevation-tiles
   "Program to generate elevation tiles"
-  [& args]
-  (when-not (== (count args) 6)
-    (.println *err* "Syntax: lein run-elevation-tiles [data] [tilesize] [level] [prefix] [y offset] [x offset]")
-    (System/exit 1))
-  (let [input-data (nth args 0)
-        tilesize   (Integer/parseInt (nth args 1))
-        level      (Integer/parseInt (nth args 2))
-        prefix     (nth args 3)
-        dy         (bit-shift-left (Integer/parseInt (nth args 4)) level)
-        dx         (bit-shift-left (Integer/parseInt (nth args 5)) level)
+  [input-data tilesize level prefix y-offset x-offset]
+  (let [dy         (bit-shift-left y-offset level)
+        dx         (bit-shift-left x-offset level)
         data       (slurp-shorts input-data)
         n          (count data)
         w          (int (sqrt n))

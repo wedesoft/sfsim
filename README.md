@@ -11,6 +11,10 @@ This is a work in progress. Requires OpenGL 4.5.
 
 * Run tests: `clj -M:test`
 * Build Worley noise: `clj -T:build worley`
+* Build blue noise: `clj -T:build bluenoise`
+* Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
+* Convert map sectors into pyramid of tiles: `clj -T:build map-sectors`
+* Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Run the cloud prototype: `clj -M etc/cloudy.clj`
 
 # External Links

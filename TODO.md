@@ -1,9 +1,8 @@
 # TODO
 * use deps.edn and tools.build
   https://betweentwoparens.com/blog/what-are-the-clojure-tools/
-  - elevation tiles
   - globe (to generate cube map)
-  - downloading (and unpacking) of tiles
+  - downloading (and unpacking and concatenating) of tiles
 * fix globe/planet, cloudcube
 * profiling mode
 * try to install and use LWJGL3 from Maven

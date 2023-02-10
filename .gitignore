@@ -4,7 +4,7 @@ world
 elevation
 globe
 world.*.png
-elevation*.raw
+elevation.*.raw
 .cpcache
 .eastwood
 .lein-*

@@ -6,6 +6,7 @@
               [sfsim25.bluenoise :as bn]
               [sfsim25.atmosphere-lut :as al]
               [sfsim25.map-tiles :as mt]
+              [sfsim25.elevation-tiles :as et]
               [sfsim25.util :as u]))
 
 (defn worley
@@ -61,7 +62,7 @@
   (map-tiles {:image (str "world." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
 
 (defn map-sector
-  "Generate scale pyramid and tiles for given sector"
+  "Generate scale pyramid and map tiles for given sector"
   [& {:keys [sector prefix y x]}]
   (map-scales {:sector sector})
   (map-sector-tiles {:sector sector :prefix prefix :y y :x x}))
@@ -77,6 +78,46 @@
   (map-sector {:sector "C2" :prefix prefix :y 1 :x 2})
   (map-sector {:sector "D1" :prefix prefix :y 0 :x 3})
   (map-sector {:sector "D2" :prefix prefix :y 1 :x 3}))
+
+(defn elevation-scales
+  "Generate pyeramid of scales for given "
+  [& {:keys [sector]}]
+  (scale-elevation {:input (str "elevation." sector ".raw") :output (str "elevation." sector "." 2 ".raw")})
+  (scale-elevation {:input (str "elevation." sector "." 2 ".raw") :output (str "elevation." sector "." 3 ".raw")})
+  (scale-elevation {:input (str "elevation." sector "." 3 ".raw") :output (str "elevation." sector "." 4 ".raw")})
+  (scale-elevation {:input (str "elevation." sector "." 4 ".raw") :output (str "elevation." sector "." 5 ".raw")}))
+
+(defn elevation-tiles
+  "Generate map tiles from specified image"
+  [& {:keys [image tilesize level prefix y-offset x-offset] :or {tilesize 675}}]
+  (et/make-elevation-tiles image tilesize level prefix y-offset x-offset))
+
+(defn elevation-sector-tiles
+  "Generate pyramid of elevation tiles for given sector of world map"
+  [& {:keys [sector prefix y x]}]
+  (elevation-tiles {:image (str "elevation." sector ".raw") :level 4 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "elevation." sector "." 2 ".raw") :level 3 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "elevation." sector "." 3 ".raw") :level 2 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "elevation." sector "." 4 ".raw") :level 1 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "elevation." sector "." 5 ".raw") :level 0 :prefix prefix :y-offset y :x-offset x}))
+
+(defn elevation-sector
+  "Generate scale pyramid and elevation tiles for given sector"
+  [& {:keys [sector prefix y x]}]
+  (elevation-scales {:sector sector})
+  (elevation-sector-tiles {:sector sector :prefix prefix :y y :x x}))
+
+(defn elevation-sectors
+  "Convert all elevation sectors into a pyramid of elevation tiles"
+  [& {:keys [prefix] :or {prefix "elevation"}}]
+  (elevation-sector {:sector "A1" :prefix prefix :y 0 :x 0})
+  (elevation-sector {:sector "A2" :prefix prefix :y 1 :x 0})
+  (elevation-sector {:sector "B1" :prefix prefix :y 0 :x 1})
+  (elevation-sector {:sector "B2" :prefix prefix :y 1 :x 1})
+  (elevation-sector {:sector "C1" :prefix prefix :y 0 :x 2})
+  (elevation-sector {:sector "C2" :prefix prefix :y 1 :x 2})
+  (elevation-sector {:sector "D1" :prefix prefix :y 0 :x 3})
+  (elevation-sector {:sector "D2" :prefix prefix :y 1 :x 3}))
 
 (defn clean [_]
   "Clean secondary files"
