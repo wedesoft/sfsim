@@ -1,7 +1,6 @@
 (ns sfsim25.globe
   "Use Mercator color and elevation map tiles to generate cube map tiles for color, water, elevation, and normals."
-  (:require [clojure.core.memoize :as m]
-            [com.climate.claypoole :as cp]
+  (:require [com.climate.claypoole :as cp]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.cubemap :refer :all]
             [sfsim25.util :refer :all])
@@ -10,15 +9,10 @@
 
 (set! *unchecked-math* true)
 
-(defn -main
+(defn make-cube-map
   "Program to generate tiles for cube map"
-  [& args]
-  (when-not (== (count args) 2)
-    (.println *err* "Syntax: lein run-globe [input level] [output level]")
-    (System/exit 1))
-  (let [in-level           (Integer/parseInt (nth args 0))
-        out-level          (Integer/parseInt (nth args 1))
-        n                  (bit-shift-left 1 out-level)
+  [in-level out-level]
+  (let [n                  (bit-shift-left 1 out-level)
         width              675
         elevation-tilesize 33
         sublevel           2
@@ -56,7 +50,6 @@
         (spit-bytes (cube-path "globe" k out-level b a ".water") (:data water))
         (spit-floats (cube-path "globe" k out-level b a ".scale") (:data scale))
         (spit-floats (cube-path "globe" k out-level b a ".normals") (:data normals))
-        (send bar tick-and-print)))
-    (System/exit 0)))
+        (send bar tick-and-print)))))
 
 (set! *unchecked-math* false)

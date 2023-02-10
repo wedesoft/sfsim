@@ -15,6 +15,7 @@ This is a work in progress. Requires OpenGL 4.5.
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Convert map sectors into pyramid of tiles: `clj -T:build map-sectors`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
+* Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
 * Run the cloud prototype: `clj -M etc/cloudy.clj`
 
 # External Links

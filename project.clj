@@ -13,11 +13,8 @@
                  [comb                       "0.1.1"]
                  [gnuplot                    "0.1.3"]]
   :main ^:skip-aot sfsim25.core
-  :profiles {:run-globe           {:main sfsim25.globe}
-             :uberjar             {:aot :all}
+  :profiles {:uberjar             {:aot :all}
              :dev                 {:dependencies [[midje "1.9.10"]]}}
-  :aliases {"run-elevation-tiles" ["with-profile" "run-elevation-tiles" "run"]
-            "run-globe"           ["with-profile" "run-globe"           "run"]}
   :resource-paths ["/usr/share/java/lwjgl.jar"
                    "/usr/share/java/ij.jar"]
   :plugins [[lein-midje "3.2.1"]
