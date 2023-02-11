@@ -7,16 +7,21 @@ This is a work in progress. Requires OpenGL 4.5.
 * Install Java, LWJGL2, and ImageJ: `sudo apt-get install openjdk-17-jre liblwjgl-java libij-java`
 * [Install Clojure](https://clojure.org/guides/install_clojure)
 
-# Run
-
-* Run tests: `clj -M:test`
+# Build
 * Build Worley noise: `clj -T:build worley`
 * Build blue noise: `clj -T:build bluenoise`
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
+* Download NOAA elevation data: `clj -T:build download-elevation``
+* Extract elevation data: `clj -T:build extract-elevation``
 * Convert map sectors into pyramid of tiles: `clj -T:build map-sectors`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
+* Perform all build steps above: `clj -T:build`
+
+# Run
+
+* Run tests: `clj -M:test`
 * Run the cloud prototype: `clj -M etc/cloudy.clj`
 
 # External Links
