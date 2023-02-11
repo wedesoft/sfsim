@@ -54,12 +54,33 @@
 (defn download-elevation
   "Download NOAA elevation data from https://www.ngdc.noaa.gov/mgg/topo/gltiles.html"
   [_]
-  (let [filename "all10g.tgz"
+  (let [filename "all10g.zip"
         url      (str "https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/" filename)]
     (.println *err* (str "Downloading " url))
     (io/copy
       (:body (http/get url {:as :stream}))
       (io/file filename))))
+
+(defn extract-elevation
+  "Extract and concatenate elevation files"
+  [_]
+  (b/unzip {:zip-file "all10g.zip" :target-dir "."})
+  (with-open [out (io/output-stream "elevation.A1.raw")]
+    (io/copy (io/file "all10/a10g") out) (io/copy (io/file "all10/e10g") out))
+  (with-open [out (io/output-stream "elevation.B1.raw")]
+    (io/copy (io/file "all10/b10g") out) (io/copy (io/file "all10/f10g") out))
+  (with-open [out (io/output-stream "elevation.C1.raw")]
+    (io/copy (io/file "all10/c10g") out) (io/copy (io/file "all10/g10g") out))
+  (with-open [out (io/output-stream "elevation.D1.raw")]
+    (io/copy (io/file "all10/d10g") out) (io/copy (io/file "all10/h10g") out))
+  (with-open [out (io/output-stream "elevation.A2.raw")]
+    (io/copy (io/file "all10/i10g") out) (io/copy (io/file "all10/m10g") out))
+  (with-open [out (io/output-stream "elevation.B2.raw")]
+    (io/copy (io/file "all10/j10g") out) (io/copy (io/file "all10/n10g") out))
+  (with-open [out (io/output-stream "elevation.C2.raw")]
+    (io/copy (io/file "all10/k10g") out) (io/copy (io/file "all10/o10g") out))
+  (with-open [out (io/output-stream "elevation.D2.raw")]
+    (io/copy (io/file "all10/l10g") out) (io/copy (io/file "all10/p10g") out)))
 
 (defn map-tiles
   "Generate map tiles from specified image"
@@ -176,6 +197,7 @@
   (atmosphere-lut)
   (download-bluemarble)
   (download-elevation)
+  (extract-elevation)
   (map-sectors)
   (elevation-sectors)
   (cube-maps))
