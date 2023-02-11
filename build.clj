@@ -46,7 +46,7 @@
   (doseq [sector ["A1" "A2" "B1" "B2" "C1" "C2" "D1" "D2"]]
          (let [filename (str "world.200404.3x21600x21600." sector ".png")
                url      (str "https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74017/" filename)]
-           (.println *err* (str "Downloading " url))
+           (.println *err* (str "Downloading " url " ..."))
            (io/copy
              (:body (http/get url {:as :stream}))
              (io/file filename)))))
@@ -56,7 +56,7 @@
   [_]
   (let [filename "all10g.zip"
         url      (str "https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/" filename)]
-    (.println *err* (str "Downloading " url))
+    (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (:body (http/get url {:as :stream}))
       (io/file filename))))
