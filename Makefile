@@ -1,29 +1,3 @@
-# See https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/
-# Also see https://visibleearth.nasa.gov/collection/1484/blue-marble (downloads keep failing)
-world.200404.3x21600x21600.A1.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.A1.png
-
-world.200404.3x21600x21600.A2.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.A2.png
-
-world.200404.3x21600x21600.B1.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.B1.png
-
-world.200404.3x21600x21600.B2.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.B2.png
-
-world.200404.3x21600x21600.C1.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.C1.png
-
-world.200404.3x21600x21600.C2.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.C2.png
-
-world.200404.3x21600x21600.D1.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.D1.png
-
-world.200404.3x21600x21600.D2.png:
-	$(WGET) https://neo.sci.gsfc.nasa.gov/archive/bluemarble/bmng/world_500m/world.200404.3x21600x21600.D2.png
-
 all10: all10g.tgz
 	tar -xvf $<
 	touch $@
