@@ -41,7 +41,7 @@
   (se/scale-elevation (str input) (str output)))
 
 (defn download-bluemarble
-  "Download some NASA Bluemarble data"
+  "Download some NASA Bluemarble data from https://visibleearth.nasa.gov/images/74017/april-blue-marble-next-generation/74037"
   [_]
   (doseq [sector ["A1" "A2" "B1" "B2" "C1" "C2" "D1" "D2"]]
          (let [filename (str "world.200404.3x21600x21600." sector ".png")
@@ -50,6 +50,16 @@
            (io/copy
              (:body (http/get url {:as :stream}))
              (io/file filename)))))
+
+(defn download-elevation
+  "Download NOAA elevation data from https://www.ngdc.noaa.gov/mgg/topo/gltiles.html"
+  [_]
+  (let [filename "all10g.tgz"
+        url      (str "https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/" filename)]
+    (.println *err* (str "Downloading " url))
+    (io/copy
+      (:body (http/get url {:as :stream}))
+      (io/file filename))))
 
 (defn map-tiles
   "Generate map tiles from specified image"
@@ -165,6 +175,7 @@
   (bluenoise)
   (atmosphere-lut)
   (download-bluemarble)
+  (download-elevation)
   (map-sectors)
   (elevation-sectors)
   (cube-maps))

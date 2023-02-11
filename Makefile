@@ -25,7 +25,3 @@ elevation.C2.raw: all10
 
 elevation.D2.raw: all10
 	cat all10/l10g all10/p10g > $@
-
-# See https://www.ngdc.noaa.gov/mgg/topo/gltiles.html
-all10g.tgz:
-	$(WGET) https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/all10g.tgz
