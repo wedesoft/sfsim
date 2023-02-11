@@ -13,6 +13,7 @@ This is a work in progress. Requires OpenGL 4.5.
 * Build Worley noise: `clj -T:build worley`
 * Build blue noise: `clj -T:build bluenoise`
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
+* Download NASA Bluemarble data: `clj -T:build download-bluemarble`
 * Convert map sectors into pyramid of tiles: `clj -T:build map-sectors`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`

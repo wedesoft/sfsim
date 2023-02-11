@@ -1,5 +1,7 @@
 (ns build
     (:require [clojure.tools.build.api :as b]
+              [clojure.java.io :as io]
+              [babashka.http-client :as http]
               [sfsim25.worley :as w]
               [sfsim25.scale-image :as si]
               [sfsim25.scale-elevation :as se]
@@ -16,16 +18,6 @@
   (let [noise     (w/worley-noise divisions size true)]
     (u/spit-floats "data/worley.raw" (float-array noise))))
 
-(defn scale-image
-  "Scale down input PNG and save to output PNG"
-  [& {:keys [input output]}]
-  (si/scale-image (str input) (str output)))
-
-(defn scale-elevation
-  "Scale down raw short-integer elevation input data and save to output raw short integers"
-  [& {:keys [input output]}]
-  (se/scale-elevation (str input) (str output)))
-
 (defn bluenoise
   "Generate 2D blue noise texture"
   [& {:keys [size] :or {size 64}}]
@@ -37,6 +29,27 @@
 (defn atmosphere-lut [_]
   "Generate atmospheric lookup tables"
   (al/generate-atmosphere-luts))
+
+(defn scale-image
+  "Scale down input PNG and save to output PNG"
+  [& {:keys [input output]}]
+  (si/scale-image (str input) (str output)))
+
+(defn scale-elevation
+  "Scale down raw short-integer elevation input data and save to output raw short integers"
+  [& {:keys [input output]}]
+  (se/scale-elevation (str input) (str output)))
+
+(defn download-bluemarble
+  "Download some NASA Bluemarble data"
+  [_]
+  (doseq [sector ["A1" "A2" "B1" "B2" "C1" "C2" "D1" "D2"]]
+         (let [filename (str "world.200404.3x21600x21600." sector ".png")
+               url      (str "https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74017/" filename)]
+           (.println *err* (str "Downloading " url))
+           (io/copy
+             (:body (http/get url {:as :stream}))
+             (io/file filename)))))
 
 (defn map-tiles
   "Generate map tiles from specified image"
@@ -146,3 +159,12 @@
   (b/delete {:path "world"})
   (b/delete {:path "elevation"})
   (b/delete {:path "globe"}))
+
+(defn all [_]
+  (worley)
+  (bluenoise)
+  (atmosphere-lut)
+  (download-bluemarble)
+  (map-sectors)
+  (elevation-sectors)
+  (cube-maps))
