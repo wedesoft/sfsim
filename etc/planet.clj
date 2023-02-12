@@ -54,6 +54,7 @@
 (def surface-height-size 16)
 (def surface-sun-elevation-size 63)
 (def worley-size 64)
+(def noise-size 64)
 (def octaves [0.7 0.7 -0.4])
 (def num-steps 1)
 
@@ -72,6 +73,9 @@
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
+
+(def data (slurp-floats "data/bluenoise.raw"))
+(def B (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data data}))
 
 (def data (float-array [0.0 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.5 0.3 0]))
 (def P (atom (make-float-texture-1d :linear :clamp data)))
@@ -96,7 +100,8 @@
 (uniform-sampler program-atmosphere :ray_scatter 1)
 (uniform-sampler program-atmosphere :mie_strength 2)
 (uniform-sampler program-atmosphere :worley 3)
-(uniform-sampler program-atmosphere :cloud_profile 4)
+(uniform-sampler program-atmosphere :bluenoise 4)
+(uniform-sampler program-atmosphere :cloud_profile 5)
 
 (def tree-state (chan))
 (def changes (chan))
@@ -129,11 +134,12 @@
 (uniform-sampler program-planet :mie_strength     2)
 (uniform-sampler program-planet :surface_radiance 3)
 (uniform-sampler program-planet :worley           4)
-(uniform-sampler program-planet :cloud_profile    5)
-(uniform-sampler program-planet :heightfield      6)
-(uniform-sampler program-planet :colors           7)
-(uniform-sampler program-planet :normals          8)
-(uniform-sampler program-planet :water            9)
+(uniform-sampler program-planet :bluenoise        5)
+(uniform-sampler program-planet :cloud_profile    6)
+(uniform-sampler program-planet :heightfield      7)
+(uniform-sampler program-planet :colors           8)
+(uniform-sampler program-planet :normals          9)
+(uniform-sampler program-planet :water            10)
 
 (defn load-tile-into-opengl
   [tile]
@@ -170,7 +176,7 @@
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet :neighbours neighbours)
-    (use-textures T S M E W @P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
+    (use-textures T S M E W B @P (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
     (render-patches (:vao tile))))
 
 (defn render-tree
@@ -291,7 +297,7 @@
                           (uniform-matrix4 program-atmosphere :transform transform)
                           (uniform-vector3 program-atmosphere :origin @position)
                           (uniform-vector3 program-atmosphere :light_direction (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
-                          (use-textures T S M W @P)
+                          (use-textures T S M W B @P)
                           (render-quads atmosphere-vao))
          (print "\rthreshold (q/a)" (format "%.3f" @threshold)
                 "anisotropic (w/s)" (format "%.3f" @anisotropic)
