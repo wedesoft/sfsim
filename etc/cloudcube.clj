@@ -341,7 +341,6 @@ void main()
 
 (destroy-texture opacity)
 (destroy-texture opacity-shape)
-(GL30/glDeleteFramebuffers fbo)
 (destroy-vertex-array-object vao2)
 (destroy-texture worley)
 (destroy-vertex-array-object vao)
