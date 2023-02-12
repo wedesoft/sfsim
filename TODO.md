@@ -1,18 +1,15 @@
 # TODO
-* fix etc/planet.clj
-* profiling mode
-* try to install and use LWJGL3 from Maven
+* step in atmosphere when passing cloud-top
 * limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
-* step in atmosphere when passing cloud-top
-* seapare transmittance\_outer call from cloud\_shadow
 * generate cubemap for global cloud cover
-* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * render to texture with alpha channel
-* integrate with planetary prototype
+* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * use shadow map of planet in cloud\_shadow?
-* use Worley octaves
-* global cloud cover
+* integrate with planetary prototype etc/planet.clj
+* profiling mode
+* try to install and use LWJGL3 from Maven
+* seapare transmittance\_outer call from cloud\_shadow
 * does opacity fragment shader need to limit offsets to bounding box?
 * prototype planetary cloud rendering using cascaded deep opacity maps
 * integration test for cascaded deep opacity map
