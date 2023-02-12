@@ -6,6 +6,7 @@
          '[sfsim25.render :refer :all]
          '[sfsim25.shaders :as shaders]
          '[sfsim25.planet :refer :all]
+         '[sfsim25.bluenoise :refer :all]
          '[sfsim25.quadtree :refer :all]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.clouds :refer :all]
@@ -53,6 +54,8 @@
 (def surface-height-size 16)
 (def surface-sun-elevation-size 63)
 (def worley-size 64)
+(def octaves [0.7 0.7 -0.4])
+(def num-steps 1)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data data}))
@@ -80,8 +83,9 @@
                            shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d shaders/interpolate-2d
                            shaders/convert-2d-index shaders/interpolate-4d shaders/is-above-horizon sky-outer shaders/ray-shell
-                           cloud-track attenuation-track cloud-density transmittance-track cloud-shadow ray-scatter-track
-                           cloud-track-base exponential-sampling phase-function]))
+                           cloud-track attenuation-track (cloud-density octaves) transmittance-track cloud-shadow
+                           ray-scatter-track exponential-sampling phase-function sampling-offset
+                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
@@ -114,8 +118,10 @@
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/make-2d-index-from-4d shaders/is-above-horizon sky-track shaders/ray-shell
-                           shaders/clip-shell-intersections cloud-track cloud-density cloud-shadow cloud-track-base
-                           exponential-sampling phase-function shaders/surface-radiance-forward]))
+                           shaders/clip-shell-intersections cloud-track (cloud-density octaves) cloud-shadow
+                           exponential-sampling phase-function shaders/surface-radiance-forward sampling-offset
+                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index
+                           transmittance-outer]))
 
 (use-program program-planet)
 (uniform-sampler program-planet :transmittance    0)

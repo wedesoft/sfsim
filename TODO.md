@@ -1,5 +1,5 @@
 # TODO
-* fix planet
+* fix etc/planet.clj
 * profiling mode
 * try to install and use LWJGL3 from Maven
 * limit sampled interval depending on start of interval
