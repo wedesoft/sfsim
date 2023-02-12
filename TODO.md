@@ -1,5 +1,5 @@
 # TODO
-* fix planet, cloudcube
+* fix planet
 * profiling mode
 * try to install and use LWJGL3 from Maven
 * limit sampled interval depending on start of interval

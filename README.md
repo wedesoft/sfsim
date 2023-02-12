@@ -22,6 +22,7 @@ This is a work in progress. Requires OpenGL 4.5.
 # Run
 
 * Run tests: `clj -M:test`
+* Run the cloud cube: `clj -M etc/cloudcube.clj`
 * Run the cloud prototype: `clj -M etc/cloudy.clj`
 
 # External Links

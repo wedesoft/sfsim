@@ -4,6 +4,7 @@
          '[sfsim25.quaternion :as q]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.clouds :refer :all]
+         '[sfsim25.bluenoise :refer :all]
          '[sfsim25.shaders :as s]
          '[sfsim25.ray :refer :all]
          '[sfsim25.render :refer :all]
@@ -105,22 +106,25 @@ void main()
 (def program
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box s/lookup-3d phase-function
-                           cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index]))
+                           cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index
+                           sampling-offset]))
 
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-(def size 128)
-;(def values (worley-noise 12 size true))
-;(spit-floats "values.raw" (float-array values))
-(def values (slurp-floats "data/worley.raw"))
-(def worley (make-float-texture-3d :linear :repeat {:width size :height size :depth size :data values}))
+(def size 64)
+(def values1 (slurp-floats "data/worley.raw"))
+(def worley (make-float-texture-3d :linear :repeat {:width size :height size :depth size :data values1}))
+(def noise-size 64)
+(def values2 (slurp-floats "data/bluenoise.raw"))
+(def bluenoise (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data values2}))
 
 (use-program program)
 (uniform-sampler program :worley 0)
-(uniform-sampler program :opacity 1)
-(uniform-sampler program :opacity_shape 2)
+(uniform-sampler program :bluenoise 1)
+(uniform-sampler program :opacity 2)
+(uniform-sampler program :opacity_shape 3)
 
 (def svertex-shader
 "#version 410 core
@@ -311,12 +315,12 @@ void main()
                              (uniform-float sprogram :multiplier (* 0.1 @multiplier))
                              (uniform-float sprogram :cloud_scatter_amount 1.0)
                              (uniform-int sprogram :cloud_base_samples 64)
-                             (uniform-float sprogram :cloud_scale 200)
+                             (uniform-float sprogram :cloud_scale 100)
                              (render-quads vao2))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 0 0]))
                           (use-program program)
-                          (use-textures worley opacity opacity-shape)
+                          (use-textures worley bluenoise opacity opacity-shape)
                           (uniform-matrix4 program :projection projection)
                           (uniform-matrix4 program :transform transform)
                           (uniform-matrix4 program :shadow (:shadow-map-matrix shadow-mat))
@@ -325,7 +329,8 @@ void main()
                           (uniform-float program :anisotropic @anisotropic)
                           (uniform-float program :cloud_scatter_amount 1.0)
                           (uniform-int program :cloud_samples 64)
-                          (uniform-float program :cloud_scale 200)
+                          (uniform-int program :noise_size noise-size)
+                          (uniform-float program :cloud_scale 100)
                           (uniform-float program :cloud_max_step 1.05)
                           (uniform-int program :cloud_base_samples 64)
                           (uniform-float program :multiplier (* 0.1 @multiplier))
