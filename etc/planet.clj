@@ -153,7 +153,7 @@
   [node]
   (if node
     (if (is-leaf? node)
-      (render-tile node)
+      (if-not (empty? node) (render-tile node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree (selector node))))))
 
