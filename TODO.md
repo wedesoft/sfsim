@@ -1,5 +1,4 @@
 # TODO
-* separate code for rendering planet with atmosphere but without clouds
 * step in atmosphere when passing cloud-top
 * limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
