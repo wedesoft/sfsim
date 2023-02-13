@@ -11,7 +11,6 @@
  :paths ["src"]
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3"
                                                          :git/sha "e537cd1f3ac65c4cbc5001dce00a636d0006da39"}
-                          org.babashka/http-client {:mvn/version "0.0.3"}
                           sfsim25/sfsim25 {:local/root "."}}
                    :ns-default build
                    :exec-fn all

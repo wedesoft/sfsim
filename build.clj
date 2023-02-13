@@ -1,7 +1,6 @@
 (ns build
     (:require [clojure.tools.build.api :as b]
               [clojure.java.io :as io]
-              [babashka.http-client :as http]
               [sfsim25.worley :as w]
               [sfsim25.scale-image :as si]
               [sfsim25.scale-elevation :as se]
@@ -48,7 +47,7 @@
                url      (str "https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74017/" filename)]
            (.println *err* (str "Downloading " url " ..."))
            (io/copy
-             (:body (http/get url {:as :stream}))
+             (io/input-stream url)
              (io/file filename)))))
 
 (defn download-elevation
@@ -58,7 +57,7 @@
         url      (str "https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/" filename)]
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
-      (:body (http/get url {:as :stream}))
+      (io/input-stream url)
       (io/file filename))))
 
 (defn extract-elevation
