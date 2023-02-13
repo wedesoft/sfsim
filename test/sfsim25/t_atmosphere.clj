@@ -10,8 +10,7 @@
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
-              [sfsim25.atmosphere :refer :all :as atmosphere]
-              [sfsim25.clouds :as clouds])
+              [sfsim25.atmosphere :refer :all :as atmosphere])
     (:import [mikera.vectorz Vector]))
 
 (def radius 6378000)
@@ -657,20 +656,6 @@ void main()
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
 
-(def opacity-lookup-mock
-"#version 410 core
-float opacity_cascade_lookup(vec4 point)
-{
-  return 1.0;
-}")
-
-(def sampling-offset-mock
-"#version 410 core
-float sampling_offset()
-{
-  return 0.5;
-}")
-
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
            (offscreen-render 256 256
@@ -688,16 +673,13 @@ float sampling_offset()
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/interpolate-4d shaders/make-2d-index-from-4d
-                                                                          shaders/is-above-horizon clouds/sky-outer
-                                                                          shaders/ray-shell clouds/cloud-track
-                                                                          (clouds/cloud-density [1.0])
-                                                                          clouds/cloud-shadow clouds/linear-sampling
+                                                                          shaders/is-above-horizon
+                                                                          shaders/ray-shell
                                                                           attenuation-track transmittance-track
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
-                                                                          shaders/sun-angle-to-index opacity-lookup-mock
-                                                                          sampling-offset-mock])
+                                                                          shaders/sun-angle-to-index])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})
@@ -705,19 +687,12 @@ float sampling_offset()
                                                                          {:width (* size size) :height (* size size) :data S})
                                    mie-strength  (make-vector-texture-2d :linear :clamp
                                                                          {:width (* size size) :height (* size size) :data M})
-                                   worley-data   (float-array (repeat (* 2 2 2) 1.0))
-                                   worley        (make-float-texture-3d :linear :repeat
-                                                                        {:width 2 :height 2 :depth 2 :data worley-data})
-                                   profile-data  (float-array [0 1 1 1 1 1 1 0])
-                                   profile       (make-float-texture-1d :linear :clamp profile-data)
                                    vao           (make-vertex-array-object program indices vertices variables)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
                                (uniform-sampler program :transmittance 0)
                                (uniform-sampler program :ray_scatter 1)
                                (uniform-sampler program :mie_strength 2)
-                               (uniform-sampler program :worley 3)
-                               (uniform-sampler program :cloud_profile 4)
                                (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-vector3 program :origin origin)
                                (uniform-matrix4 program :transform transform)
@@ -733,21 +708,8 @@ float sampling_offset()
                                (uniform-int program :transmittance_height_size size)
                                (uniform-int program :transmittance_elevation_size size)
                                (uniform-float program :amplification 5)
-                               (uniform-float program :cloud_bottom 0)
-                               (uniform-float program :cloud_top -1)
-                               (uniform-float program :cloud_scale 16)
-                               (uniform-int program :cloud_size 2)
-                               (uniform-float program :cloud_multiplier 1.0)
-                               (uniform-float program :anisotropic 0.4)
-                               (uniform-int program :cloud_samples 64)
-                               (uniform-float program :cloud_max_step 0.1)
-                               (uniform-int program :cloud_base_samples 8)
-                               (uniform-float program :cloud_scatter_amount 1.0)
-                               (uniform-float program :transparency_cutoff 0.05)
-                               (use-textures transmittance ray-scatter mie-strength worley profile)
+                               (use-textures transmittance ray-scatter mie-strength)
                                (render-quads vao)
-                               (destroy-texture profile)
-                               (destroy-texture worley)
                                (destroy-texture ray-scatter)
                                (destroy-texture mie-strength)
                                (destroy-texture transmittance)

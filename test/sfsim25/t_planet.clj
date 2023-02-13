@@ -6,7 +6,6 @@
               [clojure.core.matrix :refer (matrix mul identity-matrix)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.atmosphere :as atmosphere]
-              [sfsim25.clouds :as clouds]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
@@ -367,10 +366,8 @@ float sampling_offset()
                            shaders/ray-sphere shaders/is-above-horizon
                            fake-ray-scatter atmosphere/attenuation-track
                            atmosphere/transmittance-outer
-                           ground-radiance clouds/sky-track shaders/ray-shell
-                           clouds/cloud-track
-                           (clouds/cloud-density [1.0]) clouds/cloud-shadow
-                           clouds/linear-sampling atmosphere/phase-function
+                           ground-radiance shaders/ray-shell
+                           atmosphere/phase-function
                            shaders/clip-shell-intersections
                            shaders/ray-scatter-forward shaders/height-to-index
                            shaders/horizon-distance shaders/limit-quot
@@ -409,14 +406,7 @@ float sampling_offset()
   (uniform-float program :polar_radius ?polar)
   (uniform-vector3 program :position (matrix [0 0 (+ ?polar ?dist)]))
   (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
-  (uniform-float program :amplification ?a)
-  (uniform-float program :cloud_bottom 0)
-  (uniform-float program :cloud_top -1)
-  (uniform-float program :cloud_scale 16)
-  (uniform-float program :anisotropic 0.4)
-  (uniform-int program :cloud_samples 64)
-  (uniform-float program :cloud_max_step 0.1)
-  (uniform-int program :cloud_base_samples 8))
+  (uniform-float program :amplification ?a))
 
 (def planet-indices [0 1 3 2])
 (def planet-vertices [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5

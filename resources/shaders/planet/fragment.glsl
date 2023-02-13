@@ -24,7 +24,7 @@ out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
-vec3 sky_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 
 vec3 stretch(vec3 v)
 {
@@ -54,5 +54,5 @@ void main()
   vec3 incoming = ground_radiance(scaled_point, scaled_light_direction, wet, cos_incidence, highlight, land_color, water_color);
   float a = atmosphere_intersection.x;
   float b = distance(scaled_position, scaled_point);
-  fragColor = amplification * sky_track(scaled_light_direction, scaled_position, scaled_direction, a, b, incoming);
+  fragColor = amplification * attenuation_track(scaled_light_direction, scaled_position, scaled_direction, a, b, incoming);
 }

@@ -16,6 +16,7 @@ in VS_OUT
 out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
 vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming);
 
 vec3 stretch(vec3 v)
@@ -35,7 +36,7 @@ void main()
   if (atmosphere_intersection.y > 0) {
     vec3 scaled_point = scaled_origin + atmosphere_intersection.x * scaled_direction;
     vec3 scaled_light_direction = normalize(stretch(light_direction));
-    fragColor = amplification * sky_outer(scaled_light_direction, scaled_point, scaled_direction, incoming);
+    fragColor = amplification * attenuation_outer(scaled_light_direction, scaled_point, scaled_direction, 0, incoming);
   } else {
     fragColor = amplification * incoming;
   };
