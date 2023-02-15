@@ -222,8 +222,8 @@
                           (clear (matrix [0 1 0]))
                           ; Render planet
                           (when-let [data (poll! changes)]
-                            (unload-tiles-from-opengl (:drop data))
-                            (>!! tree-state (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))))
+                                    (unload-tiles-from-opengl (:drop data))
+                                    (>!! tree-state (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))))
                           (use-program program-planet)
                           (uniform-matrix4 program-planet :inverse_transform (inverse transform))
                           (uniform-vector3 program-planet :position @position)
