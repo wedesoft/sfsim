@@ -1,6 +1,7 @@
 (require '[clojure.math :refer (to-radians cos sin PI sqrt)]
          '[clojure.core.matrix :refer (matrix add mul inverse mget)]
          '[clojure.core.matrix.linear :refer (norm)]
+         '[clj-async-profiler.core :as prof]
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.clouds :refer :all]
@@ -201,6 +202,7 @@ void main()
           {:offset opacity-offsets :layer opacity-layers}))
     matrix-cascade))
 
+(prof/profile
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
        (while (Keyboard/next)
@@ -291,7 +293,9 @@ void main()
                   "dt" (format "%.3f" (* dt 0.001))
                   "      ")
            (flush)
-           (swap! t0 + dt))))
+           (swap! t0 + dt)))))
+
+(prof/serve-files 8080)
 
 (destroy-texture W)
 (destroy-texture @P)

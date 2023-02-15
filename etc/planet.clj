@@ -1,6 +1,7 @@
 (require '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
          '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
          '[clojure.math :refer (cos sin sqrt pow to-radians PI)]
+         '[clj-async-profiler.core :as prof]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.quaternion :as q]
          '[sfsim25.render :refer :all]
@@ -199,6 +200,7 @@
 (uniform-float program-atmosphere :amplification 6)
 
 
+(prof/profile
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
        (while (Keyboard/next)
@@ -238,7 +240,9 @@
                           (render-quads atmosphere-vao))
          (print "\rdt" (format "%5.3f    " (* 0.001 dt)) "              ")
          (flush)
-         (swap! t0 + dt)))
+         (swap! t0 + dt))))
+
+(prof/serve-files 8080)
 
 (close! tree-state)
 (close! changes)
