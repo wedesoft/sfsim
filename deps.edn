@@ -20,5 +20,5 @@
                                                           :git/sha "6dfdb029bf79cee0afa7d72b2107d818749e534a"}}
                   :extra-paths ["test"]
                   :main-opts ["-m" "midje-runner.runner"]}
-           :bench {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
-                   :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"]}}}
+           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
+                     :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"]}}}
