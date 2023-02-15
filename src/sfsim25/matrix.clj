@@ -87,14 +87,14 @@
   ([projection-matrix ndc1 ndc2]
    (let [minv (inverse projection-matrix)]
      (mapv #(mmul minv %)
-           [(matrix [-1 -1 ndc1 1])
-            (matrix [ 1 -1 ndc1 1])
-            (matrix [-1  1 ndc1 1])
-            (matrix [ 1  1 ndc1 1])
-            (matrix [-1 -1 ndc2 1])
-            (matrix [ 1 -1 ndc2 1])
-            (matrix [-1  1 ndc2 1])
-            (matrix [ 1  1 ndc2 1])]))))
+           [(matrix [-1.0 -1.0 ndc1 1.0])
+            (matrix [ 1.0 -1.0 ndc1 1.0])
+            (matrix [-1.0  1.0 ndc1 1.0])
+            (matrix [ 1.0  1.0 ndc1 1.0])
+            (matrix [-1.0 -1.0 ndc2 1.0])
+            (matrix [ 1.0 -1.0 ndc2 1.0])
+            (matrix [-1.0  1.0 ndc2 1.0])
+            (matrix [ 1.0  1.0 ndc2 1.0])]))))
 
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
