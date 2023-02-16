@@ -110,7 +110,7 @@ void main()
                            sampling-offset]))
 
 (def indices [0 1 3 2])
-(def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
+(def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4 4 -1, 4 4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
 (def size 64)
