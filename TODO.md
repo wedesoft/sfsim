@@ -1,13 +1,14 @@
 # TODO
+* generate cubemap for global cloud cover
+* Perlin noise?
 * step in atmosphere when passing cloud-top
 * limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
-* generate cubemap for global cloud cover
 * render to texture with alpha channel
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * use shadow map of planet in cloud\_shadow?
 * integrate with planetary prototype etc/planet.clj
-* profiling mode
+* try whether EJML has better performance https://ejml.org/
 * try to install and use LWJGL3 from Maven
 * seapare transmittance\_outer call from cloud\_shadow
 * does opacity fragment shader need to limit offsets to bounding box?
