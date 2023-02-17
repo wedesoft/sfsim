@@ -35,18 +35,28 @@ void main()
 uniform sampler3D worley;
 uniform float scale;
 uniform float cloud_scale;
+uniform float amount;
 in VS_OUT
 {
   vec3 point;
 } fs_in;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 out vec3 fragColor;
+
+vec3 rotate(vec3 point)
+{
+  float r = length(point.xy);
+  float sigma = 0.1;
+  float angle = -r * amount * exp(-r*r/(2*sigma*sigma)) / (sigma * exp(1));
+  return vec3(cos(angle) * point.x - sin (angle) * point.y, sin(angle) * point.x + cos(angle) * point.y, point.z);
+}
 void main ()
 {
   vec2 intersection = ray_sphere(vec3(0, 0, 0), 1, vec3(fs_in.point.xy, -1), vec3(0, 0, 1));
   if (intersection.y > 0) {
     vec3 p = vec3(fs_in.point.xy, -1 + intersection.x);
-    float density =0.0;
+    p = rotate(p);
+    float density = 0.0;
     density += texture(worley, p / cloud_scale).r;
     density += 0.5 * texture(worley, 2 * p / cloud_scale).r;
     density += 0.25 * texture(worley, 4 * p / cloud_scale).r;
@@ -70,6 +80,7 @@ void main ()
 
 (def scale (atom 1.0))
 (def magnification (atom 1.0))
+(def amount (atom 1.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -78,13 +89,16 @@ void main ()
                     event-key (Keyboard/getEventKey)]
                 (swap! keystates assoc event-key state)))
        (let [dscale         (if (@keystates Keyboard/KEY_Q) 0.0005 (if (@keystates Keyboard/KEY_A) -0.0005 0))
-             dmagnification (if (@keystates Keyboard/KEY_W) 0.0001 (if (@keystates Keyboard/KEY_S) -0.0001 0))]
+             dmagnification (if (@keystates Keyboard/KEY_W) 0.0001 (if (@keystates Keyboard/KEY_S) -0.0001 0))
+             damount        (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))]
          (swap! scale + dscale)
          (swap! magnification + dmagnification)
+         (swap! amount + damount)
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 0 0]))
                           (uniform-float program :scale @scale)
                           (uniform-float program :cloud_scale @magnification)
+                          (uniform-float program :amount @amount)
                           (use-textures W)
                           (render-quads vao))))
 
