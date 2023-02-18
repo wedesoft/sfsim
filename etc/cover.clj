@@ -82,7 +82,7 @@ out vec3 fragColor;
 vec3 rotate(vec3 point, float y)
 {
   float r = length(point.xy);
-  float angle = -r * y * amount * exp(-r*r/(2*sigma*sigma)) / (sigma * exp(1));
+  float angle = y * amount * exp(-r*r/(2*sigma*sigma));
   return vec3(cos(angle) * point.x - sin (angle) * point.y, sin(angle) * point.x + cos(angle) * point.y, point.z);
 }
 vec3 swirl(mat3 orientation, float fraction, vec3 point)
