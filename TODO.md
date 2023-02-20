@@ -1,6 +1,14 @@
 # TODO
-* generate cubemap for global cloud cover
+* curl noise? (bridson paper)
 * Perlin noise?
+* generate cubemap for global cloud cover
+* [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
+* article:
+  * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
+  * [how big aaa studios render clouds](https://www.youtube.com/watch?v=Qj_tK_mdRcA)
+  * https://www.guerrilla-games.com/read/the-real-time-volumetric-cloudscapes-of-horizon-zero-dawn
+  * cloud probability map: https://neo.gsfc.nasa.gov/view.php?datasetId=MODAL2_M_CLD_FR&date=2022-12-01
+  * example cloud cover: https://earthobservatory.nasa.gov/ContentFeature/BlueMarble/Images/cloud_combined_2048.jpg
 * step in atmosphere when passing cloud-top
 * limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
