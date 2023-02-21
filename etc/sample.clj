@@ -1,8 +1,18 @@
 (require '[clojure.math :refer (to-radians cos sin PI round floor pow)]
          '[clojure.core.matrix :refer (matrix array dimension-count eseq slice-view add sub mul inverse mmul mget)]
          '[clojure.core.matrix.linear :refer (norm)]
-         '[sfsim25.matrix :refer :all]
-         '[sfsim25.util :refer :all])
+         '[com.climate.claypoole :refer (pfor ncpus)])
+
+(import '[ij ImagePlus]
+        '[ij.process FloatProcessor])
+
+(defn show-floats
+  "Open a window displaying the image"
+  [{:keys [width height data]}]
+  (let [processor (FloatProcessor. width height data)
+        img       (ImagePlus.)]
+    (.setProcessor img processor)
+    (.show img)))
 
 (defn random-point-grid
   "Create a 3D grid with a random point in each cell"
@@ -88,17 +98,30 @@
 (defn worley-smooth [point] (interpolate-value worley point))
 (def potential (parcel size (worley-noise divisions size)))
 (defn potential-smooth [point] (interpolate-value potential point))
-(def octaves [0.5 0.25 0.125 0.0625])
+(def octaves1 [0.5 0.25 0.125 0.0625])
 (defn worley-octaves [point]
-  (apply + (map-indexed #(* %2 (worley-smooth (mul (pow 2 %1) point))) octaves)))
+  (apply + (map-indexed #(* %2 (worley-smooth (mul (pow 2 %1) point))) octaves1)))
+(def octaves2 [0.8 0.2])
 (defn potential-octaves [point]
-  (apply + (map-indexed #(* %2 (potential-smooth (mul (pow 2 %1) point))) octaves)))
+  (+ (apply + (map-indexed #(* %2 (potential-smooth (mul (pow 2 %1) point))) octaves2))
+     (* 2 (cos (* (* 1.5 PI) (/ (- (mget point 1) 32) 32))))))
 
 (def epsilon (pow 0.5 3))
 (defn gradient-x [point]
-  (- (potential-octaves (add point (matrix [1 0]))) (potential-octaves (sub point (matrix [1 0])))))
+  (* 0.5 (- (potential-octaves (add point (matrix [1 0]))) (potential-octaves (sub point (matrix [1 0]))))))
 (defn gradient-y [point]
-  (- (potential-octaves (add point (matrix [0 1]))) (potential-octaves (sub point (matrix [0 1])))))
+  (* 0.5 (- (potential-octaves (add point (matrix [0 1]))) (potential-octaves (sub point (matrix [0 1]))))))
+
+(defn warp [point n scale]
+  (if (zero? n)
+    (max 0.0 (- (* 2.25 (worley-octaves (mul 0.5 point))) 1.25))
+    (let [dx (gradient-x (mul 1.0 point))
+          dy (gradient-y (mul 1.0 point))]
+      (recur (add point (mul scale (matrix [dy (- dx)]))) (dec n) scale))))
 
 (def w 640)
-(show-floats {:width w :height w :data (float-array (for [j (range w) i (range w)] (worley-octaves (mul 0.1 (matrix [i j])))))})
+
+;(show-floats {:width w :height w :data (float-array (pfor (ncpus) [j (range w) i (range w)] (potential-octaves (mul 0.1 (matrix [i j])))))})
+;(show-floats {:width w :height w :data (float-array (pfor (ncpus) [j (range w) i (range w)] (worley-octaves (mul 0.1 (matrix [i j])))))})
+
+(show-floats {:width w :height w :data (float-array (pfor (ncpus) [j (range w) i (range w)] (warp (mul 0.1 (matrix [i j])) 15 10)))})
