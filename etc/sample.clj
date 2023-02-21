@@ -104,7 +104,7 @@
 (def octaves2 [0.8 0.2])
 (defn potential-octaves [point]
   (+ (apply + (map-indexed #(* %2 (potential-smooth (mul (pow 2 %1) point))) octaves2))
-     (* 2 (cos (* (* 1.5 PI) (/ (- (mget point 1) 32) 32))))))
+     (* 2 (sin (* (* 1.0 PI) (/ (- (mget point 1) 32) 32))))))
 
 (def epsilon (pow 0.5 3))
 (defn gradient-x [point]
@@ -114,7 +114,7 @@
 
 (defn warp [point n scale]
   (if (zero? n)
-    (max 0.0 (- (* 2.25 (worley-octaves (mul 0.5 point))) 1.25))
+    (max 0.0 (- (* 2.0 (worley-octaves (mul 0.5 point))) 1.0))
     (let [dx (gradient-x (mul 1.0 point))
           dy (gradient-y (mul 1.0 point))]
       (recur (add point (mul scale (matrix [dy (- dx)]))) (dec n) scale))))
