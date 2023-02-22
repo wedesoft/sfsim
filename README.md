@@ -1,6 +1,8 @@
 # Space Flight Simulator 2025
 
-This is a work in progress. Requires OpenGL 4.5.
+This is a work in progress.
+Aim is to simulate take off, space station docking, and moon landing of a space plane.
+Requires OpenGL 4.5.
 
 # Installation
 
