@@ -1,5 +1,6 @@
 # TODO
-* curl noise? (bridson paper)
+* integrate warp vectors using shader
+* maintain two warp vector textures and fade out the old one
 * Perlin noise?
 * generate cubemap for global cloud cover
 * [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
