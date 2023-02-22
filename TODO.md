@@ -1,7 +1,10 @@
 # TODO
 * integrate warp vectors using shader
 * maintain two warp vector textures and fade out the old one
+* use compute shaders for warp vector updates? in parallel with graphics?
 * Perlin noise?
+* separate generating octaves from cloud\_density shader
+* try Java EJML.org
 * generate cubemap for global cloud cover
 * [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
 * article:
