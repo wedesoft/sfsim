@@ -15,7 +15,7 @@ float cloud_density(vec3 point, float lod)
   float noise = 0.0;
 <% (doseq [multiplier octaves] %>
   noise += <%= multiplier %> * textureLod(worley, idx, lod).r;
-  idx /= 2;
+  idx *= 2;
 <% ) %>
   float threshold = 1 - texture(cloud_profile, (dist - radius - cloud_bottom) / (cloud_top - cloud_bottom)).r;
   return max(noise - threshold, 0) * cloud_multiplier;
