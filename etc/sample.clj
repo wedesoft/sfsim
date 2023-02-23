@@ -114,7 +114,7 @@ vec2 gradient(sampler2D tex, vec2 point)
 
 (def epsilon (pow 0.5 1))
 
-(def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F 640 640))
+(def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F size size))
 
 (def gradient-vertex
 "#version 410 core
@@ -143,7 +143,7 @@ void main()
 (def vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
 (def gradient-vao (make-vertex-array-object gradient-program indices vertices [:point 2]))
 
-(framebuffer-render 640 640 :cullback nil [field]
+(framebuffer-render size size :cullback nil [field]
                     (use-program gradient-program)
                     (uniform-sampler gradient-program :potential 0)
                     (uniform-int gradient-program :size size)
