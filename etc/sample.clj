@@ -3,9 +3,11 @@
          '[clojure.core.matrix.linear :refer (norm)]
          '[com.climate.claypoole :refer (pfor ncpus)]
          '[comb.template :as template]
-         '[sfsim25.render :refer :all])
+         '[sfsim25.render :refer :all]
+         '[sfsim25.util :refer :all])
 
-(import '[org.lwjgl.opengl Display DisplayMode])
+(import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL30]
+        '[org.lwjgl BufferUtils])
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 640))
@@ -74,13 +76,14 @@
 (def divisions 8)
 (def worley (worley-noise divisions size))
 (def potential (worley-noise divisions size))
-(def octaves1 [0.5 0.25 0.125 0.0625])
-(def octaves2 [0.8 0.2])
+(def cloud-octaves [0.5 0.25 0.125 0.0625])
+(def potential-octaves [0.8 0.2])
 ;(defn worley-octaves [point]
 ;  (apply + (map-indexed #(* %2 (worley-smooth (mul (pow 2 %1) point))) octaves1)))
 ;(defn potential-octaves [point]
 ;  (+ (apply + (map-indexed #(* %2 (potential-smooth (mul (pow 2 %1) point))) octaves2))
 ;     (* 2 (sin (* (* 1.0 PI) (/ (- (mget point 1) 32) 32))))))
+(def potential-tex (make-float-texture-2d :linear :repeat {:width size :height size :data (float-array potential)}))
 
 (def texture-octaves
   (template/fn [octaves]
@@ -95,10 +98,11 @@ float texture_octaves(sampler2D tex, vec2 point)
   return result;
 }"))
 
-(def gradient
+(def gradient-shader
 "#version 410 core
 uniform float epsilon;
 uniform int size;
+float texture_octaves(sampler2D tex, vec2 point);
 vec2 gradient(sampler2D tex, vec2 point)
 {
   vec2 delta_x = vec2(epsilon / size, 0);
@@ -108,7 +112,45 @@ vec2 gradient(sampler2D tex, vec2 point)
   return vec2(dx, dy);
 }")
 
-(def epsilon (pow 0.5 3))
+(def epsilon (pow 0.5 1))
+
+(def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F 640 640))
+
+
+(def gradient-vertex
+"#version 410 core
+in vec2 point;
+void main()
+{
+  gl_Position = vec4(point, 0.5, 1);
+}")
+
+(def gradient-fragment
+"#version 410 core
+layout (location = 0) out vec2 gradient_out;
+uniform sampler2D potential;
+uniform int size;
+vec2 gradient(sampler2D tex, vec2 point);
+void main()
+{
+  gradient_out = vec2(1, 1); // gradient(potential, vec2(gl_FragCoord.x / size, gl_FragCoord.y / size));
+}")
+
+(def gradient-program
+  (make-program :vertex [gradient-vertex]
+                :fragment [gradient-fragment gradient-shader (texture-octaves potential-octaves)]))
+
+(def indices [0 1 3 2])
+(def vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
+(def gradient-vao (make-vertex-array-object gradient-program indices vertices [:point 2]))
+
+(framebuffer-render 640 640 :cullback nil [field]
+                    (use-program gradient-program)
+                    (uniform-sampler gradient-program :potential 0)
+                    (uniform-int gradient-program :size size)
+                    (uniform-float gradient-program :epsilon epsilon)
+                    (use-textures potential-tex)
+                    (render-quads gradient-vao))
 
 ;(defn warp [point n scale]
 ;  (if (zero? n)
@@ -117,4 +159,11 @@ vec2 gradient(sampler2D tex, vec2 point)
 ;          dy (gradient-y (mul 1.0 point))]
 ;      (recur (add point (mul scale (matrix [dy (- dx)]))) (dec n) scale))))
 
+(def t (rgb-texture->vectors3 field))
+(apply max (:data t))
+
+(destroy-program gradient-program)
+(destroy-vertex-array-object gradient-vao)
+(destroy-texture potential-tex)
+(destroy-texture field)
 (Display/destroy)
