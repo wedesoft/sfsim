@@ -127,20 +127,17 @@ void main()
 (def gradient-fragment
 "#version 410 core
 layout (location = 0) out vec2 gradient_out;
-// uniform sampler2D potential;
-// uniform int size;
-// vec2 gradient(sampler2D tex, vec2 point);
+uniform sampler2D potential;
+uniform int size;
+vec2 gradient(sampler2D tex, vec2 point);
 void main()
 {
-  gradient_out = vec2(-1.0, 1.0); // gradient(potential, vec2(gl_FragCoord.x / size, gl_FragCoord.y / size));
+  gradient_out = gradient(potential, vec2(gl_FragCoord.x / size, gl_FragCoord.y / size));
 }")
 
 (def gradient-program
   (make-program :vertex [gradient-vertex]
-                :fragment [gradient-fragment
-                           ; gradient-shader
-                           ; (texture-octaves potential-octaves)
-                           ]))
+                :fragment [gradient-fragment gradient-shader (texture-octaves potential-octaves)]))
 
 (def indices [0 1 3 2])
 (def vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
@@ -148,10 +145,10 @@ void main()
 
 (framebuffer-render 640 640 :cullback nil [field]
                     (use-program gradient-program)
-                    ; (uniform-sampler gradient-program :potential 0)
-                    ; (uniform-int gradient-program :size size)
-                    ; (uniform-float gradient-program :epsilon epsilon)
-                    ; (use-textures potential-tex)
+                    (uniform-sampler gradient-program :potential 0)
+                    (uniform-int gradient-program :size size)
+                    (uniform-float gradient-program :epsilon epsilon)
+                    (use-textures potential-tex)
                     (render-quads gradient-vao))
 
 ;(defn warp [point n scale]
