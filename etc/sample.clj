@@ -116,7 +116,6 @@ vec2 gradient(sampler2D tex, vec2 point)
 
 (def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F 640 640))
 
-
 (def gradient-vertex
 "#version 410 core
 in vec2 point;
@@ -128,17 +127,20 @@ void main()
 (def gradient-fragment
 "#version 410 core
 layout (location = 0) out vec2 gradient_out;
-uniform sampler2D potential;
-uniform int size;
-vec2 gradient(sampler2D tex, vec2 point);
+// uniform sampler2D potential;
+// uniform int size;
+// vec2 gradient(sampler2D tex, vec2 point);
 void main()
 {
-  gradient_out = vec2(1, 1); // gradient(potential, vec2(gl_FragCoord.x / size, gl_FragCoord.y / size));
+  gradient_out = vec2(-1.0, 1.0); // gradient(potential, vec2(gl_FragCoord.x / size, gl_FragCoord.y / size));
 }")
 
 (def gradient-program
   (make-program :vertex [gradient-vertex]
-                :fragment [gradient-fragment gradient-shader (texture-octaves potential-octaves)]))
+                :fragment [gradient-fragment
+                           ; gradient-shader
+                           ; (texture-octaves potential-octaves)
+                           ]))
 
 (def indices [0 1 3 2])
 (def vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
@@ -146,10 +148,10 @@ void main()
 
 (framebuffer-render 640 640 :cullback nil [field]
                     (use-program gradient-program)
-                    (uniform-sampler gradient-program :potential 0)
-                    (uniform-int gradient-program :size size)
-                    (uniform-float gradient-program :epsilon epsilon)
-                    (use-textures potential-tex)
+                    ; (uniform-sampler gradient-program :potential 0)
+                    ; (uniform-int gradient-program :size size)
+                    ; (uniform-float gradient-program :epsilon epsilon)
+                    ; (use-textures potential-tex)
                     (render-quads gradient-vao))
 
 ;(defn warp [point n scale]
@@ -159,7 +161,18 @@ void main()
 ;          dy (gradient-y (mul 1.0 point))]
 ;      (recur (add point (mul scale (matrix [dy (- dx)]))) (dec n) scale))))
 
-(def t (rgb-texture->vectors3 field))
+(defn rg-texture->vectors3
+  "Extract floating-point BGR vectors from texture"
+  [{:keys [target texture width height]}]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height 2))
+          data (float-array (* width height 2))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL30/GL_RG GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(def t (rg-texture->vectors3 field))
+(apply min (:data t))
 (apply max (:data t))
 
 (destroy-program gradient-program)
