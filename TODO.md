@@ -3,8 +3,8 @@
 * maintain two warp vector textures and fade out the old one
 * use compute shaders for warp vector updates? in parallel with graphics?
 * Perlin noise?
+* try whether EJML has better performance https://ejml.org/
 * separate generating octaves from cloud\_density shader
-* try Java EJML.org
 * generate cubemap for global cloud cover
 * [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
 * article:
@@ -20,7 +20,6 @@
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * use shadow map of planet in cloud\_shadow?
 * integrate with planetary prototype etc/planet.clj
-* try whether EJML has better performance https://ejml.org/
 * try to install and use LWJGL3 from Maven
 * seapare transmittance\_outer call from cloud\_shadow
 * does opacity fragment shader need to limit offsets to bounding box?
