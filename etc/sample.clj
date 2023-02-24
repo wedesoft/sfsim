@@ -113,6 +113,15 @@ vec2 gradient(sampler2D tex, vec2 point)
   return vec2(dx, dy);
 }")
 
+(def curl-shader
+"#version 410 core
+vec2 gradient(sampler2D tex, vec2 point);
+vec2 curl(sampler2D tex, vec2 point)
+{
+  vec2 grad = gradient(tex, point);
+  return vec2(grad.y, -grad.x);
+}")
+
 (def epsilon (pow 0.5 1))
 
 (def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F large-size large-size))
@@ -131,15 +140,15 @@ layout (location = 0) out vec2 gradient_out;
 uniform sampler2D potential;
 uniform int large_size;
 uniform int size;
-vec2 gradient(sampler2D tex, vec2 point);
+vec2 curl(sampler2D tex, vec2 point);
 void main()
 {
-  gradient_out = gradient(potential, vec2(gl_FragCoord.x / large_size, gl_FragCoord.y / large_size));
+  gradient_out = curl(potential, vec2(gl_FragCoord.x / large_size, gl_FragCoord.y / large_size));
 }")
 
 (def gradient-program
   (make-program :vertex [gradient-vertex]
-                :fragment [gradient-fragment gradient-shader (texture-octaves potential-octaves)]))
+                :fragment [gradient-fragment curl-shader gradient-shader (texture-octaves potential-octaves)]))
 
 (def indices [0 1 3 2])
 (def vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
