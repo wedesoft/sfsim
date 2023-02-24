@@ -7,11 +7,15 @@
          '[sfsim25.util :refer :all])
 
 (import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL30]
+        '[org.lwjgl.input Keyboard]
         '[org.lwjgl BufferUtils])
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. 640 640))
 (Display/create)
+
+(Keyboard/create)
+(def keystates (atom {}))
 
 (defn random-point-grid
   "Create a 3D grid with a random point in each cell"
@@ -82,18 +86,12 @@
       (.get buf data)
       {:width width :height height :data data})))
 
-(def size 64)
+(def size 128)
 (def large-size 640)
-(def divisions 8)
-(def clouds (worley-noise divisions size))
-(def potential (worley-noise divisions size))
-(def cloud-octaves [0.5 0.25 0.125 0.0625])
-(def potential-octaves [0.8 0.2])
-;(defn worley-octaves [point]
-;  (apply + (map-indexed #(* %2 (worley-smooth (mul (pow 2 %1) point))) octaves1)))
-;(defn potential-octaves [point]
-;  (+ (apply + (map-indexed #(* %2 (potential-smooth (mul (pow 2 %1) point))) octaves2))
-;     (* 2 (sin (* (* 1.0 PI) (/ (- (mget point 1) 32) 32))))))
+(def clouds (worley-noise 4 size))
+(def potential (worley-noise 2 size))
+(def cloud-octaves [0.5 0.25 0.125 0.125])
+(def potential-octaves [0.5 0.25 0.125])
 (def clouds-tex (make-float-texture-2d :linear :repeat {:width size :height size :data (float-array clouds)}))
 (def potential-tex (make-float-texture-2d :linear :repeat {:width size :height size :data (float-array potential)}))
 
@@ -121,6 +119,7 @@ vec2 gradient(sampler2D tex, vec2 point)
   vec2 delta_y = vec2(0, epsilon / size);
   float dx = (texture_octaves(tex, point + delta_x) - texture_octaves(tex, point - delta_x)) / (2 * epsilon);
   float dy = (texture_octaves(tex, point + delta_y) - texture_octaves(tex, point - delta_y)) / (2 * epsilon);
+  dy += 0.03 * cos((point.y - 0.5) / 0.375 * 3.1415926);
   return vec2(dx, dy);
 }")
 
@@ -159,7 +158,6 @@ void main()
 (def gradient-program
   (make-program :vertex [vertex-simple]
                 :fragment [gradient-fragment curl-shader gradient-shader (texture-octaves potential-octaves)]))
-
 (def indices [0 1 3 2])
 (def vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
 (def gradient-vao (make-vertex-array-object gradient-program indices vertices [:point 2]))
@@ -178,35 +176,90 @@ void main()
 uniform sampler2D clouds;
 uniform sampler2D warp;
 uniform int large_size;
+uniform float threshold;
 out vec3 fragColor;
 float texture_octaves(sampler2D tex, vec2 point);
 void main()
 {
   vec2 pos = vec2(gl_FragCoord.x / large_size, gl_FragCoord.y / large_size);
   vec2 delta = texture(warp, pos).xy / large_size;
-  float result = texture_octaves(clouds, pos + delta);
+  float result = max(texture_octaves(clouds, pos + delta) - threshold, 0) / (1 - threshold);
   fragColor = vec3(result, result, result);
 }")
 
 (def cloud-program
   (make-program :vertex [vertex-simple]
                 :fragment [cloud-fragment (texture-octaves cloud-octaves)]))
+(def clouds-vao (make-vertex-array-object cloud-program indices vertices [:point 2]))
 
-(def clouds-vao (make-vertex-array-object gradient-program indices vertices [:point 2]))
+(def warp-fragment
+"#version 410 core
+layout (location = 0) out vec2 warp_out;
+uniform sampler2D field;
+uniform sampler2D warp;
+uniform int large_size;
+uniform float speed;
+void main()
+{
+  vec2 pos = vec2(gl_FragCoord.x / large_size, gl_FragCoord.y / large_size);
+  vec2 delta = texture(warp, pos).xy;
+  vec2 increment = texture(field, pos + delta / large_size).xy;
+  warp_out = delta + increment * speed;
+}")
 
-(onscreen-render (Display/getWidth) (Display/getHeight)
-                 (clear (matrix [0 1 0]))
-                 (use-program cloud-program)
-                 (uniform-sampler cloud-program :clouds 0)
-                 (uniform-sampler cloud-program :warp 1)
-                 (uniform-int cloud-program :large_size large-size)
-                 (use-textures clouds-tex field)
-                 (render-quads clouds-vao))
+(def warp-program
+  (make-program :vertex [vertex-simple]
+                :fragment [warp-fragment]))
+(def warp-vao (make-vertex-array-object warp-program indices vertices [:point 2]))
 
+(def warp (atom (make-empty-texture-2d :linear :repeat GL30/GL_RG32F large-size large-size)))
+
+(def threshold (atom 0.0))
+
+(def t0 (atom (System/currentTimeMillis)))
+(while (not (Display/isCloseRequested))
+       (while (Keyboard/next)
+              (let [state     (Keyboard/getEventKeyState)
+                    event-key (Keyboard/getEventKey)]
+                (swap! keystates assoc event-key state)))
+       (when (@keystates Keyboard/KEY_ESCAPE)
+         (reset! warp (make-empty-texture-2d :linear :repeat GL30/GL_RG32F large-size large-size)))
+       (let [t1       (System/currentTimeMillis)
+             dt       (- t1 @t0)
+             tr       (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
+             warp-out (make-empty-texture-2d :linear :repeat GL30/GL_RG32F large-size large-size)]
+         (framebuffer-render large-size large-size :cullback nil [warp-out]
+                             (use-program warp-program)
+                             (uniform-sampler warp-program :field 0)
+                             (uniform-sampler warp-program :warp 1)
+                             (uniform-int warp-program :large_size large-size)
+                             (uniform-float warp-program :speed (* 0.1 dt))
+                             (use-textures field @warp)
+                             (render-quads warp-vao))
+         (destroy-texture @warp)
+         (reset! warp warp-out)
+         (swap! threshold + (* dt tr))
+         (onscreen-render (Display/getWidth) (Display/getHeight)
+                          (clear (matrix [0 1 0]))
+                          (use-program cloud-program)
+                          (uniform-sampler cloud-program :clouds 0)
+                          (uniform-sampler cloud-program :warp 1)
+                          (uniform-int cloud-program :large_size large-size)
+                          (uniform-float cloud-program :threshold @threshold)
+                          (use-textures clouds-tex @warp)
+                          (render-quads clouds-vao))
+         (swap! t0 + dt)))
+
+(destroy-texture @warp)
+(destroy-program warp-program)
+(destroy-vertex-array-object warp-vao)
 (destroy-program cloud-program)
 (destroy-vertex-array-object clouds-vao)
 (destroy-program gradient-program)
 (destroy-vertex-array-object gradient-vao)
 (destroy-texture potential-tex)
 (destroy-texture field)
+(Keyboard/destroy)
 (Display/destroy)
+
+(System/exit 0)
