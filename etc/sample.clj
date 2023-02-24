@@ -72,10 +72,20 @@
               (do
                 (closest-distance-to-point-in-grid grid divisions size (matrix [(+ j 0.5) (+ i 0.5)]))))))))
 
+(defn rg-texture->vectors3
+  "Extract floating-point BGR vectors from texture"
+  [{:keys [target texture width height]}]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height 2))
+          data (float-array (* width height 2))]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL30/GL_RG GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
 (def size 64)
 (def large-size 640)
 (def divisions 8)
-(def worley (worley-noise divisions size))
+(def clouds (worley-noise divisions size))
 (def potential (worley-noise divisions size))
 (def cloud-octaves [0.5 0.25 0.125 0.0625])
 (def potential-octaves [0.8 0.2])
@@ -84,6 +94,7 @@
 ;(defn potential-octaves [point]
 ;  (+ (apply + (map-indexed #(* %2 (potential-smooth (mul (pow 2 %1) point))) octaves2))
 ;     (* 2 (sin (* (* 1.0 PI) (/ (- (mget point 1) 32) 32))))))
+(def clouds-tex (make-float-texture-2d :linear :repeat {:width size :height size :data (float-array clouds)}))
 (def potential-tex (make-float-texture-2d :linear :repeat {:width size :height size :data (float-array potential)}))
 
 (def texture-octaves
@@ -126,7 +137,7 @@ vec2 curl(sampler2D tex, vec2 point)
 
 (def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F large-size large-size))
 
-(def gradient-vertex
+(def vertex-simple
 "#version 410 core
 in vec2 point;
 void main()
@@ -139,7 +150,6 @@ void main()
 layout (location = 0) out vec2 gradient_out;
 uniform sampler2D potential;
 uniform int large_size;
-uniform int size;
 vec2 curl(sampler2D tex, vec2 point);
 void main()
 {
@@ -147,7 +157,7 @@ void main()
 }")
 
 (def gradient-program
-  (make-program :vertex [gradient-vertex]
+  (make-program :vertex [vertex-simple]
                 :fragment [gradient-fragment curl-shader gradient-shader (texture-octaves potential-octaves)]))
 
 (def indices [0 1 3 2])
@@ -163,27 +173,38 @@ void main()
                     (use-textures potential-tex)
                     (render-quads gradient-vao))
 
-;(defn warp [point n scale]
-;  (if (zero? n)
-;    (max 0.0 (- (* 2.0 (worley-octaves (mul 0.5 point))) 1.0))
-;    (let [dx (gradient-x (mul 1.0 point))
-;          dy (gradient-y (mul 1.0 point))]
-;      (recur (add point (mul scale (matrix [dy (- dx)]))) (dec n) scale))))
+(def cloud-fragment
+"#version 410 core
+uniform sampler2D clouds;
+uniform sampler2D warp;
+uniform int large_size;
+out vec3 fragColor;
+float texture_octaves(sampler2D tex, vec2 point);
+void main()
+{
+  vec2 pos = vec2(gl_FragCoord.x / large_size, gl_FragCoord.y / large_size);
+  vec2 delta = texture(warp, pos).xy / large_size;
+  float result = texture_octaves(clouds, pos + delta);
+  fragColor = vec3(result, result, result);
+}")
 
-(defn rg-texture->vectors3
-  "Extract floating-point BGR vectors from texture"
-  [{:keys [target texture width height]}]
-  (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height 2))
-          data (float-array (* width height 2))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL30/GL_RG GL11/GL_FLOAT buf)
-      (.get buf data)
-      {:width width :height height :data data})))
+(def cloud-program
+  (make-program :vertex [vertex-simple]
+                :fragment [cloud-fragment (texture-octaves cloud-octaves)]))
 
-(def t (rg-texture->vectors3 field))
-(apply min (:data t))
-(apply max (:data t))
+(def clouds-vao (make-vertex-array-object gradient-program indices vertices [:point 2]))
 
+(onscreen-render (Display/getWidth) (Display/getHeight)
+                 (clear (matrix [0 1 0]))
+                 (use-program cloud-program)
+                 (uniform-sampler cloud-program :clouds 0)
+                 (uniform-sampler cloud-program :warp 1)
+                 (uniform-int cloud-program :large_size large-size)
+                 (use-textures clouds-tex field)
+                 (render-quads clouds-vao))
+
+(destroy-program cloud-program)
+(destroy-vertex-array-object clouds-vao)
 (destroy-program gradient-program)
 (destroy-vertex-array-object gradient-vao)
 (destroy-texture potential-tex)
