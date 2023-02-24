@@ -73,6 +73,7 @@
                 (closest-distance-to-point-in-grid grid divisions size (matrix [(+ j 0.5) (+ i 0.5)]))))))))
 
 (def size 64)
+(def large-size 640)
 (def divisions 8)
 (def worley (worley-noise divisions size))
 (def potential (worley-noise divisions size))
@@ -114,7 +115,7 @@ vec2 gradient(sampler2D tex, vec2 point)
 
 (def epsilon (pow 0.5 1))
 
-(def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F size size))
+(def field (make-empty-texture-2d :linear :repeat GL30/GL_RG32F large-size large-size))
 
 (def gradient-vertex
 "#version 410 core
@@ -128,11 +129,12 @@ void main()
 "#version 410 core
 layout (location = 0) out vec2 gradient_out;
 uniform sampler2D potential;
+uniform int large_size;
 uniform int size;
 vec2 gradient(sampler2D tex, vec2 point);
 void main()
 {
-  gradient_out = gradient(potential, vec2(gl_FragCoord.x / size, gl_FragCoord.y / size));
+  gradient_out = gradient(potential, vec2(gl_FragCoord.x / large_size, gl_FragCoord.y / large_size));
 }")
 
 (def gradient-program
@@ -143,10 +145,11 @@ void main()
 (def vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
 (def gradient-vao (make-vertex-array-object gradient-program indices vertices [:point 2]))
 
-(framebuffer-render size size :cullback nil [field]
+(framebuffer-render large-size large-size :cullback nil [field]
                     (use-program gradient-program)
                     (uniform-sampler gradient-program :potential 0)
                     (uniform-int gradient-program :size size)
+                    (uniform-int gradient-program :large_size large-size)
                     (uniform-float gradient-program :epsilon epsilon)
                     (use-textures potential-tex)
                     (render-quads gradient-vao))
