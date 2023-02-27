@@ -1,11 +1,8 @@
 # TODO
-* integrate warp vectors using shader
-* maintain two warp vector textures and fade out the old one
-* use compute shaders for warp vector updates? in parallel with graphics?
+* generate cubemap for global cloud cover
 * Perlin noise?
 * try whether EJML has better performance https://ejml.org/
 * separate generating octaves from cloud\_density shader
-* generate cubemap for global cloud cover
 * [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
 * article:
   * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
@@ -33,8 +30,9 @@
 * use maximum possible cloud self-shadow length?
 * clouds: blue noise offsets for opacity map? use extra shadow map?
 * use rgb for scattering and a for transmittance when creating low-resolution cloud image?
-* delete cloud-track-base
-* write article about it
+* write article about cloud rendering
+* use compute shaders? in parallel with graphics?
+  GL\_COMPUTE\_SHADER type, glDispatchCompute 1024x1024x64 items (product at least 1024)
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * clouds
