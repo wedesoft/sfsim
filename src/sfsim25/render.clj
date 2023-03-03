@@ -176,6 +176,11 @@
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Vector value]
   (GL20/glUniform3f (GL20/glGetUniformLocation ^int program (name k)) (mget value 0) (mget value 1) (mget value 2)))
 
+(defn uniform-matrix3
+  "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]
+  (GL20/glUniformMatrix3 (GL20/glGetUniformLocation ^int program (name k)) true (make-float-buffer (float-array (eseq value)))))
+
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]

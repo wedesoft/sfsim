@@ -200,7 +200,29 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png"))
 
-(def vertex-transform
+(def vertex-transform3
+"#version 410 core
+in vec3 point;
+uniform mat3 transform;
+void main()
+{
+  gl_Position = vec4(transform * point, 1);
+}")
+
+(fact "Set uniform 3x3 matrix"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-transform3] :fragment [fragment-blue])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (matrix [0.0 0.0 0.0]))
+      (use-program program)
+      (uniform-matrix3 program :transform (identity-matrix 3))
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
+
+(def vertex-transform4
 "#version 410 core
 in vec3 point;
 uniform mat4 transform;
@@ -213,7 +235,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-transform] :fragment [fragment-blue])
+          program  (make-program :vertex [vertex-transform4] :fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
       (clear (matrix [0.0 0.0 0.0]))
       (use-program program)
