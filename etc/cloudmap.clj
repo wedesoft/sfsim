@@ -1,7 +1,8 @@
 (require '[clojure.core.matrix :refer (matrix eseq mmul)]
          '[clojure.math :refer (to-radians)]
          '[sfsim25.matrix :refer :all]
-         '[sfsim25.render :refer :all])
+         '[sfsim25.render :refer :all]
+         '[sfsim25.shaders :refer :all])
 (import '[org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL20 GL30]
         '[mikera.matrixx Matrix])
 
@@ -51,18 +52,19 @@ in VS_OUT
   vec2 point;
 } fs_in;
 out vec3 fragColor;
+vec3 convert_cubemap_index(vec3 idx, int size);
 void main()
 {
   if (length(fs_in.point) <= 1) {
     float z = -sqrt(1 - fs_in.point.x * fs_in.point.x - fs_in.point.y * fs_in.point.y);
     vec3 pos = vec3(fs_in.point, z);
-    float v = texture(cubemap, rotation * pos).r;
+    float v = texture(cubemap, convert_cubemap_index(rotation * pos, 3)).r;
     fragColor = vec3(v, v, v);
   } else
     fragColor = vec3(0, 0, 0);
 }")
 
-(def program (make-program :vertex [vertex] :fragment [fragment]))
+(def program (make-program :vertex [vertex] :fragment [fragment convert-cubemap-index]))
 (use-program program)
 (uniform-sampler program :cubemap 0)
 (uniform-float program :aspect (/ (Display/getWidth) (Display/getHeight)))
