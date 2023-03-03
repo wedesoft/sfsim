@@ -74,6 +74,33 @@ void main()
           0   1   0  0.5 16.5  0.5
           0   0   1  0.5  0.5 18.5)
 
+(def convert-cubemap-index-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+vec3 convert_cubemap_index(vec3 idx, int size);
+void main()
+{
+  fragColor = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 3);
+}"))
+
+(def convert-cubemap-index-test (shader-test (fn [program]) convert-cubemap-index-probe convert-cubemap-index))
+
+(tabular "Convert cubemap index to avoid clamping regions"
+         (fact (convert-cubemap-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-3))
+         ?x     ?y     ?z     ?r   ?g   ?b
+         1.5    0.0    0.0    1.5  0.0  0.0
+         1.5    1.499  0.0    1.5  1.0  0.0
+        -1.5    1.499  0.0   -1.5  1.0  0.0
+         1.5    0.0    1.499  1.5  0.0  1.0
+         1.499  1.5    0.0    1.0  1.5  0.0
+         1.499 -1.5    0.0    1.0 -1.5  0.0
+         0.0    1.5    1.499  0.0  1.5  1.0
+         1.499  1.499  1.5    1.0  1.0  1.5
+         1.499  1.499 -1.5    1.0  1.0 -1.5
+         0.000  1.499  1.5    0.0  1.0  1.5
+         0.000  1.499 -1.5    0.0  1.0 -1.5)
+
 (def convert-shadow-index-probe
   (template/fn [x y z] "#version 410 core
 out vec3 fragColor;

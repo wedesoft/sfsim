@@ -13,6 +13,10 @@
   "Convert 3D index to 3D texture lookup index avoiding clamping region"
   (slurp "resources/shaders/core/convert-3d-index.glsl"))
 
+(def convert-cubemap-index
+  "Convert cubemap index to avoid clamping regions"
+  (slurp "resources/shaders/core/convert-cubemap-index.glsl"))
+
 (def convert-shadow-index
   "Move shadow index out of clamping region"
   (slurp "resources/shaders/core/convert-shadow-index.glsl"))
