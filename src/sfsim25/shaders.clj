@@ -1,5 +1,6 @@
 (ns sfsim25.shaders
-  "Module with functions to use in shaders")
+  "Module with functions to use in shaders"
+  (:require [comb.template :as template]))
 
 (def ray-sphere
   "Shader function for computing intersection of ray with sphere"
@@ -100,3 +101,7 @@
 (def ray-scatter-forward
   "Get 4D lookup index for ray scattering"
   (slurp "resources/shaders/core/ray-scatter-forward.glsl"))
+
+(def noise-octaves
+  "Shader function to sum octaves of noise"
+  (template/fn [method-name octaves] (slurp "resources/shaders/core/noise-octaves.glsl")))
