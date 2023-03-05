@@ -299,26 +299,26 @@
                       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL)
                       ~@body))
 
-(defmulti setup-boundary-3d identity)
+(defmulti setup-boundary-3d (comp second vector))
 
 (defmethod setup-boundary-3d :clamp
-  [boundary]
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
+  [target boundary]
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-3d :repeat
-  [boundary]
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))
+  [target boundary]
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
+  (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))
 
 (defmacro create-texture-3d
   "Macro to initialise 3D texture"
   [interpolation boundary width height depth & body]
   `(create-texture GL12/GL_TEXTURE_3D texture#
                    (setup-interpolation GL12/GL_TEXTURE_3D ~interpolation)
-                   (setup-boundary-3d ~boundary)
+                   (setup-boundary-3d GL12/GL_TEXTURE_3D ~boundary)
                    ~@body
                    {:texture texture# :target GL12/GL_TEXTURE_3D :width ~width :height ~height :depth ~depth}))
 
@@ -517,5 +517,27 @@
     (let [buf  (BufferUtils/createIntBuffer (* width height))
           data (int-array (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(defn make-float-cubemap
+  "Load floating-point 2D textures into red channel of an OpenGL cubemap"
+  [interpolation boundary images]
+  (create-texture GL13/GL_TEXTURE_CUBE_MAP texture#
+    (let [size (:width (first images))]
+      (doseq [[face image] (map-indexed vector images)]
+             (GL11/glTexImage2D (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL30/GL_R32F size size 0 GL11/GL_RED
+                                GL11/GL_FLOAT (make-float-buffer (:data image))))
+      (setup-interpolation GL13/GL_TEXTURE_CUBE_MAP interpolation)
+      (setup-boundary-3d GL13/GL_TEXTURE_CUBE_MAP boundary)
+      {:width size :height size :depth 6 :target GL13/GL_TEXTURE_CUBE_MAP :texture texture#})))
+
+(defn float-cubemap->floats
+  "Extract floating-point floating-point data from texture"
+  [{:keys [target texture width height]} face]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height))
+          data (float-array (* width height))]
+      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))

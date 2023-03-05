@@ -832,3 +832,11 @@ void main(void)
           (destroy-program program-main)
           (destroy-program program-shadow)))
       => (is-image "test/sfsim25/fixtures/render/shadow.png"))
+
+(fact "Create floating-point cube map and read them out"
+      (offscreen-render 16 16
+        (let [cubemap (make-float-cubemap :linear :clamp
+                                          (mapv (fn [i] {:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
+          (doseq [i (range 6)]
+                 (get-float (float-cubemap->floats cubemap i) 0 0) => (float (inc i)))
+          (destroy-texture cubemap))))
