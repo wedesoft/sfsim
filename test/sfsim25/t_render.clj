@@ -840,3 +840,37 @@ void main(void)
           (doseq [i (range 6)]
                  (get-float (float-cubemap->floats cubemap i) 0 0) => (float (inc i)))
           (destroy-texture cubemap))))
+
+(def fragment-cubemap-attachment
+"#version 410 core
+layout (location = 0) out float output1;
+layout (location = 1) out float output2;
+layout (location = 2) out float output3;
+layout (location = 3) out float output4;
+layout (location = 4) out float output5;
+layout (location = 5) out float output6;
+void main()
+{
+  output1 = 1;
+  output2 = 2;
+  output3 = 3;
+  output4 = 4;
+  output5 = 5;
+  output6 = 6;
+}")
+
+(facts "Using framebuffer to render to faces of cubemap"
+       (offscreen-render 32 32
+         (let [tex      (make-empty-float-cubemap :linear :clamp 1)
+               indices  [0 1 3 2]
+               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-attachment])
+               vao      (make-vertex-array-object program indices vertices [:point 3])]
+           (framebuffer-render 1 1 :cullback nil [tex]
+                               (use-program program)
+                               (render-quads vao))
+           (doseq [i (range 6)]
+                 (get-float (float-cubemap->floats tex i) 0 0) => (float (inc i)))
+           (destroy-vertex-array-object vao)
+           (destroy-program program)
+           (destroy-texture tex))))

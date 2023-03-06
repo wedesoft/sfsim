@@ -538,6 +538,12 @@
              (GL11/glTexImage2D (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL30/GL_R32F size size 0 GL11/GL_RED
                                 GL11/GL_FLOAT (make-float-buffer (:data image)))))))
 
+(defn make-empty-float-cubemap
+  "Create empty cubemap with faces of specified size"
+  [interpolation boundary size]
+  (create-cubemap interpolation boundary size
+                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_R32F size size)))
+
 (defn float-cubemap->floats
   "Extract floating-point floating-point data from texture"
   [{:keys [target texture width height]} face]
