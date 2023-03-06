@@ -1,6 +1,5 @@
 # TODO
 * generate cubemap for global cloud cover
-  * create empty floating-point cubemap
   * create empty rgb cubemap
   * framebuffer render onto cubemap
   * create identity cubemap for vectors
