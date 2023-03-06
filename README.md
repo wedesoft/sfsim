@@ -5,9 +5,9 @@ Aim is to simulate take off, space station docking, and moon landing of a space 
 Requires OpenGL 4.5.
 
 # Installation
-
+* Only tested on Debian 11
 * Install Java, LWJGL2, and ImageJ: `sudo apt-get install openjdk-17-jre liblwjgl-java libij-java`
-* [Install Clojure](https://clojure.org/guides/install_clojure)
+* [Install Clojure 1.11](https://clojure.org/guides/install_clojure)
 
 # Build
 * Build Worley noise: `clj -T:build worley`
