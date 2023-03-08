@@ -1,6 +1,5 @@
 # TODO
 * generate cubemap for global cloud cover
-  * create vector cubemap from floating point vector image
   * create identity cubemap for vectors
   * create octaves of 3D Worley noise for clouds and curl
   * determine 3D curl vectors on sphere surface by rendering 6 textures of cube map
