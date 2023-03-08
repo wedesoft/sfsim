@@ -38,10 +38,10 @@
        (closest-distance-to-point-in-grid (array [[[[1 1 0.25]]]]) 1 2 (matrix [1 1 1.75])) => 0.5
        (closest-distance-to-point-in-grid (array [[[[1 1 1.75]]]]) 1 2 (matrix [1 1 0.25])) => 0.5)
 
-(facts "Normalise values of a vector"
-       (normalise-vector [1.0])         => [1.0]
-       (normalise-vector [0.0 1.0 2.0]) => [0.0 0.5 1.0]
-       (normalise-vector [1.0])         => vector?)
+(facts "Normalize values of a vector"
+       (normalize-vector [1.0])         => [1.0]
+       (normalize-vector [0.0 1.0 2.0]) => [0.0 0.5 1.0]
+       (normalize-vector [1.0])         => vector?)
 
 (facts "Invert values of a vector"
        (invert-vector []) => []

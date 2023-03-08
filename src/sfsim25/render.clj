@@ -564,6 +564,12 @@
   [interpolation boundary images]
   (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
 
+(defn make-empty-vector-cubemap
+  "Create empty cubemap with faces of specified size"
+  [interpolation boundary size]
+  (create-cubemap interpolation boundary size
+                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_RGB32F size size)))
+
 (defn vector-cubemap->vectors3
   "Extract floating-point vector data from cubemap face"
   [{:keys [target texture width height]} face]

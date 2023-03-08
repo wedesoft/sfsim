@@ -661,3 +661,83 @@ void main()
          6378000 0  0  1   0   0  -1   0   0   true   "y"       0.0
          6378000 0  0  0   1   0   0   1   0   true   "x"       1.0
          6378000 0  0  0   1   0   0  -1   0   true   "x"       0.0)
+
+(def fragment-cubemap-vectors
+"#version 410 core
+layout (location = 0) out vec3 output1;
+layout (location = 1) out vec3 output2;
+layout (location = 2) out vec3 output3;
+layout (location = 3) out vec3 output4;
+layout (location = 4) out vec3 output5;
+layout (location = 5) out vec3 output6;
+vec3 face1_vector(vec2 texcoord);
+vec3 face2_vector(vec2 texcoord);
+vec3 face3_vector(vec2 texcoord);
+vec3 face4_vector(vec2 texcoord);
+vec3 face5_vector(vec2 texcoord);
+vec3 face6_vector(vec2 texcoord);
+void main()
+{
+  vec2 x = (gl_FragCoord.xy - 0.5) / 31;
+  output1 = face1_vector(x);
+  output2 = face2_vector(x);
+  output3 = face3_vector(x);
+  output4 = face4_vector(x);
+  output5 = face5_vector(x);
+  output6 = face6_vector(x);
+}")
+
+(def face-vector-probe
+  (template/fn [x y z]
+"#version 410 core
+uniform samplerCube cubemap;
+out vec3 fragColor;
+vec3 convert_cubemap_index(vec3 idx, int size);
+void main()
+{
+  vec3 idx = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 32);
+  fragColor = texture(cubemap, idx).rgb;
+}"))
+
+(tabular "Convert cubemap face coordinate to 3D vector"
+         (fact
+           (let [result (promise)]
+             (offscreen-render 1 1
+               (let [cubemap  (make-empty-vector-cubemap :linear :clamp 32)
+                     indices  [0 1 3 2]
+                     vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                     program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-vectors cubemap-vectors])
+                     vao      (make-vertex-array-object program indices vertices [:point 3])]
+                 (framebuffer-render 32 32 :cullback nil [cubemap]
+                                     (use-program program)
+                                     (render-quads vao))
+                 (destroy-vertex-array-object vao)
+                 (destroy-program program)
+                 (let [program (make-program :vertex [vertex-passthrough]
+                                             :fragment [(face-vector-probe ?x ?y ?z) convert-cubemap-index])
+                       vao     (make-vertex-array-object program indices vertices [:point 3])
+                       tex     (texture-render-color 1 1 true
+                                                     (use-program program)
+                                                     (uniform-sampler program :cubemap 0)
+                                                     (use-textures cubemap)
+                                                     (render-quads vao))
+                       img     (rgb-texture->vectors3 tex)]
+                   (deliver result (get-vector3 img 0 0))
+                   (destroy-texture tex)
+                   (destroy-vertex-array-object vao)
+                   (destroy-program program))
+                 (destroy-texture cubemap)))
+                 @result) => (roughly-matrix (matrix [?x ?y ?z]) 1e-3))
+         ?x    ?y    ?z
+         1.0   0.0   0.0
+         1.0   0.25  0.5
+        -1.0   0.0   0.0
+        -1.0   0.25  0.5
+         0.0   1.0   0.0
+         0.25  1.0   0.5
+         0.0  -1.0   0.0
+         0.25 -1.0   0.5
+         0.0   0.0   1.0
+         0.25  0.5   1.0
+         0.0   0.0  -1.0
+         0.25  0.5  -1.0)

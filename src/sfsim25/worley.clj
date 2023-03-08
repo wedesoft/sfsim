@@ -48,8 +48,8 @@
         points   (for [dk [-1 0 1] dj [-1 0 1] di [-1 0 1]] (extract-point-from-grid grid size (+ k dk) (+ j dj) (+ i di)))]
     (apply min (map #(norm (sub point %)) points))))
 
-(defn normalise-vector
-  "Normalise the values of a vector"
+(defn normalize-vector
+  "Normalize the values of a vector"
   [values]
   (let [maximum (apply max values)]
     (vec (pmap #(/ % maximum) values))))
@@ -67,7 +67,7 @@
    (let [grid (random-point-grid divisions size)
          bar  (if progress (agent (make-progress-bar (* size size size) size)))]
      (invert-vector
-       (normalise-vector
+       (normalize-vector
          (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
                (do
                  (if progress (send bar tick-and-print))
