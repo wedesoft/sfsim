@@ -727,7 +727,7 @@ void main()
                    (destroy-vertex-array-object vao)
                    (destroy-program program))
                  (destroy-texture cubemap)))
-                 @result) => (roughly-matrix (matrix [?x ?y ?z]) 1e-3))
+                 @result) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
          ?x    ?y    ?z
          1.0   0.0   0.0
          1.0   0.25  0.5
