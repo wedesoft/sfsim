@@ -109,3 +109,7 @@
 (def cubemap-vectors
   "Shader functions to convert cubemap face texture coordinates to 3D cubemap vectors"
   (slurp "resources/shaders/core/cubemap-vectors.glsl"))
+
+(def gradient-3d
+  "Shader template for 3D gradients"
+  (template/fn [method-name function-name] (slurp "resources/shaders/core/gradient-3d.glsl")))

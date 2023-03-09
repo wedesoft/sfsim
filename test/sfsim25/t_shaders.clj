@@ -741,3 +741,26 @@ void main()
          0.25  0.5   1.0
          0.0   0.0  -1.0
          0.25  0.5  -1.0)
+
+(def gradient-3d-probe
+  (template/fn [x y z c dx dy dz]
+"#version 410 core
+out vec3 fragColor;
+float f(vec3 point)
+{
+  return min(<%= c %> + point.x * <%= dx %> + point.y * <%= dy %> + point.z * <%= dz %>, 10);
+}
+vec3 gradient(vec3 point, float epsilon);
+void main()
+{
+  fragColor = gradient(vec3(<%= x %>, <%= y %>, <%= z %>), 1e-1);
+}"))
+
+(def gradient-3d-test (shader-test (fn [program]) gradient-3d-probe (gradient-3d "gradient" "f")))
+
+(tabular "Shader template for 3D gradients"
+         (fact (gradient-3d-test [] [?x ?y ?z ?c ?dx ?dy ?dz]) => (roughly-matrix (matrix [?gx ?gy ?gz]) 1e-6))
+         ?x ?y ?z ?c ?dx ?dy ?dz ?gx ?gy ?gz
+         0  0  0  0  0   0   0   0   0   0
+         0  0  0  0  1   2   3   1   2   3
+         3  3  3  2  1   2   3   0   0   0)
