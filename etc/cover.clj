@@ -17,11 +17,6 @@
 
 (Keyboard/create)
 
-(defn uniform-matrix3
-  "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]
-  (GL20/glUniformMatrix3 (GL20/glGetUniformLocation ^int program (name k)) true (make-float-buffer (float-array (eseq value)))))
-
 (def worley-size 64)
 
 (def data (slurp-floats "data/worley.raw"))
