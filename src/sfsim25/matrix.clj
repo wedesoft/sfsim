@@ -74,7 +74,7 @@
   (float-array (flatten (map (comp reverse eseq) (flatten array)))))
 
 (defn z-to-ndc
-  "Convert (flipped to positive) z-coordinate to normalised device coordinate"
+  "Convert (flipped to positive) z-coordinate to normalized device coordinate"
   [near far z]
   (let [a (/ (* far near) (- far near))
         b (/ near (- far near))]
@@ -111,7 +111,7 @@
   (update bbox :bottomleftnear add (matrix [0 0 z-expand])))
 
 (defn shadow-box-to-ndc
-  "Scale and translate light box coordinates to normalised device coordinates"
+  "Scale and translate light box coordinates to normalized device coordinates"
   [{:keys [bottomleftnear toprightfar]}]
   (let [left   (mget bottomleftnear 0)
         right  (mget toprightfar 0)

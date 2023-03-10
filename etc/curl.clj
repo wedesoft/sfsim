@@ -55,8 +55,8 @@
         points   (for [dj [-1 0 1] di [-1 0 1]] (extract-point-from-grid grid size (+ j dj) (+ i di)))]
     (apply min (map #(norm (sub point %)) points))))
 
-(defn normalise-vector
-  "Normalise the values of a vector"
+(defn normalize-vector
+  "Normalize the values of a vector"
   [values]
   (let [maximum (apply max values)]
     (vec (pmap #(/ % maximum) values))))
@@ -71,7 +71,7 @@
   [divisions size]
   (let [grid (random-point-grid divisions size)]
     (invert-vector
-      (normalise-vector
+      (normalize-vector
         (for [j (range size) i (range size)]
               (do
                 (closest-distance-to-point-in-grid grid divisions size (matrix [(+ j 0.5) (+ i 0.5)]))))))))

@@ -764,3 +764,26 @@ void main()
          0  0  0  0  0   0   0   0   0   0
          0  0  0  0  1   2   3   1   2   3
          3  3  3  2  1   2   3   0   0   0)
+
+(def orthogonal-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+vec3 orthogonal_vector(vec3 n);
+void main()
+{
+  fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(def orthogonal-test (shader-test (fn [program]) orthogonal-probe orthogonal-vector))
+
+(facts "Shader for generating an orthogonal vector"
+       (dot (orthogonal-test [] [1 0 0]) (matrix [1 0 0])) => 0.0
+       (norm (orthogonal-test [] [1 0 0])) => 1.0
+       (norm (orthogonal-test [] [2 0 0])) => 1.0
+       (dot (orthogonal-test [] [0 1 0]) (matrix [0 1 0])) => 0.0
+       (norm (orthogonal-test [] [0 1 0])) => 1.0
+       (norm (orthogonal-test [] [0 2 0])) => 1.0
+       (dot (orthogonal-test [] [0 0 1]) (matrix [0 0 1])) => 0.0
+       (norm (orthogonal-test [] [0 0 1])) => 1.0
+       (norm (orthogonal-test [] [0 0 2])) => 1.0)

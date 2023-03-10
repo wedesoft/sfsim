@@ -42,7 +42,7 @@
 (fact "Pack nested vector of matrices into float array"
       (seq (pack-matrices [[(matrix [1 2 3])] [(matrix [4 5 6])]])) => [3.0 2.0 1.0 6.0 5.0 4.0])
 
-(facts "Convert z-coordinate to normalised device coordinate"
+(facts "Convert z-coordinate to normalized device coordinate"
        (z-to-ndc 10 40 40) => (roughly 0.0 1e-6)
        (z-to-ndc 10 40 10) => (roughly 1.0 1e-6)
        (z-to-ndc 10 40 20) => (roughly (/ 1 3) 1e-6))
@@ -83,7 +83,7 @@
          (expand-bounding-box-near bbox 0) => bbox
          (expand-bounding-box-near bbox 1) => {:bottomleftnear (matrix [2 3 -4]) :toprightfar (matrix [7 11 -13])}))
 
-(facts "Scale and translate light box coordinates to normalised device coordinates"
+(facts "Scale and translate light box coordinates to normalized device coordinates"
        (let [m (shadow-box-to-ndc {:bottomleftnear (matrix [2 3 -5]) :toprightfar (matrix [7 11 -13])})]
          (project (mmul m (matrix [2  3  -5 1]))) => (roughly-matrix (matrix [-1 -1 1]) 1e-6)
          (project (mmul m (matrix [7  3  -5 1]))) => (roughly-matrix (matrix [ 1 -1 1]) 1e-6)
@@ -100,9 +100,13 @@
 (facts "Generate orthogonal vector"
   (dot (orthogonal (matrix [1 0 0])) (matrix [1 0 0])) => 0.0
   (norm (orthogonal (matrix [1 0 0]))) => 1.0
+  (norm (orthogonal (matrix [2 0 0]))) => 1.0
   (dot (orthogonal (matrix [0 1 0])) (matrix [0 1 0])) => 0.0
   (norm (orthogonal (matrix [0 1 0]))) => 1.0
-  (dot (orthogonal (matrix [0 0 1])) (matrix [0 0 1])) => 0.0)
+  (norm (orthogonal (matrix [0 2 0]))) => 1.0
+  (dot (orthogonal (matrix [0 0 1])) (matrix [0 0 1])) => 0.0
+  (norm (orthogonal (matrix [0 0 1]))) => 1.0
+  (norm (orthogonal (matrix [0 0 2]))) => 1.0)
 
 (facts "Generate isometry with given normal vector as first row"
   (let [n (matrix [0.36 0.48 0.8])
