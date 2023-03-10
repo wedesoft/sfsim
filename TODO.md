@@ -2,6 +2,7 @@
 * generate cubemap for global cloud cover
   * project gradient vector
   * rotate gradient vector around radius vector
+  * Github actions
   * create identity cubemap for vectors
   * create octaves of 3D Worley noise for clouds and curl
   * determine 3D curl vectors on sphere surface by rendering 6 textures of cube map

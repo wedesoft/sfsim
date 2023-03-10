@@ -117,3 +117,7 @@
 (def orthogonal-vector
   "Shader for generating an orthogonal vector"
   (slurp "resources/shaders/core/orthogonal-vector.glsl"))
+
+(def oriented-matrix
+  "Shader for creating isometry with given normal vector as first row"
+  (slurp "resources/shaders/core/oriented-matrix.glsl"))

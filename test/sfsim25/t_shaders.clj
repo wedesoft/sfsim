@@ -2,11 +2,12 @@
   (:require [midje.sweet :refer :all]
             [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
             [comb.template :as template]
-            [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix)]
+            [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix cross)]
             [clojure.core.matrix.linear :refer (norm)]
             [clojure.math :refer (cos sin PI sqrt)]
             [sfsim25.render :refer :all]
             [sfsim25.shaders :refer :all]
+            [sfsim25.matrix :refer (orthogonal)]
             [sfsim25.util :refer (get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl BufferUtils]
            [org.lwjgl.opengl Pbuffer PixelFormat]))
@@ -787,3 +788,23 @@ void main()
        (dot (orthogonal-test [] [0 0 1]) (matrix [0 0 1])) => 0.0
        (norm (orthogonal-test [] [0 0 1])) => 1.0
        (norm (orthogonal-test [] [0 0 2])) => 1.0)
+
+(def oriented-matrix-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+mat3 oriented_matrix(vec3 n);
+void main()
+{
+  fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
+}"))
+
+(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix orthogonal-vector))
+
+(facts "Shader for creating isometry with given normal vector as first row"
+       (let [n  (matrix [0.36 0.48 0.8])
+             o1 (orthogonal n)
+             o2 (cross n o1)]
+         (oriented-matrix-test [] (vec n)) => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (oriented-matrix-test [] (vec o1)) => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (oriented-matrix-test [] (vec o2)) => (roughly-matrix (matrix [0 0 1]) 1e-6)))

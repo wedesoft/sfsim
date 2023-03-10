@@ -5,7 +5,7 @@
               [clojure.math :refer (exp log)]
               [clojure.core.matrix :refer (mget matrix identity-matrix diagonal-matrix)]
               [sfsim25.render :refer :all]
-              [sfsim25.shaders :refer :all]
+              [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d)]
               [sfsim25.clouds :refer :all]))
@@ -126,8 +126,8 @@ void main()
         (uniform-float program :cloud_top cloud-top))
     sky-outer-probe
     sky-outer
-    ray-sphere
-    ray-shell))
+    shaders/ray-sphere
+    shaders/ray-shell))
 
 (tabular "Shader for determining lighting of atmosphere including clouds coming from space"
          (fact (sky-outer-test [60 40 ?h1 ?h2] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
@@ -174,9 +174,9 @@ void main()
         (uniform-float program :cloud_top cloud-top))
     sky-track-probe
     sky-track
-    ray-sphere
-    ray-shell
-    clip-shell-intersections))
+    shaders/ray-sphere
+    shaders/ray-shell
+    shaders/clip-shell-intersections))
 
 (tabular "Shader for determining lighting of atmosphere including clouds between two points"
          (fact (sky-track-test [60 40 ?h1 ?h2] [?px ?py ?pz ?dx ?dy ?dz ?a ?b ?lx ?ly ?lz ?ir ?ig ?ib])
@@ -222,8 +222,8 @@ void main()
         (uniform-float program :max_height max-height))
     cloud-shadow-probe
     cloud-shadow
-    ray-sphere
-    ray-shell))
+    shaders/ray-sphere
+    shaders/ray-shell))
 
 (tabular "Shader for determining illumination of clouds"
          (fact (cloud-shadow-test [?radius ?h] [?x ?y ?z ?lx ?ly ?lz])
@@ -255,7 +255,7 @@ void main()
             vertices     [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program      (make-program :vertex [vertex-passthrough]
                                        :fragment (vector (cloud-density-probe x y z)
-                                                         (noise-octaves "cloud_octaves" octaves)
+                                                         (shaders/noise-octaves "cloud_octaves" octaves)
                                                          cloud-density))
             vao          (make-vertex-array-object program indices vertices [:point 3])
             worley-data  (cons density0 (repeat (dec (* 2 2 2)) density1))
@@ -409,7 +409,7 @@ float sampling_offset()
             ndc-to-shadow   (transformation-matrix (diagonal-matrix [1 1 ?depth]) (matrix [0 0 (- ?z ?depth)]))
             light-direction (matrix [0 0 1])
             program         (make-program :vertex [opacity-vertex
-                                                   grow-shadow-index]
+                                                   shaders/grow-shadow-index]
                                           :fragment [(opacity-fragment 7)
                                                      ray-shell-mock
                                                      cloud-density-mock
@@ -480,8 +480,8 @@ void main()
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program         (make-program :vertex [vertex-passthrough]
-                                          :fragment [(opacity-lookup-probe x y z depth) opacity-lookup convert-2d-index
-                                                     convert-3d-index])
+                                          :fragment [(opacity-lookup-probe x y z depth) opacity-lookup shaders/convert-2d-index
+                                                     shaders/convert-3d-index])
             vao             (make-vertex-array-object program indices vertices [:point 3])
             zeropad         (fn [x] [0 x 0 0])
             opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
