@@ -1,6 +1,5 @@
 # TODO
 * generate cubemap for global cloud cover
-  * project gradient vector
   * rotate gradient vector around radius vector
   * Github actions
   * create identity cubemap for vectors

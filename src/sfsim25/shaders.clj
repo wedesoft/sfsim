@@ -121,3 +121,7 @@
 (def oriented-matrix
   "Shader for creating isometry with given normal vector as first row"
   (slurp "resources/shaders/core/oriented-matrix.glsl"))
+
+(def project-vector
+  "Shader to project vector x onto vector n"
+  (slurp "resources/shaders/core/project-vector.glsl"))

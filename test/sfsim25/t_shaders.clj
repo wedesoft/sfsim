@@ -808,3 +808,23 @@ void main()
          (oriented-matrix-test [] (vec n)) => (roughly-matrix (matrix [1 0 0]) 1e-6)
          (oriented-matrix-test [] (vec o1)) => (roughly-matrix (matrix [0 1 0]) 1e-6)
          (oriented-matrix-test [] (vec o2)) => (roughly-matrix (matrix [0 0 1]) 1e-6)))
+
+(def project-vector-probe
+  (template/fn [nx ny nz x y z]
+"#version 410 core
+out vec3 fragColor;
+vec3 project_vector(vec3 n, vec3 x);
+void main()
+{
+  fragColor = project_vector(vec3(<%= nx %>, <%= ny %>, <%= nz %>), vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(def project-vector-test (shader-test (fn [program]) project-vector-probe project-vector))
+
+(tabular "Shader to project vector x onto vector n"
+         (fact (project-vector-test [] [?nx ?ny ?nz ?x ?y ?z]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
+         ?nx ?ny ?nz ?x ?y ?z ?rx ?ry ?rz
+         1   0   0   1  0  0  1   0   0
+         2   0   0   1  0  0  1   0   0
+         1   0   0   2  0  0  2   0   0
+         1   0   0   1  2  3  1   0   0)
