@@ -813,7 +813,7 @@ void main()
   (template/fn [nx ny nz x y z]
 "#version 410 core
 out vec3 fragColor;
-vec3 project_vector(vec3 n, vec3 x);
+vec3 project_vector(vec3 n, vec3 v);
 void main()
 {
   fragColor = project_vector(vec3(<%= nx %>, <%= ny %>, <%= nz %>), vec3(<%= x %>, <%= y %>, <%= z %>));

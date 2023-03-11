@@ -1,6 +1,6 @@
 #version 410 core
 
-vec3 project_vector(vec3 n, vec3 x)
+vec3 project_vector(vec3 n, vec3 v)
 {
-  return (dot(n, x) / dot(n, n)) * n;
+  return (dot(n, v) / dot(n, n)) * n;
 }
