@@ -125,3 +125,7 @@
 (def project-vector
   "Shader to project vector x onto vector n"
   (slurp "resources/shaders/core/project-vector.glsl"))
+
+(def rotate-vector
+  "SHader for rotating vector around specified axis"
+  (slurp "resources/shaders/core/rotate-vector.glsl"))

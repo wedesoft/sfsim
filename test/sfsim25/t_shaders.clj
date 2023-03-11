@@ -828,3 +828,27 @@ void main()
          2   0   0   1  0  0  1   0   0
          1   0   0   2  0  0  2   0   0
          1   0   0   1  2  3  1   0   0)
+
+(def rotate-vector-probe
+  (template/fn [ax ay az x y z angle]
+"#version 410 core
+out vec3 fragColor;
+vec3 rotate_vector(vec3 axis, vec3 v, float angle);
+void main()
+{
+  vec3 axis = vec3(<%= ax %>, <%= ay %>, <%= az %>);
+  vec3 v = vec3 (<%= x %>, <%= y %>, <%= z %>);
+  float angle = <%= angle %>;
+  fragColor = rotate_vector(axis, v, angle);
+}"))
+
+(def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector oriented-matrix orthogonal-vector))
+
+(tabular "Shader for rotating vector around specified axis"
+         (fact (rotate-vector-test [] [?ax ?ay ?az ?x ?y ?z ?angle]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
+         ?ax ?ay ?az ?x ?y ?z ?angle    ?rx ?ry ?rz
+         1   0   0   0  0  0  0         0   0   0
+         1   0   0   1  2  3  0         1   2   3
+         1   0   0   1  2  3  (/ PI 2)  1  -3   2
+         0   0   1   1  2  3  (/ PI 2) -2   1   3
+         0   0   1   1  0  0  (/ PI 2)  0   1   0)

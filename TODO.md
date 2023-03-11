@@ -1,6 +1,5 @@
 # TODO
 * generate cubemap for global cloud cover
-  * rotate gradient vector around radius vector
   * Github actions
   * create identity cubemap for vectors
   * create octaves of 3D Worley noise for clouds and curl
