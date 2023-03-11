@@ -1,12 +1,12 @@
 # TODO
 * generate cubemap for global cloud cover
-  * Github actions
   * create identity cubemap for vectors
   * create octaves of 3D Worley noise for clouds and curl
   * determine 3D curl vectors on sphere surface by rendering 6 textures of cube map
   * create cube map warp vectors pointing to surface of sphere
   * integrate warp vectors using curl vectors and project back onto sphere
   * perform lookups in octaves of cloud noise to generate cube map of cloud cover
+  * Github actions
   * increase lod in noise-octaves?
 * Perlin noise?
 * try whether EJML has better performance https://ejml.org/
