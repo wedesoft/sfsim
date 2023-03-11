@@ -1,16 +1,16 @@
 # TODO
 * generate cubemap for global cloud cover
-  * create identity cubemap for vectors
-  * create octaves of 3D Worley noise for clouds and curl
+  * create identity cubemap for vectors (initial cubemap warp vectors pointing to surface of sphere)
+  * create octaves of 3D Worley noise for clouds and curl (difference of two times sinus profile?)
   * determine 3D curl vectors on sphere surface by rendering 6 textures of cube map
-  * create cube map warp vectors pointing to surface of sphere
   * integrate warp vectors using curl vectors and project back onto sphere
   * perform lookups in octaves of cloud noise to generate cube map of cloud cover
-  * Github actions
-  * increase lod in noise-octaves?
+  * write article
+* Github actions
+* try to install and use LWJGL3 from Maven
+* increase lod in noise-octaves?
 * Perlin noise?
 * try whether EJML has better performance https://ejml.org/
-* separate generating octaves from cloud\_density shader
 * [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
 * article:
   * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
@@ -25,7 +25,6 @@
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
 * use shadow map of planet in cloud\_shadow?
 * integrate with planetary prototype etc/planet.clj
-* try to install and use LWJGL3 from Maven
 * seapare transmittance\_outer call from cloud\_shadow
 * does opacity fragment shader need to limit offsets to bounding box?
 * prototype planetary cloud rendering using cascaded deep opacity maps
