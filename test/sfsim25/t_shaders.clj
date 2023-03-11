@@ -833,13 +833,15 @@ void main()
   (template/fn [ax ay az x y z angle]
 "#version 410 core
 out vec3 fragColor;
-vec3 rotate_vector(vec3 axis, vec3 v, float angle);
+vec3 rotate_vector(vec3 axis, vec3 v, float cos_angle, float sin_angle);
 void main()
 {
   vec3 axis = vec3(<%= ax %>, <%= ay %>, <%= az %>);
   vec3 v = vec3 (<%= x %>, <%= y %>, <%= z %>);
   float angle = <%= angle %>;
-  fragColor = rotate_vector(axis, v, angle);
+  float cos_angle = cos(angle);
+  float sin_angle = sin(angle);
+  fragColor = rotate_vector(axis, v, cos_angle, sin_angle);
 }"))
 
 (def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector oriented-matrix orthogonal-vector))
