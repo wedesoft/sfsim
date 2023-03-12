@@ -1,6 +1,5 @@
 # TODO
 * generate cubemap for global cloud cover
-  * create identity cubemap for vectors (initial cubemap warp vectors pointing to surface of sphere)
   * create octaves of 3D Worley noise for clouds and curl (difference of two times sinus profile?)
   * determine 3D curl vectors on sphere surface by rendering 6 textures of cube map
   * integrate warp vectors using curl vectors and project back onto sphere

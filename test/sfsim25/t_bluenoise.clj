@@ -1,10 +1,11 @@
 (ns sfsim25.t-bluenoise
     (:require [clojure.math :refer (exp)]
               [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (vertex-passthrough record-image is-image)]
+              [sfsim25.conftest :refer (record-image is-image)]
               [sfsim25.bluenoise :refer :all]
               [clojure.core.matrix :refer (matrix)]
-              [sfsim25.render :refer :all]))
+              [sfsim25.render :refer :all]
+              [sfsim25.shaders :as shaders]))
 
 (fact "Generate indices for 2D array"
       (indices-2d 3) => [0 1 2 3 4 5 6 7 8])
@@ -96,7 +97,8 @@ void main()
                               vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                               data      [0.25 0.5 0.75 1.0]
                               bluenoise (make-float-texture-2d :nearest :repeat {:width 2 :height 2 :data (float-array data)})
-                              program   (make-program :vertex [vertex-passthrough] :fragment [fragment-noise sampling-offset])
+                              program   (make-program :vertex [shaders/vertex-passthrough]
+                                                      :fragment [fragment-noise sampling-offset])
                               vao       (make-vertex-array-object program indices vertices [:point 3])]
                           (clear (matrix [0 0 0]))
                           (use-program program)

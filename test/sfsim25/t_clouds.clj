@@ -1,6 +1,6 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
+              [sfsim25.conftest :refer (roughly-matrix shader-test)]
               [comb.template :as template]
               [clojure.math :refer (exp log)]
               [clojure.core.matrix :refer (mget matrix identity-matrix diagonal-matrix)]
@@ -253,7 +253,7 @@ void main()
     (offscreen-render 1 1
       (let [indices      [0 1 3 2]
             vertices     [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program      (make-program :vertex [vertex-passthrough]
+            program      (make-program :vertex [shaders/vertex-passthrough]
                                        :fragment (vector (cloud-density-probe x y z)
                                                          (shaders/noise-octaves "cloud_octaves" octaves)
                                                          cloud-density))
@@ -479,7 +479,7 @@ void main()
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program         (make-program :vertex [vertex-passthrough]
+            program         (make-program :vertex [shaders/vertex-passthrough]
                                           :fragment [(opacity-lookup-probe x y z depth) opacity-lookup shaders/convert-2d-index
                                                      shaders/convert-3d-index])
             vao             (make-vertex-array-object program indices vertices [:point 3])
@@ -547,7 +547,7 @@ void main()
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             inv-transform   (transformation-matrix (identity-matrix 3) (matrix [0 0 shift-z]))
-            program         (make-program :vertex [vertex-passthrough]
+            program         (make-program :vertex [shaders/vertex-passthrough]
                                           :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n)
                                                      opacity-lookup-mock])
             vao             (make-vertex-array-object program indices vertices [:point 3])
@@ -590,3 +590,48 @@ void main()
          1  -10  0       [1.0]      [0]      :coord   1.0
          2  -10  0       [1.0]      [0]      :coord   1.0
          2  -40  0       [1.0]      [0]      :coord   2.0)
+
+(def identity-cubemap-probe
+  (template/fn [x y z]
+"#version 410 core
+uniform samplerCube cubemap;
+out vec3 fragColor;
+vec3 convert_cubemap_index(vec3 idx, int size);
+void main()
+{
+  vec3 idx = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 16);
+  fragColor = texture(cubemap, idx).rgb;
+}"))
+
+(defn identity-cubemap-test [x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices  [0 1 3 2]
+            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            program  (make-program :vertex [shaders/vertex-passthrough]
+                                   :fragment [(identity-cubemap-probe x y z) shaders/convert-cubemap-index])
+            vao      (make-vertex-array-object program indices vertices [:point 3])
+            cubemap  (identity-cubemap 16)
+            tex      (texture-render-color 1 1 true
+                                           (use-program program)
+                                           (uniform-sampler program :cubemap 0)
+                                           (use-textures cubemap)
+                                           (render-quads vao))
+            img      (rgb-texture->vectors3 tex)]
+        (deliver result (get-vector3 img 0 0))
+        (destroy-texture tex)
+        (destroy-texture cubemap)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)))
+    @result))
+
+(tabular "Create identity cubemap"
+         (fact (identity-cubemap-test ?x ?y ?z) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
+         ?x ?y  ?z
+         1  0   0
+        -1  0   0
+         0  1   0
+         0 -1   0
+         0  0   1
+         0  0  -1
+         1  0.5 0.25)

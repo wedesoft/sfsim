@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image vertex-passthrough shader-test)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul add dot identity-matrix)]
@@ -503,7 +503,7 @@
           (let [indices       [0 1 3 2]
                 vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
-                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
                 tex           (texture-render-color
                                 1 1 true
@@ -559,7 +559,7 @@ void main()
                 transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
                 ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
                 mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
-                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
                 tex           (texture-render-color
                                 1 1 true

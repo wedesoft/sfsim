@@ -1,6 +1,6 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
+            [sfsim25.conftest :refer (roughly-matrix shader-test)]
             [comb.template :as template]
             [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix cross)]
             [clojure.core.matrix.linear :refer (norm)]

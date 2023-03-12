@@ -1,6 +1,6 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix is-image vertex-passthrough)]
+              [sfsim25.conftest :refer (roughly-matrix is-image)]
               [comb.template :as template]
               [clojure.math :refer (PI)]
               [clojure.core.matrix :refer (matrix mul identity-matrix)]
@@ -248,7 +248,7 @@ void main()
                 red       (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array red-data)})
                 blue-data (flatten (repeat (* 17 17) [1 0 0]))
                 blue      (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array blue-data)})
-                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                program   (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao       (make-vertex-array-object program indices vertices [:point 3])
                 tex       (texture-render-color
                             1 1 true

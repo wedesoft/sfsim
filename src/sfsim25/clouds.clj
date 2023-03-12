@@ -1,6 +1,8 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
-    (:require [comb.template :as template]))
+    (:require [comb.template :as template]
+              [sfsim25.render :refer :all]
+              [sfsim25.shaders :as shaders]))
 
 (def cloud-track
   "Shader for putting volumetric clouds into the atmosphere"
@@ -45,3 +47,23 @@
 (def opacity-cascade-lookup
   "Perform opacity (transparency) lookup in cascade of deep opacity maps"
   (template/fn [n] (slurp "resources/shaders/clouds/opacity-cascade-lookup.glsl")))
+
+(def identity-cubemap-fragment
+  "Fragment shader to render identity cubemap"
+  (slurp "resources/shaders/clouds/identity-cubemap-fragment.glsl"))
+
+(defn identity-cubemap
+  "Create identity cubemap"
+  [size]
+  (let [result   (make-empty-vector-cubemap :linear :clamp size)
+        indices  [0 1 3 2]
+        vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+        program (make-program :vertex [shaders/vertex-passthrough]
+                              :fragment [identity-cubemap-fragment shaders/cubemap-vectors])
+        vao     (make-vertex-array-object program indices vertices [:point 3])]
+    (framebuffer-render size size :cullback nil [result]
+                        (use-program program)
+                        (uniform-int program :size size)
+                        (render-quads vao))
+    (destroy-program program)
+    result))

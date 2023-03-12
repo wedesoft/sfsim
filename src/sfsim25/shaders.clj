@@ -127,5 +127,9 @@
   (slurp "resources/shaders/core/project-vector.glsl"))
 
 (def rotate-vector
-  "SHader for rotating vector around specified axis"
+  "Shader for rotating vector around specified axis"
   (slurp "resources/shaders/core/rotate-vector.glsl"))
+
+(def vertex-passthrough
+  "Vertex shader to simply pass vertex through"
+  (slurp "resources/shaders/core/vertex-passthrough.glsl"))
