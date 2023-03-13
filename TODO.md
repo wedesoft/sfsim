@@ -5,6 +5,7 @@
   * integrate warp vectors using curl vectors and project back onto sphere
   * perform lookups in octaves of cloud noise to generate cube map of cloud cover
   * write article
+* use strings instead of keywords for uniform-setting methods?
 * Github actions
 * try to install and use LWJGL3 from Maven
 * increase lod in noise-octaves?

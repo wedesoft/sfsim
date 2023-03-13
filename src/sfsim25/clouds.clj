@@ -67,3 +67,12 @@
                         (render-quads vao))
     (destroy-program program)
     result))
+
+(defn make-iterate-cubemap-warp-program [current-name field-method-name shaders]
+  "Create program to iteratively update cubemap warp vector field"
+  nil)
+
+(defmacro iterate-cubemap
+  "Macro to run program to update cubemap"
+  [size scale program shaders & body]
+  `(println "TEST"))

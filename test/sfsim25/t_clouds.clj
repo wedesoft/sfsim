@@ -591,7 +591,7 @@ void main()
          2  -10  0       [1.0]      [0]      :coord   1.0
          2  -40  0       [1.0]      [0]      :coord   2.0)
 
-(def identity-cubemap-probe
+(def cubemap-probe
   (template/fn [x y z]
 "#version 410 core
 uniform samplerCube cubemap;
@@ -609,7 +609,7 @@ void main()
       (let [indices  [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(identity-cubemap-probe x y z) shaders/convert-cubemap-index])
+                                   :fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
             vao      (make-vertex-array-object program indices vertices [:point 3])
             cubemap  (identity-cubemap 16)
             tex      (texture-render-color 1 1 true
@@ -635,3 +635,47 @@ void main()
          0  0   1
          0  0  -1
          1  0.5 0.25)
+
+(def curl-field-mock
+"#version 410 core
+uniform float x;
+uniform float y;
+uniform float z;
+vec3 curl_field_mock(vec3 point)
+{
+  return vec3(x, y, z);
+}")
+
+(defn update-cubemap [program current scale x y z]
+  (iterate-cubemap 16 scale program [curl-field-mock]
+    (uniform-sampler program :current 0)
+    (uniform-int program :x x)
+    (uniform-int program :y y)
+    (uniform-int program :z z)
+    (use-textures current)))
+
+(defn iterate-cubemap-warp-test [n scale px py pz x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices [0 1 3 2]
+            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            program  (make-program :vertex [shaders/vertex-passthrough]
+                                   :fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
+            vao      (make-vertex-array-object program indices vertices [:point 3])
+            cubemap  (atom (identity-cubemap 16))
+            update   (make-iterate-cubemap-warp-program "current" "curl_field_mock" [curl-field-mock])]
+        (dotimes [i n]
+          (swap!  (fn [current] (let [updated (update-cubemap update current scale x y z)] (destroy-texture current) updated))))
+        (let [tex (texture-render-color 1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program :cubemap 0)
+                                        (use-textures cubemap)
+                                        (render-quads vao))
+              img (rgb-texture->vectors3 tex)]
+          (deliver result (get-vector3 img 0 0))
+          (destroy-texture tex)
+          (destroy-texture cubemap)
+          (destroy-program update)
+          (destroy-vertex-array-object vao)
+          (destroy-program program))))
+    @result))
