@@ -652,7 +652,9 @@ vec3 curl_field_mock(vec3 point)
     (uniform-int program :x x)
     (uniform-int program :y y)
     (uniform-int program :z z)
-    (use-textures current)))
+    (use-textures current))
+  current  ; TODO: remove this
+  )
 
 (defn iterate-cubemap-warp-test [n scale px py pz x y z]
   (let [result (promise)]
@@ -660,22 +662,30 @@ vec3 curl_field_mock(vec3 point)
       (let [indices [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
+                                   :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
             vao      (make-vertex-array-object program indices vertices [:point 3])
             cubemap  (atom (identity-cubemap 16))
             update   (make-iterate-cubemap-warp-program "current" "curl_field_mock" [curl-field-mock])]
         (dotimes [i n]
-          (swap!  (fn [current] (let [updated (update-cubemap update current scale x y z)] (destroy-texture current) updated))))
+          (swap!  (fn [current] (let [updated (update-cubemap update current scale x y z)]
+                                  ;  TODO: (destroy-texture current)
+                                  updated))))
         (let [tex (texture-render-color 1 1 true
                                         (use-program program)
                                         (uniform-sampler program :cubemap 0)
-                                        (use-textures cubemap)
+                                        (use-textures @cubemap)
                                         (render-quads vao))
               img (rgb-texture->vectors3 tex)]
           (deliver result (get-vector3 img 0 0))
           (destroy-texture tex)
-          (destroy-texture cubemap)
-          (destroy-program update)
+          (destroy-texture @cubemap)
+          ; TODO: (destroy-program update)
           (destroy-vertex-array-object vao)
           (destroy-program program))))
     @result))
+
+(tabular "Update normalised cubemap warp vectors using specified vectors"
+         (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
+         ?n ?scale ?px ?py ?pz ?x ?y ?z ?rx ?ry ?rz
+         0  1      1   0   0   0  0  0  1   0   0
+         )
