@@ -686,6 +686,11 @@ vec3 curl_field_mock(vec3 point)
          (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-3))
          ?n ?scale ?px ?py ?pz ?x ?y ?z ?rx   ?ry   ?rz
          0  1      1   0   0   0  0  0  1     0     0
+         0  1     -1   0   0   0  0  0 -1     0     0
+         0  1      0   1   0   0  0  0  0     1     0
+         0  1      0  -1   0   0  0  0  0    -1     0
+         0  1      0   0   1   0  0  0  0     0     1
+         0  1      0   0  -1   0  0  0  0     0    -1
          1  1      1   0   0   2  0  0  3     0     0
          1  1      1   0   0   0  1  0  1     1     0
          1  0.5    1   0   0   2  0  0  2     0     0
