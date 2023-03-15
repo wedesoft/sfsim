@@ -1,9 +1,9 @@
 # TODO
 * generate cubemap for global cloud cover
+  * implement warp of floating-point cubemap
   * create octaves of 3D Worley noise for clouds and curl (difference of two times sinus profile?)
   * determine 3D curl vectors on sphere surface by rendering 6 textures of cube map
   * perform lookups in octaves of cloud noise to generate cube map of cloud cover
-  * accuracy of normalize?
   * write article
 * use strings instead of keywords for uniform-setting methods?
 * Github actions
