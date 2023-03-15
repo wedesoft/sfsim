@@ -68,11 +68,28 @@
     (destroy-program program)
     result))
 
+(def iterate-cubemap-warp-fragment
+  "Fragment shader for iterating cubemap warp"
+  (template/fn [current-name field-method-name] (slurp "resources/shaders/clouds/iterate-cubemap-warp-fragment.glsl")))
+
 (defn make-iterate-cubemap-warp-program [current-name field-method-name shaders]
   "Create program to iteratively update cubemap warp vector field"
-  nil)
+  (make-program :vertex [shaders/vertex-passthrough]
+                :fragment (into shaders [(iterate-cubemap-warp-fragment current-name field-method-name)
+                                         shaders/cubemap-vectors shaders/convert-cubemap-index])))
 
 (defmacro iterate-cubemap
   "Macro to run program to update cubemap"
   [size scale program shaders & body]
-  `(println "TEST"))
+  `(let [indices#  [0 1 3 2]
+         vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+         vao#      (make-vertex-array-object ~program indices# vertices# [:point 3])
+         result#   (make-empty-vector-cubemap :linear :clamp ~size)]
+     (framebuffer-render ~size ~size :cullback nil [result#]
+                         (use-program ~program)
+                         (uniform-int ~program :size ~size)
+                         (uniform-float ~program :scale ~scale)
+                         ~@body
+                         (render-quads vao#))
+     (destroy-vertex-array-object vao#)
+     result#))

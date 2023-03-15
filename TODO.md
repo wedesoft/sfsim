@@ -2,8 +2,8 @@
 * generate cubemap for global cloud cover
   * create octaves of 3D Worley noise for clouds and curl (difference of two times sinus profile?)
   * determine 3D curl vectors on sphere surface by rendering 6 textures of cube map
-  * integrate warp vectors using curl vectors and project back onto sphere
   * perform lookups in octaves of cloud noise to generate cube map of cloud cover
+  * accuracy of normalize?
   * write article
 * use strings instead of keywords for uniform-setting methods?
 * Github actions
@@ -76,6 +76,7 @@
   * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
   * create windows using blending
 * 3D cockpit
+  * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
   * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
   * SpaceX cockpit: https://iss-sim.spacex.com/
   * orbit plane alignment

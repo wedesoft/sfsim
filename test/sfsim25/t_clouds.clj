@@ -599,7 +599,7 @@ out vec3 fragColor;
 vec3 convert_cubemap_index(vec3 idx, int size);
 void main()
 {
-  vec3 idx = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 16);
+  vec3 idx = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 15);
   fragColor = texture(cubemap, idx).rgb;
 }"))
 
@@ -611,7 +611,7 @@ void main()
             program  (make-program :vertex [shaders/vertex-passthrough]
                                    :fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
             vao      (make-vertex-array-object program indices vertices [:point 3])
-            cubemap  (identity-cubemap 16)
+            cubemap  (identity-cubemap 15)
             tex      (texture-render-color 1 1 true
                                            (use-program program)
                                            (uniform-sampler program :cubemap 0)
@@ -647,14 +647,12 @@ vec3 curl_field_mock(vec3 point)
 }")
 
 (defn update-cubemap [program current scale x y z]
-  (iterate-cubemap 16 scale program [curl-field-mock]
+  (iterate-cubemap 15 scale program [curl-field-mock]
     (uniform-sampler program :current 0)
-    (uniform-int program :x x)
-    (uniform-int program :y y)
-    (uniform-int program :z z)
-    (use-textures current))
-  current  ; TODO: remove this
-  )
+    (uniform-float program :x x)
+    (uniform-float program :y y)
+    (uniform-float program :z z)
+    (use-textures current)))
 
 (defn iterate-cubemap-warp-test [n scale px py pz x y z]
   (let [result (promise)]
@@ -664,12 +662,12 @@ vec3 curl_field_mock(vec3 point)
             program  (make-program :vertex [shaders/vertex-passthrough]
                                    :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
             vao      (make-vertex-array-object program indices vertices [:point 3])
-            cubemap  (atom (identity-cubemap 16))
+            cubemap  (atom (identity-cubemap 15))
             update   (make-iterate-cubemap-warp-program "current" "curl_field_mock" [curl-field-mock])]
         (dotimes [i n]
-          (swap!  (fn [current] (let [updated (update-cubemap update current scale x y z)]
-                                  ;  TODO: (destroy-texture current)
-                                  updated))))
+          (let [updated (update-cubemap update @cubemap scale x y z)]
+            (destroy-texture @cubemap)
+            (reset! cubemap updated)))
         (let [tex (texture-render-color 1 1 true
                                         (use-program program)
                                         (uniform-sampler program :cubemap 0)
@@ -679,13 +677,16 @@ vec3 curl_field_mock(vec3 point)
           (deliver result (get-vector3 img 0 0))
           (destroy-texture tex)
           (destroy-texture @cubemap)
-          ; TODO: (destroy-program update)
+          (destroy-program update)
           (destroy-vertex-array-object vao)
           (destroy-program program))))
     @result))
 
 (tabular "Update normalised cubemap warp vectors using specified vectors"
-         (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
-         ?n ?scale ?px ?py ?pz ?x ?y ?z ?rx ?ry ?rz
-         0  1      1   0   0   0  0  0  1   0   0
-         )
+         (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-3))
+         ?n ?scale ?px ?py ?pz ?x ?y ?z ?rx   ?ry   ?rz
+         0  1      1   0   0   0  0  0  1     0     0
+         1  1      1   0   0   2  0  0  3     0     0
+         1  1      1   0   0   0  1  0  1     1     0
+         1  0.5    1   0   0   2  0  0  2     0     0
+         2  1      1   0   0   0  1  0  0.707 1.707 0)
