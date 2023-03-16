@@ -650,7 +650,7 @@ vec3 curl_field_mock(vec3 point)
 }")
 
 (defn update-cubemap [program current scale x y z]
-  (iterate-cubemap 15 scale program [curl-field-mock]
+  (iterate-cubemap 15 scale program
     (uniform-sampler program :current 0)
     (uniform-float program :x x)
     (uniform-float program :y y)
@@ -660,7 +660,7 @@ vec3 curl_field_mock(vec3 point)
 (defn iterate-cubemap-warp-test [n scale px py pz x y z]
   (let [result (promise)]
     (offscreen-render 1 1
-      (let [indices [0 1 3 2]
+      (let [indices  [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [shaders/vertex-passthrough]
                                    :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
@@ -699,3 +699,60 @@ vec3 curl_field_mock(vec3 point)
          1  1     -1   0   0   0  1  0 -1     0     0
          1  0.5    1   0   0   2  0  0  2     0     0
          2  1      1   0   0   0  1  0  0.707 1.707 0)
+
+(def lookup-mock
+"#version 410 core
+uniform int selector;
+float lookup_mock(vec3 point)
+{
+  if (selector == 0)
+    return point.x;
+  if (selector == 1)
+    return point.y;
+  if (selector == 2)
+    return point.z;
+  return 2.0;
+}")
+
+(defn cubemap-warp-test [px py pz selector]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices  [0 1 3 2]
+            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            program  (make-program :vertex [shaders/vertex-passthrough]
+                                   :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
+            vao      (make-vertex-array-object program indices vertices [:point 3])
+            vectors  [[1 0 0] [0 2 0] [0 0 4] [-1 0 0] [0 -1 0] [0 0 -1]]
+            to-data  (fn [v] (float-array (flatten (repeat 9 (reverse v)))))
+            current  (make-vector-cubemap :linear :clamp (mapv (fn [v] {:width 3 :height 3 :data (to-data v)}) vectors))
+            warp     (make-cubemap-warp-program "current" "lookup_mock" [lookup-mock])
+            warped   (cubemap-warp 3 warp
+                                   (uniform-sampler warp :current 0)
+                                   (uniform-int warp :selector selector)
+                                   (use-textures current))]
+        (let [tex (texture-render-color 1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program :cubemap 0)
+                                        (use-textures warped)
+                                        (render-quads vao))
+              img (rgb-texture->vectors3 tex)]
+          (deliver result (mget (get-vector3 img 0 0) 0))
+          (destroy-texture tex)
+          (destroy-texture warped)
+          (destroy-texture current)
+          (destroy-program warp)
+          (destroy-vertex-array-object vao)
+          (destroy-program program))))
+    @result))
+
+(tabular "Lookup floating-point values using cubemap warp vector field"
+         (fact (cubemap-warp-test ?px ?py ?pz ?selector) => (roughly ?result 1e-3))
+         ?px ?py ?pz ?selector ?result
+         1   0   0   0         1
+         1   0   0   1         0
+         1   0   0   2         0
+        -1   0   0   1         1
+         0   1   0   2         1
+         0  -1   0   0        -1
+         0   0   1   1        -1
+         0   0  -1   2        -1)

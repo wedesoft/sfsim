@@ -80,7 +80,7 @@
 
 (defmacro iterate-cubemap
   "Macro to run program to update cubemap"
-  [size scale program shaders & body]
+  [size scale program & body]
   `(let [indices#  [0 1 3 2]
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          vao#      (make-vertex-array-object ~program indices# vertices# [:point 3])
@@ -89,6 +89,31 @@
                          (use-program ~program)
                          (uniform-int ~program :size ~size)
                          (uniform-float ~program :scale ~scale)
+                         ~@body
+                         (render-quads vao#))
+     (destroy-vertex-array-object vao#)
+     result#))
+
+(def cubemap-warp-fragment
+  "Fragment shader for looking up values using a cubemap warp vector field"
+  (template/fn [current-name lookup-name] (slurp "resources/shaders/clouds/cubemap-warp-fragment.glsl")))
+
+(defn make-cubemap-warp-program [current-name lookup-name shaders]
+  "Create program to look up values using a given cubemap warp vector field"
+  (make-program :vertex [shaders/vertex-passthrough]
+                :fragment (into shaders [(cubemap-warp-fragment current-name lookup-name)
+                                         shaders/cubemap-vectors shaders/convert-cubemap-index])))
+
+(defmacro cubemap-warp
+  "Macro to run program to look up values using cubemap warp vector field"
+  [size program & body]
+  `(let [indices#  [0 1 3 2]
+         vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+         vao#      (make-vertex-array-object ~program indices# vertices# [:point 3])
+         result#   (make-empty-float-cubemap :linear :clamp ~size)]
+     (framebuffer-render ~size ~size :cullback nil [result#]
+                         (use-program ~program)
+                         (uniform-int ~program :size ~size)
                          ~@body
                          (render-quads vao#))
      (destroy-vertex-array-object vao#)
