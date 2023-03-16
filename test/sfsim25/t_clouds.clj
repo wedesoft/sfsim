@@ -643,7 +643,10 @@ uniform float y;
 uniform float z;
 vec3 curl_field_mock(vec3 point)
 {
-  return vec3(x, y, z);
+  if (point.x >= 0)
+    return vec3(x, y, z);
+  else
+    return vec3(0, 0, 0);
 }")
 
 (defn update-cubemap [program current scale x y z]
@@ -693,5 +696,6 @@ vec3 curl_field_mock(vec3 point)
          0  1      0   0  -1   0  0  0  0     0    -1
          1  1      1   0   0   2  0  0  3     0     0
          1  1      1   0   0   0  1  0  1     1     0
+         1  1     -1   0   0   0  1  0 -1     0     0
          1  0.5    1   0   0   2  0  0  2     0     0
          2  1      1   0   0   0  1  0  0.707 1.707 0)
