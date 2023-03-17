@@ -756,3 +756,48 @@ float lookup_mock(vec3 point)
          0  -1   0   0        -1
          0   0   1   1        -1
          0   0  -1   2        -1)
+
+(def noise-mock
+"#version 410 core
+uniform float dx;
+uniform float dy;
+uniform float dz;
+float noise_mock(vec3 point)
+{
+  return dot(point, vec3(dx, dy, dz));
+}")
+
+(def curl-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+vec3 curl(vec3 point, float epsilon);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  fragColor = curl(point, 0.125);
+}"))
+
+(def curl-test
+  (shader-test
+    (fn [program dx dy dz]
+        (uniform-float program :dx dx)
+        (uniform-float program :dy dy)
+        (uniform-float program :dz dz))
+    curl-probe
+    (curl-vector "curl" "gradient")
+    shaders/rotate-vector
+    shaders/oriented-matrix
+    shaders/orthogonal-vector
+    (shaders/gradient-3d "gradient" "noise_mock")
+    shaders/project-vector
+    noise-mock))
+
+(tabular "Shader for computing curl vectors from noise function"
+         (fact (curl-test [?dx ?dy ?dz] [?x ?y ?z]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-3))
+         ?dx ?dy ?dz ?x ?y ?z ?rx ?ry ?rz
+         0   0   0   1  0  0  0   0   0
+         0   0.1 0   1  0  0  0   0   0.1
+         0   0   0.1 1  0  0  0  -0.1 0
+         0.2 0.1 0   1  0  0  0   0   0.1
+         )

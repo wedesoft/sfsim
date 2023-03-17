@@ -2,6 +2,7 @@
 
 mat3 oriented_matrix(vec3 n);
 
+// note that axis needs to be a unit vector
 vec3 rotate_vector(vec3 axis, vec3 v, float cos_angle, float sin_angle)
 {
   mat3 orientation = oriented_matrix(axis);

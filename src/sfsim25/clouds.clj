@@ -118,3 +118,7 @@
                          (render-quads vao#))
      (destroy-vertex-array-object vao#)
      result#))
+
+(def curl-vector
+  "Shader for computing curl vectors from a noise function"
+  (template/fn [method-name gradient-name] (slurp "resources/shaders/clouds/curl-vector.glsl")))
