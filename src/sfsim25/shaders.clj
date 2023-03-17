@@ -42,6 +42,10 @@
   "Perform 3D float interpolation"
   (slurp "resources/shaders/core/interpolate-3d.glsl"))
 
+(def interpolate-cubemap
+  "Perform interpolation on cubemap avoiding seams"
+  (slurp "resources/shaders/core/interpolate-cubemap.glsl"))
+
 (def interpolate-4d
   "Perform 4D float interpolation"
   (slurp "resources/shaders/core/interpolate-4d.glsl"))

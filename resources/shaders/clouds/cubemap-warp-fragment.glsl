@@ -11,7 +11,7 @@ layout (location = 4) out float output5;
 layout (location = 5) out float output6;
 
 float <%= lookup-name %>(vec3 point);
-vec3 convert_cubemap_index(vec3 idx, int size);
+vec3 interpolate_cubemap(samplerCube cube, int size, vec3 idx);
 vec3 face1_vector(vec2 texcoord);
 vec3 face2_vector(vec2 texcoord);
 vec3 face3_vector(vec2 texcoord);
@@ -21,8 +21,7 @@ vec3 face6_vector(vec2 texcoord);
 
 float lookup(vec3 v)
 {
-  vec3 adapted = convert_cubemap_index(v, size);
-  vec3 warp_vector = texture(<%= current-name %>, adapted).xyz;
+  vec3 warp_vector = interpolate_cubemap(<%= current-name %>, size, v);
   return <%= lookup-name %>(normalize(warp_vector));
 }
 

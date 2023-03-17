@@ -12,7 +12,7 @@ layout (location = 4) out vec3 output5;
 layout (location = 5) out vec3 output6;
 
 vec3 <%= field-method-name %>(vec3 point);
-vec3 convert_cubemap_index(vec3 idx, int size);
+vec3 interpolate_cubemap(samplerCube cube, int size, vec3 idx);
 vec3 face1_vector(vec2 texcoord);
 vec3 face2_vector(vec2 texcoord);
 vec3 face3_vector(vec2 texcoord);
@@ -22,7 +22,8 @@ vec3 face6_vector(vec2 texcoord);
 
 vec3 update(vec3 v)
 {
-  vec3 previous = normalize(texture(<%= current-name %>, convert_cubemap_index(v, size)).xyz);
+  vec3 idx = interpolate_cubemap(<%= current-name %>, size, v);
+  vec3 previous = normalize(idx);
   vec3 change = <%= field-method-name %>(previous);
   return previous + scale * change;
 }
