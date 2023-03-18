@@ -165,3 +165,4 @@
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
 * beep-beep sound, paraglider audio?
+* uniform distribution on sphere: http://marc-b-reynolds.github.io/distribution/2016/11/28/Uniform.html

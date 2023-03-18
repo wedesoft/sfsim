@@ -1,15 +1,13 @@
-(require '[clojure.core.matrix :refer (matrix eseq)]
-         '[clojure.core.matrix.linear :refer (norm)]
-         '[clojure.math :refer (sin cos PI sqrt)]
-         '[comb.template :as template]
+(require '[clojure.math :refer (sin cos PI sqrt)]
+         '[clojure.core.matrix :refer (matrix)]
          '[sfsim25.render :refer :all]
-         '[sfsim25.matrix :refer :all]
+         '[sfsim25.worley :refer :all]
          '[sfsim25.shaders :as shaders]
+         '[sfsim25.clouds :refer :all]
          '[sfsim25.util :refer :all])
 
-(import '[org.lwjgl.opengl Display DisplayMode GL20]
-        '[org.lwjgl.input Keyboard]
-        '[mikera.matrixx Matrix])
+(import '[org.lwjgl.opengl Display DisplayMode]
+        '[org.lwjgl.input Keyboard])
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. (/ 1080 2) (/ 1080 2)))
@@ -19,28 +17,58 @@
 
 (def worley-size 64)
 
-(def data (slurp-floats "data/worley.raw"))
-(def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def data (float-array (worley-noise 8 64 true)))
+(def W1 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def data (float-array (worley-noise 8 64 true)))
+(def W2 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
-; http://marc-b-reynolds.github.io/distribution/2016/11/28/Uniform.html
-(defn uniform-disc []
-  (let [a     (rand)
-        theta (* PI (- (* 2 (rand)) 1))]
-    (matrix [(* (sqrt a) (cos theta)) (* (sqrt a) (sin theta))])))
+(def cubemap-size 512)
+(def warp (atom (identity-cubemap cubemap-size)))
 
-(defn uniform-sphere []
-  (let [[x y] (eseq (uniform-disc))]
-    (matrix [(* 2 x (sqrt (- 1 (+ (* x x) (* y y)))))
-             (* 2 y (sqrt (- 1 (+ (* x x) (* y y)))))
-             (- 1 (* 2 (+ (* x x) (* y y))))])))
+(def potential (shaders/noise-octaves "potential" [0.5 0.25 0.125]))
+; TODO: scale potential
+(def noise
+"#version 410 core
+uniform sampler3D worley;
+float potential(sampler3D noise, vec3 idx, float lod);
+float noise(vec3 point)
+{
+  return potential(worley, point, 0.0);
+}")
 
-(defn random-oriented-matrix []
-  (oriented-matrix (uniform-sphere)))
 
-(def n 20)
+(def curl-adapter
+"#version 410 core
+uniform float epsilon;
+vec3 curl(vec3 point, float epsilon);
+vec3 curl_adapter(vec3 point)
+{
+  return curl(point, epsilon);
+}")
 
-(def orientation (atom (repeatedly n random-oriented-matrix)))
-(def fraction (atom (repeatedly n rand)))
+(def update-warp
+  (make-iterate-cubemap-warp-program "current" "curl_adapter"
+                                     [curl-adapter (curl-vector "curl" "gradient") shaders/rotate-vector shaders/oriented-matrix
+                                      shaders/orthogonal-vector (shaders/gradient-3d "gradient" "noise")
+                                      shaders/project-vector noise potential]))
+
+(def clouds (shaders/noise-octaves "clouds" [0.5 0.25 0.125]))
+; TODO: scale clouds
+(def noise
+"#version 410 core
+uniform sampler3D worley;
+float clouds(sampler3D noise, vec3 idx, float lod);
+float noise(vec3 point)
+{
+  return clouds(worley, point, 0.0);
+}")
+
+(def lookup (make-cubemap-warp-program "current" "noise" [clouds noise]))
+
+(def warped (cubemap-warp cubemap-size lookup
+                          (uniform-sampler lookup :current 0)
+                          (uniform-sampler lookup :worley 1)
+                          (use-textures @warp W2)))
 
 (def vertex-shader
 "#version 410 core
@@ -56,104 +84,43 @@ void main()
 }")
 
 (def fragment-shader
-  (template/fn [n]
 "#version 410 core
-uniform sampler3D worley;
-uniform float scale;
-uniform float cloud_scale;
-uniform float amount;
-uniform float sigma;
-<% (doseq [i (range n)] %>
-uniform float fraction<%= i %>;
-uniform mat3 orientation<%= i %>;
-<% ) %>
+uniform samplerCube cubemap;
 in VS_OUT
 {
   vec3 point;
 } fs_in;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 out vec3 fragColor;
-
-vec3 rotate(vec3 point, float y)
-{
-  float r = length(point.xy);
-  float angle = y * amount * exp(-r*r/(2*sigma*sigma));
-  return vec3(cos(angle) * point.x - sin (angle) * point.y, sin(angle) * point.x + cos(angle) * point.y, point.z);
-}
-vec3 swirl(mat3 orientation, float fraction, vec3 point)
-{
-  return inverse(orientation) * rotate(orientation * point, 2 * fraction - 1);
-}
 void main()
 {
   vec2 intersection = ray_sphere(vec3(0, 0, 0), 1, vec3(fs_in.point.xy, -1), vec3(0, 0, 1));
   if (intersection.y > 0) {
     vec3 p = vec3(fs_in.point.xy, -1 + intersection.x);
-<% (doseq [i (range n)] %>
-    p = swirl(orientation<%= i %>, fraction<%= i %>, p);
-<% ) %>
-    float density = 0.0;
-    density += texture(worley, p / cloud_scale).r;
-    density += 0.5 * texture(worley, 2 * p / cloud_scale).r;
-    density += 0.25 * texture(worley, 4 * p / cloud_scale).r;
-    density += 0.125 * texture(worley, 8 * p / cloud_scale).r;
-    density /= 1.0 + 0.5 + 0.25 + 0.125;
-    density = max(0, scale * density - scale + 1);
-    fragColor = vec3(density, density, 1.0);
+    float value = texture(cubemap, p).r;
+    fragColor = vec3(value, value, value);
   } else
     fragColor = vec3(0, 0, 0);
-}") )
+}")
 
-(def keystates (atom {}))
-
-(def program (make-program :vertex [vertex-shader] :fragment [(fragment-shader n) shaders/ray-sphere]))
-(use-program program)
-(uniform-sampler program :worley 0)
-
+(def program (make-program :vertex [vertex-shader] :fragment [fragment-shader shaders/ray-sphere]))
 (def indices [0 1 3 2])
 (def vertices [-1 -1 0, 1 -1 0, -1 1 0, 1  1 0])
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-(def scale (atom 1.0))
-(def magnification (atom 1.0))
-(def amount (atom 1.0))
-(def sigma (atom 0.1))
+(onscreen-render (Display/getWidth) (Display/getHeight)
+                 (clear (matrix [0 0 0]))
+                 (use-program program)
+                 (uniform-sampler program :cubemap 0)
+                 (use-textures warped)
+                 (render-quads vao))
 
-
-(def t0 (atom (System/currentTimeMillis)))
-(while (not (Display/isCloseRequested))
-       (while (Keyboard/next)
-              (let [state     (Keyboard/getEventKeyState)
-                    event-key (Keyboard/getEventKey)]
-                (swap! keystates assoc event-key state)))
-       (let [dscale         (if (@keystates Keyboard/KEY_Q) 0.0005 (if (@keystates Keyboard/KEY_A) -0.0005 0))
-             dmagnification (if (@keystates Keyboard/KEY_W) 0.0005 (if (@keystates Keyboard/KEY_S) -0.0005 0))
-             damount        (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
-             dsigma         (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))]
-         (when (@keystates Keyboard/KEY_X)
-           (reset! orientation (repeatedly n random-oriented-matrix))
-           (reset! fraction (repeatedly n rand)))
-         (swap! scale + dscale)
-         (swap! magnification + dmagnification)
-         (swap! amount + damount)
-         (swap! sigma + dsigma)
-         (onscreen-render (Display/getWidth) (Display/getHeight)
-                          (clear (matrix [0 0 0]))
-                          (uniform-float program :scale @scale)
-                          (uniform-float program :cloud_scale @magnification)
-                          (uniform-float program :amount @amount)
-                          (uniform-float program :sigma @sigma)
-                          (doseq [i (range n)]
-                                 (uniform-float program (keyword (str "fraction" i)) (nth @fraction i))
-                                 (uniform-matrix3 program (keyword (str "orientation" i)) (nth @orientation i)))
-                          (use-textures W)
-                          (render-quads vao))
-         (print (format "\rscale = %5.3f, cloud_scale = %5.3f, amount = %5.3f, sigma = %5.3f          "
-                        @scale @magnification @amount @sigma))
-         (flush)))
-
+(destroy-texture warped)
 (destroy-program program)
-(destroy-vertex-array-object vao)
-(destroy-texture W)
+(destroy-program lookup)
+(destroy-program update-warp)
+(destroy-texture @warp)
+(destroy-texture W2)
+(destroy-texture W1)
 
 (Display/destroy)
