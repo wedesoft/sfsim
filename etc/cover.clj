@@ -185,8 +185,8 @@ void main()
                             (use-textures warped)
                             (render-quads vao))
            (destroy-texture warped))
-         (print (format "\rthreshold = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f"
-                        @threshold (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing))
+         (print (format "\rthreshold = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f, fps = %.1f"
+                        @threshold (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing (/ 1000.0 dt)))
          (flush)
          (swap! t0 + dt)))
 
