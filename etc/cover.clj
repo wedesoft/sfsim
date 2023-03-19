@@ -1,6 +1,7 @@
 (require '[clojure.math :refer (sin cos PI sqrt)]
-         '[clojure.core.matrix :refer (matrix)]
+         '[clojure.core.matrix :refer (matrix mmul)]
          '[sfsim25.render :refer :all]
+         '[sfsim25.matrix :refer :all]
          '[sfsim25.worley :refer :all]
          '[sfsim25.shaders :as shaders]
          '[sfsim25.clouds :refer :all]
@@ -17,9 +18,12 @@
 
 (def worley-size 64)
 
-(def data (float-array (worley-noise 8 64 true)))
+(if-not (.exists (clojure.java.io/file "w1.raw")) (spit-floats "w1.raw" (float-array (worley-noise 8 64 true))))
+(if-not (.exists (clojure.java.io/file "w2.raw")) (spit-floats "w2.raw" (float-array (worley-noise 8 64 true))))
+
+(def data (slurp-floats "w1.raw"))
 (def W1 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-(def data (float-array (worley-noise 8 64 true)))
+(def data (slurp-floats "w2.raw"))
 (def W2 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
 (def cubemap-size 512)
@@ -86,6 +90,7 @@ void main()
 (def fragment-shader
 "#version 410 core
 uniform samplerCube cubemap;
+uniform mat3 rotation;
 in VS_OUT
 {
   vec3 point;
@@ -96,7 +101,7 @@ void main()
 {
   vec2 intersection = ray_sphere(vec3(0, 0, 0), 1, vec3(fs_in.point.xy, -1), vec3(0, 0, 1));
   if (intersection.y > 0) {
-    vec3 p = vec3(fs_in.point.xy, -1 + intersection.x);
+    vec3 p = rotation * vec3(fs_in.point.xy, -1 + intersection.x);
     float value = texture(cubemap, p).r;
     fragColor = vec3(value, value, value);
   } else
@@ -108,12 +113,31 @@ void main()
 (def vertices [-1 -1 0, 1 -1 0, -1 1 0, 1  1 0])
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-(onscreen-render (Display/getWidth) (Display/getHeight)
-                 (clear (matrix [0 0 0]))
-                 (use-program program)
-                 (uniform-sampler program :cubemap 0)
-                 (use-textures warped)
-                 (render-quads vao))
+(def keystates (atom {}))
+(def alpha (atom 0))
+(def beta (atom 0))
+
+(def t0 (atom (System/currentTimeMillis)))
+(while (not (Display/isCloseRequested))
+       (while (Keyboard/next)
+              (let [state     (Keyboard/getEventKeyState)
+                    event-key (Keyboard/getEventKey)]
+                (swap! keystates assoc event-key state)))
+       (let [t1 (System/currentTimeMillis)
+             dt (- t1 @t0)
+             ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.0005 (if (@keystates Keyboard/KEY_NUMPAD8) -0.0005 0))
+             rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.0005 (if (@keystates Keyboard/KEY_NUMPAD6) -0.0005 0))]
+         (swap! alpha + ra)
+         (swap! beta + rb)
+         (let [mat (mmul (rotation-y @beta) (rotation-x @alpha))]
+           (onscreen-render (Display/getWidth) (Display/getHeight)
+                            (clear (matrix [0 0 0]))
+                            (use-program program)
+                            (uniform-sampler program :cubemap 0)
+                            (uniform-matrix3 program :rotation mat)
+                            (use-textures warped)
+                            (render-quads vao)))
+         (swap! t0 + dt)))
 
 (destroy-texture warped)
 (destroy-program program)
@@ -124,3 +148,5 @@ void main()
 (destroy-texture W1)
 
 (Display/destroy)
+
+(System/exit 0)
