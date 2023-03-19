@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (sin cos PI sqrt exp)]
+(require '[clojure.math :refer (sin cos PI sqrt exp log)]
          '[clojure.core.matrix :refer (matrix mmul)]
          '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer :all]
@@ -20,11 +20,14 @@
 
 (if-not (.exists (clojure.java.io/file "w1.raw")) (spit-floats "w1.raw" (float-array (worley-noise 8 64 true))))
 (if-not (.exists (clojure.java.io/file "w2.raw")) (spit-floats "w2.raw" (float-array (worley-noise 8 64 true))))
+(if-not (.exists (clojure.java.io/file "w3.raw")) (spit-floats "w3.raw" (float-array (worley-noise 8 64 true))))
 
 (def data (slurp-floats "w1.raw"))
 (def W1 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (def data (slurp-floats "w2.raw"))
 (def W2 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def data (slurp-floats "w3.raw"))
+(def W3 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
 (def cubemap-size 512)
 (def warp (atom (identity-cubemap cubemap-size)))
@@ -32,14 +35,29 @@
 (def potential (shaders/noise-octaves "potential" [0.5 0.25 0.125]))
 (def noise
 "#version 410 core
-uniform sampler3D worley;
+#define M_PI 3.1415926535897932384626433832795
+uniform sampler3D worley1;
+uniform sampler3D worley2;
 uniform float curl_scale;
+uniform float prevailing;
+uniform float whirl;
 float potential(sampler3D noise, vec3 idx, float lod);
+float profile(float y)
+{
+  return sin(y / 0.75 * M_PI);
+}
+float spin(float y)
+{
+  return -cos(y / 0.75 * M_PI);
+}
 float noise(vec3 point)
 {
-  return potential(worley, point / curl_scale, 0.0);
+  float offset = profile(point.y) * prevailing;
+  float m = spin(point.y);
+  float w1 = potential(worley1, point / curl_scale, 0.0) * whirl;
+  float w2 = potential(worley2, point / curl_scale, 0.0) * whirl;
+  return w1 * (1 + m) / 2 - w2 * (1 - m) / 2 + offset;
 }")
-
 
 (def curl-adapter
 "#version 410 core
@@ -113,9 +131,11 @@ void main()
 (def keystates (atom {}))
 (def alpha (atom 0))
 (def beta (atom 0))
-(def threshold (atom 0.0))
-(def curl-scale-exp (atom 0.0))
-(def cloud-scale-exp (atom 0.0))
+(def threshold (atom 0.4))
+(def curl-scale-exp (atom (log 8)))
+(def cloud-scale-exp (atom (log 2)))
+(def prevailing (atom 0.25))
+(def whirl (atom 0.5))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -129,26 +149,36 @@ void main()
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              cs (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
-             os (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))]
+             os (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
+             pw (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
+             ps (if (@keystates Keyboard/KEY_T) 0.001 (if (@keystates Keyboard/KEY_G) -0.001 0))]
          (swap! alpha + ra)
          (swap! beta + rb)
          (swap! threshold + (* dt tr))
+         (swap! whirl + (* dt pw))
+         (swap! prevailing + (* dt ps))
          (swap! curl-scale-exp + (* dt cs))
          (swap! cloud-scale-exp + (* dt os))
          (let [mat (mmul (rotation-y @beta) (rotation-x @alpha))
-               updated (if (or (@keystates Keyboard/KEY_SPACE) (@keystates Keyboard/KEY_W) (@keystates Keyboard/KEY_S))
+               updated (if (or (@keystates Keyboard/KEY_SPACE)
+                               (@keystates Keyboard/KEY_W) (@keystates Keyboard/KEY_S)
+                               (@keystates Keyboard/KEY_R) (@keystates Keyboard/KEY_F)
+                               (@keystates Keyboard/KEY_T) (@keystates Keyboard/KEY_G))
                          (identity-cubemap cubemap-size)
                          (iterate-cubemap cubemap-size (* 0.00001 (exp @curl-scale-exp)) update-warp
                                           (uniform-sampler update-warp :current 0)
-                                          (uniform-sampler update-warp :worley 1)
+                                          (uniform-sampler update-warp :worley1 1)
+                                          (uniform-sampler update-warp :worley2 2)
                                           (uniform-float update-warp :epsilon (/ 1.0 worley-size 8))
+                                          (uniform-float update-warp :whirl @whirl)
+                                          (uniform-float update-warp :prevailing @prevailing)
                                           (uniform-float update-warp :curl_scale (exp @curl-scale-exp))
-                                          (use-textures @warp W1)))
+                                          (use-textures @warp W1 W2)))
                warped (cubemap-warp cubemap-size lookup
                                     (uniform-sampler lookup :current 0)
                                     (uniform-sampler lookup :worley 1)
                                     (uniform-float lookup :cloud_scale (exp @cloud-scale-exp))
-                                    (use-textures updated W2))]
+                                    (use-textures updated W3))]
            (destroy-texture @warp)
            (reset! warp updated)
            (onscreen-render (Display/getWidth) (Display/getHeight)
@@ -160,8 +190,8 @@ void main()
                             (use-textures warped)
                             (render-quads vao))
            (destroy-texture warped))
-         (print (format "\rthreshold = %.3f, curlscale = %.3f, cloudscale = %.3f"
-                        @threshold (exp @curl-scale-exp) (exp @cloud-scale-exp)))
+         (print (format "\rthreshold = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f"
+                        @threshold (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing))
          (flush)
          (swap! t0 + dt)))
 
@@ -169,6 +199,7 @@ void main()
 (destroy-program lookup)
 (destroy-program update-warp)
 (destroy-texture @warp)
+(destroy-texture W3)
 (destroy-texture W2)
 (destroy-texture W1)
 

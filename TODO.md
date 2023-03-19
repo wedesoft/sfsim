@@ -1,6 +1,5 @@
 # TODO
 * generate cubemap for global cloud cover
-  * improve curl noise: use difference of two times sinus profile with added latitude profile (see etc/curl.clj)
   * write article
 * use strings instead of keywords for uniform-setting methods?
 * Github actions
