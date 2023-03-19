@@ -42,21 +42,16 @@ uniform float curl_scale;
 uniform float prevailing;
 uniform float whirl;
 float potential(sampler3D noise, vec3 idx, float lod);
-float profile(float y)
+float spin(float y)
 {
   return sin(y / 0.75 * M_PI);
 }
-float spin(float y)
-{
-  return -cos(y / 0.75 * M_PI);
-}
 float noise(vec3 point)
 {
-  float offset = profile(point.y) * prevailing;
   float m = spin(point.y);
   float w1 = potential(worley1, point / curl_scale, 0.0) * whirl;
   float w2 = potential(worley2, point / curl_scale, 0.0) * whirl;
-  return w1 * (1 + m) / 2 - w2 * (1 - m) / 2 + offset;
+  return w1 * ((1 + m) / 2 + prevailing) - w2 * ((1 - m) / 2 + prevailing);
 }")
 
 (def curl-adapter
