@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (sin cos PI sqrt)]
+(require '[clojure.math :refer (sin cos PI sqrt exp)]
          '[clojure.core.matrix :refer (matrix mmul)]
          '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer :all]
@@ -30,14 +30,14 @@
 (def warp (atom (identity-cubemap cubemap-size)))
 
 (def potential (shaders/noise-octaves "potential" [0.5 0.25 0.125]))
-; TODO: scale potential
 (def noise
 "#version 410 core
 uniform sampler3D worley;
+uniform float curl_scale;
 float potential(sampler3D noise, vec3 idx, float lod);
 float noise(vec3 point)
 {
-  return potential(worley, point, 0.0);
+  return potential(worley, point / curl_scale, 0.0);
 }")
 
 
@@ -57,22 +57,17 @@ vec3 curl_adapter(vec3 point)
                                       shaders/project-vector noise potential]))
 
 (def clouds (shaders/noise-octaves "clouds" [0.5 0.25 0.125]))
-; TODO: scale clouds
 (def noise
 "#version 410 core
 uniform sampler3D worley;
+uniform float cloud_scale;
 float clouds(sampler3D noise, vec3 idx, float lod);
 float noise(vec3 point)
 {
-  return clouds(worley, point, 0.0);
+  return clouds(worley, point / cloud_scale, 0.0);
 }")
 
 (def lookup (make-cubemap-warp-program "current" "noise" [clouds noise]))
-
-(def warped (cubemap-warp cubemap-size lookup
-                          (uniform-sampler lookup :current 0)
-                          (uniform-sampler lookup :worley 1)
-                          (use-textures @warp W2)))
 
 (def vertex-shader
 "#version 410 core
@@ -91,6 +86,7 @@ void main()
 "#version 410 core
 uniform samplerCube cubemap;
 uniform mat3 rotation;
+uniform float threshold;
 in VS_OUT
 {
   vec3 point;
@@ -103,6 +99,7 @@ void main()
   if (intersection.y > 0) {
     vec3 p = rotation * vec3(fs_in.point.xy, -1 + intersection.x);
     float value = texture(cubemap, p).r;
+    value = max(value - threshold, 0) / (1 - threshold);
     fragColor = vec3(value, value, value);
   } else
     fragColor = vec3(0, 0, 0);
@@ -116,6 +113,9 @@ void main()
 (def keystates (atom {}))
 (def alpha (atom 0))
 (def beta (atom 0))
+(def threshold (atom 0.0))
+(def curl-scale-exp (atom 0.0))
+(def cloud-scale-exp (atom 0.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -125,21 +125,46 @@ void main()
                 (swap! keystates assoc event-key state)))
        (let [t1 (System/currentTimeMillis)
              dt (- t1 @t0)
-             ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.0005 (if (@keystates Keyboard/KEY_NUMPAD8) -0.0005 0))
-             rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.0005 (if (@keystates Keyboard/KEY_NUMPAD6) -0.0005 0))]
+             ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
+             rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
+             tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
+             cs (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
+             os (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))]
          (swap! alpha + ra)
          (swap! beta + rb)
-         (let [mat (mmul (rotation-y @beta) (rotation-x @alpha))]
+         (swap! threshold + (* dt tr))
+         (swap! curl-scale-exp + (* dt cs))
+         (swap! cloud-scale-exp + (* dt os))
+         (let [mat (mmul (rotation-y @beta) (rotation-x @alpha))
+               updated (if (or (@keystates Keyboard/KEY_SPACE) (@keystates Keyboard/KEY_W) (@keystates Keyboard/KEY_S))
+                         (identity-cubemap cubemap-size)
+                         (iterate-cubemap cubemap-size (* 0.00001 (exp @curl-scale-exp)) update-warp
+                                          (uniform-sampler update-warp :current 0)
+                                          (uniform-sampler update-warp :worley 1)
+                                          (uniform-float update-warp :epsilon (/ 1.0 worley-size 8))
+                                          (uniform-float update-warp :curl_scale (exp @curl-scale-exp))
+                                          (use-textures @warp W1)))
+               warped (cubemap-warp cubemap-size lookup
+                                    (uniform-sampler lookup :current 0)
+                                    (uniform-sampler lookup :worley 1)
+                                    (uniform-float lookup :cloud_scale (exp @cloud-scale-exp))
+                                    (use-textures updated W2))]
+           (destroy-texture @warp)
+           (reset! warp updated)
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 0 0]))
                             (use-program program)
                             (uniform-sampler program :cubemap 0)
                             (uniform-matrix3 program :rotation mat)
+                            (uniform-float program :threshold @threshold)
                             (use-textures warped)
-                            (render-quads vao)))
+                            (render-quads vao))
+           (destroy-texture warped))
+         (print (format "\rthreshold = %.3f, curlscale = %.3f, cloudscale = %.3f"
+                        @threshold (exp @curl-scale-exp) (exp @cloud-scale-exp)))
+         (flush)
          (swap! t0 + dt)))
 
-(destroy-texture warped)
 (destroy-program program)
 (destroy-program lookup)
 (destroy-program update-warp)
