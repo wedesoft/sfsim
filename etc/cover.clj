@@ -11,7 +11,7 @@
         '[org.lwjgl.input Keyboard])
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. (/ 1080 2) (/ 1080 2)))
+(Display/setDisplayMode (DisplayMode. (/ 640 1) (/ 640 1)))
 (Display/create)
 
 (Keyboard/create)
