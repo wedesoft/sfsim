@@ -44,7 +44,8 @@ uniform float whirl;
 float potential(sampler3D noise, vec3 idx, float lod);
 float spin(float y)
 {
-  return sin(y / 0.75 * M_PI);
+  float angle = asin(y);
+  return sin(y * 2.5);
 }
 float noise(vec3 point)
 {
