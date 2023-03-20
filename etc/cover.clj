@@ -114,7 +114,7 @@ void main()
     vec3 p = rotation * vec3(fs_in.point.xy, -1 + intersection.x);
     float value = texture(cubemap, p).r;
     value = max(value - threshold, 0) / (1 - threshold);
-    fragColor = vec3(value, value, value);
+    fragColor = vec3(value, value, 1.0);
   } else
     fragColor = vec3(0, 0, 0);
 }")
