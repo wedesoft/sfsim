@@ -70,7 +70,7 @@ vec3 curl_adapter(vec3 point)
                                       shaders/orthogonal-vector (shaders/gradient-3d "gradient" "noise")
                                       shaders/project-vector noise potential]))
 
-(def clouds (shaders/noise-octaves "clouds" [0.5 0.25 0.125]))
+(def clouds (shaders/noise-octaves "clouds" [0.25 0.25 0.25 0.125 0.125]))
 (def noise
 "#version 410 core
 uniform sampler3D worley;
