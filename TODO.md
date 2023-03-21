@@ -1,8 +1,9 @@
 # TODO
-* generate cubemap for global cloud cover
-  * write article
 * use strings instead of keywords for uniform-setting methods?
-* Github actions
+* make cloud\_density more modular (separate methods for cloud profile and cloud octaves
+* add integration-tested method for generating global cloud cover
+* extend cloud\_density with global cloud cover
+* create new cloud prototype avoiding step in atmosphere and flatness of cloud boundaries
 * try to install and use LWJGL3 from Maven
 * increase lod in noise-octaves?
 * Perlin noise?
