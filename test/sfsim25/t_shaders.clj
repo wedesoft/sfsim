@@ -199,7 +199,7 @@ void main()
                                 tex       (texture-render-color
                                             1 1 true
                                             (use-program program)
-                                            (uniform-sampler program :table 0)
+                                            (uniform-sampler program "table" 0)
                                             (use-textures table)
                                             (render-quads vao))
                                 img       (rgb-texture->vectors3 tex)]
@@ -244,7 +244,7 @@ void main()
                                 tex       (texture-render-color
                                             1 1 true
                                             (use-program program)
-                                            (uniform-sampler program :table 0)
+                                            (uniform-sampler program "table" 0)
                                             (use-textures table)
                                             (render-quads vao))
                                 img       (rgb-texture->vectors3 tex)]
@@ -292,7 +292,7 @@ void main()
                 tex       (texture-render-color
                             1 1 true
                             (use-program program)
-                            (uniform-sampler program :table 0)
+                            (uniform-sampler program "table" 0)
                             (use-textures table)
                             (render-quads vao))
                 img       (rgb-texture->vectors3 tex)]
@@ -366,7 +366,7 @@ void main()
                                 tex       (texture-render-color
                                             1 1 true
                                             (use-program program)
-                                            (uniform-sampler program :table 0)
+                                            (uniform-sampler program "table" 0)
                                             (use-textures table)
                                             (render-quads vao))
                                 img       (rgb-texture->vectors3 tex)]
@@ -469,8 +469,8 @@ void main()
 (def height-to-index-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     height-to-index-probe height-to-index horizon-distance))
 
 (tabular "Shader for converting height to index"
@@ -548,8 +548,8 @@ void main()
 (def elevation-to-index-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     elevation-to-index-probe elevation-to-index horizon-distance limit-quot))
 
 (tabular "Shader for converting view direction elevation to index"
@@ -583,8 +583,8 @@ void main()
 (def transmittance-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     transmittance-forward-probe transmittance-forward height-to-index horizon-distance elevation-to-index limit-quot))
 
 (tabular "Convert point and direction to 2D lookup index in transmittance table"
@@ -611,8 +611,8 @@ void main()
 (def surface-radiance-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     surface-radiance-forward-probe surface-radiance-forward height-to-index horizon-distance sun-elevation-to-index))
 
 (tabular "Convert point and direction to 2D lookup index in surface radiance table"
@@ -644,8 +644,8 @@ void main()
 (def ray-scatter-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     ray-scatter-forward-probe ray-scatter-forward height-to-index elevation-to-index horizon-distance limit-quot
     sun-elevation-to-index sun-angle-to-index))
 
@@ -719,7 +719,7 @@ void main()
                        vao     (make-vertex-array-object program indices vertices [:point 3])
                        tex     (texture-render-color 1 1 true
                                                      (use-program program)
-                                                     (uniform-sampler program :cubemap 0)
+                                                     (uniform-sampler program "cubemap" 0)
                                                      (use-textures cubemap)
                                                      (render-quads vao))
                        img     (rgb-texture->vectors3 tex)]

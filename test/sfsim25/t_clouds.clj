@@ -62,11 +62,11 @@ void main()
 (def cloud-track-test
   (shader-test
     (fn [program anisotropic n amount]
-        (uniform-float program :anisotropic anisotropic)
-        (uniform-int program :cloud_samples n)
-        (uniform-float program :cloud_scatter_amount amount)
-        (uniform-float program :cloud_max_step 0.1)
-        (uniform-float program :transparency_cutoff 0.0))
+        (uniform-float program "anisotropic" anisotropic)
+        (uniform-int program "cloud_samples" n)
+        (uniform-float program "cloud_scatter_amount" amount)
+        (uniform-float program "cloud_max_step" 0.1)
+        (uniform-float program "transparency_cutoff" 0.0))
     cloud-track-probe
     cloud-track
     linear-sampling))
@@ -120,10 +120,10 @@ void main()
 (def sky-outer-test
   (shader-test
     (fn [program radius max-height cloud-bottom cloud-top]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height)
-        (uniform-float program :cloud_bottom cloud-bottom)
-        (uniform-float program :cloud_top cloud-top))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height)
+        (uniform-float program "cloud_bottom" cloud-bottom)
+        (uniform-float program "cloud_top" cloud-top))
     sky-outer-probe
     sky-outer
     shaders/ray-sphere
@@ -168,10 +168,10 @@ void main()
 (def sky-track-test
   (shader-test
     (fn [program radius max-height cloud-bottom cloud-top]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height)
-        (uniform-float program :cloud_bottom cloud-bottom)
-        (uniform-float program :cloud_top cloud-top))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height)
+        (uniform-float program "cloud_bottom" cloud-bottom)
+        (uniform-float program "cloud_top" cloud-top))
     sky-track-probe
     sky-track
     shaders/ray-sphere
@@ -218,8 +218,8 @@ void main()
 (def cloud-shadow-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     cloud-shadow-probe
     cloud-shadow
     shaders/ray-sphere
@@ -265,13 +265,13 @@ void main()
             tex          (texture-render-color
                            1 1 true
                            (use-program program)
-                           (uniform-sampler program :worley 0)
-                           (uniform-sampler program :cloud_profile 1)
-                           (uniform-float program :radius radius)
-                           (uniform-float program :cloud_bottom cloud-bottom)
-                           (uniform-float program :cloud_top cloud-top)
-                           (uniform-float program :cloud_scale cloud-size)
-                           (uniform-float program :cloud_multiplier cloud-multiplier)
+                           (uniform-sampler program "worley" 0)
+                           (uniform-sampler program "cloud_profile" 1)
+                           (uniform-float program "radius" radius)
+                           (uniform-float program "cloud_bottom" cloud-bottom)
+                           (uniform-float program "cloud_top" cloud-top)
+                           (uniform-float program "cloud_scale" cloud-size)
+                           (uniform-float program "cloud_multiplier" cloud-multiplier)
                            (use-textures worley profile)
                            (render-quads vao))
             img          (rgb-texture->vectors3 tex)]
@@ -316,8 +316,8 @@ void main()
 (def linear-sampling-test
   (shader-test
     (fn [program]
-        (uniform-float program :cloud_scale 100)
-        (uniform-int program :cloud_size 20))
+        (uniform-float program "cloud_scale" 100)
+        (uniform-int program "cloud_size" 20))
     sampling-probe
     linear-sampling))
 
@@ -334,8 +334,8 @@ void main()
 (def exponential-sampling-test
   (shader-test
     (fn [program]
-        (uniform-float program :cloud_scale 100)
-        (uniform-int program :cloud_size 20))
+        (uniform-float program "cloud_scale" 100)
+        (uniform-int program "cloud_size" 20))
     sampling-probe
     exponential-sampling))
 
@@ -396,10 +396,10 @@ float sampling_offset()
 
 (defn setup-opacity-fragment-static-uniforms
   [program]
-  (uniform-int program :shadow_size 3)
-  (uniform-float program :radius 1000)
-  (uniform-float program :cloud_bottom 100)
-  (uniform-float program :cloud_top 200))
+  (uniform-int program "shadow_size" 3)
+  (uniform-float program "radius" 1000)
+  (uniform-float program "cloud_bottom" 100)
+  (uniform-float program "cloud_top" 200))
 
 (tabular "Compute deep opacity map offsets and layers"
   (fact
@@ -420,16 +420,16 @@ float sampling_offset()
         (framebuffer-render 3 3 :cullback nil [opacity-offsets opacity-layers]
                             (use-program program)
                             (setup-opacity-fragment-static-uniforms program)
-                            (uniform-matrix4 program :ndc_to_shadow ndc-to-shadow)
-                            (uniform-vector3 program :light_direction light-direction)
-                            (uniform-int program :num_shell_intersections ?shells)
-                            (uniform-float program :cloud_multiplier ?multiplier)
-                            (uniform-float program :scatter_amount ?scatter)
-                            (uniform-float program :depth ?depth)
-                            (uniform-float program :offset ?offset)
-                            (uniform-float program :cloud_max_step ?cloudstep)
-                            (uniform-float program :opacity_step ?opacitystep)
-                            (uniform-float program :density_start ?start)
+                            (uniform-matrix4 program "ndc_to_shadow" ndc-to-shadow)
+                            (uniform-vector3 program "light_direction" light-direction)
+                            (uniform-int program "num_shell_intersections" ?shells)
+                            (uniform-float program "cloud_multiplier" ?multiplier)
+                            (uniform-float program "scatter_amount" ?scatter)
+                            (uniform-float program "depth" ?depth)
+                            (uniform-float program "offset" ?offset)
+                            (uniform-float program "cloud_max_step" ?cloudstep)
+                            (uniform-float program "opacity_step" ?opacitystep)
+                            (uniform-float program "density_start" ?start)
                             (render-quads vao))
         ({:offset (get-float (float-texture-2d->floats opacity-offsets) 1 ?px)
           :layer (get-float-3d (float-texture-3d->floats opacity-layers) ?layer 1 ?px)} ?selector) => (roughly ?result 1e-6)
@@ -492,11 +492,11 @@ void main()
                                                                    :data (float-array offset-data)})
             tex             (texture-render-color 1 1 true
                                                   (use-program program)
-                                                  (uniform-sampler program :opacity_offsets 0)
-                                                  (uniform-sampler program :opacity_layers 1)
-                                                  (uniform-float program :opacity_step step)
-                                                  (uniform-int program :num_opacity_layers 7)
-                                                  (uniform-int program :shadow_size 2)
+                                                  (uniform-sampler program "opacity_offsets" 0)
+                                                  (uniform-sampler program "opacity_layers" 1)
+                                                  (uniform-float program "opacity_step" step)
+                                                  (uniform-int program "num_opacity_layers" 7)
+                                                  (uniform-int program "shadow_size" 2)
                                                   (use-textures opacity-offsets opacity-layers)
                                                   (render-quads vao))
             img             (rgb-texture->vectors3 tex)]
@@ -557,19 +557,19 @@ void main()
                                  offsets)
             tex             (texture-render-color 1 1 true
                                                   (use-program program)
-                                                  (uniform-matrix4 program :inverse_transform inv-transform)
+                                                  (uniform-matrix4 program "inverse_transform" inv-transform)
                                                   (doseq [idx (range n)]
-                                                         (uniform-sampler program (keyword (str "opacity" idx)) (* 2 idx))
-                                                         (uniform-sampler program (keyword (str "offset" idx)) (inc (* 2 idx)))
-                                                         (uniform-float program (keyword (str "depth" idx)) 200.0))
+                                                         (uniform-sampler program (str "opacity" idx) (* 2 idx))
+                                                         (uniform-sampler program (str "offset" idx) (inc (* 2 idx)))
+                                                         (uniform-float program (str "depth" idx) 200.0))
                                                   (doseq [idx (range n)]
-                                                         (uniform-matrix4 program (keyword (str "shadow_map_matrix" idx))
+                                                         (uniform-matrix4 program (str "shadow_map_matrix" idx)
                                                                           (transformation-matrix (identity-matrix 3)
                                                                                                  (matrix [(inc idx) 0 0]))))
                                                   (doseq [idx (range (inc n))]
-                                                         (uniform-float program (keyword (str "split" idx))
+                                                         (uniform-float program (str "split" idx)
                                                                         (+ 10.0 (/ (* 30.0 idx) n))))
-                                                  (uniform-int program :select ({:opacity 0 :coord 1} select))
+                                                  (uniform-int program "select" ({:opacity 0 :coord 1} select))
                                                   (apply use-textures (interleave opacity-texs offset-texs))
                                                   (render-quads vao))
             img             (rgb-texture->vectors3 tex)]
@@ -614,7 +614,7 @@ void main()
             cubemap  (identity-cubemap 15)
             tex      (texture-render-color 1 1 true
                                            (use-program program)
-                                           (uniform-sampler program :cubemap 0)
+                                           (uniform-sampler program "cubemap" 0)
                                            (use-textures cubemap)
                                            (render-quads vao))
             img      (rgb-texture->vectors3 tex)]
@@ -651,10 +651,10 @@ vec3 curl_field_mock(vec3 point)
 
 (defn update-cubemap [program current scale x y z]
   (iterate-cubemap 15 scale program
-    (uniform-sampler program :current 0)
-    (uniform-float program :x x)
-    (uniform-float program :y y)
-    (uniform-float program :z z)
+    (uniform-sampler program "current" 0)
+    (uniform-float program "x" x)
+    (uniform-float program "y" y)
+    (uniform-float program "z" z)
     (use-textures current)))
 
 (defn iterate-cubemap-warp-test [n scale px py pz x y z]
@@ -673,7 +673,7 @@ vec3 curl_field_mock(vec3 point)
             (reset! cubemap updated)))
         (let [tex (texture-render-color 1 1 true
                                         (use-program program)
-                                        (uniform-sampler program :cubemap 0)
+                                        (uniform-sampler program "cubemap" 0)
                                         (use-textures @cubemap)
                                         (render-quads vao))
               img (rgb-texture->vectors3 tex)]
@@ -727,12 +727,12 @@ float lookup_mock(vec3 point)
             current  (make-vector-cubemap :linear :clamp (mapv (fn [v] {:width 3 :height 3 :data (to-data v)}) vectors))
             warp     (make-cubemap-warp-program "current" "lookup_mock" [lookup-mock])
             warped   (cubemap-warp 3 warp
-                                   (uniform-sampler warp :current 0)
-                                   (uniform-int warp :selector selector)
+                                   (uniform-sampler warp "current" 0)
+                                   (uniform-int warp "selector" selector)
                                    (use-textures current))]
         (let [tex (texture-render-color 1 1 true
                                         (use-program program)
-                                        (uniform-sampler program :cubemap 0)
+                                        (uniform-sampler program "cubemap" 0)
                                         (use-textures warped)
                                         (render-quads vao))
               img (rgb-texture->vectors3 tex)]
@@ -781,9 +781,9 @@ void main()
 (def curl-test
   (shader-test
     (fn [program dx dy dz]
-        (uniform-float program :dx dx)
-        (uniform-float program :dy dy)
-        (uniform-float program :dz dz))
+        (uniform-float program "dx" dx)
+        (uniform-float program "dy" dy)
+        (uniform-float program "dz" dz))
     curl-probe
     (curl-vector "curl" "gradient")
     shaders/rotate-vector

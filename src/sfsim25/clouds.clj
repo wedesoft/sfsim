@@ -63,7 +63,7 @@
         vao     (make-vertex-array-object program indices vertices [:point 3])]
     (framebuffer-render size size :cullback nil [result]
                         (use-program program)
-                        (uniform-int program :size size)
+                        (uniform-int program "size" size)
                         (render-quads vao))
     (destroy-program program)
     result))
@@ -87,8 +87,8 @@
          result#   (make-empty-vector-cubemap :linear :clamp ~size)]
      (framebuffer-render ~size ~size :cullback nil [result#]
                          (use-program ~program)
-                         (uniform-int ~program :size ~size)
-                         (uniform-float ~program :scale ~scale)
+                         (uniform-int ~program "size" ~size)
+                         (uniform-float ~program "scale" ~scale)
                          ~@body
                          (render-quads vao#))
      (destroy-vertex-array-object vao#)
@@ -113,7 +113,7 @@
          result#   (make-empty-float-cubemap :linear :clamp ~size)]
      (framebuffer-render ~size ~size :cullback nil [result#]
                          (use-program ~program)
-                         (uniform-int ~program :size ~size)
+                         (uniform-int ~program "size" ~size)
                          ~@body
                          (render-quads vao#))
      (destroy-vertex-array-object vao#)

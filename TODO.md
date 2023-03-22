@@ -1,5 +1,4 @@
 # TODO
-* use strings instead of keywords for uniform-setting methods?
 * make cloud\_density more modular (separate methods for cloud profile and cloud octaves
 * add integration-tested method for generating global cloud cover
 * extend cloud\_density with global cloud cover
@@ -163,4 +162,4 @@
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
 * beep-beep sound, paraglider audio?
-* uniform distribution on sphere: http://marc-b-reynolds.github.io/distribution/2016/11/28/Uniform.html
+* uniform distribution on sphere http://marc-b-reynolds.github.io/distribution/2016/11/28/Uniform.html
