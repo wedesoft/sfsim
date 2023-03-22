@@ -70,7 +70,7 @@ vec3 curl_adapter(vec3 point)
                                       shaders/orthogonal-vector (shaders/gradient-3d "gradient" "noise")
                                       shaders/project-vector noise potential]))
 
-(def clouds (shaders/noise-octaves "clouds" [0.25 0.25 0.25 0.125 0.125]))
+(def clouds (shaders/noise-octaves "clouds" [0.25 0.25 0.125 0.125 0.0625 0.0625]))
 (def noise
 "#version 410 core
 uniform sampler3D worley;
@@ -127,9 +127,9 @@ void main()
 (def keystates (atom {}))
 (def alpha (atom 0))
 (def beta (atom 0))
-(def threshold (atom 0.4))
+(def threshold (atom 0.35))
 (def curl-scale-exp (atom (log 8)))
-(def cloud-scale-exp (atom (log 2)))
+(def cloud-scale-exp (atom (log 4)))
 (def prevailing (atom 0.25))
 (def whirl (atom 0.5))
 
