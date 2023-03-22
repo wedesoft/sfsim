@@ -20,6 +20,10 @@
   "Shader for determining illumination of clouds"
   (slurp "resources/shaders/clouds/cloud-shadow.glsl"))
 
+(def cloud-profile
+  "Shader for looking up vertical cloud profile"
+  (slurp "resources/shaders/clouds/cloud-profile.glsl"))
+
 (def cloud-density
   "Shader for determining cloud density at specified point"
   (slurp "resources/shaders/clouds/cloud-density.glsl"))

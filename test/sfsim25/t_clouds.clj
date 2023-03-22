@@ -256,7 +256,7 @@ void main()
             program      (make-program :vertex [shaders/vertex-passthrough]
                                        :fragment (vector (cloud-density-probe x y z)
                                                          (shaders/noise-octaves "cloud_octaves" octaves)
-                                                         cloud-density))
+                                                         cloud-density cloud-profile))
             vao          (make-vertex-array-object program indices vertices [:point 3])
             worley-data  (cons density0 (repeat (dec (* 2 2 2)) density1))
             worley       (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array worley-data)})
