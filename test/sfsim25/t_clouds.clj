@@ -266,7 +266,7 @@ void main()
                            1 1 true
                            (use-program program)
                            (uniform-sampler program "worley" 0)
-                           (uniform-sampler program "cloud_profile" 1)
+                           (uniform-sampler program "profile" 1)
                            (uniform-float program "radius" radius)
                            (uniform-float program "cloud_bottom" cloud-bottom)
                            (uniform-float program "cloud_top" cloud-top)

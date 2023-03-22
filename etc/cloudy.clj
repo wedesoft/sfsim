@@ -137,7 +137,7 @@ void main()
 (uniform-sampler program-atmosphere "ray_scatter" 1)
 (uniform-sampler program-atmosphere "mie_strength" 2)
 (uniform-sampler program-atmosphere "worley" 3)
-(uniform-sampler program-atmosphere "cloud_profile" 4)
+(uniform-sampler program-atmosphere "profile" 4)
 (uniform-sampler program-atmosphere "bluenoise" 5)
 (doseq [i (range num-steps)]
        (uniform-sampler program-atmosphere (str "offset" i) (+ (* 2 i) 6))
@@ -173,7 +173,7 @@ void main()
 
 (use-program program-shadow)
 (uniform-sampler program-shadow "worley" 0)
-(uniform-sampler program-shadow "cloud_profile" 1)
+(uniform-sampler program-shadow "profile" 1)
 (uniform-sampler program-shadow "bluenoise" 2)
 (uniform-int program-shadow "noise_size" noise-size)
 
