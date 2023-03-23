@@ -37,6 +37,24 @@ void main()
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
+(def convert-1d-index-probe
+  (template/fn [x] "#version 410 core
+out vec3 fragColor;
+float convert_1d_index(float idx, int size);
+void main()
+{
+  float result = convert_1d_index(<%= x %>, 15);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def convert-1d-index-test (shader-test (fn [program]) convert-1d-index-probe convert-1d-index))
+
+(tabular "Convert 1D index to 1D texture lookup index"
+         (fact (mget (convert-1d-index-test [] [?x]) 0) => (roughly (/ ?r 15) 1e-6))
+         ?x  ?r
+          0   0.5
+          1  14.5)
+
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
 out vec3 fragColor;

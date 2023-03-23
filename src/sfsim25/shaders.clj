@@ -6,6 +6,10 @@
   "Shader function for computing intersection of ray with sphere"
   (slurp "resources/shaders/core/ray-sphere.glsl"))
 
+(def convert-1d-index
+  "Convert 1D index to 1D texture lookup index avoiding clamping region"
+  (slurp "resources/shaders/core/convert-1d-index.glsl"))
+
 (def convert-2d-index
   "Convert 2D index to 2D texture lookup index avoiding clamping region"
   (slurp "resources/shaders/core/convert-2d-index.glsl"))

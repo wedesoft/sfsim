@@ -28,6 +28,7 @@
 (def cloud-top 4000)
 (def cloud-scale 2500)
 (def cloud-scatter-amount 0.2)
+(def profile-size 12)
 (def worley-size 64)
 (def octaves [0.7 0.7 -0.4])
 (def noise-size 64)
@@ -128,9 +129,9 @@ void main()
                            shaders/limit-quot shaders/sun-elevation-to-index phase-function shaders/sun-angle-to-index
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
-                           cloud-density cloud-profile (shaders/noise-octaves "cloud_octaves" octaves) cloud-shadow
-                           attenuation-track sky-track shaders/clip-shell-intersections (opacity-cascade-lookup num-steps)
-                           opacity-lookup shaders/convert-3d-index bluenoise/sampling-offset]))
+                           cloud-density cloud-profile shaders/convert-1d-index (shaders/noise-octaves "cloud_octaves" octaves)
+                           cloud-shadow attenuation-track sky-track shaders/clip-shell-intersections
+                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index bluenoise/sampling-offset]))
 
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere "transmittance" 0)
@@ -157,6 +158,7 @@ void main()
 (uniform-float program-atmosphere "cloud_scatter_amount" cloud-scatter-amount)
 (uniform-float program-atmosphere "transparency_cutoff" 0.05)
 (uniform-float program-atmosphere "cloud_scale" cloud-scale)
+(uniform-int program-atmosphere "profile_size" profile-size)
 (uniform-int program-atmosphere "cloud_size" worley-size)
 (uniform-int program-atmosphere "shadow_size" shadow-size)
 (uniform-int program-atmosphere "noise_size" noise-size)
@@ -165,7 +167,8 @@ void main()
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density cloud-profile
-                           (shaders/noise-octaves "cloud_octaves" octaves) shaders/ray-sphere bluenoise/sampling-offset]))
+                           shaders/convert-1d-index (shaders/noise-octaves "cloud_octaves" octaves) shaders/ray-sphere
+                           bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])
 (def shadow-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
@@ -185,6 +188,7 @@ void main()
           (framebuffer-render shadow-size shadow-size :cullback nil [opacity-offsets opacity-layers]
                               (use-program program-shadow)
                               (uniform-int program-shadow "shadow_size" shadow-size)
+                              (uniform-int program-shadow "profile_size" profile-size)
                               (uniform-float program-shadow "radius" radius)
                               (uniform-float program-shadow "cloud_bottom" cloud-bottom)
                               (uniform-float program-shadow "cloud_top" cloud-top)
