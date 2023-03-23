@@ -276,10 +276,11 @@ void main()
 
 (tabular "Shader for creating vertical cloud profile"
          (fact (mget (cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
-         ?radius ?bottom ?top ?x  ?y ?z ?result
-         100     10      14   110 0  0  0.0
-         100     10      14   112 0  0  2.0
-         100     10      14   111 0  0  1.0)
+         ?radius ?bottom ?top ?x  ?y  ?z ?result
+         100     10      14   110 0   0  0.0
+         100     10      14   112 0   0  2.0
+         100     10      14   0   112 0  2.0
+         100     10      14   111 0   0  1.0)
 
 (def cloud-density-probe
   (template/fn [x y z]
