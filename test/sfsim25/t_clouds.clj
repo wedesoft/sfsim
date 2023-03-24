@@ -282,6 +282,54 @@ void main()
          100     10      14   0   112 0  2.0
          100     10      14   111 0   0  1.0)
 
+(def cloud-noise-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float cloud_octaves(sampler3D noise, vec3 idx, float lod)
+{
+  return texture(noise, idx).r;
+}
+float cloud_noise(vec3 point, float lod);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = cloud_noise(point, 0.0);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn cloud-noise-test [scale octaves x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices  [0 1 3 2]
+            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
+            worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
+            program  (make-program :vertex [shaders/vertex-passthrough]
+                                   :fragment [(cloud-noise-probe x y z)
+                                              cloud-noise])
+            vao      (make-vertex-array-object program indices vertices [:point 3])
+            tex      (texture-render-color 1 1 true
+                                           (use-program program)
+                                           (uniform-sampler program "worley" 0)
+                                           (uniform-float program "cloud_scale" scale)
+                                           (use-textures worley)
+                                           (render-quads vao))
+            img      (rgb-texture->vectors3 tex)]
+        (deliver result (get-vector3 img 0 0))
+        (destroy-texture tex)
+        (destroy-texture worley)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)))
+    @result))
+
+(tabular "Shader to sample 3D cloud noise texture"
+         (fact (mget (cloud-noise-test ?scale ?octaves ?x ?y ?z) 0) => (roughly ?result 1e-5))
+         ?scale ?octaves ?x   ?y   ?z   ?result
+         1.0    [1.0]    0.25 0.25 0.25 1.0
+         1.0    [1.0]    0.25 0.75 0.25 0.0
+         2.0    [1.0]    0.5  0.5  0.5  1.0)
+
 (def cloud-density-probe
   (template/fn [x y z]
 "#version 410 core
@@ -303,7 +351,7 @@ void main()
             program      (make-program :vertex [shaders/vertex-passthrough]
                                        :fragment [(cloud-density-probe x y z)
                                                   (shaders/noise-octaves "cloud_octaves" octaves)
-                                                  cloud-density cloud-profile shaders/convert-1d-index])
+                                                  cloud-density cloud-noise cloud-profile shaders/convert-1d-index])
             vao          (make-vertex-array-object program indices vertices [:point 3])
             worley-data  (cons density0 (repeat (dec (* 2 2 2)) density1))
             worley       (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array worley-data)})

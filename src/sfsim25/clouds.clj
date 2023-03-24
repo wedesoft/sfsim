@@ -24,6 +24,10 @@
   "Shader for looking up vertical cloud profile"
   (slurp "resources/shaders/clouds/cloud-profile.glsl"))
 
+(def cloud-noise
+  "Shader for sampling 3D cloud noise"
+  (slurp "resources/shaders/clouds/cloud-noise.glsl"))
+
 (def cloud-density
   "Shader for determining cloud density at specified point"
   (slurp "resources/shaders/clouds/cloud-density.glsl"))
