@@ -331,9 +331,23 @@ void main()
          2.0    [1.0]    0.5  0.5  0.5  1.0)
 
 (def cloud-density-probe
-  (template/fn [x y z]
+  (template/fn [noise profile x y z]
 "#version 410 core
 out vec3 fragColor;
+float cloud_noise(vec3 point, float lod)
+{
+  if (point.x >= 0)
+    return <%= noise %>;
+  else
+    return 0.0;
+}
+float cloud_profile(vec3 point)
+{
+  if (point.y >= 0)
+    return <%= profile %>;
+  else
+    return 0.0;
+}
 float cloud_density(vec3 point, float lod);
 void main()
 {
@@ -342,58 +356,22 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn cloud-density-test [radius cloud-bottom cloud-top density0 density1 cloud-size profile0 profile1 cloud-multiplier octaves
-                          x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices      [0 1 3 2]
-            vertices     [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program      (make-program :vertex [shaders/vertex-passthrough]
-                                       :fragment [(cloud-density-probe x y z)
-                                                  (shaders/noise-octaves "cloud_octaves" octaves)
-                                                  cloud-density cloud-noise cloud-profile shaders/convert-1d-index])
-            vao          (make-vertex-array-object program indices vertices [:point 3])
-            worley-data  (cons density0 (repeat (dec (* 2 2 2)) density1))
-            worley       (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array worley-data)})
-            profile-data (cons profile0 (repeat 10 profile1))
-            profile      (make-float-texture-1d :linear :clamp (float-array profile-data))
-            tex          (texture-render-color
-                           1 1 true
-                           (use-program program)
-                           (uniform-sampler program "worley" 0)
-                           (uniform-sampler program "profile" 1)
-                           (uniform-int program "profile_size" 11)
-                           (uniform-float program "radius" radius)
-                           (uniform-float program "cloud_bottom" cloud-bottom)
-                           (uniform-float program "cloud_top" cloud-top)
-                           (uniform-float program "cloud_scale" cloud-size)
-                           (uniform-float program "cloud_multiplier" cloud-multiplier)
-                           (use-textures worley profile)
-                           (render-quads vao))
-            img          (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture profile)
-        (destroy-texture worley)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+(def cloud-density-test
+  (shader-test
+    (fn [program multiplier]
+        (uniform-float program "cloud_multiplier" multiplier))
+    cloud-density-probe
+    cloud-density))
 
 (tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-density-test 60 ?h1 ?h2 ?d0 ?d1 ?size ?prof0 ?prof1 ?mult ?octaves ?x ?y ?z) 0)
-               => (roughly ?result 1e-5))
-         ?h1 ?h2 ?d0 ?d1 ?size ?prof0 ?prof1 ?mult ?octaves  ?x    ?y   ?z   ?result
-         20  30  0   0   1     1      1      1     [1.0]      0    0    0    0
-         20  30  1   1   1     1      1      1     [1.0]     85    0    0    1
-         20  30  1   2   1     1      1      1     [1.0]     80.25 0.25 0.25 1
-         20  30  1   2   4     1      1      1     [1.0]     81    1    1    1
-         20  30  1   1   1     1      1      3     [1.0]     85    0    0    3
-         20  30  1   1   1     0      0      1     [1.0]     85    0    0    0
-         20  30  1   1   1     0      0      1     [1.0]     85    0    0    0
-         20  30  1   1   1     1      0      1     [1.0]     80    0    0    1
-         20  30  1   1   1     1      0      1     [1.0]     85    0    0    0
-         20  30  1   2   2     1      1      1     [0.0 1.0] 80.25 0.25 0.25 1
-         20  30  1   2   2     1      1      1     [1.0 0.0] 80.5  0.5  0.5  1)
+         (fact (mget (cloud-density-test [?multiplier] [?noise ?profile ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         ?multiplier ?noise ?profile ?x ?y ?z ?result
+         1.0         1.0    1.0      0  0  0  1.0
+         2.0         1.0    1.0      0  0  0  2.0
+         1.0         0.75   0.5      0  0  0  0.25
+         1.0         0.25   0.5      0  0  0  0.0
+         1.0         1.0    1.0     -1  0  0  0.0
+         1.0         1.0    1.0      0 -1  0  0.0)
 
 (def sampling-probe
   (template/fn [term]
