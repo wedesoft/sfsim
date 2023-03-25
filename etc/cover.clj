@@ -52,7 +52,7 @@ float noise(vec3 point)
   float m = spin(point.y);
   float w1 = potential(worley1, point / curl_scale, 0.0) * whirl;
   float w2 = potential(worley2, point / curl_scale, 0.0) * whirl;
-  return w1 * ((1 + m) / 2 + prevailing) - w2 * ((1 - m) / 2 + prevailing);
+  return (w1 + prevailing) * (1 + m) / 2 - (w2 + prevailing) * (1 - m) / 2;
 }")
 
 (def curl-adapter
@@ -101,6 +101,7 @@ void main()
 uniform samplerCube cubemap;
 uniform mat3 rotation;
 uniform float threshold;
+uniform float multiplier;
 in VS_OUT
 {
   vec3 point;
@@ -113,7 +114,7 @@ void main()
   if (intersection.y > 0) {
     vec3 p = rotation * vec3(fs_in.point.xy, -1 + intersection.x);
     float value = texture(cubemap, p).r;
-    value = max(value - threshold, 0) / (1 - threshold);
+    value = (value - threshold) * multiplier;
     fragColor = vec3(value, value, 1.0);
   } else
     fragColor = vec3(0, 0, 0);
@@ -128,10 +129,11 @@ void main()
 (def alpha (atom 0))
 (def beta (atom 0))
 (def threshold (atom 0.35))
+(def multiplier (atom 1.0))
 (def curl-scale-exp (atom (log 8)))
 (def cloud-scale-exp (atom (log 4)))
 (def prevailing (atom 0.25))
-(def whirl (atom 0.5))
+(def whirl (atom 1.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -144,13 +146,15 @@ void main()
              ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
-             cs (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
-             os (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
-             pw (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
-             ps (if (@keystates Keyboard/KEY_T) 0.001 (if (@keystates Keyboard/KEY_G) -0.001 0))]
+             ta (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
+             cs (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
+             os (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
+             pw (if (@keystates Keyboard/KEY_T) 0.001 (if (@keystates Keyboard/KEY_G) -0.001 0))
+             ps (if (@keystates Keyboard/KEY_Y) 0.001 (if (@keystates Keyboard/KEY_H) -0.001 0))]
          (swap! alpha + ra)
          (swap! beta + rb)
          (swap! threshold + (* dt tr))
+         (swap! multiplier + (* dt ta))
          (swap! whirl + (* dt pw))
          (swap! prevailing + (* dt ps))
          (swap! curl-scale-exp + (* dt cs))
@@ -183,11 +187,12 @@ void main()
                             (uniform-sampler program "cubemap" 0)
                             (uniform-matrix3 program "rotation" mat)
                             (uniform-float program "threshold" @threshold)
+                            (uniform-float program "multiplier" @multiplier)
                             (use-textures warped)
                             (render-quads vao))
            (destroy-texture warped))
-         (print (format "\rthreshold = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f, fps = %.1f"
-                        @threshold (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing (/ 1000.0 dt)))
+         (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f, fps = %.1f"
+                        @threshold @multiplier (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing (/ 1000.0 dt)))
          (flush)
          (swap! t0 + dt)))
 
