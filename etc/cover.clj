@@ -45,7 +45,7 @@ float potential(sampler3D noise, vec3 idx, float lod);
 float spin(float y)
 {
   float angle = asin(y);
-  return sin(y * 2.5);
+  return sin(y * 3);
 }
 float noise(vec3 point)
 {
@@ -123,7 +123,7 @@ void main()
 (def multiplier (atom 4.0))
 (def curl-scale-exp (atom (log 8)))
 (def cloud-scale-exp (atom (log 4)))
-(def prevailing (atom 0.25))
+(def prevailing (atom 0.15))
 (def whirl (atom 1.0))
 
 (def t0 (atom (System/currentTimeMillis)))
