@@ -1,5 +1,4 @@
 # TODO
-* separate shader for cloud detail (Worley octaves)
 * separate shader for cloud cover
 * mock out cloud detail and cloud profile in cloud density test, add cloud cover cubemap mock
 * add global cloud map to cloud\_density and make it modular
