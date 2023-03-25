@@ -55,19 +55,10 @@ float noise(vec3 point)
   return (w1 + prevailing) * (1 + m) / 2 - (w2 + prevailing) * (1 - m) / 2;
 }")
 
-(def curl-adapter
-"#version 410 core
-uniform float epsilon;
-vec3 curl(vec3 point, float epsilon);
-vec3 curl_adapter(vec3 point)
-{
-  return curl(point, epsilon);
-}")
-
 (def update-warp
-  (make-iterate-cubemap-warp-program "current" "curl_adapter"
-                                     [curl-adapter (curl-vector "curl" "gradient") shaders/rotate-vector shaders/oriented-matrix
-                                      shaders/orthogonal-vector (shaders/gradient-3d "gradient" "noise")
+  (make-iterate-cubemap-warp-program "current" "curl"
+                                     [(curl-vector "curl" "gradient") shaders/rotate-vector shaders/oriented-matrix
+                                      shaders/orthogonal-vector (shaders/gradient-3d "gradient" "noise" "epsilon")
                                       shaders/project-vector noise potential]))
 
 (def clouds (shaders/noise-octaves "clouds" [0.25 0.25 0.125 0.125 0.0625 0.0625]))
@@ -128,8 +119,8 @@ void main()
 (def keystates (atom {}))
 (def alpha (atom 0))
 (def beta (atom 0))
-(def threshold (atom 0.35))
-(def multiplier (atom 1.0))
+(def threshold (atom 0.4))
+(def multiplier (atom 4.0))
 (def curl-scale-exp (atom (log 8)))
 (def cloud-scale-exp (atom (log 4)))
 (def prevailing (atom 0.25))

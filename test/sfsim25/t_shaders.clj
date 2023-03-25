@@ -769,16 +769,21 @@ float f(vec3 point)
 {
   return min(<%= c %> + point.x * <%= dx %> + point.y * <%= dy %> + point.z * <%= dz %>, 10);
 }
-vec3 gradient(vec3 point, float epsilon);
+vec3 gradient(vec3 point);
 void main()
 {
-  fragColor = gradient(vec3(<%= x %>, <%= y %>, <%= z %>), 1e-1);
+  fragColor = gradient(vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
-(def gradient-3d-test (shader-test (fn [program]) gradient-3d-probe (gradient-3d "gradient" "f")))
+(def gradient-3d-test
+  (shader-test
+    (fn [program epsilon]
+        (uniform-float program "epsilon" epsilon))
+    gradient-3d-probe
+    (gradient-3d "gradient" "f" "epsilon")))
 
 (tabular "Shader template for 3D gradients"
-         (fact (gradient-3d-test [] [?x ?y ?z ?c ?dx ?dy ?dz]) => (roughly-matrix (matrix [?gx ?gy ?gz]) 1e-6))
+         (fact (gradient-3d-test [0.1] [?x ?y ?z ?c ?dx ?dy ?dz]) => (roughly-matrix (matrix [?gx ?gy ?gz]) 1e-6))
          ?x ?y ?z ?c ?dx ?dy ?dz ?gx ?gy ?gz
          0  0  0  0  0   0   0   0   0   0
          0  0  0  0  1   2   3   1   2   3
