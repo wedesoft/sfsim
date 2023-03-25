@@ -123,7 +123,7 @@ void main()
 (def multiplier (atom 4.0))
 (def curl-scale-exp (atom (log 8)))
 (def cloud-scale-exp (atom (log 4)))
-(def prevailing (atom 0.15))
+(def prevailing (atom 0.1))
 (def whirl (atom 1.0))
 
 (def t0 (atom (System/currentTimeMillis)))
