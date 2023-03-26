@@ -16,50 +16,65 @@
 
 (Keyboard/create)
 
-(def worley-size 64)
-
-(if-not (.exists (clojure.java.io/file "w1.raw")) (spit-floats "w1.raw" (float-array (worley-noise 8 64 true))))
-(if-not (.exists (clojure.java.io/file "w2.raw")) (spit-floats "w2.raw" (float-array (worley-noise 8 64 true))))
-(if-not (.exists (clojure.java.io/file "w3.raw")) (spit-floats "w3.raw" (float-array (worley-noise 8 64 true))))
-
-(def data (slurp-floats "w1.raw"))
-(def W1 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-(def data (slurp-floats "w2.raw"))
-(def W2 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-(def data (slurp-floats "w3.raw"))
-(def W3 (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-
-(def cubemap-size 512)
-(def warp (atom (identity-cubemap cubemap-size)))
-
-(def potential (shaders/noise-octaves "potential" [0.5 0.25 0.125]))
-(def noise
+(def flow-field
 "#version 410 core
 #define M_PI 3.1415926535897932384626433832795
-uniform sampler3D worley1;
-uniform sampler3D worley2;
+uniform sampler3D worley_north;
+uniform sampler3D worley_south;
 uniform float curl_scale;
 uniform float prevailing;
 uniform float whirl;
-float potential(sampler3D noise, vec3 idx, float lod);
+float octaves(sampler3D noise, vec3 idx, float lod);
 float spin(float y)
 {
   float angle = asin(y);
   return sin(y * 3);
 }
-float noise(vec3 point)
+float flow_field(vec3 point)
 {
   float m = spin(point.y);
-  float w1 = potential(worley1, point / curl_scale, 0.0) * whirl;
-  float w2 = potential(worley2, point / curl_scale, 0.0) * whirl;
+  float w1 = octaves(worley_north, point / (2 * curl_scale), 0.0) * whirl;
+  float w2 = octaves(worley_south, point / (2 * curl_scale), 0.0) * whirl;
   return (w1 + prevailing) * (1 + m) / 2 - (w2 + prevailing) * (1 - m) / 2;
 }")
 
-(def update-warp
-  (make-iterate-cubemap-warp-program "current" "curl"
-                                     [(curl-vector "curl" "gradient") shaders/rotate-vector shaders/oriented-matrix
-                                      shaders/orthogonal-vector (shaders/gradient-3d "gradient" "noise" "epsilon")
-                                      shaders/project-vector noise potential]))
+(defn cloud-cover-cubemap [& {:keys [size worley-south worley-north worley-flow flow-octaves]}]
+  (let [warp      (atom (identity-cubemap size))
+        update-warp (make-iterate-cubemap-warp-program
+                      "current" "curl"
+                      [(curl-vector "curl" "gradient") (shaders/gradient-3d "gradient" "flow_field" "epsilon")
+                       (shaders/noise-octaves "octaves" flow-octaves) shaders/rotate-vector shaders/oriented-matrix
+                       shaders/orthogonal-vector shaders/project-vector flow-field])]
+    (destroy-program update-warp)
+    (destroy-texture @warp)))
+
+(def worley-size 64)
+
+(when-not (.exists (clojure.java.io/file "w1.raw")) (spit-floats "w1.raw" (float-array (worley-noise 8 64 true))))
+(when-not (.exists (clojure.java.io/file "w2.raw")) (spit-floats "w2.raw" (float-array (worley-noise 8 64 true))))
+(when-not (.exists (clojure.java.io/file "w3.raw")) (spit-floats "w3.raw" (float-array (worley-noise 8 64 true))))
+
+(def data (slurp-floats "w1.raw"))
+(def worley-north (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def data (slurp-floats "w2.raw"))
+(def worley-south (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def data (slurp-floats "w3.raw"))
+(def worley-flow (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+
+(cloud-cover-cubemap :size 512
+                     :worley-south worley-south
+                     :worley-north worley-north
+                     :worley-flow worley-flow
+                     :flow-octaves [0.5 0.25 0.125])
+
+(destroy-texture worley-flow)
+(destroy-texture worley-south)
+(destroy-texture worley-north)
+
+(Display/destroy)
+
+(System/exit 0)
+; --------------------------------------------------------------------------------
 
 (def clouds (shaders/noise-octaves "clouds" [0.25 0.25 0.125 0.125 0.0625 0.0625]))
 (def noise
@@ -121,7 +136,7 @@ void main()
 (def beta (atom 0))
 (def threshold (atom 0.4))
 (def multiplier (atom 4.0))
-(def curl-scale-exp (atom (log 8)))
+(def curl-scale-exp (atom (log 4)))
 (def cloud-scale-exp (atom (log 4)))
 (def prevailing (atom 0.1))
 (def whirl (atom 1.0))
@@ -158,8 +173,8 @@ void main()
                          (identity-cubemap cubemap-size)
                          (iterate-cubemap cubemap-size (* 0.00001 (exp @curl-scale-exp)) update-warp
                                           (uniform-sampler update-warp "current" 0)
-                                          (uniform-sampler update-warp "worley1" 1)
-                                          (uniform-sampler update-warp "worley2" 2)
+                                          (uniform-sampler update-warp "worley_north" 1)
+                                          (uniform-sampler update-warp "worley_south" 2)
                                           (uniform-float update-warp "epsilon" (/ 1.0 worley-size 8))
                                           (uniform-float update-warp "whirl" @whirl)
                                           (uniform-float update-warp "prevailing" @prevailing)
@@ -190,11 +205,3 @@ void main()
 (destroy-program program)
 (destroy-program lookup)
 (destroy-program update-warp)
-(destroy-texture @warp)
-(destroy-texture W3)
-(destroy-texture W2)
-(destroy-texture W1)
-
-(Display/destroy)
-
-(System/exit 0)

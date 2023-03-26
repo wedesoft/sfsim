@@ -1,6 +1,7 @@
 # TODO
+* create method to generate cloud cover texture
 * separate shader for cloud cover
-* mock out cloud detail and cloud profile in cloud density test, add cloud cover cubemap mock
+* add cloud cover cubemap mock
 * add global cloud map to cloud\_density and make it modular
 * add integration-tested method for generating global cloud cover
 * extend cloud\_density with global cloud cover
