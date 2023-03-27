@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (sin cos PI sqrt exp log)]
+(require '[clojure.math :refer (sin cos PI sqrt exp log pow)]
          '[clojure.core.matrix :refer (matrix mmul)]
          '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer :all]
@@ -39,13 +39,41 @@ float flow_field(vec3 point)
   return (w1 + prevailing) * (1 + m) / 2 - (w2 + prevailing) * (1 - m) / 2;
 }")
 
-(defn cloud-cover-cubemap [& {:keys [size worley-south worley-north worley-flow flow-octaves]}]
-  (let [warp      (atom (identity-cubemap size))
+; TODO: function to read out texture with lod and uniform scale
+; TODO: function to read out texture without lod and uniform scale
+; TODO: noise-octaves with scale on arbitrary function
+; TODO: varargs for noise-octaves to include lod or not
+(def noisy-potential
+"#version 410 core
+uniform float cloud_scale;
+float clouds(vec3 idx, float lod);
+float potential(vec3 point)
+{
+  return clouds(point / (2 * cloud_scale), 0.0);
+}")
+
+(defn cloud-cover-cubemap [& {:keys [size worley-size worley-south worley-north worley-flow flow-octaves cloud-octaves
+                                     whirl prevailing curl-scale]}]
+  (let [warp        (atom (identity-cubemap size))
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
                       [(curl-vector "curl" "gradient") (shaders/gradient-3d "gradient" "flow_field" "epsilon")
                        (shaders/noise-octaves "octaves" flow-octaves) shaders/rotate-vector shaders/oriented-matrix
-                       shaders/orthogonal-vector shaders/project-vector flow-field])]
+                       shaders/orthogonal-vector shaders/project-vector flow-field])
+        lookup      (make-cubemap-warp-program
+                      "current" "potential"
+                      [(shaders/noise-octaves "clouds" "worley" cloud-octaves) noisy-potential])]
+    (use-program update-warp)
+    (uniform-sampler update-warp "current" 0)
+    (uniform-sampler update-warp "worley_north" 1)
+    (uniform-sampler update-warp "worley_south" 2)
+    (uniform-float update-warp "epsilon" (/ 1.0 worley-size (pow 2.0 (count flow-octaves))))
+    (uniform-float update-warp "whirl" whirl)
+    (uniform-float update-warp "prevailing" prevailing)
+    (uniform-float update-warp "curl_scale" curl-scale)
+    ; TODO: iteratively increment warp
+    ; TODO: warp clouds
+    (destroy-program lookup)
     (destroy-program update-warp)
     (destroy-texture @warp)))
 
@@ -63,10 +91,16 @@ float flow_field(vec3 point)
 (def worley-flow (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
 (cloud-cover-cubemap :size 512
+                     :worley-size worley-size
                      :worley-south worley-south
                      :worley-north worley-north
                      :worley-flow worley-flow
-                     :flow-octaves [0.5 0.25 0.125])
+                     :flow-octaves [0.5 0.25 0.125]
+                     :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                     :whirl 1.0
+                     :prevailing 0.1
+                     :curl-scale 4.0
+                     )
 
 (destroy-texture worley-flow)
 (destroy-texture worley-south)
@@ -78,18 +112,6 @@ float flow_field(vec3 point)
 
 ; TODO: use uniform in noise octaves and allow specification of scale
 ; --------------------------------------------------------------------------------
-
-(def clouds (shaders/noise-octaves "clouds" "worley" [0.25 0.25 0.125 0.125 0.0625 0.0625]))
-(def noise
-"#version 410 core
-uniform float cloud_scale;
-float clouds(vec3 idx, float lod);
-float noise(vec3 point)
-{
-  return clouds(point / cloud_scale, 0.0);
-}")
-
-(def lookup (make-cubemap-warp-program "current" "noise" [clouds noise]))
 
 (def vertex-shader
 "#version 410 core
@@ -139,7 +161,7 @@ void main()
 (def threshold (atom 0.4))
 (def multiplier (atom 4.0))
 (def curl-scale-exp (atom (log 4)))
-(def cloud-scale-exp (atom (log 4)))
+(def cloud-scale-exp (atom (log 2)))
 (def prevailing (atom 0.1))
 (def whirl (atom 1.0))
 
@@ -205,5 +227,3 @@ void main()
          (swap! t0 + dt)))
 
 (destroy-program program)
-(destroy-program lookup)
-(destroy-program update-warp)
