@@ -286,9 +286,10 @@ void main()
   (template/fn [x y z]
 "#version 410 core
 out vec3 fragColor;
-float cloud_octaves(sampler3D noise, vec3 idx, float lod)
+uniform sampler3D worley;
+float cloud_octaves(vec3 idx, float lod)
 {
-  return texture(noise, idx).r;
+  return texture(worley, idx).r;
 }
 float cloud_noise(vec3 point, float lod);
 void main()

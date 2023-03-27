@@ -130,7 +130,7 @@ void main()
                            shaders/transmittance-forward cloud-track shaders/interpolate-2d shaders/convert-2d-index
                            ray-scatter-track shaders/is-above-horizon transmittance-track exponential-sampling
                            cloud-density cloud-noise cloud-profile shaders/convert-1d-index
-                           (shaders/noise-octaves "cloud_octaves" octaves) cloud-shadow attenuation-track sky-track
+                           (shaders/noise-octaves "cloud_octaves" "worley" octaves) cloud-shadow attenuation-track sky-track
                            shaders/clip-shell-intersections (opacity-cascade-lookup num-steps) opacity-lookup
                            shaders/convert-3d-index bluenoise/sampling-offset]))
 
@@ -168,7 +168,7 @@ void main()
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density cloud-noise cloud-profile
-                           shaders/convert-1d-index (shaders/noise-octaves "cloud_octaves" octaves) shaders/ray-sphere
+                           shaders/convert-1d-index (shaders/noise-octaves "cloud_octaves" "worley" octaves) shaders/ray-sphere
                            bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])

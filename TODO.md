@@ -1,4 +1,5 @@
 # TODO
+* tests for noise-octaves
 * create method to generate cloud cover texture
 * separate shader for cloud cover
 * add cloud cover cubemap mock

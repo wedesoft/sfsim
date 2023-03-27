@@ -16,6 +16,7 @@
 
 (Keyboard/create)
 
+; TODO: test this
 (def flow-field
 "#version 410 core
 #define M_PI 3.1415926535897932384626433832795
@@ -74,17 +75,18 @@ float flow_field(vec3 point)
 (Display/destroy)
 
 (System/exit 0)
+
+; TODO: use uniform in noise octaves and allow specification of scale
 ; --------------------------------------------------------------------------------
 
-(def clouds (shaders/noise-octaves "clouds" [0.25 0.25 0.125 0.125 0.0625 0.0625]))
+(def clouds (shaders/noise-octaves "clouds" "worley" [0.25 0.25 0.125 0.125 0.0625 0.0625]))
 (def noise
 "#version 410 core
-uniform sampler3D worley;
 uniform float cloud_scale;
-float clouds(sampler3D noise, vec3 idx, float lod);
+float clouds(vec3 idx, float lod);
 float noise(vec3 point)
 {
-  return clouds(worley, point / cloud_scale, 0.0);
+  return clouds(point / cloud_scale, 0.0);
 }")
 
 (def lookup (make-cubemap-warp-program "current" "noise" [clouds noise]))
