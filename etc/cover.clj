@@ -98,20 +98,7 @@ float cover(vec3 point)
 (def data (slurp-floats "w3.raw"))
 (def worley-cover (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
-(def cloud-cover
-  (cloud-cover-cubemap :size 512
-                       :worley-size worley-size
-                       :worley-south worley-south
-                       :worley-north worley-north
-                       :worley-cover worley-cover
-                       :flow-octaves [0.5 0.25 0.125]
-                       :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
-                       :whirl 1.0
-                       :prevailing 0.1
-                       :curl-scale 4.0
-                       :cover-scale 2.0
-                       :num-iterations 30
-                       :flow-scale 1e-2))
+(def cloud-cover (atom nil))
 
 (def vertex-shader
 "#version 410 core
@@ -160,6 +147,10 @@ void main()
 (def beta (atom 0))
 (def threshold (atom 0.4))
 (def multiplier (atom 4.0))
+(def curl-scale-exp (atom (log 4)))
+(def cloud-scale-exp (atom (log 2)))
+(def prevailing (atom 0.1))
+(def whirl (atom 1.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (Display/isCloseRequested))
@@ -172,11 +163,36 @@ void main()
              ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
-             ta (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))]
+             ta (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
+             cs (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
+             os (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
+             pw (if (@keystates Keyboard/KEY_T) 0.001 (if (@keystates Keyboard/KEY_G) -0.001 0))
+             ps (if (@keystates Keyboard/KEY_Y) 0.001 (if (@keystates Keyboard/KEY_H) -0.001 0))]
          (swap! alpha + (* dt ra))
          (swap! beta + (* dt rb))
          (swap! threshold + (* dt tr))
          (swap! multiplier + (* dt ta))
+         (swap! whirl + (* dt pw))
+         (swap! prevailing + (* dt ps))
+         (swap! curl-scale-exp + (* dt cs))
+         (swap! cloud-scale-exp + (* dt os))
+         (when (or (nil? @cloud-cover) (not (zero? pw)) (not (zero? ps)) (not (zero? cs)) (not (zero? os)))
+           (when-not (nil? @cloud-cover)
+                     (destroy-texture @cloud-cover))
+           (reset! cloud-cover
+             (cloud-cover-cubemap :size 512
+                                  :worley-size worley-size
+                                  :worley-south worley-south
+                                  :worley-north worley-north
+                                  :worley-cover worley-cover
+                                  :flow-octaves [0.5 0.25 0.125]
+                                  :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                  :whirl @whirl
+                                  :prevailing @prevailing
+                                  :curl-scale (exp @curl-scale-exp)
+                                  :cover-scale (exp @cloud-scale-exp)
+                                  :num-iterations 50
+                                  :flow-scale 6e-3)))
          (let [mat (mmul (rotation-y @beta) (rotation-x @alpha))]
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 0 0]))
@@ -185,16 +201,16 @@ void main()
                             (uniform-matrix3 program "rotation" mat)
                             (uniform-float program "threshold" @threshold)
                             (uniform-float program "multiplier" @multiplier)
-                            (use-textures cloud-cover)
+                            (use-textures @cloud-cover)
                             (render-quads vao)))
-         (print (format "\rthreshold = %.3f, multiplier = %.3f, fps = %.1f"
-                        @threshold @multiplier (/ 1000.0 dt)))
+         (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f, fps = %.1f"
+                        @threshold @multiplier (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing (/ 1000.0 dt)))
          (flush)
          (Thread/sleep 10)
          (swap! t0 + dt)))
 
 (destroy-program program)
-(destroy-texture cloud-cover)
+(destroy-texture @cloud-cover)
 (destroy-texture worley-cover)
 (destroy-texture worley-south)
 (destroy-texture worley-north)
