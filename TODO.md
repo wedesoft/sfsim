@@ -1,6 +1,6 @@
 # TODO
-* function to read out texture with lod and uniform scale
-* function to read out texture without lod and uniform scale
+* function to read out 3D texture with lod and uniform scale
+* function to read out 3D texture without lod and uniform scale
 * noise-octaves with scale on arbitrary function, add missing tests
 * varargs for noise-octaves to include lod or not
 * test flow field
