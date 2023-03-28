@@ -16,7 +16,6 @@
 
 (Keyboard/create)
 
-; TODO: test this
 (def flow-field
 "#version 410 core
 #define M_PI 3.1415926535897932384626433832795
@@ -38,10 +37,6 @@ float flow_field(vec3 point)
   return (w1 + prevailing) * (1 + m) / 2 - (w2 + prevailing) * (1 - m) / 2;
 }")
 
-; TODO: function to read out texture with lod and uniform scale
-; TODO: function to read out texture without lod and uniform scale
-; TODO: noise-octaves with scale on arbitrary function
-; TODO: varargs for noise-octaves to include lod or not
 (def cover-noise
 "#version 410 core
 uniform float cover_scale;
@@ -207,5 +202,3 @@ void main()
 (Display/destroy)
 
 (System/exit 0)
-
-; TODO: use uniform in noise octaves and allow specification of scale

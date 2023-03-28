@@ -1,10 +1,13 @@
 # TODO
-* tests for noise-octaves
-* create method to generate cloud cover texture
-* separate shader for cloud cover
+* function to read out texture with lod and uniform scale
+* function to read out texture without lod and uniform scale
+* noise-octaves with scale on arbitrary function, add missing tests
+* varargs for noise-octaves to include lod or not
+* test flow field
+* add integration-tested method for generating global cloud cover
+* separate shader to perform lookups in cloud cover cubemap
 * add cloud cover cubemap mock
 * add global cloud map to cloud\_density and make it modular
-* add integration-tested method for generating global cloud cover
 * extend cloud\_density with global cloud cover
 * create new cloud prototype avoiding step in atmosphere and flatness of cloud boundaries
 * try to install and use LWJGL3 from Maven
