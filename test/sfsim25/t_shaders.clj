@@ -409,6 +409,53 @@ void main()
          0.25  0.75 0.25 3.0
          0.25  0.25 0.75 5.0)
 
+(def lookup-3d-lod-probe
+  (template/fn [x y z lod]
+"#version 410 core
+out vec3 fragColor;
+float lookup_3d_lod(vec3 point, float lod);
+void main()
+{
+  float result = lookup_3d_lod(vec3(<%= x %>, <%= y %>, <%= z %>), <%= lod %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn lookup-3d-lod-test [x y z lod]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices   [0 1 3 2]
+                            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
+                            data-flat (flatten data-3d)
+                            table     (make-float-texture-3d :linear :repeat
+                                                             {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+                            program   (make-program :vertex [vertex-passthrough]
+                                                    :fragment [(lookup-3d-lod-probe x y z lod) (lookup-3d-lod "table")])
+                            vao       (make-vertex-array-object program indices vertices [:point 3])
+                            tex       (texture-render-color
+                                        1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program "table" 0)
+                                        (generate-mipmap table)
+                                        (use-textures table)
+                                        (render-quads vao))
+                            img       (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture table)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
+
+(tabular "Perform 3d texture lookup with level-of-detail"
+         (fact (mget (lookup-3d-lod-test ?x ?y ?z ?lod) 0) => ?result)
+         ?x    ?y   ?z   ?lod ?result
+         0.25  0.25 0.25 0.0  1.0
+         0.75  0.25 0.25 0.0  2.0
+         0.25  0.75 0.25 0.0  3.0
+         0.25  0.25 0.75 0.0  5.0
+         0.25  0.25 0.25 1.0  4.5)
+
 (def ray-shell-probe
   (template/fn [cx cy cz radius1 radius2 ox oy oz dx dy dz selector]
 "#version 410 core

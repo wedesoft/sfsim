@@ -1,7 +1,6 @@
 # TODO
-* function to read out uniform 3D texture with lod (lookup\_3d\_lod)
-* noise-octaves with scale on arbitrary function, add missing tests
-* noise-octaves with scale and lod on arbitrary function, add missing tests
+* noise-octaves with scale using lookup\_3d, add missing tests
+* noise-octaves with scale and lod using lookup\_3d\_lod, add missing tests
 * varargs for noise-octaves to include lod or not
 * test flow field
 * add integration-tested method for generating global cloud cover
