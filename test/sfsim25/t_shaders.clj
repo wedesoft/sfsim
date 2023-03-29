@@ -248,7 +248,7 @@ void main()
          0    1  5.0
          1    1  6.0)
 
-(defn lookup-3d-test [probe & shaders]
+(defn interpolation-3d-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
         (offscreen-render 1 1
@@ -284,7 +284,7 @@ void main()
   fragColor = vec3(result, result, result);
 }"))
 
-(def interpolate-3d-test (lookup-3d-test interpolate-3d-probe interpolate-3d convert-3d-index))
+(def interpolate-3d-test (interpolation-3d-test interpolate-3d-probe interpolate-3d convert-3d-index))
 
 (tabular "Perform 3d interpolation"
          (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)
@@ -369,7 +369,7 @@ void main()
          0   0   0   1   1   1   1.5  0.5  0.5  1  0   0   0   0
          0   0   0   1   1   1   0.5  1.5  0.5  1  0   0   0   0)
 
-(defn lookup-3d-test [probe & shaders]
+(defn looking-up-3d-test [probe & shaders]
   (fn [& args]
       (let [result (promise)]
         (offscreen-render 1 1
@@ -406,10 +406,10 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def interpolate-3d-test (lookup-3d-test lookup-3d-probe (lookup-3d "table")))
+(def lookup-3d-test (looking-up-3d-test lookup-3d-probe (lookup-3d "table")))
 
-(tabular "Perform 3d interpolation"
-         (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)
+(tabular "Perform 3d texture lookup"
+         (fact (mget (lookup-3d-test ?x ?y ?z) 0) => ?result)
          ?x    ?y   ?z   ?result
          0.25  0.25 0.25 1.0
          0.75  0.25 0.25 2.0
