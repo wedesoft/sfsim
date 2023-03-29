@@ -399,15 +399,14 @@ void main()
   (template/fn [x y z]
 "#version 410 core
 out vec3 fragColor;
-uniform sampler3D table;
-float lookup_3d(sampler3D tex, vec3 point);
+float lookup_3d(vec3 point);
 void main()
 {
-  float result = lookup_3d(table, vec3(<%= x %>, <%= y %>, <%= z %>));
+  float result = lookup_3d(vec3(<%= x %>, <%= y %>, <%= z %>));
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def interpolate-3d-test (lookup-3d-test lookup-3d-probe lookup-3d))
+(def interpolate-3d-test (lookup-3d-test lookup-3d-probe (lookup-3d "table")))
 
 (tabular "Perform 3d interpolation"
          (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)

@@ -69,12 +69,12 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float lookup_3d(sampler3D tex, vec3 point);
+float lookup_3d(vec3 point);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 float cloud_density(vec3 point, float lod)
 {
-  float s = lookup_3d(worley, point / cloud_scale);
+  float s = lookup_3d(point / cloud_scale);
   return max((s - threshold) * multiplier, 0);
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
@@ -105,7 +105,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box s/lookup-3d phase-function
+                :fragment [fragment-shader s/ray-box (s/lookup-3d "worley") phase-function
                            cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index
                            sampling-offset]))
 
@@ -167,11 +167,11 @@ layout (location = 5) out float opacity6;
 layout (location = 6) out float opacity7;
 layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float lookup_3d(sampler3D table, vec3 point);
+float lookup_3d(vec3 point);
 float phase(float g, float mu);
 float cloud_density(vec3 point, float lod)
 {
-  float s = lookup_3d(worley, point / cloud_scale);
+  float s = lookup_3d(point / cloud_scale);
   return max((s - threshold) * multiplier, 0);
 }
 void main()
@@ -255,7 +255,7 @@ void main()
 
 (def sprogram
   (make-program :vertex [svertex-shader s/grow-shadow-index]
-                :fragment [sfragment-shader s/ray-box s/lookup-3d phase-function]))
+                :fragment [sfragment-shader s/ray-box (s/lookup-3d "worley") phase-function]))
 
 (use-program sprogram)
 (uniform-sampler sprogram "worley" 0)

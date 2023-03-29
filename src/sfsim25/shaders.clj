@@ -63,8 +63,8 @@
   (slurp "resources/shaders/core/ray-box.glsl"))
 
 (def lookup-3d
-  "Perform lookup on wrapping 3D texture"
-  (slurp "resources/shaders/core/lookup-3d.glsl"))
+  "Perform lookup on a floating-point 3D texture"
+  (template/fn [sampler] (slurp "resources/shaders/core/lookup-3d.glsl")))
 
 (def ray-shell
   "Shader function for computing intersections of ray with a shell"

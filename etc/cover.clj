@@ -203,8 +203,8 @@ void main()
                             (uniform-float program "multiplier" @multiplier)
                             (use-textures @cloud-cover)
                             (render-quads vao)))
-         (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f, fps = %.1f"
-                        @threshold @multiplier (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing (/ 1000.0 dt)))
+         (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f"
+                        @threshold @multiplier (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing))
          (flush)
          (Thread/sleep 10)
          (swap! t0 + dt)))
