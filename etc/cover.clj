@@ -22,8 +22,8 @@
 uniform float curl_scale;
 uniform float prevailing;
 uniform float whirl;
-float octaves_north(vec3 idx, float lod);
-float octaves_south(vec3 idx, float lod);
+float octaves_north(vec3 idx);
+float octaves_south(vec3 idx);
 float spin(float y)
 {
   float angle = asin(y);
@@ -32,18 +32,18 @@ float spin(float y)
 float flow_field(vec3 point)
 {
   float m = spin(point.y);
-  float w1 = octaves_north(point / (2 * curl_scale), 0.0) * whirl;
-  float w2 = octaves_south(point / (2 * curl_scale), 0.0) * whirl;
+  float w1 = octaves_north(point / (2 * curl_scale)) * whirl;
+  float w2 = octaves_south(point / (2 * curl_scale)) * whirl;
   return (w1 + prevailing) * (1 + m) / 2 - (w2 + prevailing) * (1 - m) / 2;
 }")
 
 (def cover-noise
 "#version 410 core
 uniform float cover_scale;
-float clouds(vec3 idx, float lod);
+float clouds(vec3 idx);
 float cover(vec3 point)
 {
-  return clouds(point / (2 * cover_scale), 0.0);
+  return clouds(point / (2 * cover_scale));
 }")
 
 (defn cloud-cover-cubemap [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves
@@ -53,13 +53,14 @@ float cover(vec3 point)
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
                       [(curl-vector "curl" "gradient") (shaders/gradient-3d "gradient" "flow_field" "epsilon")
-                       (shaders/noise-octaves "octaves_north" "worley_north" flow-octaves)
-                       (shaders/noise-octaves "octaves_south" "worley_south" flow-octaves)
+                       (shaders/noise-octaves "octaves_north" "lookup_north" flow-octaves)
+                       (shaders/noise-octaves "octaves_south" "lookup_south" flow-octaves)
+                       (shaders/lookup-3d "lookup_north" "worley_north") (shaders/lookup-3d "lookup_south" "worley_south")
                        shaders/rotate-vector shaders/oriented-matrix shaders/orthogonal-vector shaders/project-vector
                        flow-field])
         lookup      (make-cubemap-warp-program
                       "current" "cover"
-                      [(shaders/noise-octaves "clouds" "worley" cloud-octaves) cover-noise])
+                      [(shaders/noise-octaves "clouds" "noise" cloud-octaves) (shaders/lookup-3d "noise" "worley") cover-noise])
         epsilon       (/ 1.0 worley-size (pow 2.0 (count flow-octaves)))]
     (use-program update-warp)
     (uniform-sampler update-warp "current" 0)
@@ -192,7 +193,7 @@ void main()
                                   :curl-scale (exp @curl-scale-exp)
                                   :cover-scale (exp @cloud-scale-exp)
                                   :num-iterations 50
-                                  :flow-scale 6e-3)))
+                                  :flow-scale (* 1.5e-3 (exp @curl-scale-exp)))))
          (let [mat (mmul (rotation-y @beta) (rotation-x @alpha))]
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 0 0]))
