@@ -1,12 +1,12 @@
 #version 410 core
 
-uniform sampler3D <%= sampler %>;
+float <%= base-function %>(vec3 idx);
 
-float <%= method-name %>(vec3 idx, float lod)
+float <%= method-name %>(vec3 idx)
 {
-  float result = 0.0;
+  float result;
 <% (doseq [multiplier octaves] %>
-  result += <%= multiplier %> * textureLod(<%= sampler %>, idx, lod).r;
+  result += <%= multiplier %> * <%= base-function %>(idx);
   idx *= 2;
 <% ) %>
   return result;

@@ -721,6 +721,33 @@ void main()
          6378000 0  0  0   1   0   0   1   0   true   "x"       1.0
          6378000 0  0  0   1   0   0  -1   0   true   "x"       0.0)
 
+(def noise-octaves-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float octaves(vec3 idx);
+float noise(vec3 idx)
+{
+  return idx.x == 1.0 ? 1.0 : 0.0;
+}
+void main()
+{
+  float result = octaves(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn noise-octaves-test [octaves x y z]
+  ((shader-test (fn [program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
+
+(tabular "Shader function to sum octaves of noise"
+         (fact (mget (noise-octaves-test ?octaves ?x ?y ?z) 0) => ?result)
+         ?x  ?y  ?z  ?octaves  ?result
+         0.0 0.0 0.0 [1.0]     0.0
+         1.0 0.0 0.0 [1.0]     1.0
+         1.0 0.0 0.0 [0.5]     0.5
+         0.5 0.0 0.0 [0.0 1.0] 1.0
+         1.0 0.0 0.0 [1.0 0.0] 1.0)
+
 (def fragment-cubemap-vectors
 "#version 410 core
 layout (location = 0) out vec3 output1;

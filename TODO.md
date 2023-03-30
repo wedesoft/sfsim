@@ -1,6 +1,6 @@
 # TODO
-* noise-octaves with scale using lookup\_3d, add missing tests
-* noise-octaves with scale and lod using lookup\_3d\_lod, add missing tests, increment lod for each octave
+* noise-octaves using lookup\_3d, add missing tests
+* noise-octaves with lod using lookup\_3d\_lod, add missing tests, increment lod for each octave
 * test flow field
 * add integration-tested method for generating global cloud cover
 * separate shader to perform lookups in cloud cover cubemap
