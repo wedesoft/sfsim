@@ -118,6 +118,10 @@
   "Shader function to sum octaves of noise"
   (template/fn [method-name base-function octaves] (slurp "resources/shaders/core/noise-octaves.glsl")))
 
+(def noise-octaves-lod
+  "Shader function to sum octaves of noise with level-of-detail"
+  (template/fn [method-name base-function octaves] (slurp "resources/shaders/core/noise-octaves-lod.glsl")))
+
 (def cubemap-vectors
   "Shader functions to convert cubemap face texture coordinates to 3D cubemap vectors"
   (slurp "resources/shaders/core/cubemap-vectors.glsl"))
