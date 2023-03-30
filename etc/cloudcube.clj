@@ -105,7 +105,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box (s/lookup-3d "worley") phase-function
+                :fragment [fragment-shader s/ray-box (s/lookup-3d "lookup_3d" "worley") phase-function
                            cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index
                            sampling-offset]))
 
@@ -255,7 +255,7 @@ void main()
 
 (def sprogram
   (make-program :vertex [svertex-shader s/grow-shadow-index]
-                :fragment [sfragment-shader s/ray-box (s/lookup-3d "worley") phase-function]))
+                :fragment [sfragment-shader s/ray-box (s/lookup-3d "lookup_3d" "worley") phase-function]))
 
 (use-program sprogram)
 (uniform-sampler sprogram "worley" 0)

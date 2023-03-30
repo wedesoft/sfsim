@@ -385,7 +385,7 @@ void main()
                             table     (make-float-texture-3d :linear :repeat
                                                              {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
                             program   (make-program :vertex [vertex-passthrough]
-                                                    :fragment [(lookup-3d-probe x y z) (lookup-3d "table")])
+                                                    :fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
                             vao       (make-vertex-array-object program indices vertices [:point 3])
                             tex       (texture-render-color
                                         1 1 true
@@ -430,7 +430,8 @@ void main()
                             table     (make-float-texture-3d :linear :repeat
                                                              {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
                             program   (make-program :vertex [vertex-passthrough]
-                                                    :fragment [(lookup-3d-lod-probe x y z lod) (lookup-3d-lod "table")])
+                                                    :fragment [(lookup-3d-lod-probe x y z lod)
+                                                               (lookup-3d-lod "lookup_3d_lod" "table")])
                             vao       (make-vertex-array-object program indices vertices [:point 3])
                             tex       (texture-render-color
                                         1 1 true

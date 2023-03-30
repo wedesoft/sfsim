@@ -64,11 +64,11 @@
 
 (def lookup-3d
   "Perform lookup on a floating-point 3D texture"
-  (template/fn [sampler] (slurp "resources/shaders/core/lookup-3d.glsl")))
+  (template/fn [method-name sampler] (slurp "resources/shaders/core/lookup-3d.glsl")))
 
 (def lookup-3d-lod
   "Perform lookup on a floating-point 3D texture with level-of-detail"
-  (template/fn [sampler] (slurp "resources/shaders/core/lookup-3d-lod.glsl")))
+  (template/fn [method-name sampler] (slurp "resources/shaders/core/lookup-3d-lod.glsl")))
 
 (def ray-shell
   "Shader function for computing intersections of ray with a shell"
