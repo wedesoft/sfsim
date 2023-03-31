@@ -30,6 +30,7 @@
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 75)))
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
+(def octaves [1.0])
 (def threshold (atom 0.5))
 (def anisotropic (atom 0.3))
 (def multiplier (atom 5.0))
@@ -75,7 +76,7 @@ vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 float cloud_density(vec3 point, float lod)
 {
   float s = lookup_3d(point / cloud_scale);
-  return max((s - threshold) * multiplier, 0);
+  return max(s - threshold, 0) * multiplier;
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -105,7 +106,8 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box (s/lookup-3d "lookup_3d" "worley") phase-function
+                :fragment [fragment-shader s/ray-box (s/noise-octaves "octaves" "lookup_3d" octaves)
+                           (s/lookup-3d "lookup_3d" "worley") phase-function
                            cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index
                            sampling-offset]))
 
@@ -255,7 +257,8 @@ void main()
 
 (def sprogram
   (make-program :vertex [svertex-shader s/grow-shadow-index]
-                :fragment [sfragment-shader s/ray-box (s/lookup-3d "lookup_3d" "worley") phase-function]))
+                :fragment [sfragment-shader s/ray-box (s/noise-octaves "octaves" "lookup_3d" octaves)
+                           (s/lookup-3d "lookup_3d" "worley") phase-function]))
 
 (use-program sprogram)
 (uniform-sampler sprogram "worley" 0)
