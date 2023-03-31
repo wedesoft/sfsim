@@ -36,6 +36,7 @@
 (def multiplier (atom 2.0))
 (def light (atom (/ PI 4)))
 (def keystates (atom {}))
+(def shadow-size 128)
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -59,6 +60,7 @@ uniform sampler2D opacity_shape;
 uniform vec3 origin;
 uniform vec3 light_direction;
 uniform mat4 shadow;
+uniform int shadow_size;
 uniform float threshold;
 uniform float multiplier;
 uniform float cloud_scale;
@@ -80,7 +82,7 @@ float cloud_density(vec3 point, float lod)
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
-  vec4 p = convert_shadow_index(shadow * vec4(point, 1), 512, 512);
+  vec4 p = convert_shadow_index(shadow * vec4(point, 1), shadow_size, shadow_size);
   float offset = texture(opacity_shape, p.xy).r;
   float z = (1 - p.z - offset) * depth / thickness;
   vec3 idx = vec3(p.xy, z);
@@ -132,6 +134,7 @@ void main()
 (def svertex-shader
 "#version 410 core
 uniform mat4 iprojection;
+uniform int shadow_size;
 in vec3 point;
 out VS_OUT
 {
@@ -141,7 +144,7 @@ vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
   gl_Position = vec4(point, 1);
-  vec4 origin = iprojection * grow_shadow_index(vec4(point, 1), 512, 512);
+  vec4 origin = iprojection * grow_shadow_index(vec4(point, 1), shadow_size, shadow_size);
   vs_out.origin = origin.xyz;
 }")
 
@@ -185,7 +188,7 @@ float cloud_density(vec3 point, float lod)
 void main()
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_direction);
-  int steps = int(ceil(60 * intersection.y / 60.0));
+  int steps = int(ceil(cloud_base_samples * intersection.y / 60.0));
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
   float offset = scaling_offset(intersection.x, intersection.x + intersection.y, steps, 0.0);
   float stepsize = step_size(intersection.x, intersection.y + intersection.x, offset, steps);
@@ -277,8 +280,8 @@ void main()
 (def vertices [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1])  ; quad near to light in NDCs
 (def vao2 (make-vertex-array-object sprogram indices vertices [:point 3]))
 
-(def opacity (create-texture-3d :linear :clamp 512 512 7 (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 7)))
-(def opacity-shape (make-empty-float-texture-2d :linear :clamp 512 512))
+(def opacity (create-texture-3d :linear :clamp shadow-size shadow-size 7 (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F shadow-size shadow-size 7)))
+(def opacity-shape (make-empty-float-texture-2d :linear :clamp shadow-size shadow-size))
 (def separation 10.0)
 
 (def t0 (atom (System/currentTimeMillis)))
@@ -318,18 +321,19 @@ void main()
        (let [light-direction (matrix [0 (cos @light) (sin @light)])
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
              shadow-mat      (shadow-matrices projection transform light-direction 0)]
-         (framebuffer-render 512 512 :cullback nil [opacity opacity-shape]
+         (framebuffer-render shadow-size shadow-size :cullback nil [opacity opacity-shape]
                              (use-program sprogram)
                              (use-textures worley)
                              (uniform-matrix4 sprogram "iprojection" (inverse (:shadow-ndc-matrix shadow-mat)))
                              (uniform-vector3 sprogram "light_direction" light-direction)
+                             (uniform-int sprogram "shadow_size" shadow-size)
                              (uniform-float sprogram "depth" (:depth shadow-mat))
                              (uniform-float sprogram "separation" separation)
                              (uniform-float sprogram "threshold" @threshold)
                              (uniform-float sprogram "anisotropic" @anisotropic)
                              (uniform-float sprogram "multiplier" @multiplier)
                              (uniform-float sprogram "cloud_scatter_amount" 1.0)
-                             (uniform-int sprogram "cloud_base_samples" 8)
+                             (uniform-int sprogram "cloud_base_samples" 16)
                              (uniform-float sprogram "cloud_scale" 100)
                              (render-quads vao2))
          (onscreen-render (Display/getWidth) (Display/getHeight)
@@ -340,10 +344,11 @@ void main()
                           (uniform-matrix4 program "transform" transform)
                           (uniform-matrix4 program "shadow" (:shadow-map-matrix shadow-mat))
                           (uniform-vector3 program "origin" @origin)
+                          (uniform-int program "shadow_size" shadow-size)
                           (uniform-float program "threshold" @threshold)
                           (uniform-float program "anisotropic" @anisotropic)
                           (uniform-float program "cloud_scatter_amount" 1.0)
-                          (uniform-int program "cloud_samples" 8)
+                          (uniform-int program "cloud_samples" 16)
                           (uniform-int program "noise_size" noise-size)
                           (uniform-float program "cloud_scale" 100)
                           (uniform-float program "cloud_max_step" 1.05)
