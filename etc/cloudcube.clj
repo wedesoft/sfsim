@@ -33,7 +33,7 @@
 (def octaves [0.5 0.25 0.125 0.125])
 (def threshold (atom 0.48))
 (def anisotropic (atom 0.065))
-(def multiplier (atom 20.0))
+(def multiplier (atom 2.0))
 (def light (atom (/ PI 4)))
 (def keystates (atom {}))
 
@@ -70,12 +70,12 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float octaves(vec3 point);
+float octaves(vec3 point, float lod);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 float cloud_density(vec3 point, float lod)
 {
-  float s = octaves(point / cloud_scale);
+  float s = octaves(point / cloud_scale, lod);
   return max(s - threshold, 0) * multiplier;
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
@@ -106,8 +106,8 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box (s/noise-octaves "octaves" "lookup_3d" octaves)
-                           (s/lookup-3d "lookup_3d" "worley") phase-function
+                :fragment [fragment-shader s/ray-box (s/noise-octaves-lod "octaves" "lookup_3d" octaves)
+                           (s/lookup-3d-lod "lookup_3d" "worley") phase-function
                            cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index
                            sampling-offset]))
 
@@ -118,6 +118,7 @@ void main()
 (def size 64)
 (def values1 (slurp-floats "data/worley.raw"))
 (def worley (make-float-texture-3d :linear :repeat {:width size :height size :depth size :data values1}))
+(generate-mipmap worley)
 (def noise-size 64)
 (def values2 (slurp-floats "data/bluenoise.raw"))
 (def bluenoise (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data values2}))
@@ -169,11 +170,11 @@ layout (location = 5) out float opacity6;
 layout (location = 6) out float opacity7;
 layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float octaves(vec3 point);
+float octaves(vec3 point, float lod);
 float phase(float g, float mu);
 float cloud_density(vec3 point, float lod)
 {
-  float s = octaves(point / cloud_scale);
+  float s = octaves(point / cloud_scale, lod);
   return max((s - threshold) * multiplier, 0);
 }
 void main()
@@ -257,8 +258,8 @@ void main()
 
 (def sprogram
   (make-program :vertex [svertex-shader s/grow-shadow-index]
-                :fragment [sfragment-shader s/ray-box (s/noise-octaves "octaves" "lookup_3d" octaves)
-                           (s/lookup-3d "lookup_3d" "worley") phase-function]))
+                :fragment [sfragment-shader s/ray-box (s/noise-octaves-lod "octaves" "lookup_3d" octaves)
+                           (s/lookup-3d-lod "lookup_3d" "worley") phase-function]))
 
 (use-program sprogram)
 (uniform-sampler sprogram "worley" 0)
@@ -286,7 +287,7 @@ void main()
              rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              ts (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
-             tm (if (@keystates Keyboard/KEY_E) 0.01 (if (@keystates Keyboard/KEY_D) -0.01 0))
+             tm (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
              ti (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
@@ -317,7 +318,7 @@ void main()
                              (uniform-float sprogram "separation" separation)
                              (uniform-float sprogram "threshold" @threshold)
                              (uniform-float sprogram "anisotropic" @anisotropic)
-                             (uniform-float sprogram "multiplier" (* 0.1 @multiplier))
+                             (uniform-float sprogram "multiplier" @multiplier)
                              (uniform-float sprogram "cloud_scatter_amount" 1.0)
                              (uniform-int sprogram "cloud_base_samples" 64)
                              (uniform-float sprogram "cloud_scale" 100)
@@ -338,7 +339,7 @@ void main()
                           (uniform-float program "cloud_scale" 100)
                           (uniform-float program "cloud_max_step" 1.05)
                           (uniform-int program "cloud_base_samples" 64)
-                          (uniform-float program "multiplier" (* 0.1 @multiplier))
+                          (uniform-float program "multiplier" @multiplier)
                           (uniform-vector3 program "light_direction" light-direction)
                           (uniform-float program "depth" (:depth shadow-mat))
                           (uniform-float program "thickness" (* 7 separation))
