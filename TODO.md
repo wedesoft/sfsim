@@ -1,4 +1,5 @@
 # TODO
+* rewrite cloudy.clj prototype
 * test flow field
 * add integration-tested method for generating global cloud cover
 * separate shader to perform lookups in cloud cover cubemap
