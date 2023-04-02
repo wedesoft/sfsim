@@ -1,8 +1,8 @@
 # TODO
 * rewrite cloudy.clj prototype
+  * just atmosphere with empty cloud layer to check that there is no step
   * without atmosphere, without shadows, sample full volume?
   * add shadows
-  * just atmosphere with empty cloud layer to check that there is no step
   * render planet instead of sphere, scale up and combine with rendering of planet, high resolution horizon needed?
 * test flow field
 * add integration-tested method for generating global cloud cover
