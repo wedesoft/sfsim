@@ -22,7 +22,12 @@
 
 (def fragment
 "#version 410 core
+uniform int steps;
 uniform float radius;
+uniform float cloud_bottom;
+uniform float cloud_top;
+uniform float multiplier;
+uniform float max_height;
 uniform vec3 origin;
 in VS_OUT
 {
@@ -33,15 +38,36 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
-  if (planet.y > 0) {
-    fragColor = vec3(0, 0, 255);
+  if (atmosphere.y > 0) {
+    vec3 background;
+    if (planet.y > 0) {
+      background = vec3(0, 0, 255);
+      atmosphere.y = planet.x - atmosphere.x;
+    } else
+      background = vec3(0, 0, 0);
+    float transparency = 1.0;
+    float step = atmosphere.y / steps;
+    for (int i=0; i<steps; i++) {
+      vec3 point = origin + (atmosphere.x + (i + 0.5) * step) * direction;
+      float r = length(point);
+      if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
+        float t = exp(-multiplier * step);
+        transparency *= t;
+      }
+    };
+    fragColor = background * transparency + vec3(255, 255, 255) * (1 - transparency);
   } else
     fragColor = vec3(0, 0, 0);
 }")
 
 (def fov 45.0)
-(def radius 6378000)
+(def radius 6378000.0)
+(def max-height 35000.0)
+(def cloud-bottom 1500)
+(def cloud-top 4000)
+(def multiplier 1e-7)
 (def z-near 100)
 (def z-far (* radius 2))
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 5000)])))
@@ -75,7 +101,12 @@ void main()
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
                           (uniform-matrix4 program "transform" (transformation-matrix (quaternion->matrix @orientation) @position))
+                          (uniform-int program "steps" 256)
                           (uniform-float program "radius" radius)
+                          (uniform-float program "cloud_bottom" cloud-bottom)
+                          (uniform-float program "cloud_top" cloud-top)
+                          (uniform-float program "multiplier" multiplier)
+                          (uniform-float program "max_height" max-height)
                           (uniform-vector3 program "origin" @position)
                           (render-quads vao))
          (swap! t0 + dt)))
