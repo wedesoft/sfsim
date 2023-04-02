@@ -22,7 +22,7 @@
 
 (def fragment
 "#version 410 core
-uniform int steps;
+uniform float stepsize;
 uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
@@ -48,14 +48,17 @@ void main()
     } else
       background = vec3(0, 0, 0);
     float transparency = 1.0;
-    float step = atmosphere.y / steps;
-    for (int i=0; i<steps; i++) {
+    int count = int(ceil(atmosphere.y / stepsize));
+    float step = atmosphere.y / count;
+    for (int i=0; i<count; i++) {
       vec3 point = origin + (atmosphere.x + (i + 0.5) * step) * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
         float t = exp(-multiplier * step);
         transparency *= t;
       }
+      if (transparency <= 0.05)
+        break;
     };
     fragColor = background * transparency + vec3(255, 255, 255) * (1 - transparency);
   } else
@@ -101,7 +104,7 @@ void main()
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
                           (uniform-matrix4 program "transform" (transformation-matrix (quaternion->matrix @orientation) @position))
-                          (uniform-int program "steps" 256)
+                          (uniform-float program "stepsize" 200)
                           (uniform-float program "radius" radius)
                           (uniform-float program "cloud_bottom" cloud-bottom)
                           (uniform-float program "cloud_top" cloud-top)
