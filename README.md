@@ -1,7 +1,7 @@
 # Space Flight Simulator 2025
 
 This is a work in progress.
-Aim is to simulate take off, space station docking, and moon landing of a space plane.
+Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
 
 # Installation
@@ -49,6 +49,7 @@ Requires OpenGL 4.5.
 * [How to calculate your horizon distance](https://darkskydiary.wordpress.com/2015/05/25/how-to-calculate-your-horizon-distance/)
 * [Bruneton: Precomputed Atmospheric Scattering](https://hal.inria.fr/inria-00288758/document)
 * [Bouthors: Interactive multiple anisotropic scattering in clouds](https://hal.inria.fr/file/index/docid/333007/filename/clouds.pdf)
+* [Pettersson: Real-time rendering and dynamics of sparse voxel octree clouds](https://lup.lub.lu.se/luur/download?func=downloadFile&recordOId=9024774&fileOId=9024775)
 * [Cascaded Shadow Maps](https://web.archive.org/web/20220526080455/https://dev.theomader.com/cascaded-shadow-mapping-1/)
 * [Emulating double precision in Godot](https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds)
 * [Wedesoft blog](https://www.wedesoft.de/)
