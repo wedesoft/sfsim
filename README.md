@@ -14,8 +14,8 @@ Requires OpenGL 4.5.
 * Build blue noise: `clj -T:build bluenoise`
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
-* Download NOAA elevation data: `clj -T:build download-elevation``
-* Extract elevation data: `clj -T:build extract-elevation``
+* Download NOAA elevation data: `clj -T:build download-elevation`
+* Extract elevation data: `clj -T:build extract-elevation`
 * Convert map sectors into pyramid of tiles: `clj -T:build map-sectors`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
