@@ -52,10 +52,10 @@ Requires OpenGL 4.5.
   * [Clojure performance flame graphs](https://github.com/clojure-goes-fast/clj-async-profiler)
   * [How to calculate your horizon distance](https://darkskydiary.wordpress.com/2015/05/25/how-to-calculate-your-horizon-distance/)
   * [Java native interface example](https://www.baeldung.com/jni)
+  * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
 * Publications
   * [Bruneton: Precomputed Atmospheric Scattering](https://hal.inria.fr/inria-00288758/document)
   * [Bouthors: Interactive multiple anisotropic scattering in clouds](https://hal.inria.fr/file/index/docid/333007/filename/clouds.pdf)
   * [Pettersson: Real-time rendering and dynamics of sparse voxel octree clouds](https://lup.lub.lu.se/luur/download?func=downloadFile&recordOId=9024774&fileOId=9024775)
-* [Wedesoft blog](https://www.wedesoft.de/)
