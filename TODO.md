@@ -4,6 +4,17 @@
   * without atmosphere, without shadows, sample full volume?
   * add shadows
   * render planet instead of sphere, scale up and combine with rendering of planet, high resolution horizon needed?
+  * height value remapping for different cloud types?
+  * use noise values for remapping
+  * no shading of atmosphere above 25km
+  * render 1 of 4x4 pixels per frame?
+  * https://www.guerrilla-games.com/media/News/Files/Nubis-Authoring-Realtime-Volumetric-Cloudscapes-with-the-Decima-Engine-Final.pdf
+  * remap perlin: 1.0 - worley .. 1.0 -> 0.0 .. 1.0
+  * remap low freq noise: high freq noise .. 1.0 -> 0.0 .. 1.0
+  * perlin noise to get connected cloud coverage
+  * Kenny Mitchell: volumetric light scattering as a post process (iterate highlight, use to mask mie scattering)
+  * ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
+  * moon light only dominant when sun has set
 * test flow field
 * add integration-tested method for generating global cloud cover
 * separate shader to perform lookups in cloud cover cubemap
