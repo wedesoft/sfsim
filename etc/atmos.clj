@@ -27,6 +27,7 @@ uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float multiplier;
+uniform float cap;
 uniform float threshold;
 uniform float cloud_scale;
 uniform float dense_height;
@@ -62,7 +63,7 @@ void main()
       vec3 point = origin + (atmosphere.x + (i + 0.5) * step) * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-        float density = max(cloud_density(point) - threshold, 0) * multiplier;
+        float density = min(max(cloud_density(point) - threshold, 0) * multiplier, cap);
         float t = exp(-density * step);
         transparency *= t;
       }
@@ -79,10 +80,11 @@ void main()
 (def dense-height 25000.0)
 (def cloud-bottom 1500)
 (def cloud-top 4000)
-(def multiplier 1e-7)
-(def threshold 0.3)
+(def multiplier 1e-5)
+(def cap 1e-6)
+(def threshold 0.4)
 (def cloud-scale 20000)
-(def octaves [0.75 0.25])
+(def octaves [0.5 0.25 0.25])
 (def z-near 100)
 (def z-far (* radius 2))
 (def worley-size 64)
@@ -129,6 +131,7 @@ void main()
                           (uniform-float program "cloud_bottom" cloud-bottom)
                           (uniform-float program "cloud_top" cloud-top)
                           (uniform-float program "multiplier" multiplier)
+                          (uniform-float program "cap" cap)
                           (uniform-float program "threshold" threshold)
                           (uniform-float program "cloud_scale" cloud-scale)
                           (uniform-float program "dense_height" dense-height)
