@@ -39,10 +39,12 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 float cloud_octaves(vec3 point);
+float cloud_profile(vec3 point);
 float cloud_density(vec3 point)
 {
-  float noise = cloud_octaves(point / cloud_scale);
-  return noise;
+  float noise = cloud_octaves(point / cloud_scale) * cloud_profile(point);
+  float density = min(max(noise - threshold, 0) * multiplier, cap);
+  return density;
 }
 void main()
 {
@@ -63,7 +65,7 @@ void main()
       vec3 point = origin + (atmosphere.x + (i + 0.5) * step) * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-        float density = min(max(cloud_density(point) - threshold, 0) * multiplier, cap);
+        float density = cloud_density(point);
         float t = exp(-density * step);
         transparency *= t;
       }
@@ -75,29 +77,33 @@ void main()
     fragColor = vec3(0, 0, 0);
 }")
 
-(def fov 45.0)
+(def fov 120.0)
 (def radius 6378000.0)
 (def dense-height 25000.0)
 (def cloud-bottom 1500)
 (def cloud-top 4000)
-(def multiplier 1e-5)
-(def cap 1e-6)
-(def threshold 0.4)
-(def cloud-scale 20000)
-(def octaves [0.5 0.25 0.25])
+(def multiplier 8e-5)
+(def cap 2e-6)
+(def threshold 0.5)
+(def cloud-scale 30000)
+(def octaves [0.5 0.25 0.125 0.125])
 (def z-near 100)
 (def z-far (* radius 2))
 (def worley-size 64)
+(def profile-size 12)
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 5000)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 ; (generate-mipmap W)
+(def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.5 0.3 0.0]))
+(def P (make-float-texture-1d :linear :clamp data))
 
 (def program (make-program :vertex [vertex-atmosphere]
                            :fragment [fragment (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
-                                      (shaders/lookup-3d "lookup_3d" "worley") shaders/ray-sphere]))
+                                      (shaders/lookup-3d "lookup_3d" "worley") cloud-profile
+                                      shaders/convert-1d-index shaders/ray-sphere]))
 (def indices [0 1 3 2])
 (def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
@@ -124,8 +130,10 @@ void main()
                           (clear (matrix [0 1 0]))
                           (use-program program)
                           (uniform-sampler program "worley" 0)
+                          (uniform-sampler program "profile" 1)
                           (uniform-matrix4 program "projection" (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov)))
                           (uniform-matrix4 program "transform" (transformation-matrix (quaternion->matrix @orientation) @position))
+                          (uniform-int program "profile_size" profile-size)
                           (uniform-float program "stepsize" 200)
                           (uniform-float program "radius" radius)
                           (uniform-float program "cloud_bottom" cloud-bottom)
@@ -136,7 +144,7 @@ void main()
                           (uniform-float program "cloud_scale" cloud-scale)
                           (uniform-float program "dense_height" dense-height)
                           (uniform-vector3 program "origin" @position)
-                          (use-textures W)
+                          (use-textures W P)
                           (render-quads vao))
          (swap! t0 + dt)))
 

@@ -1,5 +1,11 @@
 # TODO
+* test flow field
+* add integration-tested method for generating global cloud cover
+* saving and loading of cloud cover cubemap
+* separate shader to perform lookups in cloud cover cubemap
 * rewrite cloudy.clj prototype
+  * try adding global cloud cover
+  * Perlin simplex noise?
   * just atmosphere with empty cloud layer to check that there is no step
   * without atmosphere, without shadows, sample full volume?
   * add shadows
@@ -15,12 +21,9 @@
   * Kenny Mitchell: volumetric light scattering as a post process (iterate highlight, use to mask mie scattering)
   * ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
   * moon light only dominant when sun has set
-* test flow field
-* add integration-tested method for generating global cloud cover
-* separate shader to perform lookups in cloud cover cubemap
-* add cloud cover cubemap mock
-* add global cloud map to cloud\_density and make it modular
-* extend cloud\_density with global cloud cover
+* add global cloud cover to cloud\_density shader
+  * use cloud cover mock for cloud\_density tests
+  * add global cloud map to cloud\_density and make it modular
 * create new cloud prototype avoiding step in atmosphere and flatness of cloud boundaries
 * try to install and use LWJGL3 from Maven
 * increase lod in noise-octaves?
