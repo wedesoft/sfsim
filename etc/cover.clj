@@ -16,27 +16,6 @@
 
 (Keyboard/create)
 
-(def flow-field
-"#version 410 core
-#define M_PI 3.1415926535897932384626433832795
-uniform float curl_scale;
-uniform float prevailing;
-uniform float whirl;
-float octaves_north(vec3 idx);
-float octaves_south(vec3 idx);
-float spin(float y)
-{
-  float angle = asin(y);
-  return sin(y * 3);
-}
-float flow_field(vec3 point)
-{
-  float m = spin(point.y);
-  float w1 = octaves_north(point / (2 * curl_scale)) * whirl;
-  float w2 = octaves_south(point / (2 * curl_scale)) * whirl;
-  return (w1 + prevailing) * (1 + m) / 2 - (w2 + prevailing) * (1 - m) / 2;
-}")
-
 (def cover-noise
 "#version 410 core
 uniform float cover_scale;

@@ -2,7 +2,7 @@
     (:require [midje.sweet :refer :all]
               [sfsim25.conftest :refer (roughly-matrix shader-test)]
               [comb.template :as template]
-              [clojure.math :refer (exp log)]
+              [clojure.math :refer (exp log sin cos asin)]
               [clojure.core.matrix :refer (mget matrix identity-matrix diagonal-matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
@@ -876,3 +876,46 @@ void main()
          0   0.1 0   1  0  0  0   0   0.1
          0   0   0.1 1  0  0  0  -0.1 0
          0.2 0.1 0   1  0  0  0   0   0.1)
+
+(def flow-field-probe
+  (template/fn [north south x y z]
+"#version 410 core
+out vec3 fragColor;
+float octaves_north(vec3 idx)
+{
+  return <%= north %> + idx.z;
+}
+float octaves_south(vec3 idx)
+{
+  return <%= south %>;
+}
+float flow_field(vec3 point);
+void main()
+{
+  vec3 point = vec3 (<%= x %>, <%= y %>, <%= z %>);
+  float result = flow_field(point);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def flow-field-test
+  (shader-test
+    (fn [program curl-scale prevailing whirl]
+        (uniform-float program "curl_scale" curl-scale)
+        (uniform-float program "prevailing" prevailing)
+        (uniform-float program "whirl" whirl))
+    flow-field-probe
+    flow-field))
+
+(tabular "Shader to create potential field for generating curl noise for global cloud cover"
+         (fact (mget (flow-field-test [?curl-scale ?prevailing ?whirl] [?north ?south ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         ?curl-scale ?prevailing ?whirl ?north ?south ?x                     ?y                     ?z ?result
+         1           0           0      0.0    0.0    1                      0                      0  0
+         1           1           0      0.0    0.0    0                     -1                      0  1
+         1           1           0      0.0    0.0    1                      0                      0  0
+         1           1           0      0.0    0.0    (cos (/ (asin 0.5) 3)) (sin (/ (asin 0.5) 3)) 0  0.5
+         1           0           1      1.0    0.3    0                     -1                      0  1
+         1           0           1      0.3    1.0    0                      1                      0 -1
+         1           0           0.5    1.0    0.0    0                     -1                      0  0.5
+         1           0           0.5    0.0    1.0    0                      1                      0 -0.5
+         1           0           1      0.0    0.0    0                      0                      1  0.25
+         2           0           1      0.0    0.0    0                      0                      1  0.125)

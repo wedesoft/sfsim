@@ -1,5 +1,4 @@
 # TODO
-* test flow field
 * add integration-tested method for generating global cloud cover
 * saving and loading of cloud cover cubemap
 * separate shader to perform lookups in cloud cover cubemap
