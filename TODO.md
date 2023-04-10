@@ -23,11 +23,24 @@
 * add global cloud cover to cloud\_density shader
   * use cloud cover mock for cloud\_density tests
   * add global cloud map to cloud\_density and make it modular
+* glTextureStorage2D levels correct for mipmaps?
 * create new cloud prototype avoiding step in atmosphere and flatness of cloud boundaries
+* clouds
+  * add clouds to atmospheric and planetary shader
+  * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
+  * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
+  * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
+  * determine and increment level of detail index for mipmaps in cloud\_track
+  * increase stepsize between clouds (also only sample low-resolution noise)
+  * multiple levels of Worley and Perlin noise in channels of 3D texture
+  * offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur
+  * apply cloud texture to higher resolution picture (upscale and alpha-blend)
+  * add flat cirrus clouds
+  * move different levels of noise to create moving and shape-changing clouds
+  * global cloud map (skybox?)
+  * article about atmosphere rendering with clouds
 * try to install and use LWJGL3 from Maven
 * increase lod in noise-octaves?
-* Perlin noise?
-* try whether EJML has better performance https://ejml.org/
 * [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
 * article:
   * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
@@ -35,6 +48,13 @@
   * https://www.guerrilla-games.com/read/the-real-time-volumetric-cloudscapes-of-horizon-zero-dawn
   * cloud probability map: https://neo.gsfc.nasa.gov/view.php?datasetId=MODAL2_M_CLD_FR&date=2022-12-01
   * example cloud cover: https://earthobservatory.nasa.gov/ContentFeature/BlueMarble/Images/cloud_combined_2048.jpg
+* try whether EJML has better performance https://ejml.org/
+* implement shadow maps: https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-10-parallel-split-shadow-maps-programmable-gpus
+* use Earth explorer data: https://earthexplorer.usgs.gov/
+* use GMTED2010 or STRM90 elevation data:
+  * https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
+  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d_e.htm
+  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30_e.htm
 * step in atmosphere when passing cloud-top
 * limit sampled interval depending on start of interval
 * better computation of lod, how is cloud\_max\_step (cms) still used?
@@ -59,20 +79,6 @@
   GL\_COMPUTE\_SHADER type, glDispatchCompute 1024x1024x64 items (product at least 1024)
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
-* clouds
-  * add clouds to atmospheric and planetary shader
-  * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
-  * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
-  * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
-  * determine and increment level of detail index for mipmaps in cloud\_track
-  * increase stepsize between clouds (also only sample low-resolution noise)
-  * multiple levels of Worley and Perlin noise in channels of 3D texture
-  * offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur
-  * apply cloud texture to higher resolution picture (upscale and alpha-blend)
-  * add flat cirrus clouds
-  * move different levels of noise to create moving and shape-changing clouds
-  * global cloud map (skybox?)
-  * article about atmosphere rendering with clouds
 * appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * deferred decals for rendering runway
   https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/
@@ -92,6 +98,9 @@
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
   * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
   * create windows using blending
+  * http://www.ioaircraft.com/hypersonic/ranger.php
+  * http://www.ioaircraft.com/hypersonic/raven.php
+  * https://www.russianspaceweb.com/spiral_orbiter_design.html
 * 3D cockpit
   * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
   * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
@@ -113,7 +122,6 @@
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius, polar-radius in a configuration file
 * radius1, radius2 -> radius, polar-radius
-* use Earth explorer data: https://earthexplorer.usgs.gov/
 * use GMTED2010 data: https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
