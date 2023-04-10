@@ -6,6 +6,7 @@
 * add global cloud cover to cloud\_density shader
   * use cloud cover mock for cloud\_density tests
   * add global cloud map to cloud\_density and make it modular
+* lod for opacity and cloud rendering
 * integration test for cloud cover
 * render atmosphere
 * add integration-tested method for generating global cloud cover

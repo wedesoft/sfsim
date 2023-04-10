@@ -28,11 +28,18 @@ uniform float threshold;
 uniform float multiplier;
 float cloud_octaves(vec3 point);
 float cloud_profile(vec3 point);
-float cloud_density(vec3 point)
+float cloud_density(vec3 point, float lod)
 {
   float noise = cloud_octaves(point / cloud_scale) * cloud_profile(point);
   float density = min(max(noise - threshold, 0) * multiplier, cap);
   return density;
+}")
+
+(def sampling-offset
+"#version 410 core
+float sampling_offset()
+{
+  return 0.5;
 }")
 
 (def fragment
@@ -49,7 +56,7 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-float cloud_density(vec3 point);
+float cloud_density(vec3 point, float lod);
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -69,7 +76,7 @@ void main()
       vec3 point = origin + (atmosphere.x + (i + 0.5) * step) * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-        float density = cloud_density(point);
+        float density = cloud_density(point, 0.0);
         float t = exp(-density * step);
         transparency *= t;
       }
@@ -106,10 +113,19 @@ void main()
 (def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.5 0.3 0.0]))
 (def P (make-float-texture-1d :linear :clamp data))
 
-(def program (make-program :vertex [vertex-atmosphere]
-                           :fragment [fragment density (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
-                                      (shaders/lookup-3d "lookup_3d" "worley") cloud-profile
-                                      shaders/convert-1d-index shaders/ray-sphere]))
+(def program
+  (make-program :vertex [vertex-atmosphere]
+                :fragment [fragment density (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/lookup-3d "lookup_3d" "worley") cloud-profile
+                           shaders/convert-1d-index shaders/ray-sphere]))
+
+(def num-opacity-layers 7)
+(def program-shadow
+  (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
+                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell density
+                           (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/lookup-3d "lookup_3d" "worley") cloud-profile shaders/convert-1d-index
+                           shaders/ray-sphere sampling-offset]))
 
 (def keystates (atom {}))
 
@@ -166,6 +182,7 @@ void main()
 
 (destroy-texture P)
 (destroy-texture W)
+(destroy-program program-shadow)
 (destroy-program program)
 
 (Display/destroy)
