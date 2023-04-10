@@ -1,5 +1,5 @@
 # TODO
-* add opacity map to cloud prototype
+* add opacity map to cloud prototype etc/atmos.clj
 * improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html
 * update cloud\_density with new noise functions and remapping
 * add global cloud cover to cloud\_density shader

@@ -20,16 +20,27 @@
 ;(Display/setDisplayMode (DisplayMode. 1280 720))
 (Display/create)
 
+(def density
+"#version 410 core
+uniform float cloud_scale;
+uniform float cap;
+uniform float threshold;
+uniform float multiplier;
+float cloud_octaves(vec3 point);
+float cloud_profile(vec3 point);
+float cloud_density(vec3 point)
+{
+  float noise = cloud_octaves(point / cloud_scale) * cloud_profile(point);
+  float density = min(max(noise - threshold, 0) * multiplier, cap);
+  return density;
+}")
+
 (def fragment
 "#version 410 core
 uniform float stepsize;
 uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
-uniform float multiplier;
-uniform float cap;
-uniform float threshold;
-uniform float cloud_scale;
 uniform float dense_height;
 uniform vec3 origin;
 in VS_OUT
@@ -38,14 +49,7 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-float cloud_octaves(vec3 point);
-float cloud_profile(vec3 point);
-float cloud_density(vec3 point)
-{
-  float noise = cloud_octaves(point / cloud_scale) * cloud_profile(point);
-  float density = min(max(noise - threshold, 0) * multiplier, cap);
-  return density;
-}
+float cloud_density(vec3 point);
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -101,7 +105,7 @@ void main()
 (def P (make-float-texture-1d :linear :clamp data))
 
 (def program (make-program :vertex [vertex-atmosphere]
-                           :fragment [fragment (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
+                           :fragment [fragment density (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
                                       (shaders/lookup-3d "lookup_3d" "worley") cloud-profile
                                       shaders/convert-1d-index shaders/ray-sphere]))
 (def indices [0 1 3 2])
