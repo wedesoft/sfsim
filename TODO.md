@@ -4,7 +4,7 @@
 * separate shader to perform lookups in cloud cover cubemap
 * rewrite cloudy.clj prototype
   * try adding global cloud cover
-  * Perlin simplex noise?
+  * improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html
   * just atmosphere with empty cloud layer to check that there is no step
   * without atmosphere, without shadows, sample full volume?
   * add shadows
