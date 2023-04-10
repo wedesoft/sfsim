@@ -2,10 +2,11 @@
 * add opacity map to cloud prototype etc/atmos.clj
 * improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html
 * update cloud\_density with new noise functions and remapping
+* test cloud shadows on ellipsoidical planet
 * add global cloud cover to cloud\_density shader
   * use cloud cover mock for cloud\_density tests
   * add global cloud map to cloud\_density and make it modular
-* try adding global cloud cover
+* integration test for cloud cover
 * render atmosphere
 * add integration-tested method for generating global cloud cover
 * saving and loading of cloud cover cubemap
