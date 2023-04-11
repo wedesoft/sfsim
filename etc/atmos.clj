@@ -168,7 +168,8 @@ void main()
                projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov))
                transform  (transformation-matrix (quaternion->matrix @orientation) @position)
                matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
-               splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))]
+               splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
+               scatter-am (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic))]
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 1 0]))
                             (use-program program)
