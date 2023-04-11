@@ -89,7 +89,7 @@ void main()
       if (transparency <= 0.05)
         break;
     };
-    fragColor = background * transparency + (1 - transparency);
+    fragColor = background * transparency + cloud_scatter;
   } else
     fragColor = vec3(0, 0, 0);
 }")
@@ -100,8 +100,8 @@ void main()
 (def anisotropic 0.065)
 (def cloud-bottom 1500)
 (def cloud-top 4000)
-(def multiplier 1e-2)
-(def cap 3e-3)
+(def multiplier 1.5e-2)
+(def cap 5e-3)
 (def threshold 0.5)
 (def cloud-scale 30000)
 (def octaves [0.5 0.25 0.125 0.125])
