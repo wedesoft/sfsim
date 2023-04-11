@@ -49,6 +49,8 @@ uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float dense_height;
+uniform float anisotropic;
+uniform vec3 light_direction;
 uniform vec3 origin;
 in VS_OUT
 {
@@ -57,6 +59,7 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
+float phase(float g, float mu);
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -65,25 +68,28 @@ void main()
   if (atmosphere.y > 0) {
     vec3 background;
     if (planet.y > 0) {
-      background = vec3(0, 0, 255);
+      background = vec3(0, 0, 1);
       atmosphere.y = planet.x - atmosphere.x;
     } else
       background = vec3(0, 0, 0);
     float transparency = 1.0;
     int count = int(ceil(atmosphere.y / stepsize));
     float step = atmosphere.y / count;
+    vec3 cloud_scatter = vec3(0, 0, 0);
     for (int i=0; i<count; i++) {
       vec3 point = origin + (atmosphere.x + (i + 0.5) * step) * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
         float density = cloud_density(point, 0.0);
         float t = exp(-density * step);
+        float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic);
+        cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount;
         transparency *= t;
       }
       if (transparency <= 0.05)
         break;
     };
-    fragColor = background * transparency + vec3(255, 255, 255) * (1 - transparency);
+    fragColor = background * transparency + (1 - transparency);
   } else
     fragColor = vec3(0, 0, 0);
 }")
@@ -91,15 +97,17 @@ void main()
 (def fov 60.0)
 (def radius 6378000.0)
 (def dense-height 25000.0)
+(def anisotropic 0.065)
 (def cloud-bottom 1500)
 (def cloud-top 4000)
-(def multiplier 8e-5)
-(def cap 2e-6)
+(def multiplier 1e-2)
+(def cap 3e-3)
 (def threshold 0.5)
 (def cloud-scale 30000)
 (def octaves [0.5 0.25 0.125 0.125])
 (def z-near 100)
 (def z-far (* radius 2))
+(def mix 0.8)
 (def worley-size 64)
 (def profile-size 12)
 (def depth 30000.0)
@@ -116,10 +124,11 @@ void main()
 (def program
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment density (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
-                           (shaders/lookup-3d "lookup_3d" "worley") cloud-profile
+                           (shaders/lookup-3d "lookup_3d" "worley") cloud-profile phase-function
                            shaders/convert-1d-index shaders/ray-sphere]))
 
 (def num-opacity-layers 7)
+(def num-steps 5)
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell density
@@ -155,8 +164,11 @@ void main()
                indices    [0 1 3 2]
                vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
                vao        (make-vertex-array-object program indices vertices [:point 3])
+               light-dir  (matrix [0 (cos @light) (sin @light)])
                projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov))
-               transform  (transformation-matrix (quaternion->matrix @orientation) @position)]
+               transform  (transformation-matrix (quaternion->matrix @orientation) @position)
+               matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
+               splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))]
            (onscreen-render (Display/getWidth) (Display/getHeight)
                             (clear (matrix [0 1 0]))
                             (use-program program)
@@ -174,7 +186,9 @@ void main()
                             (uniform-float program "threshold" threshold)
                             (uniform-float program "cloud_scale" cloud-scale)
                             (uniform-float program "dense_height" dense-height)
+                            (uniform-float program "anisotropic" anisotropic)
                             (uniform-vector3 program "origin" @position)
+                            (uniform-vector3 program "light_direction" light-dir)
                             (use-textures W P)
                             (render-quads vao))
            (destroy-vertex-array-object vao))
