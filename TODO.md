@@ -1,6 +1,7 @@
 # TODO
 * add opacity map to cloud prototype etc/atmos.clj
 * is cloud-scatter-amount and density redundant?
+* separate cloud\_shadow and transmittance\_outer
 * lod for opacity and cloud rendering
 * integration test for cloud opacity map
 * update cloud\_density with new noise functions and remapping

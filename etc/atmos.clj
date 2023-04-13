@@ -31,7 +31,8 @@ float cloud_profile(vec3 point);
 float cloud_density(vec3 point, float lod)
 {
   float noise = cloud_octaves(point / cloud_scale) * cloud_profile(point);
-  float density = min(max(noise - threshold, 0) * multiplier, cap);
+  float detail = (cloud_octaves(8 * point / cloud_scale) - 0.5) * multiplier * 4e-1;
+  float density = min(max((noise - threshold) * multiplier + detail, 0), cap);
   return density;
 }")
 
@@ -60,6 +61,24 @@ out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
 float phase(float g, float mu);
+float opacity_cascade_lookup(vec4 point);
+float sampling_offset();
+
+float cloud_shadow(vec3 point, vec3 light_direction, float lod)
+{
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + dense_height, point, light_direction);
+  if (atmosphere_intersection.y > 0) {
+    if (dot(point, light_direction) < 0) {
+      vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
+      if (planet_intersection.y > 0) {
+        return 0.0;
+      };
+    };
+    float shadow = opacity_cascade_lookup(vec4(point, 1));
+    return shadow;
+  };
+  return 1.0;
+}
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -76,13 +95,15 @@ void main()
     int count = int(ceil(atmosphere.y / stepsize));
     float step = atmosphere.y / count;
     vec3 cloud_scatter = vec3(0, 0, 0);
+    float offset = sampling_offset();
     for (int i=0; i<count; i++) {
-      vec3 point = origin + (atmosphere.x + (i + 0.5) * step) * direction;
+      vec3 point = origin + (atmosphere.x + (i + offset) * step) * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
         float density = cloud_density(point, 0.0);
         float t = exp(-density * step);
-        float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic);
+        float intensity = cloud_shadow(point, light_direction, 0.0);
+        float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
         cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount;
         transparency *= t;
       }
@@ -97,13 +118,13 @@ void main()
 (def fov 60.0)
 (def radius 6378000.0)
 (def dense-height 25000.0)
-(def anisotropic 0.065)
+(def anisotropic (* 2 0.065))
 (def cloud-bottom 1500)
 (def cloud-top 4000)
-(def multiplier 1.5e-2)
-(def cap 5e-3)
-(def threshold 0.5)
-(def cloud-scale 30000)
+(def multiplier 8e-2)
+(def cap 3e-2)
+(def threshold (atom 0.6))
+(def cloud-scale 50000)
 (def octaves [0.5 0.25 0.125 0.125])
 (def z-near 100)
 (def z-far (* radius 2))
@@ -112,31 +133,37 @@ void main()
 (def worley-size 64)
 (def profile-size 12)
 (def shadow-size 128)
+(def noise-size 64)
 (def depth 30000.0)
 (def position (atom (matrix [0 (* -0 radius) (+ (* 1 radius) 5000)])))
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
-(def light (atom (* 0.03 PI)))
+(def light (atom (* 0.25 PI)))
 
 (def data (slurp-floats "data/worley.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 ; (generate-mipmap W)
-(def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.7 0.5 0.3 0.0]))
+(def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 0.8 0.6 0.4 0.2 0.0]))
 (def P (make-float-texture-1d :linear :clamp data))
+
+(def data (slurp-floats "data/bluenoise.raw"))
+(def B (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data data}))
+
+(def num-steps 5)
 
 (def program
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment density (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d "lookup_3d" "worley") cloud-profile phase-function
-                           shaders/convert-1d-index shaders/ray-sphere]))
+                           shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
+                           opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset]))
 
 (def num-opacity-layers 7)
-(def num-steps 5)
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell density
                            (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d "lookup_3d" "worley") cloud-profile shaders/convert-1d-index
-                           shaders/ray-sphere sampling-offset]))
+                           shaders/ray-sphere bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])
 (def shadow-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
@@ -151,23 +178,25 @@ void main()
                               (use-program program-shadow)
                               (uniform-sampler program-shadow "worley" 0)
                               (uniform-sampler program-shadow "profile" 1)
+                              (uniform-sampler program-shadow "bluenoise" 2)
                               (uniform-int program-shadow "shadow_size" shadow-size)
                               (uniform-int program-shadow "profile_size" profile-size)
+                              (uniform-int program-shadow "noise_size" noise-size)
                               (uniform-float program-shadow "radius" radius)
                               (uniform-float program-shadow "cloud_bottom" cloud-bottom)
                               (uniform-float program-shadow "cloud_top" cloud-top)
+                              (uniform-float program-shadow "cloud_scale" cloud-scale)
                               (uniform-matrix4 program-shadow "ndc_to_shadow" (inverse shadow-ndc-matrix))
                               (uniform-vector3 program-shadow "light_direction" light-direction)
                               (uniform-float program-shadow "multiplier" multiplier)
                               (uniform-float program-shadow "cap" cap)
-                              (uniform-float program-shadow "threshold" threshold)
-                              (uniform-float program-shadow "cloud_scale" cloud-scale)
+                              (uniform-float program-shadow "threshold" @threshold)
                               (uniform-float program-shadow "dense_height" dense-height)
                               (uniform-float program-shadow "scatter_amount" scatter-amount)
                               (uniform-float program-shadow "depth" depth)
                               (uniform-float program-shadow "opacity_step" opacity-step)
-                              (uniform-float program-shadow "cloud_max_step" 100)
-                              (use-textures W P)
+                              (uniform-float program-shadow "cloud_max_step" 50)
+                              (use-textures W P B)
                               (render-quads shadow-vao))
           {:offset opacity-offsets :layer opacity-layers}))
     matrix-cascade))(def keystates (atom {}))
@@ -184,12 +213,14 @@ void main()
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
              v  (if (@keystates Keyboard/KEY_PRIOR) 5 (if (@keystates Keyboard/KEY_NEXT) -5 0))
-             l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))]
+             l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))
+             tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
-         (swap! light + (* l 0.1 dt))
          (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (swap! light + (* l 0.1 dt))
+         (swap! threshold + (* dt tr))
          (let [norm-pos   (norm @position)
                dist       (- norm-pos radius cloud-top)
                z-near     (max 10.0 dist)
@@ -210,27 +241,42 @@ void main()
                             (use-program program)
                             (uniform-sampler program "worley" 0)
                             (uniform-sampler program "profile" 1)
+                            (uniform-sampler program "bluenoise" 2)
+                            (doseq [i (range num-steps)]
+                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 3))
+                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 4)))
+                            (doseq [[idx item] (map-indexed vector splits)]
+                                   (uniform-float program (str "split" idx) item))
+                            (doseq [[idx item] (map-indexed vector matrix-cas)]
+                                   (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+                                   (uniform-float program (str "depth" idx) (:depth item)))
                             (uniform-matrix4 program "projection" projection)
                             (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "inverse_transform" (inverse transform))
                             (uniform-int program "profile_size" profile-size)
+                            (uniform-int program "noise_size" noise-size)
                             (uniform-float program "stepsize" 200)
+                            (uniform-int program "num_opacity_layers" num-opacity-layers)
+                            (uniform-int program "shadow_size" shadow-size)
                             (uniform-float program "radius" radius)
                             (uniform-float program "cloud_bottom" cloud-bottom)
                             (uniform-float program "cloud_top" cloud-top)
                             (uniform-float program "multiplier" multiplier)
                             (uniform-float program "cap" cap)
-                            (uniform-float program "threshold" threshold)
+                            (uniform-float program "opacity_step" opacity-step)
+                            (uniform-float program "threshold" @threshold)
                             (uniform-float program "cloud_scale" cloud-scale)
                             (uniform-float program "dense_height" dense-height)
                             (uniform-float program "anisotropic" anisotropic)
                             (uniform-vector3 program "origin" @position)
                             (uniform-vector3 program "light_direction" light-dir)
-                            (use-textures W P)
+                            (apply use-textures W P B (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                             (render-quads vao))
            (doseq [{:keys [offset layer]} tex-cas]
                   (destroy-texture offset)
                   (destroy-texture layer))
            (destroy-vertex-array-object vao))
+         (print (format "\rthres (q/a) %.3f" @threshold))
          (swap! t0 + dt)))
 
 (destroy-texture P)
