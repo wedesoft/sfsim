@@ -1,6 +1,6 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix is-image)]
+              [sfsim25.conftest :refer (roughly-matrix is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (PI)]
               [clojure.core.matrix :refer (matrix mul identity-matrix)]
@@ -56,7 +56,7 @@ void main()
                           (use-program program)
                           (raster-lines (render-quads vao))
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/quad.png"))
+                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/quad.png" 2.0))
 
 (tabular "Tessellation control shader to control outer tessellation of quad using a uniform integer"
          (fact
@@ -87,7 +87,7 @@ void main()
                                (raster-lines (render-patches vao))
                                (destroy-texture heightfield)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result))
+                               (destroy-program program))) => (is-image ?result 5.0))
          ?neighbours ?result
          15          "test/sfsim25/fixtures/planet/tessellation.png"
           1          "test/sfsim25/fixtures/planet/tessellation-0.png"
@@ -139,7 +139,7 @@ void main()
                                (render-patches vao)
                                (destroy-texture heightfield)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result))
+                               (destroy-program program))) => (is-image ?result 0.02))
          ?selector                           ?scale ?result
          "frag_in.colorcoord"                1.0    "test/sfsim25/fixtures/planet/color-coords.png"
          "frag_in.heightcoord"               1.0    "test/sfsim25/fixtures/planet/height-coords.png"
@@ -175,7 +175,8 @@ void main()
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/tessellation.png"))
+                          (destroy-program program)))
+      => (is-image "test/sfsim25/fixtures/planet/tessellation.png" 5.0))
 
 (fact "Apply projection matrix to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -206,7 +207,8 @@ void main()
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/projection.png"))
+                          (destroy-program program)))
+      => (is-image "test/sfsim25/fixtures/planet/projection.png" 0.9))
 
 (fact "Scale vertex coordinates using given height field"
       (offscreen-render 256 256
@@ -236,7 +238,8 @@ void main()
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/heightfield.png"))
+                          (destroy-program program)))
+      => (is-image "test/sfsim25/fixtures/planet/heightfield.png" 1.4))
 
 (defn radiance-shader-test [setup probe & shaders]
   (fn [uniforms args]
@@ -454,7 +457,8 @@ float sampling_offset()
                                (doseq [tex [profile worley water radiance ray-scatter mie-strength transmittance normals colors]]
                                       (destroy-texture tex))
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png")))
+                               (destroy-program program)))
+           => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
          ?colors   ?albedo ?a ?polar       ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
          "white"   PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
          "pattern" PI      1  radius       1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"

@@ -12,7 +12,8 @@
            [org.lwjgl BufferUtils]))
 
 (fact "Render background color"
-  (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0]))) => (is-image "test/sfsim25/fixtures/render/red.png"))
+  (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0])))
+  => (is-image "test/sfsim25/fixtures/render/red.png" 0.0))
 
 (def vertex-passthrough
 "#version 410 core
@@ -40,7 +41,7 @@ void main()
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (def vertex-color
 "#version 410 core
@@ -72,7 +73,7 @@ void main()
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/colors.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/colors.png" 0.0))
 
 (fact "Render two quads with depth testing"
   (offscreen-render 160 120
@@ -85,7 +86,7 @@ void main()
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quads.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quads.png" 0.0))
 
 (def fragment-red
 "#version 410 core
@@ -112,7 +113,7 @@ void main()
       (destroy-vertex-array-object vao2)
       (destroy-vertex-array-object vao1)
       (destroy-program program2)
-      (destroy-program program1))) => (is-image "test/sfsim25/fixtures/render/objects.png"))
+      (destroy-program program1))) => (is-image "test/sfsim25/fixtures/render/objects.png" 0.0))
 
 (fact "Render lines only"
   (offscreen-render 160 120
@@ -124,7 +125,7 @@ void main()
       (use-program program)
       (raster-lines (render-quads vao))
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/lines.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/lines.png" 4.3))
 
 (def fragment-uniform-floats
 "#version 410 core
@@ -150,7 +151,7 @@ void main()
       (uniform-float program "blue" 0.0)
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
 
 (def fragment-uniform-ints
 "#version 410 core
@@ -176,7 +177,7 @@ void main()
       (uniform-int program "blue" 0)
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-ints.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-ints.png" 0.0))
 
 (def fragment-uniform-vector3
 "#version 410 core
@@ -198,7 +199,7 @@ void main()
       (uniform-vector3 program "color" (matrix [1.0 0.5 0.0]))
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
 
 (def vertex-transform3
 "#version 410 core
@@ -220,7 +221,7 @@ void main()
       (uniform-matrix3 program "transform" (identity-matrix 3))
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (def vertex-transform4
 "#version 410 core
@@ -242,7 +243,7 @@ void main()
       (uniform-matrix4 program "transform" (identity-matrix 4))
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (fact "Size of 1D texture"
       (offscreen-render 64 64
@@ -287,7 +288,8 @@ void main()
                         (render-quads vao)
                         (destroy-texture tex)
                         (destroy-vertex-array-object vao)
-                        (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+                        (destroy-program program)))
+    => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png") 0.0))
   ?interpolation ?boundary ?result
   :nearest       :clamp    "floats-1d-nearest-clamp"
   :linear        :clamp    "floats-1d-linear-clamp"
@@ -325,7 +327,7 @@ void main()
       (render-quads vao)
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/texture.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/texture.png" 0.0))
 
 (tabular "Render 2D floating-point texture"
   (fact
@@ -343,7 +345,8 @@ void main()
                         (render-quads vao)
                         (destroy-texture tex)
                         (destroy-vertex-array-object vao)
-                        (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+                        (destroy-program program)))
+    => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png") 0.0))
   ?interpolation ?boundary ?result
   :nearest       :clamp    "floats-2d-nearest-clamp"
   :linear        :clamp    "floats-2d-linear-clamp"
@@ -364,7 +367,7 @@ void main()
       (render-quads vao)
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/ubytes.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/ubytes.png" 0.0))
 
 (fact "Render 2D vector texture"
   (offscreen-render 64 64
@@ -380,7 +383,7 @@ void main()
       (render-quads vao)
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png" 0.0))
 
 (fact "Size of 2D depth texture"
       (offscreen-render 64 64
@@ -425,7 +428,8 @@ void main(void)
                       (render-quads vao)
                       (destroy-texture depth)
                       (destroy-vertex-array-object vao)
-                      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/shadow-sample.png"))
+                      (destroy-program program)))
+  => (is-image "test/sfsim25/fixtures/render/shadow-sample.png" 0.0))
 
 (fact "Size of 3D texture"
       (offscreen-render 64 64
@@ -463,7 +467,8 @@ void main()
                         (render-quads vao)
                         (destroy-texture tex)
                         (destroy-vertex-array-object vao)
-                        (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+                        (destroy-program program)))
+    => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png") 0.0))
   ?interpolation ?boundary ?result
   :nearest       :clamp    "floats-3d-nearest-clamp"
   :linear        :clamp    "floats-3d-linear-clamp"
@@ -501,7 +506,7 @@ void main()
       (destroy-texture tex2)
       (destroy-texture tex1)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/two-textures.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/two-textures.png" 0.0))
 
 (def control-uniform
 "#version 410 core
@@ -555,7 +560,7 @@ void main(void)
       (use-program program)
       (raster-lines (render-patches vao))
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/tessellation.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/tessellation.png" 28.9))
 
 (def fragment-part1
 "#version 410 core
@@ -584,7 +589,7 @@ void main()
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
-      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png"))
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (fact "Render to floating-point texture (needs active OpenGL context)"
       (offscreen-render 32 32
@@ -596,7 +601,7 @@ void main()
       (offscreen-render 32 32
         (let [tex (texture-render-color 160 120 false (clear (matrix [1.0 0.0 0.0])))
               img (texture->image tex)]
-          img => (is-image "test/sfsim25/fixtures/render/red.png")
+          img => (is-image "test/sfsim25/fixtures/render/red.png" 0.0)
           (destroy-texture tex))))
 
 (def fragment-two-attachments
@@ -699,7 +704,7 @@ void main()
                (render-quads vao)
                (destroy-texture tex)
                (destroy-vertex-array-object vao)
-               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png")))
+               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png") 0.0))
          ?lod ?result
          0.0  "lod-1d-0"
          1.0  "lod-1d-1"
@@ -831,7 +836,7 @@ void main(void)
           (destroy-vertex-array-object vao)
           (destroy-program program-main)
           (destroy-program program-shadow)))
-      => (is-image "test/sfsim25/fixtures/render/shadow.png"))
+      => (is-image "test/sfsim25/fixtures/render/shadow.png" 0.02))
 
 (fact "Create floating-point cube map and read them out"
       (offscreen-render 16 16
