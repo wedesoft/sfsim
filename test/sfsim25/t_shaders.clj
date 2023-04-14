@@ -977,3 +977,29 @@ void main()
          1   0   0   1  2  3  (/ PI 2)  1  -3   2
          0   0   1   1  2  3  (/ PI 2) -2   1   3
          0   0   1   1  0  0  (/ PI 2)  0   1   0)
+
+(def scale-noise-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float noise(vec3 point)
+{
+  return point.x;
+}
+float scale(vec3 point);
+void main()
+{
+  float result = scale(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def scale-noise-test
+  (shader-test
+    (fn [program factor] (uniform-float program "factor" factor))
+    scale-noise-probe (scale-noise "scale" "factor" "noise")))
+
+(tabular "Shader for calling a noise function with a scaled vector"
+         (fact (mget (scale-noise-test [?scale] [?x ?y ?z]) 0) => ?result)
+         ?scale ?x ?y ?z ?result
+         1      2  3  5  2.0
+         3      2  3  5  6.0)

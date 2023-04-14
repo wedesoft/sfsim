@@ -1,4 +1,5 @@
 # TODO
+* integration test for cloud cover
 * add opacity map to cloud prototype etc/atmos.clj
 * is cloud-scatter-amount and density redundant?
 * separate cloud\_shadow and transmittance\_outer
@@ -9,7 +10,6 @@
 * add global cloud cover to cloud\_density shader
   * use cloud cover mock for cloud\_density tests
   * add global cloud map to cloud\_density and make it modular
-* integration test for cloud cover
 * improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html
 * render atmosphere
 * add integration-tested method for generating global cloud cover

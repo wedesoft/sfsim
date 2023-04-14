@@ -149,3 +149,7 @@
 (def vertex-passthrough
   "Vertex shader to simply pass vertex through"
   (slurp "resources/shaders/core/vertex-passthrough.glsl"))
+
+(def scale-noise
+  "Shader for calling a noise function with a scaled vector"
+  (template/fn [method-name factor noise] (slurp "resources/shaders/core/scale-noise.glsl")))

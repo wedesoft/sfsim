@@ -16,15 +16,6 @@
 
 (Keyboard/create)
 
-(def cover-noise
-"#version 410 core
-uniform float cover_scale;
-float clouds(vec3 idx);
-float cover(vec3 point)
-{
-  return clouds(point / (2 * cover_scale));
-}")
-
 (defn cloud-cover-cubemap [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves
                                      whirl prevailing curl-scale cover-scale num-iterations flow-scale]}]
   (let [result      (promise)
@@ -39,7 +30,9 @@ float cover(vec3 point)
                        flow-field])
         lookup      (make-cubemap-warp-program
                       "current" "cover"
-                      [(shaders/noise-octaves "clouds" "noise" cloud-octaves) (shaders/lookup-3d "noise" "worley") cover-noise])
+                      [(shaders/noise-octaves "clouds" "noise" cloud-octaves)
+                       (shaders/lookup-3d "noise" "worley")
+                       (shaders/scale-noise "cover" "factor" "clouds")])
         epsilon       (/ 1.0 worley-size (pow 2.0 (count flow-octaves)))]
     (use-program update-warp)
     (uniform-sampler update-warp "current" 0)
@@ -58,7 +51,7 @@ float cover(vec3 point)
       (cubemap-warp size lookup
                     (uniform-sampler lookup "current" 0)
                     (uniform-sampler lookup "worley" 1)
-                    (uniform-float lookup "cover_scale" cover-scale)
+                    (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
                     (use-textures @warp worley-cover)))
     (destroy-program lookup)
     (destroy-program update-warp)
