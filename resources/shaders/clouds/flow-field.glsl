@@ -9,7 +9,7 @@ float octaves_south(vec3 idx);
 
 float spin(float y)
 {
-  float latitude = asin(y);
+  float latitude = asin(clamp(y, -1.0, 1.0));
   return sin(latitude * 3);
 }
 
