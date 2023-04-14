@@ -1,13 +1,13 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix shader-test)]
+              [sfsim25.conftest :refer (roughly-matrix shader-test is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (exp log sin cos asin)]
               [clojure.core.matrix :refer (mget matrix identity-matrix diagonal-matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
-              [sfsim25.util :refer (get-vector3 get-float get-float-3d)]
+              [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
               [sfsim25.clouds :refer :all]))
 
 (def cloud-track-probe
@@ -919,3 +919,84 @@ void main()
          1           0           0.5    0.0    1.0    0                      1                      0 -0.5
          1           0           1      0.0    0.0    0                      0                      1  0.25
          2           0           1      0.0    0.0    0                      0                      1  0.125)
+
+(def cover-vertex
+"#version 410 core
+in vec3 point;
+out VS_OUT
+{
+  vec3 point;
+} vs_out;
+void main()
+{
+  vs_out.point = point;
+  gl_Position = vec4(point, 1);
+}")
+
+(def cover-fragment
+"#version 410 core
+uniform samplerCube cubemap;
+uniform float threshold;
+uniform float multiplier;
+in VS_OUT
+{
+  vec3 point;
+} fs_in;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+out vec3 fragColor;
+void main()
+{
+  vec2 intersection = ray_sphere(vec3(0, 0, 0), 1, vec3(fs_in.point.xy, -1), vec3(0, 0, 1));
+  if (intersection.y > 0) {
+    vec3 p = vec3(fs_in.point.xy, -1 + intersection.x);
+    float value = texture(cubemap, p).r;
+    value = (value - threshold) * multiplier;
+    fragColor = vec3(value, value, 1.0);
+  } else
+    fragColor = vec3(0, 0, 0);
+}")
+
+(fact "Program to generate planetary cloud cover using curl noise"
+    (offscreen-render 128 128
+      (let [worley-size  8
+            worley-north (make-float-texture-3d :linear :repeat
+                                                {:width worley-size :height worley-size :depth worley-size
+                                                 :data (slurp-floats "test/sfsim25/fixtures/clouds/worley-north.raw")})
+            worley-south (make-float-texture-3d :linear :repeat
+                                                {:width worley-size :height worley-size :depth worley-size
+                                                 :data (slurp-floats "test/sfsim25/fixtures/clouds/worley-south.raw")})
+            worley-cover (make-float-texture-3d :linear :repeat
+                                                {:width worley-size :height worley-size :depth worley-size
+                                                 :data (slurp-floats "test/sfsim25/fixtures/clouds/worley-cover.raw")})
+            program      (make-program :vertex [cover-vertex] :fragment [cover-fragment shaders/ray-sphere])
+            indices      [0 1 3 2]
+            vertices     [-1 -1 0, 1 -1 0, -1 1 0, 1 1 0]
+            vao          (make-vertex-array-object program indices vertices [:point 3])
+            cubemap      (cloud-cover-cubemap :size 256
+                                              :worley-size worley-size
+                                              :worley-south worley-south
+                                              :worley-north worley-north
+                                              :worley-cover worley-cover
+                                              :flow-octaves [0.5 0.25 0.125]
+                                              :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                              :whirl 2.0
+                                              :prevailing 0.1
+                                              :curl-scale 1.0
+                                              :cover-scale 2.0
+                                              :num-iterations 50
+                                              :flow-scale 1.5e-3)]
+        (setup-rendering 128 128 :cullback)  ; Need to setup viewport again after creating cubemap
+        (clear (matrix [1 0 0]))
+        (use-program program)
+        (uniform-sampler program "cubemap" 0)
+        (uniform-float program "threshold" 0.3)
+        (uniform-float program "multiplier" 4.0)
+        (use-textures cubemap)
+        (render-quads vao)
+        (destroy-texture cubemap)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)
+        (destroy-texture worley-cover)
+        (destroy-texture worley-south)
+        (destroy-texture worley-north)))
+    => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.0))

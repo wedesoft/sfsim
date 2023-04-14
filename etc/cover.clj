@@ -11,52 +11,10 @@
         '[org.lwjgl.input Keyboard])
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. (/ 640 1) (/ 640 1)))
+(Display/setDisplayMode (DisplayMode. 640 640))
 (Display/create)
 
 (Keyboard/create)
-
-(defn cloud-cover-cubemap [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves
-                                     whirl prevailing curl-scale cover-scale num-iterations flow-scale]}]
-  (let [result      (promise)
-        warp        (atom (identity-cubemap size))
-        update-warp (make-iterate-cubemap-warp-program
-                      "current" "curl"
-                      [(curl-vector "curl" "gradient") (shaders/gradient-3d "gradient" "flow_field" "epsilon")
-                       (shaders/noise-octaves "octaves_north" "lookup_north" flow-octaves)
-                       (shaders/noise-octaves "octaves_south" "lookup_south" flow-octaves)
-                       (shaders/lookup-3d "lookup_north" "worley_north") (shaders/lookup-3d "lookup_south" "worley_south")
-                       shaders/rotate-vector shaders/oriented-matrix shaders/orthogonal-vector shaders/project-vector
-                       flow-field])
-        lookup      (make-cubemap-warp-program
-                      "current" "cover"
-                      [(shaders/noise-octaves "clouds" "noise" cloud-octaves)
-                       (shaders/lookup-3d "noise" "worley")
-                       (shaders/scale-noise "cover" "factor" "clouds")])
-        epsilon       (/ 1.0 worley-size (pow 2.0 (count flow-octaves)))]
-    (use-program update-warp)
-    (uniform-sampler update-warp "current" 0)
-    (uniform-sampler update-warp "worley_north" 1)
-    (uniform-sampler update-warp "worley_south" 2)
-    (uniform-float update-warp "epsilon" epsilon)
-    (uniform-float update-warp "whirl" whirl)
-    (uniform-float update-warp "prevailing" prevailing)
-    (uniform-float update-warp "curl_scale" curl-scale)
-    (dotimes [iteration num-iterations]
-      (let [updated (iterate-cubemap size flow-scale update-warp (use-textures @warp worley-north worley-south))]
-        (destroy-texture @warp)
-        (reset! warp updated)))
-    (deliver
-      result
-      (cubemap-warp size lookup
-                    (uniform-sampler lookup "current" 0)
-                    (uniform-sampler lookup "worley" 1)
-                    (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
-                    (use-textures @warp worley-cover)))
-    (destroy-program lookup)
-    (destroy-program update-warp)
-    (destroy-texture @warp)
-    @result))
 
 (def worley-size 64)
 

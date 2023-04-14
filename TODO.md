@@ -1,5 +1,5 @@
 # TODO
-* integration test for cloud cover
+* functions to save and load cloud cover cubemap, build multiple Worley noise fields, configuration (edn) file for clouds?
 * add opacity map to cloud prototype etc/atmos.clj
 * is cloud-scatter-amount and density redundant?
 * separate cloud\_shadow and transmittance\_outer
@@ -11,6 +11,7 @@
   * use cloud cover mock for cloud\_density tests
   * add global cloud map to cloud\_density and make it modular
 * improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html
+* uniform random offsets for Worley noises
 * render atmosphere
 * add integration-tested method for generating global cloud cover
 * saving and loading of cloud cover cubemap
