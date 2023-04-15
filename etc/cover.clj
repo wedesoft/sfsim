@@ -18,15 +18,11 @@
 
 (def worley-size 64)
 
-(when-not (.exists (clojure.java.io/file "w1.raw")) (spit-floats "w1.raw" (float-array (worley-noise 8 64 true))))
-(when-not (.exists (clojure.java.io/file "w2.raw")) (spit-floats "w2.raw" (float-array (worley-noise 8 64 true))))
-(when-not (.exists (clojure.java.io/file "w3.raw")) (spit-floats "w3.raw" (float-array (worley-noise 8 64 true))))
-
-(def data (slurp-floats "w1.raw"))
+(def data (slurp-floats "data/clouds/worley-north.raw"))
 (def worley-north (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-(def data (slurp-floats "w2.raw"))
+(def data (slurp-floats "data/clouds/worley-south.raw"))
 (def worley-south (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-(def data (slurp-floats "w3.raw"))
+(def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def worley-cover (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
 (def cloud-cover (atom nil))

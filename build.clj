@@ -5,6 +5,8 @@
               [sfsim25.scale-image :as si]
               [sfsim25.scale-elevation :as se]
               [sfsim25.bluenoise :as bn]
+              [sfsim25.render :as rn]
+              [sfsim25.clouds :as cl]
               [sfsim25.atmosphere-lut :as al]
               [sfsim25.map-tiles :as mt]
               [sfsim25.elevation-tiles :as et]
@@ -24,6 +26,34 @@
         sigma  1.5
         dither (bn/blue-noise size n sigma)]
     (u/spit-floats "data/bluenoise.raw" (float-array (map #(/ % size size) dither)))))
+
+(defn cloud-cover
+  "Generate cloud cover cubemap"
+  [& {:keys [size] :or {size 64}}]
+  (rn/offscreen-render 1 1
+    (let [load-floats  (fn [filename] {:width size :height size :depth size :data (u/slurp-floats filename)})
+          worley-north (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
+          worley-south (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
+          worley-cover (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-cover.raw"))
+          cubemap      (cl/cloud-cover-cubemap :size 512
+                                               :worley-size size
+                                               :worley-south worley-south
+                                               :worley-north worley-north
+                                               :worley-cover worley-cover
+                                               :flow-octaves [0.5 0.25 0.125]
+                                               :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                               :whirl 1.0
+                                               :prevailing 0.0
+                                               :curl-scale 4.0
+                                               :cover-scale 2.0
+                                               :num-iterations 50
+                                               :flow-scale 6e-3)]
+      (doseq [i (range 6)]
+             (u/spit-floats (str "data/clouds/cover" i ".raw") (:data (rn/float-cubemap->floats cubemap i))))
+      (rn/destroy-texture cubemap)
+      (rn/destroy-texture worley-cover)
+      (rn/destroy-texture worley-south)
+      (rn/destroy-texture worley-north))))
 
 (defn atmosphere-lut [_]
   "Generate atmospheric lookup tables"
@@ -183,6 +213,12 @@
   (b/delete {:path "data/clouds/worley-north.raw"})
   (b/delete {:path "data/clouds/worley-south.raw"})
   (b/delete {:path "data/clouds/worley-cover.raw"})
+  (b/delete {:path "data/clouds/cover0.raw"})
+  (b/delete {:path "data/clouds/cover1.raw"})
+  (b/delete {:path "data/clouds/cover2.raw"})
+  (b/delete {:path "data/clouds/cover3.raw"})
+  (b/delete {:path "data/clouds/cover4.raw"})
+  (b/delete {:path "data/clouds/cover5.raw"})
   (b/delete {:path "data/bluenoise.raw"})
   (b/delete {:path "data/atmosphere/mie-strength.scatter"})
   (b/delete {:path "data/atmosphere/ray-scatter.scatter"})
@@ -195,6 +231,7 @@
 (defn all [_]
   (worley)
   (bluenoise)
+  (cloud-cover)
   (atmosphere-lut)
   (download-bluemarble)
   (download-elevation)
