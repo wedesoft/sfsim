@@ -26,13 +26,15 @@ uniform float cloud_scale;
 uniform float cap;
 uniform float threshold;
 uniform float multiplier;
+uniform samplerCube cover;
 float cloud_octaves(vec3 point);
 float cloud_profile(vec3 point);
 float cloud_density(vec3 point, float lod)
 {
+  float cover_sample = 1 - clamp(4 * (texture(cover, point).r - 0.4), 0.0, 1.0) * (1 - threshold);
   float noise = cloud_octaves(point / cloud_scale) * cloud_profile(point);
   float detail = (cloud_octaves(8 * point / cloud_scale) - 0.5) * multiplier * 4e-1;
-  float density = min(max((noise - threshold) * multiplier + detail, 0), cap);
+  float density = min(max((noise - cover_sample) * multiplier + detail, 0), cap);
   return density;
 }")
 
@@ -126,9 +128,9 @@ void main()
 (def cloud-top 4000)
 (def multiplier 8e-2)
 (def cap 3e-2)
-(def threshold (atom 0.6))
-(def cloud-scale 50000)
-(def octaves [0.5 0.25 0.125 0.125])
+(def threshold (atom 0.4))
+(def cloud-scale 200000)
+(def octaves [0.25 0.25 0.25 0.125 0.0625 0.0625])
 (def z-near 100)
 (def z-far (* radius 2))
 (def mix 0.8)
@@ -145,11 +147,15 @@ void main()
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 ; (generate-mipmap W)
+
 (def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 0.8 0.6 0.4 0.2 0.0]))
 (def P (make-float-texture-1d :linear :clamp data))
 
 (def data (slurp-floats "data/bluenoise.raw"))
 (def B (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data data}))
+
+(def cover (map (fn [i] {:width 512 :height 512 :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
+(def C (make-float-cubemap :linear :clamp cover))
 
 (def num-steps 5)
 
@@ -182,6 +188,7 @@ void main()
                               (uniform-sampler program-shadow "worley" 0)
                               (uniform-sampler program-shadow "profile" 1)
                               (uniform-sampler program-shadow "bluenoise" 2)
+                              (uniform-sampler program-shadow "cover" 3)
                               (uniform-int program-shadow "shadow_size" shadow-size)
                               (uniform-int program-shadow "profile_size" profile-size)
                               (uniform-int program-shadow "noise_size" noise-size)
@@ -199,7 +206,7 @@ void main()
                               (uniform-float program-shadow "depth" depth)
                               (uniform-float program-shadow "opacity_step" @opacity-step)
                               (uniform-float program-shadow "cloud_max_step" 100)
-                              (use-textures W P B)
+                              (use-textures W P B C)
                               (render-quads shadow-vao))
           {:offset opacity-offsets :layer opacity-layers}))
     matrix-cascade))(def keystates (atom {}))
@@ -215,7 +222,7 @@ void main()
              ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-             v  (if (@keystates Keyboard/KEY_PRIOR) 5 (if (@keystates Keyboard/KEY_NEXT) -5 0))
+             v  (if (@keystates Keyboard/KEY_PRIOR) 500 (if (@keystates Keyboard/KEY_NEXT) -500 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              to (if (@keystates Keyboard/KEY_W) 0.05 (if (@keystates Keyboard/KEY_S) -0.05 0))
@@ -249,9 +256,10 @@ void main()
                             (uniform-sampler program "worley" 0)
                             (uniform-sampler program "profile" 1)
                             (uniform-sampler program "bluenoise" 2)
+                            (uniform-sampler program "cover" 3)
                             (doseq [i (range num-steps)]
-                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 3))
-                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 4)))
+                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 4))
+                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 5)))
                             (doseq [[idx item] (map-indexed vector splits)]
                                    (uniform-float program (str "split" idx) item))
                             (doseq [[idx item] (map-indexed vector matrix-cas)]
@@ -277,7 +285,7 @@ void main()
                             (uniform-float program "anisotropic" @anisotropic)
                             (uniform-vector3 program "origin" @position)
                             (uniform-vector3 program "light_direction" light-dir)
-                            (apply use-textures W P B (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
+                            (apply use-textures W P B C (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                             (render-quads vao))
            (doseq [{:keys [offset layer]} tex-cas]
                   (destroy-texture offset)
@@ -288,6 +296,8 @@ void main()
          (flush)
          (swap! t0 + dt)))
 
+(destroy-texture C)
+(destroy-texture B)
 (destroy-texture P)
 (destroy-texture W)
 (destroy-vertex-array-object shadow-vao)
