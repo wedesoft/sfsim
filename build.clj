@@ -12,10 +12,10 @@
               [sfsim25.util :as u]))
 
 (defn worley
-  "Generate 3D Worley noise texture"
+  "Generate 3D Worley noise textures"
   [& {:keys [size divisions] :or {size 64 divisions 8}}]
-  (let [noise     (w/worley-noise divisions size true)]
-    (u/spit-floats "data/worley.raw" (float-array noise))))
+  (doseq [filename ["worley-north.raw" "worley-south.raw" "worley-cover.raw"]]
+         (u/spit-floats (str "data/clouds/" filename) (float-array (w/worley-noise divisions size true)))))
 
 (defn bluenoise
   "Generate 2D blue noise texture"
@@ -180,7 +180,9 @@
 
 (defn clean [_]
   "Clean secondary files"
-  (b/delete {:path "data/worley.raw"})
+  (b/delete {:path "data/clouds/worley-north.raw"})
+  (b/delete {:path "data/clouds/worley-south.raw"})
+  (b/delete {:path "data/clouds/worley-cover.raw"})
   (b/delete {:path "data/bluenoise.raw"})
   (b/delete {:path "data/atmosphere/mie-strength.scatter"})
   (b/delete {:path "data/atmosphere/ray-scatter.scatter"})

@@ -46,7 +46,7 @@
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
 
-(def data (slurp-floats "data/worley.raw"))
+(def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 

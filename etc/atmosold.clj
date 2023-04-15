@@ -57,7 +57,7 @@
 (def anisotropic (atom 0.065))
 (def keystates (atom {}))
 
-(def data (slurp-floats "data/worley.raw"))
+(def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 

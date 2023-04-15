@@ -118,7 +118,7 @@ void main()
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
 (def size 64)
-(def values1 (slurp-floats "data/worley.raw"))
+(def values1 (slurp-floats "data/clouds/worley-cover.raw"))
 (def worley (make-float-texture-3d :linear :repeat {:width size :height size :depth size :data values1}))
 (generate-mipmap worley)
 (def noise-size 64)

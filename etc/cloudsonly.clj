@@ -142,7 +142,7 @@ void main()
 (def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def light (atom (* 0.25 PI)))
 
-(def data (slurp-floats "data/worley.raw"))
+(def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 ; (generate-mipmap W)
 (def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 0.8 0.6 0.4 0.2 0.0]))
