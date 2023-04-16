@@ -27,22 +27,15 @@ uniform float cap;
 uniform float threshold;
 uniform float multiplier;
 uniform samplerCube cover;
-float cloud_octaves(vec3 point);
+float cloud_octaves(vec3 point, float lod);
 float cloud_profile(vec3 point);
 float cloud_density(vec3 point, float lod)
 {
   float cover_sample = 1 - clamp(4 * (texture(cover, point).r - 0.4), 0.0, 1.0) * (1 - threshold);
-  float noise = cloud_octaves(point / cloud_scale) * cloud_profile(point);
-  float detail = (cloud_octaves(8 * point / cloud_scale) - 0.5) * multiplier * 4e-1;
+  float noise = cloud_octaves(point / cloud_scale, 0.0) * cloud_profile(point);
+  float detail = (cloud_octaves(8 * point / cloud_scale, 0.0) - 0.5) * multiplier * 4e-1;
   float density = min(max((noise - cover_sample) * multiplier + detail, 0), cap);
   return density;
-}")
-
-(def sampling-offset
-"#version 410 core
-float sampling_offset()
-{
-  return 0.5;
 }")
 
 (def fragment
@@ -161,8 +154,8 @@ void main()
 
 (def program
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment density (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
-                           (shaders/lookup-3d "lookup_3d" "worley") cloud-profile phase-function
+                :fragment [fragment density (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/lookup-3d-lod "lookup_3d" "worley") cloud-profile phase-function
                            shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
                            opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset]))
 
@@ -170,8 +163,8 @@ void main()
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell density
-                           (shaders/noise-octaves "cloud_octaves" "lookup_3d" octaves)
-                           (shaders/lookup-3d "lookup_3d" "worley") cloud-profile shaders/convert-1d-index
+                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/lookup-3d-lod "lookup_3d" "worley") cloud-profile shaders/convert-1d-index
                            shaders/ray-sphere bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])
