@@ -1,6 +1,6 @@
 # TODO
 * lod for opacity and cloud rendering
-* add opacity map to cloud prototype etc/atmos.clj
+* use high frequency noise to remap low-frequency noise?
 * is cloud-scatter-amount and density redundant?
 * separate cloud\_shadow and transmittance\_outer
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
