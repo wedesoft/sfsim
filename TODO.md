@@ -1,9 +1,10 @@
 # TODO
+* lod for opacity and cloud rendering
 * functions to save and load cloud cover cubemap, build multiple Worley noise fields, configuration (edn) file for clouds?
 * add opacity map to cloud prototype etc/atmos.clj
 * is cloud-scatter-amount and density redundant?
 * separate cloud\_shadow and transmittance\_outer
-* lod for opacity and cloud rendering
+* powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
 * integration test for cloud opacity map
 * update cloud\_density with new noise functions and remapping
 * test cloud shadows on ellipsoidical planet
