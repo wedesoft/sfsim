@@ -1,5 +1,5 @@
 # TODO
-* lod for opacity and cloud rendering
+* lod for opacity
 * use high frequency noise to remap low-frequency noise?
 * is cloud-scatter-amount and density redundant?
 * separate cloud\_shadow and transmittance\_outer

@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (to-radians cos sin PI sqrt)]
+(require '[clojure.math :refer (to-radians cos sin tan PI sqrt log)]
          '[clojure.core.matrix :refer (matrix add mul inverse mget)]
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.render :refer :all]
@@ -32,8 +32,8 @@ float cloud_profile(vec3 point);
 float cloud_density(vec3 point, float lod)
 {
   float cover_sample = 1 - clamp(4 * (texture(cover, point).r - 0.4), 0.0, 1.0) * (1 - threshold);
-  float noise = cloud_octaves(point / cloud_scale, 0.0) * cloud_profile(point);
-  float detail = (cloud_octaves(8 * point / cloud_scale, 0.0) - 0.5) * multiplier * 4e-1;
+  float noise = cloud_octaves(point / cloud_scale, lod) * cloud_profile(point);
+  float detail = (cloud_octaves(8 * point / cloud_scale, lod + 3) - 0.5) * multiplier * 4e-1;
   float density = min(max((noise - cover_sample) * multiplier + detail, 0), cap);
   return density;
 }")
@@ -45,6 +45,7 @@ uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float dense_height;
+uniform float detail;
 uniform float anisotropic;
 uniform vec3 light_direction;
 uniform vec3 origin;
@@ -95,10 +96,12 @@ void main()
     vec3 cloud_scatter = vec3(0, 0, 0);
     float offset = sampling_offset();
     for (int i=0; i<count; i++) {
-      vec3 point = origin + (atmosphere.x + (i + offset) * step) * direction;
+      float l = atmosphere.x + (i + offset) * step;
+      vec3 point = origin + l * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-        float density = cloud_density(point, 0.0);
+        float lod = log2(l) + detail;
+        float density = cloud_density(point, lod);
         float t = exp(-density * step);
         float intensity = cloud_shadow(point, light_direction, 0.0);
         float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
@@ -113,7 +116,7 @@ void main()
     fragColor = vec3(0, 0, 0);
 }")
 
-(def fov 60.0)
+(def fov (to-radians 60.0))
 (def radius 6378000.0)
 (def dense-height 25000.0)
 (def anisotropic (atom (* 2 0.065)))
@@ -139,7 +142,7 @@ void main()
 
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-; (generate-mipmap W)
+(generate-mipmap W)
 
 (def data (float-array [0.0 1.0 1.0 1.0 1.0 1.0 1.0 0.8 0.6 0.4 0.2 0.0]))
 (def P (make-float-texture-1d :linear :clamp data))
@@ -219,7 +222,8 @@ void main()
              l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              to (if (@keystates Keyboard/KEY_W) 0.05 (if (@keystates Keyboard/KEY_S) -0.05 0))
-             ta (if (@keystates Keyboard/KEY_E) 0.0001 (if (@keystates Keyboard/KEY_D) -0.0001 0))]
+             ta (if (@keystates Keyboard/KEY_E) 0.0001 (if (@keystates Keyboard/KEY_D) -0.0001 0))
+             tl (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
@@ -237,7 +241,8 @@ void main()
                vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
                vao        (make-vertex-array-object program indices vertices [:point 3])
                light-dir  (matrix [0 (cos @light) (sin @light)])
-               projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) (to-radians fov))
+               projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) fov)
+               detail     (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ cloud-scale worley-size))) (log 2))
                transform  (transformation-matrix (quaternion->matrix @orientation) @position)
                matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
                splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
@@ -274,6 +279,7 @@ void main()
                             (uniform-float program "opacity_step" @opacity-step)
                             (uniform-float program "threshold" @threshold)
                             (uniform-float program "cloud_scale" cloud-scale)
+                            (uniform-float program "detail" detail)
                             (uniform-float program "dense_height" dense-height)
                             (uniform-float program "anisotropic" @anisotropic)
                             (uniform-vector3 program "origin" @position)
