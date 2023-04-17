@@ -8,6 +8,7 @@ uniform float cloud_max_step;
 uniform float opacity_step;
 uniform float scatter_amount;
 uniform float depth;
+uniform float detail; // TODO: test
 
 in VS_OUT
 {
@@ -50,7 +51,7 @@ void main()
       float stepsize = extent_segment / steps;
       for (int i=0; i<steps; i++) {
         vec3 sample_point = fs_in.origin - (start_segment + (i + sampling_offset()) * stepsize) * light_direction;
-        float density = cloud_density(sample_point, 0.0);
+        float density = cloud_density(sample_point, detail);
         // Compute this on the CPU: scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount
         float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
         float transmittance = previous_transmittance * transmittance_step;
