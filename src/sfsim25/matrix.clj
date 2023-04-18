@@ -1,6 +1,6 @@
 (ns sfsim25.matrix
   "Matrix and vector operations"
-  (:require [clojure.core.matrix :refer (matrix mget mmul inverse eseq transpose div dot identity-matrix normalise cross add)]
+  (:require [clojure.core.matrix :refer (matrix mget mmul sub inverse eseq transpose div dot identity-matrix normalise cross add)]
             [clojure.math :refer (cos sin tan pow)]
             [clojure.core.matrix.linear :refer (norm)]
             [sfsim25.util :refer :all]
@@ -161,9 +161,12 @@
          bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)
          shadow-ndc   (shadow-box-to-ndc bbox)
          shadow-map   (shadow-box-to-map bbox)
-         depth        (- (mget (:bottomleftnear bbox) 2) (mget (:toprightfar bbox) 2))]
+         span         (sub (:toprightfar bbox) (:bottomleftnear bbox))
+         scale        (* 0.5 (+ (mget span 0) (mget span 1)))
+         depth        (- (mget span 2))]
      {:shadow-ndc-matrix (mmul shadow-ndc light-matrix)
       :shadow-map-matrix (mmul shadow-map light-matrix)
+      :scale scale
       :depth depth})))
 
 (defn split-linear

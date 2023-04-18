@@ -130,7 +130,7 @@ void main()
 (def z-near 10)
 (def z-far (* radius 2))
 (def mix 0.8)
-(def opacity-step (atom 400.0))
+(def opacity-step (atom 200.0))
 (def worley-size 64)
 (def profile-size 12)
 (def shadow-size 256)
@@ -176,10 +176,10 @@ void main()
 
 (defn shadow-cascade [matrix-cascade light-direction scatter-amount]
   (mapv
-    (fn [{:keys [shadow-ndc-matrix depth]}]
+    (fn [{:keys [shadow-ndc-matrix depth scale]}]
         (let [opacity-offsets (make-empty-float-texture-2d :linear :clamp shadow-size shadow-size)
               opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size num-opacity-layers)
-              detail          (/ (log (/ (/ (sqrt (/ (det (inverse shadow-ndc-matrix)) depth)) shadow-size) (/ cloud-scale worley-size))) (log 2))]
+              detail          (/ (log (/ (/ scale shadow-size) (/ cloud-scale worley-size))) (log 2))]
           (framebuffer-render shadow-size shadow-size :cullback nil [opacity-offsets opacity-layers]
                               (use-program program-shadow)
                               (uniform-sampler program-shadow "worley" 0)
@@ -203,7 +203,7 @@ void main()
                               (uniform-float program-shadow "scatter_amount" scatter-amount)
                               (uniform-float program-shadow "depth" depth)
                               (uniform-float program-shadow "opacity_step" @opacity-step)
-                              (uniform-float program-shadow "cloud_max_step" (* 0.25 @opacity-step))
+                              (uniform-float program-shadow "cloud_max_step" @opacity-step)
                               (use-textures W P B C)
                               (render-quads shadow-vao))
           {:offset opacity-offsets :layer opacity-layers}))
@@ -273,7 +273,7 @@ void main()
                             (uniform-matrix4 program "inverse_transform" (inverse transform))
                             (uniform-int program "profile_size" profile-size)
                             (uniform-int program "noise_size" noise-size)
-                            (uniform-float program "stepsize" 200)
+                            (uniform-float program "stepsize" 400)
                             (uniform-int program "num_opacity_layers" num-opacity-layers)
                             (uniform-int program "shadow_size" shadow-size)
                             (uniform-float program "radius" radius)

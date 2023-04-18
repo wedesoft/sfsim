@@ -1,4 +1,5 @@
 # TODO
+* get bounding box size with depth
 * test lod for opacity fragment shader
 * use high frequency noise to remap low-frequency noise?
 * is cloud-scatter-amount and density redundant?
