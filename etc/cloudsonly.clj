@@ -86,7 +86,7 @@ void main()
       vec3 point = origin + planet.x * direction;
       float intensity = cloud_shadow(point, light_direction, 0.0);
       float cos_angle = max(dot(point, light_direction) / length(point), 0);
-      background = vec3(0, 0, intensity * cos_angle);
+      background = 2 * vec3(0.09, 0.11, 0.34) * intensity * cos_angle;
       atmosphere.y = planet.x - atmosphere.x;
     } else
       background = vec3(0, 0, 0);
@@ -123,13 +123,13 @@ void main()
 (def cloud-bottom 1500)
 (def cloud-top 4000)
 (def multiplier (atom 0.1))
-(def cap (atom 3e-2))
+(def cap (atom 6e-3))
 (def threshold (atom 0.4))
 (def cloud-scale 200000)
-(def octaves [0.25 0.25 0.25 0.125 0.0625 0.0625])
-(def z-near 100)
+(def octaves [0.375 0.25 0.25 0.125])
+(def z-near 10)
 (def z-far (* radius 2))
-(def mix 0.8)
+(def mix 1.0)
 (def opacity-step (atom 400.0))
 (def worley-size 64)
 (def profile-size 12)
