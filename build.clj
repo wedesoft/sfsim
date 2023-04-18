@@ -44,8 +44,8 @@
                                                :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
                                                :whirl 1.0
                                                :prevailing 0.0
-                                               :curl-scale 4.0
-                                               :cover-scale 2.0
+                                               :curl-scale 2.0
+                                               :cover-scale 1.0
                                                :num-iterations 50
                                                :flow-scale 6e-3)]
       (doseq [i (range 6)]
