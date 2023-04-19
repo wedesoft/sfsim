@@ -153,3 +153,7 @@
 (def scale-noise
   "Shader for calling a noise function with a scaled vector"
   (template/fn [method-name factor noise] (slurp "resources/shaders/core/scale-noise.glsl")))
+
+(def remap
+  "Shader for mapping linear range to a new linear range"
+  (slurp "resources/shaders/core/remap.glsl"))

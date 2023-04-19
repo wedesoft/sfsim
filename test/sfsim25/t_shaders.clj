@@ -1003,3 +1003,26 @@ void main()
          ?scale ?x ?y ?z ?result
          1      2  3  5  2.0
          3      2  3  5  6.0)
+
+(def remap-probe
+  (template/fn [value original-min original-max new-min new-max]
+"#version 410 core
+out vec3 fragColor;
+float remap(float value, float original_min, float original_max, float new_min, float new_max);
+void main()
+{
+  float result = remap(<%= value %>, <%= original-min %>, <%= original-max %>, <%= new-min %>, <%= new-max %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def remap-test (shader-test (fn [program]) remap-probe remap))
+
+(tabular "Shader for mapping linear range to a new linear range"
+         (fact (mget (remap-test [] [?val ?orig-min ?orig-max ?new-min ?new-max]) 0) => (roughly ?result 1e-5))
+         ?val ?orig-min ?orig-max ?new-min ?new-max ?result
+         0.0  0.0       1.0       0.0      1.0      0.0
+         1.0  0.0       1.0       0.0      1.0      1.0
+         0.7  0.2       1.2       0.0      1.0      0.5
+         0.3  0.2       0.4       0.0      1.0      0.5
+         0.5  0.0       1.0       0.0      0.4      0.2
+         0.5  0.0       1.0       0.2      0.4      0.3)

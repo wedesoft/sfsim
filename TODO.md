@@ -2,6 +2,14 @@
 * use high frequency noise to remap low-frequency noise?
 * separate cloud\_shadow and transmittance\_outer
 * is cloud-scatter-amount and density redundant?
+* try whether EJML has better performance https://ejml.org/
+* improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html (also combined with Worley)
+* article:
+  * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
+  * [how big aaa studios render clouds](https://www.youtube.com/watch?v=Qj_tK_mdRcA)
+  * https://www.guerrilla-games.com/read/the-real-time-volumetric-cloudscapes-of-horizon-zero-dawn
+  * cloud probability map: https://neo.gsfc.nasa.gov/view.php?datasetId=MODAL2_M_CLD_FR&date=2022-12-01
+  * example cloud cover: https://earthobservatory.nasa.gov/ContentFeature/BlueMarble/Images/cloud_combined_2048.jpg
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
 * integration test for cloud opacity map
 * update cloud\_density with new noise functions and remapping
@@ -9,7 +17,6 @@
 * add global cloud cover to cloud\_density shader
   * use cloud cover mock for cloud\_density tests
   * add global cloud map to cloud\_density and make it modular
-* improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html
 * uniform random offsets for Worley noises
 * render atmosphere
 * configuration (edn) file for clouds?
@@ -47,17 +54,9 @@
   * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
   * global cloud map (skybox?)
-  * article about atmosphere rendering with clouds
 * try to install and use LWJGL3 from Maven
 * increase lod in noise-octaves?
 * [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
-* article:
-  * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
-  * [how big aaa studios render clouds](https://www.youtube.com/watch?v=Qj_tK_mdRcA)
-  * https://www.guerrilla-games.com/read/the-real-time-volumetric-cloudscapes-of-horizon-zero-dawn
-  * cloud probability map: https://neo.gsfc.nasa.gov/view.php?datasetId=MODAL2_M_CLD_FR&date=2022-12-01
-  * example cloud cover: https://earthobservatory.nasa.gov/ContentFeature/BlueMarble/Images/cloud_combined_2048.jpg
-* try whether EJML has better performance https://ejml.org/
 * implement shadow maps: https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-10-parallel-split-shadow-maps-programmable-gpus
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * use GMTED2010 or STRM90 elevation data:
