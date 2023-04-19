@@ -181,6 +181,7 @@ void main()
 (uniform-sampler program-shadow "profile" 1)
 (uniform-sampler program-shadow "bluenoise" 2)
 (uniform-int program-shadow "noise_size" noise-size)
+(uniform-float program-shadow "level_of_detail" 0.0)
 
 (defn shadow-cascade [matrix-cascade light-direction scatter-amount]
   (mapv

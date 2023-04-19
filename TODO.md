@@ -1,9 +1,7 @@
 # TODO
-* get bounding box size with depth
-* test lod for opacity fragment shader
 * use high frequency noise to remap low-frequency noise?
-* is cloud-scatter-amount and density redundant?
 * separate cloud\_shadow and transmittance\_outer
+* is cloud-scatter-amount and density redundant?
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
 * integration test for cloud opacity map
 * update cloud\_density with new noise functions and remapping
