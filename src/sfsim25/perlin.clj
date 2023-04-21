@@ -22,7 +22,7 @@
   "Create a 3D grid with random gradient vectors"
   ([divisions]
    (random-gradient-grid divisions random-gradient))
-  ([divisions selector]
-   (array (repeatedly divisions (fn [] (repeatedly divisions (fn [] (repeatedly divisions selector))))))))
+  ([divisions random-gradient]
+   (array (repeatedly divisions (fn [] (repeatedly divisions (fn [] (repeatedly divisions random-gradient))))))))
 
 (set! *unchecked-math* false)
