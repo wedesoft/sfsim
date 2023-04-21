@@ -1,9 +1,32 @@
 # TODO
-* use high frequency noise to remap low-frequency noise?
-* separate cloud\_shadow and transmittance\_outer
-* is cloud-scatter-amount and density redundant?
-* try whether EJML has better performance https://ejml.org/
 * improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html (also combined with Worley)
+* sample tiled 3D Perlin-Worley noise on a sphere to create connected 2D cloud shapes
+* improve cloud\_density to generate realistic clouds
+* separate shader to perform lookups in cloud cover cubemap
+* add global cloud cover to cloud\_density shader
+  * use cloud cover mock for cloud\_density tests
+  * add global cloud map to cloud\_density and make it modular
+* separate cloud\_shadow and transmittance\_outer
+* how is cloud\_max\_step (cms) still used?
+* is cloud-scatter-amount and density redundant?
+* render just atmosphere with empty cloud layer to check that there is no step
+* no shading of atmosphere above 25km
+* add atmospheric transmittance and scattering
+* increase stepsize between clouds (also only sample low-resolution noise)
+* limit opacity mapping and cloud sampling
+* clouds
+  * test cloud shadows on ellipsoidical planet
+  * add clouds to atmospheric and planetary shader
+  * add shadows of mountains, use shadow map of planet in cloud\_shadow?
+  * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
+  * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
+  * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
+  * offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur
+  * render 1 of 4x4 pixels per frame?
+  * apply cloud texture to higher resolution picture (upscale and alpha-blend)
+  * add flat cirrus clouds
+  * move different levels of noise to create moving and shape-changing clouds
+* try whether EJML has better performance https://ejml.org/
 * article:
   * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
   * [how big aaa studios render clouds](https://www.youtube.com/watch?v=Qj_tK_mdRcA)
@@ -11,73 +34,29 @@
   * cloud probability map: https://neo.gsfc.nasa.gov/view.php?datasetId=MODAL2_M_CLD_FR&date=2022-12-01
   * example cloud cover: https://earthobservatory.nasa.gov/ContentFeature/BlueMarble/Images/cloud_combined_2048.jpg
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
-* integration test for cloud opacity map
-* update cloud\_density with new noise functions and remapping
-* test cloud shadows on ellipsoidical planet
-* add global cloud cover to cloud\_density shader
-  * use cloud cover mock for cloud\_density tests
-  * add global cloud map to cloud\_density and make it modular
+  [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
+* integration test for cascaded deep opacity map
 * uniform random offsets for Worley noises
-* render atmosphere
 * configuration (edn) file for clouds?
-* add integration-tested method for generating global cloud cover
-* saving and loading of cloud cover cubemap
-* separate shader to perform lookups in cloud cover cubemap
 * rewrite cloudy.clj prototype
-  * just atmosphere with empty cloud layer to check that there is no step
-  * without atmosphere, without shadows, sample full volume?
-  * add shadows
-  * render planet instead of sphere, scale up and combine with rendering of planet, high resolution horizon needed?
-  * height value remapping for different cloud types?
-  * use noise values for remapping
-  * no shading of atmosphere above 25km
-  * render 1 of 4x4 pixels per frame?
-  * https://www.guerrilla-games.com/media/News/Files/Nubis-Authoring-Realtime-Volumetric-Cloudscapes-with-the-Decima-Engine-Final.pdf
-  * remap perlin: 1.0 - worley .. 1.0 -> 0.0 .. 1.0
-  * remap low freq noise: high freq noise .. 1.0 -> 0.0 .. 1.0
-  * perlin noise to get connected cloud coverage
-  * Kenny Mitchell: volumetric light scattering as a post process (iterate highlight, use to mask mie scattering)
-  * ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
-  * moon light only dominant when sun has set
+* Kenny Mitchell: volumetric light scattering as a post process (iterate highlight, use to mask mie scattering)
+* ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
+* moon light only dominant when sun has set
 * glTextureStorage2D levels correct for mipmaps?
 * create new cloud prototype avoiding step in atmosphere and flatness of cloud boundaries
-* clouds
-  * add clouds to atmospheric and planetary shader
-  * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
-  * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
-  * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
-  * determine and increment level of detail index for mipmaps in cloud\_track
-  * increase stepsize between clouds (also only sample low-resolution noise)
-  * multiple levels of Worley and Perlin noise in channels of 3D texture
-  * offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur
-  * apply cloud texture to higher resolution picture (upscale and alpha-blend)
-  * add flat cirrus clouds
-  * move different levels of noise to create moving and shape-changing clouds
-  * global cloud map (skybox?)
 * try to install and use LWJGL3 from Maven
-* increase lod in noise-octaves?
-* [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
 * implement shadow maps: https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-10-parallel-split-shadow-maps-programmable-gpus
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * use GMTED2010 or STRM90 elevation data:
   * https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d_e.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30_e.htm
-* step in atmosphere when passing cloud-top
-* limit sampled interval depending on start of interval
-* better computation of lod, how is cloud\_max\_step (cms) still used?
 * render to texture with alpha channel
 * horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
-* use shadow map of planet in cloud\_shadow?
-* integrate with planetary prototype etc/planet.clj
 * seapare transmittance\_outer call from cloud\_shadow
 * does opacity fragment shader need to limit offsets to bounding box?
-* prototype planetary cloud rendering using cascaded deep opacity maps
-* integration test for cascaded deep opacity map
-* use shadow map for terrain and clouds
 * convert\_1d\_index
 * does lookup\_3d need to use textureLod?
-* shadow lookup: use convert 2d index
 * test opacity offsets with constant density cloud, use clip\_shell\_intersections
 * use maximum possible cloud self-shadow length?
 * clouds: blue noise offsets for opacity map? use extra shadow map?
