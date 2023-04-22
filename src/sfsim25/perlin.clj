@@ -1,6 +1,6 @@
 (ns sfsim25.perlin
     "Create improved Perlin noise"
-    (:require [clojure.core.matrix :refer (matrix array sub add)]
+    (:require [clojure.core.matrix :refer (matrix array sub add slice-view dimension-count)]
               [clojure.math :refer (floor pow)]
               [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]))
 
@@ -37,6 +37,14 @@
   (let [division (matrix (determine-division point))]
     (vec (for [z (range 2) y (range 2) x (range 2)]
               (sub point (add division (matrix [x y z])))))))
+
+(defn corner-gradients
+  "Get 3D gradient vectors from corners of division"
+  [gradient-grid point]
+  (let [[x  y  z ] (determine-division point)
+        [x+ y+ z+] (map #(mod (inc %) (dimension-count gradient-grid 0)) [x y z])]
+    (vec (for [zd [z z+] yd [y y+] xd [x x+]]
+              (reduce slice-view gradient-grid [zd yd xd])))))
 
 (defn ease-curve
   "Monotonous ease curve"

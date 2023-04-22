@@ -1,6 +1,6 @@
 (ns sfsim25.t-perlin
     (:require [midje.sweet :refer :all]
-              [clojure.core.matrix :refer (matrix dimensionality dimension-count mget)]
+              [clojure.core.matrix :refer (array matrix dimensionality dimension-count mget)]
               [sfsim25.perlin :refer :all :as perlin]
               [sfsim25.conftest :refer (roughly-matrix)]))
 
@@ -40,6 +40,31 @@
          5  -0.9  0.2 -0.7
          6   0.1 -0.8 -0.7
          7  -0.9 -0.8 -0.7)
+
+(def identity-array (array (for [z (range 4)] (for [y (range 4)] (for [x (range 4)] (matrix [x y z]))))))
+
+(tabular "Get 3D gradient vectors from corners of division"
+         (fact (nth (corner-gradients identity-array (matrix [?x ?y ?z])) ?i) => (matrix [?gx ?gy ?gz]))
+         ?x  ?y  ?z  ?i ?gx ?gy ?gz
+         0.5 0.5 0.5 0  0.0 0.0 0.0
+         1.5 0.5 0.5 0  1.0 0.0 0.0
+         0.5 1.5 0.5 0  0.0 1.0 0.0
+         0.5 0.5 1.5 0  0.0 0.0 1.0
+         0.5 0.5 0.5 1  1.0 0.0 0.0
+         0.5 0.5 0.5 2  0.0 1.0 0.0
+         0.5 0.5 0.5 3  1.0 1.0 0.0
+         0.5 0.5 0.5 4  0.0 0.0 1.0
+         0.5 0.5 0.5 5  1.0 0.0 1.0
+         0.5 0.5 0.5 6  0.0 1.0 1.0
+         0.5 0.5 0.5 7  1.0 1.0 1.0
+         3.5 3.5 3.5 0  3.0 3.0 3.0
+         3.5 3.5 3.5 1  0.0 3.0 3.0
+         3.5 3.5 3.5 2  3.0 0.0 3.0
+         3.5 3.5 3.5 3  0.0 0.0 3.0
+         3.5 3.5 3.5 4  3.0 3.0 0.0
+         3.5 3.5 3.5 5  0.0 3.0 0.0
+         3.5 3.5 3.5 6  3.0 0.0 0.0
+         3.5 3.5 3.5 7  0.0 0.0 0.0)
 
 (tabular "Monotonous ease curve"
          (fact (ease-curve ?t) => (roughly ?result 1e-4))
