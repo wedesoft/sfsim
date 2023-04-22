@@ -1,7 +1,7 @@
 (ns sfsim25.perlin
     "Create improved Perlin noise"
     (:require [clojure.core.matrix :refer (matrix array sub add)]
-              [clojure.math :refer (floor)]
+              [clojure.math :refer (floor pow)]
               [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]))
 
 ; improved Perlin noise algorithm
@@ -37,5 +37,10 @@
   (let [division (matrix (determine-division point))]
     (vec (for [z (range 2) y (range 2) x (range 2)]
               (sub point (add division (matrix [x y z])))))))
+
+(defn ease-curve
+  "Monotonous ease curve"
+  [t]
+  (-> (* 6 (pow t 5)) (- (* 15 (pow t 4))) (+ (* 10 (pow t 3)))))
 
 (set! *unchecked-math* false)

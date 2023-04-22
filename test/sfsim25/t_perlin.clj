@@ -40,3 +40,12 @@
          5  -0.9  0.2 -0.7
          6   0.1 -0.8 -0.7
          7  -0.9 -0.8 -0.7)
+
+(tabular "Monotonous ease curve"
+         (fact (ease-curve ?t) => (roughly ?result 1e-4))
+         ?t  ?result
+         0.0 0.0
+         1.0 1.0
+         0.5 0.5
+         0.2 0.05792
+         0.8 0.94208)
