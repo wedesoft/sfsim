@@ -66,7 +66,13 @@
          3.5 3.5 3.5 6  3.0 0.0 0.0
          3.5 3.5 3.5 7  0.0 0.0 0.0)
 
-(tabular "Monotonous ease curve"
+(facts "Determine influence values"
+       (influence-values [] []) => []
+       (influence-values [(matrix [2 3 5])] [(matrix [1.0 0.0 0.0])]) => [2.0]
+       (influence-values [(matrix [2 3 5])] [(matrix [0.0 1.0 0.0])]) => [3.0]
+       (influence-values [(matrix [2 3 5])] [(matrix [0.0 0.0 1.0])]) => [5.0])
+
+(tabular "Monotonous and point-symmetric ease curve"
          (fact (ease-curve ?t) => (roughly ?result 1e-4))
          ?t  ?result
          0.0 0.0
@@ -74,3 +80,18 @@
          0.5 0.5
          0.2 0.05792
          0.8 0.94208)
+
+(tabular "Determine weights for interpolation"
+         (fact (nth (interpolation-weights ?easing (matrix [?x ?y ?z])) ?i) => (roughly ?result 1e-4))
+         ?easing    ?x  ?y  ?z  ?i ?result
+         identity   0.0 0.0 0.0 0  1.0
+         identity   0.0 0.0 0.0 1  0.0
+         identity   0.3 0.0 0.0 0  0.7
+         identity   0.3 0.0 0.0 1  0.3
+         identity   0.0 0.3 0.0 0  0.7
+         identity   0.0 0.3 0.0 2  0.3
+         identity   0.0 0.0 0.3 0  0.7
+         identity   0.0 0.0 0.3 4  0.3
+         ease-curve 0.2 0.0 0.0 0  0.94208
+         ease-curve 0.0 0.2 0.0 0  0.94208
+         ease-curve 0.0 0.0 0.2 0  0.94208)

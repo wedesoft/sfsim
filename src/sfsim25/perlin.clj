@@ -1,6 +1,6 @@
 (ns sfsim25.perlin
     "Create improved Perlin noise"
-    (:require [clojure.core.matrix :refer (matrix array sub add slice-view dimension-count)]
+    (:require [clojure.core.matrix :refer (matrix array sub add slice-view dimension-count dot eseq)]
               [clojure.math :refer (floor pow)]
               [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]))
 
@@ -46,9 +46,22 @@
     (vec (for [zd [z z+] yd [y y+] xd [x x+]]
               (reduce slice-view gradient-grid [zd yd xd])))))
 
+(defn influence-values
+  "Determine influence values"
+  [corner-gradients corner-vectors]
+  (mapv dot corner-gradients corner-vectors))
+
 (defn ease-curve
-  "Monotonous ease curve"
+  "Monotonous and point-symmetric ease curve"
   [t]
   (-> (* 6 (pow t 5)) (- (* 15 (pow t 4))) (+ (* 10 (pow t 3)))))
+
+(defn interpolation-weights
+  "Determine weights for interpolation"
+  [ease-curve point]
+  (let [[bx by bz] (eseq point)
+        [ax ay az] (eseq (sub 1.0 point))]
+    (for [z [az bz] y [ay by] x [ax bx]]
+         (* (ease-curve z) (ease-curve y) (ease-curve x)))))
 
 (set! *unchecked-math* false)
