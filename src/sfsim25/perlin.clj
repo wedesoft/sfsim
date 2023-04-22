@@ -1,7 +1,7 @@
 (ns sfsim25.perlin
     "Create improved Perlin noise"
     (:require [clojure.core.matrix :refer (matrix array sub add slice-view dimension-count dot eseq)]
-              [clojure.math :refer (floor pow)]
+              [clojure.math :refer (floor)]
               [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]))
 
 ; improved Perlin noise algorithm
@@ -54,7 +54,7 @@
 (defn ease-curve
   "Monotonous and point-symmetric ease curve"
   [t]
-  (-> (* 6 (pow t 5)) (- (* 15 (pow t 4))) (+ (* 10 (pow t 3)))))
+  (-> t (* 6) (- 15) (* t) (+ 10) (* t t t)))
 
 (defn interpolation-weights
   "Determine weights for interpolation"
