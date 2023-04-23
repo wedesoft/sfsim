@@ -49,7 +49,7 @@
     (apply min (map #(norm (sub point %)) points))))
 
 (defn normalize-vector
-  "Normalize the values of a vector"
+  "Normalize the values of a vector by scaling the maximum down to 1.0"
   [values]
   (let [maximum (apply max values)]
     (vec (pmap #(/ % maximum) values))))

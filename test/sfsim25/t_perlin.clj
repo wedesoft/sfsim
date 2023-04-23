@@ -95,3 +95,23 @@
          ease-curve 0.2 0.0 0.0 0  0.94208
          ease-curve 0.0 0.2 0.0 0  0.94208
          ease-curve 0.0 0.0 0.2 0  0.94208)
+
+(def gradient-grid (array [[[[1 1 0] [1 0 -1]] [[1 0 1] [-1 -1 0]]]
+                           [[[1 0 1] [-1 0 1]] [[1 0 -1] [-1 0 -1]]]]))
+
+(facts "Normalize values of a vector"
+       (normalize-vector [0.0 1.0])     => [0.0 1.0]
+       (normalize-vector [0.0 1.0 2.0]) => [0.0 0.5 1.0]
+       (normalize-vector [1.0 2.0 3.0]) => [0.0 0.5 1.0]
+       (normalize-vector [0.0 1.0])     => vector?)
+
+(facts "Compute a single sample of Perlin noise"
+       (perlin-noise-sample gradient-grid 2 4 (matrix [0.5 0.5 0.5])) => (roughly  0.30273 1e-5)
+       (perlin-noise-sample gradient-grid 2 4 (matrix [1.5 0.5 0.5])) => (roughly -0.21457 1e-5))
+
+(facts "Create 3D Perlin noise"
+       (with-redefs [perlin/random-gradient-grid (fn [n] (fact n => 2) gradient-grid)]
+         (nth (perlin-noise 2 4) 0) => (roughly 0.99682 1e-5)
+         (count (perlin-noise 2 4)) => 64
+         (apply min (perlin-noise 2 4)) => 0.0
+         (apply max (perlin-noise 2 4)) => 1.0))

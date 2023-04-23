@@ -1,7 +1,8 @@
 (ns sfsim25.perlin
     "Create improved Perlin noise"
-    (:require [clojure.core.matrix :refer (matrix array sub add slice-view dimension-count dot eseq)]
+    (:require [clojure.core.matrix :refer (matrix array sub add div mul slice-view dimension-count dot eseq)]
               [clojure.math :refer (floor)]
+              [com.climate.claypoole :refer (pfor ncpus)]
               [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]))
 
 ; improved Perlin noise algorithm
@@ -63,5 +64,35 @@
         [ax ay az] (eseq (sub 1.0 point))]
     (for [z [az bz] y [ay by] x [ax bx]]
          (* (ease-curve z) (ease-curve y) (ease-curve x)))))
+
+(defn normalize-vector
+  "Normalize the values of a vector to be between 0.0 and 1.0"
+  [values]
+  (let [minimum (apply min values)
+        maximum (apply max values)]
+    (vec (pmap #(/ (- % minimum) (- maximum minimum)) values))))
+
+(defn perlin-noise-sample
+  "Compute a single sample of Perlin noise"
+  [gradient-grid divisions size cell]
+  (let [point     (mul cell (/ divisions size))
+        corners   (corner-vectors point)
+        gradients (corner-gradients gradient-grid point)
+        influence (influence-values gradients corners)
+        weights   (interpolation-weights ease-curve point)]
+    (apply + (map * weights influence))))
+
+(defn perlin-noise
+  "Create 3D Perlin noise"
+  ([divisions size]
+   (perlin-noise divisions size false))
+  ([divisions size progress]
+   (let [gradient-grid (random-gradient-grid divisions)
+         bar           (if progress (agent (make-progress-bar (* size size size) size)))]
+     (normalize-vector
+       (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
+             (do
+               (if progress (send bar tick-and-print))
+               (perlin-noise-sample gradient-grid divisions size (matrix [(+ i 0.5) (+ j 0.5) (+ k 0.5) ]))))))))
 
 (set! *unchecked-math* false)
