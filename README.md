@@ -11,6 +11,7 @@ Requires OpenGL 4.5.
 
 # Build
 * Build Worley noise: `clj -T:build worley`
+* Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`
 * Build cloud cover: `clj -T:build cloud-cover`
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`

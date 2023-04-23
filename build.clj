@@ -2,6 +2,7 @@
     (:require [clojure.tools.build.api :as b]
               [clojure.java.io :as io]
               [sfsim25.worley :as w]
+              [sfsim25.perlin :as p]
               [sfsim25.scale-image :as si]
               [sfsim25.scale-elevation :as se]
               [sfsim25.bluenoise :as bn]
@@ -18,6 +19,11 @@
   [& {:keys [size divisions] :or {size 64 divisions 8}}]
   (doseq [filename ["worley-north.raw" "worley-south.raw" "worley-cover.raw"]]
          (u/spit-floats (str "data/clouds/" filename) (float-array (w/worley-noise divisions size true)))))
+
+(defn perlin
+  "Generate 3D Perlin noise textures"
+  [& {:keys [size divisions] :or {size 64 divisions 8}}]
+  (u/spit-floats "data/clouds/perlin.raw" (float-array (p/perlin-noise divisions size true))))
 
 (defn bluenoise
   "Generate 2D blue noise texture"
@@ -213,6 +219,7 @@
   (b/delete {:path "data/clouds/worley-north.raw"})
   (b/delete {:path "data/clouds/worley-south.raw"})
   (b/delete {:path "data/clouds/worley-cover.raw"})
+  (b/delete {:path "data/clouds/perlin.raw"})
   (b/delete {:path "data/clouds/cover0.raw"})
   (b/delete {:path "data/clouds/cover1.raw"})
   (b/delete {:path "data/clouds/cover2.raw"})
@@ -230,6 +237,7 @@
 
 (defn all [_]
   (worley)
+  (perlin)
   (bluenoise)
   (cloud-cover)
   (atmosphere-lut)
