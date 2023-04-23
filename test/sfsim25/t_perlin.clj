@@ -92,6 +92,7 @@
          identity   0.0 0.3 0.0 2  0.3
          identity   0.0 0.0 0.3 0  0.7
          identity   0.0 0.0 0.3 4  0.3
+         identity   1.3 0.0 0.0 0  0.7
          ease-curve 0.2 0.0 0.0 0  0.94208
          ease-curve 0.0 0.2 0.0 0  0.94208
          ease-curve 0.0 0.0 0.2 0  0.94208)
@@ -111,7 +112,7 @@
 
 (facts "Create 3D Perlin noise"
        (with-redefs [perlin/random-gradient-grid (fn [n] (fact n => 2) gradient-grid)]
-         (nth (perlin-noise 2 4) 0) => (roughly 0.99682 1e-5)
+         (nth (perlin-noise 2 4) 0) => (roughly 0.74821 1e-5)
          (count (perlin-noise 2 4)) => 64
          (apply min (perlin-noise 2 4)) => 0.0
          (apply max (perlin-noise 2 4)) => 1.0))

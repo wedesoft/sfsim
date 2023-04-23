@@ -59,8 +59,10 @@
 
 (defn interpolation-weights
   "Determine weights for interpolation"
-  [ease-curve point]
-  (let [[bx by bz] (eseq point)
+  [ease-curve index]
+  (let [division   (determine-division index)
+        point      (sub index division)
+        [bx by bz] (eseq point)
         [ax ay az] (eseq (sub 1.0 point))]
     (for [z [az bz] y [ay by] x [ax bx]]
          (* (ease-curve z) (ease-curve y) (ease-curve x)))))
