@@ -119,6 +119,7 @@ void main()
 
 (def size 64)
 (def values1 (slurp-floats "data/clouds/worley-cover.raw"))
+; (def values1 (slurp-floats "data/clouds/perlin.raw"))
 (def worley (make-float-texture-3d :linear :repeat {:width size :height size :depth size :data values1}))
 (generate-mipmap worley)
 (def noise-size 64)
