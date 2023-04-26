@@ -31,15 +31,16 @@ uniform float multiplier;
 uniform samplerCube cover;
 uniform sampler3D perlin;
 float cloud_octaves(vec3 point, float lod);
+float perlin_octaves(vec3 point);
 float cloud_profile(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
 float cloud_density(vec3 point, float lod)
 {
-  float clouds = texture(perlin, normalize(point) * radius / cloud_scale).r;
+  float clouds = perlin_octaves(normalize(point) * radius / cloud_scale);
   float profile = cloud_profile(point);
-  float cover_sample = texture(cover, point).r - threshold;
+  float cover_sample = (texture(cover, point).r - threshold) * multiplier;
   float noise = cloud_octaves(point / detail_scale, lod);
-  float base = clamp(cover_sample + clouds * cap * 20, 0.0, cap) * profile * multiplier;
+  float base = clamp(cover_sample + clouds * cap * 20, 0.0, cap) * profile;
   float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
   return density;
 }")
@@ -129,11 +130,11 @@ void main()
 (def anisotropic (atom 0.5))
 (def cloud-bottom 1500)
 (def cloud-top 6000)
-(def multiplier (atom 0.9))
+(def multiplier (atom 0.2))
 (def cap (atom 0.005))
-(def threshold (atom 0.58))
+(def threshold (atom 0.785))
 (def detail-scale 10000)
-(def cloud-scale 50000)
+(def cloud-scale 100000)
 (def octaves [0.375 0.25 0.25 0.125])
 (def z-near 10)
 (def z-far (* radius 2))
@@ -170,7 +171,9 @@ void main()
 (def program
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment density shaders/remap (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley") cloud-profile phase-function
+                           (shaders/lookup-3d-lod "lookup_3d" "worley")
+                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" octaves)
+                           (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile phase-function
                            shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
                            opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset]))
 
@@ -179,7 +182,9 @@ void main()
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell density shaders/remap
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley") cloud-profile shaders/convert-1d-index
+                           (shaders/lookup-3d-lod "lookup_3d" "worley")
+                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" octaves)
+                           (shaders/lookup-3d "lookup_perlin" "perlin")cloud-profile shaders/convert-1d-index
                            shaders/ray-sphere bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])
