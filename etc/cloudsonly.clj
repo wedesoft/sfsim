@@ -37,9 +37,9 @@ float cloud_density(vec3 point, float lod)
 {
   float clouds = texture(perlin, normalize(point) * radius / cloud_scale).r;
   float profile = cloud_profile(point);
-  float cover_sample = (texture(cover, point).r - threshold) * multiplier;
+  float cover_sample = texture(cover, point).r - threshold;
   float noise = cloud_octaves(point / detail_scale, lod);
-  float base = clamp(cover_sample + clouds * cap * 20 + profile * cap, 0.0, cap);
+  float base = clamp(cover_sample + clouds * cap * 20, 0.0, cap) * profile * multiplier;
   float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
   return density;
 }")
@@ -131,9 +131,9 @@ void main()
 (def cloud-top 6000)
 (def multiplier (atom 0.9))
 (def cap (atom 0.005))
-(def threshold (atom 0.5))
-(def detail-scale 20000)
-(def cloud-scale 100000)
+(def threshold (atom 0.58))
+(def detail-scale 10000)
+(def cloud-scale 50000)
 (def octaves [0.375 0.25 0.25 0.125])
 (def z-near 10)
 (def z-far (* radius 2))
@@ -236,7 +236,7 @@ void main()
              rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
              v  (if (@keystates Keyboard/KEY_PRIOR) 100 (if (@keystates Keyboard/KEY_NEXT) -100 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))
-             tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
+             tr (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
              to (if (@keystates Keyboard/KEY_W) 0.05 (if (@keystates Keyboard/KEY_S) -0.05 0))
              ta (if (@keystates Keyboard/KEY_E) 0.0001 (if (@keystates Keyboard/KEY_D) -0.0001 0))
              tm (if (@keystates Keyboard/KEY_R) 0.0001 (if (@keystates Keyboard/KEY_F) -0.0001 0))
