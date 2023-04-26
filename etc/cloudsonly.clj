@@ -36,12 +36,11 @@ float remap(float value, float original_min, float original_max, float new_min, 
 float cloud_density(vec3 point, float lod)
 {
   float clouds = texture(perlin, normalize(point) * radius / cloud_scale).r;
-  // TODO: remap?
-  float cover_sample = (texture(cover, point).r * cloud_profile(point) - threshold) * multiplier;
-  // float noise = cloud_octaves(point / detail_scale, lod);
-  // float base = clamp(cover_sample, 0.0, cap);
-  // float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
-  float density = clamp(cover_sample + clouds * cap * 20, 0.0, cap);
+  float profile = cloud_profile(point);
+  float cover_sample = (texture(cover, point).r - threshold) * multiplier;
+  float noise = cloud_octaves(point / detail_scale, lod);
+  float base = clamp(cover_sample + clouds * cap * 20 + profile * cap, 0.0, cap);
+  float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
   return density;
 }")
 
@@ -133,7 +132,7 @@ void main()
 (def multiplier (atom 0.9))
 (def cap (atom 0.005))
 (def threshold (atom 0.5))
-(def detail-scale 10000)
+(def detail-scale 20000)
 (def cloud-scale 100000)
 (def octaves [0.375 0.25 0.25 0.125])
 (def z-near 10)
@@ -157,7 +156,7 @@ void main()
 (def data (slurp-floats "data/clouds/perlin.raw"))
 (def L (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
-(def data (float-array [0.0 1.0 1.0 1.0 1.0 0.0]))
+(def data (float-array (map #(-> % (/ (dec profile-size)) (* PI) sin) (range profile-size))))
 (def P (make-float-texture-1d :linear :clamp data))
 
 (def data (slurp-floats "data/bluenoise.raw"))
