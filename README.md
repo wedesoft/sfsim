@@ -1,4 +1,4 @@
-# Space Flight Simulator 2025
+# [SFsim25][1] [![GPL-3.0](https://img.shields.io/github/license/wedesoft/sfsim25)](https://www.gnu.org/copyleft/gpl.html) [![tipping jar](https://img.shields.io/badge/tipping%20jar-wedesoft%40getalby.com-yellow)](https://getalby.com/wedesoft)
 
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
@@ -65,3 +65,5 @@ Requires OpenGL 4.5.
   * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
+
+  [1]: https://github.com/wedesoft/sfsim25
