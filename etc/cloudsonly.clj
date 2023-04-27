@@ -139,12 +139,12 @@ void main()
 (def perlin-octaves [0.5 0.5])
 (def z-near 10)
 (def z-far (* radius 2))
-(def mix 0.8)
+(def mix 0.5)
 (def opacity-step (atom 400.0))
 (def step (atom 250.0))
 (def worley-size 64)
 (def profile-size 6)
-(def shadow-size 256)
+(def shadow-size 1024)
 (def noise-size 64)
 (def depth 30000.0)
 (def position (atom (matrix [0 (* -0 radius) (+ radius cloud-top 1000)])))
@@ -167,7 +167,7 @@ void main()
 (def cover (map (fn [i] {:width 512 :height 512 :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
 (def C (make-float-cubemap :linear :clamp cover))
 
-(def num-steps 5)
+(def num-steps 3)
 
 (def program
   (make-program :vertex [vertex-atmosphere]
