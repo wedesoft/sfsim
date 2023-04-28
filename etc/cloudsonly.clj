@@ -28,6 +28,7 @@ uniform float cloud_scale;
 uniform float cap;
 uniform float threshold;
 uniform float multiplier;
+uniform float gradient;
 uniform samplerCube cover;
 uniform sampler3D perlin;
 float cloud_octaves(vec3 point, float lod);
@@ -38,11 +39,12 @@ float cloud_density(vec3 point, float lod)
 {
   float clouds = perlin_octaves(normalize(point) * radius / cloud_scale);
   float profile = cloud_profile(point);
-  float cover_sample = clamp((texture(cover, point).r - threshold + (clouds - 0.5) * multiplier), 0.0, cap);
-  // float noise = cloud_octaves(point / detail_scale, lod);
-  // float base = clamp(cover_sample + clouds * cap * 20, 0.0, cap) * profile;
-  // float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
-  float density = cover_sample * profile;
+  float level = 0.5 * (multiplier + gradient) * threshold;
+  float cover_sample = clamp(texture(cover, point).r * gradient + clouds * multiplier - level, 0.0, cap);
+  float base = cover_sample * profile;
+  float noise = cloud_octaves(point / detail_scale, lod);
+  float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
+  // float density = clamp(base, 0.0, cap);
   return density;
 }")
 
@@ -128,24 +130,25 @@ void main()
 (def radius 6378000.0)
 ; (def dense-height 25000.0)
 (def dense-height 6000.0)
-(def anisotropic (atom 0.35))
+(def threshold (atom 1.0))
+(def anisotropic (atom 0.12))
 (def cloud-bottom 1500)
 (def cloud-top 6000)
-(def multiplier (atom 0.4))
-(def cap (atom 0.004))
-(def threshold (atom 0.62))
-(def detail-scale 5000)
-(def cloud-scale 200000)
+(def multiplier (atom 0.236))
+(def gradient (atom 0.64))
+(def cap (atom 0.012))
+(def detail-scale 10000)
+(def cloud-scale 100000)
 (def octaves [0.375 0.25 0.25 0.125])
 (def perlin-octaves [0.5 0.5])
 (def z-near 10)
 (def z-far (* radius 2))
 (def mix 0.5)
 (def opacity-step (atom 400.0))
-(def step (atom 250.0))
+(def step (atom 400.0))
 (def worley-size 64)
 (def profile-size 6)
-(def shadow-size 1024)
+(def shadow-size 512)
 (def noise-size 64)
 (def depth 30000.0)
 (def position (atom (matrix [0 (* -0 radius) (+ radius cloud-top 1000)])))
@@ -218,6 +221,7 @@ void main()
                               (uniform-matrix4 program-shadow "ndc_to_shadow" (inverse shadow-ndc-matrix))
                               (uniform-vector3 program-shadow "light_direction" light-direction)
                               (uniform-float program-shadow "multiplier" @multiplier)
+                              (uniform-float program-shadow "gradient" @gradient)
                               (uniform-float program-shadow "cap" @cap)
                               (uniform-float program-shadow "threshold" @threshold)
                               (uniform-float program-shadow "dense_height" dense-height)
@@ -249,7 +253,8 @@ void main()
              ta (if (@keystates Keyboard/KEY_E) 0.0001 (if (@keystates Keyboard/KEY_D) -0.0001 0))
              tm (if (@keystates Keyboard/KEY_R) 0.0001 (if (@keystates Keyboard/KEY_F) -0.0001 0))
              tc (if (@keystates Keyboard/KEY_T) 0.00001 (if (@keystates Keyboard/KEY_G) -0.00001 0))
-             ts (if (@keystates Keyboard/KEY_Y) 0.05 (if (@keystates Keyboard/KEY_H) -0.05 0))]
+             ts (if (@keystates Keyboard/KEY_Y) 0.05 (if (@keystates Keyboard/KEY_H) -0.05 0))
+             tg (if (@keystates Keyboard/KEY_U) 0.0001 (if (@keystates Keyboard/KEY_J) -0.0001 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
@@ -259,6 +264,7 @@ void main()
          (swap! opacity-step + (* dt to))
          (swap! anisotropic + (* dt ta))
          (swap! multiplier + (* dt tm))
+         (swap! gradient + (* dt tg))
          (swap! cap + (* dt tc))
          (swap! step + (* dt ts))
          (let [norm-pos   (norm @position)
@@ -305,6 +311,7 @@ void main()
                             (uniform-float program "cloud_bottom" cloud-bottom)
                             (uniform-float program "cloud_top" cloud-top)
                             (uniform-float program "multiplier" @multiplier)
+                            (uniform-float program "gradient" @gradient)
                             (uniform-float program "cap" @cap)
                             (uniform-float program "opacity_step" @opacity-step)
                             (uniform-float program "threshold" @threshold)
@@ -323,8 +330,8 @@ void main()
            (destroy-vertex-array-object vao))
          (swap! n inc)
          (when (zero? (mod @n 10))
-           (print (format "\rthres (q/a) %.3f, o.-step (w/s) %.1f, aniso (e/d) %.3f, mult (r/f) %.3f, cap (t/g) %.3f, step (y/h) %.3f, dt %.3f   "
-                          @threshold @opacity-step @anisotropic @multiplier @cap @step (* dt 0.001)))
+           (print (format "\rthres (q/a) %.3f, o.-step (w/s) %.0f, aniso (e/d) %.3f, mult (r/f) %.3f, grad (u/j) %.3f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
+                          @threshold @opacity-step @anisotropic @multiplier @gradient @cap @step (* dt 0.001)))
            (flush))
          (swap! t0 + dt)))
 
