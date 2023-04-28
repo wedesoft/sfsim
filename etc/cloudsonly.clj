@@ -36,13 +36,13 @@ float cloud_profile(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
 float cloud_density(vec3 point, float lod)
 {
-  // float clouds = perlin_octaves(normalize(point) * radius / cloud_scale);
+  float clouds = perlin_octaves(normalize(point) * radius / cloud_scale);
   float profile = cloud_profile(point);
-  float cover_sample = clamp((texture(cover, point).r - threshold) * multiplier, 0.0, cap);
+  float cover_sample = clamp((texture(cover, point).r - threshold + (clouds - 0.5) * multiplier), 0.0, cap);
   // float noise = cloud_octaves(point / detail_scale, lod);
   // float base = clamp(cover_sample + clouds * cap * 20, 0.0, cap) * profile;
   // float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
-  float density = cover_sample;
+  float density = cover_sample * profile;
   return density;
 }")
 
@@ -131,11 +131,11 @@ void main()
 (def anisotropic (atom 0.35))
 (def cloud-bottom 1500)
 (def cloud-top 6000)
-(def multiplier (atom 1.0))
-(def cap (atom 0.01))
+(def multiplier (atom 0.4))
+(def cap (atom 0.004))
 (def threshold (atom 0.62))
 (def detail-scale 5000)
-(def cloud-scale 100000)
+(def cloud-scale 200000)
 (def octaves [0.375 0.25 0.25 0.125])
 (def perlin-octaves [0.5 0.5])
 (def z-near 10)
