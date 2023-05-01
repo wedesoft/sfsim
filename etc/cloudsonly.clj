@@ -164,7 +164,7 @@ void main()
                             (slurp-floats "data/clouds/worley-cover.raw"))))
 (def L (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
-(def data (float-array [0.0 1.0 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.0]))
+(def data (float-array [0.0 1.0 0.7 0.6 0.55 0.5 0.45 0.35 0.2 0.0]))
 (def profile-size (count data))
 (def P (make-float-texture-1d :linear :clamp data))
 
