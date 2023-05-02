@@ -27,14 +27,9 @@
   * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
 * try whether EJML has better performance https://ejml.org/
-* article:
-  * [coding adventure](https://www.youtube.com/watch?v=4QOcCGI6xOU)
-  * [how big aaa studios render clouds](https://www.youtube.com/watch?v=Qj_tK_mdRcA)
-  * https://www.guerrilla-games.com/read/the-real-time-volumetric-cloudscapes-of-horizon-zero-dawn
-  * cloud probability map: https://neo.gsfc.nasa.gov/view.php?datasetId=MODAL2_M_CLD_FR&date=2022-12-01
-  * example cloud cover: https://earthobservatory.nasa.gov/ContentFeature/BlueMarble/Images/cloud_combined_2048.jpg
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
+  https://www.youtube.com/watch?v=Qj_tK_mdRcA
 * integration test for cascaded deep opacity map
 * uniform random offsets for Worley noises
 * configuration (edn) file for clouds?
