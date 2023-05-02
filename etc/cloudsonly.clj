@@ -43,7 +43,7 @@ float cloud_density(vec3 point, float lod)
   float cover_sample = clamp(texture(cover, point).r * gradient + clouds * multiplier - level, 0.0, cap);
   float base = cover_sample * profile;
   float noise = cloud_octaves(point / detail_scale, lod);
-  float density = clamp(remap(base, noise * cap, cap, 0.0, cap), 0.0, cap);
+  float density = clamp(remap(noise, 1 - base / cap, 1.0, 0.0, cap), 0.0, cap);
   return density;
 }")
 
@@ -137,11 +137,13 @@ void main()
 (def gradient (atom 0.30))
 (def cap (atom 0.012))
 (def detail-scale 10000)
-(def cloud-scale 60000)
-(def series (take 6 (iterate #(* % 0.7) 1.0)))
+(def cloud-scale 200000)
+(def series (take 5 (iterate #(* % 0.8) 1.0)))
 (def sum-series (apply + series))
 (def octaves (mapv #(/ % sum-series) series))
-(def perlin-octaves [0.5 0.5])
+(def series (take 3 (iterate #(* % 0.8) 1.0)))
+(def sum-series (apply + series))
+(def perlin-octaves (mapv #(/ % sum-series) series))
 (def z-near 10)
 (def z-far (* radius 2))
 (def mix 0.5)
@@ -159,12 +161,12 @@ void main()
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 
-(def data (float-array (map #(+ (* 0.5 %1) (* 0.5 %2))
+(def data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
                             (slurp-floats "data/clouds/perlin.raw")
                             (slurp-floats "data/clouds/worley-cover.raw"))))
 (def L (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
-(def data (float-array [0.0 1.0 0.7 0.6 0.55 0.525 0.5 0.45 0.4 0.0]))
+(def data (float-array [0.0 1.0 0.7 0.65 0.6 0.55 0.4 0.3 0.15 0.0]))
 (def profile-size (count data))
 (def P (make-float-texture-1d :linear :clamp data))
 
