@@ -39,10 +39,10 @@ float cloud_density(vec3 point, float lod)
 {
   float clouds = sphere_noise(point);
   float profile = cloud_profile(point);
-  float cover_sample = clamp(texture(cover, point).r * cover_multiplier + clouds * cloud_multiplier - threshold, 0.0, cap);
+  float cover_sample = clamp(texture(cover, point).r * cover_multiplier + clouds * cloud_multiplier - threshold, 0.0, 1.0);
   float base = cover_sample * profile;
   float noise = cloud_octaves(point / detail_scale, lod);
-  float density = clamp(remap(noise, 1 - base / cap, 1.0, 0.0, cap), 0.0, cap);
+  float density = clamp(remap(noise, 1 - base, 1.0, 0.0, cap), 0.0, cap);
   return density;
 }");
 
@@ -128,12 +128,12 @@ void main()
 (def radius 6378000.0)
 ; (def dense-height 25000.0)
 (def dense-height 6000.0)
-(def threshold (atom 0.2))
+(def threshold (atom 16.666))
 (def anisotropic (atom 0.2))
 (def cloud-bottom 1500)
 (def cloud-top 6000)
-(def cloud-multiplier (atom 0.1))
-(def cover-multiplier (atom 0.30))
+(def cloud-multiplier (atom 8.333))
+(def cover-multiplier (atom 25.0))
 (def cap (atom 0.012))
 (def detail-scale 10000)
 (def cloud-scale 200000)
@@ -256,13 +256,13 @@ void main()
              rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
              v  (if (@keystates Keyboard/KEY_PRIOR) 10 (if (@keystates Keyboard/KEY_NEXT) -10 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))
-             tr (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
+             tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              to (if (@keystates Keyboard/KEY_W) 0.05 (if (@keystates Keyboard/KEY_S) -0.05 0))
              ta (if (@keystates Keyboard/KEY_E) 0.0001 (if (@keystates Keyboard/KEY_D) -0.0001 0))
-             tm (if (@keystates Keyboard/KEY_R) 0.0001 (if (@keystates Keyboard/KEY_F) -0.0001 0))
+             tm (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
              tc (if (@keystates Keyboard/KEY_T) 0.00001 (if (@keystates Keyboard/KEY_G) -0.00001 0))
              ts (if (@keystates Keyboard/KEY_Y) 0.05 (if (@keystates Keyboard/KEY_H) -0.05 0))
-             tg (if (@keystates Keyboard/KEY_U) 0.0001 (if (@keystates Keyboard/KEY_J) -0.0001 0))]
+             tg (if (@keystates Keyboard/KEY_U) 0.001 (if (@keystates Keyboard/KEY_J) -0.001 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
          (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
@@ -338,7 +338,7 @@ void main()
            (destroy-vertex-array-object vao))
          (swap! n inc)
          (when (zero? (mod @n 10))
-           (print (format "\rthres (q/a) %.3f, o.-step (w/s) %.0f, aniso (e/d) %.3f, mult (r/f) %.3f, cov (u/j) %.3f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
+           (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, mult (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
                           @threshold @opacity-step @anisotropic @cloud-multiplier @cover-multiplier @cap @step (* dt 0.001)))
            (flush))
          (swap! t0 + dt)))
