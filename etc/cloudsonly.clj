@@ -27,8 +27,8 @@ uniform float radius;
 uniform float cloud_scale;
 uniform float cap;
 uniform float threshold;
-uniform float multiplier;
-uniform float gradient;
+uniform float cloud_multiplier;
+uniform float cover_multiplier;
 uniform samplerCube cover;
 uniform sampler3D perlin;
 float cloud_octaves(vec3 point, float lod);
@@ -39,7 +39,7 @@ float cloud_density(vec3 point, float lod)
 {
   float clouds = sphere_noise(point);
   float profile = cloud_profile(point);
-  float cover_sample = clamp(texture(cover, point).r * gradient + clouds * multiplier - threshold, 0.0, cap);
+  float cover_sample = clamp(texture(cover, point).r * cover_multiplier + clouds * cloud_multiplier - threshold, 0.0, cap);
   float base = cover_sample * profile;
   float noise = cloud_octaves(point / detail_scale, lod);
   float density = clamp(remap(noise, 1 - base / cap, 1.0, 0.0, cap), 0.0, cap);
@@ -132,8 +132,8 @@ void main()
 (def anisotropic (atom 0.2))
 (def cloud-bottom 1500)
 (def cloud-top 6000)
-(def multiplier (atom 0.1))
-(def gradient (atom 0.30))
+(def cloud-multiplier (atom 0.1))
+(def cover-multiplier (atom 0.30))
 (def cap (atom 0.012))
 (def detail-scale 10000)
 (def cloud-scale 200000)
@@ -228,8 +228,8 @@ void main()
                               (uniform-float program-shadow "cloud_scale" cloud-scale)
                               (uniform-matrix4 program-shadow "ndc_to_shadow" (inverse shadow-ndc-matrix))
                               (uniform-vector3 program-shadow "light_direction" light-direction)
-                              (uniform-float program-shadow "multiplier" @multiplier)
-                              (uniform-float program-shadow "gradient" @gradient)
+                              (uniform-float program-shadow "cloud_multiplier" @cloud-multiplier)
+                              (uniform-float program-shadow "cover_multiplier" @cover-multiplier)
                               (uniform-float program-shadow "cap" @cap)
                               (uniform-float program-shadow "threshold" @threshold)
                               (uniform-float program-shadow "dense_height" dense-height)
@@ -271,8 +271,8 @@ void main()
          (swap! threshold + (* dt tr))
          (swap! opacity-step + (* dt to))
          (swap! anisotropic + (* dt ta))
-         (swap! multiplier + (* dt tm))
-         (swap! gradient + (* dt tg))
+         (swap! cloud-multiplier + (* dt tm))
+         (swap! cover-multiplier + (* dt tg))
          (swap! cap + (* dt tc))
          (swap! step + (* dt ts))
          (let [norm-pos   (norm @position)
@@ -318,8 +318,8 @@ void main()
                             (uniform-float program "radius" radius)
                             (uniform-float program "cloud_bottom" cloud-bottom)
                             (uniform-float program "cloud_top" cloud-top)
-                            (uniform-float program "multiplier" @multiplier)
-                            (uniform-float program "gradient" @gradient)
+                            (uniform-float program "cloud_multiplier" @cloud-multiplier)
+                            (uniform-float program "cover_multiplier" @cover-multiplier)
                             (uniform-float program "cap" @cap)
                             (uniform-float program "opacity_step" @opacity-step)
                             (uniform-float program "threshold" @threshold)
@@ -338,8 +338,8 @@ void main()
            (destroy-vertex-array-object vao))
          (swap! n inc)
          (when (zero? (mod @n 10))
-           (print (format "\rthres (q/a) %.3f, o.-step (w/s) %.0f, aniso (e/d) %.3f, mult (r/f) %.3f, grad (u/j) %.3f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
-                          @threshold @opacity-step @anisotropic @multiplier @gradient @cap @step (* dt 0.001)))
+           (print (format "\rthres (q/a) %.3f, o.-step (w/s) %.0f, aniso (e/d) %.3f, mult (r/f) %.3f, cov (u/j) %.3f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
+                          @threshold @opacity-step @anisotropic @cloud-multiplier @cover-multiplier @cap @step (* dt 0.001)))
            (flush))
          (swap! t0 + dt)))
 
