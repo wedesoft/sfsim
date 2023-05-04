@@ -41,8 +41,18 @@ float cloud_density(vec3 point, float lod)
   float profile = cloud_profile(point);
   float cover_sample = clamp(texture(cover, point).r * cover_multiplier + clouds * cloud_multiplier - threshold, 0.0, 1.0);
   float base = cover_sample * profile;
-  float noise = cloud_octaves(point / detail_scale, lod);
-  float density = clamp(remap(noise, 1 - base, 1.0, 0.0, cap), 0.0, cap);
+  float density;
+  if (base <= 0.0)
+    density = 0.0;
+  else if (base >= 1.0)
+    density = cap;
+  else {
+    float noise = cloud_octaves(point / detail_scale, lod);
+    if (noise <= 1 - base)
+      density = 0.0;
+    else
+      density = remap(noise, 1 - base, 1.0, 0.0, cap);
+  };
   return density;
 }");
 
