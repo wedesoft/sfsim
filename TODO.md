@@ -1,11 +1,6 @@
 # TODO
-* improved Perlin noise? https://adrianb.io/2014/08/09/perlinnoise.html (also combined with Worley)
-* sample tiled 3D Perlin-Worley noise on a sphere to create connected 2D cloud shapes
-* improve cloud\_density to generate realistic clouds
 * separate shader to perform lookups in cloud cover cubemap
-* add global cloud cover to cloud\_density shader
-  * use cloud cover mock for cloud\_density tests
-  * add global cloud map to cloud\_density and make it modular
+* use noise mocks to test cloud\_density implementation and make it modular
 * separate cloud\_shadow and transmittance\_outer
 * how is cloud\_max\_step (cms) still used?
 * is cloud-scatter-amount and density redundant?

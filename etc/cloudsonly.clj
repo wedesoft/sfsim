@@ -17,7 +17,7 @@
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. (/ 1920 2) (/ 1080 2)))
-;(Display/setDisplayMode (DisplayMode. 1280 720))
+;(Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
 
 (def density
@@ -155,6 +155,8 @@ void main()
 (def depth 30000.0)
 (def position (atom (matrix [0 (* -0 radius) (+ radius cloud-bottom -750)])))
 (def orientation (atom (q/rotation (to-radians 105) (matrix [1 0 0]))))
+;(def position (atom (matrix [0 (* -2 radius) 0])))
+;(def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
 (def light (atom (* 0.25 PI)))
 
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
@@ -251,7 +253,7 @@ void main()
              ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
              rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
              rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-             v  (if (@keystates Keyboard/KEY_PRIOR) 100 (if (@keystates Keyboard/KEY_NEXT) -100 0))
+             v  (if (@keystates Keyboard/KEY_PRIOR) 10 (if (@keystates Keyboard/KEY_NEXT) -10 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))
              tr (if (@keystates Keyboard/KEY_Q) 0.0001 (if (@keystates Keyboard/KEY_A) -0.0001 0))
              to (if (@keystates Keyboard/KEY_W) 0.05 (if (@keystates Keyboard/KEY_S) -0.05 0))

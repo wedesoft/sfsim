@@ -20,7 +20,7 @@
         '[org.lwjgl BufferUtils])
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 1280 720))
+(Display/setDisplayMode (DisplayMode. 640 480))
 ;(Display/setFullscreen true)
 (Display/create)
 (Keyboard/create)
@@ -31,7 +31,7 @@
 (def origin (atom (matrix [0 0 100])))
 (def orientation (atom (q/* (q/rotation (to-radians 125) (matrix [1 0 0])) (q/rotation (to-radians 24) (matrix [0 1 0])))))
 (def octaves [0.5 0.25 0.125 0.125])
-(def threshold (atom 0.55))
+(def threshold (atom 0.53))
 (def anisotropic (atom 0.2))
 (def multiplier (atom 2.0))
 (def light (atom (+ (/ PI 4) 0.1)))
