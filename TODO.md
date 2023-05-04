@@ -1,7 +1,9 @@
 # TODO
+* static threshold, simplify cloud\_density prototype
 * separate shader to perform lookups in cloud cover cubemap
 * use noise mocks to test cloud\_density implementation and make it modular
 * separate cloud\_shadow and transmittance\_outer
+* add conditions to shortcut lookup in some noise textures
 * how is cloud\_max\_step (cms) still used?
 * is cloud-scatter-amount and density redundant?
 * render just atmosphere with empty cloud layer to check that there is no step
