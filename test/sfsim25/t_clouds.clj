@@ -900,7 +900,7 @@ float octaves_south(vec3 idx)
 float flow_field(vec3 point);
 void main()
 {
-  vec3 point = vec3 (<%= x %>, <%= y %>, <%= z %>);
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
   float result = flow_field(point);
   fragColor = vec3(result, 0, 0);
 }"))
@@ -1008,3 +1008,35 @@ void main()
         (destroy-texture worley-south)
         (destroy-texture worley-north)))
     => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.0))
+
+(def sphere-noise-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float base_noise(vec3 point)
+{
+  return point.x;
+}
+float sphere_noise(vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float noise = sphere_noise(point);
+  fragColor = vec3(noise, 0, 0);
+}"))
+
+(def sphere-noise-test
+  (shader-test
+    (fn [program radius cloud-scale]
+        (uniform-float program "radius" radius)
+        (uniform-float program "cloud_scale" cloud-scale))
+    sphere-noise-probe
+    (sphere-noise "base_noise")))
+
+(tabular "Sample 3D noise on the surface of a sphere"
+         (fact (mget (sphere-noise-test [?radius ?cloud-scale] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         ?radius ?cloud-scale ?x  ?y  ?z  ?result
+         100.0   100.0        1.0 0.0 0.0   1.0
+         100.0    10.0        1.0 0.0 0.0  10.0
+         100.0    10.0       -1.0 0.0 0.0 -10.0
+         100.0    10.0        2.0 0.0 0.0  10.0)

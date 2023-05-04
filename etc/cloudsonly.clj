@@ -32,19 +32,19 @@ uniform float gradient;
 uniform samplerCube cover;
 uniform sampler3D perlin;
 float cloud_octaves(vec3 point, float lod);
-float perlin_octaves(vec3 point);
+float sphere_noise(vec3 point);
 float cloud_profile(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
 float cloud_density(vec3 point, float lod)
 {
-  float clouds = perlin_octaves(normalize(point) * radius / cloud_scale);
+  float clouds = sphere_noise(point);
   float profile = cloud_profile(point);
   float cover_sample = clamp(texture(cover, point).r * gradient + clouds * multiplier - threshold, 0.0, cap);
   float base = cover_sample * profile;
   float noise = cloud_octaves(point / detail_scale, lod);
   float density = clamp(remap(noise, 1 - base / cap, 1.0, 0.0, cap), 0.0, cap);
   return density;
-}")
+}");
 
 (def fragment
 "#version 410 core
@@ -184,6 +184,7 @@ void main()
                 :fragment [fragment density shaders/remap (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
+                           (sphere-noise "perlin_octaves")
                            (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile phase-function
                            shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
                            opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset]))
@@ -195,7 +196,8 @@ void main()
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (shaders/lookup-3d "lookup_perlin" "perlin")cloud-profile shaders/convert-1d-index
+                           (sphere-noise "perlin_octaves")
+                           (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile shaders/convert-1d-index
                            shaders/ray-sphere bluenoise/sampling-offset]))
 
 (def indices [0 1 3 2])

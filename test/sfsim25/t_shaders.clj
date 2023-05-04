@@ -960,7 +960,7 @@ vec3 rotate_vector(vec3 axis, vec3 v, float cos_angle, float sin_angle);
 void main()
 {
   vec3 axis = vec3(<%= ax %>, <%= ay %>, <%= az %>);
-  vec3 v = vec3 (<%= x %>, <%= y %>, <%= z %>);
+  vec3 v = vec3(<%= x %>, <%= y %>, <%= z %>);
   float angle = <%= angle %>;
   float cos_angle = cos(angle);
   float sin_angle = sin(angle);

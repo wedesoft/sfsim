@@ -179,3 +179,7 @@
     (destroy-program update-warp)
     (destroy-texture @warp)
     @result))
+
+(def sphere-noise
+  "Sample 3D noise on the surface of a sphere"
+  (template/fn [base-noise] (slurp "resources/shaders/clouds/sphere-noise.glsl")))
