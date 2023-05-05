@@ -40,8 +40,8 @@ float cloud_density(vec3 point, float lod)
   float cover_value = texture(cover, point).r * cover_multiplier;
   float density;
   if (cover_value + cloud_multiplier > threshold) {
-    float clouds = sphere_noise(point) * cloud_multiplier;
-    float combined_cover = cover_value + clouds - threshold;
+    float bodies_value = sphere_noise(point) * cloud_multiplier;
+    float combined_cover = cover_value + bodies_value - threshold;
     float profile = cloud_profile(point);
     float base = combined_cover * profile;
     if (base <= 0.0)
