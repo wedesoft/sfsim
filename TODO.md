@@ -5,6 +5,7 @@
 * add conditions to shortcut lookup in some noise textures
 * how is cloud\_max\_step (cms) still used?
 * is cloud-scatter-amount and density redundant?
+* non-linear steps?
 * render just atmosphere with empty cloud layer to check that there is no step
 * no shading of atmosphere above 25km
 * add atmospheric transmittance and scattering
