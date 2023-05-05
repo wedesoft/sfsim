@@ -8,7 +8,7 @@
             [sfsim25.render :refer :all]
             [sfsim25.shaders :refer :all]
             [sfsim25.matrix :refer (orthogonal)]
-            [sfsim25.util :refer (get-vector3 convert-4d-to-2d)])
+            [sfsim25.util :refer (get-float get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl BufferUtils]
            [org.lwjgl.opengl Pbuffer PixelFormat]))
 
@@ -291,6 +291,56 @@ void main()
          0    1  0   8.0
          0    0  1  12.0
          3    2  1  23.0)
+
+(def interpolate-cubemap-probe
+  (template/fn [method selector x y z]
+"#version 410 core
+uniform samplerCube cube;
+out vec3 fragColor;
+float interpolate_float_cubemap(samplerCube cube, int size, vec3 idx);
+vec3 interpolate_vector_cubemap(samplerCube cube, int size, vec3 idx);
+void main()
+{
+  fragColor = vec3(0, 0, 0);
+  fragColor.<%= selector %> = interpolate_<%= method %>_cubemap(cube, 2, vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(defn interpolate-cubemap-test [method selector x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices     [0 1 3 2]
+                            vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
+                            data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
+                            cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
+                            program     (make-program :vertex [vertex-passthrough]
+                                                      :fragment [(interpolate-cubemap-probe method selector x y z)
+                                                                 interpolate-float-cubemap interpolate-vector-cubemap
+                                                                 convert-cubemap-index])
+                            vao         (make-vertex-array-object program indices vertices [:point 3])
+                            tex         (texture-render-color
+                                          1 1 true
+                                          (use-program program)
+                                          (uniform-sampler program "cube" 0)
+                                          (use-textures cube)
+                                          (render-quads vao))
+                            img         (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture cube)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
+
+(tabular "Perform interpolation on cubemap avoiding seams"
+         (fact (mget (interpolate-cubemap-test ?method ?selector ?x ?y ?z) 0) => ?result)
+         ?method  ?selector ?x   ?y ?z  ?result
+         "float"  "r"       1    0   0   0.5
+         "float"  "r"       1    0  -1   1.0
+         "float"  "r"       1    0   0.5 0.25
+         "vector" "xyz"     1    0   0   0.5
+         "vector" "xyz"     1    0  -1   1.0
+         "vector" "xyz"     1    0   0.5 0.25)
 
 (def interpolate-4d-probe
   (template/fn [x y z w] "#version 410 core

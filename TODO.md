@@ -1,5 +1,4 @@
 # TODO
-* separate shader to perform lookups in cloud cover cubemap
 * use noise mocks to test cloud\_density implementation and make it modular
 * add z-near offset to origin?
 * separate cloud\_shadow and transmittance\_outer

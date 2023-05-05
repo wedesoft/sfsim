@@ -31,13 +31,15 @@ uniform float cloud_multiplier;
 uniform float cover_multiplier;
 uniform samplerCube cover;
 uniform sampler3D perlin;
+float interpolate_float_cubemap(samplerCube cube, int size, vec3 idx);
 float cloud_octaves(vec3 point, float lod);
 float sphere_noise(vec3 point);
 float cloud_profile(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
+vec3 convert_cubemap_index(vec3 idx, int size);
 float cloud_density(vec3 point, float lod)
 {
-  float cover_value = texture(cover, point).r * cover_multiplier;
+  float cover_value = interpolate_float_cubemap(cover, 512, point) * cover_multiplier;
   float density;
   if (cover_value + cloud_multiplier > threshold) {
     float bodies_value = sphere_noise(point) * cloud_multiplier;
@@ -202,7 +204,8 @@ void main()
                            (sphere-noise "perlin_octaves")
                            (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile phase-function
                            shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
-                           opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset]))
+                           opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset
+                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index]))
 
 (def num-opacity-layers 7)
 (def program-shadow
@@ -213,7 +216,8 @@ void main()
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (sphere-noise "perlin_octaves")
                            (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile shaders/convert-1d-index
-                           shaders/ray-sphere bluenoise/sampling-offset]))
+                           shaders/ray-sphere bluenoise/sampling-offset
+                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index]))
 
 (def indices [0 1 3 2])
 (def shadow-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])

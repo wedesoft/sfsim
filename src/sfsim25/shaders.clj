@@ -48,7 +48,15 @@
 
 (def interpolate-cubemap
   "Perform interpolation on cubemap avoiding seams"
-  (slurp "resources/shaders/core/interpolate-cubemap.glsl"))
+  (template/fn [result-type method-name selector] (slurp "resources/shaders/core/interpolate-cubemap.glsl")))
+
+(def interpolate-float-cubemap
+  "Perform floating-point interpolation on cubemap avoiding seams"
+  (interpolate-cubemap "float" "interpolate_float_cubemap" "r"))
+
+(def interpolate-vector-cubemap
+  "Perform floating-point interpolation on cubemap avoiding seams"
+  (interpolate-cubemap "vec3" "interpolate_vector_cubemap" "xyz"))
 
 (def interpolate-4d
   "Perform 4D float interpolation"
