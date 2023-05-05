@@ -163,28 +163,33 @@
 
 (defn uniform-float
   "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^double value]
-  (GL20/glUniform1f (GL20/glGetUniformLocation ^int program (name k)) value))
+  [^clojure.lang.IPersistentMap program ^String k ^double value]
+  (GL20/glUniform1f (GL20/glGetUniformLocation ^int program ^String k) value))
 
 (defn uniform-int
   "Set uniform integer variable in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program (name k)) value))
+  [^clojure.lang.IPersistentMap program ^String k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Vector value]
-  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program (name k)) (mget value 0) (mget value 1) (mget value 2)))
+  [^clojure.lang.IPersistentMap program ^String k ^Vector value]
+  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program ^String k) (mget value 0) (mget value 1) (mget value 2)))
+
+(defn uniform-matrix3
+  "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^String k ^Matrix value]
+  (GL20/glUniformMatrix3 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (float-array (eseq value)))))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^Matrix value]
-  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int program (name k)) true (make-float-buffer (float-array (eseq value)))))
+  [^clojure.lang.IPersistentMap program ^String k ^Matrix value]
+  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (float-array (eseq value)))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.Keyword k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program (name k)) value))
+  [^clojure.lang.IPersistentMap program ^String k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
@@ -294,26 +299,26 @@
                       (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL)
                       ~@body))
 
-(defmulti setup-boundary-3d identity)
+(defmulti setup-boundary-3d (comp second vector))
 
 (defmethod setup-boundary-3d :clamp
-  [boundary]
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
+  [target boundary]
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
+  (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-3d :repeat
-  [boundary]
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
-  (GL11/glTexParameteri GL12/GL_TEXTURE_3D GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))
+  [target boundary]
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
+  (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))
 
 (defmacro create-texture-3d
   "Macro to initialise 3D texture"
   [interpolation boundary width height depth & body]
   `(create-texture GL12/GL_TEXTURE_3D texture#
                    (setup-interpolation GL12/GL_TEXTURE_3D ~interpolation)
-                   (setup-boundary-3d ~boundary)
+                   (setup-boundary-3d GL12/GL_TEXTURE_3D ~boundary)
                    ~@body
                    {:texture texture# :target GL12/GL_TEXTURE_3D :width ~width :height ~height :depth ~depth}))
 
@@ -326,8 +331,8 @@
       (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
 
 (defn- make-texture-2d
-  [image make-buffer interpolation boundary internalformat format_ type_]
   "Initialise a 2D texture"
+  [image make-buffer interpolation boundary internalformat format_ type_]
   (let [buffer (make-buffer (:data image))]
     (create-texture-2d interpolation boundary (:width image) (:height image)
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer))))
@@ -512,5 +517,65 @@
     (let [buf  (BufferUtils/createIntBuffer (* width height))
           data (int-array (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(defmacro create-cubemap
+  "Macro to initialise cubemap"
+  [interpolation boundary size & body]
+  `(create-texture GL13/GL_TEXTURE_CUBE_MAP texture#
+                   (setup-interpolation GL13/GL_TEXTURE_CUBE_MAP ~interpolation)
+                   (setup-boundary-3d GL13/GL_TEXTURE_CUBE_MAP ~boundary)
+                   ~@body
+                   {:width ~size :height ~size :depth 6 :target GL13/GL_TEXTURE_CUBE_MAP :texture texture#}))
+
+
+(defn- make-cubemap
+  "Initialise a cubemap"
+  [images interpolation boundary internalformat format_ type_]
+  (let [size (:width (first images))]
+    (create-cubemap interpolation boundary size
+      (doseq [[face image] (map-indexed vector images)]
+             (GL11/glTexImage2D (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 internalformat size size 0 format_
+                                type_ (make-float-buffer (:data image)))))))
+(defn make-float-cubemap
+  "Load floating-point 2D textures into red channel of an OpenGL cubemap"
+  [interpolation boundary images]
+  (make-cubemap images interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
+
+(defn make-empty-float-cubemap
+  "Create empty cubemap with faces of specified size"
+  [interpolation boundary size]
+  (create-cubemap interpolation boundary size
+                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_R32F size size)))
+
+(defn float-cubemap->floats
+  "Extract floating-point data from cubemap face"
+  [{:keys [target texture width height]} face]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height))
+          data (float-array (* width height))]
+      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
+(defn make-vector-cubemap
+  "Load vector 2D textures into an OpenGL cubemap"
+  [interpolation boundary images]
+  (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+
+(defn make-empty-vector-cubemap
+  "Create empty cubemap with faces of specified size"
+  [interpolation boundary size]
+  (create-cubemap interpolation boundary size
+                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_RGB32F size size)))
+
+(defn vector-cubemap->vectors3
+  "Extract floating-point vector data from cubemap face"
+  [{:keys [target texture width height]} face]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
+          data (float-array (* width height 3))]
+      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_BGR GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))

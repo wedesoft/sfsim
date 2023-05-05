@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image vertex-passthrough shader-test)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul add dot identity-matrix)]
@@ -503,12 +503,12 @@
           (let [indices       [0 1 3 2]
                 vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
-                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
                 tex           (texture-render-color
                                 1 1 true
                                 (use-program program)
-                                (uniform-sampler program :transmittance 0)
+                                (uniform-sampler program "transmittance" 0)
                                 (apply setup program uniforms)
                                 (use-textures transmittance)
                                 (render-quads vao))
@@ -534,10 +534,10 @@ void main()
 (def transmittance-track-test
   (transmittance-shader-test
     (fn [program transmittance-height-size transmittance-elevation-size radius max-height]
-        (uniform-int program :transmittance_height_size transmittance-height-size)
-        (uniform-int program :transmittance_elevation_size transmittance-elevation-size)
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-int program "transmittance_height_size" transmittance-height-size)
+        (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
     shaders/horizon-distance shaders/limit-quot phase-function))
@@ -559,14 +559,14 @@ void main()
                 transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
                 ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
                 mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
-                program       (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao           (make-vertex-array-object program indices vertices [:point 3])
                 tex           (texture-render-color
                                 1 1 true
                                 (use-program program)
-                                (uniform-sampler program :transmittance 0)
-                                (uniform-sampler program :ray_scatter 1)
-                                (uniform-sampler program :mie_strength 2)
+                                (uniform-sampler program "transmittance" 0)
+                                (uniform-sampler program "ray_scatter" 1)
+                                (uniform-sampler program "mie_strength" 2)
                                 (apply setup program uniforms)
                                 (use-textures transmittance ray-scatter mie-strength)
                                 (render-quads vao))
@@ -594,14 +594,14 @@ void main()
   (ray-scatter-shader-test
     (fn [program transmittance-height-size transmittance-elevation-size
          height-size elevation-size light-elevation-size heading-size radius max-height]
-        (uniform-int program :transmittance_height_size transmittance-height-size)
-        (uniform-int program :transmittance_elevation_size transmittance-elevation-size)
-        (uniform-int program :height_size height-size)
-        (uniform-int program :elevation_size elevation-size)
-        (uniform-int program :light_elevation_size light-elevation-size)
-        (uniform-int program :heading_size heading-size)
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-int program "transmittance_height_size" transmittance-height-size)
+        (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+        (uniform-int program "height_size" height-size)
+        (uniform-int program "elevation_size" elevation-size)
+        (uniform-int program "light_elevation_size" light-elevation-size)
+        (uniform-int program "heading_size" heading-size)
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
     shaders/make-2d-index-from-4d transmittance-track shaders/transmittance-forward shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
@@ -645,11 +645,11 @@ void main()
                                    vao       (make-vertex-array-object program indices vertices variables)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
-                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
-                               (uniform-matrix4 program :transform ?matrix)
+                               (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
+                               (uniform-matrix4 program "transform" ?matrix)
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result))
+                               (destroy-program program))) => (is-image ?result 0.0))
          ?selector                               ?matrix ?result
          "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere/quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere/direction.png"
@@ -690,40 +690,41 @@ void main()
                                    vao           (make-vertex-array-object program indices vertices variables)]
                                (clear (matrix [0 0 0]))
                                (use-program program)
-                               (uniform-sampler program :transmittance 0)
-                               (uniform-sampler program :ray_scatter 1)
-                               (uniform-sampler program :mie_strength 2)
-                               (uniform-matrix4 program :projection (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
-                               (uniform-vector3 program :origin origin)
-                               (uniform-matrix4 program :transform transform)
-                               (uniform-vector3 program :light_direction (matrix [?lx ?ly ?lz]))
-                               (uniform-float program :radius radius)
-                               (uniform-float program :polar_radius ?polar)
-                               (uniform-float program :max_height max-height)
-                               (uniform-float program :specular 500)
-                               (uniform-int program :height_size size)
-                               (uniform-int program :elevation_size size)
-                               (uniform-int program :light_elevation_size size)
-                               (uniform-int program :heading_size size)
-                               (uniform-int program :transmittance_height_size size)
-                               (uniform-int program :transmittance_elevation_size size)
-                               (uniform-float program :amplification 5)
+                               (uniform-sampler program "transmittance" 0)
+                               (uniform-sampler program "ray_scatter" 1)
+                               (uniform-sampler program "mie_strength" 2)
+                               (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
+                               (uniform-vector3 program "origin" origin)
+                               (uniform-matrix4 program "transform" transform)
+                               (uniform-vector3 program "light_direction" (matrix [?lx ?ly ?lz]))
+                               (uniform-float program "radius" radius)
+                               (uniform-float program "polar_radius" ?polar)
+                               (uniform-float program "max_height" max-height)
+                               (uniform-float program "specular" 500)
+                               (uniform-int program "height_size" size)
+                               (uniform-int program "elevation_size" size)
+                               (uniform-int program "light_elevation_size" size)
+                               (uniform-int program "heading_size" size)
+                               (uniform-int program "transmittance_height_size" size)
+                               (uniform-int program "transmittance_elevation_size" size)
+                               (uniform-float program "amplification" 5)
                                (use-textures transmittance ray-scatter mie-strength)
                                (render-quads vao)
                                (destroy-texture ray-scatter)
                                (destroy-texture mie-strength)
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result)))
-         ?x ?y              ?z                      ?polar       ?rotation   ?lx ?ly       ?lz           ?result
-         0  0               (- 0 radius max-height) radius       0           0   0         -1            "sun.png"
-         0  0               (- 0 radius max-height) radius       0           0   0          1            "space.png"
-         0  0               (* 2.5 radius)          radius       0           0   1          0            "haze.png"
-         0  radius          (* 0.5 radius)          radius       0           0   0         -1            "sunset.png"
-         0  (+ radius 1000) 0                       radius       0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
-         0  0               (- 0 radius 2)          radius       0           0   0         -1            "inside.png"
-         0  (* 3 radius)    0                       radius       (* -0.5 PI) 0   1          0            "yview.png"
-         0  (* 3 radius)    0                       (/ radius 2) (* -0.5 PI) 0   1          0            "ellipsoid.png")
+                               (destroy-program program)))
+           => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
+         ?x ?y              ?z                        ?polar       ?rotation   ?lx ?ly       ?lz           ?result
+         0  0               (- 0 radius max-height 1) radius       0           0   0         -1            "sun.png"
+         0  0               (- 0 radius max-height 1) radius       0           0   0          1            "space.png"
+         0  0               (* 2.5 radius)            radius       0           0   1          0            "haze.png"
+         0  radius          (* 0.5 radius)            radius       0           0   0         -1            "sunset.png"
+         0  (+ radius 1000) 0                         radius       0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
+         0  0               (- 0 radius 2)            radius       0           0   0         -1            "inside.png"
+         0  (* 3 radius)    0                         radius       (* -0.5 PI) 0   1          0            "yview.png"
+         0  (* 3 radius)    0                         (/ radius 2) (* -0.5 PI) 0   1          0            "ellipsoid.png")
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core

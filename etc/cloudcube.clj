@@ -20,7 +20,7 @@
         '[org.lwjgl BufferUtils])
 
 (Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 1280 720))
+(Display/setDisplayMode (DisplayMode. 640 480))
 ;(Display/setFullscreen true)
 (Display/create)
 (Keyboard/create)
@@ -29,12 +29,14 @@
 (def z-far 150)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 75)))
 (def origin (atom (matrix [0 0 100])))
-(def orientation (atom (q/rotation (to-radians 0) (matrix [1 0 0]))))
-(def threshold (atom 0.5))
-(def anisotropic (atom 0.3))
-(def multiplier (atom 5.0))
-(def light (atom (/ PI 4)))
+(def orientation (atom (q/* (q/rotation (to-radians 125) (matrix [1 0 0])) (q/rotation (to-radians 24) (matrix [0 1 0])))))
+(def octaves [0.5 0.25 0.125 0.125])
+(def threshold (atom 0.53))
+(def anisotropic (atom 0.2))
+(def multiplier (atom 2.0))
+(def light (atom (+ (/ PI 4) 0.1)))
 (def keystates (atom {}))
+(def shadow-size 128)
 
 (def vertex-shader "#version 410 core
 uniform mat4 projection;
@@ -58,6 +60,7 @@ uniform sampler2D opacity_shape;
 uniform vec3 origin;
 uniform vec3 light_direction;
 uniform mat4 shadow;
+uniform int shadow_size;
 uniform float threshold;
 uniform float multiplier;
 uniform float cloud_scale;
@@ -69,17 +72,17 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float lookup_3d(sampler3D tex, vec3 point);
+float octaves(vec3 point, float lod);
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 float cloud_density(vec3 point, float lod)
 {
-  float s = lookup_3d(worley, point / cloud_scale);
-  return max((s - threshold) * multiplier, 0);
+  float s = octaves(point / cloud_scale, lod);
+  return max(s - threshold, 0) * multiplier;
 }
 vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
-  vec4 p = convert_shadow_index(shadow * vec4(point, 1), 512, 512);
+  vec4 p = convert_shadow_index(shadow * vec4(point, 1), shadow_size, shadow_size);
   float offset = texture(opacity_shape, p.xy).r;
   float z = (1 - p.z - offset) * depth / thickness;
   vec3 idx = vec3(p.xy, z);
@@ -105,30 +108,34 @@ void main()
 
 (def program
   (make-program :vertex [vertex-shader]
-                :fragment [fragment-shader s/ray-box s/lookup-3d phase-function
+                :fragment [fragment-shader s/ray-box (s/noise-octaves-lod "octaves" "lookup_3d" octaves)
+                           (s/lookup-3d-lod "lookup_3d" "worley") phase-function
                            cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index
                            sampling-offset]))
 
 (def indices [0 1 3 2])
-(def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1]))
+(def vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4 4 -1, 4 4 -1]))
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
 (def size 64)
-(def values1 (slurp-floats "data/worley.raw"))
+(def values1 (slurp-floats "data/clouds/worley-cover.raw"))
+; (def values1 (slurp-floats "data/clouds/perlin.raw"))
 (def worley (make-float-texture-3d :linear :repeat {:width size :height size :depth size :data values1}))
+(generate-mipmap worley)
 (def noise-size 64)
 (def values2 (slurp-floats "data/bluenoise.raw"))
 (def bluenoise (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data values2}))
 
 (use-program program)
-(uniform-sampler program :worley 0)
-(uniform-sampler program :bluenoise 1)
-(uniform-sampler program :opacity 2)
-(uniform-sampler program :opacity_shape 3)
+(uniform-sampler program "worley" 0)
+(uniform-sampler program "bluenoise" 1)
+(uniform-sampler program "opacity" 2)
+(uniform-sampler program "opacity_shape" 3)
 
 (def svertex-shader
 "#version 410 core
 uniform mat4 iprojection;
+uniform int shadow_size;
 in vec3 point;
 out VS_OUT
 {
@@ -138,7 +145,7 @@ vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
   gl_Position = vec4(point, 1);
-  vec4 origin = iprojection * grow_shadow_index(vec4(point, 1), 512, 512);
+  vec4 origin = iprojection * grow_shadow_index(vec4(point, 1), shadow_size, shadow_size);
   vs_out.origin = origin.xyz;
 }")
 
@@ -167,29 +174,37 @@ layout (location = 5) out float opacity6;
 layout (location = 6) out float opacity7;
 layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float lookup_3d(sampler3D table, vec3 point);
+float scaling_offset(float a, float b, int samples, float max_step);
+float step_size(float a, float b, float scaling_offset, int num_steps);
+float sample_point(float a, float scaling_offset, int idx, float step_size);
+float initial_lod(float a, float scaling_offset, float step_size);
+float lod_increment(float step_size);
+float octaves(vec3 point, float lod);
 float phase(float g, float mu);
 float cloud_density(vec3 point, float lod)
 {
-  float s = lookup_3d(worley, point / cloud_scale);
+  float s = octaves(point / cloud_scale, lod);
   return max((s - threshold) * multiplier, 0);
 }
 void main()
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_direction);
+  int steps = int(ceil(cloud_base_samples * intersection.y / 60.0));
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
-  float stepsize = 60.0 / cloud_base_samples;
-  int steps = int(ceil(intersection.y / stepsize));
-  stepsize = intersection.y / steps;
+  float offset = scaling_offset(intersection.x, intersection.x + intersection.y, steps, 0.0);
+  float stepsize = step_size(intersection.x, intersection.y + intersection.x, offset, steps);
+  float lod = initial_lod(intersection.x, offset, stepsize);
+  float incr = lod_increment(stepsize);
   float previous_transmittance = 1.0;
   float previous_depth = intersection.x - stepsize;
   float start_depth = 0.0;
   int filled = 0;
   for (int i=0; i<steps; i++) {
-    float dist = intersection.x + (i + 0.5) * stepsize;
-    float depth = intersection.x + (i + 1) * stepsize;
+    float previous = sample_point(intersection.x, offset, i, stepsize);
+    float depth = sample_point(intersection.x, offset, i, stepsize);
+    float dist = 0.5 * (previous + depth);
     vec3 point = fs_in.origin - light_direction * dist;
-    float density = cloud_density(point, 0.0);
+    float density = cloud_density(point, lod);
     float transmittance;
     if (previous_transmittance == 1.0) {
       start_depth = intersection.x + i * stepsize;
@@ -242,6 +257,7 @@ void main()
     };
     previous_depth = depth;
     previous_transmittance = transmittance;
+    lod += incr;
   };
   if (filled <= 0) opacity1 = previous_transmittance;
   if (filled <= 1) opacity2 = previous_transmittance;
@@ -255,18 +271,20 @@ void main()
 
 (def sprogram
   (make-program :vertex [svertex-shader s/grow-shadow-index]
-                :fragment [sfragment-shader s/ray-box s/lookup-3d phase-function]))
+                :fragment [sfragment-shader s/ray-box (s/noise-octaves-lod "octaves" "lookup_3d" octaves)
+                           (s/lookup-3d-lod "lookup_3d" "worley") linear-sampling phase-function]))
 
 (use-program sprogram)
-(uniform-sampler sprogram :worley 0)
+(uniform-sampler sprogram "worley" 0)
 
 (def indices [0 1 3 2])
 (def vertices [-1 -1 1, 1 -1 1, -1 1 1, 1 1 1])  ; quad near to light in NDCs
 (def vao2 (make-vertex-array-object sprogram indices vertices [:point 3]))
 
-(def opacity (create-texture-3d :linear :clamp 512 512 7 (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F 512 512 7)))
-(def opacity-shape (make-empty-float-texture-2d :linear :clamp 512 512))
+(def opacity (create-texture-3d :linear :clamp shadow-size shadow-size 7 (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F shadow-size shadow-size 7)))
+(def opacity-shape (make-empty-float-texture-2d :linear :clamp shadow-size shadow-size))
 (def separation 10.0)
+(def samples (atom 16.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (def tf @t0)
@@ -284,7 +302,7 @@ void main()
              tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
              ts (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
              tm (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
-             ti (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
+             tl (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
          (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
@@ -292,51 +310,58 @@ void main()
          (swap! threshold + (* dt tr))
          (swap! anisotropic + (* dt ts))
          (swap! multiplier + (* dt tm))
+         (swap! samples + (* dt tl))
          (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
          (swap! light + (* l dt))
          (swap! t0 + dt)
          (swap! n + 1)
-         (print "\rthreshold" (format "%.3f" @threshold)
-                "anisotropic" (format "%.3f" @anisotropic)
-                "multiplier" (format "%.3f" @multiplier)
-                "fps" (format "%.3f" (/ (* @n 1000.0) (- t1 tf)))))
+         (when (zero? (mod @n 10))
+           (print "\rthreshold (q/a)" (format "%.3f" @threshold)
+                  "anisotropic (w/s)" (format "%.3f" @anisotropic)
+                  "multiplier (e/d)" (format "%.3f" @multiplier)
+                  "samples (r/f)" (format "%3d" (int @samples))
+                  "fps" (format "%.3f" (/ (* @n 1000.0) (- t1 tf))))
+           (flush)))
        (let [light-direction (matrix [0 (cos @light) (sin @light)])
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
              shadow-mat      (shadow-matrices projection transform light-direction 0)]
-         (framebuffer-render 512 512 :cullback nil [opacity opacity-shape]
+         (framebuffer-render shadow-size shadow-size :cullback nil [opacity opacity-shape]
                              (use-program sprogram)
                              (use-textures worley)
-                             (uniform-matrix4 sprogram :iprojection (inverse (:shadow-ndc-matrix shadow-mat)))
-                             (uniform-vector3 sprogram :light_direction light-direction)
-                             (uniform-float sprogram :depth (:depth shadow-mat))
-                             (uniform-float sprogram :separation separation)
-                             (uniform-float sprogram :threshold @threshold)
-                             (uniform-float sprogram :anisotropic @anisotropic)
-                             (uniform-float sprogram :multiplier (* 0.1 @multiplier))
-                             (uniform-float sprogram :cloud_scatter_amount 1.0)
-                             (uniform-int sprogram :cloud_base_samples 64)
-                             (uniform-float sprogram :cloud_scale 100)
+                             (uniform-matrix4 sprogram "iprojection" (inverse (:shadow-ndc-matrix shadow-mat)))
+                             (uniform-vector3 sprogram "light_direction" light-direction)
+                             (uniform-int sprogram "shadow_size" shadow-size)
+                             (uniform-float sprogram "depth" (:depth shadow-mat))
+                             (uniform-float sprogram "separation" separation)
+                             (uniform-float sprogram "threshold" @threshold)
+                             (uniform-float sprogram "anisotropic" @anisotropic)
+                             (uniform-float sprogram "multiplier" @multiplier)
+                             (uniform-float sprogram "cloud_scatter_amount" 1.0)
+                             (uniform-int sprogram "cloud_base_samples" (int @samples))
+                             (uniform-float sprogram "cloud_scale" 100)
+                             (uniform-int sprogram "cloud_size" size)
                              (render-quads vao2))
          (onscreen-render (Display/getWidth) (Display/getHeight)
                           (clear (matrix [0 0 0]))
                           (use-program program)
                           (use-textures worley bluenoise opacity opacity-shape)
-                          (uniform-matrix4 program :projection projection)
-                          (uniform-matrix4 program :transform transform)
-                          (uniform-matrix4 program :shadow (:shadow-map-matrix shadow-mat))
-                          (uniform-vector3 program :origin @origin)
-                          (uniform-float program :threshold @threshold)
-                          (uniform-float program :anisotropic @anisotropic)
-                          (uniform-float program :cloud_scatter_amount 1.0)
-                          (uniform-int program :cloud_samples 64)
-                          (uniform-int program :noise_size noise-size)
-                          (uniform-float program :cloud_scale 100)
-                          (uniform-float program :cloud_max_step 1.05)
-                          (uniform-int program :cloud_base_samples 64)
-                          (uniform-float program :multiplier (* 0.1 @multiplier))
-                          (uniform-vector3 program :light_direction light-direction)
-                          (uniform-float program :depth (:depth shadow-mat))
-                          (uniform-float program :thickness (* 7 separation))
+                          (uniform-matrix4 program "projection" projection)
+                          (uniform-matrix4 program "transform" transform)
+                          (uniform-matrix4 program "shadow" (:shadow-map-matrix shadow-mat))
+                          (uniform-vector3 program "origin" @origin)
+                          (uniform-int program "shadow_size" shadow-size)
+                          (uniform-float program "threshold" @threshold)
+                          (uniform-float program "anisotropic" @anisotropic)
+                          (uniform-float program "cloud_scatter_amount" 1.0)
+                          (uniform-int program "cloud_samples" (int @samples))
+                          (uniform-int program "noise_size" noise-size)
+                          (uniform-float program "cloud_scale" 100)
+                          (uniform-int program "cloud_size" size)
+                          (uniform-float program "cloud_max_step" 1.05)
+                          (uniform-float program "multiplier" @multiplier)
+                          (uniform-vector3 program "light_direction" light-direction)
+                          (uniform-float program "depth" (:depth shadow-mat))
+                          (uniform-float program "thickness" (* 7 separation))
                           (render-quads vao))))
 
 (destroy-texture opacity)

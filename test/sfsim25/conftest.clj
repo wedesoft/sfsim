@@ -3,6 +3,7 @@
               [clojure.core.matrix.linear :refer (norm)]
               [midje.sweet :refer (roughly)]
               [sfsim25.render :refer :all]
+              [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]))
 
 (defn roughly-matrix
@@ -17,27 +18,40 @@
       (and (== (count expected) (count actual)))
       (every? true? (map #((roughly %1 error) %2) expected actual))))
 
+(defn int->rgb [x]
+  "Convert 32-bit integer to RGB vector"
+  (let [red   (bit-shift-right (bit-and 0x00ff0000 x) 16)
+        green (bit-shift-right (bit-and 0x0000ff00 x) 8)
+        blue  (bit-and 0x000000ff x)]
+    [red green blue]))
+
+(defn rgb-dist [c1 c2]
+  (apply max (map #(abs (- %1 %2)) c1 c2)))
+
+(defn average-rgb-dist [data1 data2]
+  (let [distances (map #(rgb-dist (int->rgb %1) (int->rgb %2)) data1 data2)]
+    (float (/ (reduce + distances) (count distances)))))
+
 (defn is-image
   "Compare RGB components of image and ignore alpha values."
-  [filename]
+  [filename tolerance]
   (fn [other]
-      (let [img (slurp-image filename)]
-        (and (== (:width img) (:width other))
-             (== (:height img) (:height other))
-             (= (map #(bit-and % 0x00ffffff) (:data img)) (map #(bit-and % 0x00ffffff) (:data other)))))))
+      (let [{:keys [width height data]} (slurp-image filename)
+            size                        (* width height)]
+        (and (== (:width other) width)
+             (== (:height other) height)
+             (let [avg-dist (average-rgb-dist (:data other) data)]
+               (or (<= avg-dist tolerance)
+                   (do (.println *err*
+                                 (format "Average deviation from %s averages %5.2f > %5.2f"
+                                         filename avg-dist tolerance))
+                     false)))))))
 
 (defn record-image
   "Use this test function to record the image the first time."
-  [filename]
+  [filename tolerance]
   (fn [other]
       (spit-image filename other)))
-
-(def vertex-passthrough "#version 410 core
-in vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
 
 (defn shader-test [setup probe & shaders]
   (fn [uniforms args]
@@ -45,7 +59,7 @@ void main()
         (offscreen-render 1 1
           (let [indices  [0 1 3 2]
                 vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                program  (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
+                program  (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao      (make-vertex-array-object program indices vertices [:point 3])
                 tex      (texture-render-color 1 1 true (use-program program) (apply setup program uniforms) (render-quads vao))
                 img      (rgb-texture->vectors3 tex)]

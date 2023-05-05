@@ -1,13 +1,14 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (roughly-matrix shader-test vertex-passthrough)]
+            [sfsim25.conftest :refer (roughly-matrix shader-test)]
             [comb.template :as template]
-            [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix)]
+            [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix cross)]
             [clojure.core.matrix.linear :refer (norm)]
             [clojure.math :refer (cos sin PI sqrt)]
             [sfsim25.render :refer :all]
             [sfsim25.shaders :refer :all]
-            [sfsim25.util :refer (get-vector3 convert-4d-to-2d)])
+            [sfsim25.matrix :refer (orthogonal)]
+            [sfsim25.util :refer (get-float get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl BufferUtils]
            [org.lwjgl.opengl Pbuffer PixelFormat]))
 
@@ -35,6 +36,24 @@ void main()
          0   0   0   0   0  -2   0   0   2   0.5 1.0
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
+
+(def convert-1d-index-probe
+  (template/fn [x] "#version 410 core
+out vec3 fragColor;
+float convert_1d_index(float idx, int size);
+void main()
+{
+  float result = convert_1d_index(<%= x %>, 15);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def convert-1d-index-test (shader-test (fn [program]) convert-1d-index-probe convert-1d-index))
+
+(tabular "Convert 1D index to 1D texture lookup index"
+         (fact (mget (convert-1d-index-test [] [?x]) 0) => (roughly (/ ?r 15) 1e-6))
+         ?x  ?r
+          0   0.5
+          1  14.5)
 
 (def convert-2d-index-probe
   (template/fn [x y] "#version 410 core
@@ -73,6 +92,33 @@ void main()
           1   0   0 14.5  0.5  0.5
           0   1   0  0.5 16.5  0.5
           0   0   1  0.5  0.5 18.5)
+
+(def convert-cubemap-index-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+vec3 convert_cubemap_index(vec3 idx, int size);
+void main()
+{
+  fragColor = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 3);
+}"))
+
+(def convert-cubemap-index-test (shader-test (fn [program]) convert-cubemap-index-probe convert-cubemap-index))
+
+(tabular "Convert cubemap index to avoid clamping regions"
+         (fact (convert-cubemap-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-3))
+         ?x     ?y     ?z     ?r   ?g   ?b
+         1.5    0.0    0.0    1.5  0.0  0.0
+         1.5    1.499  0.0    1.5  1.0  0.0
+        -1.5    1.499  0.0   -1.5  1.0  0.0
+         1.5    0.0    1.499  1.5  0.0  1.0
+         1.499  1.5    0.0    1.0  1.5  0.0
+         1.499 -1.5    0.0    1.0 -1.5  0.0
+         0.0    1.5    1.499  0.0  1.5  1.0
+         1.499  1.499  1.5    1.0  1.0  1.5
+         1.499  1.499 -1.5    1.0  1.0 -1.5
+         0.000  1.499  1.5    0.0  1.0  1.5
+         0.000  1.499 -1.5    0.0  1.0 -1.5)
 
 (def convert-shadow-index-probe
   (template/fn [x y z] "#version 410 core
@@ -156,32 +202,6 @@ void main()
          0  0   0.123  1.123  7  3   "pq"      (+ 0.5 7)        (+ 0.5 (* 2 7))
          0  0   0.123  2.123  7  3   "pq"      (+ 0.5 (* 2 7))  (+ 0.5 (* 2 7)))
 
-(defn lookup-2d-test [probe & shaders]
-  (fn [& args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-                          (let [indices   [0 1 3 2]
-                                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                                data-2d   [[1 2] [3 4] [5 6]]
-                                data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
-                                table     (make-vector-texture-2d :linear :clamp
-                                                                  {:width 2 :height 3 :data (float-array data-flat)})
-                                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                                vao       (make-vertex-array-object program indices vertices [:point 3])
-                                tex       (texture-render-color
-                                            1 1 true
-                                            (use-program program)
-                                            (uniform-sampler program :table 0)
-                                            (use-textures table)
-                                            (render-quads vao))
-                                img       (rgb-texture->vectors3 tex)]
-                            (deliver result (get-vector3 img 0 0))
-                            (destroy-texture tex)
-                            (destroy-texture table)
-                            (destroy-vertex-array-object vao)
-                            (destroy-program program)))
-        @result)))
-
 (def interpolate-2d-probe
   (template/fn [x y] "#version 410 core
 out vec3 fragColor;
@@ -192,7 +212,31 @@ void main()
   fragColor = interpolate_2d(table, 3, 2, vec2(<%= x %>, <%= y %>));
 }"))
 
-(def interpolate-2d-test (lookup-2d-test interpolate-2d-probe interpolate-2d convert-2d-index))
+(defn interpolate-2d-test [x y]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices   [0 1 3 2]
+                            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            data-2d   [[1 2] [3 4] [5 6]]
+                            data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
+                            table     (make-vector-texture-2d :linear :clamp
+                                                              {:width 2 :height 3 :data (float-array data-flat)})
+                            program   (make-program :vertex [vertex-passthrough]
+                                                    :fragment [(interpolate-2d-probe x y) interpolate-2d convert-2d-index])
+                            vao       (make-vertex-array-object program indices vertices [:point 3])
+                            tex       (texture-render-color
+                                        1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program "table" 0)
+                                        (use-textures table)
+                                        (render-quads vao))
+                            img       (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture table)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
 
 (tabular "Perform 2d interpolation"
          (fact (mget (interpolate-2d-test ?x ?y) 0) => ?result)
@@ -201,31 +245,6 @@ void main()
          0.25 0  1.25
          0    1  5.0
          1    1  6.0)
-
-(defn lookup-3d-test [probe & shaders]
-  (fn [& args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-                          (let [indices   [0 1 3 2]
-                                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                                data-3d   (range (* 2 3 4))
-                                table     (make-float-texture-3d :linear :clamp
-                                                                 {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
-                                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                                vao       (make-vertex-array-object program indices vertices [:point 3])
-                                tex       (texture-render-color
-                                            1 1 true
-                                            (use-program program)
-                                            (uniform-sampler program :table 0)
-                                            (use-textures table)
-                                            (render-quads vao))
-                                img       (rgb-texture->vectors3 tex)]
-                            (deliver result (get-vector3 img 0 0))
-                            (destroy-texture tex)
-                            (destroy-texture table)
-                            (destroy-vertex-array-object vao)
-                            (destroy-program program)))
-        @result)))
 
 (def interpolate-3d-probe
   (template/fn [x y z] "#version 410 core
@@ -238,7 +257,30 @@ void main()
   fragColor = vec3(result, result, result);
 }"))
 
-(def interpolate-3d-test (lookup-3d-test interpolate-3d-probe interpolate-3d convert-3d-index))
+(defn interpolate-3d-test [x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices   [0 1 3 2]
+                            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            data-3d   (range (* 2 3 4))
+                            table     (make-float-texture-3d :linear :clamp
+                                                             {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
+                            program   (make-program :vertex [vertex-passthrough]
+                                                    :fragment [(interpolate-3d-probe x y z) interpolate-3d convert-3d-index])
+                            vao       (make-vertex-array-object program indices vertices [:point 3])
+                            tex       (texture-render-color
+                                        1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program "table" 0)
+                                        (use-textures table)
+                                        (render-quads vao))
+                            img       (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture table)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
 
 (tabular "Perform 3d interpolation"
          (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)
@@ -250,30 +292,55 @@ void main()
          0    0  1  12.0
          3    2  1  23.0)
 
-(defn lookup-4d-test [probe & shaders]
-  (fn [& args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices   [0 1 3 2]
-                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
-                data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
-                table     (make-vector-texture-2d :linear :clamp {:width 4 :height 4 :data (float-array data-flat)})
-                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao       (make-vertex-array-object program indices vertices [:point 3])
-                tex       (texture-render-color
-                            1 1 true
-                            (use-program program)
-                            (uniform-sampler program :table 0)
-                            (use-textures table)
-                            (render-quads vao))
-                img       (rgb-texture->vectors3 tex)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-texture table)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
+(def interpolate-cubemap-probe
+  (template/fn [method selector x y z]
+"#version 410 core
+uniform samplerCube cube;
+out vec3 fragColor;
+float interpolate_float_cubemap(samplerCube cube, int size, vec3 idx);
+vec3 interpolate_vector_cubemap(samplerCube cube, int size, vec3 idx);
+void main()
+{
+  fragColor = vec3(0, 0, 0);
+  fragColor.<%= selector %> = interpolate_<%= method %>_cubemap(cube, 2, vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(defn interpolate-cubemap-test [method selector x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices     [0 1 3 2]
+                            vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
+                            data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
+                            cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
+                            program     (make-program :vertex [vertex-passthrough]
+                                                      :fragment [(interpolate-cubemap-probe method selector x y z)
+                                                                 interpolate-float-cubemap interpolate-vector-cubemap
+                                                                 convert-cubemap-index])
+                            vao         (make-vertex-array-object program indices vertices [:point 3])
+                            tex         (texture-render-color
+                                          1 1 true
+                                          (use-program program)
+                                          (uniform-sampler program "cube" 0)
+                                          (use-textures cube)
+                                          (render-quads vao))
+                            img         (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture cube)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
+
+(tabular "Perform interpolation on cubemap avoiding seams"
+         (fact (mget (interpolate-cubemap-test ?method ?selector ?x ?y ?z) 0) => ?result)
+         ?method  ?selector ?x   ?y ?z  ?result
+         "float"  "r"       1    0   0   0.5
+         "float"  "r"       1    0  -1   1.0
+         "float"  "r"       1    0   0.5 0.25
+         "vector" "xyz"     1    0   0   0.5
+         "vector" "xyz"     1    0  -1   1.0
+         "vector" "xyz"     1    0   0.5 0.25)
 
 (def interpolate-4d-probe
   (template/fn [x y z w] "#version 410 core
@@ -285,7 +352,31 @@ void main()
   fragColor = interpolate_4d(table, 2, 2, 2, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
 }"))
 
-(def interpolate-4d-test (lookup-4d-test interpolate-4d-probe interpolate-4d make-2d-index-from-4d))
+(defn interpolate-4d-test [x y z w]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices   [0 1 3 2]
+                            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
+                            data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
+                            table     (make-vector-texture-2d :linear :clamp {:width 4 :height 4 :data (float-array data-flat)})
+                            program   (make-program :vertex [vertex-passthrough]
+                                                    :fragment [(interpolate-4d-probe x y z w) interpolate-4d
+                                                               make-2d-index-from-4d])
+                            vao       (make-vertex-array-object program indices vertices [:point 3])
+                            tex       (texture-render-color
+                                        1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program "table" 0)
+                                        (use-textures table)
+                                        (render-quads vao))
+                            img       (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture table)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
 
 (tabular "Perform 4D interpolation"
          (fact (mget (interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
@@ -323,53 +414,98 @@ void main()
          0   0   0   1   1   1   1.5  0.5  0.5  1  0   0   0   0
          0   0   0   1   1   1   0.5  1.5  0.5  1  0   0   0   0)
 
-(defn lookup-3d-test [probe & shaders]
-  (fn [& args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-                          (let [indices   [0 1 3 2]
-                                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                                data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
-                                data-flat (flatten data-3d)
-                                table     (make-float-texture-3d :linear :repeat
-                                                                 {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
-                                program   (make-program :vertex [vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                                vao       (make-vertex-array-object program indices vertices [:point 3])
-                                tex       (texture-render-color
-                                            1 1 true
-                                            (use-program program)
-                                            (uniform-sampler program :table 0)
-                                            (use-textures table)
-                                            (render-quads vao))
-                                img       (rgb-texture->vectors3 tex)]
-                            (deliver result (get-vector3 img 0 0))
-                            (destroy-texture tex)
-                            (destroy-texture table)
-                            (destroy-vertex-array-object vao)
-                            (destroy-program program)))
-        @result)))
-
 (def lookup-3d-probe
   (template/fn [x y z]
 "#version 410 core
 out vec3 fragColor;
-uniform sampler3D table;
-float lookup_3d(sampler3D tex, vec3 point);
+float lookup_3d(vec3 point);
 void main()
 {
-  float result = lookup_3d(table, vec3(<%= x %>, <%= y %>, <%= z %>));
+  float result = lookup_3d(vec3(<%= x %>, <%= y %>, <%= z %>));
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def interpolate-3d-test (lookup-3d-test lookup-3d-probe lookup-3d))
+(defn lookup-3d-test [x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices   [0 1 3 2]
+                            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
+                            data-flat (flatten data-3d)
+                            table     (make-float-texture-3d :linear :repeat
+                                                             {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+                            program   (make-program :vertex [vertex-passthrough]
+                                                    :fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
+                            vao       (make-vertex-array-object program indices vertices [:point 3])
+                            tex       (texture-render-color
+                                        1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program "table" 0)
+                                        (use-textures table)
+                                        (render-quads vao))
+                            img       (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture table)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
 
-(tabular "Perform 3d interpolation"
-         (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)
+(tabular "Perform 3d texture lookup"
+         (fact (mget (lookup-3d-test ?x ?y ?z) 0) => ?result)
          ?x    ?y   ?z   ?result
          0.25  0.25 0.25 1.0
          0.75  0.25 0.25 2.0
          0.25  0.75 0.25 3.0
          0.25  0.25 0.75 5.0)
+
+(def lookup-3d-lod-probe
+  (template/fn [x y z lod]
+"#version 410 core
+out vec3 fragColor;
+float lookup_3d_lod(vec3 point, float lod);
+void main()
+{
+  float result = lookup_3d_lod(vec3(<%= x %>, <%= y %>, <%= z %>), <%= lod %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn lookup-3d-lod-test [x y z lod]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices   [0 1 3 2]
+                            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
+                            data-flat (flatten data-3d)
+                            table     (make-float-texture-3d :linear :repeat
+                                                             {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+                            program   (make-program :vertex [vertex-passthrough]
+                                                    :fragment [(lookup-3d-lod-probe x y z lod)
+                                                               (lookup-3d-lod "lookup_3d_lod" "table")])
+                            vao       (make-vertex-array-object program indices vertices [:point 3])
+                            tex       (texture-render-color
+                                        1 1 true
+                                        (use-program program)
+                                        (uniform-sampler program "table" 0)
+                                        (generate-mipmap table)
+                                        (use-textures table)
+                                        (render-quads vao))
+                            img       (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture table)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
+
+(tabular "Perform 3d texture lookup with level-of-detail"
+         (fact (mget (lookup-3d-lod-test ?x ?y ?z ?lod) 0) => ?result)
+         ?x    ?y   ?z   ?lod ?result
+         0.25  0.25 0.25 0.0  1.0
+         0.75  0.25 0.25 0.0  2.0
+         0.25  0.75 0.25 0.0  3.0
+         0.25  0.25 0.75 0.0  5.0
+         0.25  0.25 0.25 1.0  4.5)
 
 (def ray-shell-probe
   (template/fn [cx cy cz radius1 radius2 ox oy oz dx dy dz selector]
@@ -441,8 +577,8 @@ void main()
 (def height-to-index-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     height-to-index-probe height-to-index horizon-distance))
 
 (tabular "Shader for converting height to index"
@@ -520,8 +656,8 @@ void main()
 (def elevation-to-index-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     elevation-to-index-probe elevation-to-index horizon-distance limit-quot))
 
 (tabular "Shader for converting view direction elevation to index"
@@ -555,8 +691,8 @@ void main()
 (def transmittance-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     transmittance-forward-probe transmittance-forward height-to-index horizon-distance elevation-to-index limit-quot))
 
 (tabular "Convert point and direction to 2D lookup index in transmittance table"
@@ -583,8 +719,8 @@ void main()
 (def surface-radiance-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     surface-radiance-forward-probe surface-radiance-forward height-to-index horizon-distance sun-elevation-to-index))
 
 (tabular "Convert point and direction to 2D lookup index in surface radiance table"
@@ -616,8 +752,8 @@ void main()
 (def ray-scatter-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program :radius radius)
-        (uniform-float program :max_height max-height))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
     ray-scatter-forward-probe ray-scatter-forward height-to-index elevation-to-index horizon-distance limit-quot
     sun-elevation-to-index sun-angle-to-index))
 
@@ -634,3 +770,309 @@ void main()
          6378000 0  0  1   0   0  -1   0   0   true   "y"       0.0
          6378000 0  0  0   1   0   0   1   0   true   "x"       1.0
          6378000 0  0  0   1   0   0  -1   0   true   "x"       0.0)
+
+(def noise-octaves-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float octaves(vec3 idx);
+float noise(vec3 idx)
+{
+  return idx.x == 1.0 ? 1.0 : 0.0;
+}
+void main()
+{
+  float result = octaves(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn noise-octaves-test [octaves x y z]
+  ((shader-test (fn [program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
+
+(tabular "Shader function to sum octaves of noise"
+         (fact (mget (noise-octaves-test ?octaves ?x ?y ?z) 0) => ?result)
+         ?x  ?y  ?z  ?octaves  ?result
+         0.0 0.0 0.0 [1.0]     0.0
+         1.0 0.0 0.0 [1.0]     1.0
+         1.0 0.0 0.0 [0.5]     0.5
+         0.5 0.0 0.0 [0.0 1.0] 1.0
+         1.0 0.0 0.0 [1.0 0.0] 1.0)
+
+(def noise-octaves-lod-probe
+  (template/fn [x y z lod]
+"#version 410 core
+out vec3 fragColor;
+float octaves(vec3 idx, float lod);
+float noise(vec3 idx, float lod)
+{
+  if (idx.y == 0.0)
+    return idx.x == 1.0 ? 1.0 : 0.0;
+  else
+    return lod;
+}
+void main()
+{
+  float result = octaves(vec3(<%= x %>, <%= y %>, <%= z %>), <%= lod %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn noise-octaves-lod-test [octaves x y z lod]
+  ((shader-test (fn [program]) noise-octaves-lod-probe (noise-octaves-lod "octaves" "noise" octaves)) [] [x y z lod]))
+
+(tabular "Shader function to sum octaves of noise with level-of-detail"
+         (fact (mget (noise-octaves-lod-test ?octaves ?x ?y ?z ?lod) 0) => ?result)
+         ?x  ?y  ?z  ?lod ?octaves  ?result
+         0.0 0.0 0.0 0.0  [1.0]     0.0
+         1.0 0.0 0.0 0.0  [1.0]     1.0
+         1.0 0.0 0.0 0.0  [0.5]     0.5
+         0.5 0.0 0.0 0.0  [0.0 1.0] 1.0
+         1.0 0.0 0.0 0.0  [1.0 0.0] 1.0
+         0.0 1.0 0.0 0.0  [1.0]     0.0
+         0.0 1.0 0.0 1.0  [1.0]     1.0
+         0.0 1.0 0.0 1.0  [0.0 1.0] 2.0)
+
+(def fragment-cubemap-vectors
+"#version 410 core
+layout (location = 0) out vec3 output1;
+layout (location = 1) out vec3 output2;
+layout (location = 2) out vec3 output3;
+layout (location = 3) out vec3 output4;
+layout (location = 4) out vec3 output5;
+layout (location = 5) out vec3 output6;
+vec3 face1_vector(vec2 texcoord);
+vec3 face2_vector(vec2 texcoord);
+vec3 face3_vector(vec2 texcoord);
+vec3 face4_vector(vec2 texcoord);
+vec3 face5_vector(vec2 texcoord);
+vec3 face6_vector(vec2 texcoord);
+void main()
+{
+  vec2 x = (gl_FragCoord.xy - 0.5) / 31;
+  output1 = face1_vector(x);
+  output2 = face2_vector(x);
+  output3 = face3_vector(x);
+  output4 = face4_vector(x);
+  output5 = face5_vector(x);
+  output6 = face6_vector(x);
+}")
+
+(def face-vector-probe
+  (template/fn [x y z]
+"#version 410 core
+uniform samplerCube cubemap;
+out vec3 fragColor;
+vec3 convert_cubemap_index(vec3 idx, int size);
+void main()
+{
+  vec3 idx = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 32);
+  fragColor = texture(cubemap, idx).rgb;
+}"))
+
+(tabular "Convert cubemap face coordinate to 3D vector"
+         (fact
+           (let [result (promise)]
+             (offscreen-render 1 1
+               (let [cubemap  (make-empty-vector-cubemap :linear :clamp 32)
+                     indices  [0 1 3 2]
+                     vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                     program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-vectors cubemap-vectors])
+                     vao      (make-vertex-array-object program indices vertices [:point 3])]
+                 (framebuffer-render 32 32 :cullback nil [cubemap]
+                                     (use-program program)
+                                     (render-quads vao))
+                 (destroy-vertex-array-object vao)
+                 (destroy-program program)
+                 (let [program (make-program :vertex [vertex-passthrough]
+                                             :fragment [(face-vector-probe ?x ?y ?z) convert-cubemap-index])
+                       vao     (make-vertex-array-object program indices vertices [:point 3])
+                       tex     (texture-render-color 1 1 true
+                                                     (use-program program)
+                                                     (uniform-sampler program "cubemap" 0)
+                                                     (use-textures cubemap)
+                                                     (render-quads vao))
+                       img     (rgb-texture->vectors3 tex)]
+                   (deliver result (get-vector3 img 0 0))
+                   (destroy-texture tex)
+                   (destroy-vertex-array-object vao)
+                   (destroy-program program))
+                 (destroy-texture cubemap)))
+                 @result) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
+         ?x    ?y    ?z
+         1.0   0.0   0.0
+         1.0   0.25  0.5
+        -1.0   0.0   0.0
+        -1.0   0.25  0.5
+         0.0   1.0   0.0
+         0.25  1.0   0.5
+         0.0  -1.0   0.0
+         0.25 -1.0   0.5
+         0.0   0.0   1.0
+         0.25  0.5   1.0
+         0.0   0.0  -1.0
+         0.25  0.5  -1.0)
+
+(def gradient-3d-probe
+  (template/fn [x y z c dx dy dz]
+"#version 410 core
+out vec3 fragColor;
+float f(vec3 point)
+{
+  return min(<%= c %> + point.x * <%= dx %> + point.y * <%= dy %> + point.z * <%= dz %>, 10);
+}
+vec3 gradient(vec3 point);
+void main()
+{
+  fragColor = gradient(vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(def gradient-3d-test
+  (shader-test
+    (fn [program epsilon]
+        (uniform-float program "epsilon" epsilon))
+    gradient-3d-probe
+    (gradient-3d "gradient" "f" "epsilon")))
+
+(tabular "Shader template for 3D gradients"
+         (fact (gradient-3d-test [0.1] [?x ?y ?z ?c ?dx ?dy ?dz]) => (roughly-matrix (matrix [?gx ?gy ?gz]) 1e-6))
+         ?x ?y ?z ?c ?dx ?dy ?dz ?gx ?gy ?gz
+         0  0  0  0  0   0   0   0   0   0
+         0  0  0  0  1   2   3   1   2   3
+         3  3  3  2  1   2   3   0   0   0)
+
+(def orthogonal-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+vec3 orthogonal_vector(vec3 n);
+void main()
+{
+  fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(def orthogonal-test (shader-test (fn [program]) orthogonal-probe orthogonal-vector))
+
+(facts "Shader for generating an orthogonal vector"
+       (dot (orthogonal-test [] [1 0 0]) (matrix [1 0 0])) => 0.0
+       (norm (orthogonal-test [] [1 0 0])) => 1.0
+       (norm (orthogonal-test [] [2 0 0])) => 1.0
+       (dot (orthogonal-test [] [0 1 0]) (matrix [0 1 0])) => 0.0
+       (norm (orthogonal-test [] [0 1 0])) => 1.0
+       (norm (orthogonal-test [] [0 2 0])) => 1.0
+       (dot (orthogonal-test [] [0 0 1]) (matrix [0 0 1])) => 0.0
+       (norm (orthogonal-test [] [0 0 1])) => 1.0
+       (norm (orthogonal-test [] [0 0 2])) => 1.0)
+
+(def oriented-matrix-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+mat3 oriented_matrix(vec3 n);
+void main()
+{
+  fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
+}"))
+
+(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix orthogonal-vector))
+
+(facts "Shader for creating isometry with given normal vector as first row"
+       (let [n  (matrix [0.36 0.48 0.8])
+             o1 (orthogonal n)
+             o2 (cross n o1)]
+         (oriented-matrix-test [] (vec n)) => (roughly-matrix (matrix [1 0 0]) 1e-6)
+         (oriented-matrix-test [] (vec o1)) => (roughly-matrix (matrix [0 1 0]) 1e-6)
+         (oriented-matrix-test [] (vec o2)) => (roughly-matrix (matrix [0 0 1]) 1e-6)))
+
+(def project-vector-probe
+  (template/fn [nx ny nz x y z]
+"#version 410 core
+out vec3 fragColor;
+vec3 project_vector(vec3 n, vec3 v);
+void main()
+{
+  fragColor = project_vector(vec3(<%= nx %>, <%= ny %>, <%= nz %>), vec3(<%= x %>, <%= y %>, <%= z %>));
+}"))
+
+(def project-vector-test (shader-test (fn [program]) project-vector-probe project-vector))
+
+(tabular "Shader to project vector x onto vector n"
+         (fact (project-vector-test [] [?nx ?ny ?nz ?x ?y ?z]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
+         ?nx ?ny ?nz ?x ?y ?z ?rx ?ry ?rz
+         1   0   0   1  0  0  1   0   0
+         2   0   0   1  0  0  1   0   0
+         1   0   0   2  0  0  2   0   0
+         1   0   0   1  2  3  1   0   0)
+
+(def rotate-vector-probe
+  (template/fn [ax ay az x y z angle]
+"#version 410 core
+out vec3 fragColor;
+vec3 rotate_vector(vec3 axis, vec3 v, float cos_angle, float sin_angle);
+void main()
+{
+  vec3 axis = vec3(<%= ax %>, <%= ay %>, <%= az %>);
+  vec3 v = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float angle = <%= angle %>;
+  float cos_angle = cos(angle);
+  float sin_angle = sin(angle);
+  fragColor = rotate_vector(axis, v, cos_angle, sin_angle);
+}"))
+
+(def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector oriented-matrix orthogonal-vector))
+
+(tabular "Shader for rotating vector around specified axis"
+         (fact (rotate-vector-test [] [?ax ?ay ?az ?x ?y ?z ?angle]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
+         ?ax ?ay ?az ?x ?y ?z ?angle    ?rx ?ry ?rz
+         1   0   0   0  0  0  0         0   0   0
+         1   0   0   1  2  3  0         1   2   3
+         1   0   0   1  2  3  (/ PI 2)  1  -3   2
+         0   0   1   1  2  3  (/ PI 2) -2   1   3
+         0   0   1   1  0  0  (/ PI 2)  0   1   0)
+
+(def scale-noise-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float noise(vec3 point)
+{
+  return point.x;
+}
+float scale(vec3 point);
+void main()
+{
+  float result = scale(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def scale-noise-test
+  (shader-test
+    (fn [program factor] (uniform-float program "factor" factor))
+    scale-noise-probe (scale-noise "scale" "factor" "noise")))
+
+(tabular "Shader for calling a noise function with a scaled vector"
+         (fact (mget (scale-noise-test [?scale] [?x ?y ?z]) 0) => ?result)
+         ?scale ?x ?y ?z ?result
+         1      2  3  5  2.0
+         3      2  3  5  6.0)
+
+(def remap-probe
+  (template/fn [value original-min original-max new-min new-max]
+"#version 410 core
+out vec3 fragColor;
+float remap(float value, float original_min, float original_max, float new_min, float new_max);
+void main()
+{
+  float result = remap(<%= value %>, <%= original-min %>, <%= original-max %>, <%= new-min %>, <%= new-max %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def remap-test (shader-test (fn [program]) remap-probe remap))
+
+(tabular "Shader for mapping linear range to a new linear range"
+         (fact (mget (remap-test [] [?val ?orig-min ?orig-max ?new-min ?new-max]) 0) => (roughly ?result 1e-5))
+         ?val ?orig-min ?orig-max ?new-min ?new-max ?result
+         0.0  0.0       1.0       0.0      1.0      0.0
+         1.0  0.0       1.0       0.0      1.0      1.0
+         0.7  0.2       1.2       0.0      1.0      0.5
+         0.3  0.2       0.4       0.0      1.0      0.5
+         0.5  0.0       1.0       0.0      0.4      0.2
+         0.5  0.0       1.0       0.2      0.4      0.3)
