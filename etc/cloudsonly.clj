@@ -100,12 +100,13 @@ float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + dense_height, origin, direction);
-  vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
+  vec3 origin2 = origin + direction * 15;
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + dense_height, origin2, direction);
+  vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin2, direction);
   if (atmosphere.y > 0) {
     vec3 background;
     if (planet.y > 0) {
-      vec3 point = origin + planet.x * direction;
+      vec3 point = origin2 + planet.x * direction;
       float intensity = cloud_shadow(point, light_direction, 0.0);
       float cos_angle = max(dot(point, light_direction) / length(point), 0);
       background = 2 * vec3(0.09, 0.11, 0.34) * intensity * cos_angle;
@@ -119,7 +120,7 @@ void main()
     float offset = sampling_offset();
     for (int i=0; i<count; i++) {
       float l = atmosphere.x + (i + offset) * step;
-      vec3 point = origin + l * direction;
+      vec3 point = origin2 + l * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
         float lod = log2(l) + detail;
@@ -148,7 +149,7 @@ void main()
 (def cloud-top 6000)
 (def cloud-multiplier (atom 8.333))
 (def cover-multiplier (atom 25.0))
-(def cap (atom 0.012))
+(def cap (atom 0.010))
 (def detail-scale 10000)
 (def cloud-scale 800000)
 (def series (take 5 (iterate #(* % 0.8) 1.0)))
@@ -298,7 +299,7 @@ void main()
                vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
                vao        (make-vertex-array-object program indices vertices [:point 3])
                light-dir  (matrix [0 (cos @light) (sin @light)])
-               projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 10) fov)
+               projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 1) fov)
                detail     (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ detail-scale worley-size))) (log 2))
                transform  (transformation-matrix (quaternion->matrix @orientation) @position)
                matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
