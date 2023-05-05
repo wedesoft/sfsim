@@ -6,10 +6,10 @@
 * how is cloud\_max\_step (cms) still used?
 * is cloud-scatter-amount and density redundant?
 * non-linear steps?
+* increase stepsize between clouds (also only sample low-resolution noise)
 * render just atmosphere with empty cloud layer to check that there is no step
 * no shading of atmosphere above 25km
 * add atmospheric transmittance and scattering
-* increase stepsize between clouds (also only sample low-resolution noise)
 * limit opacity mapping and cloud sampling
 * clouds
   * test cloud shadows on ellipsoidical planet
