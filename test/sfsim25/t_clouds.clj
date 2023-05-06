@@ -999,14 +999,18 @@ void main()
          100.0    10.0        2.0 0.0 0.0  10.0)
 
 (def cloud-density-probe
-  (template/fn [x y z]
+  (template/fn [lod x y z]
 "#version 410 core
 out vec3 fragColor;
+float cloud_cover(vec3 point)
+{
+  return point.x >= 0.0 ? 1.0 : 0.0;
+}
 float cloud_density(vec3 point, float lod);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = 1.0;
+  float result = cloud_density(point, <%= lod %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
@@ -1014,9 +1018,10 @@ void main()
   (shader-test
     (fn [program])
     cloud-density-probe
-    ))
+    cloud-density))
 
 (tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-density-test [] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
-          ?x   ?y ?z ?result
-          1000  0  0  1.0)
+         (fact (mget (cloud-density-test [] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+          ?lod ?x   ?y ?z ?result
+          0    1000  0  0  1.0
+          0   -1000  0  0  0.0)
