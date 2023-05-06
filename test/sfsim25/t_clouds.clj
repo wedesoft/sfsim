@@ -331,49 +331,6 @@ void main()
          1.0    [1.0]    0.25 0.75 0.25 0.0
          2.0    [1.0]    0.5  0.5  0.5  1.0)
 
-(def cloud-density-probe
-  (template/fn [noise profile x y z]
-"#version 410 core
-out vec3 fragColor;
-float cloud_noise(vec3 point, float lod)
-{
-  if (point.x >= 0)
-    return <%= noise %>;
-  else
-    return 0.0;
-}
-float cloud_profile(vec3 point)
-{
-  if (point.y >= 0)
-    return <%= profile %>;
-  else
-    return 0.0;
-}
-float cloud_density(vec3 point, float lod);
-void main()
-{
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = cloud_density(point, 0);
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def cloud-density-test
-  (shader-test
-    (fn [program multiplier]
-        (uniform-float program "cloud_multiplier" multiplier))
-    cloud-density-probe
-    cloud-density))
-
-(tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-density-test [?multiplier] [?noise ?profile ?x ?y ?z]) 0) => (roughly ?result 1e-5))
-         ?multiplier ?noise ?profile ?x ?y ?z ?result
-         1.0         1.0    1.0      0  0  0  1.0
-         2.0         1.0    1.0      0  0  0  2.0
-         1.0         0.75   0.5      0  0  0  0.25
-         1.0         0.25   0.5      0  0  0  0.0
-         1.0         1.0    1.0     -1  0  0  0.0
-         1.0         1.0    1.0      0 -1  0  0.0)
-
 (def sampling-probe
   (template/fn [term]
 "#version 410 core
@@ -1040,3 +997,26 @@ void main()
          100.0    10.0        1.0 0.0 0.0  10.0
          100.0    10.0       -1.0 0.0 0.0 -10.0
          100.0    10.0        2.0 0.0 0.0  10.0)
+
+(def cloud-density-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float cloud_density(vec3 point, float lod);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = 1.0;
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def cloud-density-test
+  (shader-test
+    (fn [program])
+    cloud-density-probe
+    ))
+
+(tabular "Shader for determining cloud density at specified point"
+         (fact (mget (cloud-density-test [] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
+          ?x   ?y ?z ?result
+          1000  0  0  1.0)

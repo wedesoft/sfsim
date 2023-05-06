@@ -1,5 +1,6 @@
 # TODO
-* use noise mocks to test cloud\_density implementation and make it modular
+* use noise mocks to test cloud\_density implementation and make it modular, use cloud\_noise, move cloud\_profile
+* cloud\_cover method performing cubemap lookup
 * add z-near offset to origin?
 * separate cloud\_shadow and transmittance\_outer
 * add conditions to shortcut lookup in some noise textures
