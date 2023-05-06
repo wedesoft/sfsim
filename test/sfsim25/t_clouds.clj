@@ -1016,12 +1016,15 @@ void main()
 
 (def cloud-density-test
   (shader-test
-    (fn [program])
+    (fn [program cover]
+        (uniform-float program "cover_multiplier" cover))
     cloud-density-probe
     cloud-density))
 
 (tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-density-test [] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
-          ?lod ?x   ?y ?z ?result
-          0    1000  0  0  1.0
-          0   -1000  0  0  0.0)
+         (fact (mget (cloud-density-test [?cover] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+          ?cover ?lod ?x    ?y ?z ?result
+          1.0     0    1000  0  0  1.0
+          1.0     0   -1000  0  0  0.0
+          0.5     0    1000  0  0  0.5
+          )
