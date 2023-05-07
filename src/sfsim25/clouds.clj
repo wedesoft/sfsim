@@ -29,9 +29,9 @@
   "Shader for sampling 3D cloud noise"
   (slurp "resources/shaders/clouds/cloud-noise.glsl"))
 
-(def cloud-density
+(def cloud-base
   "Shader for determining cloud density at specified point"
-  (slurp "resources/shaders/clouds/cloud-density.glsl"))
+  (slurp "resources/shaders/clouds/cloud-base.glsl"))
 
 (def linear-sampling
   "Shader functions for defining linear sampling"
