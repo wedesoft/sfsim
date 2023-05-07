@@ -24,41 +24,27 @@
 "#version 410 core
 uniform float detail_scale;
 uniform float radius;
-uniform float cloud_scale;
 uniform float cap;
-uniform float threshold;
-uniform float cloud_multiplier;
-uniform float cover_multiplier;
 uniform samplerCube cover;
 uniform sampler3D perlin;
-float interpolate_float_cubemap(samplerCube cube, int size, vec3 idx);
+float cloud_base(vec3 point);
 float cloud_octaves(vec3 point, float lod);
-float sphere_noise(vec3 point);
-float cloud_profile(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
-vec3 convert_cubemap_index(vec3 idx, int size);
 float cloud_density(vec3 point, float lod)
 {
-  float cover_value = interpolate_float_cubemap(cover, 512, point) * cover_multiplier;
+  float base = cloud_base(point);
   float density;
-  if (cover_value + cloud_multiplier > threshold) {
-    float bodies_value = sphere_noise(point) * cloud_multiplier;
-    float combined_cover = cover_value + bodies_value - threshold;
-    float profile = cloud_profile(point);
-    float base = combined_cover * profile;
-    if (base <= 0.0)
-      density = 0.0;
-    else if (base >= 1.0)
-      density = cap;
-    else {
-      float noise = cloud_octaves(point / detail_scale, lod);
-      if (noise <= 1 - base)
-        density = 0.0;
-      else
-        density = remap(noise, 1 - base, 1.0, 0.0, cap);
-    };
-  } else
+  if (base <= 0.0)
     density = 0.0;
+  else if (base >= 1.0)
+    density = cap;
+  else {
+    float noise = cloud_octaves(point / detail_scale, lod);
+    if (noise <= 1 - base)
+      density = 0.0;
+    else
+      density = remap(noise, 1 - base, 1.0, 0.0, cap);
+  };
   return density;
 }");
 
@@ -199,6 +185,7 @@ void main()
 (def program
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment density shaders/remap (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                           cloud-base cloud-cover
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (sphere-noise "perlin_octaves")
@@ -211,6 +198,7 @@ void main()
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell density shaders/remap
+                           cloud-base cloud-cover
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
@@ -236,6 +224,7 @@ void main()
                               (uniform-sampler program-shadow "profile" 2)
                               (uniform-sampler program-shadow "bluenoise" 3)
                               (uniform-sampler program-shadow "cover" 4)
+                              (uniform-int program-shadow "cover_size" 512)
                               (uniform-float program-shadow "level_of_detail" detail)
                               (uniform-int program-shadow "shadow_size" shadow-size)
                               (uniform-int program-shadow "profile_size" profile-size)
@@ -326,6 +315,7 @@ void main()
                             (doseq [[idx item] (map-indexed vector matrix-cas)]
                                    (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                    (uniform-float program (str "depth" idx) (:depth item)))
+                            (uniform-int program "cover_size" 512)
                             (uniform-matrix4 program "projection" projection)
                             (uniform-matrix4 program "transform" transform)
                             (uniform-matrix4 program "inverse_transform" (inverse transform))
