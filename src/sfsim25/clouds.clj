@@ -21,10 +21,6 @@
   "Shader for determining illumination of clouds"
   (slurp "resources/shaders/clouds/cloud-shadow.glsl"))
 
-(def cloud-profile
-  "Shader for looking up vertical cloud profile"
-  (slurp "resources/shaders/clouds/cloud-profile.glsl"))
-
 (def cloud-noise
   "Shader for sampling 3D cloud noise"
   (slurp "resources/shaders/clouds/cloud-noise.glsl"))
@@ -181,6 +177,10 @@
     (destroy-program update-warp)
     (destroy-texture @warp)
     @result))
+
+(def cloud-profile
+  "Shader for looking up vertical cloud profile"
+  (slurp "resources/shaders/clouds/cloud-profile.glsl"))
 
 (def sphere-noise
   "Sample 3D noise on the surface of a sphere"

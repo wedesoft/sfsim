@@ -235,53 +235,6 @@ void main()
          100     20  110   0  0  1   0   0   0.5   0.5   0.5
          100     20  105   0  0  1   0   0   0.125 0.125 0.125)
 
-(def cloud-profile-probe
-  (template/fn [x y z]
-"#version 410 core
-out vec3 fragColor;
-float cloud_profile(vec3 point);
-void main()
-{
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = cloud_profile(point);
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(defn cloud-profile-test [radius cloud-bottom cloud-top x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices  [0 1 3 2]
-            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(cloud-profile-probe x y z) cloud-profile shaders/convert-1d-index])
-            vao      (make-vertex-array-object program indices vertices [:point 3])
-            data     [0.0 2.0 1.0]
-            profile  (make-float-texture-1d :linear :clamp (float-array data))
-            tex      (texture-render-color 1 1 true
-                                           (use-program program)
-                                           (uniform-sampler program "profile" 0)
-                                           (uniform-int program "profile_size" 3)
-                                           (uniform-float program "radius" radius)
-                                           (uniform-float program "cloud_bottom" cloud-bottom)
-                                           (uniform-float program "cloud_top" cloud-top)
-                                           (use-textures profile)
-                                           (render-quads vao))
-            img     (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture profile)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
-
-(tabular "Shader for creating vertical cloud profile"
-         (fact (mget (cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
-         ?radius ?bottom ?top ?x  ?y  ?z ?result
-         100     10      14   110 0   0  0.0
-         100     10      14   112 0   0  2.0
-         100     10      14   0   112 0  2.0
-         100     10      14   111 0   0  1.0)
-
 (def cloud-noise-probe
   (template/fn [x y z]
 "#version 410 core
@@ -965,6 +918,53 @@ void main()
         (destroy-texture worley-south)
         (destroy-texture worley-north)))
     => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.0))
+
+(def cloud-profile-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float cloud_profile(vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = cloud_profile(point);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn cloud-profile-test [radius cloud-bottom cloud-top x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+      (let [indices  [0 1 3 2]
+            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            program  (make-program :vertex [shaders/vertex-passthrough]
+                                   :fragment [(cloud-profile-probe x y z) cloud-profile shaders/convert-1d-index])
+            vao      (make-vertex-array-object program indices vertices [:point 3])
+            data     [0.0 2.0 1.0]
+            profile  (make-float-texture-1d :linear :clamp (float-array data))
+            tex      (texture-render-color 1 1 true
+                                           (use-program program)
+                                           (uniform-sampler program "profile" 0)
+                                           (uniform-int program "profile_size" 3)
+                                           (uniform-float program "radius" radius)
+                                           (uniform-float program "cloud_bottom" cloud-bottom)
+                                           (uniform-float program "cloud_top" cloud-top)
+                                           (use-textures profile)
+                                           (render-quads vao))
+            img     (rgb-texture->vectors3 tex)]
+        (deliver result (get-vector3 img 0 0))
+        (destroy-texture tex)
+        (destroy-texture profile)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)))
+    @result))
+
+(tabular "Shader for creating vertical cloud profile"
+         (fact (mget (cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
+         ?radius ?bottom ?top ?x  ?y  ?z ?result
+         100     10      14   110 0   0  0.0
+         100     10      14   112 0   0  2.0
+         100     10      14   0   112 0  2.0
+         100     10      14   111 0   0  1.0)
 
 (def sphere-noise-probe
   (template/fn [x y z]
