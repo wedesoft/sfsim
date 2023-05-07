@@ -1,5 +1,6 @@
 # TODO
-* use cloud\_noise, move cloud\_profile
+* use cloud\_noise
+* threshold -> cloud\_threshold
 * wrap interpolate\_cubemap to just take idx -> cloud\_cover
 * add z-near offset to origin?
 * separate cloud\_shadow and transmittance\_outer

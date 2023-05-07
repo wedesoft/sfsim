@@ -266,7 +266,7 @@ void main()
             tex      (texture-render-color 1 1 true
                                            (use-program program)
                                            (uniform-sampler program "worley" 0)
-                                           (uniform-float program "cloud_scale" scale)
+                                           (uniform-float program "detail_scale" scale)
                                            (use-textures worley)
                                            (render-quads vao))
             img      (rgb-texture->vectors3 tex)]
@@ -1013,10 +1013,6 @@ float sphere_noise(vec3 point)
 float cloud_profile(vec3 point)
 {
   return max(1.0 - 0.01 * abs(length(point) - 1000), 0.0);
-}
-float cloud_noise(vec3 point)
-{
-  return point.z >= 0.0 ? 0.5 : 0.0;
 }
 float cloud_base(vec3 point);
 void main()
