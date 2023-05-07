@@ -1045,3 +1045,49 @@ void main()
           0.0     0.5     0.0       1000  1  0  0.2
           1.0     1.0     0.5       1000  1  0  0.9
           1.0     1.0     0.5        950  1  0  0.45)
+
+(def cloud-cover-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float cloud_cover(vec3 idx);
+void main()
+{
+  float result = cloud_cover(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn cloud-cover-test [x y z]
+  (let [result (promise)]
+    (offscreen-render 1 1
+                      (let [indices     [0 1 3 2]
+                            vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                            datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
+                            data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
+                            cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
+                            program     (make-program :vertex [shaders/vertex-passthrough]
+                                                      :fragment [(cloud-cover-probe x y z) cloud-cover
+                                                                 shaders/interpolate-float-cubemap
+                                                                 shaders/convert-cubemap-index])
+                            vao         (make-vertex-array-object program indices vertices [:point 3])
+                            tex         (texture-render-color
+                                          1 1 true
+                                          (use-program program)
+                                          (uniform-sampler program "cover" 0)
+                                          (uniform-int program "cover_size" 2)
+                                          (use-textures cube)
+                                          (render-quads vao))
+                            img         (rgb-texture->vectors3 tex)]
+                        (deliver result (get-vector3 img 0 0))
+                        (destroy-texture tex)
+                        (destroy-texture cube)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    @result))
+
+(tabular "Perform cloud cover lookup in cube map"
+         (fact (mget (cloud-cover-test ?x ?y ?z) 0) => ?result)
+         ?x   ?y ?z  ?result
+         1    0   0   0.5
+         1    0  -1   1.0
+         1    0   0.5 0.25)

@@ -1,5 +1,4 @@
 # TODO
-* cloud\_cover method performing cubemap lookup
 * use cloud\_noise, move cloud\_profile
 * wrap interpolate\_cubemap to just take idx -> cloud\_cover
 * add z-near offset to origin?
