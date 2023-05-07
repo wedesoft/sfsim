@@ -999,7 +999,7 @@ void main()
          100.0    10.0        2.0 0.0 0.0  10.0)
 
 (def cloud-base-probe
-  (template/fn [lod x y z]
+  (template/fn [x y z]
 "#version 410 core
 out vec3 fragColor;
 float cloud_cover(vec3 point)
@@ -1018,11 +1018,11 @@ float cloud_noise(vec3 point)
 {
   return point.z >= 0.0 ? 0.5 : 0.0;
 }
-float cloud_base(vec3 point, float lod);
+float cloud_base(vec3 point);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = cloud_base(point, <%= lod %>);
+  float result = cloud_base(point);
   fragColor = vec3(result, 0, 0);
 }"))
 
@@ -1033,17 +1033,15 @@ void main()
         (uniform-float program "cloud_multiplier" clouds)
         (uniform-float program "threshold" threshold))
     cloud-base-probe
-    cloud-base
-    shaders/remap))
+    cloud-base))
 
 (tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-base-test [?cover ?clouds ?threshold] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
-          ?cover ?clouds ?threshold ?lod   ?x   ?y ?z ?result
-          1.0     1.0     0.0        0.0   1000 -1  0  1.0
-          1.0     1.0     0.0        0.0  -1000 -1  0  0.0
-          0.5     1.0     0.0        0.0   1000 -1  0  0.5
-          0.0     1.0     0.0        0.0   1000  1  0  0.4
-          0.0     0.5     0.0        0.0   1000  1  0  0.2
-          1.0     1.0     0.5        0.0   1000  1  0  0.9
-          1.0     1.0     0.5        0.0    950  1  0  0.45
-          )
+         (fact (mget (cloud-base-test [?cover ?clouds ?threshold] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
+          ?cover ?clouds ?threshold ?x   ?y ?z ?result
+          1.0     1.0     0.0       1000 -1  0  1.0
+          1.0     1.0     0.0      -1000 -1  0  0.0
+          0.5     1.0     0.0       1000 -1  0  0.5
+          0.0     1.0     0.0       1000  1  0  0.4
+          0.0     0.5     0.0       1000  1  0  0.2
+          1.0     1.0     0.5       1000  1  0  0.9
+          1.0     1.0     0.5        950  1  0  0.45)

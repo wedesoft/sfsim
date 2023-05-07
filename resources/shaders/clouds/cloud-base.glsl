@@ -7,9 +7,8 @@ uniform float threshold;
 float cloud_cover(vec3 point);
 float sphere_noise(vec3 point);
 float cloud_profile(vec3 point);
-float remap(float value, float original_min, float original_max, float new_min, float new_max);
 
-float cloud_base(vec3 point, float lod)
+float cloud_base(vec3 point)
 {
   float cover = cloud_cover(point) * cover_multiplier;
   float clouds = sphere_noise(point) * cloud_multiplier;
