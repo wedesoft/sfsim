@@ -1006,6 +1006,14 @@ float cloud_cover(vec3 point)
 {
   return point.x >= 0.0 ? 1.0 : 0.0;
 }
+float sphere_noise(vec3 point)
+{
+  return point.y >= 0.0 ? 0.4 : 0.0;
+}
+float cloud_profile(vec3 point)
+{
+  return max(1.0 - 0.01 * abs(length(point) - 1000), 0.0);
+}
 float cloud_density(vec3 point, float lod);
 void main()
 {
@@ -1016,15 +1024,21 @@ void main()
 
 (def cloud-density-test
   (shader-test
-    (fn [program cover]
-        (uniform-float program "cover_multiplier" cover))
+    (fn [program cover clouds threshold]
+        (uniform-float program "cover_multiplier" cover)
+        (uniform-float program "cloud_multiplier" clouds)
+        (uniform-float program "threshold" threshold))
     cloud-density-probe
     cloud-density))
 
 (tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-density-test [?cover] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
-          ?cover ?lod ?x    ?y ?z ?result
-          1.0     0    1000  0  0  1.0
-          1.0     0   -1000  0  0  0.0
-          0.5     0    1000  0  0  0.5
+         (fact (mget (cloud-density-test [?cover ?clouds ?threshold] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+          ?cover ?clouds ?threshold ?lod   ?x   ?y ?z ?result
+          1.0     1.0     0.0        0.0   1000 -1  0  1.0
+          1.0     1.0     0.0        0.0  -1000 -1  0  0.0
+          0.5     1.0     0.0        0.0   1000 -1  0  0.5
+          0.0     1.0     0.0        0.0   1000  1  0  0.4
+          0.0     0.5     0.0        0.0   1000  1  0  0.2
+          1.0     1.0     0.5        0.0   1000  1  0  0.9
+          1.0     1.0     0.5        0.0    950  1  0  0.45
           )
