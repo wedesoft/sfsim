@@ -20,35 +20,6 @@
 ;(Display/setDisplayMode (DisplayMode. 640 480))
 (Display/create)
 
-(def density
-"#version 410 core
-uniform float detail_scale;
-uniform float radius;
-uniform float cap;
-uniform samplerCube cover;
-uniform sampler3D perlin;
-float cloud_base(vec3 point);
-float cloud_octaves(vec3 point, float lod);
-float cloud_noise(vec3 point, float lod);
-float remap(float value, float original_min, float original_max, float new_min, float new_max);
-float cloud_density(vec3 point, float lod)
-{
-  float base = cloud_base(point);
-  float density;
-  if (base <= 0.0)
-    density = 0.0;
-  else if (base >= 1.0)
-    density = cap;
-  else {
-    float noise = cloud_noise(point, lod);
-    if (noise <= 1 - base)
-      density = 0.0;
-    else
-      density = remap(noise, 1 - base, 1.0, 0.0, cap);
-  };
-  return density;
-}");
-
 (def fragment
 "#version 410 core
 uniform float stepsize;
@@ -185,7 +156,7 @@ void main()
 
 (def program
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment density shaders/remap (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                :fragment [fragment cloud-density shaders/remap (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            cloud-base cloud-cover cloud-noise
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
@@ -198,7 +169,7 @@ void main()
 (def num-opacity-layers 7)
 (def program-shadow
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell density shaders/remap
+                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/remap
                            cloud-base cloud-cover cloud-noise
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley")

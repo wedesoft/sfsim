@@ -1087,3 +1087,43 @@ void main()
          1    0   0   0.5
          1    0  -1   1.0
          1    0   0.5 0.25)
+
+(def cloud-density-probe
+  (template/fn [lod x y z]
+"#version 410 core
+out vec3 fragColor;
+float cloud_base(vec3 point)
+{
+  return point.x;
+}
+float cloud_noise(vec3 point, float lod)
+{
+  return point.y - lod;
+}
+float cloud_density(vec3 point, float lod);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = cloud_density(point, <%= lod %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def cloud-density-test
+  (shader-test
+    (fn [program cap]
+        (uniform-float program "cap" cap))
+    cloud-density-probe
+    cloud-density
+    shaders/remap))
+
+(tabular "Compute cloud density at given point"
+         (fact (mget (cloud-density-test [?cap] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         ?cap ?lod ?x  ?y   ?z  ?result
+         1.0  0.0  0.0 0.0  0.0 0.0
+         1.0  0.0  1.0 1.0  0.0 1.0
+         1.0  0.0  1.0 0.5  0.0 0.5
+         1.0  0.0  0.5 0.75 0.0 0.5
+         0.6  0.0  1.0 1.0  0.0 0.6
+         1.0  0.0  2.0 0.5  0.0 0.75
+         1.0  0.0  0.5 0.25 0.0 0.0
+         1.0  0.5  1.0 1.0  0.0 0.5)
