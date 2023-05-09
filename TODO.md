@@ -1,4 +1,5 @@
 # TODO
+* Belt of Venus, real sky 20 deg elevation whiter than 30 degrees (Cedders001 comment)
 * use cloud\_noise
 * threshold -> cloud\_threshold
 * wrap interpolate\_cubemap to just take idx -> cloud\_cover
