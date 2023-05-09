@@ -109,9 +109,7 @@
                        (fn [planet ray]
                            (facts planet => earth
                                   ray => #:sfsim25.ray{:origin (matrix [0 radius 0]) :direction (matrix [0 1 0])})
-                           (matrix [0 (+ radius height) 0])
-                           )
-                       ]
+                           (matrix [0 (+ radius height) 0]))]
            (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0]) (matrix [0 radius 0])) 0)
            => (roughly 1.0 1e-6)
            (mget (transmittance earth [rayleigh] 50 (matrix [0 radius 0]) (matrix [1000 radius 0])) 0)
