@@ -21,7 +21,7 @@
 
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
-  ^Vector [scattering-type ^double height]
+  ^Vector [^clojure.lang.IPersistentMap scattering-type ^double height]
   (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1)))
 
 (defn phase
@@ -53,9 +53,9 @@
 (defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
   [planet point direction]
-  (let [radius               (norm point)
+  (let [norm-point           (norm point)
         sin-elevation-radius (dot direction point)
-        horizon-distance-sqr (->> planet :sfsim25.sphere/radius sqr (- (sqr radius)))]
+        horizon-distance-sqr (->> planet :sfsim25.sphere/radius sqr (- (sqr norm-point)))]
     (or (>= sin-elevation-radius 0) (<= (sqr sin-elevation-radius) horizon-distance-sqr))))
 
 (defn ray-extremity

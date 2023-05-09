@@ -40,8 +40,8 @@
 (fact "Compute sum of scattering and absorption (i.e. Mie extinction)"
   (let [mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5]) :scatter-scale 1200 :scatter-quotient 0.9}]
     (mget (extinction mie 1200) 0) => (roughly (/ 2e-5 0.9 E) 1e-12))
-  (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [2e-5]) :scatter-scale 8000}]
-    (mget (extinction rayleigh 8000) 0) => (roughly (/ 2e-5 E) 1e-12)))
+  (let [rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6]) :scatter-scale 8000}]
+    (mget (extinction rayleigh 8000) 0) => (roughly (/ 5.8e-6 E) 1e-12)))
 
 (facts "Rayleigh phase function"
   (phase {}  0) => (roughly (/ 3 (* 16 PI)))
