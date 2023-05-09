@@ -1,4 +1,5 @@
 (require '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
+         '[clojure.core.matrix.linear :refer (norm)]
          '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
          '[clojure.math :refer (cos sin sqrt pow to-radians PI)]
          '[sfsim25.matrix :refer :all]
@@ -236,7 +237,9 @@
                           (uniform-vector3 program-atmosphere "light_direction" (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
                           (use-textures T S M)
                           (render-quads atmosphere-vao))
-         (print "\rdt" (format "%5.3f    " (* 0.001 dt)) "              ")
+         (print (format "\rdt: %5.3f, h: %6.0f            "
+                        (* 0.001 dt)
+                        (- (norm (mul @position (matrix [1 1 (/ radius polar-radius)]))) radius)))
          (flush)
          (swap! t0 + dt)))
 
