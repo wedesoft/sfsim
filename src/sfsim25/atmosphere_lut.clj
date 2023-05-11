@@ -13,8 +13,8 @@
                             :radius radius
                             :sfsim25.atmosphere/height height
                             :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (matrix [2e-5 2e-5 2e-5])
-                              :scatter-scale 1200
+(def mie #:sfsim25.atmosphere{:scatter-base (matrix [5e-6 5e-6 5e-6])
+                              :scatter-scale 2000
                               :scatter-g 0.76
                               :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
