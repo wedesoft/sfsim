@@ -35,7 +35,7 @@
         transmittance-shape           [transmittance-height-size transmittance-elevation-size]
         surface-radiance-shape        [surface-height-size surface-sun-elevation-size]
         ray-scatter-shape             [height-size elevation-size light-elevation-size heading-size]
-        bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) height-size)
+        bar                           #(progress-wrap % (size-of-shape ray-scatter-shape) (* elevation-size light-elevation-size))
         ray-steps                     100
         sphere-steps                  15
         iterations                    5
