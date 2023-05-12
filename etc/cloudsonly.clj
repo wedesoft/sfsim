@@ -27,6 +27,7 @@ uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float dense_height;
+uniform float max_height;
 uniform float detail;
 uniform float anisotropic;
 uniform vec3 light_direction;
@@ -44,6 +45,7 @@ float sampling_offset();
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 transmittance_outer(vec3 point, vec3 direction);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
+vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction);
 
 float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -64,18 +66,22 @@ void main()
 {
   vec3 direction = normalize(fs_in.direction);
   vec3 origin2 = origin + direction * 15;
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + dense_height, origin2, direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin2, direction);
   vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin2, direction);
   if (atmosphere.y > 0) {
     vec3 background;
     if (planet.y > 0) {
       vec3 point = origin2 + planet.x * direction;
       float intensity = cloud_shadow(point, light_direction, 0.0);
-      float cos_angle = max(dot(point, light_direction) / length(point), 0);
-      background = 2 * vec3(0.09, 0.11, 0.34) * intensity * cos_angle;
+      vec3 direct_light;
+      if (dot(point, light_direction) > 0)
+        direct_light = transmittance_outer(point, light_direction);
+      else
+        direct_light = vec3(0, 0, 0);
+      background = 2 * vec3(0.09, 0.11, 0.34) * intensity * direct_light;
       atmosphere.y = planet.x - atmosphere.x;
     } else
-      background = vec3(0, 0, 0);
+      background = ray_scatter_outer(light_direction, origin, direction) * 6;
     float transparency = 1.0;
     int count = int(ceil(atmosphere.y / stepsize));
     float step = atmosphere.y / count;
@@ -96,7 +102,7 @@ void main()
           transparency *= t;
         };
       }
-      if (transparency <= 0.05)
+      if (transparency <= 0.01)
         break;
     };
     fragColor = background * transparency + cloud_scatter;
@@ -188,7 +194,7 @@ void main()
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer]))
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer]))
 
 (def num-opacity-layers 7)
 (def program-shadow
