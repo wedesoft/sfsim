@@ -1027,7 +1027,7 @@ void main()
     (fn [program cover clouds threshold]
         (uniform-float program "cover_multiplier" cover)
         (uniform-float program "cloud_multiplier" clouds)
-        (uniform-float program "threshold" threshold))
+        (uniform-float program "cloud_threshold" threshold))
     cloud-base-probe
     cloud-base))
 
