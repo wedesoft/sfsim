@@ -42,6 +42,8 @@ float phase(float g, float mu);
 float opacity_cascade_lookup(vec4 point);
 float sampling_offset();
 vec3 transmittance_track(vec3 p, vec3 q);
+vec3 transmittance_outer(vec3 point, vec3 direction);
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 
 float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -86,11 +88,13 @@ void main()
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
         float lod = log2(l) + detail;
         float density = cloud_density(point, lod);
-        float t = exp(-density * step);
-        float intensity = cloud_shadow(point, light_direction, 0.0);
-        float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-        cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount * transmittance_track(origin, point);
-        transparency *= t;
+        if (density > 0) {
+          float t = exp(-density * step);
+          vec3 intensity = cloud_shadow(point, light_direction, 0.0) * transmittance_outer(point, light_direction);
+          vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
+          cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount;
+          transparency *= t;
+        };
       }
       if (transparency <= 0.05)
         break;
@@ -182,7 +186,9 @@ void main()
                            opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset
                            shaders/interpolate-float-cubemap shaders/convert-cubemap-index transmittance-track
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
-                           shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot]))
+                           shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
+                           ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer]))
 
 (def num-opacity-layers 7)
 (def program-shadow
