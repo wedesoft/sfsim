@@ -17,7 +17,7 @@
 
 (Display/setTitle "scratch")
 (Display/setDisplayMode (DisplayMode. (/ 1920 2) (/ 1080 2)))
-;(Display/setDisplayMode (DisplayMode. 640 480))
+;(Display/setDisplayMode (DisplayMode. 1280 768))
 (Display/create)
 
 (def fragment
@@ -30,6 +30,7 @@ uniform float dense_height;
 uniform float max_height;
 uniform float detail;
 uniform float anisotropic;
+uniform float amplification;
 uniform vec3 light_direction;
 uniform vec3 origin;
 in VS_OUT
@@ -81,7 +82,7 @@ void main()
       background = 2 * vec3(0.09, 0.11, 0.34) * intensity * direct_light;
       atmosphere.y = planet.x - atmosphere.x;
     } else
-      background = ray_scatter_outer(light_direction, origin, direction) * 6;
+      background = ray_scatter_outer(light_direction, origin + atmosphere.x * direction, direction) * amplification;
     float transparency = 1.0;
     int count = int(ceil(atmosphere.y / stepsize));
     float step = atmosphere.y / count;
@@ -98,7 +99,9 @@ void main()
           float t = exp(-density * step);
           vec3 intensity = cloud_shadow(point, light_direction, 0.0) * transmittance_outer(point, light_direction);
           vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-          cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount;
+          vec3 in_scatter = ray_scatter_track(light_direction, origin2 + atmosphere.x * step * direction, point) * amplification;
+          vec3 transmit = transmittance_track(origin2 + atmosphere.x * step * direction, point);
+          cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount * transmit + transparency * (1 - t) * in_scatter;
           transparency *= t;
         };
       }
@@ -349,6 +352,7 @@ void main()
                             (uniform-float program "detail" detail)
                             (uniform-float program "dense_height" dense-height)
                             (uniform-float program "anisotropic" @anisotropic)
+                            (uniform-float program "amplification" 6)
                             (uniform-vector3 program "origin" @position)
                             (uniform-vector3 program "light_direction" light-dir)
                             (apply use-textures W L P B C T S M (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
