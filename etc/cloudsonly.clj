@@ -41,6 +41,7 @@ float cloud_density(vec3 point, float lod);
 float phase(float g, float mu);
 float opacity_cascade_lookup(vec4 point);
 float sampling_offset();
+vec3 transmittance_track(vec3 p, vec3 q);
 
 float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -88,7 +89,7 @@ void main()
         float t = exp(-density * step);
         float intensity = cloud_shadow(point, light_direction, 0.0);
         float scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-        cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount;
+        cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount * transmittance_track(origin, point);
         transparency *= t;
       }
       if (transparency <= 0.05)
@@ -101,7 +102,7 @@ void main()
 
 (def fov (to-radians 60.0))
 (def radius 6378000.0)
-; (def dense-height 25000.0)
+(def max-height 35000.0)
 (def dense-height 6000.0)
 (def threshold (atom 29.0))
 (def anisotropic (atom 0.2))
@@ -127,6 +128,12 @@ void main()
 (def shadow-size 512)
 (def noise-size 64)
 (def depth 30000.0)
+(def height-size 32)
+(def elevation-size 127)
+(def light-elevation-size 32)
+(def heading-size 8)
+(def transmittance-height-size 64)
+(def transmittance-elevation-size 255)
 (def position (atom (matrix [0 (* -0 radius) (+ radius cloud-bottom -750)])))
 (def orientation (atom (q/rotation (to-radians 105) (matrix [1 0 0]))))
 ;(def position (atom (matrix [0 (* -2 radius) 0])))
@@ -152,6 +159,15 @@ void main()
 (def cover (map (fn [i] {:width 512 :height 512 :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
 (def C (make-float-cubemap :linear :clamp cover))
 
+(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def T (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data data}))
+
+(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(def S (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+
+(def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
+(def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+
 (def num-steps 3)
 
 (def program
@@ -164,7 +180,9 @@ void main()
                            (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile phase-function
                            shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
                            opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset
-                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index]))
+                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index transmittance-track
+                           shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
+                           shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot]))
 
 (def num-opacity-layers 7)
 (def program-shadow
@@ -279,9 +297,12 @@ void main()
                             (uniform-sampler program "profile" 2)
                             (uniform-sampler program "bluenoise" 3)
                             (uniform-sampler program "cover" 4)
+                            (uniform-sampler program "transmittance" 5)
+                            (uniform-sampler program "ray_scatter" 6)
+                            (uniform-sampler program "mie_strength" 7)
                             (doseq [i (range num-steps)]
-                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 5))
-                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 6)))
+                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 8))
+                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 9)))
                             (doseq [[idx item] (map-indexed vector splits)]
                                    (uniform-float program (str "split" idx) item))
                             (doseq [[idx item] (map-indexed vector matrix-cas)]
@@ -293,10 +314,17 @@ void main()
                             (uniform-matrix4 program "inverse_transform" (inverse transform))
                             (uniform-int program "profile_size" profile-size)
                             (uniform-int program "noise_size" noise-size)
+                            (uniform-int program "height_size" height-size)
+                            (uniform-int program "elevation_size" elevation-size)
+                            (uniform-int program "light_elevation_size" light-elevation-size)
+                            (uniform-int program "heading_size" heading-size)
+                            (uniform-int program "transmittance_height_size" transmittance-height-size)
+                            (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
                             (uniform-float program "stepsize" @step)
                             (uniform-int program "num_opacity_layers" num-opacity-layers)
                             (uniform-int program "shadow_size" shadow-size)
                             (uniform-float program "radius" radius)
+                            (uniform-float program "max_height" max-height)
                             (uniform-float program "cloud_bottom" cloud-bottom)
                             (uniform-float program "cloud_top" cloud-top)
                             (uniform-float program "cloud_multiplier" @cloud-multiplier)
@@ -311,7 +339,7 @@ void main()
                             (uniform-float program "anisotropic" @anisotropic)
                             (uniform-vector3 program "origin" @position)
                             (uniform-vector3 program "light_direction" light-dir)
-                            (apply use-textures W L P B C (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
+                            (apply use-textures W L P B C T S M (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                             (render-quads vao))
            (doseq [{:keys [offset layer]} tex-cas]
                   (destroy-texture offset)
@@ -324,6 +352,9 @@ void main()
            (flush))
          (swap! t0 + dt)))
 
+(destroy-texture M)
+(destroy-texture S)
+(destroy-texture T)
 (destroy-texture C)
 (destroy-texture B)
 (destroy-texture P)
