@@ -1,7 +1,7 @@
 # TODO
-* Belt of Venus, real sky 20 deg elevation whiter than 30 degrees (Cedders001 comment)
-* use cloud\_noise
 * threshold -> cloud\_threshold
+* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
+* Belt of Venus, real sky 20 deg elevation whiter than 30 degrees (Cedders001 comment)
 * wrap interpolate\_cubemap to just take idx -> cloud\_cover
 * add z-near offset to origin?
 * separate cloud\_shadow and transmittance\_outer
@@ -61,7 +61,6 @@
   GL\_COMPUTE\_SHADER type, glDispatchCompute 1024x1024x64 items (product at least 1024)
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
-* appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * deferred decals for rendering runway
   https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/
 * shadows
