@@ -1,5 +1,4 @@
 # TODO
-* threshold -> cloud\_threshold
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * Belt of Venus, real sky 20 deg elevation whiter than 30 degrees (Cedders001 comment)
 * wrap interpolate\_cubemap to just take idx -> cloud\_cover
