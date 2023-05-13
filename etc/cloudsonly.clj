@@ -99,8 +99,8 @@ void main()
           float t = exp(-density * step);
           vec3 intensity = cloud_shadow(point, light_direction, 0.0) * transmittance_outer(point, light_direction);
           vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-          vec3 in_scatter = ray_scatter_track(light_direction, origin2 + atmosphere.x * step * direction, point) * amplification;
-          vec3 transmit = transmittance_track(origin2 + atmosphere.x * step * direction, point);
+          vec3 in_scatter = ray_scatter_track(light_direction, origin2 + atmosphere.x * direction, point) * amplification;
+          vec3 transmit = transmittance_track(origin2 + atmosphere.x * direction, point);
           cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount * transmit + transparency * (1 - t) * in_scatter;
           transparency *= t;
         };
