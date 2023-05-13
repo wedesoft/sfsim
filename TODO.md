@@ -171,3 +171,5 @@
 * missions and high scores
 * beep-beep sound, paraglider audio?
 * uniform distribution on sphere http://marc-b-reynolds.github.io/distribution/2016/11/28/Uniform.html
+* fluid dynamics on GPU: https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu
+* introduction to fluid dynamics: https://shahriyarshahrabi.medium.com/gentle-introduction-to-fluid-simulation-for-programmers-and-technical-artists-7c0045c40bac
