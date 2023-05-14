@@ -32,6 +32,10 @@
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
   (slurp "resources/shaders/planet/geometry.glsl"))
 
+(def surface-radiance-function
+  "Shader function to determine ambient light scattered by the atmosphere"
+  (slurp "resources/shaders/planet/surface-radiance.glsl"))
+
 (def ground-radiance
   "Shader function to compute light emitted from ground"
   (slurp "resources/shaders/planet/ground-radiance.glsl"))

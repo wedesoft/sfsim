@@ -100,7 +100,7 @@
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/ray-shell
                            shaders/clip-shell-intersections phase-function shaders/surface-radiance-forward
-                           transmittance-outer]))
+                           transmittance-outer surface-radiance-function]))
 
 (use-program program-planet)
 (uniform-sampler program-planet "transmittance"    0)

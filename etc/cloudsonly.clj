@@ -218,7 +218,7 @@ void main()
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
-                           ground-radiance shaders/surface-radiance-forward]))
+                           ground-radiance shaders/surface-radiance-forward surface-radiance-function]))
 
 (def num-opacity-layers 7)
 (def program-shadow
