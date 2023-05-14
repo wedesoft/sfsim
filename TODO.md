@@ -1,6 +1,7 @@
 # TODO
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* use transmittance\_outer in ground\_radiance function
+* add separate tests for surface radiance shader
+* use mocks in tests for ground radiance shader
 * add z-near offset to origin?
 * separate cloud\_shadow and transmittance\_outer
 * add conditions to shortcut lookup in some noise textures

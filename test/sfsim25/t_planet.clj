@@ -295,7 +295,7 @@ void main()
         (uniform-float program "reflectivity" reflectivity))
     ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/elevation-to-index shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/surface-radiance-forward shaders/sun-elevation-to-index surface-radiance-function))
+    shaders/surface-radiance-forward shaders/sun-elevation-to-index surface-radiance-function atmosphere/transmittance-outer))
 
 (tabular "Shader function to compute light emitted from ground"
          (fact (mul (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5]
