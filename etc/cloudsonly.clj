@@ -3,6 +3,7 @@
          '[clojure.core.matrix.linear :refer (norm)]
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
+         '[sfsim25.planet :refer :all]
          '[sfsim25.clouds :refer :all]
          '[sfsim25.bluenoise :as bluenoise]
          '[sfsim25.matrix :refer :all]
@@ -30,6 +31,7 @@ uniform float dense_height;
 uniform float max_height;
 uniform float detail;
 uniform float anisotropic;
+uniform float specular;
 uniform float amplification;
 uniform vec3 light_direction;
 uniform vec3 origin;
@@ -47,6 +49,8 @@ vec3 transmittance_track(vec3 p, vec3 q);
 vec3 transmittance_outer(vec3 point, vec3 direction);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction);
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
+                     vec3 land_color, vec3 water_color);
 
 float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -74,15 +78,24 @@ void main()
     if (planet.y > 0) {
       vec3 point = origin2 + planet.x * direction;
       float intensity = cloud_shadow(point, light_direction, 0.0);
-      vec3 direct_light;
-      if (dot(point, light_direction) > 0)
-        direct_light = transmittance_outer(point, light_direction);
-      else
-        direct_light = vec3(0, 0, 0);
-      background = 2 * vec3(0.09, 0.11, 0.34) * intensity * direct_light;
+      vec3 normal = normalize(point);
+      float cos_incidence = dot(light_direction, normal);
+      float highlight;
+      if (cos_incidence > 0) {
+        highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular);
+      } else {
+        cos_incidence = 0.0;
+        highlight = 0.0;
+      };
+      vec3 ground = ground_radiance(point, light_direction, 1.0, cos_incidence, highlight, vec3(1, 1, 1), vec3(0.09, 0.11, 0.34));
+      vec3 transmit = transmittance_track(origin2 + atmosphere.x * direction, point);
+      background = (ground * transmit * intensity + ray_scatter_track(light_direction, origin2 + atmosphere.x * direction, point)) * amplification;
       atmosphere.y = planet.x - atmosphere.x;
-    } else
-      background = ray_scatter_outer(light_direction, origin + atmosphere.x * direction, direction) * amplification;
+    } else {
+      vec3 transmit = transmittance_outer(origin2 + atmosphere.x * direction, direction);
+      vec3 glare = pow(max(0, dot(direction, light_direction)), specular) * transmit;
+      background = ray_scatter_outer(light_direction, origin + atmosphere.x * direction, direction) * amplification + glare;
+    };
     float transparency = 1.0;
     int count = int(ceil(atmosphere.y / stepsize));
     float step = atmosphere.y / count;
@@ -109,8 +122,10 @@ void main()
         break;
     };
     fragColor = background * transparency + cloud_scatter;
-  } else
-    fragColor = vec3(0, 0, 0);
+  } else {
+    float glare = pow(max(0, dot(direction, light_direction)), specular);
+    fragColor = vec3(glare, glare, glare);
+  };
 }")
 
 (def fov (to-radians 60.0))
@@ -147,6 +162,8 @@ void main()
 (def heading-size 8)
 (def transmittance-height-size 64)
 (def transmittance-elevation-size 255)
+(def surface-height-size 16)
+(def surface-sun-elevation-size 63)
 (def position (atom (matrix [0 (* -0 radius) (+ radius cloud-bottom -750)])))
 (def orientation (atom (q/rotation (to-radians 105) (matrix [1 0 0]))))
 ;(def position (atom (matrix [0 (* -2 radius) 0])))
@@ -181,6 +198,9 @@ void main()
 (def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
 (def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
 
+(def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
+(def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data data}))
+
 (def num-steps 3)
 
 (def program
@@ -197,7 +217,8 @@ void main()
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer]))
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
+                           ground-radiance shaders/surface-radiance-forward]))
 
 (def num-opacity-layers 7)
 (def program-shadow
@@ -315,9 +336,10 @@ void main()
                             (uniform-sampler program "transmittance" 5)
                             (uniform-sampler program "ray_scatter" 6)
                             (uniform-sampler program "mie_strength" 7)
+                            (uniform-sampler program "surface_radiance" 8)
                             (doseq [i (range num-steps)]
-                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 8))
-                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 9)))
+                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 9))
+                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 10)))
                             (doseq [[idx item] (map-indexed vector splits)]
                                    (uniform-float program (str "split" idx) item))
                             (doseq [[idx item] (map-indexed vector matrix-cas)]
@@ -333,8 +355,12 @@ void main()
                             (uniform-int program "elevation_size" elevation-size)
                             (uniform-int program "light_elevation_size" light-elevation-size)
                             (uniform-int program "heading_size" heading-size)
-                            (uniform-int program "transmittance_height_size" transmittance-height-size)
                             (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+                            (uniform-int program "transmittance_height_size" transmittance-height-size)
+                            (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
+                            (uniform-int program "surface_height_size" surface-height-size)
+                            (uniform-float program "albedo" 0.9)
+                            (uniform-float program "reflectivity" 0.1)
                             (uniform-float program "stepsize" @step)
                             (uniform-int program "num_opacity_layers" num-opacity-layers)
                             (uniform-int program "shadow_size" shadow-size)
@@ -352,10 +378,11 @@ void main()
                             (uniform-float program "detail" detail)
                             (uniform-float program "dense_height" dense-height)
                             (uniform-float program "anisotropic" @anisotropic)
+                            (uniform-float program "specular" 1000)
                             (uniform-float program "amplification" 6)
                             (uniform-vector3 program "origin" @position)
                             (uniform-vector3 program "light_direction" light-dir)
-                            (apply use-textures W L P B C T S M (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
+                            (apply use-textures W L P B C T S M E (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                             (render-quads vao))
            (doseq [{:keys [offset layer]} tex-cas]
                   (destroy-texture offset)
@@ -368,6 +395,7 @@ void main()
            (flush))
          (swap! t0 + dt)))
 
+(destroy-texture E)
 (destroy-texture M)
 (destroy-texture S)
 (destroy-texture T)
