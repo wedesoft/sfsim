@@ -1,6 +1,7 @@
 # TODO
 * add origin at z-near to vertex shader
 * lod of shadow
+* ray scatter with cloud shadows
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * add separate tests for surface radiance shader
 * use mocks in tests for ground radiance shader
