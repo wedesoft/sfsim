@@ -11,7 +11,10 @@ float cloud_profile(vec3 point);
 float cloud_base(vec3 point)
 {
   float cover = cloud_cover(point) * cover_multiplier;
-  float clouds = sphere_noise(point) * cloud_multiplier;
-  float profile = cloud_profile(point);
-  return (cover + clouds - cloud_threshold) * profile;
+  if (cover + cloud_multiplier > cloud_threshold) {
+    float clouds = sphere_noise(point) * cloud_multiplier;
+    float profile = cloud_profile(point);
+    return (cover + clouds - cloud_threshold) * profile;
+  } else
+    return cover + cloud_multiplier - cloud_threshold;
 }
