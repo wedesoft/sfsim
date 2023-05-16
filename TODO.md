@@ -1,4 +1,5 @@
 # TODO
+* try whether EJML has better performance https://ejml.org/
 * add origin at z-near to vertex shader
 * lod of shadow
 * ray scatter with cloud shadows
@@ -28,7 +29,6 @@
   * apply cloud texture to higher resolution picture (upscale and alpha-blend)
   * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
-* try whether EJML has better performance https://ejml.org/
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj_tK_mdRcA
