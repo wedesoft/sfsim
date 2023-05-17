@@ -3,6 +3,7 @@
 (import '[org.ejml.simple SimpleMatrix SimpleBase])
 
 (def m (SimpleMatrix. 3 3 true (float-array [1 1 1 0 2 2 0 0 4])))
+(def n (SimpleMatrix. 3 3 false (float-array [1 1 1 0 2 2 0 0 4])))
 (def v (SimpleMatrix. 3 1 true (float-array [1 2 3])))
 (:bases (r/reflect SimpleMatrix))
 (pprint (sort (map :name (:members (r/reflect m)))))
@@ -19,4 +20,7 @@
 (.get m 1 1)
 (.dot v v)
 (.determinant m)
+(.getMatrix m)
 (.data (.getMatrix m))
+(.getMatrix n)
+(.data (.getMatrix n))
