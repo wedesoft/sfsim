@@ -7,15 +7,6 @@
 (import '[org.ejml.simple SimpleMatrix SimpleBase])
 (import '[org.ejml.data DMatrixRMaj])
 
-; versions used: core.matrix 0.63.0, ejml 0.43, vectorz-clj 0.48.0
-; support for both single and double precision floating point numbers
-; no vectors (vectors need to be presented as single column matrix) leading to slower matrix-vector multiplication
-; no custom 3x3 implementation
-; fast 4x4 inverse
-; slower matrix multiplication
-; no Clojure wrapper
-; fast access to raw data
-
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
 (set-current-implementation :vectorz)
