@@ -11,6 +11,7 @@
 ; only 2D matrices (vectors need to be presented as single column matrix)
 ; access to raw data array
 ; no custom 3x3 implementation
+; faster 4x4 inverse
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
@@ -51,9 +52,14 @@
 (mybench (let [result (.clone ^Matrix c)] (.multiply ^Matrix result ^Matrix c) result))
 
 (println "--------------------------------------------------------------------------------")
+(mybench (mmul ^Matrix a ^Matrix a))
+(mybench (.mult ^SimpleMatrix b ^SimpleMatrix b))
+(mybench (.innerProduct ^Matrix c ^Matrix c))
+
+(println "--------------------------------------------------------------------------------")
 (mybench (mmul ^Matrix a ^Vector u))
 (mybench (.mult ^SimpleMatrix b ^SimpleMatrix v))
-(mybench (.innerProduct ^Matrix c ^Matrix c))
+(mybench (.innerProduct ^Matrix c ^Vector w))
 
 (println "--------------------------------------------------------------------------------")
 (mybench (dot ^Vector u ^Vector u))
