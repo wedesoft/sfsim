@@ -7,11 +7,14 @@
 (import '[org.ejml.simple SimpleMatrix SimpleBase])
 (import '[org.ejml.data DMatrixRMaj])
 
+; versions used: core.matrix 0.63.0, ejml 0.43, vectorz-clj 0.48.0
 ; support for both single and double precision floating point numbers
-; only 2D matrices (vectors need to be presented as single column matrix)
-; access to raw data array
+; no vectors (vectors need to be presented as single column matrix) leading to slower matrix-vector multiplication
 ; no custom 3x3 implementation
-; faster 4x4 inverse
+; fast 4x4 inverse
+; slower matrix multiplication
+; no Clojure wrapper
+; fast access to raw data
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* true)
@@ -19,12 +22,12 @@
 
 (defmacro mybench [expr] `(do (println (quote ~expr)) (bench ~expr) (println)))
 
-(def a (matrix [[1.0 1.0 1.0 1.0] [0.0 2.0 2.0 2.0] [0.0 0.0 4.0 4.0] [0.0 0.0 0.0 8.0]]))
-(def b (SimpleMatrix. 4 4 true (double-array [1.0 1.0 1.0 1.0 0.0 2.0 2.0 2.0 0.0 0.0 4.0 4.0 0.0 0.0 0.0 8.0])))
-(def c (Matrixx/create [[1.0 1.0 1.0 1.0] [0.0 2.0 2.0 2.0] [0.0 0.0 4.0 4.0] [0.0 0.0 0.0 8.0]]))
-(def u (matrix [1.0 2.0 3.0 4.0]))
-(def v (SimpleMatrix. 4 1 true (double-array [1.0 2.0 3.0 4.0])))
-(def w (Vector/create [1.0 2.0 3.0 4.0]))
+(def a (matrix [[1.0 1.0 1.0 1.0] [1.0 2.0 2.0 2.0] [2.0 2.0 4.0 4.0] [3.0 3.0 3.0 8.0]]))
+(def b (SimpleMatrix. 4 4 true (double-array [1.0 1.0 1.0 1.0 1.0 2.0 2.0 2.0 2.0 2.0 4.0 4.0 3.0 3.0 3.0 8.0])))
+(def c (Matrixx/create [[1.0 1.0 1.0 1.0] [1.0 2.0 2.0 2.0] [2.0 2.0 4.0 4.0] [3.0 3.0 3.0 8.0]]))
+(def u (matrix [2.0 3.0 5.0 7.0]))
+(def v (SimpleMatrix. 4 1 true (double-array [2.0 3.0 5.0 7.0])))
+(def w (Vector/create [2.0 3.0 5.0 7.0]))
 
 (println "--------------------------------------------------------------------------------")
 (mybench (matrix [[1.0 1.0 1.0 1.0] [0.0 2.0 2.0 2.0] [0.0 0.0 4.0 4.0] [0.0 0.0 0.0 8.0]]))
