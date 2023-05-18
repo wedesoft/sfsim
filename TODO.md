@@ -1,5 +1,5 @@
 # TODO
-* try whether EJML has better performance https://ejml.org/
+* port to fastmath
 * add origin at z-near to vertex shader
 * lod of shadow
 * ray scatter with cloud shadows
