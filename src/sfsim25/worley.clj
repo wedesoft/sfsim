@@ -1,6 +1,6 @@
 (ns sfsim25.worley
     "Create Worley noise"
-    (:require [clojure.core.matrix :refer (matrix array add sub dimension-count slice-view eseq)]
+    (:require [clojure.core.matrix :refer (matrix add sub dimension-count eseq)]
               [clojure.core.matrix.linear :refer (norm)]
               [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]
               [com.climate.claypoole :refer (pfor ncpus)]))
@@ -13,15 +13,14 @@
    (random-point-grid divisions size rand))
   ([divisions size random]
    (let [cellsize (/ size divisions)]
-     (array
-       (map (fn [k]
-                (map (fn [j]
-                         (map (fn [i]
-                                  (add (matrix [(* i cellsize) (* j cellsize) (* k cellsize)])
-                                       (matrix (repeatedly 3 #(random cellsize)))))
-                              (range divisions)))
-                     (range divisions)))
-            (range divisions))))))
+     (map (fn [k]
+              (map (fn [j]
+                       (map (fn [i]
+                                (add (matrix [(* i cellsize) (* j cellsize) (* k cellsize)])
+                                     (matrix (repeatedly 3 #(random cellsize)))))
+                            (range divisions)))
+                   (range divisions)))
+          (range divisions)))))
 
 (defn- clipped-index-and-offset
   "Return index modulo dimension of grid and offset for corresponding coordinate"
@@ -37,7 +36,7 @@
   (let [[i-clip x-offset] (clipped-index-and-offset grid size 2 i)
         [j-clip y-offset] (clipped-index-and-offset grid size 1 j)
         [k-clip z-offset] (clipped-index-and-offset grid size 0 k)]
-    (add (slice-view (slice-view (slice-view grid k-clip) j-clip) i-clip) (matrix [x-offset y-offset z-offset]))))
+    (add (reduce nth grid [k-clip j-clip i-clip]) (matrix [x-offset y-offset z-offset]))))
 
 (defn closest-distance-to-point-in-grid
   "Return distance to closest point in 3D grid"
