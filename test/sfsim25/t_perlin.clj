@@ -1,6 +1,6 @@
 (ns sfsim25.t-perlin
     (:require [midje.sweet :refer :all]
-              [clojure.core.matrix :refer (array matrix dimensionality dimension-count mget)]
+              [clojure.core.matrix :refer (matrix dimensionality dimension-count mget)]
               [sfsim25.perlin :refer :all :as perlin]
               [sfsim25.conftest :refer (roughly-matrix)]))
 
@@ -41,7 +41,7 @@
          6   0.1 -0.8 -0.7
          7  -0.9 -0.8 -0.7)
 
-(def identity-array (array (for [z (range 4)] (for [y (range 4)] (for [x (range 4)] (matrix [x y z]))))))
+(def identity-array (for [z (range 4)] (for [y (range 4)] (for [x (range 4)] (matrix [x y z])))))
 
 (tabular "Get 3D gradient vectors from corners of division"
          (fact (nth (corner-gradients identity-array (matrix [?x ?y ?z])) ?i) => (matrix [?gx ?gy ?gz]))
@@ -97,8 +97,7 @@
          ease-curve 0.0 0.2 0.0 0  0.94208
          ease-curve 0.0 0.0 0.2 0  0.94208)
 
-(def gradient-grid (array [[[[1 1 0] [1 0 -1]] [[1 0 1] [-1 -1 0]]]
-                           [[[1 0 1] [-1 0 1]] [[1 0 -1] [-1 0 -1]]]]))
+(def gradient-grid [[[[1 1 0] [1 0 -1]] [[1 0 1] [-1 -1 0]]] [[[1 0 1] [-1 0 1]] [[1 0 -1] [-1 0 -1]]]])
 
 (facts "Normalize values of a vector"
        (normalize-vector [0.0 1.0])     => [0.0 1.0]

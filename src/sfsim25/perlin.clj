@@ -1,6 +1,6 @@
 (ns sfsim25.perlin
     "Create improved Perlin noise"
-    (:require [clojure.core.matrix :refer (matrix array sub add div mul slice-view dimension-count dot eseq)]
+    (:require [clojure.core.matrix :refer (matrix sub add div mul dimension-count dot eseq)]
               [clojure.math :refer (floor)]
               [com.climate.claypoole :refer (pfor ncpus)]
               [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]))
@@ -25,7 +25,7 @@
   ([divisions]
    (random-gradient-grid divisions random-gradient))
   ([divisions random-gradient]
-   (array (repeatedly divisions (fn [] (repeatedly divisions (fn [] (repeatedly divisions random-gradient))))))))
+   (repeatedly divisions (fn [] (repeatedly divisions (fn [] (repeatedly divisions random-gradient)))))))
 
 (defn determine-division
   "Determine division point belongs to"
@@ -45,7 +45,7 @@
   (let [[x  y  z ] (determine-division point)
         [x+ y+ z+] (map #(mod (inc %) (dimension-count gradient-grid 0)) [x y z])]
     (vec (for [zd [z z+] yd [y y+] xd [x x+]]
-              (reduce slice-view gradient-grid [zd yd xd])))))
+              (reduce nth gradient-grid [zd yd xd])))))
 
 (defn influence-values
   "Determine influence values"
