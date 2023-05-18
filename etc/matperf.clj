@@ -40,7 +40,7 @@
 (println "--------------------------------------------------------------------------------")
 (mybench (add ^Vector u ^Vector u))
 (mybench (.plus ^SimpleMatrix v ^SimpleMatrix v))
-(mybench (let [result (.clone ^Matrix c)] (.add ^Matrix result ^Matrix c) result))
+(mybench (let [result (.clone ^Vector w)] (.add ^Vector result ^Vector w) result))
 (mybench (fv/add z z))
 
 (println "--------------------------------------------------------------------------------")
