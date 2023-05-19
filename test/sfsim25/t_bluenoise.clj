@@ -1,9 +1,9 @@
 (ns sfsim25.t-bluenoise
     (:require [clojure.math :refer (exp)]
               [midje.sweet :refer :all]
+              [fastmath.vector :refer (vec3)]
               [sfsim25.conftest :refer (record-image is-image)]
               [sfsim25.bluenoise :refer :all]
-              [clojure.core.matrix :refer (matrix)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]))
 
@@ -100,7 +100,7 @@ void main()
                               program   (make-program :vertex [shaders/vertex-passthrough]
                                                       :fragment [fragment-noise sampling-offset])
                               vao       (make-vertex-array-object program indices vertices [:point 3])]
-                          (clear (matrix [0 0 0]))
+                          (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "bluenoise" 0)
                           (uniform-int program "noise_size" 2)
