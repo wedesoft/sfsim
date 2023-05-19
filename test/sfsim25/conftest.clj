@@ -1,7 +1,6 @@
 (ns sfsim25.conftest
     (:require [clojure.math :refer (sqrt)]
               [fastmath.matrix :as fm]
-              [fastmath.vector :as fv]
               [midje.sweet :refer (roughly)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
@@ -18,15 +17,8 @@
   "Compare vector with expected value."
   [expected error]
   (fn [actual]
-      (let [difference (fv/sub expected actual)]
-        (<= (fv/mag difference) error))))
-
-(defn roughly-indices
-  "Elementwise comparison of sequences"
-  [expected error]
-  (fn [actual]
-      (and (== (count expected) (count actual)))
-      (every? true? (map #((roughly %1 error) %2) expected actual))))
+      (and (== (count expected) (count actual))
+           (<= (sqrt (apply + (map (comp #(* % %) -) actual expected))) error))))
 
 (defn int->rgb [x]
   "Convert 32-bit integer to RGB vector"

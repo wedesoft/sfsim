@@ -1,6 +1,6 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix roughly-indices record-image is-image shader-test)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [clojure.core.matrix :refer (matrix mget mul add dot identity-matrix)]
@@ -414,7 +414,7 @@
          (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0])) => [14.0 16.0]
          (forward (matrix [radius 0 0]) (matrix [-1 0 0])) => [0.0 0.0]
          (forward (matrix [radius 0 0]) (matrix [-0.2 0.980 0])) => [0.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [0 1 0])) => (roughly-indices [0.0 7.422] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 1 0])) => (roughly-vector [0.0 7.422] 1e-3)
          (first (backward 0.0 16.0)) => (matrix [radius 0 0])
          (first (backward 14.0 16.0)) => (matrix [(+ radius height) 0 0])
          (second (backward 0.0 16.0)) => (roughly-matrix (matrix [1 0 0]) 1e-6)
@@ -459,17 +459,17 @@
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
          (:sfsim25.interpolate/shape space) => [21 19 17 15]
-         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => (roughly-indices [0.0 9.794 16.0 14.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => (roughly-vector [0.0 9.794 16.0 14.0] 1e-3)
          (forward (matrix [(+ radius height) 0 0]) (matrix [1 0 0]) (matrix [1 0 0]) true) => [20.0 9.0 16.0 14.0]
          (forward (matrix [radius 0 0]) (matrix [-1 0 0]) (matrix [1 0 0]) false) => [0.0 9.0 16.0 0.0]
          (forward (matrix [0 radius 0]) (matrix [0 -1 0]) (matrix [0 1 0]) false) => [0.0 9.0 16.0 0.0]
-         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [0 0 1]) true) => (roughly-indices [0.0 9.794 7.422 7.0] 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) true) => (roughly-indices [0.0 18.0 7.422 14.0] 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) false) => (roughly-indices [0.0 9.0 7.422 14.0] 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]) true) => (roughly-indices [0.0 18.0 7.422 7.0] 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]) true) => (roughly-indices [0.0 18.0 7.422 7.0] 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]) true) => (roughly-indices [0.0 18.0 7.422 14.0] 1e-3)
-         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]) true) => (roughly-indices [0.0 18.0 7.422 0.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [1 0 0]) (matrix [0 0 1]) true) => (roughly-vector [0.0 9.794 7.422 7.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) true) => (roughly-vector [0.0 18.0 7.422 14.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 1]) false) => (roughly-vector [0.0 9.0 7.422 14.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 -1 0]) true) => (roughly-vector [0.0 18.0 7.422 7.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 1 0]) true) => (roughly-vector [0.0 18.0 7.422 7.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 1 0]) (matrix [0 1 0]) true) => (roughly-vector [0.0 18.0 7.422 14.0] 1e-3)
+         (forward (matrix [radius 0 0]) (matrix [0 0 1]) (matrix [0 0 -1]) true) => (roughly-vector [0.0 18.0 7.422 0.0] 1e-3)
          (nth (backward 0.0 0.0 0.0 0.0) 0) => (matrix [radius 0 0])
          (nth (backward 20.0 0.0 0.0 0.0) 0) => (matrix [(+ radius height) 0 0])
          (nth (backward 0.0 9.79376 0.0 0.0) 1) => (roughly-matrix (matrix [1 0 0]) 1e-6)
