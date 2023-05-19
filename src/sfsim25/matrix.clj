@@ -33,10 +33,12 @@
 (defn quaternion->matrix
   "Convert rotation quaternion to rotation matrix"
   ^Mat3x3 [^Quaternion q]
-  (let [a (rotate-vector q (matrix [1 0 0]))
-        b (rotate-vector q (matrix [0 1 0]))
-        c (rotate-vector q (matrix [0 0 1]))]
-    (transpose (matrix [a b c]))))
+  (let [a (rotate-vector q (fv/vec3 1 0 0))
+        b (rotate-vector q (fv/vec3 0 1 0))
+        c (rotate-vector q (fv/vec3 0 0 1))]
+    (fm/mat3x3 (a 0) (b 0) (c 0)
+               (a 1) (b 1) (c 1)
+               (a 2) (b 2) (c 2))))
 
 (defn project
   "Project homogeneous coordinate to cartesian"
@@ -46,10 +48,10 @@
 (defn transformation-matrix
   "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
   ^Mat4x4 [^Mat3x3 m ^Vec3 v]
-  (matrix [[(mget m 0 0) (mget m 0 1) (mget m 0 2) (mget v 0)]
-           [(mget m 1 0) (mget m 1 1) (mget m 1 2) (mget v 1)]
-           [(mget m 2 0) (mget m 2 1) (mget m 2 2) (mget v 2)]
-           [           0            0            0          1]]))
+  (fm/mat4x4 (m 0 0) (m 0 1) (m 0 2) (v 0)
+             (m 1 0) (m 1 1) (m 1 2) (v 1)
+             (m 2 0) (m 2 1) (m 2 2) (v 2)
+                   0       0       0     1))
 
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"
@@ -58,15 +60,15 @@
         dy (-> dx (* width) (/ height))
         a  (/ (* far near) (- far near))
         b  (/ near (- far near))]
-    (matrix [[dx  0  0  0]
-             [ 0 dy  0  0]
-             [ 0  0  b  a]
-             [ 0  0 -1  0]])))
+    (fm/mat4x4 dx  0  0  0
+                0 dy  0  0
+                0  0  b  a
+                0  0 -1  0)))
 
 (defn pack-matrices
   "Pack nested vector of matrices into float array"
   [array]
-  (float-array (flatten (map (comp reverse eseq) (flatten array)))))
+  (float-array (flatten (for [row array] (for [cell row] (reverse cell))))))
 
 (defn z-to-ndc
   "Convert (flipped to positive) z-coordinate to normalized device coordinate"
@@ -80,87 +82,87 @@
   ([projection-matrix]
    (frustum-corners projection-matrix 1.0 0.0))
   ([projection-matrix ndc1 ndc2]
-   (let [minv (inverse projection-matrix)]
-     (mapv #(mmul minv %)
-           [(matrix [-1.0 -1.0 ndc1 1.0])
-            (matrix [ 1.0 -1.0 ndc1 1.0])
-            (matrix [-1.0  1.0 ndc1 1.0])
-            (matrix [ 1.0  1.0 ndc1 1.0])
-            (matrix [-1.0 -1.0 ndc2 1.0])
-            (matrix [ 1.0 -1.0 ndc2 1.0])
-            (matrix [-1.0  1.0 ndc2 1.0])
-            (matrix [ 1.0  1.0 ndc2 1.0])]))))
+   (let [minv (fm/inverse projection-matrix)]
+     (mapv #(fm/mulv minv %)
+           [(fv/vec4 -1.0 -1.0 ndc1 1.0)
+            (fv/vec4  1.0 -1.0 ndc1 1.0)
+            (fv/vec4 -1.0  1.0 ndc1 1.0)
+            (fv/vec4  1.0  1.0 ndc1 1.0)
+            (fv/vec4 -1.0 -1.0 ndc2 1.0)
+            (fv/vec4  1.0 -1.0 ndc2 1.0)
+            (fv/vec4 -1.0  1.0 ndc2 1.0)
+            (fv/vec4  1.0  1.0 ndc2 1.0)]))))
 
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
   [points]
-  (let [x (map #(/ (mget % 0) (mget % 3)) points)
-        y (map #(/ (mget % 1) (mget % 3)) points)
-        z (map #(/ (mget % 2) (mget % 3)) points)]
-    {:bottomleftnear (matrix [(apply min x) (apply min y) (apply max z)])
-     :toprightfar (matrix [(apply max x) (apply max y) (apply min z)])}))
+  (let [x (map #(/ (% 0) (% 3)) points)
+        y (map #(/ (% 1) (% 3)) points)
+        z (map #(/ (% 2) (% 3)) points)]
+    {:bottomleftnear (fv/vec3 (apply min x) (apply min y) (apply max z))
+     :toprightfar (fv/vec3 (apply max x) (apply max y) (apply min z))}))
 
 (defn expand-bounding-box-near
   "Enlarge bounding box towards positive z (near)"
   [bbox z-expand]
-  (update bbox :bottomleftnear add (matrix [0 0 z-expand])))
+  (update bbox :bottomleftnear fv/add (fv/vec3 0 0 z-expand)))
 
 (defn shadow-box-to-ndc
   "Scale and translate light box coordinates to normalized device coordinates"
   [{:keys [bottomleftnear toprightfar]}]
-  (let [left   (mget bottomleftnear 0)
-        right  (mget toprightfar 0)
-        bottom (mget bottomleftnear 1)
-        top    (mget toprightfar 1)
-        near   (- (mget bottomleftnear 2))
-        far    (- (mget toprightfar 2))]
-    (matrix [[(/ 2 (- right left))                    0                  0   (- (/ (* 2 left) (- left right)) 1)]
-             [                   0 (/ 2 (- top bottom))                  0 (- (/ (* 2 bottom) (- bottom top)) 1)]
-             [                   0                    0 (/ 1 (- far near))                  (/ far (- far near))]
-             [                   0                    0                  0                                     1]])))
+  (let [left   (bottomleftnear 0)
+        right  (toprightfar 0)
+        bottom (bottomleftnear 1)
+        top    (toprightfar 1)
+        near   (- (bottomleftnear 2))
+        far    (- (toprightfar 2))]
+    (fm/mat4x4 (/ 2 (- right left))                    0                  0   (- (/ (* 2 left) (- left right)) 1)
+                                  0 (/ 2 (- top bottom))                  0 (- (/ (* 2 bottom) (- bottom top)) 1)
+                                  0                    0 (/ 1 (- far near))                  (/ far (- far near))
+                                  0                    0                  0                                     1)))
 
 (defn shadow-box-to-map
   "Scale and translate light box coordinates to shadow map texture coordinates"
   [bounding-box]
-  (mmul (matrix [[0.5 0 0 0.5] [0 0.5 0 0.5] [0 0 1 0] [0 0 0 1]]) (shadow-box-to-ndc bounding-box)))
+  (fm/mulm (fm/mat4x4 0.5 0 0 0.5, 0 0.5 0 0.5, 0 0 1 0, 0 0 0 1) (shadow-box-to-ndc bounding-box)))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"
   [n]
-  (let [b (first (sort-by #(abs (dot n %)) (identity-matrix 3)))]
-    (normalise (cross n b))))
+  (let [b (first (sort-by #(abs (fv/dot n %)) (fm/eye 3)))]
+    (fv/normalize (fv/cross n b))))
 
 (defn oriented-matrix
   "Create a 3x3 isometry with given normal vector as first row"
   [n]
   (let [o1 (orthogonal n)
-        o2 (cross n o1)]
-    (matrix [n o1 o2])))
+        o2 (fv/cross n o1)]
+    (fm/mat3x3 (n 0) (n 1) (n 2) (o1 0) (o1 1) (o1 2) (o2 0) (o2 1) (o2 2))))
 
 (defn orient-to-light
   "Return matrix to rotate points into coordinate system with z-axis pointing towards the light"
   [light-vector]
   (let [o (oriented-matrix light-vector)]
-    (matrix [[(mget o 1 0) (mget o 1 1) (mget o 1 2) 0]
-             [(mget o 2 0) (mget o 2 1) (mget o 2 2) 0]
-             [(mget o 0 0) (mget o 0 1) (mget o 0 2) 0]
-             [           0            0            0 1]])))
+    (fm/mat4x4 (o 1 0) (o 1 1) (o 1 2) 0
+               (o 2 0) (o 2 1) (o 2 2) 0
+               (o 0 0) (o 0 1) (o 0 2) 0
+                     0       0       0 1)))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
   ([projection-matrix transform light-vector longest-shadow]
    (shadow-matrices projection-matrix transform light-vector longest-shadow 1.0 0.0))
   ([projection-matrix transform light-vector longest-shadow ndc1 ndc2]
-   (let [points       (map #(mmul transform %) (frustum-corners projection-matrix ndc1 ndc2))
+   (let [points       (map #(fm/mulv transform %) (frustum-corners projection-matrix ndc1 ndc2))
          light-matrix (orient-to-light light-vector)
-         bbox         (expand-bounding-box-near (bounding-box (map #(mmul light-matrix %) points)) longest-shadow)
+         bbox         (expand-bounding-box-near (bounding-box (map #(fm/mulv light-matrix %) points)) longest-shadow)
          shadow-ndc   (shadow-box-to-ndc bbox)
          shadow-map   (shadow-box-to-map bbox)
-         span         (sub (:toprightfar bbox) (:bottomleftnear bbox))
-         scale        (* 0.5 (+ (mget span 0) (mget span 1)))
-         depth        (- (mget span 2))]
-     {:shadow-ndc-matrix (mmul shadow-ndc light-matrix)
-      :shadow-map-matrix (mmul shadow-map light-matrix)
+         span         (fv/sub (:toprightfar bbox) (:bottomleftnear bbox))
+         scale        (* 0.5 (+ (span 0) (span 1)))
+         depth        (- (span 2))]
+     {:shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
+      :shadow-map-matrix (fm/mulm shadow-map light-matrix)
       :scale scale
       :depth depth})))
 
