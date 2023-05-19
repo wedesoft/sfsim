@@ -1,6 +1,7 @@
 (ns sfsim25.conftest
-    (:require [clojure.core.matrix :refer (sub)]
-              [clojure.core.matrix.linear :refer (norm)]
+    (:require [clojure.math :refer (sqrt)]
+              [fastmath.matrix :as fm]
+              [fastmath.vector :as fv]
               [midje.sweet :refer (roughly)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
@@ -9,10 +10,19 @@
 (defn roughly-matrix
   "Compare matrix with expected value."
   [expected error]
-  (fn [actual] (<= (norm (sub expected actual)) error)))
+  (fn [actual]
+      (let [difference (fm/sub expected actual)]
+        (<= (sqrt (apply + (fm/mat->array (fm/emulm difference difference)))) error))))
 
 (defn roughly-vector
-  "Elementwise comparison of vector"
+  "Compare vector with expected value."
+  [expected error]
+  (fn [actual]
+      (let [difference (fv/sub expected actual)]
+        (<= (fv/mag difference) error))))
+
+(defn roughly-indices
+  "Elementwise comparison of sequences"
   [expected error]
   (fn [actual]
       (and (== (count expected) (count actual)))
