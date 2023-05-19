@@ -1,43 +1,38 @@
 (ns sfsim25.matrix
   "Matrix and vector operations"
-  (:require [clojure.core.matrix :refer (matrix mget mmul sub inverse eseq transpose div dot identity-matrix normalise cross add)]
-            [clojure.math :refer (cos sin tan pow)]
-            [clojure.core.matrix.linear :refer (norm)]
+  (:require [clojure.math :refer (cos sin tan pow)]
+            [fastmath.matrix :as fm]
+            [fastmath.vector :as fv]
             [sfsim25.util :refer :all]
             [sfsim25.quaternion :refer (rotate-vector)])
-  (:import [mikera.vectorz Vector]
-           [mikera.matrixx Matrix]
+  (:import [fastmath.vector Vec3 Vec4]
+           [fastmath.matrix Mat3x3 Mat4x4]
            [sfsim25.quaternion Quaternion]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(defn normalize
-  "Normalize the vector"
-  ^Vector [^Vector v]
-  (div v (norm v)))
-
 (defn rotation-x
   "Rotation matrix around x-axis"
-  ^Matrix [^double angle]
+  ^Mat3x3 [^double angle]
   (let [ca (cos angle) sa (sin angle)]
-    (matrix [[1 0 0] [0 ca (- sa)] [0 sa ca]])))
+    (fm/mat3x3 1 0 0, 0 ca (- sa), 0 sa ca)))
 
 (defn rotation-y
   "Rotation matrix around y-axis"
-  ^Matrix [^double angle]
+  ^Mat3x3 [^double angle]
   (let [ca (cos angle) sa (sin angle)]
-    (matrix [[ca 0 sa] [0 1 0] [(- sa) 0 ca]])))
+    (fm/mat3x3 ca 0 sa, 0 1 0, (- sa) 0 ca)))
 
 (defn rotation-z
   "Rotation matrix around z-axis"
-  ^Matrix [^double angle]
+  ^Mat3x3 [^double angle]
   (let [ca (cos angle) sa (sin angle)]
-    (matrix [[ca (- sa) 0] [sa ca 0] [0 0 1]])))
+    (fm/mat3x3 ca (- sa) 0, sa ca 0, 0 0 1)))
 
 (defn quaternion->matrix
   "Convert rotation quaternion to rotation matrix"
-  ^Matrix [^Quaternion q]
+  ^Mat3x3 [^Quaternion q]
   (let [a (rotate-vector q (matrix [1 0 0]))
         b (rotate-vector q (matrix [0 1 0]))
         c (rotate-vector q (matrix [0 0 1]))]
@@ -45,12 +40,12 @@
 
 (defn project
   "Project homogeneous coordinate to cartesian"
-  ^Vector [^Vector v]
-  (div (matrix [(mget v 0) (mget v 1) (mget v 2)]) (mget v 3)))
+  ^Vec3 [^Vec4 v]
+  (fv/div (fv/vec3 (v 0) (v 1) (v 2)) (v 3)))
 
 (defn transformation-matrix
   "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
-  ^Matrix [^Matrix m ^Vector v]
+  ^Mat4x4 [^Mat3x3 m ^Vec3 v]
   (matrix [[(mget m 0 0) (mget m 0 1) (mget m 0 2) (mget v 0)]
            [(mget m 1 0) (mget m 1 1) (mget m 1 2) (mget v 1)]
            [(mget m 2 0) (mget m 2 1) (mget m 2 2) (mget v 2)]
