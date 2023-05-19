@@ -1,7 +1,7 @@
 (ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
             [clojure.math :refer (PI)]
-            [clojure.core.matrix :refer (matrix)]
+            [fastmath.vector :refer (vec3 vec4)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
 
@@ -78,12 +78,12 @@
 
 (facts "Reading and writing image pixels"
   (let [img {:width 4 :height 2 :data (int-array [0 0 0 0 0 0 0 (bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
-    (get-pixel img 1 3) => (matrix [1 2 3]))
+    (get-pixel img 1 3) => (vec3 1 2 3))
   (let [img {:width 1 :height 1 :data (int-array [(bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
-    (get-pixel img 0 0) => (matrix [1 2 3]))
+    (get-pixel img 0 0) => (vec3 1 2 3))
   (let [img {:width 4 :height 2 :data (int-array (repeat 8 0))}]
-    (set-pixel! img 1 2 (matrix [253 254 255])) => anything
-    (get-pixel img 1 2) => (matrix [253 254 255])))
+    (set-pixel! img 1 2 (vec3 253 254 255)) => anything
+    (get-pixel img 1 2) => (vec3 253 254 255)))
 
 (facts "Reading and writing of short integer values in 2D array"
   (let [elevation {:width 4 :height 2 :data (short-array (range 8))}]
@@ -111,15 +111,15 @@
 
 (facts "Reading and writing of BGR vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
-    (get-vector3 vectors 1 2) => (matrix [20.0 19.0 18.0])
-    (set-vector3! vectors 1 2 (matrix [24.5 25.5 26.5])) => anything
-    (get-vector3 vectors 1 2) => (matrix [24.5 25.5 26.5])))
+    (get-vector3 vectors 1 2) => (vec3 20.0 19.0 18.0)
+    (set-vector3! vectors 1 2 (vec3 24.5 25.5 26.5)) => anything
+    (get-vector3 vectors 1 2) => (vec3 24.5 25.5 26.5)))
 
 (facts "Reading and writing of BGRA vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 32))}]
-    (get-vector4 vectors 1 2) => (matrix [27.0 26.0 25.0 24.0])
-    (set-vector4! vectors 1 2 (matrix [1.5 2.5 3.5 4.5])) => anything
-    (get-vector4 vectors 1 2) => (matrix [1.5 2.5 3.5 4.5])))
+    (get-vector4 vectors 1 2) => (vec4 27.0 26.0 25.0 24.0)
+    (set-vector4! vectors 1 2 (vec4 1.5 2.5 3.5 4.5)) => anything
+    (get-vector4 vectors 1 2) => (vec4 1.5 2.5 3.5 4.5)))
 
 (facts "Removal of entry in nested hash"
   (dissoc-in {:a 42} [:a]) => {}
@@ -136,7 +136,7 @@
 (facts "Shape of nested vector"
        (dimensions [1 2 3]) => [3]
        (dimensions [[1 2 3] [4 5 6]]) => [2 3]
-       (dimensions [(matrix [1 2 3]) (matrix [4 5 6])]) => [2])
+       (dimensions [(vec3 1 2 3) (vec3 4 5 6)]) => [2])
 
 (facts "Combine multiple-argument functions"
        ((comp* + vector) 1 2 3) => 6)

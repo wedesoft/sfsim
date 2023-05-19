@@ -2,18 +2,16 @@
   "Various utility functions."
   (:require [clojure.java.io :as io]
             [clojure.math :refer (sin sqrt round)]
-            [clojure.core.matrix :refer (matrix mget set-current-implementation)]
+            [fastmath.vector :refer (vec3 vec4)]
             [progrock.core :as p])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.io ByteArrayOutputStream]
            [ij ImagePlus]
            [ij.io Opener FileSaver]
            [ij.process ImageConverter ColorProcessor FloatProcessor]
-           [mikera.vectorz Vector]))
+           [fastmath.vector Vec3 Vec4]))
 
 (set! *unchecked-math* true)
-
-(set-current-implementation :vectorz)
 
 (defn third
   "Get third element of a list"
@@ -148,19 +146,19 @@
 
 (defn get-pixel
   "Read color value from a pixel of an image"
-  ^Vector [{:keys [width height data]} ^long y ^long x]
+  ^Vec3 [{:keys [width height data]} ^long y ^long x]
   (let [offset (+ (* width y) x)
         value  (aget data offset)]
-    (matrix [(bit-shift-right (bit-and 0xff0000 value) 16) (bit-shift-right (bit-and 0xff00 value) 8) (bit-and 0xff value)])))
+    (vec3 (bit-shift-right (bit-and 0xff0000 value) 16) (bit-shift-right (bit-and 0xff00 value) 8) (bit-and 0xff value))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
-  [{:keys [width height data]} ^long y ^long x ^Vector c]
+  [{:keys [width height data]} ^long y ^long x ^Vec3 c]
   (let [offset (+ (* width y) x)]
     (aset-int data offset (bit-or (bit-shift-left -1 24)
-                                  (bit-shift-left (round (mget c 0)) 16)
-                                  (bit-shift-left (round (mget c 1)) 8)
-                                  (round (mget c 2))))))
+                                  (bit-shift-left (round (c 0)) 16)
+                                  (bit-shift-left (round (c 1)) 8)
+                                  (round (c 2))))))
 
 (defn get-short
   "Read value from a short integer tile"
@@ -204,37 +202,32 @@
 
 (defn get-vector3
   "Read BGR vector from a vectors tile"
-  ^Vector [{:keys [width height data]} ^long y ^long x]
+  ^Vec3 [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (matrix [(aget data (+ offset 2))
-             (aget data (+ offset 1))
-             (aget data (+ offset 0))])))
+    (vec3 (aget data (+ offset 2)) (aget data (+ offset 1)) (aget data (+ offset 0)))))
 
 (defn set-vector3!
   "Write BGR vector value to vectors tile"
-  [{:keys [width height data]} ^long y ^long x ^Vector value]
+  [{:keys [width height data]} ^long y ^long x ^Vec3 value]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-float data (+ offset 2) (mget value 0))
-    (aset-float data (+ offset 1) (mget value 1))
-    (aset-float data (+ offset 0) (mget value 2))))
+    (aset-float data (+ offset 2) (value 0))
+    (aset-float data (+ offset 1) (value 1))
+    (aset-float data (+ offset 0) (value 2))))
 
 (defn get-vector4
   "read BGRA vector from a vectors tile"
-  ^Vector [{:keys [width height data]} ^long y ^long x]
+  ^Vec4 [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 4 (+ (* width y) x))]
-    (matrix [(aget data (+ offset 3))
-             (aget data (+ offset 2))
-             (aget data (+ offset 1))
-             (aget data (+ offset 0))])))
+    (vec4 (aget data (+ offset 3)) (aget data (+ offset 2)) (aget data (+ offset 1)) (aget data (+ offset 0)))))
 
 (defn set-vector4!
   "Write BGRA vector value to vectors tile"
-  [{:keys [width height data]} ^long y ^long x ^Vector value]
+  [{:keys [width height data]} ^long y ^long x ^Vec4 value]
   (let [offset (* 4 (+ (* width y) x))]
-    (aset-float data (+ offset 3) (mget value 0))
-    (aset-float data (+ offset 2) (mget value 1))
-    (aset-float data (+ offset 1) (mget value 2))
-    (aset-float data (+ offset 0) (mget value 3))))
+    (aset-float data (+ offset 3) (value 0))
+    (aset-float data (+ offset 2) (value 1))
+    (aset-float data (+ offset 1) (value 2))
+    (aset-float data (+ offset 0) (value 3))))
 
 (defn dissoc-in
   "Return nested hash with path removed"
@@ -252,7 +245,7 @@
 (defn dimensions
   "Return shape of nested vector"
   [array]
-  (if (vector? array)
+  (if (instance? clojure.lang.PersistentVector array)
     (into [(count array)] (dimensions (first array)))
     []))
 
