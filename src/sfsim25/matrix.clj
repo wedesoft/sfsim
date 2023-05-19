@@ -129,7 +129,7 @@
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"
   [n]
-  (let [b (first (sort-by #(abs (fv/dot n %)) (fm/eye 3)))]
+  (let [b (first (sort-by #(abs (fv/dot n %)) (fm/rows (fm/eye 3))))]
     (fv/normalize (fv/cross n b))))
 
 (defn oriented-matrix
