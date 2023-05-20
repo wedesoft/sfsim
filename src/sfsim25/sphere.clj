@@ -1,7 +1,8 @@
 (ns sfsim25.sphere
   "Functions dealing with spheres"
-  (:require [clojure.core.matrix :refer (matrix mmul mul add dot sub transpose length)]
-            [clojure.math :refer (cos sin ceil sqrt PI)]
+  (:require [clojure.math :refer (cos sin ceil sqrt PI)]
+            [fastmath.matrix :refer (transpose mulv)]
+            [fastmath.vector :refer (vec3 add sub mag dot mult)]
             [sfsim25.matrix :refer :all]
             [sfsim25.util :refer :all])
   (:import [mikera.vectorz Vector]))
@@ -9,7 +10,7 @@
 (defn height
   "Determine height above surface of sphere"
   ^double [{:sfsim25.sphere/keys [centre radius]} ^Vector point]
-  (- (length (sub point centre)) radius))
+  (- (mag (sub point centre)) radius))
 
 (defn- ray-sphere-determinant
   "Get determinant for intersection of ray with sphere"
@@ -48,7 +49,7 @@
   [steps fun]
   (let [samples (map #(* 2 PI (/ (+ 0.5 %) steps)) (range steps))
         weight  (/ (* 2 PI) steps)]
-    (mul (reduce add (map fun samples)) weight)))
+    (mult (reduce add (map fun samples)) weight)))
 
 (defn- spherical-integral
   "Integrate over specified range of sphere"
@@ -62,14 +63,14 @@
               ringsteps (int (ceil (* (sin theta) phi-steps)))
               cos-theta (cos theta)
               sin-theta (sin theta)]
-          (mul (integrate-circle
-                 ringsteps
-                 (fn [phi]
-                   (let [x cos-theta
-                         y (* sin-theta (cos phi))
-                         z (* sin-theta (sin phi))]
-                     (fun (mmul mat (matrix [x y z]))))))
-               factor)))
+          (mult (integrate-circle
+                  ringsteps
+                  (fn [phi]
+                      (let [x cos-theta
+                            y (* sin-theta (cos phi))
+                            z (* sin-theta (sin phi))]
+                        (fun (mulv mat (vec3 x y z))))))
+                factor)))
         samples))))
 
 (defn integral-half-sphere
