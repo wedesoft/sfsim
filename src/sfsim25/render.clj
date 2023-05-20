@@ -1,10 +1,10 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
-  (:require [clojure.core.matrix :refer (mget eseq)])
+  (:require [fastmath.matrix :refer (mat->float-array)])
   (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
-           [mikera.vectorz Vector]
-           [mikera.matrixx Matrix]))
+           [fastmath.matrix Mat3x3 Mat4x4]
+           [fastmath.vector Vec3]))
 
 (defn setup-rendering
   "Common code for setting up rendering"
@@ -48,7 +48,7 @@
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
    (GL11/glClear GL11/GL_DEPTH_BUFFER_BIT))
   ([color]
-   (GL11/glClearColor (mget color 0) (mget color 1) (mget color 2) 1.0)
+   (GL11/glClearColor (color 0) (color 1) (color 2) 1.0)
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
    (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))))
 
@@ -173,18 +173,18 @@
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^Vector value]
-  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program ^String k) (mget value 0) (mget value 1) (mget value 2)))
+  [^clojure.lang.IPersistentMap program ^String k ^Vec3 value]
+  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program ^String k) (value 0) (value 1) (value 2)))
 
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^Matrix value]
-  (GL20/glUniformMatrix3 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (float-array (eseq value)))))
+  [^clojure.lang.IPersistentMap program ^String k ^Mat3x3 value]
+  (GL20/glUniformMatrix3 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^Matrix value]
-  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (float-array (eseq value)))))
+  [^clojure.lang.IPersistentMap program ^String k ^Mat4x4 value]
+  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"

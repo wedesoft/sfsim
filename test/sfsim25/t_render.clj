@@ -1,7 +1,8 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (is-image record-image roughly-matrix)]
-            [clojure.core.matrix :refer (matrix identity-matrix)]
+            [sfsim25.conftest :refer (is-image record-image roughly-vector)]
+            [fastmath.vector :refer (vec3 vec4 normalize)]
+            [fastmath.matrix :refer (eye)]
             [clojure.math :refer (to-radians)]
             [comb.template :as template]
             [sfsim25.util :refer :all]
@@ -12,7 +13,7 @@
            [org.lwjgl BufferUtils]))
 
 (fact "Render background color"
-  (offscreen-render 160 120 (clear (matrix [1.0 0.0 0.0])))
+  (offscreen-render 160 120 (clear (vec3 1.0 0.0 0.0)))
   => (is-image "test/sfsim25/fixtures/render/red.png" 0.0))
 
 (def vertex-passthrough
@@ -37,7 +38,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
@@ -69,7 +70,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-color] :fragment [fragment-color])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
@@ -82,7 +83,7 @@ void main()
                     -0.5 -0.5 0.1 0.0 1.0, 1.0 -0.5 0.1 0.0 1.0, -0.5 1.0 0.1 0.0 1.0, 1.0 1.0 0.1 0.0 1.0]
           program  (make-program :vertex [vertex-color] :fragment [fragment-color])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
@@ -105,7 +106,7 @@ void main()
           program2  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
           vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
           vao2      (make-vertex-array-object program2 indices vertices2 [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program1)
       (render-quads vao1)
       (use-program program2)
@@ -121,7 +122,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (raster-lines (render-quads vao))
       (destroy-vertex-array-object vao)
@@ -144,7 +145,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-floats])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-float program "red" 1.0)
       (uniform-float program "green" 0.5)
@@ -170,7 +171,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-ints])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-int program "red" 255)
       (uniform-int program "green" 128)
@@ -194,9 +195,9 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-vector3])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
-      (uniform-vector3 program "color" (matrix [1.0 0.5 0.0]))
+      (uniform-vector3 program "color" (vec3 1.0 0.5 0.0))
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
@@ -216,9 +217,9 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-transform3] :fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
-      (uniform-matrix3 program "transform" (identity-matrix 3))
+      (uniform-matrix3 program "transform" (eye 3))
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
@@ -238,9 +239,9 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-transform4] :fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
-      (uniform-matrix4 program "transform" (identity-matrix 4))
+      (uniform-matrix4 program "transform" (eye 4))
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
@@ -281,7 +282,7 @@ void main()
                             program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-1d])
                             vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
                             tex      (make-float-texture-1d ?interpolation ?boundary (float-array [0.0 1.0]))]
-                        (clear (matrix [0.0 0.0 0.0]))
+                        (clear (vec3 0.0 0.0 0.0))
                         (use-program program)
                         (uniform-sampler program "tex" 0)
                         (use-textures tex)
@@ -320,7 +321,7 @@ void main()
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
       (use-textures tex)
@@ -338,7 +339,7 @@ void main()
                             vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
                             img      {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])}
                             tex      (make-float-texture-2d ?interpolation ?boundary img)]
-                        (clear (matrix [0.0 0.0 0.0]))
+                        (clear (vec3 0.0 0.0 0.0))
                         (use-program program)
                         (uniform-sampler program "tex" 0)
                         (use-textures tex)
@@ -360,7 +361,7 @@ void main()
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-ubyte-texture-2d :linear :clamp {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
       (use-textures tex)
@@ -376,7 +377,7 @@ void main()
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
       (use-textures tex)
@@ -421,7 +422,7 @@ void main(void)
                           vao      (make-vertex-array-object program indices vertices [:point 3])
                           data     [0.4 0.4 0.4 0.4, 0.4 0.6 0.6 0.4, 0.4 0.6 0.6 0.4, 0.4 0.4 0.4 0.4]
                           depth    (make-depth-texture :linear :clamp {:width 4 :height 4 :data (float-array data)})]
-                      (clear (matrix [1.0 0.0 0.0]))
+                      (clear (vec3 1.0 0.0 0.0))
                       (use-program program)
                       (uniform-sampler program "shadow_map" 0)
                       (use-textures depth)
@@ -460,7 +461,7 @@ void main()
                             data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
                             tex      (make-float-texture-3d ?interpolation ?boundary
                                                             {:width 2 :height 2 :depth 2 :data (float-array data)})]
-                        (clear (matrix [0.0 0.0 0.0]))
+                        (clear (vec3 0.0 0.0 0.0))
                         (use-program program)
                         (uniform-sampler program "tex" 0)
                         (use-textures tex)
@@ -497,7 +498,7 @@ void main()
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
           tex1     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
           tex2     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex1" 0)
       (uniform-sampler program "tex2" 1)
@@ -556,7 +557,7 @@ void main(void)
           program  (make-program :vertex [vertex-passthrough] :tess-control [control-uniform] :tess-evaluation [evaluation-mix]
                                  :geometry [geometry-triangle] :fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (raster-lines (render-patches vao))
       (destroy-vertex-array-object vao)
@@ -585,7 +586,7 @@ void main()
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-part1 fragment-part2])
           vao      (make-vertex-array-object program indices vertices [:point 3])]
-      (clear (matrix [0.0 0.0 0.0]))
+      (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
       (destroy-vertex-array-object vao)
@@ -593,13 +594,13 @@ void main()
 
 (fact "Render to floating-point texture (needs active OpenGL context)"
       (offscreen-render 32 32
-        (let [tex (texture-render-color 8 8 true (clear (matrix [1.0 2.0 3.0])))]
-          (get-vector3 (rgb-texture->vectors3 tex) 0 0) => (matrix [1.0 2.0 3.0])
+        (let [tex (texture-render-color 8 8 true (clear (vec3 1.0 2.0 3.0)))]
+          (get-vector3 (rgb-texture->vectors3 tex) 0 0) => (vec3 1.0 2.0 3.0)
           (destroy-texture tex))))
 
 (fact "Render to image texture (needs active OpenGL context)"
       (offscreen-render 32 32
-        (let [tex (texture-render-color 160 120 false (clear (matrix [1.0 0.0 0.0])))
+        (let [tex (texture-render-color 160 120 false (clear (vec3 1.0 0.0 0.0)))
               img (texture->image tex)]
           img => (is-image "test/sfsim25/fixtures/render/red.png" 0.0)
           (destroy-texture tex))))
@@ -696,7 +697,7 @@ void main()
                    data     (flatten (repeat 8 [0 0 1 1]))
                    tex      (make-float-texture-1d :linear :clamp (float-array data))]
                (generate-mipmap tex)
-               (clear (matrix [0.0 0.0 0.0]))
+               (clear (vec3 0.0 0.0 0.0))
                (use-program program)
                (uniform-sampler program "tex" 0)
                (uniform-float program "lod" ?lod)
@@ -733,7 +734,7 @@ void main()
                  (destroy-texture tex)
                  (destroy-vertex-array-object vao)
                  (destroy-program program)))
-             @result) => (roughly-matrix (matrix [?alpha 0.25 0.5 0.75]) 1e-6))
+             @result) => (roughly-vector (vec4 ?alpha 0.25 0.5 0.75) 1e-6))
          ?alpha
          1.0
          0.0)
@@ -808,8 +809,8 @@ void main(void)
 (fact "Shadow mapping integration test"
       (offscreen-render 320 240
         (let [projection (projection-matrix 320 240 2 5 (to-radians 90))
-              transform (identity-matrix 4)
-              light-vector (normalize (matrix [1 1 2]))
+              transform (eye 4)
+              light-vector (normalize (vec3 1 1 2))
               shadow (shadow-matrices projection transform light-vector 1)
               indices [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
@@ -825,7 +826,7 @@ void main(void)
                            (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:shadow-ndc-matrix shadow))
                            (render-quads vao))]
           (setup-rendering 320 240 :cullback); Need to set it up again because texture-render-depth has overriden the settings
-          (clear (matrix [0 0 0]))
+          (clear (vec3 0 0 0))
           (use-program program-main)
           (uniform-sampler program-main "shadow_map" 0)
           (uniform-matrix4 program-main "projection" projection)
@@ -887,5 +888,5 @@ void main()
                                            (mapv (fn [i] {:width 1 :height 1 :data (float-array (reverse (gen-vector i)))})
                                                  (range 6)))]
           (doseq [i (range 6)]
-                 (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (matrix (gen-vector i)))
+                 (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
           (destroy-texture cubemap))))
