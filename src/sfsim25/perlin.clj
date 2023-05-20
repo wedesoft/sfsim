@@ -1,9 +1,9 @@
 (ns sfsim25.perlin
     "Create improved Perlin noise"
-    (:require [clojure.core.matrix :refer (matrix sub add div mul dimension-count dot eseq)]
-              [clojure.math :refer (floor)]
+    (:require [clojure.math :refer (floor)]
+              [fastmath.vector :refer (vec3 add sub dot mult)]
               [com.climate.claypoole :refer (pfor ncpus)]
-              [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats)]))
+              [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats dimension-count)]))
 
 ; improved Perlin noise algorithm
 ; https://adrianb.io/2014/08/09/perlinnoise.html
@@ -15,7 +15,7 @@
   ([]
    (random-gradient rand-nth))
   ([selector]
-   (matrix
+   (apply vec3
      (selector [[ 1  1  0] [-1  1  0] [ 1 -1  0] [-1 -1  0]
                 [ 1  0  1] [-1  0  1] [ 1  0 -1] [-1  0 -1]
                 [ 0  1  1] [ 0 -1  1] [ 0  1 -1] [ 0 -1 -1]]))))
@@ -35,9 +35,9 @@
 (defn corner-vectors
   "Get 3D vectors pointing to corners of division"
   [point]
-  (let [division (matrix (determine-division point))]
+  (let [division (apply vec3 (determine-division point))]
     (vec (for [z (range 2) y (range 2) x (range 2)]
-              (sub point (add division (matrix [x y z])))))))
+              (sub point (add division (vec3 x y z)))))))
 
 (defn corner-gradients
   "Get 3D gradient vectors from corners of division"
@@ -60,10 +60,10 @@
 (defn interpolation-weights
   "Determine weights for interpolation"
   [ease-curve index]
-  (let [division   (determine-division index)
+  (let [division   (apply vec3 (determine-division index))
         point      (sub index division)
-        [bx by bz] (eseq point)
-        [ax ay az] (eseq (sub 1.0 point))]
+        [bx by bz] point
+        [ax ay az] (sub (vec3 1 1 1) point)]
     (for [z [az bz] y [ay by] x [ax bx]]
          (* (ease-curve z) (ease-curve y) (ease-curve x)))))
 
@@ -77,7 +77,7 @@
 (defn perlin-noise-sample
   "Compute a single sample of Perlin noise"
   [gradient-grid divisions size cell]
-  (let [point     (mul cell (/ divisions size))
+  (let [point     (mult cell (/ divisions size))
         corners   (corner-vectors point)
         gradients (corner-gradients gradient-grid point)
         influence (influence-values gradients corners)
@@ -95,6 +95,6 @@
        (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
              (do
                (if progress (send bar tick-and-print))
-               (perlin-noise-sample gradient-grid divisions size (matrix [(+ i 0.5) (+ j 0.5) (+ k 0.5) ]))))))))
+               (perlin-noise-sample gradient-grid divisions size (vec3 (+ i 0.5) (+ j 0.5) (+ k 0.5) ))))))))
 
 (set! *unchecked-math* false)
