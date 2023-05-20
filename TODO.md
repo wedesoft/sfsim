@@ -1,5 +1,13 @@
 # TODO
-* port to fastmath
+* modules to port to fastmath:
+  test/sfsim25/t_atmosphere.clj
+  test/sfsim25/t_clouds.clj
+  test/sfsim25/t_cubemap.clj
+  test/sfsim25/t_ellipsoid.clj
+  test/sfsim25/t_interpolate.clj
+  test/sfsim25/t_planet.clj
+  test/sfsim25/t_quadtree.clj
+  deps.edn
 * add origin at z-near to vertex shader
 * lod of shadow
 * ray scatter with cloud shadows
