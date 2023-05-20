@@ -322,4 +322,9 @@
         (send bar tick-and-print)
         (apply fun args))))
 
+(defn dimension-count
+  "Count dimensions of nested vector"
+  [array dimension]
+  (count (nth (iterate first array) dimension)))
+
 (set! *unchecked-math* false)

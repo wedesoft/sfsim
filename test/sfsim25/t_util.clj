@@ -166,3 +166,9 @@
        (limit-quot -4 2 1) => -1
        (limit-quot 1 2 1) => 1/2
        (limit-quot -4 -2 1) => 1)
+
+(facts "Count dimensions of nested vector"
+       (dimension-count [1 2 3] 0) => 3
+       (dimension-count [[1 2 3]] 0) => 1
+       (dimension-count [[1 2 3]] 1) => 3
+       (dimension-count [[[1 2]]] 2) => 2)
