@@ -1,7 +1,7 @@
 (ns sfsim25.t-cubemap
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (roughly-matrix)]
-            [clojure.core.matrix :refer (matrix add mul)]
+            [sfsim25.conftest :refer (roughly-vector)]
+            [fastmath.vector :refer (vec3 add mult)]
             [clojure.math :refer (sqrt PI)]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
@@ -62,7 +62,7 @@
   cube-map-y 1  0   1.0)
 
 (fact "Get vector to cube face"
-  (cube-map 5 0 0.5) => (matrix [0.0 -1.0 -1.0]))
+  (cube-map 5 0 0.5) => (vec3 0.0 -1.0 -1.0))
 
 (facts "Test cube coordinates"
   (cube-coordinate 0 256 0     0) => 0.0
@@ -70,7 +70,7 @@
   (cube-coordinate 1 256 1 127.5) => 0.75)
 
 (tabular "Get corners of cube map tiles"
-  (fact (nth (cube-map-corners ?face ?level ?b ?a) ?idx) => (matrix [?x ?y ?z]))
+  (fact (nth (cube-map-corners ?face ?level ?b ?a) ?idx) => (vec3 ?x ?y ?z))
   ?face ?level ?b ?a ?idx ?x ?y ?z
   0 0 0 0 0 -1    1    1
   0 0 0 0 1  1    1    1
@@ -82,17 +82,17 @@
   5 2 3 1 3  0.0  1.0 -1.0)
 
 (facts "Longitude of 3D point"
-  (longitude (matrix [1 0 0])) => (roughly 0        1e-6)
-  (longitude (matrix [0 1 0])) => (roughly (/ PI 2) 1e-6))
+  (longitude (vec3 1 0 0)) => (roughly 0        1e-6)
+  (longitude (vec3 0 1 0)) => (roughly (/ PI 2) 1e-6))
 
 (facts "Latitude of 3D point"
-  (latitude (matrix [0 6378000 0]) 6378000 6357000) => (roughly 0        1e-6)
-  (latitude (matrix [0 0 6357000]) 6378000 6357000) => (roughly (/ PI 2) 1e-6)
-  (latitude (matrix [6378000 0 0]) 6378000 6357000) => (roughly 0        1e-6))
+  (latitude (vec3 0 6378000 0) 6378000 6357000) => (roughly 0        1e-6)
+  (latitude (vec3 0 0 6357000) 6378000 6357000) => (roughly (/ PI 2) 1e-6)
+  (latitude (vec3 6378000 0 0) 6378000 6357000) => (roughly 0        1e-6))
 
 (tabular "Conversion from geodetic to cartesian coordinates"
   (fact
-    (geodetic->cartesian ?lon ?lat ?h 6378000.0 6357000.0) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
+    (geodetic->cartesian ?lon ?lat ?h 6378000.0 6357000.0) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
       ?lon     ?lat   ?h        ?x        ?y        ?z
          0        0    0 6378000.0       0.0       0.0
   (/ PI 2)        0    0       0.0 6378000.0       0.0
@@ -102,7 +102,7 @@
 
 (tabular "Conversion from cartesian (surface) coordinates to latitude and longitude"
   (fact
-    (cartesian->geodetic (matrix [?x ?y ?z]) 6378000.0 6357000.0) =>
+    (cartesian->geodetic (vec3 ?x ?y ?z) 6378000.0 6357000.0) =>
       (just (roughly ?lon 1e-6) (roughly ?lat 1e-6) (roughly ?height 1e-6)))
          ?x        ?y         ?z           ?lon         ?lat ?height
   6378000.0       0.0        0.0              0            0       0
@@ -117,7 +117,7 @@
 
 (tabular "Project a vector onto an ellipsoid"
   (fact
-    (project-onto-ellipsoid (matrix [?x ?y ?z]) 6378000.0 6357000.0) => (roughly-matrix (matrix [?xp ?yp ?zp]) 1e-6))
+    (project-onto-ellipsoid (vec3 ?x ?y ?z) 6378000.0 6357000.0) => (roughly-vector (vec3 ?xp ?yp ?zp) 1e-6))
    ?x ?y ?z       ?xp       ?yp       ?zp
    1  0  0  6378000.0       0.0       0.0
    0  1  0        0.0 6378000.0       0.0
@@ -142,18 +142,18 @@
   (map-pixels-y (/ PI (* 4 256)) 256 0) => [(dec 256)         256               0.5 0.5])
 
 (facts "Offset in longitudinal direction"
-  (offset-longitude (matrix [1  0 0]) 0 675) => (roughly-matrix (matrix [0 (/ (* 2 PI) (* 4 675)) 0]) 1e-6)
-  (offset-longitude (matrix [0 -1 0]) 0 675) => (roughly-matrix (matrix [(/ (* 2 PI) (* 4 675)) 0 0]) 1e-6)
-  (offset-longitude (matrix [0 -2 0]) 0 675) => (roughly-matrix (matrix [(/ (* 4 PI) (* 4 675)) 0 0]) 1e-6)
-  (offset-longitude (matrix [0 -2 0]) 1 675) => (roughly-matrix (matrix [(/ (* 2 PI) (* 4 675)) 0 0]) 1e-6))
+  (offset-longitude (vec3 1  0 0) 0 675) => (roughly-vector (vec3 0 (/ (* 2 PI) (* 4 675)) 0) 1e-6)
+  (offset-longitude (vec3 0 -1 0) 0 675) => (roughly-vector (vec3 (/ (* 2 PI) (* 4 675)) 0 0) 1e-6)
+  (offset-longitude (vec3 0 -2 0) 0 675) => (roughly-vector (vec3 (/ (* 4 PI) (* 4 675)) 0 0) 1e-6)
+  (offset-longitude (vec3 0 -2 0) 1 675) => (roughly-vector (vec3 (/ (* 2 PI) (* 4 675)) 0 0) 1e-6))
 
 (facts "Offset in latitudinal direction"
-  (offset-latitude (matrix [1 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 PI) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [0 0 1]) 0 675 1 1)     => (roughly-matrix (matrix [(/ (* -2 PI) (* 4 675)) 0 0]) 1e-6)
-  (offset-latitude (matrix [2 0 0]) 0 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 4 PI) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [2 0 0]) 1 675 1 1)     => (roughly-matrix (matrix [0 0 (/ (* 2 PI) (* 4 675))]) 1e-6)
-  (offset-latitude (matrix [0 -1e-8 1]) 0 675 1 1) => (roughly-matrix (matrix [0 (/ (* 2 PI) (* 4 675)) 0]) 1e-6)
-  (offset-latitude (matrix [1 0 0]) 0 675 1 0.5)   => (roughly-matrix (matrix [0 0 (/ PI (* 4 675))]) 1e-6))
+  (offset-latitude (vec3 1 0 0) 0 675 1 1)     => (roughly-vector (vec3 0 0 (/ (* 2 PI) (* 4 675))) 1e-6)
+  (offset-latitude (vec3 0 0 1) 0 675 1 1)     => (roughly-vector (vec3 (/ (* -2 PI) (* 4 675)) 0 0) 1e-6)
+  (offset-latitude (vec3 2 0 0) 0 675 1 1)     => (roughly-vector (vec3 0 0 (/ (* 4 PI) (* 4 675))) 1e-6)
+  (offset-latitude (vec3 2 0 0) 1 675 1 1)     => (roughly-vector (vec3 0 0 (/ (* 2 PI) (* 4 675))) 1e-6)
+  (offset-latitude (vec3 0 -1e-8 1) 0 675 1 1) => (roughly-vector (vec3 0 (/ (* 2 PI) (* 4 675)) 0) 1e-6)
+  (offset-latitude (vec3 1 0 0) 0 675 1 0.5)   => (roughly-vector (vec3 0 0 (/ PI (* 4 675))) 1e-6))
 
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
@@ -196,14 +196,14 @@
 
 (fact "Determine center of cube map tile"
   (with-redefs [cubemap/project-onto-ellipsoid (fn [^Vector p ^double radius1 ^double radius2]
-                                                 (fact [p radius1 radius2] => [(matrix [1.0 -0.625 -0.875]) 6378000.0 6357000.0])
-                                                 (matrix [1000 -625 -875]))]
-    (tile-center 2 3 7 1 6378000.0 6357000.0) => (matrix [1000 -625 -875])))
+                                                 (fact [p radius1 radius2] => [(vec3 1.0 -0.625 -0.875) 6378000.0 6357000.0])
+                                                 (vec3 1000 -625 -875))]
+    (tile-center 2 3 7 1 6378000.0 6357000.0) => (vec3 1000 -625 -875)))
 
 (fact "Getting world map color for given longitude and latitude"
-      (color-geodetic 5 675 135.0 45.0) => (matrix [3 5 7])
+      (color-geodetic 5 675 135.0 45.0) => (vec3 3 5 7)
       (provided
-        (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel add mul) => (matrix [3 5 7])))
+        (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel add mult) => (vec3 3 5 7)))
 
 (fact "Getting elevation value for given longitude and latitude"
   (elevation-geodetic 5 675 135.0 45.0) => 42.0
@@ -228,42 +228,42 @@
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
                                              (fact [in-level width lon lat] => [4 675 0.0 (/ (- PI) 2)])
                                              2777.0)]
-    (project-onto-globe (matrix [0 0 -1]) 4 675 6378000 6357000) => (roughly-matrix (matrix [0 0 -6359777.0]) 1e-6)))
+    (project-onto-globe (vec3 0 0 -1) 4 675 6378000 6357000) => (roughly-vector (vec3 0 0 -6359777.0) 1e-6)))
 
 (fact "Clip negative height (water) to zero"
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
-    (project-onto-globe (matrix [1 0 0]) 4 675 6378000 6357000) => (roughly-matrix (matrix [6378000 0 0]) 1e-6)))
+    (project-onto-globe (vec3 1 0 0) 4 675 6378000 6357000) => (roughly-vector (vec3 6378000 0 0) 1e-6)))
 
 (facts "Determine surrounding points for a location on the globe"
   (let [ps (atom [])]
     (with-redefs [cubemap/offset-longitude (fn [^Vector p ^long level ^long tilesize]
-                                             (fact [p level tilesize] => [(matrix [1 0 0]) 7 33])
-                                             (matrix [0 0 -0.1]))
+                                             (fact [p level tilesize] => [(vec3 1 0 0) 7 33])
+                                             (vec3 0 0 -0.1))
                   cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]
-                                             (fact [p level tilesize radius1 radius2] => [(matrix [1 0 0]) 7 33 6378000 6357000])
-                                             (matrix [0 0.1 0]))
+                                             (fact [p level tilesize radius1 radius2] => [(vec3 1 0 0) 7 33 6378000 6357000])
+                                             (vec3 0 0.1 0))
                   cubemap/project-onto-globe (fn [p in-level width radius1 radius2]
                                                (fact [in-level width radius1 radius2] => [5 675 6378000 6357000])
                                                (swap! ps conj p)
-                                               (mul 2 p))]
-      (let [pts (surrounding-points (matrix [1 0 0]) 5 7 675 33 6378000 6357000)]
+                                               (mult p 2))]
+      (let [pts (surrounding-points (vec3 1 0 0) 5 7 675 33 6378000 6357000)]
         (doseq [j [-1 0 1] i [-1 0 1]]
           (let [k (+ (* 3 (inc j)) (inc i))]
-            (matrix [2 (* 0.2 j) (* -0.2 i)]) => (roughly-matrix (nth pts k) 1e-6)
-            (matrix [1 (* 0.1 j) (* -0.1 i)]) => (roughly-matrix (nth @ps k) 1e-6)))))))
+            (vec3 2 (* 0.2 j) (* -0.2 i)) => (roughly-vector (nth pts k) 1e-6)
+            (vec3 1 (* 0.1 j) (* -0.1 i)) => (roughly-vector (nth @ps k) 1e-6)))))))
 
 (fact "Get normal vector for point on flat part of elevation map"
   (with-redefs [cubemap/surrounding-points (fn [& args]
-                                             (fact args => [(matrix [1 0 0]) 5 7 675 33 6378000 6357000])
-                                             (for [j [-1 0 1] i [-1 0 1]] (matrix [6378000 j (- i)])))]
-    (normal-for-point (matrix [1 0 0]) 5 7 675 33 6378000 6357000) => (matrix [1 0 0])))
+                                             (fact args => [(vec3 1 0 0) 5 7 675 33 6378000 6357000])
+                                             (for [j [-1 0 1] i [-1 0 1]] (vec3 6378000 j (- i))))]
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000 6357000) => (vec3 1 0 0)))
 
 (fact "Get normal vector for point on elevation map sloped in longitudinal direction"
-  (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (matrix [(+ 6378000 i) j (- i)])))]
-    (normal-for-point (matrix [1 0 0]) 5 7 675 33 6378000 6357000) =>
-    (roughly-matrix (matrix [(sqrt 0.5) 0 (sqrt 0.5)]) 1e-6)))
+  (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (vec3 (+ 6378000 i) j (- i))))]
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000 6357000) =>
+    (roughly-vector (vec3 (sqrt 0.5) 0 (sqrt 0.5)) 1e-6)))
 
 (fact "Get normal vector for point on elevation map sloped in latitudinal direction"
-  (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (matrix [(+ 6378000 j) j (- i)])))]
-    (normal-for-point (matrix [1 0 0]) 5 7 675 33 6378000 6357000) =>
-    (roughly-matrix (matrix [(sqrt 0.5) (- (sqrt 0.5)) 0]) 1e-6)))
+  (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (vec3 (+ 6378000 j) j (- i))))]
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000 6357000) =>
+    (roughly-vector (vec3 (sqrt 0.5) (- (sqrt 0.5)) 0) 1e-6)))
