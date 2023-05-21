@@ -5,7 +5,6 @@
   test/sfsim25/t_ellipsoid.clj
   test/sfsim25/t_interpolate.clj
   test/sfsim25/t_planet.clj
-  test/sfsim25/t_quadtree.clj
   deps.edn
 * add origin at z-near to vertex shader
 * lod of shadow
