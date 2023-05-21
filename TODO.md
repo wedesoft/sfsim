@@ -117,7 +117,7 @@
 * use glTexSubImage2D?
 * use ZGC (short pause garbage collector for Java)
 * redesign floating point math of height maps
-* improve performance of quaternions (see clojure.core.matrix implementation)
+* improve performance of quaternions (see fastmath implementation)
 * Get scale-image to work on large images
 * use short integers for normal vector textures?
 * NASA docking system, soft-dock, hard-dock, https://www.youtube.com/watch?v=dWYpVfhvsak
