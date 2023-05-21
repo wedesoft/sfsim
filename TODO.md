@@ -1,5 +1,4 @@
 # TODO
-* test atmosphere\_lut
 * add origin at z-near to vertex shader
 * lod of shadow
 * ray scatter with cloud shadows
