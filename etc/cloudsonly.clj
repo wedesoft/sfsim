@@ -1,6 +1,6 @@
 (require '[clojure.math :refer (to-radians cos sin tan PI sqrt log)]
-         '[clojure.core.matrix :refer (matrix add mul inverse mget det)]
-         '[clojure.core.matrix.linear :refer (norm)]
+         '[fastmath.matrix :refer (inverse)]
+         '[fastmath.vector :refer (vec3 add mult mag)]
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.planet :refer :all]
@@ -164,10 +164,10 @@ void main()
 (def transmittance-elevation-size 255)
 (def surface-height-size 16)
 (def surface-sun-elevation-size 63)
-(def position (atom (matrix [0 (* -0 radius) (+ radius cloud-bottom -750)])))
-(def orientation (atom (q/rotation (to-radians 105) (matrix [1 0 0]))))
-;(def position (atom (matrix [0 (* -2 radius) 0])))
-;(def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
+(def position (atom (vec3 0 (* -0 radius) (+ radius cloud-bottom -750))))
+(def orientation (atom (q/rotation (to-radians 105) (vec3 1 0 0))))
+;(def position (atom (vec3 0 (* -2 radius) 0)))
+;(def orientation (atom (q/rotation (to-radians 90) (vec3 1 0 0))))
 (def light (atom (* 0.25 PI)))
 
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
@@ -297,10 +297,10 @@ void main()
              tc (if (@keystates Keyboard/KEY_T) 0.00001 (if (@keystates Keyboard/KEY_G) -0.00001 0))
              ts (if (@keystates Keyboard/KEY_Y) 0.05 (if (@keystates Keyboard/KEY_H) -0.05 0))
              tg (if (@keystates Keyboard/KEY_U) 0.001 (if (@keystates Keyboard/KEY_J) -0.001 0))]
-         (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
-         (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
-         (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
-         (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
+         (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
+         (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
+         (swap! position add (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* dt v)))
          (swap! light + (* l 0.1 dt))
          (swap! threshold + (* dt tr))
          (swap! opacity-step + (* dt to))
@@ -309,7 +309,7 @@ void main()
          (swap! cover-multiplier + (* dt tg))
          (swap! cap + (* dt tc))
          (swap! step + (* dt ts))
-         (let [norm-pos   (norm @position)
+         (let [norm-pos   (mag @position)
                dist       (- norm-pos radius cloud-top)
                z-near     (max 10.0 (* 0.7 dist))
                z-far      (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
@@ -317,7 +317,7 @@ void main()
                indices    [0 1 3 2]
                vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
                vao        (make-vertex-array-object program indices vertices [:point 3])
-               light-dir  (matrix [0 (cos @light) (sin @light)])
+               light-dir  (vec3 0 (cos @light) (sin @light))
                projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 1) fov)
                detail     (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ detail-scale worley-size))) (log 2))
                transform  (transformation-matrix (quaternion->matrix @orientation) @position)
@@ -326,7 +326,7 @@ void main()
                scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                tex-cas    (shadow-cascade matrix-cas light-dir scatter-am)]
            (onscreen-render (Display/getWidth) (Display/getHeight)
-                            (clear (matrix [0 1 0]))
+                            (clear (vec3 0 1 0))
                             (use-program program)
                             (uniform-sampler program "worley" 0)
                             (uniform-sampler program "perlin" 1)
