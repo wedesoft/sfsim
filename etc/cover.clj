@@ -1,5 +1,6 @@
 (require '[clojure.math :refer (sin cos PI sqrt exp log pow)]
-         '[clojure.core.matrix :refer (matrix mmul)]
+         '[fastmath.vector :refer (vec3)]
+         '[fastmath.matrix :refer (mulm)]
          '[sfsim25.render :refer :all]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.worley :refer :all]
@@ -25,7 +26,7 @@
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def worley-cover (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
-(def cloud-cover (atom nil))
+(def cloud-cover-tex (atom nil))
 
 (def vertex-shader
 "#version 410 core
@@ -103,10 +104,10 @@ void main()
          (swap! prevailing + (* dt ps))
          (swap! curl-scale-exp + (* dt cs))
          (swap! cloud-scale-exp + (* dt os))
-         (when (or (nil? @cloud-cover) (not (zero? pw)) (not (zero? ps)) (not (zero? cs)) (not (zero? os)))
-           (when-not (nil? @cloud-cover)
-                     (destroy-texture @cloud-cover))
-           (reset! cloud-cover
+         (when (or (nil? @cloud-cover-tex) (not (zero? pw)) (not (zero? ps)) (not (zero? cs)) (not (zero? os)))
+           (when-not (nil? @cloud-cover-tex)
+                     (destroy-texture @cloud-cover-tex))
+           (reset! cloud-cover-tex
              (cloud-cover-cubemap :size 512
                                   :worley-size worley-size
                                   :worley-south worley-south
@@ -120,15 +121,15 @@ void main()
                                   :cover-scale (exp @cloud-scale-exp)
                                   :num-iterations 50
                                   :flow-scale (* 1.5e-3 (exp @curl-scale-exp)))))
-         (let [mat (mmul (rotation-y @beta) (rotation-x @alpha))]
+         (let [mat (mulm (rotation-y @beta) (rotation-x @alpha))]
            (onscreen-render (Display/getWidth) (Display/getHeight)
-                            (clear (matrix [0 0 0]))
+                            (clear (vec3 0 0 0))
                             (use-program program)
                             (uniform-sampler program "cubemap" 0)
                             (uniform-matrix3 program "rotation" mat)
                             (uniform-float program "threshold" @threshold)
                             (uniform-float program "multiplier" @multiplier)
-                            (use-textures @cloud-cover)
+                            (use-textures @cloud-cover-tex)
                             (render-quads vao)))
          (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f"
                         @threshold @multiplier (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing))
@@ -137,7 +138,7 @@ void main()
          (swap! t0 + dt)))
 
 (destroy-program program)
-(destroy-texture @cloud-cover)
+(destroy-texture @cloud-cover-tex)
 (destroy-texture worley-cover)
 (destroy-texture worley-south)
 (destroy-texture worley-north)
