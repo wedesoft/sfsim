@@ -1,7 +1,6 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
-    (:require [clojure.core.matrix :refer (matrix mget mmul add sub mul div normalise dot) :as m]
-              [clojure.core.matrix.linear :refer (norm)]
+    (:require [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
               [clojure.math :refer (cos sin exp pow atan2 acos asin PI sqrt log)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
@@ -15,7 +14,7 @@
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
   (^Vector [^clojure.lang.IPersistentMap {:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
-           (-> height (/ scatter-scale) - exp (mul scatter-base)))
+           (mult scatter-base (-> height (/ scatter-scale) - exp)))
   (^Vector [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vector x]
            (scattering component (height planet x))))
 
@@ -37,13 +36,13 @@
   (let [height                    (:sfsim25.atmosphere/height planet)
         atmosphere                #:sfsim25.sphere{:centre centre :radius (+ radius height)}
         {:sfsim25.intersection/keys [distance length]} (ray-sphere-intersection atmosphere ray)]
-    (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) (+ distance length)))))
+    (add (:sfsim25.ray/origin ray) (mult (:sfsim25.ray/direction ray) (+ distance length)))))
 
 (defn surface-intersection
   "Get intersection of ray with surface of planet or nearest point if there is no intersection"
   [planet ray]
   (let [{:sfsim25.intersection/keys [distance length]} (ray-sphere-intersection planet ray)]
-    (add (:sfsim25.ray/origin ray) (mul (:sfsim25.ray/direction ray) distance))))
+    (add (:sfsim25.ray/origin ray) (mult (:sfsim25.ray/direction ray) distance))))
 
 (defn surface-point?
   "Check whether a point is near the surface or near the edge of the atmosphere"
@@ -53,7 +52,7 @@
 (defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
   [planet point direction]
-  (let [norm-point           (norm point)
+  (let [norm-point           (mag point)
         sin-elevation-radius (dot direction point)
         horizon-distance-sqr (->> planet :sfsim25.sphere/radius sqr (- (sqr norm-point)))]
     (or (>= sin-elevation-radius 0) (<= (sqr sin-elevation-radius) horizon-distance-sqr))))
@@ -69,7 +68,7 @@
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
   ([planet scatter steps x x0]
    (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
-     (-> (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub m/exp)))
+     (-> (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub fv/exp)))
   ([planet scatter steps x v above-horizon]
    (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
      (transmittance planet scatter steps x (intersection planet #:sfsim25.ray{:origin x :direction v})))))
@@ -77,14 +76,14 @@
 (defn surface-radiance-base
   "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
   [planet scatter steps intensity x light-direction]
-  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-    (mul (max 0.0 (dot normal light-direction))
-         (transmittance planet scatter steps x light-direction true) intensity)))
+  (let [normal (normalize (sub x (:sfsim25.sphere/centre planet)))]
+    (mult (emult (transmittance planet scatter steps x light-direction true) intensity)
+          (max 0.0 (dot normal light-direction)))))
 
 (defn- in-scattering-component
   "Determine amount of scattering for a scattering component, view direction, and light direction"
   [planet component x view-direction light-direction]
-  (mul (scattering planet component x) (phase component (dot view-direction light-direction))))
+  (mult (scattering planet component x) (phase component (dot view-direction light-direction))))
 
 (defn- overall-in-scattering
   "Determine overall amount of in-scattering for multiple scattering components"
@@ -95,14 +94,14 @@
   "Determine amount of incoming direct sun light"
   [planet scatter steps x light-direction intensity]
   (if (is-above-horizon? planet x light-direction)
-    (mul intensity (transmittance planet scatter steps x light-direction true))
-    (matrix [0 0 0])))  ; No direct sun light if sun is below horizon.
+    (emult intensity (transmittance planet scatter steps x light-direction true))
+    (vec3 0 0 0)))  ; No direct sun light if sun is below horizon.
 
 (defn- overall-point-scatter
   "Compute single-scatter components of light at a point and given direction in atmosphere"
   [planet scatter components steps intensity x view-direction light-direction]
-  (mul (overall-in-scattering planet components x view-direction light-direction)
-       (filtered-sun-light planet scatter steps x light-direction intensity)))
+  (emult (overall-in-scattering planet components x view-direction light-direction)
+         (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-component
   "Compute single-scatter component of light at a point and given direction in atmosphere"
@@ -112,8 +111,8 @@
 (defn strength-component
   "Compute scatter strength of component of light at a point and given direction in atmosphere"
   [planet scatter component steps intensity x view-direction light-direction above-horizon]
-  (mul (scattering planet component x)
-       (filtered-sun-light planet scatter steps x light-direction intensity)))
+  (emult (scattering planet component x)
+         (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-base
   "Compute total single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
@@ -126,13 +125,13 @@
   (let [intersection (if above-horizon atmosphere-intersection surface-intersection)
         point        (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
         ray          #:sfsim25.ray{:origin x :direction (sub point x)}]
-    (integral-ray ray steps 1.0 #(mul (transmittance planet scatter steps x %)
-                                      (point-scatter % view-direction light-direction above-horizon)))))
+    (integral-ray ray steps 1.0 #(emult (transmittance planet scatter steps x %)
+                                        (point-scatter % view-direction light-direction above-horizon)))))
 
 (defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
   [planet scatter ray-scatter surface-radiance intensity sphere-steps ray-steps x view-direction light-direction above-horizon]
-  (let [normal        (normalise (sub x (:sfsim25.sphere/centre planet)))]
+  (let [normal        (normalize (sub x (:sfsim25.sphere/centre planet)))]
     (integral-sphere sphere-steps
                      normal
                      (fn [omega]
@@ -140,19 +139,19 @@
                                point           (ray-extremity planet ray)
                                surface         (surface-point? planet point)
                                overall-scatter (overall-in-scattering planet scatter x view-direction omega)]
-                           (mul overall-scatter
-                                (add (ray-scatter x omega light-direction (not surface))
-                                     (if surface
-                                       (let [surface-brightness (-> (::brightness planet) (div PI)
-                                                                    (mul (surface-radiance point light-direction)))]
-                                         (mul (transmittance planet scatter ray-steps x point) surface-brightness))
-                                       (matrix [0 0 0])))))))))
+                           (emult overall-scatter
+                                  (add (ray-scatter x omega light-direction (not surface))
+                                       (if surface
+                                         (let [surface-brightness (-> (::brightness planet) (div PI)
+                                                                      (emult (surface-radiance point light-direction)))]
+                                           (emult (transmittance planet scatter ray-steps x point) surface-brightness))
+                                         (vec3 0 0 0)))))))))
 
 (defn surface-radiance
   "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
   [planet ray-scatter steps x light-direction]
-  (let [normal (normalise (sub x (:sfsim25.sphere/centre planet)))]
-    (integral-half-sphere steps normal #(mul (ray-scatter x % light-direction true) (dot % normal)))))
+  (let [normal (normalize (sub x (:sfsim25.sphere/centre planet)))]
+    (integral-half-sphere steps normal #(mult (ray-scatter x % light-direction true) (dot % normal)))))
 
 (defn horizon-distance [planet radius]
   "Distance from point with specified radius to horizon of planet"
@@ -161,7 +160,7 @@
 (defn elevation-to-index
   "Convert elevation to index depending on height"
   [planet size point direction above-horizon]
-  (let [radius        (norm point)
+  (let [radius        (mag point)
         ground-radius (:sfsim25.sphere/radius planet)
         top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
         sin-elevation (/ (dot point direction) radius)
@@ -184,17 +183,17 @@
     (if (or (< scaled-index 0.5) (and (== scaled-index 0.5) (< (* 2 radius) (+ ground-radius top-radius))))
       (let [ground-dist   (* horizon-dist (- 1 (* 2 scaled-index)))
             sin-elevation (limit-quot (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist) 1.0)]
-        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) false])
+        [(vec3 sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0) false])
       (let [sky-dist      (* (+ horizon-dist H) (- (* 2 scaled-index) 1))
             sin-elevation (limit-quot (- (sqr top-radius) (sqr radius) (sqr sky-dist)) (* 2 radius sky-dist) -1.0 1.0)]
-        [(matrix [sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0]) true]))))
+        [(vec3 sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0) true]))))
 
 (defn height-to-index
   "Convert height of point to index"
   [planet size point]
   (let [radius     (:sfsim25.sphere/radius planet)
         max-height (:sfsim25.atmosphere/height planet)]
-    (* (dec size) (/ (horizon-distance planet (norm point)) (horizon-distance planet (+ radius max-height))))))
+    (* (dec size) (/ (horizon-distance planet (mag point)) (horizon-distance planet (+ radius max-height))))))
 
 (defn index-to-height
   "Convert index to point with corresponding height"
@@ -203,7 +202,7 @@
         max-height   (:sfsim25.atmosphere/height planet)
         max-horizon  (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
         horizon-dist (* (/ index (dec size)) max-horizon)]
-    (matrix [(sqrt (+ (sqr radius) (sqr horizon-dist))) 0 0])))
+    (vec3 (sqrt (+ (sqr radius) (sqr horizon-dist))) 0 0)))
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
@@ -218,7 +217,7 @@
   [planet shape]
   (fn [height-index elevation-index]
       (let [point                     (index-to-height planet (first shape) height-index)
-            [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)]
+            [direction above-horizon] (index-to-elevation planet (second shape) (point 0) elevation-index)]
         [point direction above-horizon])))
 
 (defn transmittance-space
@@ -231,7 +230,7 @@
 (defn sun-elevation-to-index
   "Convert sun elevation to index"
   [size point light-direction]
-  (let [sin-elevation (/ (dot point light-direction) (norm point))]
+  (let [sin-elevation (/ (dot point light-direction) (mag point))]
     (* (dec size) (max 0.0 (/ (- 1 (exp (- 0 (* 3 sin-elevation) 0.6))) (- 1 (exp -3.6)))))))
 
 (defn index-to-sin-sun-elevation
@@ -254,7 +253,7 @@
       (let [point             (index-to-height planet (first shape) height-index)
             sin-sun-elevation (index-to-sin-sun-elevation (second shape) sun-elevation-index)
             cos-sun-elevation (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
-            light-direction   (matrix [sin-sun-elevation cos-sun-elevation 0])]
+            light-direction   (vec3 sin-sun-elevation cos-sun-elevation 0)]
         [point light-direction])))
 
 (defn surface-radiance-space
@@ -274,9 +273,9 @@
   [size direction sin-sun-elevation index]
   (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
         max-sun-1    (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
-        sun-1        (limit-quot (->> sin-sun-elevation (* (mget direction 0)) (- dot-view-sun)) (mget direction 1) max-sun-1)
+        sun-1        (limit-quot (->> sin-sun-elevation (* (direction 0)) (- dot-view-sun)) (direction 1) max-sun-1)
         sun-2        (->> sin-sun-elevation sqr (- 1 (sqr sun-1)) (max 0.0) sqrt)]
-    (matrix [sin-sun-elevation sun-1 sun-2])))
+    (vec3 sin-sun-elevation sun-1 sun-2)))
 
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
@@ -293,7 +292,7 @@
   [planet shape]
   (fn [height-index elevation-index sun-elevation-index sun-angle-index]
       (let [point                     (index-to-height planet (first shape) height-index)
-            [direction above-horizon] (index-to-elevation planet (second shape) (mget point 0) elevation-index)
+            [direction above-horizon] (index-to-elevation planet (second shape) (point 0) elevation-index)
             sin-sun-elevation         (index-to-sin-sun-elevation (third shape) sun-elevation-index)
             light-direction           (index-to-sun-direction (fourth shape) direction sin-sun-elevation sun-angle-index)]
         [point direction light-direction above-horizon])))
