@@ -1,7 +1,6 @@
 # TODO
 * modules to port to fastmath:
   test/sfsim25/t_atmosphere.clj
-  test/sfsim25/t_clouds.clj
   deps.edn
 * add origin at z-near to vertex shader
 * lod of shadow

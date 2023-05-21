@@ -1,9 +1,10 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix shader-test is-image record-image)]
+              [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (exp log sin cos asin)]
-              [clojure.core.matrix :refer (mget matrix identity-matrix diagonal-matrix)]
+              [fastmath.vector :refer (vec3)]
+              [fastmath.matrix :refer (mat3x3 eye)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
@@ -73,7 +74,7 @@ void main()
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
          (fact (cloud-track-test [?aniso ?n ?amnt] [?a ?b ?decay ?scatter ?offs ?dens ?grad ?lx ?ly ?lz ?ir ?ig ?ib])
-               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
+               => (roughly-vector (vec3 ?or ?og ?ob) 1e-3))
          ?a  ?b  ?n ?amnt ?decay  ?scatter ?offs ?dens ?grad ?aniso ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
          0    1  1  1     0       0        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0
          0    0  1  1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
@@ -131,7 +132,7 @@ void main()
 
 (tabular "Shader for determining lighting of atmosphere including clouds coming from space"
          (fact (sky-outer-test [60 40 ?h1 ?h2] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
-               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
+               => (roughly-vector (vec3 ?or ?og ?ob) 1e-5))
          ?x  ?y ?z ?dx ?dy ?dz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
          110 0  0  1   0   0   10  20  1   0   0   0   0   0    0   0   0
          110 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.1 0.0 0.0
@@ -180,7 +181,7 @@ void main()
 
 (tabular "Shader for determining lighting of atmosphere including clouds between two points"
          (fact (sky-track-test [60 40 ?h1 ?h2] [?px ?py ?pz ?dx ?dy ?dz ?a ?b ?lx ?ly ?lz ?ir ?ig ?ib])
-               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-5))
+               => (roughly-vector (vec3 ?or ?og ?ob) 1e-5))
          ?px ?py ?pz  ?a ?b  ?dx ?dy  ?dz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
         -120 0  -110   0  0  1   0    0   20  30  1   0   0   0   0   0    0   0   0
         -120 0  -110   0  0  1   0    0   20  30  1   0   0   0.1 0   0    0.1 0   0
@@ -227,7 +228,7 @@ void main()
 
 (tabular "Shader for determining illumination of clouds"
          (fact (cloud-shadow-test [?radius ?h] [?x ?y ?z ?lx ?ly ?lz])
-               => (roughly-matrix (matrix [?or ?og ?ob]) 1e-3))
+               => (roughly-vector (vec3 ?or ?og ?ob) 1e-3))
          ?radius ?h  ?x   ?y ?z ?lx ?ly ?lz ?or   ?og   ?ob
          100     20  120   0  0  1   0   0   1     1     1
          100     20 -120   0  0  1   0   0   0     0     0
@@ -278,7 +279,7 @@ void main()
     @result))
 
 (tabular "Shader to sample 3D cloud noise texture"
-         (fact (mget (cloud-noise-test ?scale ?octaves ?x ?y ?z) 0) => (roughly ?result 1e-5))
+         (fact ((cloud-noise-test ?scale ?octaves ?x ?y ?z) 0) => (roughly ?result 1e-5))
          ?scale ?octaves ?x   ?y   ?z   ?result
          1.0    [1.0]    0.25 0.25 0.25 1.0
          1.0    [1.0]    0.25 0.75 0.25 0.0
@@ -307,7 +308,7 @@ void main()
     linear-sampling))
 
 (tabular "Shader functions for defining linear sampling"
-         (fact (mget (linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
+         (fact ((linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
          ?term                              ?result
          "step_size(10, 20, 0, 5)"              2
          "sample_point(20, 0, 4, 2)"           28
@@ -325,7 +326,7 @@ void main()
     exponential-sampling))
 
 (tabular "Shader functions for defining exponential sampling"
-         (fact (mget (exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
+         (fact ((exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
          ?term                               ?result
          "scaling_offset(10, 20, 1, 2.0)"        0
          "scaling_offset(10, 30, 1, 2.0)"       10
@@ -405,8 +406,8 @@ float sampling_offset()
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-            ndc-to-shadow   (transformation-matrix (diagonal-matrix [1 1 ?depth]) (matrix [0 0 (- ?z ?depth)]))
-            light-direction (matrix [0 0 1])
+            ndc-to-shadow   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
+            light-direction (vec3 0 0 1)
             program         (make-program :vertex [opacity-vertex
                                                    shaders/grow-shadow-index]
                                           :fragment [(opacity-fragment 7)
@@ -501,7 +502,7 @@ void main()
     @result))
 
 (tabular "Lookup values from deep opacity map taking into account offsets"
-  (fact (mget (opacity-lookup-test ?offset ?step ?depth ?x ?y ?z) 0) => (roughly ?result 1e-6))
+  (fact ((opacity-lookup-test ?offset ?step ?depth ?x ?y ?z) 0) => (roughly ?result 1e-6))
   ?offset ?step ?depth ?x    ?y ?z        ?result
   1.0     1.0    6      1     0  1         1.0
   1.0     1.0    6      1     0  0         0.4
@@ -539,7 +540,7 @@ void main()
     (offscreen-render 1 1
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            inv-transform   (transformation-matrix (identity-matrix 3) (matrix [0 0 shift-z]))
+            inv-transform   (transformation-matrix (eye 3) (vec3 0 0 shift-z))
             program         (make-program :vertex [shaders/vertex-passthrough]
                                           :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n)
                                                      opacity-lookup-mock])
@@ -557,8 +558,8 @@ void main()
                                                          (uniform-float program (str "depth" idx) 200.0))
                                                   (doseq [idx (range n)]
                                                          (uniform-matrix4 program (str "shadow_map_matrix" idx)
-                                                                          (transformation-matrix (identity-matrix 3)
-                                                                                                 (matrix [(inc idx) 0 0]))))
+                                                                          (transformation-matrix (eye 3)
+                                                                                                 (vec3 (inc idx) 0 0))))
                                                   (doseq [idx (range (inc n))]
                                                          (uniform-float program (str "split" idx)
                                                                         (+ 10.0 (/ (* 30.0 idx) n))))
@@ -574,7 +575,7 @@ void main()
     @result))
 
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
-         (fact (mget (opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
+         (fact ((opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
          ?n ?z  ?shift-z ?opacities ?offsets ?select  ?result
          1  -10  0       [0.75]     [0]      :opacity 0.75
          2  -40  0       [0.75 0.5] [0 0]    :opacity 0.5
@@ -619,7 +620,7 @@ void main()
     @result))
 
 (tabular "Create identity cubemap"
-         (fact (identity-cubemap-test ?x ?y ?z) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
+         (fact (identity-cubemap-test ?x ?y ?z) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
          ?x ?y  ?z
          1  0   0
         -1  0   0
@@ -679,7 +680,7 @@ vec3 curl_field_mock(vec3 point)
     @result))
 
 (tabular "Update normalised cubemap warp vectors using specified vectors"
-         (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-3))
+         (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-3))
          ?n ?scale ?px ?py ?pz ?x ?y ?z ?rx   ?ry   ?rz
          0  1      1   0   0   0  0  0  1     0     0
          0  1     -1   0   0   0  0  0 -1     0     0
@@ -729,7 +730,7 @@ float lookup_mock(vec3 point)
                                         (use-textures warped)
                                         (render-quads vao))
               img (rgb-texture->vectors3 tex)]
-          (deliver result (mget (get-vector3 img 0 0) 0))
+          (deliver result ((get-vector3 img 0 0) 0))
           (destroy-texture tex)
           (destroy-texture warped)
           (destroy-texture current)
@@ -788,7 +789,7 @@ void main()
     noise-mock))
 
 (tabular "Shader for computing curl vectors from noise function"
-         (fact (curl-test [0.125 ?dx ?dy ?dz] [?x ?y ?z]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-3))
+         (fact (curl-test [0.125 ?dx ?dy ?dz] [?x ?y ?z]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-3))
          ?dx ?dy ?dz ?x ?y ?z ?rx ?ry ?rz
          0   0   0   1  0  0  0   0   0
          0   0.1 0   1  0  0  0   0   0.1
@@ -825,7 +826,7 @@ void main()
     flow-field))
 
 (tabular "Shader to create potential field for generating curl noise for global cloud cover"
-         (fact (mget (flow-field-test [?curl-scale ?prevailing ?whirl] [?north ?south ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         (fact ((flow-field-test [?curl-scale ?prevailing ?whirl] [?north ?south ?x ?y ?z]) 0) => (roughly ?result 1e-5))
          ?curl-scale ?prevailing ?whirl ?north ?south ?x                     ?y                     ?z ?result
          1           0           0      0.0    0.0    1                      0                      0  0
          1           1           0      0.0    0.0    0                     -1                      0  1
@@ -904,7 +905,7 @@ void main()
                                               :num-iterations 50
                                               :flow-scale 1.5e-3)]
         (setup-rendering 128 128 :cullback)  ; Need to setup viewport again after creating cubemap
-        (clear (matrix [1 0 0]))
+        (clear (vec3 1 0 0))
         (use-program program)
         (uniform-sampler program "cubemap" 0)
         (uniform-float program "threshold" 0.3)
@@ -959,7 +960,7 @@ void main()
     @result))
 
 (tabular "Shader for creating vertical cloud profile"
-         (fact (mget (cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
+         (fact ((cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
          ?radius ?bottom ?top ?x  ?y  ?z ?result
          100     10      14   110 0   0  0.0
          100     10      14   112 0   0  2.0
@@ -991,7 +992,7 @@ void main()
     (sphere-noise "base_noise")))
 
 (tabular "Sample 3D noise on the surface of a sphere"
-         (fact (mget (sphere-noise-test [?radius ?cloud-scale] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         (fact ((sphere-noise-test [?radius ?cloud-scale] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
          ?radius ?cloud-scale ?x  ?y  ?z  ?result
          100.0   100.0        1.0 0.0 0.0   1.0
          100.0    10.0        1.0 0.0 0.0  10.0
@@ -1032,7 +1033,7 @@ void main()
     cloud-base))
 
 (tabular "Shader for determining cloud density at specified point"
-         (fact (mget (cloud-base-test [?cover ?clouds ?threshold] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         (fact ((cloud-base-test [?cover ?clouds ?threshold] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
           ?cover ?clouds ?threshold ?x   ?y ?z ?result
           1.0     1.0     0.0       1000 -1  0  1.0
           1.0     1.0     0.0      -1000 -1  0  0.0
@@ -1084,7 +1085,7 @@ void main()
     @result))
 
 (tabular "Perform cloud cover lookup in cube map"
-         (fact (mget (cloud-cover-test ?x ?y ?z) 0) => ?result)
+         (fact ((cloud-cover-test ?x ?y ?z) 0) => ?result)
          ?x   ?y ?z  ?result
          1    0   0   0.5
          1    0  -1   1.0
@@ -1119,7 +1120,7 @@ void main()
     shaders/remap))
 
 (tabular "Compute cloud density at given point"
-         (fact (mget (cloud-density-test [?cap] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         (fact ((cloud-density-test [?cap] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
          ?cap ?lod ?x  ?y   ?z  ?result
          1.0  0.0  0.0 0.0  0.0 0.0
          1.0  0.0  1.0 1.0  0.0 1.0
