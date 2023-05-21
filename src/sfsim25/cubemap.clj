@@ -6,7 +6,7 @@
             [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
             [sfsim25.matrix :refer :all]
             [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-short sqr)])
-  (:import [mikera.vectorz Vector]))
+  (:import [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
 
@@ -45,7 +45,7 @@
 
 (defn cube-map
   "Get 3D vector to point on cube face"
-  ^Vector [^long face ^double j ^double i]
+  ^Vec3 [^long face ^double j ^double i]
   (vec3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
 
 (defn cube-coordinate
@@ -64,12 +64,12 @@
 
 (defn longitude
   "Longitude of 3D point (East is positive)"
-  ^double [^Vector p]
+  ^double [^Vec3 p]
   (atan2 (p 1) (p 0)))
 
 (defn latitude
   "Latitude of 3D point"
-  ^double [^Vector point ^double radius1 ^double radius2]
+  ^double [^Vec3 point ^double radius1 ^double radius2]
   (let [e (/ (sqrt (- (sqr radius1) (sqr radius2))) radius1)
         p (sqrt (+ (sqr (point 0)) (sqr (point 1))))]
     (atan2 (point 2) (* p (- 1.0 (* e e))))))
@@ -89,7 +89,7 @@
 
 (defn project-onto-ellipsoid
   "Project a 3D vector onto an ellipsoid"
-  ^Vector [^Vector point ^double radius1 ^double radius2]
+  ^Vec3 [^Vec3 point ^double radius1 ^double radius2]
   (let [radius           (mag point)
         xy-radius        (sqrt (+ (sqr (point 0)) (sqr (point 1))))
         cos-latitude     (/ xy-radius radius)
@@ -104,7 +104,7 @@
 
 (defn ellipsoid-normal
   "Get normal vector for point on ellipsoid's surface"
-  ^Vector [^Vector point ^double radius1 ^double radius2]
+  ^Vec3 [^Vec3 point ^double radius1 ^double radius2]
   (let [radius1-sqr (sqr radius1)
         radius2-sqr (sqr radius2)
         x           (/ (point 0) radius1-sqr)
@@ -114,10 +114,10 @@
 
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height"
-  [^Vector point ^double radius1 ^double radius2]
+  [^Vec3 point ^double radius1 ^double radius2]
   (let [e         (/ (sqrt (- (sqr radius1) (sqr radius2))) radius1)
         lon       (atan2 (point 1) (point 0))
-        iteration (fn [^Vector reference-point iter]
+        iteration (fn [^Vec3 reference-point iter]
                     (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
                           normal        (ellipsoid-normal surface-point radius1 radius2)
                           height        (dot normal (sub point surface-point))
@@ -166,14 +166,14 @@
 
 (defn offset-longitude
   "Determine longitudinal offset for computing normal vector"
-  ^Vector [^Vector p ^long level ^long tilesize]
+  ^Vec3 [^Vec3 p ^long level ^long tilesize]
   (let [lon  (longitude p)
         norm (mag p)]
     (mulv (rotation-z lon) (vec3 0 (/ (* norm PI) (* 2 tilesize (bit-shift-left 1 level))) 0))))
 
 (defn offset-latitude
   "Determine latitudinal offset for computing normal vector"
-  ^Vector [p level tilesize radius1 radius2]
+  ^Vec3 [p level tilesize radius1 radius2]
   (let [lon  (longitude p)
         lat  (latitude p radius1 radius2)
         norm (mag p)

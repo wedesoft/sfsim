@@ -12,7 +12,7 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
               [sfsim25.atmosphere :refer :all :as atmosphere])
-    (:import [mikera.vectorz Vector]))
+    (:import [fastmath.vector Vec3]))
 
 (def radius 6378000)
 (def max-height 100000)
@@ -159,7 +159,7 @@
                              direction => light-direction)
                       true)
                   atmosphere/scattering
-                  (fn ^Vector [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vector x]
+                  (fn ^Vec3 [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vec3 x]
                       (facts "Scattering function gets called with correct arguments"
                              planet => earth
                              component => mie

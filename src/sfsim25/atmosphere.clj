@@ -7,20 +7,20 @@
               [sfsim25.ray :refer :all]
               [sfsim25.sphere :refer :all]
               [sfsim25.util :refer :all])
-    (:import [mikera.vectorz Vector]))
+    (:import [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
 
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
-  (^Vector [^clojure.lang.IPersistentMap {:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
-           (mult scatter-base (-> height (/ scatter-scale) - exp)))
-  (^Vector [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vector x]
-           (scattering component (height planet x))))
+  (^Vec3 [^clojure.lang.IPersistentMap {:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
+         (mult scatter-base (-> height (/ scatter-scale) - exp)))
+  (^Vec3 [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vec3 x]
+         (scattering component (height planet x))))
 
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
-  ^Vector [^clojure.lang.IPersistentMap scattering-type ^double height]
+  ^Vec3 [^clojure.lang.IPersistentMap scattering-type ^double height]
   (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1)))
 
 (defn phase

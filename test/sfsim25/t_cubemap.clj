@@ -5,7 +5,7 @@
             [clojure.math :refer (sqrt PI)]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
-  (:import [mikera.vectorz Vector]))
+  (:import [fastmath.vector Vec3]))
 
 (tabular "First face of cube"
   (fact (?c 0 ?j ?i) => ?result)
@@ -195,7 +195,7 @@
       (map-interpolation 5 675 135.0 45.0 get-pixel + *) => 3.875)))
 
 (fact "Determine center of cube map tile"
-  (with-redefs [cubemap/project-onto-ellipsoid (fn [^Vector p ^double radius1 ^double radius2]
+  (with-redefs [cubemap/project-onto-ellipsoid (fn [^Vec3 p ^double radius1 ^double radius2]
                                                  (fact [p radius1 radius2] => [(vec3 1.0 -0.625 -0.875) 6378000.0 6357000.0])
                                                  (vec3 1000 -625 -875))]
     (tile-center 2 3 7 1 6378000.0 6357000.0) => (vec3 1000 -625 -875)))
@@ -236,7 +236,7 @@
 
 (facts "Determine surrounding points for a location on the globe"
   (let [ps (atom [])]
-    (with-redefs [cubemap/offset-longitude (fn [^Vector p ^long level ^long tilesize]
+    (with-redefs [cubemap/offset-longitude (fn [^Vec3 p ^long level ^long tilesize]
                                              (fact [p level tilesize] => [(vec3 1 0 0) 7 33])
                                              (vec3 0 0 -0.1))
                   cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]

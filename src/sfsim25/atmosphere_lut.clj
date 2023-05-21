@@ -1,23 +1,22 @@
 (ns sfsim25.atmosphere-lut
     "Compute lookup tables for atmospheric scattering"
-    (:require [clojure.core.matrix :refer (matrix add mul dot)]
+    (:require [fastmath.vector :refer (vec3 add mult dot)]
               [sfsim25.atmosphere :refer :all]
               [sfsim25.interpolate :refer :all]
               [sfsim25.matrix :refer :all]
-              [sfsim25.util :refer :all])
-    (:import [mikera.vectorz Vector]))
+              [sfsim25.util :refer :all]))
 
 (def radius 6378000.0)
 (def height 35000.0)
-(def earth #:sfsim25.sphere{:centre (matrix [0 0 0])
+(def earth #:sfsim25.sphere{:centre (vec3 0 0 0)
                             :radius radius
                             :sfsim25.atmosphere/height height
-                            :sfsim25.atmosphere/brightness (matrix [0.3 0.3 0.3])})
-(def mie #:sfsim25.atmosphere{:scatter-base (matrix [5e-6 5e-6 5e-6])
+                            :sfsim25.atmosphere/brightness (vec3 0.3 0.3 0.3)})
+(def mie #:sfsim25.atmosphere{:scatter-base (vec3 5e-6 5e-6 5e-6)
                               :scatter-scale 2000
                               :scatter-g 0.76
                               :scatter-quotient 0.9})
-(def rayleigh #:sfsim25.atmosphere{:scatter-base (matrix [5.8e-6 13.5e-6 33.1e-6])
+(def rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 13.5e-6 33.1e-6)
                                    :scatter-scale 8000})
 
 (defn generate-atmosphere-luts
@@ -39,7 +38,7 @@
         ray-steps                     100
         sphere-steps                  15
         iterations                    5
-        intensity                     (matrix [1 1 1])
+        intensity                     (vec3 1 1 1)
         scatter                       [mie rayleigh]
         transmittance-planet          (partial transmittance earth scatter ray-steps)
         transmittance-space-planet    (transmittance-space earth transmittance-shape)
@@ -53,14 +52,14 @@
         ray-scatter-space-planet      (ray-scatter-space earth ray-scatter-shape)
         T                             (interpolate-function transmittance-planet transmittance-space-planet)
         dE                            (atom (interpolate-function surface-radiance-base-planet surface-radiance-space-planet))
-        E                             (atom (constantly (matrix [0 0 0])))  ; First order incident light excluded from table.
+        E                             (atom (constantly (vec3 0 0 0)))  ; First order incident light excluded from table.
         first-order-rayleigh          (interpolate-function ray-scatter-base-rayleigh ray-scatter-space-planet)
         first-order-mie-strength      (interpolate-function ray-scatter-strength-mie ray-scatter-space-planet)
         dS                            (atom
                                         (fn [x view-direction light-direction above-horizon]
                                             (add (first-order-rayleigh x view-direction light-direction above-horizon)
-                                                 (mul (first-order-mie-strength x view-direction light-direction above-horizon)
-                                                      (phase mie (dot view-direction light-direction))))))
+                                                 (mult (first-order-mie-strength x view-direction light-direction above-horizon)
+                                                       (phase mie (dot view-direction light-direction))))))
         S                             (atom first-order-rayleigh)]  ; First order Mie scatter strength goes into another table.
     (doseq [iteration (range iterations)]
            (.println *err* (str "Iteration " (inc iteration) "/" iterations " " (.toString (java.time.LocalDateTime/now))))

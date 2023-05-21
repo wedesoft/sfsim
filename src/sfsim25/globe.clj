@@ -1,7 +1,7 @@
 (ns sfsim25.globe
   "Use Mercator color and elevation map tiles to generate cube map tiles for color, water, elevation, and normals."
   (:require [com.climate.claypoole :as cp]
-            [clojure.core.matrix.linear :refer (norm)]
+            [fastmath.vector :refer (mag)]
             [sfsim25.cubemap :refer :all]
             [sfsim25.util :refer :all])
   (:import [java.io File])

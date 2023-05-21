@@ -5,16 +5,16 @@
             [fastmath.vector :refer (vec3 add sub mag dot mult)]
             [sfsim25.matrix :refer :all]
             [sfsim25.util :refer :all])
-  (:import [mikera.vectorz Vector]))
+  (:import [fastmath.vector Vec3]))
 
 (defn height
   "Determine height above surface of sphere"
-  ^double [{:sfsim25.sphere/keys [centre radius]} ^Vector point]
+  ^double [{:sfsim25.sphere/keys [centre radius]} ^Vec3 point]
   (- (mag (sub point centre)) radius))
 
 (defn- ray-sphere-determinant
   "Get determinant for intersection of ray with sphere"
-  ^double [^Vector centre ^Vector radius ^Vector origin ^Vector direction]
+  ^double [^Vec3 centre ^Vec3 radius ^Vec3 origin ^Vec3 direction]
   (let [offset        (sub origin centre)
         direction-sqr (dot direction direction)]
     (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))))
