@@ -1,5 +1,5 @@
-(require '[clojure.core.matrix :refer (matrix add mul mmul inverse)]
-         '[clojure.core.matrix.linear :refer (norm)]
+(require '[fastmath.vector :refer (vec3 mag emult add mult)]
+         '[fastmath.matrix :refer (mulv inverse)]
          '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
          '[clojure.math :refer (cos sin sqrt pow to-radians PI)]
          '[sfsim25.matrix :refer :all]
@@ -33,8 +33,8 @@
 
 (def light1 (atom (to-radians 15)))
 (def light2 (atom 0))
-(def position (atom (matrix [0 (* -0 radius) (+ (* 1 polar-radius) 100)])))
-(def orientation (atom (q/rotation (to-radians 90) (matrix [1 0 0]))))
+(def position (atom (vec3 0 (* -0 radius) (+ (* 1 polar-radius) 100))))
+(def orientation (atom (q/rotation (to-radians 90) (vec3 1 0 0))))
 (def z-near 100)
 (def z-far (* 2.0 radius))
 
@@ -180,7 +180,7 @@
 (uniform-float program-planet "radius" radius)
 (uniform-float program-planet "polar_radius" polar-radius)
 (uniform-float program-planet "max_height" max-height)
-(uniform-vector3 program-planet "water_color" (matrix [0.09 0.11 0.34]))
+(uniform-vector3 program-planet "water_color" (vec3 0.09 0.11 0.34))
 (uniform-float program-planet "amplification" 6)
 
 (use-program program-atmosphere)
@@ -214,13 +214,13 @@
              rc        (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
              v         (if (@keystates Keyboard/KEY_PRIOR) 500 (if (@keystates Keyboard/KEY_NEXT) -500 0))
              l         (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))]
-         (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
-         (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
-         (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
-         (swap! position add (mul dt v (q/rotate-vector @orientation (matrix [0 0 -1]))))
+         (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
+         (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
+         (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
+         (swap! position add (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* dt v)))
          (swap! light1 + (* l 0.1 dt))
          (onscreen-render (Display/getWidth) (Display/getHeight)
-                          (clear (matrix [0 1 0]))
+                          (clear (vec3 0 1 0))
                           ; Render planet
                           (when-let [data (poll! changes)]
                                     (unload-tiles-from-opengl (:drop data))
@@ -228,18 +228,18 @@
                           (use-program program-planet)
                           (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                           (uniform-vector3 program-planet "position" @position)
-                          (uniform-vector3 program-planet "light_direction" (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
+                          (uniform-vector3 program-planet "light_direction" (mulv (rotation-z @light2) (vec3 0 (cos @light1) (sin @light1))))
                           (render-tree @tree)
                           ; Render atmosphere
                           (use-program program-atmosphere)
                           (uniform-matrix4 program-atmosphere "transform" transform)
                           (uniform-vector3 program-atmosphere "origin" @position)
-                          (uniform-vector3 program-atmosphere "light_direction" (mmul (rotation-z @light2) (matrix [0 (cos @light1) (sin @light1)])))
+                          (uniform-vector3 program-atmosphere "light_direction" (mulv (rotation-z @light2) (vec3 0 (cos @light1) (sin @light1))))
                           (use-textures T S M)
                           (render-quads atmosphere-vao))
          (print (format "\rdt: %5.3f, h: %6.0f            "
                         (* 0.001 dt)
-                        (- (norm (mul @position (matrix [1 1 (/ radius polar-radius)]))) radius)))
+                        (- (mag (emult @position (vec3 1 1 (/ radius polar-radius)))) radius)))
          (flush)
          (swap! t0 + dt)))
 
