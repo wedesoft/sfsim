@@ -1,6 +1,6 @@
 (ns sfsim25.interpolate
     "N-dimensional interpolation"
-    (:require [clojure.core.matrix :refer (add mul)]
+    (:require [fastmath.vector :refer (add mult)]
               [clojure.math :refer (floor)]
               [sfsim25.util :refer (comp* dimensions)]))
 
@@ -41,7 +41,7 @@
 (defn mix
   "Linear mixing of values"
   [a b ^double scalar]
-  (add (mul (- 1 scalar) a) (mul scalar b)))
+  (add (mult a (- 1 scalar)) (mult b scalar)))
 
 (defn- interpolate-value
   "Linear interpolation for point in table"

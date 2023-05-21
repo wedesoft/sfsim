@@ -1,10 +1,10 @@
 (ns sfsim25.t-quaternion
   (:refer-clojure :exclude [+ - *])
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (roughly-matrix)]
+            [sfsim25.conftest :refer (roughly-vector)]
             [clojure.core :as c]
             [clojure.math :refer (PI E)]
-            [clojure.core.matrix :refer (matrix)]
+            [fastmath.vector :refer (vec3)]
             [sfsim25.quaternion :refer :all]))
 
 (def  o (->Quaternion  1  0  0  0))
@@ -62,8 +62,8 @@
   (inverse (->Quaternion 0.432 0.576 0.96 1.6)) => (->Quaternion 0.108 -0.144 -0.24 -0.4))
 
 (facts "Convert 3D vector to quaternion and back"
-  (vector->quaternion (matrix [2 3 5]))      => (->Quaternion 0 2 3 5)
-  (quaternion->vector (->Quaternion 0 2 3 5)) => (matrix [2.0 3.0 5.0]))
+  (vector->quaternion (vec3 2 3 5))           => (->Quaternion 0 2 3 5)
+  (quaternion->vector (->Quaternion 0 2 3 5)) => (vec3 2.0 3.0 5.0))
 
 (def -E (c/- E))
 
@@ -83,13 +83,13 @@
 
 (tabular "Represent rotation using quaternion"
   (fact (?component (rotation ?angle ?axis)) => (roughly ?result 1e-6))
-  ?axis                     ?angle     ?component ?result
-  (matrix [0 0 1])         0          :a         1.0
-  (matrix [0 0 1])         (c/* 2 PI) :a        -1.0
-  (matrix [0.36 0.48 0.8]) PI         :b         0.36
-  (matrix [0.36 0.48 0.8]) PI         :d         0.8
-  (matrix [0.36 0.48 0.8]) (/ PI 3)   :b         0.18)
+  ?axis                ?angle     ?component ?result
+  (vec3 0 0 1)         0          :a         1.0
+  (vec3 0 0 1)         (c/* 2 PI) :a        -1.0
+  (vec3 0.36 0.48 0.8) PI         :b         0.36
+  (vec3 0.36 0.48 0.8) PI         :d         0.8
+  (vec3 0.36 0.48 0.8) (/ PI 3)   :b         0.18)
 
 (facts "Rotate a vector using a rotation quaternion"
-  (rotate-vector (rotation 0 (matrix [1 0 0])) (matrix [2 4 8]))        => (roughly-matrix (matrix [2  4 8]) 1e-6)
-  (rotate-vector (rotation (/ PI 2) (matrix [1 0 0])) (matrix [2 4 8])) => (roughly-matrix (matrix [2 -8 4]) 1e-6))
+  (rotate-vector (rotation 0 (vec3 1 0 0)) (vec3 2 4 8))        => (roughly-vector (vec3 2  4 8) 1e-6)
+  (rotate-vector (rotation (/ PI 2) (vec3 1 0 0)) (vec3 2 4 8)) => (roughly-vector (vec3 2 -8 4) 1e-6))

@@ -3,10 +3,9 @@
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
             [clojure.math :refer (cos sin sqrt) :as m]
-            [clojure.core.matrix :refer (matrix mul)]
-            [clojure.core.matrix.linear :as l]
+            [fastmath.vector :refer (vec3 mag mult)]
             [sfsim25.util :refer (sinc sqr)])
-  (:import [mikera.vectorz Vector]))
+  (:import [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
 
@@ -62,32 +61,32 @@
 
 (defn vector->quaternion
   "Convert 3D vector to quaternion"
-  ^Quaternion [^Vector v]
+  ^Quaternion [^Vec3 v]
   (apply ->Quaternion 0.0 v))
 
 (defn quaternion->vector
   "Convert quaternion to 3D vector"
-  ^Vector [^Quaternion q]
-  (matrix [(:b q) (:c q) (:d q)]))
+  ^Vec3 [^Quaternion q]
+  (vec3 (:b q) (:c q) (:d q)))
 
 (defn exp
   "Exponentiation of quaternion"
   ^Quaternion [^Quaternion q]
   (let [scale      (m/exp (:a q))
-        rotation   (l/norm (quaternion->vector q))
+        rotation   (mag (quaternion->vector q))
         cos-scale  (c/* scale (cos rotation))
         sinc-scale (c/* scale (sinc rotation))]
     (->Quaternion cos-scale (c/* sinc-scale (:b q)) (c/* sinc-scale (:c q)) (c/* sinc-scale (:d q)))))
 
 (defn rotation
   "Generate quaternion to represent rotation"
-  ^Quaternion [^double theta ^Vector v]
+  ^Quaternion [^double theta ^Vec3 v]
   (let [scale (/ theta 2)]
-    (exp (vector->quaternion (mul scale v)))))
+    (exp (vector->quaternion (mult v scale)))))
 
 (defn rotate-vector
   "Rotate a vector with a rotation represented by a quaternion"
-  ^Vector [^Quaternion q ^Vector v]
+  ^Vec3 [^Quaternion q ^Vec3 v]
   (quaternion->vector (* (* q (vector->quaternion v)) (conjugate q))))
 
 (set! *warn-on-reflection* false)

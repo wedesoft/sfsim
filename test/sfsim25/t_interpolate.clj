@@ -1,6 +1,6 @@
 (ns sfsim25.t-interpolate
     (:require [midje.sweet :refer :all]
-              [clojure.core.matrix :refer (matrix)]
+              [fastmath.vector :refer (vec3)]
               [clojure.math :refer (hypot)]
               [sfsim25.interpolate :refer :all]
               [sfsim25.util :refer (sqr)]))
@@ -62,7 +62,7 @@
           3   4.0)
 
 (fact "Linear interpolation using a table of vectors"
-      ((interpolation-table [(matrix [2 3 5]) (matrix [3 5 9])] (linear-space [-1] [1] [2])) 0) => (matrix [2.5 4.0 7.0]))
+      ((interpolation-table [(vec3 2 3 5) (vec3 3 5 9)] (linear-space [-1] [1] [2])) 0) => (vec3 2.5 4.0 7.0))
 
 (tabular "Linear interpolation using a 2D table"
          (fact ((interpolation-table [[2 3 5] [7 11 13]] (linear-space [?y0 ?x0] [?y1 ?x1] [2 3])) ?y ?x) => ?result)

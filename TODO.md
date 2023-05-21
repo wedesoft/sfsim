@@ -1,5 +1,10 @@
 # TODO
-* use noise mocks to test cloud\_density implementation and make it modular
+* add origin at z-near to vertex shader
+* lod of shadow
+* ray scatter with cloud shadows
+* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
+* add separate tests for surface radiance shader
+* use mocks in tests for ground radiance shader
 * add z-near offset to origin?
 * separate cloud\_shadow and transmittance\_outer
 * add conditions to shortcut lookup in some noise textures
@@ -23,7 +28,6 @@
   * apply cloud texture to higher resolution picture (upscale and alpha-blend)
   * add flat cirrus clouds
   * move different levels of noise to create moving and shape-changing clouds
-* try whether EJML has better performance https://ejml.org/
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj_tK_mdRcA
@@ -58,7 +62,6 @@
   GL\_COMPUTE\_SHADER type, glDispatchCompute 1024x1024x64 items (product at least 1024)
 * make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
-* appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * deferred decals for rendering runway
   https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/
 * shadows
@@ -114,7 +117,7 @@
 * use glTexSubImage2D?
 * use ZGC (short pause garbage collector for Java)
 * redesign floating point math of height maps
-* improve performance of quaternions (see clojure.core.matrix implementation)
+* improve performance of quaternions (see fastmath implementation)
 * Get scale-image to work on large images
 * use short integers for normal vector textures?
 * NASA docking system, soft-dock, hard-dock, https://www.youtube.com/watch?v=dWYpVfhvsak
@@ -171,3 +174,6 @@
 * missions and high scores
 * beep-beep sound, paraglider audio?
 * uniform distribution on sphere http://marc-b-reynolds.github.io/distribution/2016/11/28/Uniform.html
+* fluid dynamics on GPU: https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu
+* introduction to fluid dynamics: https://shahriyarshahrabi.medium.com/gentle-introduction-to-fluid-simulation-for-programmers-and-technical-artists-7c0045c40bac
+* fluid dynamics tutorial: http://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf

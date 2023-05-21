@@ -1,14 +1,24 @@
 #version 410 core
 
-uniform float cloud_multiplier;
+uniform float cap;
 
+float cloud_base(vec3 point);
 float cloud_noise(vec3 point, float lod);
-float cloud_profile(vec3 point);
+float remap(float value, float original_min, float original_max, float new_min, float new_max);
 
 float cloud_density(vec3 point, float lod)
 {
-  float noise = cloud_noise(point, lod);
-  float profile = cloud_profile(point);
-  float threshold = 1 - profile;
-  return max(noise - threshold, 0) * cloud_multiplier;
+  float base = cloud_base(point);
+  float result;
+  if (base <= 0.0)
+    result = 0.0;
+  else {
+    float noise = cloud_noise(point, lod);
+    if (noise <= 1.0 - base)
+      result = 0.0;
+    else
+      result = remap(noise, 1.0 - base, 1.0, 0.0, cap);
+  };
+  return result;
 }
+

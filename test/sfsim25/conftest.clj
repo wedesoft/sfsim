@@ -1,6 +1,6 @@
 (ns sfsim25.conftest
-    (:require [clojure.core.matrix :refer (sub)]
-              [clojure.core.matrix.linear :refer (norm)]
+    (:require [clojure.math :refer (sqrt)]
+              [fastmath.matrix :as fm]
               [midje.sweet :refer (roughly)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
@@ -9,14 +9,16 @@
 (defn roughly-matrix
   "Compare matrix with expected value."
   [expected error]
-  (fn [actual] (<= (norm (sub expected actual)) error)))
+  (fn [actual]
+      (let [difference (fm/sub expected actual)]
+        (<= (sqrt (apply + (fm/mat->array (fm/emulm difference difference)))) error))))
 
 (defn roughly-vector
-  "Elementwise comparison of vector"
+  "Compare vector with expected value."
   [expected error]
   (fn [actual]
-      (and (== (count expected) (count actual)))
-      (every? true? (map #((roughly %1 error) %2) expected actual))))
+      (and (== (count expected) (count actual))
+           (<= (sqrt (apply + (map (comp #(* % %) -) actual expected))) error))))
 
 (defn int->rgb [x]
   "Convert 32-bit integer to RGB vector"

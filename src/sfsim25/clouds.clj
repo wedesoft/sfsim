@@ -21,17 +21,13 @@
   "Shader for determining illumination of clouds"
   (slurp "resources/shaders/clouds/cloud-shadow.glsl"))
 
-(def cloud-profile
-  "Shader for looking up vertical cloud profile"
-  (slurp "resources/shaders/clouds/cloud-profile.glsl"))
-
 (def cloud-noise
   "Shader for sampling 3D cloud noise"
   (slurp "resources/shaders/clouds/cloud-noise.glsl"))
 
-(def cloud-density
+(def cloud-base
   "Shader for determining cloud density at specified point"
-  (slurp "resources/shaders/clouds/cloud-density.glsl"))
+  (slurp "resources/shaders/clouds/cloud-base.glsl"))
 
 (def linear-sampling
   "Shader functions for defining linear sampling"
@@ -182,6 +178,18 @@
     (destroy-texture @warp)
     @result))
 
+(def cloud-profile
+  "Shader for looking up vertical cloud profile"
+  (slurp "resources/shaders/clouds/cloud-profile.glsl"))
+
 (def sphere-noise
   "Sample 3D noise on the surface of a sphere"
   (template/fn [base-noise] (slurp "resources/shaders/clouds/sphere-noise.glsl")))
+
+(def cloud-cover
+  "Perform cloud cover lookup in cube map"
+  (slurp "resources/shaders/clouds/cloud-cover.glsl"))
+
+(def cloud-density
+  "Compute cloud density at given point"
+  (slurp "resources/shaders/clouds/cloud-density.glsl"))

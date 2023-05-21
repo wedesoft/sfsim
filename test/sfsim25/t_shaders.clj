@@ -1,10 +1,9 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
-            [sfsim25.conftest :refer (roughly-matrix shader-test)]
+            [sfsim25.conftest :refer (roughly-vector shader-test)]
             [comb.template :as template]
-            [clojure.core.matrix :refer (matrix mget mmul dot div transpose identity-matrix cross)]
-            [clojure.core.matrix.linear :refer (norm)]
             [clojure.math :refer (cos sin PI sqrt)]
+            [fastmath.vector :refer (vec3 div ediv dot mag cross)]
             [sfsim25.render :refer :all]
             [sfsim25.shaders :refer :all]
             [sfsim25.matrix :refer (orthogonal)]
@@ -28,7 +27,7 @@ void main()
 (def ray-sphere-test (shader-test (fn [program]) ray-sphere-probe ray-sphere))
 
 (tabular "Shader for intersection of ray with sphere"
-         (fact (ray-sphere-test [] [?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz]) => (matrix [?ix ?iy 0]))
+         (fact (ray-sphere-test [] [?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz]) => (vec3 ?ix ?iy 0))
          ?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz ?ix ?iy
          0   0   0   2   2  -1   0   0   1   0.0 0.0
          0   0   0   0   0  -2   0   0   1   1.0 2.0
@@ -50,7 +49,7 @@ void main()
 (def convert-1d-index-test (shader-test (fn [program]) convert-1d-index-probe convert-1d-index))
 
 (tabular "Convert 1D index to 1D texture lookup index"
-         (fact (mget (convert-1d-index-test [] [?x]) 0) => (roughly (/ ?r 15) 1e-6))
+         (fact ((convert-1d-index-test [] [?x]) 0) => (roughly (/ ?r 15) 1e-6))
          ?x  ?r
           0   0.5
           1  14.5)
@@ -68,7 +67,7 @@ void main()
 (def convert-2d-index-test (shader-test (fn [program]) convert-2d-index-probe convert-2d-index))
 
 (tabular "Convert 2D index to 2D texture lookup index"
-         (fact (convert-2d-index-test [] [?x ?y]) => (roughly-matrix (div (matrix [?r ?g 0]) (matrix [15 17 1])) 1e-6))
+         (fact (convert-2d-index-test [] [?x ?y]) => (roughly-vector (ediv (vec3 ?r ?g 0) (vec3 15 17 1)) 1e-6))
          ?x  ?y  ?r   ?g
           0   0   0.5  0.5
           1   0  14.5  0.5
@@ -86,7 +85,7 @@ void main()
 (def convert-3d-index-test (shader-test (fn [program]) convert-3d-index-probe convert-3d-index))
 
 (tabular "Convert 2D index to 2D texture lookup index"
-         (fact (convert-3d-index-test [] [?x ?y ?z]) => (roughly-matrix (div (matrix [?r ?g ?b]) (matrix [15 17 19])) 1e-6))
+         (fact (convert-3d-index-test [] [?x ?y ?z]) => (roughly-vector (ediv (vec3 ?r ?g ?b) (vec3 15 17 19)) 1e-6))
          ?x  ?y  ?z  ?r   ?g   ?b
           0   0   0  0.5  0.5  0.5
           1   0   0 14.5  0.5  0.5
@@ -106,7 +105,7 @@ void main()
 (def convert-cubemap-index-test (shader-test (fn [program]) convert-cubemap-index-probe convert-cubemap-index))
 
 (tabular "Convert cubemap index to avoid clamping regions"
-         (fact (convert-cubemap-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-3))
+         (fact (convert-cubemap-index-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?r ?g ?b) 1e-3))
          ?x     ?y     ?z     ?r   ?g   ?b
          1.5    0.0    0.0    1.5  0.0  0.0
          1.5    1.499  0.0    1.5  1.0  0.0
@@ -132,7 +131,7 @@ void main()
 (def convert-shadow-index-test (shader-test (fn [program]) convert-shadow-index-probe convert-shadow-index))
 
 (tabular "Move shadow index out of clamping region"
-         (fact (convert-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (div (matrix [?r ?g ?b]) (matrix [6 4 1])) 1e-6))
+         (fact (convert-shadow-index-test [] [?x ?y ?z]) => (roughly-vector (ediv (vec3 ?r ?g ?b) (vec3 6 4 1)) 1e-6))
          ?x  ?y  ?z  ?r   ?g   ?b
           0   0   0  0.5  0.5  0.0
           1   0   0  5.5  0.5  0.0
@@ -151,7 +150,7 @@ void main()
 (def shrink-shadow-index-test (shader-test (fn [program]) shrink-shadow-index-probe shrink-shadow-index))
 
 (tabular "Shrink sampling index to cover full NDC space"
-         (fact (shrink-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+         (fact (shrink-shadow-index-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
           ?x ?y ?z ?r    ?g   ?b
           -1 -1  0 -0.75 -0.5  0
            1 -1  0  0.75 -0.5  0
@@ -170,7 +169,7 @@ void main()
 (def grow-shadow-index-test (shader-test (fn [program]) grow-shadow-index-probe grow-shadow-index))
 
 (tabular "grow sampling index to cover full NDC space"
-         (fact (grow-shadow-index-test [] [?x ?y ?z]) => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+         (fact (grow-shadow-index-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
           ?x    ?y  ?z ?r ?g ?b
          -0.75 -0.5  0 -1 -1  0
           0.75 -0.5  0  1 -1  0
@@ -191,7 +190,8 @@ void main()
 (def make-2d-index-from-4d-test (shader-test (fn [program]) make-2d-index-from-4d-probe make-2d-index-from-4d))
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
-         (fact (make-2d-index-from-4d-test [] [?x ?y ?z ?w ?selector]) => (roughly-matrix (div (matrix [?r ?g 0]) ?s2 ?s1) 1e-6))
+         (fact (make-2d-index-from-4d-test [] [?x ?y ?z ?w ?selector])
+               => (roughly-vector (div (vec3 ?r ?g 0) (* ?s2 ?s1)) 1e-6))
          ?x ?y ?z     ?w     ?s2 ?s1 ?selector ?r               ?g
          0  0   0.123  0.123 11  5   "st"      0.5              (+ 0.5 11)
          1  0   0.123  0.123 11  5   "st"      1.5              (+ 1.5 11)
@@ -239,7 +239,7 @@ void main()
     @result))
 
 (tabular "Perform 2d interpolation"
-         (fact (mget (interpolate-2d-test ?x ?y) 0) => ?result)
+         (fact ((interpolate-2d-test ?x ?y) 0) => ?result)
          ?x   ?y ?result
          0    0  1.0
          0.25 0  1.25
@@ -283,7 +283,7 @@ void main()
     @result))
 
 (tabular "Perform 3d interpolation"
-         (fact (mget (interpolate-3d-test ?x ?y ?z) 0) => ?result)
+         (fact ((interpolate-3d-test ?x ?y ?z) 0) => ?result)
          ?x   ?y ?z ?result
          0    0  0   0.0
          0.25 0  0   0.75
@@ -333,7 +333,7 @@ void main()
     @result))
 
 (tabular "Perform interpolation on cubemap avoiding seams"
-         (fact (mget (interpolate-cubemap-test ?method ?selector ?x ?y ?z) 0) => ?result)
+         (fact ((interpolate-cubemap-test ?method ?selector ?x ?y ?z) 0) => ?result)
          ?method  ?selector ?x   ?y ?z  ?result
          "float"  "r"       1    0   0   0.5
          "float"  "r"       1    0  -1   1.0
@@ -379,7 +379,7 @@ void main()
     @result))
 
 (tabular "Perform 4D interpolation"
-         (fact (mget (interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
+         (fact ((interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
          ?x   ?y ?z  ?w  ?result
          0    0  0   0   1.0
          0.25 0  0   0   1.25
@@ -403,7 +403,7 @@ void main()
 (def ray-box-test (shader-test (fn [program]) ray-box-probe ray-box))
 
 (tabular "Shader for intersection of ray with axis-aligned box"
-         (fact (ray-box-test [] [?ax ?ay ?az ?bx ?by ?bz ?ox ?oy ?oz ?dx ?dy ?dz]) => (matrix [?ix ?iy 0]))
+         (fact (ray-box-test [] [?ax ?ay ?az ?bx ?by ?bz ?ox ?oy ?oz ?dx ?dy ?dz]) => (vec3 ?ix ?iy 0))
          ?ax ?ay ?az ?bx ?by ?bz ?ox  ?oy  ?oz ?dx ?dy ?dz ?ix ?iy
          3   0   0   4   1   1  -2    0.5  0.5  1  0   0   5   1
          3   0   0   4   1   1  -2    0.5  0.5  2  0   0   2.5 0.5
@@ -452,7 +452,7 @@ void main()
     @result))
 
 (tabular "Perform 3d texture lookup"
-         (fact (mget (lookup-3d-test ?x ?y ?z) 0) => ?result)
+         (fact ((lookup-3d-test ?x ?y ?z) 0) => ?result)
          ?x    ?y   ?z   ?result
          0.25  0.25 0.25 1.0
          0.75  0.25 0.25 2.0
@@ -499,7 +499,7 @@ void main()
     @result))
 
 (tabular "Perform 3d texture lookup with level-of-detail"
-         (fact (mget (lookup-3d-lod-test ?x ?y ?z ?lod) 0) => ?result)
+         (fact ((lookup-3d-lod-test ?x ?y ?z ?lod) 0) => ?result)
          ?x    ?y   ?z   ?lod ?result
          0.25  0.25 0.25 0.0  1.0
          0.75  0.25 0.25 0.0  2.0
@@ -526,7 +526,7 @@ void main()
 
 (tabular "Shader for computing intersections of ray with a shell"
          (fact (ray-shell-test [] [?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector])
-               => (roughly-matrix (matrix [?ix ?iy 0]) 1e-6))
+               => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
          ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix ?iy
          0   0   0   1        2        -10 0   0   0   1   0   "st"       0  0
          0   0   0   1        2        -10 0   0   0   1   0   "pq"       0  0
@@ -553,7 +553,7 @@ void main()
 
 (tabular "Clip the intersection information of ray and shell using given limit"
          (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?limit ?selector])
-               => (roughly-matrix (matrix [?ix ?iy 0]) 1e-6))
+               => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
          ?a ?b ?c ?d ?limit ?selector ?ix ?iy
          2  3  6  2  9      "xy"      2   3
          2  3  6  2  9      "zw"      6   2
@@ -582,7 +582,7 @@ void main()
     height-to-index-probe height-to-index horizon-distance))
 
 (tabular "Shader for converting height to index"
-         (fact (mget (height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
+         (fact ((height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
          ?radius ?max-height ?x    ?y ?z ?result
          4       1           4     0  0  0.0
          4       1           5     0  0  1.0
@@ -608,7 +608,7 @@ void main()
     sun-elevation-to-index-probe sun-elevation-to-index))
 
 (tabular "Shader for converting sun elevation to index"
-         (fact (mget (sun-elevation-to-index-test [] [?x ?y ?z ?dx ?dy ?dz]) 0) => (roughly ?result 1e-6))
+         (fact ((sun-elevation-to-index-test [] [?x ?y ?z ?dx ?dy ?dz]) 0) => (roughly ?result 1e-6))
          ?x ?y ?z ?dx ?dy      ?dz ?result
          4  0  0  1   0        0   1.0
          4  0  0  0   1        0   0.463863
@@ -634,7 +634,7 @@ void main()
     sun-angle-to-index-probe sun-angle-to-index))
 
 (tabular "Shader for converting sun angle to index"
-         (fact (mget (sun-angle-to-index-test [] [?dx ?dy ?dz ?lx ?ly ?lz]) 0) => (roughly ?result 1e-6))
+         (fact ((sun-angle-to-index-test [] [?dx ?dy ?dz ?lx ?ly ?lz]) 0) => (roughly ?result 1e-6))
          ?dx ?dy ?dz ?lx ?ly ?lz ?result
          0   1   0   0   1   0   1.0
          0   1   0   0  -1   0   0.0
@@ -661,7 +661,7 @@ void main()
     elevation-to-index-probe elevation-to-index horizon-distance limit-quot))
 
 (tabular "Shader for converting view direction elevation to index"
-         (fact (mget (elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
+         (fact ((elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
                => (roughly ?result 1e-6))
          ?radius ?max-height ?x ?y ?z ?dx           ?dy        ?dz ?above-horizon ?result
          4       1           4  0  0 -1             0          0   false          0.5
@@ -697,7 +697,7 @@ void main()
 
 (tabular "Convert point and direction to 2D lookup index in transmittance table"
          (fact (transmittance-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
-               => (roughly-matrix (matrix [?u ?v 0]) 1e-3))
+               => (roughly-vector (vec3 ?u ?v 0) 1e-3))
          ?x      ?y ?z  ?dx ?dy ?dz ?above ?u  ?v
          6378000 0  0   0   1   0   true   1   0
          6478000 0  0   0   1   0   true   0.5 1
@@ -725,7 +725,7 @@ void main()
 
 (tabular "Convert point and direction to 2D lookup index in surface radiance table"
          (fact (surface-radiance-forward-test [6378000.0 100000.0] [?x ?y ?z ?lx ?ly ?lz])
-               => (roughly-matrix (matrix [?u ?v 0]) 1e-3))
+               => (roughly-vector (vec3 ?u ?v 0) 1e-3))
          ?x      ?y ?z  ?lx ?ly   ?lz ?u    ?v
          6378000 0  0   1   0     0   1     0
          6478000 0  0   1   0     0   1     1
@@ -758,7 +758,7 @@ void main()
     sun-elevation-to-index sun-angle-to-index))
 
 (tabular "Get 4D lookup index for ray scattering"
-         (fact (mget (ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
+         (fact ((ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
                => (roughly ?result 1e-3))
          ?x      ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector ?result
          6378000 0  0  1   0   0   1   0   0   true   "w"       0.0
@@ -790,7 +790,7 @@ void main()
   ((shader-test (fn [program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
 
 (tabular "Shader function to sum octaves of noise"
-         (fact (mget (noise-octaves-test ?octaves ?x ?y ?z) 0) => ?result)
+         (fact ((noise-octaves-test ?octaves ?x ?y ?z) 0) => ?result)
          ?x  ?y  ?z  ?octaves  ?result
          0.0 0.0 0.0 [1.0]     0.0
          1.0 0.0 0.0 [1.0]     1.0
@@ -820,7 +820,7 @@ void main()
   ((shader-test (fn [program]) noise-octaves-lod-probe (noise-octaves-lod "octaves" "noise" octaves)) [] [x y z lod]))
 
 (tabular "Shader function to sum octaves of noise with level-of-detail"
-         (fact (mget (noise-octaves-lod-test ?octaves ?x ?y ?z ?lod) 0) => ?result)
+         (fact ((noise-octaves-lod-test ?octaves ?x ?y ?z ?lod) 0) => ?result)
          ?x  ?y  ?z  ?lod ?octaves  ?result
          0.0 0.0 0.0 0.0  [1.0]     0.0
          1.0 0.0 0.0 0.0  [1.0]     1.0
@@ -896,7 +896,7 @@ void main()
                    (destroy-vertex-array-object vao)
                    (destroy-program program))
                  (destroy-texture cubemap)))
-                 @result) => (roughly-matrix (matrix [?x ?y ?z]) 1e-6))
+                 @result) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
          ?x    ?y    ?z
          1.0   0.0   0.0
          1.0   0.25  0.5
@@ -933,7 +933,7 @@ void main()
     (gradient-3d "gradient" "f" "epsilon")))
 
 (tabular "Shader template for 3D gradients"
-         (fact (gradient-3d-test [0.1] [?x ?y ?z ?c ?dx ?dy ?dz]) => (roughly-matrix (matrix [?gx ?gy ?gz]) 1e-6))
+         (fact (gradient-3d-test [0.1] [?x ?y ?z ?c ?dx ?dy ?dz]) => (roughly-vector (vec3 ?gx ?gy ?gz) 1e-6))
          ?x ?y ?z ?c ?dx ?dy ?dz ?gx ?gy ?gz
          0  0  0  0  0   0   0   0   0   0
          0  0  0  0  1   2   3   1   2   3
@@ -952,15 +952,15 @@ void main()
 (def orthogonal-test (shader-test (fn [program]) orthogonal-probe orthogonal-vector))
 
 (facts "Shader for generating an orthogonal vector"
-       (dot (orthogonal-test [] [1 0 0]) (matrix [1 0 0])) => 0.0
-       (norm (orthogonal-test [] [1 0 0])) => 1.0
-       (norm (orthogonal-test [] [2 0 0])) => 1.0
-       (dot (orthogonal-test [] [0 1 0]) (matrix [0 1 0])) => 0.0
-       (norm (orthogonal-test [] [0 1 0])) => 1.0
-       (norm (orthogonal-test [] [0 2 0])) => 1.0
-       (dot (orthogonal-test [] [0 0 1]) (matrix [0 0 1])) => 0.0
-       (norm (orthogonal-test [] [0 0 1])) => 1.0
-       (norm (orthogonal-test [] [0 0 2])) => 1.0)
+       (dot (orthogonal-test [] [1 0 0]) (vec3 1 0 0)) => 0.0
+       (mag (orthogonal-test [] [1 0 0])) => 1.0
+       (mag (orthogonal-test [] [2 0 0])) => 1.0
+       (dot (orthogonal-test [] [0 1 0]) (vec3 0 1 0)) => 0.0
+       (mag (orthogonal-test [] [0 1 0])) => 1.0
+       (mag (orthogonal-test [] [0 2 0])) => 1.0
+       (dot (orthogonal-test [] [0 0 1]) (vec3 0 0 1)) => 0.0
+       (mag (orthogonal-test [] [0 0 1])) => 1.0
+       (mag (orthogonal-test [] [0 0 2])) => 1.0)
 
 (def oriented-matrix-probe
   (template/fn [x y z]
@@ -975,12 +975,12 @@ void main()
 (def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix orthogonal-vector))
 
 (facts "Shader for creating isometry with given normal vector as first row"
-       (let [n  (matrix [0.36 0.48 0.8])
+       (let [n  (vec3 0.36 0.48 0.8)
              o1 (orthogonal n)
              o2 (cross n o1)]
-         (oriented-matrix-test [] (vec n)) => (roughly-matrix (matrix [1 0 0]) 1e-6)
-         (oriented-matrix-test [] (vec o1)) => (roughly-matrix (matrix [0 1 0]) 1e-6)
-         (oriented-matrix-test [] (vec o2)) => (roughly-matrix (matrix [0 0 1]) 1e-6)))
+         (oriented-matrix-test [] (vec n)) => (roughly-vector (vec3 1 0 0) 1e-6)
+         (oriented-matrix-test [] (vec o1)) => (roughly-vector (vec3 0 1 0) 1e-6)
+         (oriented-matrix-test [] (vec o2)) => (roughly-vector (vec3 0 0 1) 1e-6)))
 
 (def project-vector-probe
   (template/fn [nx ny nz x y z]
@@ -995,7 +995,7 @@ void main()
 (def project-vector-test (shader-test (fn [program]) project-vector-probe project-vector))
 
 (tabular "Shader to project vector x onto vector n"
-         (fact (project-vector-test [] [?nx ?ny ?nz ?x ?y ?z]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
+         (fact (project-vector-test [] [?nx ?ny ?nz ?x ?y ?z]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
          ?nx ?ny ?nz ?x ?y ?z ?rx ?ry ?rz
          1   0   0   1  0  0  1   0   0
          2   0   0   1  0  0  1   0   0
@@ -1020,7 +1020,7 @@ void main()
 (def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector oriented-matrix orthogonal-vector))
 
 (tabular "Shader for rotating vector around specified axis"
-         (fact (rotate-vector-test [] [?ax ?ay ?az ?x ?y ?z ?angle]) => (roughly-matrix (matrix [?rx ?ry ?rz]) 1e-6))
+         (fact (rotate-vector-test [] [?ax ?ay ?az ?x ?y ?z ?angle]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
          ?ax ?ay ?az ?x ?y ?z ?angle    ?rx ?ry ?rz
          1   0   0   0  0  0  0         0   0   0
          1   0   0   1  2  3  0         1   2   3
@@ -1049,7 +1049,7 @@ void main()
     scale-noise-probe (scale-noise "scale" "factor" "noise")))
 
 (tabular "Shader for calling a noise function with a scaled vector"
-         (fact (mget (scale-noise-test [?scale] [?x ?y ?z]) 0) => ?result)
+         (fact ((scale-noise-test [?scale] [?x ?y ?z]) 0) => ?result)
          ?scale ?x ?y ?z ?result
          1      2  3  5  2.0
          3      2  3  5  6.0)
@@ -1068,7 +1068,7 @@ void main()
 (def remap-test (shader-test (fn [program]) remap-probe remap))
 
 (tabular "Shader for mapping linear range to a new linear range"
-         (fact (mget (remap-test [] [?val ?orig-min ?orig-max ?new-min ?new-max]) 0) => (roughly ?result 1e-5))
+         (fact ((remap-test [] [?val ?orig-min ?orig-max ?new-min ?new-max]) 0) => (roughly ?result 1e-5))
          ?val ?orig-min ?orig-max ?new-min ?new-max ?result
          0.0  0.0       1.0       0.0      1.0      0.0
          1.0  0.0       1.0       0.0      1.0      1.0

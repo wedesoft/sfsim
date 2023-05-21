@@ -1,6 +1,6 @@
-(require '[clojure.core.matrix :refer (matrix div sub mul add mget mmul inverse) :as m]
-         '[clojure.core.matrix.linear :refer (norm)]
-         '[clojure.math :refer (PI sqrt pow cos sin to-radians)]
+(require '[clojure.math :refer (PI sqrt pow cos sin to-radians)]
+         '[fastmath.matrix :refer (mulv inverse)]
+         '[fastmath.vector :refer (vec3)]
          '[sfsim25.quaternion :as q]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.clouds :refer :all]
@@ -28,8 +28,8 @@
 (def z-near 50)
 (def z-far 150)
 (def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 75)))
-(def origin (atom (matrix [0 0 100])))
-(def orientation (atom (q/* (q/rotation (to-radians 125) (matrix [1 0 0])) (q/rotation (to-radians 24) (matrix [0 1 0])))))
+(def origin (atom (vec3 0 0 100)))
+(def orientation (atom (q/* (q/rotation (to-radians 125) (vec3 1 0 0)) (q/rotation (to-radians 24) (vec3 0 1 0)))))
 (def octaves [0.5 0.25 0.125 0.125])
 (def threshold (atom 0.53))
 (def anisotropic (atom 0.2))
@@ -304,14 +304,14 @@ void main()
              tm (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
              tl (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
              l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
-         (swap! orientation q/* (q/rotation (* dt ra) (matrix [1 0 0])))
-         (swap! orientation q/* (q/rotation (* dt rb) (matrix [0 1 0])))
-         (swap! orientation q/* (q/rotation (* dt rc) (matrix [0 0 1])))
+         (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
+         (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
+         (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
          (swap! threshold + (* dt tr))
          (swap! anisotropic + (* dt ts))
          (swap! multiplier + (* dt tm))
          (swap! samples + (* dt tl))
-         (reset! origin (mmul (quaternion->matrix @orientation) (matrix [0 0 100])))
+         (reset! origin (mulv (quaternion->matrix @orientation) (vec3 0 0 100)))
          (swap! light + (* l dt))
          (swap! t0 + dt)
          (swap! n + 1)
@@ -322,7 +322,7 @@ void main()
                   "samples (r/f)" (format "%3d" (int @samples))
                   "fps" (format "%.3f" (/ (* @n 1000.0) (- t1 tf))))
            (flush)))
-       (let [light-direction (matrix [0 (cos @light) (sin @light)])
+       (let [light-direction (vec3 0 (cos @light) (sin @light))
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
              shadow-mat      (shadow-matrices projection transform light-direction 0)]
          (framebuffer-render shadow-size shadow-size :cullback nil [opacity opacity-shape]
@@ -342,7 +342,7 @@ void main()
                              (uniform-int sprogram "cloud_size" size)
                              (render-quads vao2))
          (onscreen-render (Display/getWidth) (Display/getHeight)
-                          (clear (matrix [0 0 0]))
+                          (clear (vec3 0 0 0))
                           (use-program program)
                           (use-textures worley bluenoise opacity opacity-shape)
                           (uniform-matrix4 program "projection" projection)
