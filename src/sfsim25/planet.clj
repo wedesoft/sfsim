@@ -1,7 +1,6 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
-    (:require [clojure.core.matrix :refer (mget)]
-              [sfsim25.cubemap :refer :all]))
+    (:require [sfsim25.cubemap :refer :all]))
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
@@ -11,10 +10,10 @@
         h1        (- 1.0 h0)
         c0        (/ 0.5 color-tilesize)
         c1        (- 1.0 c0)]
-    [(mget a 0) (mget a 1) (mget a 2) h0 h0 c0 c0
-     (mget b 0) (mget b 1) (mget b 2) h1 h0 c1 c0
-     (mget c 0) (mget c 1) (mget c 2) h0 h1 c0 c1
-     (mget d 0) (mget d 1) (mget d 2) h1 h1 c1 c1]))
+    [(a 0) (a 1) (a 2) h0 h0 c0 c0
+     (b 0) (b 1) (b 2) h1 h0 c1 c0
+     (c 0) (c 1) (c 2) h0 h1 c0 c1
+     (d 0) (d 1) (d 2) h1 h1 c1 c1]))
 
 (def vertex-planet
   "Pass through vertices, height field coordinates, and color texture coordinates"

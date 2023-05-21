@@ -1,9 +1,10 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix is-image record-image)]
+              [sfsim25.conftest :refer (roughly-vector is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (PI)]
-              [clojure.core.matrix :refer (matrix mul identity-matrix)]
+              [fastmath.vector :refer (vec3 mult)]
+              [fastmath.matrix :refer (eye)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.atmosphere :as atmosphere]
               [sfsim25.render :refer :all]
@@ -13,10 +14,10 @@
               [sfsim25.planet :refer :all]))
 
 (facts "Create vertex array object for drawing cube map tiles"
-       (let [a (matrix [-0.75 -0.5  -1.0])
-             b (matrix [-0.5  -0.5  -1.0])
-             c (matrix [-0.75 -0.25 -1.0])
-             d (matrix [-0.5  -0.25 -1.0])]
+       (let [a (vec3 -0.75 -0.5  -1.0)
+             b (vec3 -0.5  -0.5  -1.0)
+             c (vec3 -0.75 -0.25 -1.0)
+             d (vec3 -0.5  -0.25 -1.0)]
          (with-redefs [cubemap/cube-map-corners (fn [^long face ^long level ^long y ^long x]
                                                     (fact [face level y x] => [5 3 2 1])
                                                     [a b c d])]
@@ -52,7 +53,7 @@ void main()
                                                       :fragment [fragment-white])
                               variables [:point 3 :heightcoord 2 :colorcoord 2]
                               vao       (make-vertex-array-object program indices vertices variables)]
-                          (clear (matrix [0 0 0]))
+                          (clear (vec3 0 0 0))
                           (use-program program)
                           (raster-lines (render-quads vao))
                           (destroy-vertex-array-object vao)
@@ -75,14 +76,14 @@ void main()
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    heightfield (make-float-texture-2d :linear :clamp
                                                                       {:width 1 :height 1 :data (float-array [1.0])})]
-                               (clear (matrix [0 0 0]))
+                               (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "heightfield" 0)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" ?neighbours)
-                               (uniform-matrix4 program "inverse_transform" (identity-matrix 4))
-                               (uniform-matrix4 program "projection" (identity-matrix 4))
+                               (uniform-matrix4 program "inverse_transform" (eye 4))
+                               (uniform-matrix4 program "projection" (eye 4))
                                (use-textures heightfield)
                                (raster-lines (render-patches vao))
                                (destroy-texture heightfield)
@@ -127,14 +128,14 @@ void main()
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    heightfield (make-float-texture-2d :linear :clamp
                                                                       {:width 1 :height 1 :data (float-array [?scale])})]
-                               (clear (matrix [0 0 0]))
+                               (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "heightfield" 0)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" 15)
-                               (uniform-matrix4 program "inverse_transform" (identity-matrix 4))
-                               (uniform-matrix4 program "projection" (identity-matrix 4))
+                               (uniform-matrix4 program "inverse_transform" (eye 4))
+                               (uniform-matrix4 program "projection" (eye 4))
                                (use-textures heightfield)
                                (render-patches vao)
                                (destroy-texture heightfield)
@@ -162,15 +163,15 @@ void main()
                               vao         (make-vertex-array-object program indices vertices variables)
                               heightfield (make-float-texture-2d :linear :clamp
                                                                  {:width 1 :height 1 :data (float-array [1.0])})]
-                          (clear (matrix [0 0 0]))
+                          (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "heightfield" 0)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
-                          (uniform-matrix4 program "inverse_transform" (transformation-matrix (identity-matrix 3)
-                                                                                             (matrix [0.1 0 0])))
-                          (uniform-matrix4 program "projection" (identity-matrix 4))
+                          (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
+                                                                                             (vec3 0.1 0 0)))
+                          (uniform-matrix4 program "projection" (eye 4))
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
@@ -194,14 +195,14 @@ void main()
                               vao         (make-vertex-array-object program indices vertices variables)
                               heightfield (make-float-texture-2d :linear :clamp
                                                                  {:width 1 :height 1 :data (float-array [1.0])})]
-                          (clear (matrix [0 0 0]))
+                          (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "heightfield" 0)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
-                          (uniform-matrix4 program "inverse_transform" (transformation-matrix (identity-matrix 3)
-                                                                                             (matrix [0 0 -2])))
+                          (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
+                                                                                             (vec3 0 0 -2)))
                           (uniform-matrix4 program "projection" (projection-matrix 256 256 1 3 (/ PI 3)))
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
@@ -226,14 +227,14 @@ void main()
                               vao         (make-vertex-array-object program indices vertices variables)
                               heightfield (make-float-texture-2d :linear :clamp
                                                                  {:width 2 :height 2 :data (float-array [0.5 1.0 1.5 2.0])})]
-                          (clear (matrix [0 0 0]))
+                          (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "heightfield" 0)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
-                          (uniform-matrix4 program "inverse_transform" (identity-matrix 4))
-                          (uniform-matrix4 program "projection" (identity-matrix 4))
+                          (uniform-matrix4 program "inverse_transform" (eye 4))
+                          (uniform-matrix4 program "projection" (eye 4))
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
@@ -298,9 +299,9 @@ void main()
     shaders/surface-radiance-forward shaders/sun-elevation-to-index surface-radiance-function atmosphere/transmittance-outer))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mul (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5]
-                                          [?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
-               => (roughly-matrix (matrix [?r ?g ?b]) 1e-6))
+         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5]
+                                           [?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
+               => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
          ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
          1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
          1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
@@ -392,7 +393,7 @@ float sampling_offset()
   (uniform-sampler program "profile" 8)
   (uniform-float program "specular" 100)
   (uniform-float program "max_height" 100000)
-  (uniform-vector3 program "water_color" (matrix [0.09 0.11 0.34])))
+  (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
 
 (defn setup-uniforms [program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a]
   ; Moved this code out of the test below, otherwise method is too large
@@ -408,8 +409,8 @@ float sampling_offset()
   (uniform-float program "reflectivity" ?refl)
   (uniform-float program "radius" radius)
   (uniform-float program "polar_radius" ?polar)
-  (uniform-vector3 program "position" (matrix [0 0 (+ ?polar ?dist)]))
-  (uniform-vector3 program "light_direction" (matrix [?lx ?ly ?lz]))
+  (uniform-vector3 program "position" (vec3 0 0 (+ ?polar ?dist)))
+  (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
   (uniform-float program "amplification" ?a))
 
 (def planet-indices [0 1 3 2])
@@ -449,7 +450,7 @@ float sampling_offset()
                                                                         {:width 2 :height 2 :depth 2 :data worley-data})
                                    profile-data  (float-array [0 1 1 1 1 1 1 0])
                                    profile       (make-float-texture-1d :linear :clamp profile-data)]
-                               (clear (matrix [0 0 0]))
+                               (clear (vec3 0 0 0))
                                (use-program program)
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl radius ?polar ?dist ?lx ?ly ?lz ?a)
