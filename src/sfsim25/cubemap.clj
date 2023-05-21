@@ -226,7 +226,7 @@
         v1                      (pixel dy0 dx1 in-level width)
         v2                      (pixel dy1 dx0 in-level width)
         v3                      (pixel dy1 dx1 in-level width)]
-    (p+ (p* (* yfrac0 xfrac0) v0) (p* (* yfrac0 xfrac1) v1) (p* (* yfrac1 xfrac0) v2) (p* (* yfrac1 xfrac1) v3))))
+    (reduce p+ [(p* v0 (* yfrac0 xfrac0)) (p* v1 (* yfrac0 xfrac1)) (p* v2 (* yfrac1 xfrac0)) (p* v3 (* yfrac1 xfrac1))])))
 
 (defn tile-center
   "Determine the 3D center of a cube map tile"

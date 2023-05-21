@@ -32,7 +32,7 @@
                 p                (cube-map k j i)
                 point            (project-onto-globe p (min 4 in-level) width radius1 radius2)
                 [lon lat height] (cartesian->geodetic point radius1 radius2)]
-            (set-float! scale v u (/ (norm point) (norm p)))))
+            (set-float! scale v u (/ (mag point) (mag p)))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
           (let [j                (cube-coordinate out-level color-tilesize b v)
                 i                (cube-coordinate out-level color-tilesize a u)
