@@ -289,7 +289,8 @@ void main()
   (template/fn [term]
 "#version 410 core
 out vec3 fragColor;
-float step_size(float a, float b, int num_steps);
+int number_of_samples(float a, float b, float max_step);
+float step_size(float a, float b, int num_samples);
 float sample_point(float a, float idx, float step_size);
 float initial_lod(float step_size);
 void main()
@@ -307,13 +308,16 @@ void main()
 
 (tabular "Shader functions for defining linear sampling"
          (fact ((linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
-         ?term                      ?result
-         "step_size(10, 20, 5)"      2
-         "sample_point(20, 0, 2)"   20
-         "sample_point(20, 3, 2)"   26
-         "sample_point(20, 0.5, 2)" 21
-         "initial_lod(5)"            0
-         "initial_lod(10)"           1)
+         ?term                          ?result
+         "number_of_samples(10, 20, 5)"  2
+         "number_of_samples(10, 20, 3)"  4
+         "step_size(10, 20, 2)"          5
+         "step_size(10, 20, 4)"          2.5
+         "sample_point(20, 0, 2)"       20
+         "sample_point(20, 3, 2)"       26
+         "sample_point(20, 0.5, 2)"     21
+         "initial_lod(5)"                0
+         "initial_lod(10)"               1)
 
 (def ray-shell-mock
 "#version 410 core

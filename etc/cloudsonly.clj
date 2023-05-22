@@ -51,7 +51,9 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
+int number_of_samples(float a, float b, float max_step);
 float sample_point(float a, float idx, float step_size);
+float step_size(float a, float b, int num_samples);
 
 float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -98,8 +100,8 @@ void main()
       background = ray_scatter_outer(light_direction, origin + atmosphere.x * direction, direction) * amplification + glare;
     };
     float transparency = 1.0;
-    int count = int(ceil(atmosphere.y / stepsize));
-    float step = atmosphere.y / count;
+    int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
+    float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
     vec3 cloud_scatter = vec3(0, 0, 0);
     float offset = sampling_offset();
     for (int i=0; i<count; i++) {

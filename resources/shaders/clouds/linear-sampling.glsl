@@ -3,10 +3,17 @@
 uniform float cloud_scale;
 uniform int cloud_size;
 
-float step_size(float a, float b, int num_steps)
+int number_of_samples(float a, float b, float max_step)
 {
   float dist = b - a;
-  return dist / num_steps;
+  float count = ceil(dist / max_step);
+  return int(count);
+}
+
+float step_size(float a, float b, int num_samples)
+{
+  float dist = b - a;
+  return dist / num_samples;
 }
 
 float sample_point(float a, float idx, float step_size)

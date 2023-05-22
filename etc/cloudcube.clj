@@ -174,7 +174,7 @@ layout (location = 5) out float opacity6;
 layout (location = 6) out float opacity7;
 layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float step_size(float a, float b, int num_steps);
+float step_size(float a, float b, int num_samples);
 float sample_point(float a, float idx, float step_size);
 float initial_lod(float step_size);
 float octaves(vec3 point, float lod);
