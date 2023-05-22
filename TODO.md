@@ -1,4 +1,5 @@
 # TODO
+* use step size code in opacity fragment shader
 * change initial\_lod to log2 function from cloudsonly prototype
 * is cloud-scatter-amount and density redundant?
 * add z-near origin offset to vertex shader
