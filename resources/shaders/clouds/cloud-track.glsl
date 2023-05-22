@@ -1,7 +1,6 @@
 #version 410 core
 
 uniform float anisotropic;
-uniform int cloud_samples;
 uniform float cloud_scatter_amount;
 uniform float cloud_max_step;
 uniform float transparency_cutoff;
@@ -28,6 +27,7 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     vec3 transmittance_atmosphere = transmittance_track(p, q);
     incoming = incoming * transmittance_atmosphere + ray_scatter_atmosphere;
     float transparency = 1.0;
+    int cloud_samples = number_of_samples(a, b, cloud_max_step);
     float stepping = step_size(a, b, cloud_samples);
     float lod = initial_lod(stepping);
     vec3 cloud_scatter = vec3(0, 0, 0);

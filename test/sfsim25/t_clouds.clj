@@ -62,35 +62,34 @@ void main()
 
 (def cloud-track-test
   (shader-test
-    (fn [program anisotropic n amount]
+    (fn [program anisotropic step amount]
         (uniform-float program "anisotropic" anisotropic)
-        (uniform-int program "cloud_samples" n)
         (uniform-float program "cloud_scatter_amount" amount)
-        (uniform-float program "cloud_max_step" 0.1)
+        (uniform-float program "cloud_max_step" step)
         (uniform-float program "transparency_cutoff" 0.0))
     cloud-track-probe
     cloud-track
     linear-sampling))
 
 (tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test [?aniso ?n ?amnt] [?a ?b ?decay ?scatter ?offs ?dens ?grad ?lx ?ly ?lz ?ir ?ig ?ib])
+         (fact (cloud-track-test [?aniso ?s ?amnt] [?a ?b ?decay ?scatter ?offs ?dens ?grad ?lx ?ly ?lz ?ir ?ig ?ib])
                => (roughly-vector (vec3 ?or ?og ?ob) 1e-3))
-         ?a  ?b  ?n ?amnt ?decay  ?scatter ?offs ?dens ?grad ?aniso ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
-         0    1  1  1     0       0        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0
-         0    0  1  1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
-         0    1  1  1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
-         0    1  1  1     1       0        0.5   0.0   0     1      0   0   1   1   0   0   (exp -1) 0                      0
-         9   10  1  1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
-         8    9  1  1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.25
-         8    9  1  1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
-         8    9  2  1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
-         0    1  1  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -1))         0
-         0    1  1  0.5   0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
-         0    2  1  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    2  2  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    1  1  1     0       0        0.5   1.0   0     1      1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
-         0    1  1  1     0       0        0.5   1.0   0     0      1   0   0   0   0   0   0        (- 1 (exp -1))         0
-         0    1  1  1     0       0        0.5   0.0   2.0   0      0   0   1   0   0   0   0        (- 1 (exp -1))         0)
+         ?a ?b  ?s ?amnt ?decay  ?scatter ?offs ?dens ?grad ?aniso ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
+         0   1  1   1     0       0        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0
+         0   0  1   1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
+         0   1  1   1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
+         0   1  1   1     1       0        0.5   0.0   0     1      0   0   1   1   0   0   (exp -1) 0                      0
+         9  10  1   1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
+         8   9  1   1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.25
+         8   9  1   1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
+         8   9  0.5 1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
+         0   1  1   1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -1))         0
+         0   1  1   0.5   0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
+         0   2  2   1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
+         0   2  1   1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
+         0   1  1   1     0       0        0.5   1.0   0     1      1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
+         0   1  1   1     0       0        0.5   1.0   0     0      1   0   0   0   0   0   0        (- 1 (exp -1))         0
+         0   1  1   1     0       0        0.5   0.0   2.0   0      0   0   1   0   0   0   0        (- 1 (exp -1))         0)
 
 (def sky-outer-probe
   (template/fn [x y z dx dy dz lx ly lz ir ig ib]
@@ -311,6 +310,7 @@ void main()
          ?term                          ?result
          "number_of_samples(10, 20, 5)"  2
          "number_of_samples(10, 20, 3)"  4
+         "number_of_samples(10, 10, 5)"  1
          "step_size(10, 20, 2)"          5
          "step_size(10, 20, 4)"          2.5
          "sample_point(20, 0, 2)"       20

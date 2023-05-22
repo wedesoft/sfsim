@@ -7,7 +7,7 @@ int number_of_samples(float a, float b, float max_step)
 {
   float dist = b - a;
   float count = ceil(dist / max_step);
-  return int(count);
+  return max(int(count), 1);
 }
 
 float step_size(float a, float b, int num_samples)

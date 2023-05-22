@@ -1,6 +1,4 @@
 # TODO
-* cloud\_track and cloudcube should compute number of samples
-* compute step size using max step size
 * change initial\_lod to log2 function from cloudsonly prototype
 * is cloud-scatter-amount and density redundant?
 * add z-near origin offset to vertex shader
