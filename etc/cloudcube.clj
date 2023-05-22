@@ -110,7 +110,7 @@ void main()
   (make-program :vertex [vertex-shader]
                 :fragment [fragment-shader s/ray-box (s/noise-octaves-lod "octaves" "lookup_3d" octaves)
                            (s/lookup-3d-lod "lookup_3d" "worley") phase-function
-                           cloud-track exponential-sampling s/is-above-horizon s/convert-shadow-index
+                           cloud-track linear-sampling s/is-above-horizon s/convert-shadow-index
                            sampling-offset]))
 
 (def indices [0 1 3 2])
@@ -174,11 +174,9 @@ layout (location = 5) out float opacity6;
 layout (location = 6) out float opacity7;
 layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float scaling_offset(float a, float b, int samples, float max_step);
-float step_size(float a, float b, float scaling_offset, int num_steps);
-float sample_point(float a, float scaling_offset, int idx, float step_size);
-float initial_lod(float a, float scaling_offset, float step_size);
-float lod_increment(float step_size);
+float step_size(float a, float b, int num_steps);
+float sample_point(float a, float idx, float step_size);
+float initial_lod(float step_size);
 float octaves(vec3 point, float lod);
 float phase(float g, float mu);
 float cloud_density(vec3 point, float lod)
@@ -191,19 +189,15 @@ void main()
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_direction);
   int steps = int(ceil(cloud_base_samples * intersection.y / 60.0));
   float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
-  float offset = scaling_offset(intersection.x, intersection.x + intersection.y, steps, 0.0);
-  float stepsize = step_size(intersection.x, intersection.y + intersection.x, offset, steps);
-  float lod = initial_lod(intersection.x, offset, stepsize);
-  float incr = lod_increment(stepsize);
+  float stepsize = step_size(intersection.x, intersection.y + intersection.x, steps);
+  float lod = initial_lod(stepsize);
   float previous_transmittance = 1.0;
   float previous_depth = intersection.x - stepsize;
   float start_depth = 0.0;
   int filled = 0;
   for (int i=0; i<steps; i++) {
-    float previous = sample_point(intersection.x, offset, i, stepsize);
-    float depth = sample_point(intersection.x, offset, i, stepsize);
-    float dist = 0.5 * (previous + depth);
-    vec3 point = fs_in.origin - light_direction * dist;
+    float depth = sample_point(intersection.x, i, stepsize);
+    vec3 point = fs_in.origin - light_direction * depth;
     float density = cloud_density(point, lod);
     float transmittance;
     if (previous_transmittance == 1.0) {
@@ -257,7 +251,6 @@ void main()
     };
     previous_depth = depth;
     previous_transmittance = transmittance;
-    lod += incr;
   };
   if (filled <= 0) opacity1 = previous_transmittance;
   if (filled <= 1) opacity2 = previous_transmittance;
@@ -357,7 +350,6 @@ void main()
                           (uniform-int program "noise_size" noise-size)
                           (uniform-float program "cloud_scale" 100)
                           (uniform-int program "cloud_size" size)
-                          (uniform-float program "cloud_max_step" 1.05)
                           (uniform-float program "multiplier" @multiplier)
                           (uniform-vector3 program "light_direction" light-direction)
                           (uniform-float program "depth" (:depth shadow-mat))

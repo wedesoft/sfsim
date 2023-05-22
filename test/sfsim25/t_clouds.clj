@@ -289,11 +289,9 @@ void main()
   (template/fn [term]
 "#version 410 core
 out vec3 fragColor;
-float step_size(float a, float b, float scaling_offset, int num_steps);
-float sample_point(float a, float scaling_offset, int idx, float step_size);
-float scaling_offset(float a, float b, int samples, float max_step);
-float initial_lod(float a, float scaling_offset, float step_size);
-float lod_increment(float step_size);
+float step_size(float a, float b, int num_steps);
+float sample_point(float a, float idx, float step_size);
+float initial_lod(float step_size);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
@@ -309,38 +307,13 @@ void main()
 
 (tabular "Shader functions for defining linear sampling"
          (fact ((linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
-         ?term                              ?result
-         "step_size(10, 20, 0, 5)"              2
-         "sample_point(20, 0, 4, 2)"           28
-         "scaling_offset(10, 20, 10, 2.0)"      0
-         "initial_lod(10, 0, 5)"                0
-         "initial_lod(10, 0, 10)"               1
-         "lod_increment(10)"                    0)
-
-(def exponential-sampling-test
-  (shader-test
-    (fn [program]
-        (uniform-float program "cloud_scale" 100)
-        (uniform-int program "cloud_size" 20))
-    sampling-probe
-    exponential-sampling))
-
-(tabular "Shader functions for defining exponential sampling"
-         (fact ((exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
-         ?term                               ?result
-         "scaling_offset(10, 20, 1, 2.0)"        0
-         "scaling_offset(10, 30, 1, 2.0)"       10
-         "scaling_offset(10, 30, 10, 2.0)"       0
-         "step_size(10, 20, 0, 1)"               2
-         "step_size(10, 40, 0, 2)"               2
-         "step_size(10, 30, 10, 1)"              2
-         "sample_point(10, 0, 1, 2)"            20
-         "sample_point(10, 10, 1, 2)"           30
-         "initial_lod(10, 0, 1.5)"               0
-         "initial_lod(10, 0, 2.0)"               1
-         "initial_lod(3, 7, 2.0)"                1
-         "lod_increment(1.0)"                    0
-         "lod_increment(2.0)"                    1)
+         ?term                      ?result
+         "step_size(10, 20, 5)"      2
+         "sample_point(20, 0, 2)"   20
+         "sample_point(20, 3, 2)"   26
+         "sample_point(20, 0.5, 2)" 21
+         "initial_lod(5)"            0
+         "initial_lod(10)"           1)
 
 (def ray-shell-mock
 "#version 410 core

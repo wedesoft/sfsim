@@ -1,5 +1,6 @@
 # TODO
-* how is cloud\_max\_step (cms) still used?
+* compute step size using max step size
+* change initial\_lod to log2 function from cloudsonly prototype
 * is cloud-scatter-amount and density redundant?
 * add z-near origin offset to vertex shader
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer

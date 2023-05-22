@@ -51,6 +51,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
+float sample_point(float a, float idx, float step_size);
 
 float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -102,7 +103,7 @@ void main()
     vec3 cloud_scatter = vec3(0, 0, 0);
     float offset = sampling_offset();
     for (int i=0; i<count; i++) {
-      float l = atmosphere.x + (i + offset) * step;
+      float l = sample_point(atmosphere.x, i + offset, step);
       vec3 point = origin2 + l * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
@@ -218,7 +219,7 @@ void main()
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
-                           ground-radiance shaders/surface-radiance-forward surface-radiance-function]))
+                           ground-radiance shaders/surface-radiance-forward surface-radiance-function linear-sampling]))
 
 (def num-opacity-layers 7)
 (def program-shadow

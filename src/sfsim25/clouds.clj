@@ -33,10 +33,6 @@
   "Shader functions for defining linear sampling"
   (slurp "resources/shaders/clouds/linear-sampling.glsl"))
 
-(def exponential-sampling
-  "Shader functions for defining exponential sampling"
-  (slurp "resources/shaders/clouds/exponential-sampling.glsl"))
-
 (def opacity-vertex
   "Vertex shader for rendering deep opacity map"
   (slurp "resources/shaders/clouds/opacity-vertex.glsl"))
