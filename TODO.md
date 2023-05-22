@@ -1,17 +1,15 @@
 # TODO
-* add origin at z-near to vertex shader
-* lod of shadow
-* ray scatter with cloud shadows
-* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* add separate tests for surface radiance shader
-* use mocks in tests for ground radiance shader
-* add z-near offset to origin?
-* separate cloud\_shadow and transmittance\_outer
-* add conditions to shortcut lookup in some noise textures
 * how is cloud\_max\_step (cms) still used?
 * is cloud-scatter-amount and density redundant?
+* add z-near origin offset to vertex shader
+* make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer
+* add separate tests for surface radiance shader
+* use mocks in tests for ground radiance shader
+* increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
+* reuse (parts of) shadow map?
+* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
+* lod of shadow
 * non-linear steps?
-* increase stepsize between clouds (also only sample low-resolution noise)
 * render just atmosphere with empty cloud layer to check that there is no step
 * no shading of atmosphere above 25km
 * add atmospheric transmittance and scattering
