@@ -1,74 +1,47 @@
 # TODO
+* is cloud-scatter-amount and density redundant?
 * use step size code in opacity fragment shader
 * change initial\_lod to log2 function from cloudsonly prototype
-* is cloud-scatter-amount and density redundant?
 * add z-near origin offset to vertex shader
-* make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer
+* try to install and use LWJGL3 from Maven
+* make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
+* sepapare transmittance\_outer call from cloud\_shadow,
+  integration test for cascaded deep opacity map
+* test cloud shadows on ellipsoidical planet
+* lod of shadow correct when rendering opacity map and when performing lookups?
+  exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * add separate tests for surface radiance shader
 * use mocks in tests for ground radiance shader
+* add clouds to planetary shader,
+  offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur,
+  add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
+* render to texture with alpha channel,
+  render 1 of 4x4 pixels per frame?
+  apply cloud texture to higher resolution picture (upscale and alpha-blend)
+* add shadows of mountains, use shadow map of planet in cloud\_shadow?
+* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
 * reuse (parts of) shadow map?
-* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* lod of shadow
-* non-linear steps?
-* render just atmosphere with empty cloud layer to check that there is no step
-* no shading of atmosphere above 25km
-* add atmospheric transmittance and scattering
 * limit opacity mapping and cloud sampling
-* clouds
-  * test cloud shadows on ellipsoidical planet
-  * add clouds to atmospheric and planetary shader
-  * add shadows of mountains, use shadow map of planet in cloud\_shadow?
-  * ozone absorption? s2016-pbs-frostbite-sky-clouds-new.pdf page 20
-  * attenuation of far clouds, transmittance-weighted average cloud distance -> correct atmospheric scattering
-  * exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
-  * offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur
-  * render 1 of 4x4 pixels per frame?
-  * apply cloud texture to higher resolution picture (upscale and alpha-blend)
-  * add flat cirrus clouds
-  * move different levels of noise to create moving and shape-changing clouds
+* move different levels of noise to create moving and shape-changing clouds
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj_tK_mdRcA
-* integration test for cascaded deep opacity map
 * uniform random offsets for Worley noises
 * configuration (edn) file for clouds?
-* rewrite cloudy.clj prototype
-* Kenny Mitchell: volumetric light scattering as a post process (iterate highlight, use to mask mie scattering)
 * ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
-* moon light only dominant when sun has set
 * glTextureStorage2D levels correct for mipmaps?
-* create new cloud prototype avoiding step in atmosphere and flatness of cloud boundaries
-* try to install and use LWJGL3 from Maven
-* implement shadow maps: https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-10-parallel-split-shadow-maps-programmable-gpus
+* hot spots for map
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * use GMTED2010 or STRM90 elevation data:
   * https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d_e.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30_e.htm
-* render to texture with alpha channel
-* horizon still bright even under dark clouds (attenuation\_track needs to take into account cloudiness)
-* seapare transmittance\_outer call from cloud\_shadow
 * does opacity fragment shader need to limit offsets to bounding box?
-* convert\_1d\_index
-* does lookup\_3d need to use textureLod?
-* test opacity offsets with constant density cloud, use clip\_shell\_intersections
-* use maximum possible cloud self-shadow length?
-* clouds: blue noise offsets for opacity map? use extra shadow map?
 * use rgb for scattering and a for transmittance when creating low-resolution cloud image?
-* write article about cloud rendering
-* use compute shaders? in parallel with graphics?
-  GL\_COMPUTE\_SHADER type, glDispatchCompute 1024x1024x64 items (product at least 1024)
-* make is-image checker less strict (threshold relative sum of difference?) or add new checker roughly-image
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * deferred decals for rendering runway
   https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/
-* shadows
-  * add atmospheric scattering taking cloud shadow into account (cascaded shadow maps)
-  * add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
-  * how to render shadows on planet surface and in atmosphere; shadow maps or shadow volumes (bruneton chapter 5)?
-  * polygonoffset?
-* hot spots for map
 * microtextures, bump maps
 * how to render water, waves
 * render stars
