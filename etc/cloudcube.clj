@@ -160,7 +160,6 @@ uniform float anisotropic;
 uniform float multiplier;
 uniform float cloud_scale;
 uniform int cloud_base_samples;
-uniform float cloud_scatter_amount;
 in VS_OUT
 {
   vec3 origin;
@@ -188,7 +187,7 @@ void main()
 {
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), fs_in.origin, -light_direction);
   int steps = int(ceil(cloud_base_samples * intersection.y / 60.0));
-  float scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic) * cloud_scatter_amount;
+  float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
   float stepsize = step_size(intersection.x, intersection.y + intersection.x, steps);
   float lod = initial_lod(stepsize);
   float previous_transmittance = 1.0;
@@ -329,7 +328,6 @@ void main()
                              (uniform-float sprogram "threshold" @threshold)
                              (uniform-float sprogram "anisotropic" @anisotropic)
                              (uniform-float sprogram "multiplier" @multiplier)
-                             (uniform-float sprogram "cloud_scatter_amount" 1.0)
                              (uniform-int sprogram "cloud_base_samples" (int @samples))
                              (uniform-float sprogram "cloud_scale" 100)
                              (uniform-int sprogram "cloud_size" size)
@@ -345,7 +343,6 @@ void main()
                           (uniform-int program "shadow_size" shadow-size)
                           (uniform-float program "threshold" @threshold)
                           (uniform-float program "anisotropic" @anisotropic)
-                          (uniform-float program "cloud_scatter_amount" 1.0)
                           (uniform-float program "cloud_max_step" 2.0)
                           (uniform-int program "noise_size" noise-size)
                           (uniform-float program "cloud_scale" 100)
