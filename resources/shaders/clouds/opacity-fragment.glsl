@@ -22,6 +22,9 @@ layout (location = <%= (inc i) %>) out float opacity_layer_<%= i %>;
 
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
+int number_of_samples(float a, float b, float max_step);
+float step_size(float a, float b, int num_samples);
+float sample_point(float a, float idx, float step_size);
 float sampling_offset();
 
 void interpolate_opacity(float opacity_interval_begin, float opacity_interval_end, float previous_transmittance, float transmittance)
@@ -47,10 +50,11 @@ void main()
     float start_segment = segment == 0 ? intersections.x : intersections.z;
     float extent_segment = segment == 0 ? intersections.y : intersections.w;
     if (extent_segment > 0) {
-      int steps = int(ceil(extent_segment / cloud_max_step));
-      float stepsize = extent_segment / steps;
+      int steps = number_of_samples(start_segment, start_segment + extent_segment, cloud_max_step);
+      float stepsize = step_size(start_segment, start_segment + extent_segment, steps);
       for (int i=0; i<steps; i++) {
-        vec3 sample_point = fs_in.origin - (start_segment + (i + sampling_offset()) * stepsize) * light_direction;
+        float s = sample_point(start_segment, i + sampling_offset(), stepsize);
+        vec3 sample_point = fs_in.origin - s * light_direction;
         float density = cloud_density(sample_point, level_of_detail);
         // Compute this on the CPU: scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic)
         float transmittance_step = exp((scatter_amount - 1) * density * stepsize);

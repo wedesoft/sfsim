@@ -388,7 +388,8 @@ float sampling_offset()
                                           :fragment [(opacity-fragment 7)
                                                      ray-shell-mock
                                                      cloud-density-mock
-                                                     sampling-offset-mock])
+                                                     sampling-offset-mock
+                                                     linear-sampling])
             vao             (make-vertex-array-object program indices vertices [:point 2])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 7)]

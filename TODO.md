@@ -1,5 +1,4 @@
 # TODO
-* use step size code in opacity fragment shader
 * change initial\_lod to log2 function from cloudsonly prototype
 * add z-near origin offset to vertex shader
 * try to install and use LWJGL3 from Maven
