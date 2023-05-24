@@ -1,4 +1,5 @@
 # TODO
+* use shadow scale from matrix cascade to determine lod in cloudsonly and cloudcube shadow
 * change initial\_lod to log2 function from cloudsonly prototype
 * add z-near origin offset to vertex shader
 * try to install and use LWJGL3 from Maven

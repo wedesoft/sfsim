@@ -3,6 +3,7 @@
 uniform float anisotropic;
 uniform float cloud_max_step;
 uniform float transparency_cutoff;
+uniform float lod_offset;
 
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
@@ -13,7 +14,7 @@ int number_of_steps(float a, float b, int min_samples, int max_samples, float ma
 int number_of_samples(float a, float b, float max_step);
 float step_size(float a, float b, int num_samples);
 float sample_point(float a, float idx, float step_size);
-float initial_lod(float step_size);
+float lod_at_distance(float dist, float lod_offset);
 float sampling_offset();
 
 vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
@@ -28,12 +29,12 @@ vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, flo
     float transparency = 1.0;
     int cloud_samples = number_of_samples(a, b, cloud_max_step);
     float stepping = step_size(a, b, cloud_samples);
-    float lod = initial_lod(stepping);
     vec3 cloud_scatter = vec3(0, 0, 0);
     float b_step = a;
     for (int i=0; i<cloud_samples; i++) {
       float dist = sample_point(a, i + sampling_offset(), stepping);
       vec3 c = origin + dist * direction;
+      float lod = lod_at_distance(dist, lod_offset);
       float density = cloud_density(c, lod);
       if (density > 0) {
         float transmittance_cloud = exp(-density * stepping);

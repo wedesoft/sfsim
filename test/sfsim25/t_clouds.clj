@@ -65,6 +65,7 @@ void main()
     (fn [program anisotropic step]
         (uniform-float program "anisotropic" anisotropic)
         (uniform-float program "cloud_max_step" step)
+        (uniform-float program "lod_offset" 0.0)
         (uniform-float program "transparency_cutoff" 0.0))
     cloud-track-probe
     cloud-track
@@ -289,7 +290,7 @@ out vec3 fragColor;
 int number_of_samples(float a, float b, float max_step);
 float step_size(float a, float b, int num_samples);
 float sample_point(float a, float idx, float step_size);
-float initial_lod(float step_size);
+float lod_at_distance(float dist, float lod_offset);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
@@ -314,8 +315,9 @@ void main()
          "sample_point(20, 0, 2)"       20
          "sample_point(20, 3, 2)"       26
          "sample_point(20, 0.5, 2)"     21
-         "initial_lod(5)"                0
-         "initial_lod(10)"               1)
+         "lod_at_distance(1, 0)"         0
+         "lod_at_distance(1, 3)"         3
+         "lod_at_distance(2, 3)"         4)
 
 (def ray-shell-mock
 "#version 410 core

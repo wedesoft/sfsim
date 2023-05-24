@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (PI sqrt pow cos sin to-radians)]
+(require '[clojure.math :refer (PI sqrt pow cos sin to-radians log tan)]
          '[fastmath.matrix :refer (mulv inverse)]
          '[fastmath.vector :refer (vec3)]
          '[sfsim25.quaternion :as q]
@@ -27,13 +27,15 @@
 
 (def z-near 50)
 (def z-far 150)
-(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 75)))
+(def fov (to-radians 75))
+(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far fov))
 (def origin (atom (vec3 0 0 100)))
 (def orientation (atom (q/* (q/rotation (to-radians 125) (vec3 1 0 0)) (q/rotation (to-radians 24) (vec3 0 1 0)))))
 (def octaves [0.5 0.25 0.125 0.125])
 (def threshold (atom 0.53))
 (def anisotropic (atom 0.2))
 (def multiplier (atom 2.0))
+(def cloud-scale 100)
 (def light (atom (+ (/ PI 4) 0.1)))
 (def keystates (atom {}))
 (def shadow-size 128)
@@ -160,6 +162,7 @@ uniform float anisotropic;
 uniform float multiplier;
 uniform float cloud_scale;
 uniform int cloud_base_samples;
+uniform int shadow_size;
 in VS_OUT
 {
   vec3 origin;
@@ -175,7 +178,6 @@ layout (location = 7) out float opacity_shape;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float step_size(float a, float b, int num_samples);
 float sample_point(float a, float idx, float step_size);
-float initial_lod(float step_size);
 float octaves(vec3 point, float lod);
 float phase(float g, float mu);
 float cloud_density(vec3 point, float lod)
@@ -189,7 +191,7 @@ void main()
   int steps = int(ceil(cloud_base_samples * intersection.y / 60.0));
   float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
   float stepsize = step_size(intersection.x, intersection.y + intersection.x, steps);
-  float lod = initial_lod(stepsize);
+  float lod = -3;
   float previous_transmittance = 1.0;
   float previous_depth = intersection.x - stepsize;
   float start_depth = 0.0;
@@ -316,7 +318,9 @@ void main()
            (flush)))
        (let [light-direction (vec3 0 (cos @light) (sin @light))
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
-             shadow-mat      (shadow-matrices projection transform light-direction 0)]
+             shadow-mat      (shadow-matrices projection transform light-direction 0)
+             lod-offset      (- (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ cloud-scale size))) (log 2))
+                                (dec (count octaves)))]
          (framebuffer-render shadow-size shadow-size :cullback nil [opacity opacity-shape]
                              (use-program sprogram)
                              (use-textures worley)
@@ -329,7 +333,7 @@ void main()
                              (uniform-float sprogram "anisotropic" @anisotropic)
                              (uniform-float sprogram "multiplier" @multiplier)
                              (uniform-int sprogram "cloud_base_samples" (int @samples))
-                             (uniform-float sprogram "cloud_scale" 100)
+                             (uniform-float sprogram "cloud_scale" cloud-scale)
                              (uniform-int sprogram "cloud_size" size)
                              (render-quads vao2))
          (onscreen-render (Display/getWidth) (Display/getHeight)
@@ -345,7 +349,8 @@ void main()
                           (uniform-float program "anisotropic" @anisotropic)
                           (uniform-float program "cloud_max_step" 2.0)
                           (uniform-int program "noise_size" noise-size)
-                          (uniform-float program "cloud_scale" 100)
+                          (uniform-float program "lod_offset" lod-offset)
+                          (uniform-float program "cloud_scale" cloud-scale)
                           (uniform-int program "cloud_size" size)
                           (uniform-float program "multiplier" @multiplier)
                           (uniform-vector3 program "light_direction" light-direction)

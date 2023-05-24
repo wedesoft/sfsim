@@ -29,7 +29,7 @@ uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float dense_height;
 uniform float max_height;
-uniform float detail;
+uniform float lod_offset;
 uniform float anisotropic;
 uniform float specular;
 uniform float amplification;
@@ -54,6 +54,7 @@ vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_in
 int number_of_samples(float a, float b, float max_step);
 float sample_point(float a, float idx, float step_size);
 float step_size(float a, float b, int num_samples);
+float lod_at_distance(float dist, float lod_offset);
 
 float cloud_shadow(vec3 point, vec3 light_direction, float lod)
 {
@@ -109,7 +110,7 @@ void main()
       vec3 point = origin2 + l * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-        float lod = log2(l) + detail;
+        float lod = lod_at_distance(l, lod_offset);
         float density = cloud_density(point, lod);
         if (density > 0) {
           float t = exp(-density * step);
@@ -233,7 +234,7 @@ void main()
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (sphere-noise "perlin_octaves")
                            (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile shaders/convert-1d-index
-                           shaders/ray-sphere bluenoise/sampling-offset
+                           shaders/ray-sphere bluenoise/sampling-offset linear-sampling
                            shaders/interpolate-float-cubemap shaders/convert-cubemap-index]))
 
 (def indices [0 1 3 2])
@@ -322,7 +323,7 @@ void main()
                vao        (make-vertex-array-object program indices vertices [:point 3])
                light-dir  (vec3 0 (cos @light) (sin @light))
                projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 1) fov)
-               detail     (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ detail-scale worley-size))) (log 2))
+               lod-offset (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ detail-scale worley-size))) (log 2))
                transform  (transformation-matrix (quaternion->matrix @orientation) @position)
                matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
                splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
@@ -378,7 +379,7 @@ void main()
                             (uniform-float program "cloud_threshold" @threshold)
                             (uniform-float program "detail_scale" detail-scale)
                             (uniform-float program "cloud_scale" cloud-scale)
-                            (uniform-float program "detail" detail)
+                            (uniform-float program "lod_offset" lod-offset)
                             (uniform-float program "dense_height" dense-height)
                             (uniform-float program "anisotropic" @anisotropic)
                             (uniform-float program "specular" 1000)

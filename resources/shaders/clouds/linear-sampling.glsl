@@ -21,8 +21,7 @@ float sample_point(float a, float idx, float step_size)
   return a + idx * step_size;
 }
 
-float initial_lod(float step_size)
+float lod_at_distance(float dist, float lod_offset)
 {
-  float cloud_pixel = cloud_scale / cloud_size;
-  return log2(step_size / cloud_pixel);
+  return log2(dist) + lod_offset;
 }
