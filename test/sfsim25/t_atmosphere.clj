@@ -618,6 +618,7 @@ void main()
   (template/fn [selector] "#version 410 core
 in VS_OUT
 {
+  vec3 origin;
   vec3 direction;
 } fs_in;
 out vec3 fragColor;
@@ -646,6 +647,8 @@ void main()
                                (use-program program)
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-matrix4 program "transform" ?matrix)
+                               (uniform-float program "z_far" 1.0)
+                               (uniform-float program "z_near" 0.5)
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 0.0))
@@ -653,7 +656,9 @@ void main()
          "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere/quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png"
+         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    initial "test/sfsim25/fixtures/atmosphere/origin.png"
+         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    rotated "test/sfsim25/fixtures/atmosphere/origin-rotated.png")
 
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
@@ -693,7 +698,8 @@ void main()
                                (uniform-sampler program "ray_scatter" 1)
                                (uniform-sampler program "mie_strength" 2)
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
-                               (uniform-vector3 program "origin" origin)
+                               (uniform-float program "z_near" 0.0)
+                               (uniform-float program "z_far" 1.0)
                                (uniform-matrix4 program "transform" transform)
                                (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
                                (uniform-float program "radius" radius)

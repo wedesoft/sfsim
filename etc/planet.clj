@@ -185,6 +185,8 @@
 
 (use-program program-atmosphere)
 (uniform-matrix4 program-atmosphere "projection" projection)
+(uniform-float program-atmosphere "z_near" z-near)
+(uniform-float program-atmosphere "z_far" z-far)
 (uniform-float program-atmosphere "radius" radius)
 (uniform-float program-atmosphere "polar_radius" polar-radius)
 (uniform-float program-atmosphere "max_height" max-height)
@@ -233,7 +235,6 @@
                           ; Render atmosphere
                           (use-program program-atmosphere)
                           (uniform-matrix4 program-atmosphere "transform" transform)
-                          (uniform-vector3 program-atmosphere "origin" @position)
                           (uniform-vector3 program-atmosphere "light_direction" (mulv (rotation-z @light2) (vec3 0 (cos @light1) (sin @light1))))
                           (use-textures T S M)
                           (render-quads atmosphere-vao))

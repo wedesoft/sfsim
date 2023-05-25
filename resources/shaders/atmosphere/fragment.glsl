@@ -5,11 +5,11 @@ uniform float radius;
 uniform float polar_radius;
 uniform float max_height;
 uniform float specular;
-uniform vec3 origin;
 uniform float amplification;
 
 in VS_OUT
 {
+  vec3 origin;
   vec3 direction;
 } fs_in;
 
@@ -30,7 +30,7 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   float glare = pow(max(0, dot(direction, light_direction)), specular);
   vec3 incoming = vec3(glare, glare, glare) / amplification;
-  vec3 scaled_origin = stretch(origin);
+  vec3 scaled_origin = stretch(fs_in.origin);
   vec3 scaled_direction = normalize(stretch(direction));
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, scaled_origin, scaled_direction);
   if (atmosphere_intersection.y > 0) {

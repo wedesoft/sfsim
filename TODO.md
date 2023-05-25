@@ -1,5 +1,4 @@
 # TODO
-* add z-near origin offset to vertex shader
 * try to install and use LWJGL3 from Maven
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
 * sepapare transmittance\_outer call from cloud\_shadow,

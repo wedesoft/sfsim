@@ -34,9 +34,9 @@ uniform float anisotropic;
 uniform float specular;
 uniform float amplification;
 uniform vec3 light_direction;
-uniform vec3 origin;
 in VS_OUT
 {
+  vec3 origin;
   vec3 direction;
 } fs_in;
 out vec3 fragColor;
@@ -74,13 +74,12 @@ float cloud_shadow(vec3 point, vec3 light_direction)
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
-  vec3 origin2 = origin + direction * 15;
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin2, direction);
-  vec2 planet = ray_sphere(vec3(0, 0, 0), radius, origin2, direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
+  vec2 planet = ray_sphere(vec3(0, 0, 0), radius, fs_in.origin, direction);
   if (atmosphere.y > 0) {
     vec3 background;
     if (planet.y > 0) {
-      vec3 point = origin2 + planet.x * direction;
+      vec3 point = fs_in.origin + planet.x * direction;
       float intensity = cloud_shadow(point, light_direction);
       vec3 normal = normalize(point);
       float cos_incidence = dot(light_direction, normal);
@@ -92,13 +91,13 @@ void main()
         highlight = 0.0;
       };
       vec3 ground = ground_radiance(point, light_direction, 1.0, cos_incidence, highlight, vec3(1, 1, 1), vec3(0.09, 0.11, 0.34));
-      vec3 transmit = transmittance_track(origin2 + atmosphere.x * direction, point);
-      background = (ground * transmit * intensity + ray_scatter_track(light_direction, origin2 + atmosphere.x * direction, point)) * amplification;
+      vec3 transmit = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
+      background = (ground * transmit * intensity + ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point)) * amplification;
       atmosphere.y = planet.x - atmosphere.x;
     } else {
-      vec3 transmit = transmittance_outer(origin2 + atmosphere.x * direction, direction);
+      vec3 transmit = transmittance_outer(fs_in.origin + atmosphere.x * direction, direction);
       vec3 glare = pow(max(0, dot(direction, light_direction)), specular) * transmit;
-      background = ray_scatter_outer(light_direction, origin + atmosphere.x * direction, direction) * amplification + glare;
+      background = ray_scatter_outer(light_direction, fs_in.origin + atmosphere.x * direction, direction) * amplification + glare;
     };
     float transparency = 1.0;
     int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
@@ -107,7 +106,7 @@ void main()
     float offset = sampling_offset();
     for (int i=0; i<count; i++) {
       float l = sample_point(atmosphere.x, i + offset, step);
-      vec3 point = origin2 + l * direction;
+      vec3 point = fs_in.origin + l * direction;
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
         float lod = lod_at_distance(l, lod_offset);
@@ -116,8 +115,8 @@ void main()
           float t = exp(-density * step);
           vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
           vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-          vec3 in_scatter = ray_scatter_track(light_direction, origin2 + atmosphere.x * direction, point) * amplification;
-          vec3 transmit = transmittance_track(origin2 + atmosphere.x * direction, point);
+          vec3 in_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point) * amplification;
+          vec3 transmit = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
           cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount * transmit + transparency * (1 - t) * in_scatter;
           transparency *= t;
         };
@@ -151,7 +150,7 @@ void main()
 (def series (take 5 (iterate #(* % 0.8) 1.0)))
 (def sum-series (apply + series))
 (def perlin-octaves (mapv #(/ % sum-series) series))
-(def z-near 10)
+(def z-near 10.0)
 (def z-far (* radius 2))
 (def mix 0.5)
 (def opacity-step (atom 1000.0))
@@ -353,6 +352,8 @@ void main()
                             (uniform-matrix4 program "projection" projection)
                             (uniform-matrix4 program "transform" transform)
                             (uniform-matrix4 program "inverse_transform" (inverse transform))
+                            (uniform-float program "z_near" (+ 1 z-near))
+                            (uniform-float program "z_far" z-far)
                             (uniform-int program "profile_size" profile-size)
                             (uniform-int program "noise_size" noise-size)
                             (uniform-int program "height_size" height-size)
@@ -384,7 +385,6 @@ void main()
                             (uniform-float program "anisotropic" @anisotropic)
                             (uniform-float program "specular" 1000)
                             (uniform-float program "amplification" 6)
-                            (uniform-vector3 program "origin" @position)
                             (uniform-vector3 program "light_direction" light-dir)
                             (apply use-textures W L P B C T S M E (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                             (render-quads vao))
