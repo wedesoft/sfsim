@@ -161,6 +161,7 @@ uniform float threshold;
 uniform float anisotropic;
 uniform float multiplier;
 uniform float cloud_scale;
+uniform float level_of_detail;
 uniform int cloud_base_samples;
 uniform int shadow_size;
 in VS_OUT
@@ -191,7 +192,6 @@ void main()
   int steps = int(ceil(cloud_base_samples * intersection.y / 60.0));
   float scatter_amount = anisotropic * phase(0.76, -1) + 1 - anisotropic;
   float stepsize = step_size(intersection.x, intersection.y + intersection.x, steps);
-  float lod = -3;
   float previous_transmittance = 1.0;
   float previous_depth = intersection.x - stepsize;
   float start_depth = 0.0;
@@ -199,7 +199,7 @@ void main()
   for (int i=0; i<steps; i++) {
     float depth = sample_point(intersection.x, i, stepsize);
     vec3 point = fs_in.origin - light_direction * depth;
-    float density = cloud_density(point, lod);
+    float density = cloud_density(point, level_of_detail);
     float transmittance;
     if (previous_transmittance == 1.0) {
       start_depth = intersection.x + i * stepsize;
@@ -319,6 +319,7 @@ void main()
        (let [light-direction (vec3 0 (cos @light) (sin @light))
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
              shadow-mat      (shadow-matrices projection transform light-direction 0)
+             lod             (/ (log (/ (/ (:scale shadow-mat) shadow-size) (/ cloud-scale size))) (log 2))
              lod-offset      (- (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ cloud-scale size))) (log 2))
                                 (dec (count octaves)))]
          (framebuffer-render shadow-size shadow-size :cullback nil [opacity opacity-shape]
@@ -334,6 +335,7 @@ void main()
                              (uniform-float sprogram "multiplier" @multiplier)
                              (uniform-int sprogram "cloud_base_samples" (int @samples))
                              (uniform-float sprogram "cloud_scale" cloud-scale)
+                             (uniform-float sprogram "level_of_detail" lod)
                              (uniform-int sprogram "cloud_size" size)
                              (render-quads vao2))
          (onscreen-render (Display/getWidth) (Display/getHeight)
