@@ -1,3 +1,4 @@
+; https://github.com/rogerallen/hello_lwjgl/blob/master/src/hello_lwjgl/alpha.clj
 (import '[org.lwjgl BufferUtils]
         '[org.lwjgl.glfw GLFW]
         '[org.lwjgl.opengl GL GL11])
