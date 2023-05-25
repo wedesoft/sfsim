@@ -56,7 +56,7 @@ float sample_point(float a, float idx, float step_size);
 float step_size(float a, float b, int num_samples);
 float lod_at_distance(float dist, float lod_offset);
 
-float cloud_shadow(vec3 point, vec3 light_direction, float lod)
+float cloud_shadow(vec3 point, vec3 light_direction)
 {
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + dense_height, point, light_direction);
   if (atmosphere_intersection.y > 0) {
@@ -81,7 +81,7 @@ void main()
     vec3 background;
     if (planet.y > 0) {
       vec3 point = origin2 + planet.x * direction;
-      float intensity = cloud_shadow(point, light_direction, 0.0);
+      float intensity = cloud_shadow(point, light_direction);
       vec3 normal = normalize(point);
       float cos_incidence = dot(light_direction, normal);
       float highlight;
@@ -114,7 +114,7 @@ void main()
         float density = cloud_density(point, lod);
         if (density > 0) {
           float t = exp(-density * step);
-          vec3 intensity = cloud_shadow(point, light_direction, 0.0) * transmittance_outer(point, light_direction);
+          vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
           vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
           vec3 in_scatter = ray_scatter_track(light_direction, origin2 + atmosphere.x * direction, point) * amplification;
           vec3 transmit = transmittance_track(origin2 + atmosphere.x * direction, point);
