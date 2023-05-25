@@ -1,13 +1,11 @@
 # TODO
-* use shadow scale from matrix cascade to determine lod in cloudsonly and cloudcube shadow
-* change initial\_lod to log2 function from cloudsonly prototype
 * add z-near origin offset to vertex shader
 * try to install and use LWJGL3 from Maven
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
 * sepapare transmittance\_outer call from cloud\_shadow,
   integration test for cascaded deep opacity map
 * test cloud shadows on ellipsoidical planet
-* lod of shadow correct when rendering opacity map and when performing lookups?
+* opacity\_cascade\_lookup with level of detail?
   exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * add separate tests for surface radiance shader
 * use mocks in tests for ground radiance shader
