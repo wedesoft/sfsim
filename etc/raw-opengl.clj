@@ -5,7 +5,7 @@
 
 (def width 320)
 (def height 240)
-(def title "scratch")
+(def title "mini")
 
 (def vertex-source "#version 130
 in mediump vec3 point;
