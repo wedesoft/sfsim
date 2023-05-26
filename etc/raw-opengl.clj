@@ -1,6 +1,11 @@
-(ns raw-opengl
-  (:import [org.lwjgl BufferUtils]
-           [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL13 GL15 GL20 GL30]))
+; https://github.com/rogerallen/hello_lwjgl/blob/master/src/hello_lwjgl/alpha.clj
+(import '[org.lwjgl BufferUtils]
+        '[org.lwjgl.glfw GLFW]
+        '[org.lwjgl.opengl GL GL11 GL12 GL13 GL15 GL20 GL30])
+
+(def width 320)
+(def height 240)
+(def title "scratch")
 
 (def vertex-source "#version 130
 in mediump vec3 point;
@@ -62,10 +67,14 @@ void main()
 (def-make-buffer make-float-buffer BufferUtils/createFloatBuffer)
 (def-make-buffer make-int-buffer BufferUtils/createIntBuffer)
 
-(Display/setTitle "mini")
-(Display/setDisplayMode (DisplayMode. 320 240))
-(Display/create)
+(GLFW/glfwInit)
+(GLFW/glfwDefaultWindowHints)
+(def window (GLFW/glfwCreateWindow width height title 0 0))
+(GLFW/glfwMakeContextCurrent window)
+(GLFW/glfwSwapInterval 1)
+(GLFW/glfwShowWindow window)
 
+(GL/createCapabilities)
 (def vertex-shader (make-shader vertex-source GL20/GL_VERTEX_SHADER))
 (def fragment-shader (make-shader fragment-source GL20/GL_FRAGMENT_SHADER))
 (def program (make-program vertex-shader fragment-shader))
@@ -103,12 +112,13 @@ void main()
 
 (GL11/glEnable GL11/GL_DEPTH_TEST)
 
-(while (not (Display/isCloseRequested))
-  (GL11/glClearColor 0.0 0.0 0.0 0.0)
-  (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-  (GL11/glDrawElements GL11/GL_TRIANGLES 3 GL11/GL_UNSIGNED_INT 0)
-  (Display/update)
-  (Thread/sleep 40))
+(while (not (GLFW/glfwWindowShouldClose window))
+       (GL11/glClearColor 0.0 0.0 0.0 0.0)
+       (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT  GL11/GL_DEPTH_BUFFER_BIT))
+       (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
+       (GL11/glDrawElements GL11/GL_TRIANGLES 3 GL11/GL_UNSIGNED_INT 0)
+       (GLFW/glfwSwapBuffers window)
+       (GLFW/glfwPollEvents))
 
 (GL20/glDisableVertexAttribArray 1)
 (GL20/glDisableVertexAttribArray 0)
@@ -125,10 +135,7 @@ void main()
 (GL30/glBindVertexArray 0)
 (GL30/glDeleteVertexArrays vao)
 
-(GL20/glDetachShader program vertex-shader)
-(GL20/glDetachShader program fragment-shader)
 (GL20/glDeleteProgram program)
-(GL20/glDeleteShader vertex-shader)
-(GL20/glDeleteShader fragment-shader)
 
-(Display/destroy)
+(GLFW/glfwDestroyWindow window)
+(GLFW/glfwTerminate)
