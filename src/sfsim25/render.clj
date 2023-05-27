@@ -34,13 +34,16 @@
          (.destroy pbuffer#)))))
 
 (defmacro onscreen-render
-  "Macro to use the current display for rendering"
-  [width height & body]
-  `(do
-     (Display/makeCurrent)
-     (setup-rendering ~width ~height :cullback)
+  "Macro to use the specified window for rendering"
+  [window & body]
+  `(let [width#  (BufferUtils/createIntBuffer 1)
+         height# (BufferUtils/createIntBuffer 1)]
+     (GLFW/glfwGetWindowSize ~window width# height#)
+     (GLFW/glfwMakeContextCurrent ~window)
+     (GL/createCapabilities)
+     (setup-rendering (.get width# 0) (.get height# 0) :cullback)
      ~@body
-     (Display/update)))
+     (GLFW/glfwSwapBuffers window)))
 
 (defn clear
   "Set clear color and clear color buffer as well as depth buffer"
