@@ -5,7 +5,12 @@
         progrock/progrock {:mvn/version "0.1.2"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.2.2-SNAPSHOT" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
-        lwjgl/lwjgl {:local/root "/usr/share/java/lwjgl.jar"}
+        org.lwjgl/lwjgl {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.2"}
         imagej/imagej {:local/root "/usr/share/java/ij.jar"}}
  :paths ["src"]
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3"
