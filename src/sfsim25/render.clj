@@ -1,7 +1,7 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
   (:require [fastmath.matrix :refer (mat->float-array)])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
+  (:import [org.lwjgl.opengl GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [fastmath.matrix Mat3x3 Mat4x4]
            [fastmath.vector Vec3]))
