@@ -307,14 +307,14 @@
                    ~@body
                    {:texture texture# :target GL11/GL_TEXTURE_2D :width ~width :height ~height}))
 
-;(defmacro create-depth-texture
-;  "Macro to initialise shadow map"
-;  [interpolation boundary width height & body]
-;  `(create-texture-2d ~interpolation ~boundary ~width ~height
-;                      (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL14/GL_COMPARE_R_TO_TEXTURE)
-;                      (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL)
-;                      ~@body))
-;
+(defmacro create-depth-texture
+  "Macro to initialise shadow map"
+  [interpolation boundary width height & body]
+  `(create-texture-2d ~interpolation ~boundary ~width ~height
+                      (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL14/GL_COMPARE_R_TO_TEXTURE)
+                      (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_FUNC GL11/GL_GEQUAL)
+                      ~@body))
+
 ;(defmulti setup-boundary-3d (comp second vector))
 ;
 ;(defmethod setup-boundary-3d :clamp
@@ -375,13 +375,13 @@
 ;  "Create 2D floating-point texture and allocate storage"
 ;  [interpolation boundary width height]
 ;  (make-empty-texture-2d interpolation boundary GL30/GL_R32F width height))
-;
-;(defn make-empty-depth-texture-2d
-;  "Create 2D depth texture and allocate storage"
-;  [interpolation boundary width height]
-;  (create-depth-texture interpolation boundary width height
-;                        (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F width height)))
-;
+
+(defn make-empty-depth-texture-2d
+  "Create 2D depth texture and allocate storage"
+  [interpolation boundary width height]
+  (create-depth-texture interpolation boundary width height
+                        (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F width height)))
+
 ;(defn make-float-texture-2d
 ;  "Load floating-point 2D data into red channel of an OpenGL texture"
 ;  [interpolation boundary image]
@@ -540,10 +540,13 @@
   "Macro to render to a texture and convert it to an image"
   [width height & body]
   `(with-invisible-window
-     (let [tex# (texture-render-color ~width ~height false ~@body)
-           img# (texture->image tex#)]
-       (destroy-texture tex#)
-       img#)))
+     (let [depth# (make-empty-depth-texture-2d :linear :clamp ~width ~height)
+           tex#   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 ~width ~height)]
+       (framebuffer-render ~width ~height :cullback depth# [tex#] ~@body)
+       (let [img# (texture->image tex#)]
+         (destroy-texture tex#)
+         (destroy-texture depth#)
+         img#))))
 
 ;(defmacro create-cubemap
 ;  "Macro to initialise cubemap"

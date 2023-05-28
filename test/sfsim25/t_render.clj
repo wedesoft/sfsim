@@ -79,19 +79,19 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/colors.png" 0.0))
 
-;(fact "Render two quads with depth testing"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2, 4 5 7 6]
-;          vertices [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0,
-;                    -0.5 -0.5 0.1 0.0 1.0, 1.0 -0.5 0.1 0.0 1.0, -0.5 1.0 0.1 0.0 1.0, 1.0 1.0 0.1 0.0 1.0]
-;          program  (make-program :vertex [vertex-color] :fragment [fragment-color])
-;          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quads.png" 0.0))
-;
+(fact "Render two quads with depth testing"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2, 4 5 7 6]
+          vertices [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0,
+                    -0.5 -0.5 0.1 0.0 1.0, 1.0 -0.5 0.1 0.0 1.0, -0.5 1.0 0.1 0.0 1.0, 1.0 1.0 0.1 0.0 1.0]
+          program  (make-program :vertex [vertex-color] :fragment [fragment-color])
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quads.png" 0.0))
+
 ;(def fragment-red
 ;"#version 410 core
 ;out vec3 fragColor;
