@@ -19,34 +19,34 @@
   (offscreen-render 160 120 (clear (vec3 1.0 0.0 0.0)))
   => (is-image "test/sfsim25/fixtures/render/red.png" 0.0))
 
-;(def vertex-passthrough
-;"#version 410 core
-;in vec3 point;
-;void main()
-;{
-;  gl_Position = vec4(point, 1);
-;}")
-;
-;(def fragment-blue
-;"#version 410 core
-;out vec3 fragColor;
-;void main()
-;{
-;  fragColor = vec3(0.0, 0.0, 1.0);
-;}")
-;
-;(fact "Render a quad"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2]
-;          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-;          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
-;          vao      (make-vertex-array-object program indices vertices [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
-;
+(def vertex-passthrough
+"#version 410 core
+in vec3 point;
+void main()
+{
+  gl_Position = vec4(point, 1);
+}")
+
+(def fragment-blue
+"#version 410 core
+out vec3 fragColor;
+void main()
+{
+  fragColor = vec3(0.0, 0.0, 1.0);
+}")
+
+(fact "Render a quad"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
+
 ;(def vertex-color
 ;"#version 410 core
 ;in vec3 point;

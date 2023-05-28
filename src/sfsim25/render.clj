@@ -68,44 +68,44 @@
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
    (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))))
 
-;(defn make-shader
-;  "Compile a GLSL shader"
-;  [^String context ^String source ^long shader-type]
-;  (let [shader (GL20/glCreateShader shader-type)]
-;    (GL20/glShaderSource shader source)
-;    (GL20/glCompileShader shader)
-;    (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
-;      (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024)))))
-;    shader))
-;
-;(defn destroy-shader
-;  "Delete a shader"
-;  [shader]
-;  (GL20/glDeleteShader shader))
-;
-;(defn make-program
-;  "Compile and link a shader program"
-;  [& {:keys [vertex tess-control tess-evaluation geometry fragment]
-;      :or {vertex [] tess-control [] tess-evaluation [] geometry [] fragment []}}]
-;  (let [vertex-shaders          (map #(make-shader "vertex" % GL20/GL_VERTEX_SHADER) vertex)
-;        tess-control-shaders    (map #(make-shader "tessellation control" % GL40/GL_TESS_CONTROL_SHADER) tess-control)
-;        tess-evaluation-shaders (map #(make-shader "tessellation evaluation" % GL40/GL_TESS_EVALUATION_SHADER) tess-evaluation)
-;        geometry-shaders        (map #(make-shader "geometry" % GL32/GL_GEOMETRY_SHADER) geometry)
-;        fragment-shaders        (map #(make-shader "fragment" % GL20/GL_FRAGMENT_SHADER) fragment)]
-;    (let [program (GL20/glCreateProgram)
-;          shaders (concat vertex-shaders tess-control-shaders tess-evaluation-shaders geometry-shaders fragment-shaders)]
-;      (doseq [shader shaders] (GL20/glAttachShader program shader))
-;      (GL20/glLinkProgram program)
-;      (if (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
-;        (throw (Exception. (GL20/glGetProgramInfoLog program 1024))))
-;      (doseq [shader shaders] (destroy-shader shader))
-;      program)))
-;
-;(defn destroy-program
-;  "Delete a program and associated shaders"
-;  [program]
-;  (GL20/glDeleteProgram program))
-;
+(defn make-shader
+  "Compile a GLSL shader"
+  [^String context ^String source ^long shader-type]
+  (let [shader (GL20/glCreateShader shader-type)]
+    (GL20/glShaderSource shader source)
+    (GL20/glCompileShader shader)
+    (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
+      (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024)))))
+    shader))
+
+(defn destroy-shader
+  "Delete a shader"
+  [shader]
+  (GL20/glDeleteShader shader))
+
+(defn make-program
+  "Compile and link a shader program"
+  [& {:keys [vertex tess-control tess-evaluation geometry fragment]
+      :or {vertex [] tess-control [] tess-evaluation [] geometry [] fragment []}}]
+  (let [vertex-shaders          (map #(make-shader "vertex" % GL20/GL_VERTEX_SHADER) vertex)
+        tess-control-shaders    (map #(make-shader "tessellation control" % GL40/GL_TESS_CONTROL_SHADER) tess-control)
+        tess-evaluation-shaders (map #(make-shader "tessellation evaluation" % GL40/GL_TESS_EVALUATION_SHADER) tess-evaluation)
+        geometry-shaders        (map #(make-shader "geometry" % GL32/GL_GEOMETRY_SHADER) geometry)
+        fragment-shaders        (map #(make-shader "fragment" % GL20/GL_FRAGMENT_SHADER) fragment)]
+    (let [program (GL20/glCreateProgram)
+          shaders (concat vertex-shaders tess-control-shaders tess-evaluation-shaders geometry-shaders fragment-shaders)]
+      (doseq [shader shaders] (GL20/glAttachShader program shader))
+      (GL20/glLinkProgram program)
+      (if (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
+        (throw (Exception. (GL20/glGetProgramInfoLog program 1024))))
+      (doseq [shader shaders] (destroy-shader shader))
+      program)))
+
+(defn destroy-program
+  "Delete a program and associated shaders"
+  [program]
+  (GL20/glDeleteProgram program))
+
 ;(defmacro def-make-buffer [method create-buffer]
 ;  "Create a buffer object for binary input/output"
 ;  `(defn ~method [data#]
@@ -113,13 +113,13 @@
 ;       (.put buffer# data#)
 ;       (.flip buffer#)
 ;       buffer#)))
-;
-;(defn make-float-buffer
-;  "Create a floating-point buffer object"
-;  ^java.nio.DirectFloatBufferU [^floats data]
-;  (doto (BufferUtils/createFloatBuffer (count data))
-;    (.put data)
-;    (.flip)))
+
+(defn make-float-buffer
+  "Create a floating-point buffer object"
+  ^java.nio.DirectFloatBufferU [^floats data]
+  (doto (BufferUtils/createFloatBuffer (count data))
+    (.put data)
+    (.flip)))
 
 (defn make-int-buffer
   "Create a integer buffer object"
@@ -134,49 +134,49 @@
 ;  (doto (BufferUtils/createByteBuffer (count data))
 ;    (.put data)
 ;    (.flip)))
-;
-;(defn make-vertex-array-object
-;  "Create vertex array object and vertex buffer objects"
-;  [program indices vertices attributes]
-;  (let [vertex-array-object (GL30/glGenVertexArrays)]
-;    (GL30/glBindVertexArray vertex-array-object)
-;    (let [array-buffer (GL15/glGenBuffers)
-;          index-buffer (GL15/glGenBuffers)]
-;      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-;      (GL15/glBufferData GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)) GL15/GL_STATIC_DRAW)
-;      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-;      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)) GL15/GL_STATIC_DRAW)
-;      (let [attribute-pairs (partition 2 attributes)
-;            sizes           (map second attribute-pairs)
-;            stride          (apply + sizes)
-;            offsets         (reductions + (cons 0 (butlast sizes)))]
-;        (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
-;          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^int program (name attribute)) ^int size
-;                                      GL11/GL_FLOAT false ^int (* stride Float/BYTES) ^int (* offset Float/BYTES))
-;          (GL20/glEnableVertexAttribArray i))
-;        {:vertex-array-object vertex-array-object
-;         :array-buffer        array-buffer
-;         :index-buffer        index-buffer
-;         :nrows               (count indices)
-;         :ncols               (count attribute-pairs)}))))
-;
-;(defn destroy-vertex-array-object
-;  "Destroy vertex array object and vertex buffer objects"
-;  [{:keys [^int vertex-array-object ^int array-buffer ^int index-buffer ^int ncols]}]
-;  (GL30/glBindVertexArray vertex-array-object)
-;  (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
-;  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
-;  (GL15/glDeleteBuffers index-buffer)
-;  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
-;  (GL15/glDeleteBuffers array-buffer)
-;  (GL30/glBindVertexArray 0)
-;  (GL30/glDeleteVertexArrays vertex-array-object))
-;
-;(defn use-program
-;  "Use specified shader program"
-;  [program]
-;  (GL20/glUseProgram ^int program))
-;
+
+(defn make-vertex-array-object
+  "Create vertex array object and vertex buffer objects"
+  [program indices vertices attributes]
+  (let [vertex-array-object (GL30/glGenVertexArrays)]
+    (GL30/glBindVertexArray vertex-array-object)
+    (let [array-buffer (GL15/glGenBuffers)
+          index-buffer (GL15/glGenBuffers)]
+      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
+      (GL15/glBufferData GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)) GL15/GL_STATIC_DRAW)
+      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
+      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)) GL15/GL_STATIC_DRAW)
+      (let [attribute-pairs (partition 2 attributes)
+            sizes           (map second attribute-pairs)
+            stride          (apply + sizes)
+            offsets         (reductions + (cons 0 (butlast sizes)))]
+        (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
+          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^int program (name attribute)) ^int size
+                                      GL11/GL_FLOAT false ^int (* stride Float/BYTES) ^int (* offset Float/BYTES))
+          (GL20/glEnableVertexAttribArray i))
+        {:vertex-array-object vertex-array-object
+         :array-buffer        array-buffer
+         :index-buffer        index-buffer
+         :nrows               (count indices)
+         :ncols               (count attribute-pairs)}))))
+
+(defn destroy-vertex-array-object
+  "Destroy vertex array object and vertex buffer objects"
+  [{:keys [^int vertex-array-object ^int array-buffer ^int index-buffer ^int ncols]}]
+  (GL30/glBindVertexArray vertex-array-object)
+  (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
+  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
+  (GL15/glDeleteBuffers index-buffer)
+  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
+  (GL15/glDeleteBuffers array-buffer)
+  (GL30/glBindVertexArray 0)
+  (GL30/glDeleteVertexArrays vertex-array-object))
+
+(defn use-program
+  "Use specified shader program"
+  [program]
+  (GL20/glUseProgram ^int program))
+
 ;(defn uniform-float
 ;  "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
 ;  [^clojure.lang.IPersistentMap program ^String k ^double value]
@@ -206,18 +206,18 @@
 ;  "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
 ;  [^clojure.lang.IPersistentMap program ^String k ^long value]
 ;  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
-;
-;(defn- setup-vertex-array-object
-;  "Initialise rendering of a vertex array object"
-;  [vertex-array-object]
-;  (GL30/glBindVertexArray ^int (:vertex-array-object vertex-array-object)))
-;
-;(defn render-quads
-;  "Render one or more quads"
-;  [vertex-array-object]
-;  (setup-vertex-array-object vertex-array-object)
-;  (GL11/glDrawElements GL11/GL_QUADS ^int (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
-;
+
+(defn- setup-vertex-array-object
+  "Initialise rendering of a vertex array object"
+  [vertex-array-object]
+  (GL30/glBindVertexArray ^int (:vertex-array-object vertex-array-object)))
+
+(defn render-quads
+  "Render one or more quads"
+  [vertex-array-object]
+  (setup-vertex-array-object vertex-array-object)
+  (GL11/glDrawElements GL11/GL_QUADS ^int (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+
 ;(defn render-patches
 ;  "Render one or more tessellated quads"
 ;  [vertex-array-object]
