@@ -205,101 +205,101 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
 
-;(def vertex-transform3
-;"#version 410 core
-;in vec3 point;
-;uniform mat3 transform;
-;void main()
-;{
-;  gl_Position = vec4(transform * point, 1);
-;}")
-;
-;(fact "Set uniform 3x3 matrix"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2]
-;          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-;          program  (make-program :vertex [vertex-transform3] :fragment [fragment-blue])
-;          vao      (make-vertex-array-object program indices vertices [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (uniform-matrix3 program "transform" (eye 3))
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
-;
-;(def vertex-transform4
-;"#version 410 core
-;in vec3 point;
-;uniform mat4 transform;
-;void main()
-;{
-;  gl_Position = transform * vec4(point, 1);
-;}")
-;
-;(fact "Set uniform 4x4 matrix"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2]
-;          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-;          program  (make-program :vertex [vertex-transform4] :fragment [fragment-blue])
-;          vao      (make-vertex-array-object program indices vertices [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (uniform-matrix4 program "transform" (eye 4))
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
-;
-;(fact "Size of 1D texture"
-;      (offscreen-render 64 64
-;                        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
-;                          (:width tex) => 4
-;                          (destroy-texture tex))))
-;
-;(def vertex-texture
-;"#version 410 core
-;in vec3 point;
-;in vec2 uv;
-;out vec3 color;
-;out vec2 uv_fragment;
-;void main()
-;{
-;  gl_Position = vec4(point, 1);
-;  uv_fragment = uv;
-;}")
-;
-;(def fragment-texture-1d
-;"#version 410 core
-;in vec2 uv_fragment;
-;out vec3 fragColor;
-;uniform sampler1D tex;
-;void main()
-;{
-;  fragColor = texture(tex, uv_fragment.x).rgb;
-;}")
-;
-;(tabular "Render 1D floating-point texture"
-;  (fact
-;    (offscreen-render 64 64
-;                      (let [indices  [0 1 3 2]
-;                            vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
-;                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-1d])
-;                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-;                            tex      (make-float-texture-1d ?interpolation ?boundary (float-array [0.0 1.0]))]
-;                        (clear (vec3 0.0 0.0 0.0))
-;                        (use-program program)
-;                        (uniform-sampler program "tex" 0)
-;                        (use-textures tex)
-;                        (render-quads vao)
-;                        (destroy-texture tex)
-;                        (destroy-vertex-array-object vao)
-;                        (destroy-program program)))
-;    => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png") 0.0))
-;  ?interpolation ?boundary ?result
-;  :nearest       :clamp    "floats-1d-nearest-clamp"
-;  :linear        :clamp    "floats-1d-linear-clamp"
-;  :nearest       :repeat   "floats-1d-nearest-repeat"
-;  :linear        :repeat   "floats-1d-linear-repeat")
-;
+(def vertex-transform3
+"#version 410 core
+in vec3 point;
+uniform mat3 transform;
+void main()
+{
+  gl_Position = vec4(transform * point, 1);
+}")
+
+(fact "Set uniform 3x3 matrix"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-transform3] :fragment [fragment-blue])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (uniform-matrix3 program "transform" (eye 3))
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
+
+(def vertex-transform4
+"#version 410 core
+in vec3 point;
+uniform mat4 transform;
+void main()
+{
+  gl_Position = transform * vec4(point, 1);
+}")
+
+(fact "Set uniform 4x4 matrix"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-transform4] :fragment [fragment-blue])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (uniform-matrix4 program "transform" (eye 4))
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
+
+(fact "Size of 1D texture"
+      (offscreen-render 64 64
+                        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
+                          (:width tex) => 4
+                          (destroy-texture tex))))
+
+(def vertex-texture
+"#version 410 core
+in vec3 point;
+in vec2 uv;
+out vec3 color;
+out vec2 uv_fragment;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  uv_fragment = uv;
+}")
+
+(def fragment-texture-1d
+"#version 410 core
+in vec2 uv_fragment;
+out vec3 fragColor;
+uniform sampler1D tex;
+void main()
+{
+  fragColor = texture(tex, uv_fragment.x).rgb;
+}")
+
+(tabular "Render 1D floating-point texture"
+  (fact
+    (offscreen-render 64 64
+                      (let [indices  [0 1 3 2]
+                            vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
+                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-1d])
+                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                            tex      (make-float-texture-1d ?interpolation ?boundary (float-array [0.0 1.0]))]
+                        (clear (vec3 0.0 0.0 0.0))
+                        (use-program program)
+                        (uniform-sampler program "tex" 0)
+                        (use-textures tex)
+                        (render-quads vao)
+                        (destroy-texture tex)
+                        (destroy-vertex-array-object vao)
+                        (destroy-program program)))
+    => (is-image (str "test/sfsim25/fixtures/render/" ?result ".png") 0.0))
+  ?interpolation ?boundary ?result
+  :nearest       :clamp    "floats-1d-nearest-clamp"
+  :linear        :clamp    "floats-1d-linear-clamp"
+  :nearest       :repeat   "floats-1d-nearest-repeat"
+  :linear        :repeat   "floats-1d-linear-repeat")
+
 ;(fact "Size of 2D RGB texture"
 ;      (offscreen-render 64 64
 ;                        (let [tex (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]

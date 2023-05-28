@@ -192,20 +192,20 @@
   [^clojure.lang.IPersistentMap program ^String k ^Vec3 value]
   (GL20/glUniform3f (GL20/glGetUniformLocation ^int program ^String k) (value 0) (value 1) (value 2)))
 
-;(defn uniform-matrix3
-;  "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
-;  [^clojure.lang.IPersistentMap program ^String k ^Mat3x3 value]
-;  (GL20/glUniformMatrix3 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
-;
-;(defn uniform-matrix4
-;  "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
-;  [^clojure.lang.IPersistentMap program ^String k ^Mat4x4 value]
-;  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
-;
-;(defn uniform-sampler
-;  "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
-;  [^clojure.lang.IPersistentMap program ^String k ^long value]
-;  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
+(defn uniform-matrix3
+  "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^String k ^Mat3x3 value]
+  (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
+
+(defn uniform-matrix4
+  "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^String k ^Mat4x4 value]
+  (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
+
+(defn uniform-sampler
+  "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^String k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
@@ -267,24 +267,24 @@
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
-;(defmulti setup-boundary-1d identity)
-;
-;(defmethod setup-boundary-1d :clamp
-;  [boundary]
-;  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE))
-;
-;(defmethod setup-boundary-1d :repeat
-;  [boundary]
-;  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
-;
-;(defmacro create-texture-1d
-;  "Macro to initialise 1D texture"
-;  [interpolation boundary width & body]
-;  `(create-texture GL11/GL_TEXTURE_1D texture#
-;                   (setup-interpolation GL11/GL_TEXTURE_1D ~interpolation)
-;                   (setup-boundary-1d ~boundary)
-;                   ~@body
-;                   {:texture texture# :target GL11/GL_TEXTURE_1D :width ~width}))
+(defmulti setup-boundary-1d identity)
+
+(defmethod setup-boundary-1d :clamp
+  [boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE))
+
+(defmethod setup-boundary-1d :repeat
+  [boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
+
+(defmacro create-texture-1d
+  "Macro to initialise 1D texture"
+  [interpolation boundary width & body]
+  `(create-texture GL11/GL_TEXTURE_1D texture#
+                   (setup-interpolation GL11/GL_TEXTURE_1D ~interpolation)
+                   (setup-boundary-1d ~boundary)
+                   ~@body
+                   {:texture texture# :target GL11/GL_TEXTURE_1D :width ~width}))
 
 (defmulti setup-boundary-2d identity)
 
@@ -338,14 +338,14 @@
 ;                   ~@body
 ;                   {:texture texture# :target GL12/GL_TEXTURE_3D :width ~width :height ~height :depth ~depth}))
 ;
-;(defn make-float-texture-1d
-;  "Load floating-point 1D data into red channel of an OpenGL texture"
-;  [interpolation boundary data]
-;  (let [buffer (make-float-buffer data)
-;        width  (count data) ]
-;    (create-texture-1d interpolation boundary width
-;      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
-;
+(defn make-float-texture-1d
+  "Load floating-point 1D data into red channel of an OpenGL texture"
+  [interpolation boundary data]
+  (let [buffer (make-float-buffer data)
+        width  (count data) ]
+    (create-texture-1d interpolation boundary width
+      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
+
 ;(defn- make-texture-2d
 ;  "Initialise a 2D texture"
 ;  [image make-buffer interpolation boundary internalformat format_ type_]
@@ -415,12 +415,12 @@
   [texture]
   (GL11/glDeleteTextures ^int (:texture texture)))
 
-;(defn use-textures
-;  "Specify textures to be used in the next rendering operation"
-;  [& textures]
-;  (doseq [[i texture] (map list (range) textures)]
-;    (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
-;    (GL11/glBindTexture (:target texture) (:texture texture))))
+(defn use-textures
+  "Specify textures to be used in the next rendering operation"
+  [& textures]
+  (doseq [[i texture] (map list (range) textures)]
+    (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
+    (GL11/glBindTexture (:target texture) (:texture texture))))
 
 (defn- list-texture-layers
   "Return 2D textures and each layer of 3D textures"
