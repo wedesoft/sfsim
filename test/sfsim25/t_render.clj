@@ -47,38 +47,38 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
-;(def vertex-color
-;"#version 410 core
-;in vec3 point;
-;in vec2 uv;
-;out vec3 color;
-;void main()
-;{
-;  gl_Position = vec4(point, 1);
-;  color = vec3(uv.x, 0.5, uv.y);
-;}")
-;
-;(def fragment-color
-;"#version 410 core
-;in vec3 color;
-;out vec3 fragColor;
-;void main()
-;{
-;  fragColor = color;
-;}")
-;
-;(fact "Shader with two vertex attributes"
-;  (offscreen-render 64 64
-;    (let [indices  [0 1 3 2]
-;          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-;          program  (make-program :vertex [vertex-color] :fragment [fragment-color])
-;          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/colors.png" 0.0))
-;
+(def vertex-color
+"#version 410 core
+in vec3 point;
+in vec2 uv;
+out vec3 color;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  color = vec3(uv.x, 0.5, uv.y);
+}")
+
+(def fragment-color
+"#version 410 core
+in vec3 color;
+out vec3 fragColor;
+void main()
+{
+  fragColor = color;
+}")
+
+(fact "Shader with two vertex attributes"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+          program  (make-program :vertex [vertex-color] :fragment [fragment-color])
+          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/colors.png" 0.0))
+
 ;(fact "Render two quads with depth testing"
 ;  (offscreen-render 160 120
 ;    (let [indices  [0 1 3 2, 4 5 7 6]
