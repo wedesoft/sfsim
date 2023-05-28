@@ -1,5 +1,5 @@
 # TODO
-* try to install and use LWJGL3 from Maven
+* lwjgl3: window-render, with-invisible-window, shader-test, render-test
 * use lwgl3 stb library to load images instead of ImageJ?
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
 * sepapare transmittance\_outer call from cloud\_shadow,
