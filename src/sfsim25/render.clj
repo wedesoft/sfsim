@@ -548,45 +548,45 @@
          (destroy-texture depth#)
          img#))))
 
-;(defmacro create-cubemap
-;  "Macro to initialise cubemap"
-;  [interpolation boundary size & body]
-;  `(create-texture GL13/GL_TEXTURE_CUBE_MAP texture#
-;                   (setup-interpolation GL13/GL_TEXTURE_CUBE_MAP ~interpolation)
-;                   (setup-boundary-3d GL13/GL_TEXTURE_CUBE_MAP ~boundary)
-;                   ~@body
-;                   {:width ~size :height ~size :depth 6 :target GL13/GL_TEXTURE_CUBE_MAP :texture texture#}))
-;
-;
-;(defn- make-cubemap
-;  "Initialise a cubemap"
-;  [images interpolation boundary internalformat format_ type_]
-;  (let [size (:width (first images))]
-;    (create-cubemap interpolation boundary size
-;      (doseq [[face image] (map-indexed vector images)]
-;             (GL11/glTexImage2D (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 internalformat size size 0 format_
-;                                type_ (make-float-buffer (:data image)))))))
-;(defn make-float-cubemap
-;  "Load floating-point 2D textures into red channel of an OpenGL cubemap"
-;  [interpolation boundary images]
-;  (make-cubemap images interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
-;
-;(defn make-empty-float-cubemap
-;  "Create empty cubemap with faces of specified size"
-;  [interpolation boundary size]
-;  (create-cubemap interpolation boundary size
-;                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_R32F size size)))
-;
-;(defn float-cubemap->floats
-;  "Extract floating-point data from cubemap face"
-;  [{:keys [target texture width height]} face]
-;  (with-texture target texture
-;    (let [buf  (BufferUtils/createFloatBuffer (* width height))
-;          data (float-array (* width height))]
-;      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
-;      (.get buf data)
-;      {:width width :height height :data data})))
-;
+(defmacro create-cubemap
+  "Macro to initialise cubemap"
+  [interpolation boundary size & body]
+  `(create-texture GL13/GL_TEXTURE_CUBE_MAP texture#
+                   (setup-interpolation GL13/GL_TEXTURE_CUBE_MAP ~interpolation)
+                   (setup-boundary-3d GL13/GL_TEXTURE_CUBE_MAP ~boundary)
+                   ~@body
+                   {:width ~size :height ~size :depth 6 :target GL13/GL_TEXTURE_CUBE_MAP :texture texture#}))
+
+
+(defn- make-cubemap
+  "Initialise a cubemap"
+  [images interpolation boundary internalformat format_ type_]
+  (let [size (:width (first images))]
+    (create-cubemap interpolation boundary size
+      (doseq [[face image] (map-indexed vector images)]
+             (GL11/glTexImage2D (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 internalformat size size 0 format_
+                                type_ (make-float-buffer (:data image)))))))
+(defn make-float-cubemap
+  "Load floating-point 2D textures into red channel of an OpenGL cubemap"
+  [interpolation boundary images]
+  (make-cubemap images interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
+
+(defn make-empty-float-cubemap
+  "Create empty cubemap with faces of specified size"
+  [interpolation boundary size]
+  (create-cubemap interpolation boundary size
+                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_R32F size size)))
+
+(defn float-cubemap->floats
+  "Extract floating-point data from cubemap face"
+  [{:keys [target texture width height]} face]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height))
+          data (float-array (* width height))]
+      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))
+
 ;(defn make-vector-cubemap
 ;  "Load vector 2D textures into an OpenGL cubemap"
 ;  [interpolation boundary images]
