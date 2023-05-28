@@ -92,119 +92,119 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quads.png" 0.0))
 
-;(def fragment-red
-;"#version 410 core
-;out vec3 fragColor;
-;void main()
-;{
-;  fragColor = vec3(1.0, 0.0, 0.0);
-;}")
-;
-;(fact "Correct switching between two vertex array objects and shader programs"
-;  (offscreen-render 160 120
-;    (let [indices   [0 1 3 2]
-;          vertices1 [-1.0 -1.0 0.1, 0.5 -1.0 0.1, -1.0 0.5 0.1, 0.5 0.5 0.1]
-;          vertices2 [-0.5 -0.5 0.2, 1.0 -0.5 0.2, -0.5 1.0 0.2, 1.0 1.0 0.2]
-;          program1  (make-program :vertex [vertex-passthrough] :fragment [fragment-red])
-;          program2  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
-;          vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
-;          vao2      (make-vertex-array-object program2 indices vertices2 [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program1)
-;      (render-quads vao1)
-;      (use-program program2)
-;      (render-quads vao2)
-;      (destroy-vertex-array-object vao2)
-;      (destroy-vertex-array-object vao1)
-;      (destroy-program program2)
-;      (destroy-program program1))) => (is-image "test/sfsim25/fixtures/render/objects.png" 0.0))
-;
-;(fact "Render lines only"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2]
-;          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-;          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
-;          vao      (make-vertex-array-object program indices vertices [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (raster-lines (render-quads vao))
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/lines.png" 4.3))
-;
-;(def fragment-uniform-floats
-;"#version 410 core
-;out vec3 fragColor;
-;uniform float red;
-;uniform float green;
-;uniform float blue;
-;void main()
-;{
-;  fragColor = vec3(red, green, blue);
-;}")
-;
-;(fact "Set uniform floating point numbers"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2]
-;          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-;          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-floats])
-;          vao      (make-vertex-array-object program indices vertices [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (uniform-float program "red" 1.0)
-;      (uniform-float program "green" 0.5)
-;      (uniform-float program "blue" 0.0)
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
-;
-;(def fragment-uniform-ints
-;"#version 410 core
-;out vec3 fragColor;
-;uniform int red;
-;uniform int green;
-;uniform int blue;
-;void main()
-;{
-;  fragColor = vec3(red / 255.0, green / 255.0, blue / 255.0);
-;}")
-;
-;(fact "Set uniform integer numbers"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2]
-;          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-;          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-ints])
-;          vao      (make-vertex-array-object program indices vertices [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (uniform-int program "red" 255)
-;      (uniform-int program "green" 128)
-;      (uniform-int program "blue" 0)
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-ints.png" 0.0))
-;
-;(def fragment-uniform-vector3
-;"#version 410 core
-;out vec3 fragColor;
-;uniform vec3 color;
-;void main()
-;{
-;  fragColor = color;
-;}")
-;
-;(fact "Set uniform 3D vector"
-;  (offscreen-render 160 120
-;    (let [indices  [0 1 3 2]
-;          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-;          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-vector3])
-;          vao      (make-vertex-array-object program indices vertices [:point 3])]
-;      (clear (vec3 0.0 0.0 0.0))
-;      (use-program program)
-;      (uniform-vector3 program "color" (vec3 1.0 0.5 0.0))
-;      (render-quads vao)
-;      (destroy-vertex-array-object vao)
-;      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
-;
+(def fragment-red
+"#version 410 core
+out vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1.0, 0.0, 0.0);
+}")
+
+(fact "Correct switching between two vertex array objects and shader programs"
+  (offscreen-render 160 120
+    (let [indices   [0 1 3 2]
+          vertices1 [-1.0 -1.0 0.1, 0.5 -1.0 0.1, -1.0 0.5 0.1, 0.5 0.5 0.1]
+          vertices2 [-0.5 -0.5 0.2, 1.0 -0.5 0.2, -0.5 1.0 0.2, 1.0 1.0 0.2]
+          program1  (make-program :vertex [vertex-passthrough] :fragment [fragment-red])
+          program2  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
+          vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
+          vao2      (make-vertex-array-object program2 indices vertices2 [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program1)
+      (render-quads vao1)
+      (use-program program2)
+      (render-quads vao2)
+      (destroy-vertex-array-object vao2)
+      (destroy-vertex-array-object vao1)
+      (destroy-program program2)
+      (destroy-program program1))) => (is-image "test/sfsim25/fixtures/render/objects.png" 0.0))
+
+(fact "Render lines only"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (raster-lines (render-quads vao))
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/lines.png" 4.3))
+
+(def fragment-uniform-floats
+"#version 410 core
+out vec3 fragColor;
+uniform float red;
+uniform float green;
+uniform float blue;
+void main()
+{
+  fragColor = vec3(red, green, blue);
+}")
+
+(fact "Set uniform floating point numbers"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-floats])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (uniform-float program "red" 1.0)
+      (uniform-float program "green" 0.5)
+      (uniform-float program "blue" 0.0)
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
+
+(def fragment-uniform-ints
+"#version 410 core
+out vec3 fragColor;
+uniform int red;
+uniform int green;
+uniform int blue;
+void main()
+{
+  fragColor = vec3(red / 255.0, green / 255.0, blue / 255.0);
+}")
+
+(fact "Set uniform integer numbers"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-ints])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (uniform-int program "red" 255)
+      (uniform-int program "green" 128)
+      (uniform-int program "blue" 0)
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-ints.png" 0.0))
+
+(def fragment-uniform-vector3
+"#version 410 core
+out vec3 fragColor;
+uniform vec3 color;
+void main()
+{
+  fragColor = color;
+}")
+
+(fact "Set uniform 3D vector"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-vector3])
+          vao      (make-vertex-array-object program indices vertices [:point 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (uniform-vector3 program "color" (vec3 1.0 0.5 0.0))
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/uniform-floats.png" 0.0))
+
 ;(def vertex-transform3
 ;"#version 410 core
 ;in vec3 point;

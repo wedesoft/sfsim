@@ -177,21 +177,21 @@
   [program]
   (GL20/glUseProgram ^int program))
 
-;(defn uniform-float
-;  "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
-;  [^clojure.lang.IPersistentMap program ^String k ^double value]
-;  (GL20/glUniform1f (GL20/glGetUniformLocation ^int program ^String k) value))
-;
-;(defn uniform-int
-;  "Set uniform integer variable in current shader program (don't forget to set the program using use-program first)"
-;  [^clojure.lang.IPersistentMap program ^String k ^long value]
-;  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
-;
-;(defn uniform-vector3
-;  "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
-;  [^clojure.lang.IPersistentMap program ^String k ^Vec3 value]
-;  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program ^String k) (value 0) (value 1) (value 2)))
-;
+(defn uniform-float
+  "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^String k ^double value]
+  (GL20/glUniform1f (GL20/glGetUniformLocation ^int program ^String k) value))
+
+(defn uniform-int
+  "Set uniform integer variable in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^String k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
+
+(defn uniform-vector3
+  "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
+  [^clojure.lang.IPersistentMap program ^String k ^Vec3 value]
+  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program ^String k) (value 0) (value 1) (value 2)))
+
 ;(defn uniform-matrix3
 ;  "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
 ;  [^clojure.lang.IPersistentMap program ^String k ^Mat3x3 value]
@@ -225,13 +225,13 @@
 ;  (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
 ;  (GL11/glDrawElements GL40/GL_PATCHES ^int (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 ;
-;(defmacro raster-lines
-;  "Macro for temporarily switching polygon rasterization to line mode"
-;  [& body]
-;  `(do
-;     (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
-;     ~@body
-;     (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
+(defmacro raster-lines
+  "Macro for temporarily switching polygon rasterization to line mode"
+  [& body]
+  `(do
+     (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
+     ~@body
+     (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
 
 (defmacro with-texture
   "Macro to bind a texture and open a context with it"
