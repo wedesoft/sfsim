@@ -16,23 +16,6 @@
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
-;(defmacro offscreen-render
-;  "Macro to use a pbuffer for offscreen rendering"
-;  [width height & body]
-;  `(let [pixels#  (BufferUtils/createIntBuffer (* ~width ~height))
-;         pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 24 0 0) nil nil)
-;         data#    (int-array (* ~width ~height))]
-;     (.makeCurrent pbuffer#)
-;     (setup-rendering ~width ~height :cullback)
-;     (try
-;       ~@body
-;       (GL11/glReadPixels 0 0 ~width ~height GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixels#)
-;       (.get pixels# data#)
-;       {:width ~width :height ~height :data data#}
-;       (finally
-;         (.releaseContext pbuffer#)
-;         (.destroy pbuffer#)))))
-
 (defmacro with-invisible-window
   "Macro to create temporary invisible window to provide context"
   [& body]
@@ -105,14 +88,6 @@
   "Delete a program and associated shaders"
   [program]
   (GL20/glDeleteProgram program))
-
-;(defmacro def-make-buffer [method create-buffer]
-;  "Create a buffer object for binary input/output"
-;  `(defn ~method [data#]
-;     (let [buffer# (~create-buffer (count data#))]
-;       (.put buffer# data#)
-;       (.flip buffer#)
-;       buffer#)))
 
 (defn make-float-buffer
   "Create a floating-point buffer object"
@@ -496,16 +471,16 @@
       (.get buf data)
       {:width width :height height :data data})))
 
-;(defn float-texture-3d->floats
-;  "Extract floating-point floating-point data from texture"
-;  [{:keys [target texture width height depth]}]
-;  (with-texture target texture
-;    (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
-;          data (float-array (* width height depth))]
-;      (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
-;      (.get buf data)
-;      {:width width :height height :depth depth :data data})))
-;
+(defn float-texture-3d->floats
+  "Extract floating-point floating-point data from texture"
+  [{:keys [target texture width height depth]}]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
+          data (float-array (* width height depth))]
+      (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :depth depth :data data})))
+
 (defn rgb-texture->vectors3
   "Extract floating-point BGR vectors from texture"
   [{:keys [target texture width height]}]
@@ -587,23 +562,23 @@
       (.get buf data)
       {:width width :height height :data data})))
 
-;(defn make-vector-cubemap
-;  "Load vector 2D textures into an OpenGL cubemap"
-;  [interpolation boundary images]
-;  (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
-;
-;(defn make-empty-vector-cubemap
-;  "Create empty cubemap with faces of specified size"
-;  [interpolation boundary size]
-;  (create-cubemap interpolation boundary size
-;                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_RGB32F size size)))
-;
-;(defn vector-cubemap->vectors3
-;  "Extract floating-point vector data from cubemap face"
-;  [{:keys [target texture width height]} face]
-;  (with-texture target texture
-;    (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
-;          data (float-array (* width height 3))]
-;      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_BGR GL11/GL_FLOAT buf)
-;      (.get buf data)
-;      {:width width :height height :data data})))
+(defn make-vector-cubemap
+  "Load vector 2D textures into an OpenGL cubemap"
+  [interpolation boundary images]
+  (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+
+(defn make-empty-vector-cubemap
+  "Create empty cubemap with faces of specified size"
+  [interpolation boundary size]
+  (create-cubemap interpolation boundary size
+                  (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_RGB32F size size)))
+
+(defn vector-cubemap->vectors3
+  "Extract floating-point vector data from cubemap face"
+  [{:keys [target texture width height]} face]
+  (with-texture target texture
+    (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
+          data (float-array (* width height 3))]
+      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_BGR GL11/GL_FLOAT buf)
+      (.get buf data)
+      {:width width :height height :data data})))

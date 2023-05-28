@@ -884,14 +884,14 @@ void main()
            (destroy-program program)
            (destroy-texture tex))))
 
-;(fact "Create cube map of 3D vectors and read them out"
-;      (offscreen-render 16 16
-;        (let [gen-vector (fn [i] (let [i3 (* i 3)] [i3 (inc i3) (inc (inc i3))]))
-;              cubemap (make-vector-cubemap :linear :clamp
-;                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array (reverse (gen-vector i)))})
-;                                                 (range 6)))]
-;          (doseq [i (range 6)]
-;                 (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
-;          (destroy-texture cubemap))))
+(fact "Create cube map of 3D vectors and read them out"
+      (offscreen-render 16 16
+        (let [gen-vector (fn [i] (let [i3 (* i 3)] [i3 (inc i3) (inc (inc i3))]))
+              cubemap (make-vector-cubemap :linear :clamp
+                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array (reverse (gen-vector i)))})
+                                                 (range 6)))]
+          (doseq [i (range 6)]
+                 (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
+          (destroy-texture cubemap))))
 
 (GLFW/glfwTerminate)
