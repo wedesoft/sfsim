@@ -55,18 +55,18 @@
   (fn [other]
       (spit-image filename other)))
 
-(defn shader-test [setup probe & shaders]
-  (fn [uniforms args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices  [0 1 3 2]
-                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                program  (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao      (make-vertex-array-object program indices vertices [:point 3])
-                tex      (texture-render-color 1 1 true (use-program program) (apply setup program uniforms) (render-quads vao))
-                img      (rgb-texture->vectors3 tex)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
+;(defn shader-test [setup probe & shaders]
+;  (fn [uniforms args]
+;      (let [result (promise)]
+;        (offscreen-render 1 1
+;          (let [indices  [0 1 3 2]
+;                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+;                program  (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+;                vao      (make-vertex-array-object program indices vertices [:point 3])
+;                tex      (texture-render-color 1 1 true (use-program program) (apply setup program uniforms) (render-quads vao))
+;                img      (rgb-texture->vectors3 tex)]
+;            (deliver result (get-vector3 img 0 0))
+;            (destroy-texture tex)
+;            (destroy-vertex-array-object vao)
+;            (destroy-program program)))
+;        @result)))
