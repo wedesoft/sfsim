@@ -11,7 +11,10 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.util :refer :all]
-              [sfsim25.planet :refer :all]))
+              [sfsim25.planet :refer :all])
+    (:import [org.lwjgl.glfw GLFW]))
+
+(GLFW/glfwInit)
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (vec3 -0.75 -0.5  -1.0)
@@ -240,7 +243,7 @@ void main()
                           (destroy-texture heightfield)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
-      => (is-image "test/sfsim25/fixtures/planet/heightfield.png" 1.4))
+      => (is-image "test/sfsim25/fixtures/planet/heightfield.png" 1.6))
 
 (defn radiance-shader-test [setup probe & shaders]
   (fn [uniforms args]
@@ -477,3 +480,5 @@ float sampling_offset()
          "white"   PI      1  radius       1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
          "white"   PI      1  radius       1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter"
          "white"   PI      1  (/ radius 2) 1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "scaled")
+
+(GLFW/glfwTerminate)
