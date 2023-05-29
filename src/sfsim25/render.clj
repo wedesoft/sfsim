@@ -33,12 +33,12 @@
 (defmacro onscreen-render
   "Macro to use the specified window for rendering"
   [window & body]
-  `(let [width#  (BufferUtils/createIntBuffer 1)
-         height# (BufferUtils/createIntBuffer 1)]
+  `(let [width#  (int-array 1)
+         height# (int-array 1)]
      (GLFW/glfwGetWindowSize ~window width# height#)
      (GLFW/glfwMakeContextCurrent ~window)
      (GL/createCapabilities)
-     (setup-rendering (.get width# 0) (.get height# 0) :cullback)
+     (setup-rendering (aget width# 0) (aget height# 0) :cullback)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))
 
