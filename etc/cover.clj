@@ -8,14 +8,19 @@
          '[sfsim25.clouds :refer :all]
          '[sfsim25.util :refer :all])
 
-(import '[org.lwjgl.opengl Display DisplayMode]
-        '[org.lwjgl.input Keyboard])
+(import '[org.lwjgl.opengl GL]
+        '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 
-(Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 640 640))
-(Display/create)
+(def width 640)
+(def height 640)
 
-(Keyboard/create)
+(GLFW/glfwInit)
+(GLFW/glfwDefaultWindowHints)
+(def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
+
+(GLFW/glfwMakeContextCurrent window)
+(GLFW/glfwShowWindow window)
+(GL/createCapabilities)
 
 (def worley-size 64)
 
@@ -70,7 +75,6 @@ void main()
 (def vertices [-1 -1 0, 1 -1 0, -1 1 0, 1  1 0])
 (def vao (make-vertex-array-object program indices vertices [:point 3]))
 
-(def keystates (atom {}))
 (def alpha (atom 0))
 (def beta (atom 0))
 (def threshold (atom 0.4))
@@ -80,22 +84,30 @@ void main()
 (def prevailing (atom 0.1))
 (def whirl (atom 1.0))
 
+(def keystates (atom {}))
+
+(def keyboard-callback
+  (proxy [GLFWKeyCallback] []
+         (invoke [window k scancode action mods]
+           (if (= action GLFW/GLFW_PRESS)
+             (swap! keystates assoc k true))
+           (if (= action GLFW/GLFW_RELEASE)
+             (swap! keystates assoc k false)))))
+
+(GLFW/glfwSetKeyCallback window keyboard-callback)
+
 (def t0 (atom (System/currentTimeMillis)))
-(while (not (Display/isCloseRequested))
-       (while (Keyboard/next)
-              (let [state     (Keyboard/getEventKeyState)
-                    event-key (Keyboard/getEventKey)]
-                (swap! keystates assoc event-key state)))
+(while (not (GLFW/glfwWindowShouldClose window))
        (let [t1 (System/currentTimeMillis)
              dt (- t1 @t0)
-             ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
-             rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
-             tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
-             ta (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
-             cs (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
-             os (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
-             pw (if (@keystates Keyboard/KEY_T) 0.001 (if (@keystates Keyboard/KEY_G) -0.001 0))
-             ps (if (@keystates Keyboard/KEY_Y) 0.001 (if (@keystates Keyboard/KEY_H) -0.001 0))]
+             ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
+             rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
+             tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
+             ta (if (@keystates GLFW/GLFW_KEY_W) 0.001 (if (@keystates GLFW/GLFW_KEY_S) -0.001 0))
+             cs (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0))
+             os (if (@keystates GLFW/GLFW_KEY_R) 0.001 (if (@keystates GLFW/GLFW_KEY_F) -0.001 0))
+             pw (if (@keystates GLFW/GLFW_KEY_T) 0.001 (if (@keystates GLFW/GLFW_KEY_G) -0.001 0))
+             ps (if (@keystates GLFW/GLFW_KEY_Y) 0.001 (if (@keystates GLFW/GLFW_KEY_H) -0.001 0))]
          (swap! alpha + (* dt ra))
          (swap! beta + (* dt rb))
          (swap! threshold + (* dt tr))
@@ -122,7 +134,7 @@ void main()
                                   :num-iterations 50
                                   :flow-scale (* 1.5e-3 (exp @curl-scale-exp)))))
          (let [mat (mulm (rotation-y @beta) (rotation-x @alpha))]
-           (onscreen-render (Display/getWidth) (Display/getHeight)
+           (onscreen-render window
                             (clear (vec3 0 0 0))
                             (use-program program)
                             (uniform-sampler program "cubemap" 0)
@@ -131,10 +143,10 @@ void main()
                             (uniform-float program "multiplier" @multiplier)
                             (use-textures @cloud-cover-tex)
                             (render-quads vao)))
+         (GLFW/glfwPollEvents)
          (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f"
                         @threshold @multiplier (exp @curl-scale-exp) (exp @cloud-scale-exp) @whirl @prevailing))
          (flush)
-         (Thread/sleep 10)
          (swap! t0 + dt)))
 
 (destroy-program program)
@@ -143,6 +155,7 @@ void main()
 (destroy-texture worley-south)
 (destroy-texture worley-north)
 
-(Display/destroy)
+(GLFW/glfwDestroyWindow window)
+(GLFW/glfwTerminate)
 
 (System/exit 0)
