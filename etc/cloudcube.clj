@@ -13,12 +13,10 @@
          '[sfsim25.matrix :refer :all]
          '[sfsim25.util :refer :all])
 
-(import '[ij ImagePlus]
-        '[ij.process FloatProcessor])
-(import '[org.lwjgl.opengl GL11 GL12 GL20 GL30 GL32 GL42]
-        '[org.lwjgl.glfw GLFW]
-        '[org.lwjgl.input Keyboard]
-        '[org.lwjgl BufferUtils])
+(import '[org.lwjgl.opengl GL GL11 GL12 GL20 GL30 GL32 GL42]
+        '[org.lwjgl.glfw GLFW GLFWKeyCallback])
+
+(set! *unchecked-math* true)
 
 (GLFW/glfwInit)
 (GLFW/glfwDefaultWindowHints)
@@ -27,7 +25,6 @@
 (def height 480)
 
 (def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
-(Keyboard/create)
 
 (def z-near 50)
 (def z-far 150)
@@ -41,7 +38,6 @@
 (def multiplier (atom 2.0))
 (def cloud-scale 100)
 (def light (atom (+ (/ PI 4) 0.1)))
-(def keystates (atom {}))
 (def shadow-size 128)
 
 (def vertex-shader "#version 410 core
@@ -111,6 +107,10 @@ void main()
   vec2 intersection = ray_box(vec3(-30, -30, -30), vec3(30, 30, 30), origin, direction);
   fragColor = cloud_track(light_direction, origin, direction, intersection.x, intersection.x + intersection.y, bg);
 }")
+
+(GLFW/glfwMakeContextCurrent window)
+(GLFW/glfwShowWindow window)
+(GL/createCapabilities)
 
 (def program
   (make-program :vertex [vertex-shader]
@@ -284,24 +284,32 @@ void main()
 (def separation 10.0)
 (def samples (atom 16.0))
 
+(def keystates (atom {}))
+
+(def keyboard-callback
+  (proxy [GLFWKeyCallback] []
+         (invoke [window k scancode action mods]
+           (if (= action GLFW/GLFW_PRESS)
+             (swap! keystates assoc k true))
+           (if (= action GLFW/GLFW_RELEASE)
+             (swap! keystates assoc k false)))))
+
+(GLFW/glfwSetKeyCallback window keyboard-callback)
+
 (def t0 (atom (System/currentTimeMillis)))
 (def tf @t0)
 (def n (atom 0))
-(while (not (Display/isCloseRequested))
-       (while (Keyboard/next)
-              (let [state     (Keyboard/getEventKeyState)
-                    event-key (Keyboard/getEventKey)]
-                (swap! keystates assoc event-key state)))
+(while (not (GLFW/glfwWindowShouldClose window))
        (let [t1 (System/currentTimeMillis)
              dt (- t1 @t0)
-             ra (if (@keystates Keyboard/KEY_NUMPAD8) 0.001 (if (@keystates Keyboard/KEY_NUMPAD2) -0.001 0))
-             rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
-             rc (if (@keystates Keyboard/KEY_NUMPAD3) 0.001 (if (@keystates Keyboard/KEY_NUMPAD1) -0.001 0))
-             tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
-             ts (if (@keystates Keyboard/KEY_W) 0.001 (if (@keystates Keyboard/KEY_S) -0.001 0))
-             tm (if (@keystates Keyboard/KEY_E) 0.001 (if (@keystates Keyboard/KEY_D) -0.001 0))
-             tl (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
-             l  (if (@keystates Keyboard/KEY_ADD) 0.0005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.0005 0))]
+             ra (if (@keystates GLFW/GLFW_KEY_KP_8) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_2) -0.001 0))
+             rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
+             rc (if (@keystates GLFW/GLFW_KEY_KP_3) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_1) -0.001 0))
+             tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
+             ts (if (@keystates GLFW/GLFW_KEY_W) 0.001 (if (@keystates GLFW/GLFW_KEY_S) -0.001 0))
+             tm (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0))
+             tl (if (@keystates GLFW/GLFW_KEY_R) 0.001 (if (@keystates GLFW/GLFW_KEY_F) -0.001 0))
+             l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.0005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
          (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
          (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
@@ -342,7 +350,7 @@ void main()
                              (uniform-float sprogram "level_of_detail" lod)
                              (uniform-int sprogram "cloud_size" size)
                              (render-quads vao2))
-         (onscreen-render width height
+         (onscreen-render window
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (use-textures worley bluenoise opacity opacity-shape)
@@ -362,7 +370,8 @@ void main()
                           (uniform-vector3 program "light_direction" light-direction)
                           (uniform-float program "depth" (:depth shadow-mat))
                           (uniform-float program "thickness" (* 7 separation))
-                          (render-quads vao))))
+                          (render-quads vao)))
+       (GLFW/glfwPollEvents))
 
 (destroy-texture opacity)
 (destroy-texture opacity-shape)
@@ -374,3 +383,5 @@ void main()
 
 (GLFW/glfwDestroyWindow window)
 (GLFW/glfwTerminate)
+
+(set! *unchecked-math* false)

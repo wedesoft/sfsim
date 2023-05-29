@@ -11,6 +11,8 @@
 (import '[org.lwjgl.opengl GL]
         '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 
+(set! *unchecked-math* true)
+
 (def width 640)
 (def height 640)
 
@@ -157,5 +159,7 @@ void main()
 
 (GLFW/glfwDestroyWindow window)
 (GLFW/glfwTerminate)
+
+(set! *unchecked-math* false)
 
 (System/exit 0)
