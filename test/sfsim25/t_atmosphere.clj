@@ -12,7 +12,10 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
               [sfsim25.atmosphere :refer :all :as atmosphere])
-    (:import [fastmath.vector Vec3]))
+    (:import [fastmath.vector Vec3]
+             [org.lwjgl.glfw GLFW]))
+
+(GLFW/glfwInit)
 
 (def radius 6378000)
 (def max-height 100000)
@@ -751,3 +754,5 @@ void main()
          0  -1   (/ 6 (* 16 PI))
          0.5 0   (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5)))
          0.5 1   (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))
+
+(GLFW/glfwTerminate)

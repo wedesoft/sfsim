@@ -3,6 +3,7 @@
   (:require [fastmath.matrix :refer (mat->float-array)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
+           [org.lwjgl.glfw GLFW]
            [fastmath.matrix Mat3x3 Mat4x4]
            [fastmath.vector Vec3]))
 
