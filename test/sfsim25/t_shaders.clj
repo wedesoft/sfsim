@@ -8,8 +8,9 @@
             [sfsim25.shaders :refer :all]
             [sfsim25.matrix :refer (orthogonal)]
             [sfsim25.util :refer (get-float get-vector3 convert-4d-to-2d)])
-  (:import [org.lwjgl BufferUtils]
-           [org.lwjgl.opengl Pbuffer PixelFormat]))
+  (:import [org.lwjgl.glfw GLFW]))
+
+(GLFW/glfwInit)
 
 (def ray-sphere-probe
   (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
@@ -1076,3 +1077,5 @@ void main()
          0.3  0.2       0.4       0.0      1.0      0.5
          0.5  0.0       1.0       0.0      0.4      0.2
          0.5  0.0       1.0       0.2      0.4      0.3)
+
+(GLFW/glfwTerminate)
