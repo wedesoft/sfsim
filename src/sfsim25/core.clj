@@ -1,22 +1,22 @@
 (ns sfsim25.core
   "Space flight simulator main program."
-  (:import [org.lwjgl.opengl Display GL11]
-           [org.lwjgl.input Keyboard])
+  (:import [org.lwjgl.opengl GL GL11]
+           [org.lwjgl.glfw GLFW])
   (:gen-class))
 
 (defn -main
   "Space flight simulator main function"
   [& args]
   (let [running (atom true)]
-    (Display/setTitle "sfsim25")
-    (Display/setFullscreen true)
-    (Display/create)
-    (while (and @running (not (Display/isCloseRequested)))
-      (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-      (Display/update)
-      (Thread/sleep 20)
-      (while (Keyboard/next)
-        (when (Keyboard/getEventKeyState)
-          (if (== (Keyboard/getEventKey) Keyboard/KEY_ESCAPE)
-            (reset! running false)))))
-    (Display/destroy)))
+    (GLFW/glfwInit)
+    (GLFW/glfwDefaultWindowHints)
+    (let [window (GLFW/glfwCreateWindow 320 240 "scratch" 0 0)]
+      (GLFW/glfwMakeContextCurrent window)
+      (GLFW/glfwShowWindow window)
+      (GL/createCapabilities)
+      (while (not (GLFW/glfwWindowShouldClose window))
+             (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
+             (GLFW/glfwSwapBuffers window)
+             (GLFW/glfwPollEvents))
+      (GLFW/glfwDestroyWindow window)
+      (GLFW/glfwTerminate))))
