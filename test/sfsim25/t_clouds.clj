@@ -9,7 +9,10 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
-              [sfsim25.clouds :refer :all]))
+              [sfsim25.clouds :refer :all])
+    (:import [org.lwjgl.glfw GLFW]))
+
+(GLFW/glfwInit)
 
 (def cloud-track-probe
   (template/fn [a b decay scatter offset density gradient lx ly lz ir ig ib]
@@ -854,7 +857,7 @@ void main()
 }")
 
 (fact "Program to generate planetary cloud cover using curl noise"
-    (offscreen-render 128 128
+    (with-invisible-window
       (let [worley-size  8
             worley-north (make-float-texture-3d :linear :repeat
                                                 {:width worley-size :height worley-size :depth worley-size
@@ -882,20 +885,24 @@ void main()
                                               :cover-scale 2.0
                                               :num-iterations 50
                                               :flow-scale 1.5e-3)]
-        (setup-rendering 128 128 :cullback)  ; Need to setup viewport again after creating cubemap
-        (clear (vec3 1 0 0))
-        (use-program program)
-        (uniform-sampler program "cubemap" 0)
-        (uniform-float program "threshold" 0.3)
-        (uniform-float program "multiplier" 4.0)
-        (use-textures cubemap)
-        (render-quads vao)
-        (destroy-texture cubemap)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)
-        (destroy-texture worley-cover)
-        (destroy-texture worley-south)
-        (destroy-texture worley-north)))
+        (let [tex (texture-render-color 128 128 false
+                                        (clear (vec3 1 0 0))
+                                        (use-program program)
+                                        (uniform-sampler program "cubemap" 0)
+                                        (uniform-float program "threshold" 0.3)
+                                        (uniform-float program "multiplier" 4.0)
+                                        (use-textures cubemap)
+                                        (render-quads vao)
+                                        )
+              img (texture->image tex)]
+          (destroy-texture cubemap)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (destroy-texture worley-cover)
+          (destroy-texture worley-south)
+          (destroy-texture worley-north)
+          (destroy-texture tex)
+          img)))
     => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.0))
 
 (def cloud-profile-probe
@@ -1108,3 +1115,5 @@ void main()
          1.0  0.0  2.0 0.5  0.0 0.75
          1.0  0.0  0.5 0.25 0.0 0.0
          1.0  0.5  1.0 1.0  0.0 0.5)
+
+(GLFW/glfwTerminate)
