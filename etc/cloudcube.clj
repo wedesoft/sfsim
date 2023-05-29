@@ -15,20 +15,24 @@
 
 (import '[ij ImagePlus]
         '[ij.process FloatProcessor])
-(import '[org.lwjgl.opengl Display DisplayMode PixelFormat GL11 GL12 GL20 GL30 GL32 GL42]
+(import '[org.lwjgl.opengl GL11 GL12 GL20 GL30 GL32 GL42]
+        '[org.lwjgl.glfw GLFW]
         '[org.lwjgl.input Keyboard]
         '[org.lwjgl BufferUtils])
 
-(Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. 640 480))
-;(Display/setFullscreen true)
-(Display/create)
+(GLFW/glfwInit)
+(GLFW/glfwDefaultWindowHints)
+
+(def width 640)
+(def height 480)
+
+(def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
 (Keyboard/create)
 
 (def z-near 50)
 (def z-far 150)
 (def fov (to-radians 75))
-(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far fov))
+(def projection (projection-matrix width height z-near z-far fov))
 (def origin (atom (vec3 0 0 100)))
 (def orientation (atom (q/* (q/rotation (to-radians 125) (vec3 1 0 0)) (q/rotation (to-radians 24) (vec3 0 1 0)))))
 (def octaves [0.5 0.25 0.125 0.125])
@@ -320,7 +324,7 @@ void main()
              transform       (transformation-matrix (quaternion->matrix @orientation) @origin)
              shadow-mat      (shadow-matrices projection transform light-direction 0)
              lod             (/ (log (/ (/ (:scale shadow-mat) shadow-size) (/ cloud-scale size))) (log 2))
-             lod-offset      (- (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ cloud-scale size))) (log 2))
+             lod-offset      (- (/ (log (/ (tan (/ fov 2)) (/ width 2) (/ cloud-scale size))) (log 2))
                                 (dec (count octaves)))]
          (framebuffer-render shadow-size shadow-size :cullback nil [opacity opacity-shape]
                              (use-program sprogram)
@@ -338,7 +342,7 @@ void main()
                              (uniform-float sprogram "level_of_detail" lod)
                              (uniform-int sprogram "cloud_size" size)
                              (render-quads vao2))
-         (onscreen-render (Display/getWidth) (Display/getHeight)
+         (onscreen-render width height
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (use-textures worley bluenoise opacity opacity-shape)
@@ -367,4 +371,6 @@ void main()
 (destroy-vertex-array-object vao)
 (destroy-program program)
 (destroy-program sprogram)
-(Display/destroy)
+
+(GLFW/glfwDestroyWindow window)
+(GLFW/glfwTerminate)

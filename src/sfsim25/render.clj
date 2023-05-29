@@ -40,7 +40,7 @@
      (GL/createCapabilities)
      (setup-rendering (.get width# 0) (.get height# 0) :cullback)
      ~@body
-     (GLFW/glfwSwapBuffers window)))
+     (GLFW/glfwSwapBuffers ~window)))
 
 (defn clear
   "Set clear color and clear color buffer as well as depth buffer"

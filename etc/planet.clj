@@ -12,18 +12,17 @@
          '[sfsim25.planet :refer :all]
          '[sfsim25.util :refer :all])
 
-(import '[org.lwjgl.opengl Display DisplayMode PixelFormat]
-        '[org.lwjgl.input Keyboard])
+(import '[org.lwjgl.glfw GLFW GLFWKeyCallback]
+        '[org.lwjgl.opengl GL])
 
 (set! *unchecked-math* true)
 
-(Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. (/ 1920 2) (/ 1080 2)))
-;(Display/setDisplayMode (DisplayMode. 1280 720))
-;(Display/setFullscreen true)
-(Display/create)
+(def width 960)
+(def height 540)
 
-(Keyboard/create)
+(GLFW/glfwInit)
+(GLFW/glfwDefaultWindowHints)
+(def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
 
 (def radius 6378000.0)
 (def polar-radius 6357000.0)
@@ -38,8 +37,6 @@
 (def z-near 100)
 (def z-far (* 2.0 radius))
 
-(def keystates (atom {}))
-
 (def height-size 32)
 (def elevation-size 127)
 (def light-elevation-size 32)
@@ -48,6 +45,10 @@
 (def transmittance-elevation-size 255)
 (def surface-height-size 16)
 (def surface-sun-elevation-size 63)
+
+(GLFW/glfwMakeContextCurrent window)
+(GLFW/glfwShowWindow window)
+(GL/createCapabilities)
 
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data data}))
@@ -85,7 +86,7 @@
 
 (go-loop []
          (if-let [tree (<! tree-state)]
-                 (let [increase? (partial increase-level? tilesize radius polar-radius (Display/getWidth) 60 10 5 @position)]
+                 (let [increase? (partial increase-level? tilesize radius polar-radius width 60 10 5 @position)]
                    (>! changes (update-level-of-detail tree increase? true))
                    (recur))))
 
@@ -160,7 +161,7 @@
 
 (>!! tree-state @tree)
 
-(def projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near z-far (to-radians 60)))
+(def projection (projection-matrix width height z-near z-far (to-radians 60)))
 
 (use-program program-planet)
 (uniform-matrix4 program-planet "projection" projection)
@@ -201,27 +202,34 @@
 (uniform-int program-atmosphere "surface_sun_elevation_size" surface-sun-elevation-size)
 (uniform-float program-atmosphere "amplification" 6)
 
+(def keystates (atom {}))
+
+(def keyboard-callback
+  (proxy [GLFWKeyCallback] []
+         (invoke [window k scancode action mods]
+           (if (= action GLFW/GLFW_PRESS)
+             (swap! keystates assoc k true))
+           (if (= action GLFW/GLFW_RELEASE)
+             (swap! keystates assoc k false)))))
+
+(GLFW/glfwSetKeyCallback window keyboard-callback)
 
 (def t0 (atom (System/currentTimeMillis)))
-(while (not (Display/isCloseRequested))
-       (while (Keyboard/next)
-              (let [state     (Keyboard/getEventKeyState)
-                    event-key (Keyboard/getEventKey)]
-                (swap! keystates assoc event-key state)))
+(while (not (GLFW/glfwWindowShouldClose window))
        (let [t1        (System/currentTimeMillis)
              dt        (- t1 @t0)
              transform (transformation-matrix (quaternion->matrix @orientation) @position)
-             ra        (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
-             rb        (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
-             rc        (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-             v         (if (@keystates Keyboard/KEY_PRIOR) 500 (if (@keystates Keyboard/KEY_NEXT) -500 0))
-             l         (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))]
+             ra        (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
+             rb        (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
+             rc        (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
+             v         (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 500 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -500 0))
+             l         (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
          (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
          (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
          (swap! position add (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* dt v)))
          (swap! light1 + (* l 0.1 dt))
-         (onscreen-render (Display/getWidth) (Display/getHeight)
+         (onscreen-render window
                           (clear (vec3 0 1 0))
                           ; Render planet
                           (when-let [data (poll! changes)]
@@ -238,6 +246,7 @@
                           (uniform-vector3 program-atmosphere "light_direction" (mulv (rotation-z @light2) (vec3 0 (cos @light1) (sin @light1))))
                           (use-textures T S M)
                           (render-quads atmosphere-vao))
+         (GLFW/glfwPollEvents)
          (print (format "\rdt: %5.3f, h: %6.0f            "
                         (* 0.001 dt)
                         (- (mag (emult @position (vec3 1 1 (/ radius polar-radius)))) radius)))
@@ -256,6 +265,8 @@
 (destroy-texture T)
 (destroy-texture E)
 (destroy-vertex-array-object atmosphere-vao)
-(Display/destroy)
+
+(GLFW/glfwDestroyWindow window)
+(GLFW/glfwTerminate)
 
 (set! *unchecked-math* false)
