@@ -13,7 +13,8 @@
               [sfsim25.map-tiles :as mt]
               [sfsim25.elevation-tiles :as et]
               [sfsim25.globe :as g]
-              [sfsim25.util :as u]))
+              [sfsim25.util :as u])
+    (:import [org.lwjgl.glfw GLFW]))
 
 (defn worley
   "Generate 3D Worley noise textures"
@@ -37,7 +38,8 @@
 (defn cloud-cover
   "Generate cloud cover cubemap"
   [& {:keys [size] :or {size 64}}]
-  (rn/offscreen-render 1 1
+  (GLFW/glfwInit)
+  (rn/with-invisible-window
     (let [load-floats  (fn [filename] {:width size :height size :depth size :data (u/slurp-floats filename)})
           worley-north (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
           worley-south (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
@@ -60,7 +62,8 @@
       (rn/destroy-texture cubemap)
       (rn/destroy-texture worley-cover)
       (rn/destroy-texture worley-south)
-      (rn/destroy-texture worley-north))))
+      (rn/destroy-texture worley-north)
+      (GLFW/glfwTerminate))))
 
 (defn atmosphere-lut [_]
   "Generate atmospheric lookup tables"

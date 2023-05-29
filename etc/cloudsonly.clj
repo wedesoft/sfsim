@@ -11,15 +11,17 @@
          '[sfsim25.util :refer :all]
          '[sfsim25.shaders :as shaders])
 
-(import '[org.lwjgl.opengl Display DisplayMode]
-        '[org.lwjgl.input Keyboard])
+(import '[org.lwjgl.opengl GL]
+        '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 
 (set! *unchecked-math* true)
 
-(Display/setTitle "scratch")
-(Display/setDisplayMode (DisplayMode. (/ 1920 2) (/ 1080 2)))
-;(Display/setDisplayMode (DisplayMode. 1280 768))
-(Display/create)
+(def width 960)
+(def height 540)
+
+(GLFW/glfwInit)
+(GLFW/glfwDefaultWindowHints)
+(def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
 
 (def fragment
 "#version 410 core
@@ -173,6 +175,10 @@ void main()
 ;(def orientation (atom (q/rotation (to-radians 90) (vec3 1 0 0))))
 (def light (atom (* 0.25 PI)))
 
+(GLFW/glfwMakeContextCurrent window)
+(GLFW/glfwShowWindow window)
+(GL/createCapabilities)
+
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
@@ -277,29 +283,37 @@ void main()
                               (use-textures W L P B C)
                               (render-quads shadow-vao))
           {:offset opacity-offsets :layer opacity-layers}))
-    matrix-cascade))(def keystates (atom {}))
+    matrix-cascade))
+
+(def keystates (atom {}))
+
+(def keyboard-callback
+  (proxy [GLFWKeyCallback] []
+         (invoke [window k scancode action mods]
+           (if (= action GLFW/GLFW_PRESS)
+             (swap! keystates assoc k true))
+           (if (= action GLFW/GLFW_RELEASE)
+             (swap! keystates assoc k false)))))
+
+(GLFW/glfwSetKeyCallback window keyboard-callback)
 
 (def t0 (atom (System/currentTimeMillis)))
 (def n (atom 0))
-(while (not (Display/isCloseRequested))
-       (while (Keyboard/next)
-              (let [state     (Keyboard/getEventKeyState)
-                    event-key (Keyboard/getEventKey)]
-                (swap! keystates assoc event-key state)))
+(while (not (GLFW/glfwWindowShouldClose window))
        (let [t1 (System/currentTimeMillis)
              dt (- t1 @t0)
-             ra (if (@keystates Keyboard/KEY_NUMPAD2) 0.001 (if (@keystates Keyboard/KEY_NUMPAD8) -0.001 0))
-             rb (if (@keystates Keyboard/KEY_NUMPAD4) 0.001 (if (@keystates Keyboard/KEY_NUMPAD6) -0.001 0))
-             rc (if (@keystates Keyboard/KEY_NUMPAD1) 0.001 (if (@keystates Keyboard/KEY_NUMPAD3) -0.001 0))
-             v  (if (@keystates Keyboard/KEY_PRIOR) 10 (if (@keystates Keyboard/KEY_NEXT) -10 0))
-             l  (if (@keystates Keyboard/KEY_ADD) 0.005 (if (@keystates Keyboard/KEY_SUBTRACT) -0.005 0))
-             tr (if (@keystates Keyboard/KEY_Q) 0.001 (if (@keystates Keyboard/KEY_A) -0.001 0))
-             to (if (@keystates Keyboard/KEY_W) 0.05 (if (@keystates Keyboard/KEY_S) -0.05 0))
-             ta (if (@keystates Keyboard/KEY_E) 0.0001 (if (@keystates Keyboard/KEY_D) -0.0001 0))
-             tm (if (@keystates Keyboard/KEY_R) 0.001 (if (@keystates Keyboard/KEY_F) -0.001 0))
-             tc (if (@keystates Keyboard/KEY_T) 0.00001 (if (@keystates Keyboard/KEY_G) -0.00001 0))
-             ts (if (@keystates Keyboard/KEY_Y) 0.05 (if (@keystates Keyboard/KEY_H) -0.05 0))
-             tg (if (@keystates Keyboard/KEY_U) 0.001 (if (@keystates Keyboard/KEY_J) -0.001 0))]
+             ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
+             rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
+             rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
+             v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 10 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -10 0))
+             l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
+             tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
+             to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
+             ta (if (@keystates GLFW/GLFW_KEY_E) 0.0001 (if (@keystates GLFW/GLFW_KEY_D) -0.0001 0))
+             tm (if (@keystates GLFW/GLFW_KEY_R) 0.001 (if (@keystates GLFW/GLFW_KEY_F) -0.001 0))
+             tc (if (@keystates GLFW/GLFW_KEY_T) 0.00001 (if (@keystates GLFW/GLFW_KEY_G) -0.00001 0))
+             ts (if (@keystates GLFW/GLFW_KEY_Y) 0.05 (if (@keystates GLFW/GLFW_KEY_H) -0.05 0))
+             tg (if (@keystates GLFW/GLFW_KEY_U) 0.001 (if (@keystates GLFW/GLFW_KEY_J) -0.001 0))]
          (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
          (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
          (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
@@ -321,14 +335,14 @@ void main()
                vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
                vao        (make-vertex-array-object program indices vertices [:point 3])
                light-dir  (vec3 0 (cos @light) (sin @light))
-               projection (projection-matrix (Display/getWidth) (Display/getHeight) z-near (+ z-far 1) fov)
-               lod-offset (/ (log (/ (tan (/ fov 2)) (/ (Display/getWidth) 2) (/ detail-scale worley-size))) (log 2))
+               projection (projection-matrix width height z-near (+ z-far 1) fov)
+               lod-offset (/ (log (/ (tan (/ fov 2)) (/ width 2) (/ detail-scale worley-size))) (log 2))
                transform  (transformation-matrix (quaternion->matrix @orientation) @position)
                matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
                splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
                scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                tex-cas    (shadow-cascade matrix-cas light-dir scatter-am)]
-           (onscreen-render (Display/getWidth) (Display/getHeight)
+           (onscreen-render window
                             (clear (vec3 0 1 0))
                             (use-program program)
                             (uniform-sampler program "worley" 0)
@@ -392,6 +406,7 @@ void main()
                   (destroy-texture offset)
                   (destroy-texture layer))
            (destroy-vertex-array-object vao))
+         (GLFW/glfwPollEvents)
          (swap! n inc)
          (when (zero? (mod @n 10))
            (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, mult (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
@@ -411,4 +426,7 @@ void main()
 (destroy-program program-shadow)
 (destroy-program program)
 
-(Display/destroy)
+(GLFW/glfwDestroyWindow window)
+(GLFW/glfwTerminate)
+
+(set! *unchecked-math* false)
