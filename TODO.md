@@ -1,5 +1,5 @@
 # TODO
-* use lwgl3 stb library to load images instead of ImageJ? (see etc/scratch.clj)
+* use lwgl3 stb library to load images instead of ImageJ, change textures and vector textures to GL\_RGBA or GL\_RGB, change pack-matrices
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
 * sepapare transmittance\_outer call from cloud\_shadow,
   integration test for cascaded deep opacity map

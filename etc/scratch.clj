@@ -1,15 +1,28 @@
-(import '[org.lwjgl BufferUtils]
-        '[org.lwjgl.glfw GLFW]
-        '[org.lwjgl.stb STBImage]
-        '[org.lwjgl.opengl GL GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL45])
+(require '[clojure.reflect :as r])
+(require '[clojure.java.io :as io])
+(import '[org.lwjgl.stb STBImage STBImageWrite]
+        '[org.lwjgl BufferUtils])
 
-(defn load-image [path]
+(defn slurp-image [path]
+  "Load an RGB image"
   (let [width (int-array 1)
         height (int-array 1)
         channels (int-array 1)]
-    (with-open [stream (io/input-stream (io/resource path))]
-      (let [image (STBImage/stbi_load_from_memory (.toByteArray stream) width height channels 0)]
-        {:data image
-         :width (aget width 0)
-         :height (aget height 0)
-         :channels (aget channels 0)}))))
+    (let [buffer (STBImage/stbi_load path width height channels 4)
+          width  (aget width 0)
+          height (aget height 0)
+          data   (int-array (* width height))]
+      (.get (.asIntBuffer buffer) data)
+      {:data data :width width :height height :channels (aget channels 0)})))
+
+(defn spit-image
+  "Save RGB image as PNG file"
+  [path {:keys [width height data] :as img}]
+  (let [byte-buffer (BufferUtils/createByteBuffer (* 4 (count data)))
+        int-buffer  (-> byte-buffer (.asIntBuffer) (.put data) (.flip))]
+    (STBImageWrite/stbi_write_png path width height 4 byte-buffer (* 4 width))
+    img))
+
+
+(def img (slurp-image "sun.png"))
+(spit-image "test.png" img)

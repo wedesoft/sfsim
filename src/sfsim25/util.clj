@@ -4,11 +4,10 @@
             [clojure.math :refer (sin sqrt round)]
             [fastmath.vector :refer (vec3 vec4)]
             [progrock.core :as p])
-  (:import [java.nio ByteBuffer ByteOrder]
-           [java.io ByteArrayOutputStream]
-           [ij ImagePlus]
-           [ij.io Opener FileSaver]
-           [ij.process ImageConverter ColorProcessor FloatProcessor]
+  (:import [java.io ByteArrayOutputStream]
+           [java.nio ByteBuffer ByteOrder]
+           [org.lwjgl BufferUtils]
+           [org.lwjgl.stb STBImage STBImageWrite]
            [fastmath.vector Vec3 Vec4]))
 
 (set! *unchecked-math* true)
@@ -73,14 +72,6 @@
     (.put (.asFloatBuffer byte-buffer) float-data)
     (spit-bytes file-name (.array byte-buffer))))
 
-(defn show-floats
-  "Open a window displaying the image"
-  [{:keys [width height data]}]
-  (let [processor (FloatProcessor. width height data)
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.show img)))
-
 (defn tile-path
   "Determine file path of map tile"
   ^String [prefix level y x suffix]
@@ -111,28 +102,25 @@
   ^double [^double x]
   (* x x))
 
-(defn slurp-image
+(defn slurp-image [path]
   "Load an RGB image"
-  [^String file-name]
-  (let [img (.openImage (Opener.) file-name)]
-    (.convertToRGB (ImageConverter. img))
-    {:width (.getWidth img) :height (.getHeight img) :data (.getPixels (.getProcessor img))}))
+  (let [width (int-array 1)
+        height (int-array 1)
+        channels (int-array 1)]
+    (let [buffer (STBImage/stbi_load path width height channels 4)
+          width  (aget width 0)
+          height (aget height 0)
+          data   (int-array (* width height))]
+      (.get (.asIntBuffer buffer) data)
+      {:data data :width width :height height :channels (aget channels 0)})))
 
 (defn spit-image
   "Save RGB image as PNG file"
-  [^String file-name {:keys [width height data]}]
-  (let [processor (ColorProcessor. width height data)
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.saveAsPng (FileSaver. img) file-name)))
-
-(defn show-image
-  "Open a window displaying the image"
-  [{:keys [width height data]}]
-  (let [processor (ColorProcessor. width height data)
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.show img)))
+  [path {:keys [width height data] :as img}]
+  (let [byte-buffer (BufferUtils/createByteBuffer (* 4 (count data)))
+        int-buffer  (-> byte-buffer (.asIntBuffer) (.put data) (.flip))]
+    (STBImageWrite/stbi_write_png path width height 4 byte-buffer (* 4 width))
+    img))
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
