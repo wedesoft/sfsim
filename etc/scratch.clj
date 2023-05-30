@@ -1,5 +1,4 @@
 (require '[clojure.reflect :as r])
-(require '[clojure.java.io :as io])
 (import '[org.lwjgl.stb STBImage STBImageWrite]
         '[org.lwjgl BufferUtils])
 
