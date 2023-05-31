@@ -1,5 +1,6 @@
 # TODO
-* change textures and vector textures to GL\_RGBA or GL\_RGB
+* scale image and map tiles should use lwjgl stb
+* test atmosphere recomputation
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
 * sepapare transmittance\_outer call from cloud\_shadow,
   integration test for cascaded deep opacity map

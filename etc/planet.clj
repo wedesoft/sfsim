@@ -30,10 +30,12 @@
 (def tilesize 33)
 (def color-tilesize 129)
 
-(def light1 (atom (to-radians 15)))
+;(def light1 (atom (to-radians 15)))
+(def light1 (atom (to-radians 90)))
 (def light2 (atom 0))
-(def position (atom (vec3 0 (* -0 radius) (+ (* 1 polar-radius) 100))))
+;(def position (atom (vec3 0 (* -0 radius) (+ (* 1 polar-radius) 100))))
 (def orientation (atom (q/rotation (to-radians 90) (vec3 1 0 0))))
+(def position (atom (vec3 0 (* -2 radius) 0)))
 (def z-near 100)
 (def z-far (* 2.0 radius))
 
