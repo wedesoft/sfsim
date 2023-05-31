@@ -483,7 +483,7 @@
       {:width width :height height :depth depth :data data})))
 
 (defn rgb-texture->vectors3
-  "Extract floating-point BGR vectors from texture"
+  "Extract floating-point RGB vectors from texture"
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
@@ -493,7 +493,7 @@
       {:width width :height height :data data})))
 
 (defn rgba-texture->vectors4
-  "Extract floating-point BGRA vectors from texture"
+  "Extract floating-point RGBA vectors from texture"
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
@@ -566,7 +566,7 @@
 (defn make-vector-cubemap
   "Load vector 2D textures into an OpenGL cubemap"
   [interpolation boundary images]
-  (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+  (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn make-empty-vector-cubemap
   "Create empty cubemap with faces of specified size"
@@ -580,6 +580,6 @@
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
-      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_BGR GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))

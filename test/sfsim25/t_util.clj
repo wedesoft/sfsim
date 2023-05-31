@@ -112,13 +112,13 @@
     (set-byte! water 1 2 136) => anything
     (get-byte water 1 2) => 136))
 
-(facts "Reading and writing of BGR vectors"
+(facts "Reading and writing of RGB vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
     (get-vector3 vectors 1 2) => (vec3 18.0 19.0 20.0)
     (set-vector3! vectors 1 2 (vec3 24.5 25.5 26.5)) => anything
     (get-vector3 vectors 1 2) => (vec3 24.5 25.5 26.5)))
 
-(facts "Reading and writing of BGRA vectors"
+(facts "Reading and writing of RGBA vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 32))}]
     (get-vector4 vectors 1 2) => (vec4 24.0 25.0 26.0 27.0)
     (set-vector4! vectors 1 2 (vec4 1.5 2.5 3.5 4.5)) => anything
