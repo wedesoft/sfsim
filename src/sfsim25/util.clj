@@ -137,16 +137,16 @@
   ^Vec3 [{:keys [width height data]} ^long y ^long x]
   (let [offset (+ (* width y) x)
         value  (aget data offset)]
-    (vec3 (bit-shift-right (bit-and 0xff0000 value) 16) (bit-shift-right (bit-and 0xff00 value) 8) (bit-and 0xff value))))
+    (vec3 (bit-and 0xff value) (bit-shift-right (bit-and 0xff00 value) 8) (bit-shift-right (bit-and 0xff0000 value) 16))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
   [{:keys [width height data]} ^long y ^long x ^Vec3 c]
   (let [offset (+ (* width y) x)]
     (aset-int data offset (bit-or (bit-shift-left -1 24)
-                                  (bit-shift-left (round (c 0)) 16)
+                                  (bit-shift-left (round (c 2)) 16)
                                   (bit-shift-left (round (c 1)) 8)
-                                  (round (c 2))))))
+                                  (round (c 0))))))
 
 (defn get-short
   "Read value from a short integer tile"

@@ -77,9 +77,12 @@
   (ubyte->byte  255) =>   -1)
 
 (facts "Reading and writing image pixels"
-  (let [img {:width 4 :height 2 :data (int-array [0 0 0 0 0 0 0 (bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
+  (get-pixel (slurp-image "test/sfsim25/fixtures/util/red.png") 0 0) => (vec3 255 0 0)
+  (get-pixel (slurp-image "test/sfsim25/fixtures/util/green.png") 0 0) => (vec3 0 255 0)
+  (get-pixel (slurp-image "test/sfsim25/fixtures/util/blue.png") 0 0) => (vec3 0 0 255)
+  (let [img {:width 4 :height 2 :data (int-array [0 0 0 0 0 0 0 (bit-or 1 (bit-shift-left 2 8) (bit-shift-left 3 16))])}]
     (get-pixel img 1 3) => (vec3 1 2 3))
-  (let [img {:width 1 :height 1 :data (int-array [(bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
+  (let [img {:width 1 :height 1 :data (int-array [(bit-or 1 (bit-shift-left 2 8) (bit-shift-left 3 16))])}]
     (get-pixel img 0 0) => (vec3 1 2 3))
   (let [img {:width 4 :height 2 :data (int-array (repeat 8 0))}]
     (set-pixel! img 1 2 (vec3 253 254 255)) => anything
