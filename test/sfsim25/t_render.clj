@@ -310,11 +310,11 @@ void main()
 (def fragment-texture-2d
 "#version 410 core
 in vec2 uv_fragment;
-out vec4 fragColor;
+out vec3 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  fragColor = texture(tex, uv_fragment).rgba;
+  fragColor = texture(tex, uv_fragment).rgb;
 }")
 
 (fact "Render 2D RGB texture"

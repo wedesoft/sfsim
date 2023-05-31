@@ -517,7 +517,7 @@
   [width height & body]
   `(with-invisible-window
      (let [depth# (make-empty-depth-texture-2d :linear :clamp ~width ~height)
-           tex#   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 ~width ~height)]
+           tex#   (make-empty-texture-2d :linear :clamp GL11/GL_RGB8 ~width ~height)]
        (framebuffer-render ~width ~height :cullback depth# [tex#] ~@body)
        (let [img# (texture->image tex#)]
          (destroy-texture tex#)
