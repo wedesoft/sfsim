@@ -192,30 +192,30 @@
   "Read BGR vector from a vectors tile"
   ^Vec3 [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (vec3 (aget data (+ offset 2)) (aget data (+ offset 1)) (aget data (+ offset 0)))))
+    (vec3 (aget data (+ offset 0)) (aget data (+ offset 1)) (aget data (+ offset 2)))))
 
 (defn set-vector3!
   "Write BGR vector value to vectors tile"
   [{:keys [width height data]} ^long y ^long x ^Vec3 value]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-float data (+ offset 2) (value 0))
+    (aset-float data (+ offset 0) (value 0))
     (aset-float data (+ offset 1) (value 1))
-    (aset-float data (+ offset 0) (value 2))))
+    (aset-float data (+ offset 2) (value 2))))
 
 (defn get-vector4
   "read BGRA vector from a vectors tile"
   ^Vec4 [{:keys [width height data]} ^long y ^long x]
   (let [offset (* 4 (+ (* width y) x))]
-    (vec4 (aget data (+ offset 3)) (aget data (+ offset 2)) (aget data (+ offset 1)) (aget data (+ offset 0)))))
+    (vec4 (aget data (+ offset 0)) (aget data (+ offset 1)) (aget data (+ offset 2)) (aget data (+ offset 3)))))
 
 (defn set-vector4!
   "Write BGRA vector value to vectors tile"
   [{:keys [width height data]} ^long y ^long x ^Vec4 value]
   (let [offset (* 4 (+ (* width y) x))]
-    (aset-float data (+ offset 3) (value 0))
-    (aset-float data (+ offset 2) (value 1))
-    (aset-float data (+ offset 1) (value 2))
-    (aset-float data (+ offset 0) (value 3))))
+    (aset-float data (+ offset 0) (value 0))
+    (aset-float data (+ offset 1) (value 1))
+    (aset-float data (+ offset 2) (value 2))
+    (aset-float data (+ offset 3) (value 3))))
 
 (defn dissoc-in
   "Return nested hash with path removed"

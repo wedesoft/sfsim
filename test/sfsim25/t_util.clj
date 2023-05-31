@@ -60,7 +60,7 @@
 
 (facts "Saving and loading of RGB image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
-        value     (bit-or (bit-shift-left -1 24) (bit-shift-left 1 16) (bit-shift-left 2 8) 3)]
+        value     (bit-or 1 (bit-shift-left 2 8) (bit-shift-left 3 16) (bit-shift-left -1 24))]
       (spit-image file-name {:width 4 :height 2 :data (int-array (repeat 8 value))})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
@@ -114,13 +114,13 @@
 
 (facts "Reading and writing of BGR vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
-    (get-vector3 vectors 1 2) => (vec3 20.0 19.0 18.0)
+    (get-vector3 vectors 1 2) => (vec3 18.0 19.0 20.0)
     (set-vector3! vectors 1 2 (vec3 24.5 25.5 26.5)) => anything
     (get-vector3 vectors 1 2) => (vec3 24.5 25.5 26.5)))
 
 (facts "Reading and writing of BGRA vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 32))}]
-    (get-vector4 vectors 1 2) => (vec4 27.0 26.0 25.0 24.0)
+    (get-vector4 vectors 1 2) => (vec4 24.0 25.0 26.0 27.0)
     (set-vector4! vectors 1 2 (vec4 1.5 2.5 3.5 4.5)) => anything
     (get-vector4 vectors 1 2) => (vec4 1.5 2.5 3.5 4.5)))
 
