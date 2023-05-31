@@ -371,7 +371,7 @@
 (defn make-vector-texture-2d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn make-float-texture-3d
   "Load floating-point 3D data into red channel of an OpenGL texture"

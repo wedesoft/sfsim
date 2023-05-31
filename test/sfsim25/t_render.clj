@@ -310,11 +310,11 @@ void main()
 (def fragment-texture-2d
 "#version 410 core
 in vec2 uv_fragment;
-out vec3 fragColor;
+out vec4 fragColor;
 uniform sampler2D tex;
 void main()
 {
-  fragColor = texture(tex, uv_fragment).rgb;
+  fragColor = texture(tex, uv_fragment).rgba;
 }")
 
 (fact "Render 2D RGB texture"
@@ -379,7 +379,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
+          tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
