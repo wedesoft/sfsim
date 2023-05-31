@@ -1,5 +1,5 @@
 # TODO
-* use lwgl3 stb library to load images, change textures and vector textures to GL\_RGBA or GL\_RGB, change pack-matrices, change set and get methods in util
+* change textures and vector textures to GL\_RGBA or GL\_RGB
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
 * sepapare transmittance\_outer call from cloud\_shadow,
   integration test for cascaded deep opacity map

@@ -68,7 +68,7 @@
 (defn pack-matrices
   "Pack nested vector of matrices into float array"
   [array]
-  (float-array (flatten (for [row array] (for [cell row] (reverse cell))))))
+  (float-array (flatten array)))
 
 (defn z-to-ndc
   "Convert (flipped to positive) z-coordinate to normalized device coordinate"

@@ -251,9 +251,9 @@ void main()
         (offscreen-render 1 1
           (let [indices   [0 1 3 2]
                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                red-data  (flatten (repeat (* 17 17) [0 0 1]))
+                red-data  (flatten (repeat (* 17 17) [1 0 0]))
                 red       (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array red-data)})
-                blue-data (flatten (repeat (* 17 17) [1 0 0]))
+                blue-data (flatten (repeat (* 17 17) [0 0 1]))
                 blue      (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array blue-data)})
                 program   (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
                 vao       (make-vertex-array-object program indices vertices [:point 3])
@@ -433,10 +433,10 @@ float sampling_offset()
                                    colors        (make-rgb-texture :linear :clamp
                                                    (slurp-image (str "test/sfsim25/fixtures/planet/" ?colors ".png")))
                                    normals       (make-vector-texture-2d :linear :clamp
-                                                   {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nz ?ny ?nx])))})
+                                                   {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nx ?ny ?nz])))})
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                    {:width size :height size
-                                                    :data (float-array (flatten (repeat (* size size) [?tb ?tg ?tr])))})
+                                                    :data (float-array (flatten (repeat (* size size) [?tr ?tg ?tb])))})
                                    ray-scatter   (make-vector-texture-2d :linear :clamp
                                                    {:width (* size size) :height (* size size)
                                                     :data (float-array (repeat (* size size size size 3) ?s))})
@@ -445,7 +445,7 @@ float sampling_offset()
                                                     :data (float-array (repeat (* size size size size 3) 0))})
                                    radiance      (make-vector-texture-2d :linear :clamp
                                                    {:width size :height size
-                                                    :data (float-array (flatten (repeat (* size size) [?ab ?ag ?ar])))})
+                                                    :data (float-array (flatten (repeat (* size size) [?ar ?ag ?ab])))})
                                    water         (make-ubyte-texture-2d :linear :clamp
                                                    {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
