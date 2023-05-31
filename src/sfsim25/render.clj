@@ -332,7 +332,7 @@
 (defn make-rgb-texture
   "Load RGB image into an OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-int-buffer interpolation boundary GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE))
+  (make-texture-2d image make-int-buffer interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
@@ -488,7 +488,7 @@
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGR GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 
@@ -498,7 +498,7 @@
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
           data (float-array (* width height 4))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 
@@ -508,7 +508,7 @@
   (with-texture target texture
     (let [buf  (BufferUtils/createIntBuffer (* width height))
           data (int-array (* width height))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buf)
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE buf)
       (.get buf data)
       {:width width :height height :data data})))
 

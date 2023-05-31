@@ -737,7 +737,7 @@ void main()
                  (destroy-texture tex)
                  (destroy-vertex-array-object vao)
                  (destroy-program program)))
-             @result) => (roughly-vector (vec4 ?alpha 0.25 0.5 0.75) 1e-6))
+             @result) => (roughly-vector (vec4 0.25 0.5 0.75 ?alpha) 1e-6))
          ?alpha
          1.0
          0.0)
@@ -892,7 +892,7 @@ void main()
       (offscreen-render 16 16
         (let [gen-vector (fn [i] (let [i3 (* i 3)] [i3 (inc i3) (inc (inc i3))]))
               cubemap (make-vector-cubemap :linear :clamp
-                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array (reverse (gen-vector i)))})
+                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array (gen-vector i))})
                                                  (range 6)))]
           (doseq [i (range 6)]
                  (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
