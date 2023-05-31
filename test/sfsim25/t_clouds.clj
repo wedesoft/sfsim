@@ -698,7 +698,7 @@ float lookup_mock(vec3 point)
                                    :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
             vao      (make-vertex-array-object program indices vertices [:point 3])
             vectors  [[1 0 0] [0 2 0] [0 0 4] [-1 0 0] [0 -1 0] [0 0 -1]]
-            to-data  (fn [v] (float-array (flatten (repeat 9 (reverse v)))))
+            to-data  (fn [v] (float-array (flatten (repeat 9 v))))
             current  (make-vector-cubemap :linear :clamp (mapv (fn [v] {:width 3 :height 3 :data (to-data v)}) vectors))
             warp     (make-cubemap-warp-program "current" "lookup_mock" [lookup-mock])
             warped   (cubemap-warp 3 warp
