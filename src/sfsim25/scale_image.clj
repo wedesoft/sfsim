@@ -6,11 +6,8 @@
 
 (defn scale-image
   "Scale image down to 50%"
-  [input-image]
-  (let [width (:width input-image)
-        height (:height input-image)
-        data (:data input-image)
-        buffer (BufferUtils/createByteBuffer (* 4 (count data)))
+  [{:keys [width height data]}]
+  (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))
         output-width (quot width 2)
         output-height (quot height 2)
         output-buffer (BufferUtils/createByteBuffer (* 4 output-width output-height))
