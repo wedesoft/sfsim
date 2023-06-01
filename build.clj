@@ -2,6 +2,7 @@
 (ns build
     (:require [clojure.tools.build.api :as b]
               [clojure.java.io :as io]
+              [clojure.java.shell :refer (sh)]
               [sfsim25.worley :as w]
               [sfsim25.perlin :as p]
               [sfsim25.scale-image :as si]
@@ -129,7 +130,7 @@
 (defn map-scales
   "Generate pyramid of scales for given sector of world map"
   [& {:keys [sector]}]
-  (scale-image-file {:input (str "world.200404.3x21600x21600." sector ".png") :output (str "world." sector "." 2 ".png")})
+  (sh "convert" (str "world.200404.3x21600x21600." sector ".png") "-scale" "50%" (str "world." sector "." 2 ".png"))
   (scale-image-file {:input (str "world." sector "." 2 ".png") :output (str "world." sector "." 3 ".png")})
   (scale-image-file {:input (str "world." sector "." 3 ".png") :output (str "world." sector "." 4 ".png")})
   (scale-image-file {:input (str "world." sector "." 4 ".png") :output (str "world." sector "." 5 ".png")})
