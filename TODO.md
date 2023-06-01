@@ -1,5 +1,6 @@
 # TODO
-* scale image and map tiles should use lwjgl stb
+* map tiles should use lwjgl stb
+* use byte arrays to represent images
 * test atmosphere recomputation
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
 * sepapare transmittance\_outer call from cloud\_shadow,

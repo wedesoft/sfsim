@@ -117,9 +117,9 @@
 (defn spit-image
   "Save RGB image as PNG file"
   [path {:keys [width height data] :as img}]
-  (let [byte-buffer (BufferUtils/createByteBuffer (* 4 (count data)))
-        int-buffer  (-> byte-buffer (.asIntBuffer) (.put data) (.flip))]
-    (STBImageWrite/stbi_write_png path width height 4 byte-buffer (* 4 width))
+  (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
+    (-> buffer (.asIntBuffer) (.put data) (.flip))
+    (STBImageWrite/stbi_write_png path width height 4 buffer (* 4 width))
     img))
 
 (defn byte->ubyte

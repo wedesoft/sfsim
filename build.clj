@@ -69,10 +69,10 @@
   "Generate atmospheric lookup tables"
   (al/generate-atmosphere-luts))
 
-(defn scale-image
+(defn scale-image-file
   "Scale down input PNG and save to output PNG"
   [& {:keys [input output]}]
-  (si/scale-image (str input) (str output)))
+  (si/scale-image-file (str input) (str output)))
 
 (defn scale-elevation
   "Scale down raw short-integer elevation input data and save to output raw short integers"
@@ -129,11 +129,11 @@
 (defn map-scales
   "Generate pyramid of scales for given sector of world map"
   [& {:keys [sector]}]
-  (scale-image {:input (str "world.200404.3x21600x21600." sector ".png") :output (str "world." sector "." 2 ".png")})
-  (scale-image {:input (str "world." sector "." 2 ".png") :output (str "world." sector "." 3 ".png")})
-  (scale-image {:input (str "world." sector "." 3 ".png") :output (str "world." sector "." 4 ".png")})
-  (scale-image {:input (str "world." sector "." 4 ".png") :output (str "world." sector "." 5 ".png")})
-  (scale-image {:input (str "world." sector "." 5 ".png") :output (str "world." sector "." 6 ".png")}))
+  (scale-image-file {:input (str "world.200404.3x21600x21600." sector ".png") :output (str "world." sector "." 2 ".png")})
+  (scale-image-file {:input (str "world." sector "." 2 ".png") :output (str "world." sector "." 3 ".png")})
+  (scale-image-file {:input (str "world." sector "." 3 ".png") :output (str "world." sector "." 4 ".png")})
+  (scale-image-file {:input (str "world." sector "." 4 ".png") :output (str "world." sector "." 5 ".png")})
+  (scale-image-file {:input (str "world." sector "." 5 ".png") :output (str "world." sector "." 6 ".png")}))
 
 (defn map-sector-tiles
   "Generate pyramid of map tiles for given sector of world map"
