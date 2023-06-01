@@ -134,8 +134,7 @@
   "Program to generate planetary cloud cover using curl noise"
   [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves
              whirl prevailing curl-scale cover-scale num-iterations flow-scale]}]
-  (let [result      (promise)
-        warp        (atom (identity-cubemap size))
+  (let [warp        (atom (identity-cubemap size))
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
                       [(curl-vector "curl" "gradient") (shaders/gradient-3d "gradient" "flow_field" "epsilon")
@@ -162,17 +161,15 @@
       (let [updated (iterate-cubemap size flow-scale update-warp (use-textures @warp worley-north worley-south))]
         (destroy-texture @warp)
         (reset! warp updated)))
-    (deliver
-      result
-      (cubemap-warp size lookup
-                    (uniform-sampler lookup "current" 0)
-                    (uniform-sampler lookup "worley" 1)
-                    (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
-                    (use-textures @warp worley-cover)))
-    (destroy-program lookup)
-    (destroy-program update-warp)
-    (destroy-texture @warp)
-    @result))
+    (let [result (cubemap-warp size lookup
+                               (uniform-sampler lookup "current" 0)
+                               (uniform-sampler lookup "worley" 1)
+                               (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
+                               (use-textures @warp worley-cover))]
+      (destroy-program lookup)
+      (destroy-program update-warp)
+      (destroy-texture @warp)
+      result)))
 
 (def cloud-profile
   "Shader for looking up vertical cloud profile"

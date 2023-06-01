@@ -214,30 +214,28 @@ void main()
 }"))
 
 (defn interpolate-2d-test [x y]
-  (let [result (promise)]
-    (with-invisible-window
-      (let [indices   [0 1 3 2]
-            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            data-2d   [[1 2] [3 4] [5 6]]
-            data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
-            table     (make-vector-texture-2d :linear :clamp
-                                              {:width 2 :height 3 :data (float-array data-flat)})
-            program   (make-program :vertex [vertex-passthrough]
-                                    :fragment [(interpolate-2d-probe x y) interpolate-2d convert-2d-index])
-            vao       (make-vertex-array-object program indices vertices [:point 3])
-            tex       (texture-render-color
-                        1 1 true
-                        (use-program program)
-                        (uniform-sampler program "table" 0)
-                        (use-textures table)
-                        (render-quads vao))
-            img       (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture table)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices   [0 1 3 2]
+          vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          data-2d   [[1 2] [3 4] [5 6]]
+          data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
+          table     (make-vector-texture-2d :linear :clamp
+                                            {:width 2 :height 3 :data (float-array data-flat)})
+          program   (make-program :vertex [vertex-passthrough]
+                                  :fragment [(interpolate-2d-probe x y) interpolate-2d convert-2d-index])
+          vao       (make-vertex-array-object program indices vertices [:point 3])
+          tex       (texture-render-color
+                      1 1 true
+                      (use-program program)
+                      (uniform-sampler program "table" 0)
+                      (use-textures table)
+                      (render-quads vao))
+          img       (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture table)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform 2d interpolation"
          (fact ((interpolate-2d-test ?x ?y) 0) => ?result)
@@ -259,29 +257,27 @@ void main()
 }"))
 
 (defn interpolate-3d-test [x y z]
-  (let [result (promise)]
-    (with-invisible-window
-      (let [indices   [0 1 3 2]
-            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            data-3d   (range (* 2 3 4))
-            table     (make-float-texture-3d :linear :clamp
-                                             {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
-            program   (make-program :vertex [vertex-passthrough]
-                                    :fragment [(interpolate-3d-probe x y z) interpolate-3d convert-3d-index])
-            vao       (make-vertex-array-object program indices vertices [:point 3])
-            tex       (texture-render-color
-                        1 1 true
-                        (use-program program)
-                        (uniform-sampler program "table" 0)
-                        (use-textures table)
-                        (render-quads vao))
-            img       (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture table)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices   [0 1 3 2]
+          vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          data-3d   (range (* 2 3 4))
+          table     (make-float-texture-3d :linear :clamp
+                                           {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
+          program   (make-program :vertex [vertex-passthrough]
+                                  :fragment [(interpolate-3d-probe x y z) interpolate-3d convert-3d-index])
+          vao       (make-vertex-array-object program indices vertices [:point 3])
+          tex       (texture-render-color
+                      1 1 true
+                      (use-program program)
+                      (uniform-sampler program "table" 0)
+                      (use-textures table)
+                      (render-quads vao))
+          img       (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture table)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform 3d interpolation"
          (fact ((interpolate-3d-test ?x ?y ?z) 0) => ?result)
@@ -307,31 +303,29 @@ void main()
 }"))
 
 (defn interpolate-cubemap-test [method selector x y z]
-  (let [result (promise)]
-    (with-invisible-window
-      (let [indices     [0 1 3 2]
-            vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
-            data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
-            cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
-            program     (make-program :vertex [vertex-passthrough]
-                                      :fragment [(interpolate-cubemap-probe method selector x y z)
-                                                 interpolate-float-cubemap interpolate-vector-cubemap
-                                                 convert-cubemap-index])
-            vao         (make-vertex-array-object program indices vertices [:point 3])
-            tex         (texture-render-color
-                          1 1 true
-                          (use-program program)
-                          (uniform-sampler program "cube" 0)
-                          (use-textures cube)
-                          (render-quads vao))
-            img         (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture cube)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices     [0 1 3 2]
+          vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
+          data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
+          cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
+          program     (make-program :vertex [vertex-passthrough]
+                                    :fragment [(interpolate-cubemap-probe method selector x y z)
+                                               interpolate-float-cubemap interpolate-vector-cubemap
+                                               convert-cubemap-index])
+          vao         (make-vertex-array-object program indices vertices [:point 3])
+          tex         (texture-render-color
+                        1 1 true
+                        (use-program program)
+                        (uniform-sampler program "cube" 0)
+                        (use-textures cube)
+                        (render-quads vao))
+          img         (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture cube)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform interpolation on cubemap avoiding seams"
          (fact ((interpolate-cubemap-test ?method ?selector ?x ?y ?z) 0) => ?result)
@@ -354,30 +348,28 @@ void main()
 }"))
 
 (defn interpolate-4d-test [x y z w]
-  (let [result (promise)]
-    (with-invisible-window
-      (let [indices   [0 1 3 2]
-            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
-            data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
-            table     (make-vector-texture-2d :linear :clamp {:width 4 :height 4 :data (float-array data-flat)})
-            program   (make-program :vertex [vertex-passthrough]
-                                    :fragment [(interpolate-4d-probe x y z w) interpolate-4d
-                                               make-2d-index-from-4d])
-            vao       (make-vertex-array-object program indices vertices [:point 3])
-            tex       (texture-render-color
-                        1 1 true
-                        (use-program program)
-                        (uniform-sampler program "table" 0)
-                        (use-textures table)
-                        (render-quads vao))
-            img       (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture table)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices   [0 1 3 2]
+          vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
+          data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
+          table     (make-vector-texture-2d :linear :clamp {:width 4 :height 4 :data (float-array data-flat)})
+          program   (make-program :vertex [vertex-passthrough]
+                                  :fragment [(interpolate-4d-probe x y z w) interpolate-4d
+                                             make-2d-index-from-4d])
+          vao       (make-vertex-array-object program indices vertices [:point 3])
+          tex       (texture-render-color
+                      1 1 true
+                      (use-program program)
+                      (uniform-sampler program "table" 0)
+                      (use-textures table)
+                      (render-quads vao))
+          img       (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture table)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform 4D interpolation"
          (fact ((interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
@@ -427,30 +419,28 @@ void main()
 }"))
 
 (defn lookup-3d-test [x y z]
-  (let [result (promise)]
-    (with-invisible-window
-      (let [indices   [0 1 3 2]
-            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
-            data-flat (flatten data-3d)
-            table     (make-float-texture-3d :linear :repeat
-                                             {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
-            program   (make-program :vertex [vertex-passthrough]
-                                    :fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
-            vao       (make-vertex-array-object program indices vertices [:point 3])
-            tex       (texture-render-color
-                        1 1 true
-                        (use-program program)
-                        (uniform-sampler program "table" 0)
-                        (use-textures table)
-                        (render-quads vao))
-            img       (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture table)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices   [0 1 3 2]
+          vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
+          data-flat (flatten data-3d)
+          table     (make-float-texture-3d :linear :repeat
+                                           {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+          program   (make-program :vertex [vertex-passthrough]
+                                  :fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
+          vao       (make-vertex-array-object program indices vertices [:point 3])
+          tex       (texture-render-color
+                      1 1 true
+                      (use-program program)
+                      (uniform-sampler program "table" 0)
+                      (use-textures table)
+                      (render-quads vao))
+          img       (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture table)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform 3d texture lookup"
          (fact ((lookup-3d-test ?x ?y ?z) 0) => ?result)
@@ -472,32 +462,30 @@ void main()
 }"))
 
 (defn lookup-3d-lod-test [x y z lod]
-  (let [result (promise)]
-    (with-invisible-window
-      (let [indices   [0 1 3 2]
-            vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
-            data-flat (flatten data-3d)
-            table     (make-float-texture-3d :linear :repeat
-                                             {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
-            program   (make-program :vertex [vertex-passthrough]
-                                    :fragment [(lookup-3d-lod-probe x y z lod)
-                                               (lookup-3d-lod "lookup_3d_lod" "table")])
-            vao       (make-vertex-array-object program indices vertices [:point 3])
-            tex       (texture-render-color
-                        1 1 true
-                        (use-program program)
-                        (uniform-sampler program "table" 0)
-                        (generate-mipmap table)
-                        (use-textures table)
-                        (render-quads vao))
-            img       (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture table)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices   [0 1 3 2]
+          vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
+          data-flat (flatten data-3d)
+          table     (make-float-texture-3d :linear :repeat
+                                           {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+          program   (make-program :vertex [vertex-passthrough]
+                                  :fragment [(lookup-3d-lod-probe x y z lod)
+                                             (lookup-3d-lod "lookup_3d_lod" "table")])
+          vao       (make-vertex-array-object program indices vertices [:point 3])
+          tex       (texture-render-color
+                      1 1 true
+                      (use-program program)
+                      (uniform-sampler program "table" 0)
+                      (generate-mipmap table)
+                      (use-textures table)
+                      (render-quads vao))
+          img       (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture table)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform 3d texture lookup with level-of-detail"
          (fact ((lookup-3d-lod-test ?x ?y ?z ?lod) 0) => ?result)
@@ -871,33 +859,31 @@ void main()
 
 (tabular "Convert cubemap face coordinate to 3D vector"
          (fact
-           (let [result (promise)]
-             (with-invisible-window
-               (let [cubemap  (make-empty-vector-cubemap :linear :clamp 32)
-                     indices  [0 1 3 2]
-                     vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                     program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-vectors cubemap-vectors])
-                     vao      (make-vertex-array-object program indices vertices [:point 3])]
-                 (framebuffer-render 32 32 :cullback nil [cubemap]
-                                     (use-program program)
-                                     (render-quads vao))
+           (with-invisible-window
+             (let [cubemap  (make-empty-vector-cubemap :linear :clamp 32)
+                   indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-vectors cubemap-vectors])
+                   vao      (make-vertex-array-object program indices vertices [:point 3])]
+               (framebuffer-render 32 32 :cullback nil [cubemap]
+                                   (use-program program)
+                                   (render-quads vao))
+               (destroy-vertex-array-object vao)
+               (destroy-program program)
+               (let [program (make-program :vertex [vertex-passthrough]
+                                           :fragment [(face-vector-probe ?x ?y ?z) convert-cubemap-index])
+                     vao     (make-vertex-array-object program indices vertices [:point 3])
+                     tex     (texture-render-color 1 1 true
+                                                   (use-program program)
+                                                   (uniform-sampler program "cubemap" 0)
+                                                   (use-textures cubemap)
+                                                   (render-quads vao))
+                     img     (rgb-texture->vectors3 tex)]
+                 (destroy-texture tex)
                  (destroy-vertex-array-object vao)
                  (destroy-program program)
-                 (let [program (make-program :vertex [vertex-passthrough]
-                                             :fragment [(face-vector-probe ?x ?y ?z) convert-cubemap-index])
-                       vao     (make-vertex-array-object program indices vertices [:point 3])
-                       tex     (texture-render-color 1 1 true
-                                                     (use-program program)
-                                                     (uniform-sampler program "cubemap" 0)
-                                                     (use-textures cubemap)
-                                                     (render-quads vao))
-                       img     (rgb-texture->vectors3 tex)]
-                   (deliver result (get-vector3 img 0 0))
-                   (destroy-texture tex)
-                   (destroy-vertex-array-object vao)
-                   (destroy-program program))
-                 (destroy-texture cubemap)))
-                 @result) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
+                 (destroy-texture cubemap)
+                 (get-vector3 img 0 0)))) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
          ?x    ?y    ?z
          1.0   0.0   0.0
          1.0   0.25  0.5

@@ -1,5 +1,4 @@
 # TODO
-* replace offsscreen-render with with-invisible-image
 * scale image and map tiles should use lwjgl stb
 * test atmosphere recomputation
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,

@@ -725,19 +725,17 @@ void main()
 
 (tabular "render alpha"
          (fact
-           (let [result (promise)]
-             (with-invisible-window
-               (let [indices  [0 1 3 2]
-                     vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                     program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
-                     vao      (make-vertex-array-object program indices vertices [:point 3])
-                     tex      (texture-render-color 1 1 true (use-program program) (render-quads vao))
-                     img      (rgba-texture->vectors4 tex)]
-                 (deliver result (get-vector4 img 0 0))
-                 (destroy-texture tex)
-                 (destroy-vertex-array-object vao)
-                 (destroy-program program)))
-             @result) => (roughly-vector (vec4 0.25 0.5 0.75 ?alpha) 1e-6))
+           (with-invisible-window
+             (let [indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
+                   vao      (make-vertex-array-object program indices vertices [:point 3])
+                   tex      (texture-render-color 1 1 true (use-program program) (render-quads vao))
+                   img      (rgba-texture->vectors4 tex)]
+               (destroy-texture tex)
+               (destroy-vertex-array-object vao)
+               (destroy-program program)
+               (get-vector4 img 0 0))) => (roughly-vector (vec4 0.25 0.5 0.75 ?alpha) 1e-6))
          ?alpha
          1.0
          0.0)

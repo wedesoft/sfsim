@@ -500,27 +500,25 @@
 
 (defn transmittance-shader-test [setup probe & shaders]
   (fn [uniforms args]
-      (let [result (promise)]
-        (with-invisible-window
-          (let [indices       [0 1 3 2]
-                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
-                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render-color
-                                1 1 true
-                                (use-program program)
-                                (uniform-sampler program "transmittance" 0)
-                                (apply setup program uniforms)
-                                (use-textures transmittance)
-                                (render-quads vao))
-                img           (rgb-texture->vectors3 tex)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-texture transmittance)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
+      (with-invisible-window
+        (let [indices       [0 1 3 2]
+              vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
+              program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              vao           (make-vertex-array-object program indices vertices [:point 3])
+              tex           (texture-render-color
+                              1 1 true
+                              (use-program program)
+                              (uniform-sampler program "transmittance" 0)
+                              (apply setup program uniforms)
+                              (use-textures transmittance)
+                              (render-quads vao))
+              img           (rgb-texture->vectors3 tex)]
+          (destroy-texture tex)
+          (destroy-texture transmittance)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (get-vector3 img 0 0)))))
 
 (def transmittance-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
@@ -554,32 +552,30 @@ void main()
 
 (defn ray-scatter-shader-test [setup probe & shaders]
   (fn [uniforms args]
-      (let [result (promise)]
-        (with-invisible-window
-          (let [indices       [0 1 3 2]
-                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
-                ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
-                mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
-                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render-color
-                                1 1 true
-                                (use-program program)
-                                (uniform-sampler program "transmittance" 0)
-                                (uniform-sampler program "ray_scatter" 1)
-                                (uniform-sampler program "mie_strength" 2)
-                                (apply setup program uniforms)
-                                (use-textures transmittance ray-scatter mie-strength)
-                                (render-quads vao))
-                img           (rgb-texture->vectors3 tex)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-texture ray-scatter)
-            (destroy-texture transmittance)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
+      (with-invisible-window
+        (let [indices       [0 1 3 2]
+              vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
+              ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
+              mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
+              program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              vao           (make-vertex-array-object program indices vertices [:point 3])
+              tex           (texture-render-color
+                              1 1 true
+                              (use-program program)
+                              (uniform-sampler program "transmittance" 0)
+                              (uniform-sampler program "ray_scatter" 1)
+                              (uniform-sampler program "mie_strength" 2)
+                              (apply setup program uniforms)
+                              (use-textures transmittance ray-scatter mie-strength)
+                              (render-quads vao))
+              img           (rgb-texture->vectors3 tex)]
+          (destroy-texture tex)
+          (destroy-texture ray-scatter)
+          (destroy-texture transmittance)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (get-vector3 img 0 0)))))
 
 (def ray-scatter-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core

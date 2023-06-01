@@ -247,32 +247,30 @@ void main()
 
 (defn radiance-shader-test [setup probe & shaders]
   (fn [uniforms args]
-      (let [result (promise)]
-        (with-invisible-window
-          (let [indices   [0 1 3 2]
-                vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                red-data  (flatten (repeat (* 17 17) [1 0 0]))
-                red       (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array red-data)})
-                blue-data (flatten (repeat (* 17 17) [0 0 1]))
-                blue      (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array blue-data)})
-                program   (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao       (make-vertex-array-object program indices vertices [:point 3])
-                tex       (texture-render-color
-                            1 1 true
-                            (use-program program)
-                            (uniform-sampler program "transmittance" 0)
-                            (uniform-sampler program "surface_radiance" 1)
-                            (apply setup program uniforms)
-                            (use-textures red blue)
-                            (render-quads vao))
-                img       (rgb-texture->vectors3 tex)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-texture blue)
-            (destroy-texture red)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
+      (with-invisible-window
+        (let [indices   [0 1 3 2]
+              vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              red-data  (flatten (repeat (* 17 17) [1 0 0]))
+              red       (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array red-data)})
+              blue-data (flatten (repeat (* 17 17) [0 0 1]))
+              blue      (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array blue-data)})
+              program   (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              vao       (make-vertex-array-object program indices vertices [:point 3])
+              tex       (texture-render-color
+                          1 1 true
+                          (use-program program)
+                          (uniform-sampler program "transmittance" 0)
+                          (uniform-sampler program "surface_radiance" 1)
+                          (apply setup program uniforms)
+                          (use-textures red blue)
+                          (render-quads vao))
+              img       (rgb-texture->vectors3 tex)]
+          (destroy-texture tex)
+          (destroy-texture blue)
+          (destroy-texture red)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (get-vector3 img 0 0)))))
 
 (def ground-radiance-probe
   (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb] "#version 410 core
