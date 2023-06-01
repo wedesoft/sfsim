@@ -20,18 +20,19 @@
       (and (== (count expected) (count actual))
            (<= (sqrt (apply + (map (comp #(* % %) -) actual expected))) error))))
 
-(defn int->rgb [x]
+(defn int->rgba [x]
   "Convert 32-bit integer to RGB vector"
-  (let [red   (bit-shift-right (bit-and 0x00ff0000 x) 16)
-        green (bit-shift-right (bit-and 0x0000ff00 x) 8)
-        blue  (bit-and 0x000000ff x)]
-    [red green blue]))
+  (let [red   (bit-shift-right (bit-and 0x000000ff x)  0)
+        green (bit-shift-right (bit-and 0x0000ff00 x)  8)
+        blue  (bit-shift-right (bit-and 0x00ff0000 x) 16)
+        alpha (bit-shift-right (bit-and 0xff000000 x) 24)]
+    [red green blue alpha]))
 
-(defn rgb-dist [c1 c2]
+(defn rgba-dist [c1 c2]
   (apply max (map #(abs (- %1 %2)) c1 c2)))
 
-(defn average-rgb-dist [data1 data2]
-  (let [distances (map #(rgb-dist (int->rgb %1) (int->rgb %2)) data1 data2)]
+(defn average-rgba-dist [data1 data2]
+  (let [distances (map #(rgba-dist (int->rgba %1) (int->rgba %2)) data1 data2)]
     (float (/ (reduce + distances) (count distances)))))
 
 (defn is-image
@@ -42,7 +43,7 @@
             size                        (* width height)]
         (and (== (:width other) width)
              (== (:height other) height)
-             (let [avg-dist (average-rgb-dist (:data other) data)]
+             (let [avg-dist (average-rgba-dist (:data other) data)]
                (or (<= avg-dist tolerance)
                    (do (.println *err*
                                  (format "Average deviation from %s averages %5.2f > %5.2f"

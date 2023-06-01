@@ -800,13 +800,13 @@ void main(void)
 uniform sampler2DShadow shadow_map;
 in vec4 shadow_pos;
 in float ambient;
-out vec3 fragColor;
+out vec4 fragColor;
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
   float shade = textureProj(shadow_map, convert_shadow_index(shadow_pos, 256, 256));
   float brightness = 0.7 * shade + 0.1 * ambient + 0.1;
-  fragColor = vec3(brightness, brightness, brightness);
+  fragColor = vec4(brightness, brightness, brightness, 1.0);
 }")
 
 (fact "Shadow mapping integration test"

@@ -843,7 +843,7 @@ in VS_OUT
   vec3 point;
 } fs_in;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-out vec3 fragColor;
+out vec4 fragColor;
 void main()
 {
   vec2 intersection = ray_sphere(vec3(0, 0, 0), 1, vec3(fs_in.point.xy, -1), vec3(0, 0, 1));
@@ -851,9 +851,9 @@ void main()
     vec3 p = vec3(fs_in.point.xy, -1 + intersection.x);
     float value = texture(cubemap, p).r;
     value = (value - threshold) * multiplier;
-    fragColor = vec3(value, value, 1.0);
+    fragColor = vec4(value, value, 1.0, 1.0);
   } else
-    fragColor = vec3(0, 0, 0);
+    fragColor = vec4(0, 0, 0, 1.0);
 }")
 
 (fact "Program to generate planetary cloud cover using curl noise"
