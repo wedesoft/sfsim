@@ -250,10 +250,10 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (fact "Size of 1D texture"
-      (offscreen-render 64 64
-                        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
-                          (:width tex) => 4
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
+          (:width tex) => 4
+          (destroy-texture tex))))
 
 (def vertex-texture
 "#version 410 core
@@ -301,11 +301,11 @@ void main()
   :linear        :repeat   "floats-1d-linear-repeat")
 
 (fact "Size of 2D RGB texture"
-      (offscreen-render 64 64
-                        (let [tex (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
-                          (:width tex) => 2
-                          (:height tex) => 2
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
+          (:width tex) => 2
+          (:height tex) => 2
+          (destroy-texture tex))))
 
 (def fragment-texture-2d
 "#version 410 core
@@ -390,11 +390,11 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png" 0.0))
 
 (fact "Size of 2D depth texture"
-      (offscreen-render 64 64
-                        (let [tex (make-depth-texture :linear :clamp {:width 2 :height 1 :data (float-array [0 0])})]
-                          (:width tex) => 2
-                          (:height tex) => 1
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-depth-texture :linear :clamp {:width 2 :height 1 :data (float-array [0 0])})]
+          (:width tex) => 2
+          (:height tex) => 1
+          (destroy-texture tex))))
 
 (def vertex-interpolate
 "#version 410 core
@@ -436,13 +436,13 @@ void main(void)
   => (is-image "test/sfsim25/fixtures/render/shadow-sample.png" 0.0))
 
 (fact "Size of 3D texture"
-      (offscreen-render 64 64
-                        (let [tex (make-float-texture-3d :linear :clamp
-                                                         {:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
-                          (:width tex) => 3
-                          (:height tex) => 2
-                          (:depth tex) => 1
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-float-texture-3d :linear :clamp
+                                         {:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
+          (:width tex) => 3
+          (:height tex) => 2
+          (:depth tex) => 1
+          (destroy-texture tex))))
 
 (def fragment-texture-3d
 "#version 410 core
@@ -596,13 +596,13 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (fact "Render to floating-point texture (needs active OpenGL context)"
-      (offscreen-render 32 32
+      (with-invisible-window
         (let [tex (texture-render-color 8 8 true (clear (vec3 1.0 2.0 3.0)))]
           (get-vector3 (rgb-texture->vectors3 tex) 0 0) => (vec3 1.0 2.0 3.0)
           (destroy-texture tex))))
 
 (fact "Render to image texture (needs active OpenGL context)"
-      (offscreen-render 32 32
+      (with-invisible-window
         (let [tex (texture-render-color 160 120 false (clear (vec3 1.0 0.0 0.0)))
               img (texture->image tex)]
           img => (is-image "test/sfsim25/fixtures/render/red.png" 0.0)
@@ -619,7 +619,7 @@ void main()
 }")
 
 (facts "Using framebuffer to render to two color textures"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [tex1     (make-empty-float-texture-2d :linear :clamp 1 1)
                tex2     (make-empty-float-texture-2d :linear :clamp 1 1)
                indices  [0 1 3 2]
@@ -637,7 +637,7 @@ void main()
            (destroy-texture tex2))))
 
 (facts "Using framebuffer to render to layers of 3D texture"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [tex      (make-empty-float-texture-3d :linear :clamp 1 1 2)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -663,7 +663,7 @@ void main(void)
 }")
 
 (facts "Using framebuffer to render to depth texture"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [depth    (make-empty-depth-texture-2d :linear :clamp 1 1)
                indices  [2 3 1 0]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -726,7 +726,7 @@ void main()
 (tabular "render alpha"
          (fact
            (let [result (promise)]
-             (offscreen-render 1 1
+             (with-invisible-window
                (let [indices  [0 1 3 2]
                      vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                      program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
@@ -743,13 +743,13 @@ void main()
          0.0)
 
 (fact "Render empty depth map"
-      (offscreen-render 32 32
+      (with-invisible-window
         (let [tex (texture-render-depth 10 10 (clear))]
           (get-float (depth-texture->floats tex) 0 0) => 0.0
           (destroy-texture tex))))
 
 (tabular "Render back face of quad into shadow map"
-         (offscreen-render 32 32
+         (with-invisible-window
            (let [indices  (reverse [0 1 3 2])
                  vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
                  program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
@@ -847,7 +847,7 @@ void main(void)
       => (is-image "test/sfsim25/fixtures/render/shadow.png" 0.02))
 
 (fact "Create floating-point cube map and read them out"
-      (offscreen-render 16 16
+      (with-invisible-window
         (let [cubemap (make-float-cubemap :linear :clamp
                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
           (doseq [i (range 6)]
@@ -873,7 +873,7 @@ void main()
 }")
 
 (facts "Using framebuffer to render to faces of cubemap"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [tex      (make-empty-float-cubemap :linear :clamp 1)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -889,7 +889,7 @@ void main()
            (destroy-texture tex))))
 
 (fact "Create cube map of 3D vectors and read them out"
-      (offscreen-render 16 16
+      (with-invisible-window
         (let [gen-vector (fn [i] (let [i3 (* i 3)] [i3 (inc i3) (inc (inc i3))]))
               cubemap (make-vector-cubemap :linear :clamp
                                            (mapv (fn [i] {:width 1 :height 1 :data (float-array (gen-vector i))})

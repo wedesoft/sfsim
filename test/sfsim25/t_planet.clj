@@ -248,7 +248,7 @@ void main()
 (defn radiance-shader-test [setup probe & shaders]
   (fn [uniforms args]
       (let [result (promise)]
-        (offscreen-render 1 1
+        (with-invisible-window
           (let [indices   [0 1 3 2]
                 vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 red-data  (flatten (repeat (* 17 17) [1 0 0]))

@@ -256,7 +256,7 @@ void main()
 
 (defn cloud-noise-test [scale octaves x y z]
   (let [result (promise)]
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices  [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
@@ -383,7 +383,7 @@ float sampling_offset()
 
 (tabular "Compute deep opacity map offsets and layers"
   (fact
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
             ndc-to-shadow   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
@@ -451,7 +451,7 @@ void main()
 
 (defn opacity-lookup-test [offset step depth x y z]
   (let [result (promise)]
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program         (make-program :vertex [shaders/vertex-passthrough]
@@ -518,7 +518,7 @@ void main()
 
 (defn opacity-cascade-lookup-test [n z shift-z opacities offsets select]
   (let [result (promise)]
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             inv-transform   (transformation-matrix (eye 3) (vec3 0 0 shift-z))
@@ -580,7 +580,7 @@ void main()
 
 (defn identity-cubemap-test [x y z]
   (let [result (promise)]
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices  [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [shaders/vertex-passthrough]
@@ -634,7 +634,7 @@ vec3 curl_field_mock(vec3 point)
 
 (defn iterate-cubemap-warp-test [n scale px py pz x y z]
   (let [result (promise)]
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices  [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [shaders/vertex-passthrough]
@@ -691,7 +691,7 @@ float lookup_mock(vec3 point)
 
 (defn cubemap-warp-test [px py pz selector]
   (let [result (promise)]
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices  [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [shaders/vertex-passthrough]
@@ -919,7 +919,7 @@ void main()
 
 (defn cloud-profile-test [radius cloud-bottom cloud-top x y z]
   (let [result (promise)]
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices  [0 1 3 2]
             vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             program  (make-program :vertex [shaders/vertex-passthrough]
@@ -1043,30 +1043,30 @@ void main()
 
 (defn cloud-cover-test [x y z]
   (let [result (promise)]
-    (offscreen-render 1 1
-                      (let [indices     [0 1 3 2]
-                            vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                            datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
-                            data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
-                            cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
-                            program     (make-program :vertex [shaders/vertex-passthrough]
-                                                      :fragment [(cloud-cover-probe x y z) cloud-cover
-                                                                 shaders/interpolate-float-cubemap
-                                                                 shaders/convert-cubemap-index])
-                            vao         (make-vertex-array-object program indices vertices [:point 3])
-                            tex         (texture-render-color
-                                          1 1 true
-                                          (use-program program)
-                                          (uniform-sampler program "cover" 0)
-                                          (uniform-int program "cover_size" 2)
-                                          (use-textures cube)
-                                          (render-quads vao))
-                            img         (rgb-texture->vectors3 tex)]
-                        (deliver result (get-vector3 img 0 0))
-                        (destroy-texture tex)
-                        (destroy-texture cube)
-                        (destroy-vertex-array-object vao)
-                        (destroy-program program)))
+    (with-invisible-window
+      (let [indices     [0 1 3 2]
+            vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
+            data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
+            cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
+            program     (make-program :vertex [shaders/vertex-passthrough]
+                                      :fragment [(cloud-cover-probe x y z) cloud-cover
+                                                 shaders/interpolate-float-cubemap
+                                                 shaders/convert-cubemap-index])
+            vao         (make-vertex-array-object program indices vertices [:point 3])
+            tex         (texture-render-color
+                          1 1 true
+                          (use-program program)
+                          (uniform-sampler program "cover" 0)
+                          (uniform-int program "cover_size" 2)
+                          (use-textures cube)
+                          (render-quads vao))
+            img         (rgb-texture->vectors3 tex)]
+        (deliver result (get-vector3 img 0 0))
+        (destroy-texture tex)
+        (destroy-texture cube)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)))
     @result))
 
 (tabular "Perform cloud cover lookup in cube map"

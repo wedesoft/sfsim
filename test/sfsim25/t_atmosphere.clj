@@ -501,7 +501,7 @@
 (defn transmittance-shader-test [setup probe & shaders]
   (fn [uniforms args]
       (let [result (promise)]
-        (offscreen-render 1 1
+        (with-invisible-window
           (let [indices       [0 1 3 2]
                 vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
@@ -555,7 +555,7 @@ void main()
 (defn ray-scatter-shader-test [setup probe & shaders]
   (fn [uniforms args]
       (let [result (promise)]
-        (offscreen-render 1 1
+        (with-invisible-window
           (let [indices       [0 1 3 2]
                 vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
