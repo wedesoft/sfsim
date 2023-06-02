@@ -1,5 +1,5 @@
 # TODO
-* map tiles should use lwjgl stb
+* map tiles should use lwjgl stb or (javax.imageio.ImageIO/read (java.io.File. "...")), (.getSubimage x y w h)
 * use byte arrays to represent images
 * test atmosphere recomputation
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
