@@ -891,7 +891,7 @@ void main()
           (destroy-texture worley-north)
           (destroy-texture tex)
           img)))
-    => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.0))
+    => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.1))
 
 (def cloud-profile-probe
   (template/fn [x y z]

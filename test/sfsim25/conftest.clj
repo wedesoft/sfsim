@@ -45,9 +45,8 @@
              (== (:height other) height)
              (let [avg-dist (average-rgba-dist (:data other) data)]
                (or (<= avg-dist tolerance)
-                   (do (.println *err*
-                                 (format "Average deviation from %s averages %5.2f > %5.2f"
-                                         filename avg-dist tolerance))
+                   (do
+                     (println (format "Average deviation from %s averages %5.2f > %5.2f" filename avg-dist tolerance))
                      false)))))))
 
 (defn record-image
