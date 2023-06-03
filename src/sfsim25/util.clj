@@ -110,15 +110,15 @@
     (let [buffer (STBImage/stbi_load path width height channels 4)
           width  (aget width 0)
           height (aget height 0)
-          data   (int-array (* width height))]
-      (.get (.asIntBuffer buffer) data)
+          data   (byte-array (* width height 4))]
+      (.get buffer data)
       {:data data :width width :height height :channels (aget channels 0)})))
 
 (defn spit-image
   "Save RGB image as PNG file"
   [path {:keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
-    (-> buffer (.asIntBuffer) (.put data) (.flip))
+    (-> buffer (.put data) (.flip))
     (STBImageWrite/stbi_write_png path width height 4 buffer (* 4 width))
     img))
 
@@ -135,18 +135,19 @@
 (defn get-pixel
   "Read color value from a pixel of an image"
   ^Vec3 [{:keys [width height data]} ^long y ^long x]
-  (let [offset (+ (* width y) x)
-        value  (aget data offset)]
-    (vec3 (bit-and 0xff value) (bit-shift-right (bit-and 0xff00 value) 8) (bit-shift-right (bit-and 0xff0000 value) 16))))
+  (let [offset (* 4 (+ (* width y) x))]
+    (vec3 (byte->ubyte (aget data offset))
+          (byte->ubyte (aget data (inc offset)))
+          (byte->ubyte (aget data (inc (inc offset)))))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
   [{:keys [width height data]} ^long y ^long x ^Vec3 c]
-  (let [offset (+ (* width y) x)]
-    (aset-int data offset (bit-or (bit-shift-left -1 24)
-                                  (bit-shift-left (round (c 2)) 16)
-                                  (bit-shift-left (round (c 1)) 8)
-                                  (round (c 0))))))
+  (let [offset (* 4 (+ (* width y) x))]
+    (aset-byte data offset (ubyte->byte (c 0)))
+    (aset-byte data (inc offset) (ubyte->byte (c 1)))
+    (aset-byte data (inc (inc offset)) (ubyte->byte (c 2)))
+    (aset-byte data (inc (inc (inc offset))) -1)))
 
 (defn get-short
   "Read value from a short integer tile"

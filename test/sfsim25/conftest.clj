@@ -20,19 +20,11 @@
       (and (== (count expected) (count actual))
            (<= (sqrt (apply + (map (comp #(* % %) -) actual expected))) error))))
 
-(defn int->rgba [x]
-  "Convert 32-bit integer to RGB vector"
-  (let [red   (bit-shift-right (bit-and 0x000000ff x)  0)
-        green (bit-shift-right (bit-and 0x0000ff00 x)  8)
-        blue  (bit-shift-right (bit-and 0x00ff0000 x) 16)
-        alpha (bit-shift-right (bit-and 0xff000000 x) 24)]
-    [red green blue alpha]))
-
 (defn rgba-dist [c1 c2]
   (apply max (map #(abs (- %1 %2)) c1 c2)))
 
 (defn average-rgba-dist [data1 data2]
-  (let [distances (map #(rgba-dist (int->rgba %1) (int->rgba %2)) data1 data2)]
+  (let [distances (map rgba-dist (partition 4 data1) (partition 4 data2))]
     (float (/ (reduce + distances) (count distances)))))
 
 (defn is-image

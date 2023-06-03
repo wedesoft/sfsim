@@ -60,11 +60,11 @@
 
 (facts "Saving and loading of RGB image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
-        value     (bit-or 1 (bit-shift-left 2 8) (bit-shift-left 3 16) (bit-shift-left -1 24))]
-      (spit-image file-name {:width 4 :height 2 :data (int-array (repeat 8 value))})
+        value     [1 2 3 -1]]
+      (spit-image file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
-      (first (:data (slurp-image file-name))) => value))
+      (take 4 (:data (slurp-image file-name))) => value))
 
 (facts "Converting unsigned byte to byte and back"
   (byte->ubyte    0) =>    0
@@ -80,11 +80,11 @@
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/red.png") 0 0) => (vec3 255 0 0)
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/green.png") 0 0) => (vec3 0 255 0)
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/blue.png") 0 0) => (vec3 0 0 255)
-  (let [img {:width 4 :height 2 :data (int-array [0 0 0 0 0 0 0 (bit-or 1 (bit-shift-left 2 8) (bit-shift-left 3 16))])}]
+  (let [img {:width 4 :height 2 :data (byte-array (flatten (concat (repeat 7 [0 0 0 -1]) [[1 2 3 -1]])))}]
     (get-pixel img 1 3) => (vec3 1 2 3))
-  (let [img {:width 1 :height 1 :data (int-array [(bit-or 1 (bit-shift-left 2 8) (bit-shift-left 3 16))])}]
+  (let [img {:width 1 :height 1 :data (byte-array [1 2 3 -1])}]
     (get-pixel img 0 0) => (vec3 1 2 3))
-  (let [img {:width 4 :height 2 :data (int-array (repeat 8 0))}]
+  (let [img {:width 4 :height 2 :data (byte-array (repeat 32 0))}]
     (set-pixel! img 1 2 (vec3 253 254 255)) => anything
     (get-pixel img 1 2) => (vec3 253 254 255)))
 

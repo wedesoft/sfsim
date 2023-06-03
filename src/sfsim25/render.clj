@@ -332,7 +332,7 @@
 (defn make-rgb-texture
   "Load RGB image into an OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-int-buffer interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
+  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
@@ -506,8 +506,9 @@
   "Convert texture to RGB image"
   [{:keys [target texture width height]}]
   (with-texture target texture
-    (let [buf  (BufferUtils/createIntBuffer (* width height))
-          data (int-array (* width height))]
+    (let [size (* 4 width height)
+          buf  (BufferUtils/createByteBuffer size)
+          data (byte-array size)]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE buf)
       (.get buf data)
       {:width width :height height :data data})))
