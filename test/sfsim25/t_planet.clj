@@ -2,19 +2,29 @@
     (:require [midje.sweet :refer :all]
               [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image)]
               [comb.template :as template]
-              [clojure.math :refer (PI)]
-              [fastmath.vector :refer (vec3 mult)]
+              [clojure.math :refer (PI exp pow)]
+              [fastmath.vector :refer (vec3 mult dot mag)]
               [fastmath.matrix :refer (eye)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.atmosphere :as atmosphere]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
+              [sfsim25.interpolate :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all])
     (:import [org.lwjgl.glfw GLFW]))
 
 (GLFW/glfwInit)
+
+(def radius 6378000.0)
+(def max-height 100000.0)
+(def ray-steps 10)
+(def size 12)
+(def earth #:sfsim25.sphere{:centre (vec3 0 0 0)
+                            :radius radius
+                            :sfsim25.atmosphere/height max-height
+                            :sfsim25.atmosphere/brightness (vec3 0.3 0.3 0.3)})
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (vec3 -0.75 -0.5  -1.0)
@@ -244,6 +254,64 @@ void main()
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
       => (is-image "test/sfsim25/fixtures/planet/heightfield.png" 1.6))
+
+(defn ray-scatter [x view-direction light-direction above-horizon]
+  (let [value (* (pow (max (dot view-direction light-direction) 0.0) 10) (exp (/ (- radius (mag x)) 5500.0)))]
+    (vec3 value value value)))
+
+(def surface-radiance-earth (partial atmosphere/surface-radiance earth ray-scatter ray-steps))
+(def surface-radiance-space-earth (atmosphere/surface-radiance-space earth [size size]))
+(def S (pack-matrices (make-lookup-table surface-radiance-earth surface-radiance-space-earth)))
+
+(defn surface-radiance-shader-test [setup probe & shaders]
+  (fn [uniforms args]
+      (with-invisible-window
+        (let [indices          [0 1 3 2]
+              vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              surface-radiance (make-vector-texture-2d :linear :clamp {:width size :height size :data S})
+              program          (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              vao              (make-vertex-array-object program indices vertices [:point 3])
+              tex              (texture-render-color
+                                 1 1 true
+                                 (use-program program)
+                                 (uniform-sampler program "surface_radiance" 0)
+                                 (apply setup program uniforms)
+                                 (use-textures surface-radiance)
+                                 (render-quads vao))
+              img           (rgb-texture->vectors3 tex)]
+          (destroy-texture tex)
+          (destroy-texture surface-radiance)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (get-vector3 img 0 0)))))
+
+(def surface-radiance-probe
+  (template/fn [px py pz lx ly lz] "#version 410 core
+out vec3 fragColor;
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+void main()
+{
+  vec3 point = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
+  fragColor = surface_radiance_function(point, light_direction);
+}"))
+
+(def surface-radiance-test
+  (surface-radiance-shader-test
+    (fn [program radius max-height size]
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height)
+        (uniform-int program "surface_sun_elevation_size" size)
+        (uniform-int program "surface_height_size" size))
+    surface-radiance-probe surface-radiance-function shaders/surface-radiance-forward shaders/interpolate-2d
+    shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index shaders/convert-2d-index))
+
+(tabular "Shader function to determine ambient light scattered by the atmosphere"
+         (fact ((surface-radiance-test [radius max-height size] [?x ?y ?z ?lx ?ly ?lz]) 0) => (roughly ?value 1e-6))
+         ?x ?y ?z              ?lx ?ly ?lz ?value
+         0  0  radius          0   0   1   0.770411
+         0  0  radius          1   0   0   0.095782
+         0  0  (+ radius 1000) 0   0   1   0.639491)
 
 (def ground-radiance-probe
   (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb]
