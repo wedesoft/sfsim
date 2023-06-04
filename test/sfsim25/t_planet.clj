@@ -1,6 +1,6 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-vector is-image record-image)]
+              [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (PI)]
               [fastmath.vector :refer (vec3 mult)]
@@ -245,24 +245,6 @@ void main()
                           (destroy-program program)))
       => (is-image "test/sfsim25/fixtures/planet/heightfield.png" 1.6))
 
-(defn radiance-shader-test [setup probe & shaders]
-  (fn [uniforms args]
-      (with-invisible-window
-        (let [indices   [0 1 3 2]
-              vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              program   (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-              vao       (make-vertex-array-object program indices vertices [:point 3])
-              tex       (texture-render-color
-                          1 1 true
-                          (use-program program)
-                          (apply setup program uniforms)
-                          (render-quads vao))
-              img       (rgb-texture->vectors3 tex)]
-          (destroy-texture tex)
-          (destroy-vertex-array-object vao)
-          (destroy-program program)
-          (get-vector3 img 0 0)))))
-
 (def ground-radiance-probe
   (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb]
 "#version 410 core
@@ -287,7 +269,7 @@ void main()
 }"))
 
 (def ground-radiance-test
-  (radiance-shader-test
+  (shader-test
     (fn [program radius max-height elevation-size height-size albedo reflectivity]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height)
