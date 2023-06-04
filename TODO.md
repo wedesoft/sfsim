@@ -1,5 +1,5 @@
 # TODO
-* add separate tests for surface radiance shader
+* add separate tests for surface radiance shader and transmittance\_outer
 * use mocks in tests for ground radiance shader
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map

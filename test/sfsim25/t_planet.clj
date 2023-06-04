@@ -250,31 +250,31 @@ void main()
       (with-invisible-window
         (let [indices   [0 1 3 2]
               vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              red-data  (flatten (repeat (* 17 17) [1 0 0]))
-              red       (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array red-data)})
-              blue-data (flatten (repeat (* 17 17) [0 0 1]))
-              blue      (make-vector-texture-2d :linear :clamp {:width 17 :height 17 :data (float-array blue-data)})
               program   (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
               vao       (make-vertex-array-object program indices vertices [:point 3])
               tex       (texture-render-color
                           1 1 true
                           (use-program program)
-                          (uniform-sampler program "transmittance" 0)
-                          (uniform-sampler program "surface_radiance" 1)
                           (apply setup program uniforms)
-                          (use-textures red blue)
                           (render-quads vao))
               img       (rgb-texture->vectors3 tex)]
           (destroy-texture tex)
-          (destroy-texture blue)
-          (destroy-texture red)
           (destroy-vertex-array-object vao)
           (destroy-program program)
           (get-vector3 img 0 0)))))
 
 (def ground-radiance-probe
-  (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb] "#version 410 core
+  (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb]
+"#version 410 core
 out vec3 fragColor;
+vec3 surface_radiance_function(vec3 point, vec3 light_direction)
+{
+  return vec3(0, 0, 1);
+}
+vec3 transmittance_outer (vec3 point, vec3 direction)
+{
+  return vec3(1, 0, 0);
+}
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
 void main()
@@ -295,9 +295,9 @@ void main()
         (uniform-int program "height_size" height-size)
         (uniform-float program "albedo" albedo)
         (uniform-float program "reflectivity" reflectivity))
-    ground-radiance-probe ground-radiance shaders/transmittance-forward shaders/elevation-to-index shaders/interpolate-2d
+    ground-radiance-probe ground-radiance shaders/elevation-to-index shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/surface-radiance-forward shaders/sun-elevation-to-index surface-radiance-function atmosphere/transmittance-outer))
+    shaders/sun-elevation-to-index))
 
 (tabular "Shader function to compute light emitted from ground"
          (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5]
