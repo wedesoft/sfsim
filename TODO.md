@@ -15,7 +15,6 @@
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * reuse (parts of) shadow map?
 * limit opacity mapping and cloud sampling
-* move different levels of noise to create moving and shape-changing clouds
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj_tK_mdRcA
