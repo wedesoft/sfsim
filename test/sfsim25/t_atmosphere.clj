@@ -575,10 +575,10 @@ void main()
 (tabular "Shader function to compute transmittance between point in the atmosphere and space"
          (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
                => (roughly ?result 1e-6))
-         ?px     ?py ?pz      ?dx     ?dy ?dz     ?result
-         0       0    6478000 0       0   1       0.976359
-         0       0    6378000 0       0   1       0.953463
-         0       0    6378000 1       0   0       0.016916)
+         ?px ?py ?pz      ?dx ?dy ?dz ?result
+         0   0    6478000 0   0   1   0.976359
+         0   0    6378000 0   0   1   0.953463
+         0   0    6378000 1   0   0   0.016916)
 
 (defn ray-scatter-shader-test [setup probe & shaders]
   (fn [uniforms args]
