@@ -550,6 +550,36 @@ void main()
          0       0   6378000 0       0   6478000 0.976549
          6378000 0   0       6378000 0   100000  0.079658)
 
+(def transmittance-outer-probe
+  (template/fn [px py pz dx dy dz] "#version 410 core
+out vec3 fragColor;
+vec3 transmittance_outer(vec3 point, vec3 direction);
+void main()
+{
+  vec3 point = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  fragColor = transmittance_outer(point, direction);
+}"))
+
+(def transmittance-outer-test
+  (transmittance-shader-test
+    (fn [program transmittance-height-size transmittance-elevation-size radius max-height]
+        (uniform-int program "transmittance_height_size" transmittance-height-size)
+        (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
+    transmittance-outer-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
+    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
+    shaders/horizon-distance shaders/limit-quot phase-function))
+
+(tabular "Shader function to compute transmittance between point in the atmosphere and space"
+         (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
+               => (roughly ?result 1e-6))
+         ?px     ?py ?pz      ?dx     ?dy ?dz     ?result
+         0       0    6478000 0       0   1       0.976359
+         0       0    6378000 0       0   1       0.953463
+         0       0    6378000 1       0   0       0.016916)
+
 (defn ray-scatter-shader-test [setup probe & shaders]
   (fn [uniforms args]
       (with-invisible-window
