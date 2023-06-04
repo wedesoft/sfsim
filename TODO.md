@@ -1,22 +1,18 @@
 # TODO
-* test atmosphere recomputation
-* make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
-* separate transmittance\_outer call from cloud\_shadow,
-  integration test for cascaded deep opacity map
-* test cloud shadows on ellipsoidical planet
-* opacity\_cascade\_lookup with level of detail?
-  exponentially reduce and or limit samples with distance or when viewing from space and do level of detail
 * add separate tests for surface radiance shader
 * use mocks in tests for ground radiance shader
-* add clouds to planetary shader,
-  offscreen render clouds with low resolution (and atmosphere in front) with alpha channel, use blue noise z-offsets and blur,
-  add cloud shadow computation to ground radiance function, compute cloud shadows on ground with quarter resolution
-* render to texture with alpha channel,
-  render 1 of 4x4 pixels per frame?
-  apply cloud texture to higher resolution picture (upscale and alpha-blend)
+* make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
+  integration test for cascaded deep opacity map
+* test cloud shadows on ellipsoidical planet
+* render clouds on planet, output to 3-channel transparency layer and colour layer
+  low-res. offscreen render planet and background with clouds and atmosphere in front, blur?
+  add cloud shadow computation to ground radiance function
+  apply cloud texture when rendering atmosphere and planet at high resolution (upscale and use transmittance when rendering planet)
+  keep transmittance of atmosphere for rendering moon
+* increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
+* change cloud computation when viewing from space far away
 * add shadows of mountains, use shadow map of planet in cloud\_shadow?
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
 * reuse (parts of) shadow map?
 * limit opacity mapping and cloud sampling
 * move different levels of noise to create moving and shape-changing clouds
