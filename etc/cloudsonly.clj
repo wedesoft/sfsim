@@ -58,20 +58,20 @@ float sample_point(float a, float idx, float step_size);
 float step_size(float a, float b, int num_samples);
 float lod_at_distance(float dist, float lod_offset);
 
+bool planet_shadow(vec3 point, vec3 light_direction)
+{
+  if (dot(point, light_direction) < 0) {
+    vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
+    return planet_intersection.y > 0;
+  } else
+    return false;
+}
 float cloud_shadow(vec3 point, vec3 light_direction)
 {
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + dense_height, point, light_direction);
-  if (atmosphere_intersection.y > 0) {
-    if (dot(point, light_direction) < 0) {
-      vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
-      if (planet_intersection.y > 0) {
-        return 0.0;
-      };
-    };
-    float shadow = opacity_cascade_lookup(vec4(point, 1));
-    return shadow;
-  };
-  return 1.0;
+  if (planet_shadow(point, light_direction))
+    return 0.0;
+  else
+    return opacity_cascade_lookup(vec4(point, 1));
 }
 void main()
 {
