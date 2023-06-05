@@ -79,7 +79,7 @@ void main()
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
   if (atmosphere.y > 0) {
     vec3 background;
-    vec2 planet = ray_sphere(vec3(0, 0, 0), radius, fs_in.origin, direction);
+    vec2 planet = ray_sphere(vec3(0, 0, 0), radius, fs_in.origin, direction);  // replace using planetary shader
     if (planet.y > 0) {
       vec3 point = fs_in.origin + planet.x * direction;
       float intensity = cloud_shadow(point, light_direction);
