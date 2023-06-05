@@ -8,7 +8,7 @@
   apply cloud texture when rendering atmosphere and planet at high resolution (upscale and use transmittance when rendering planet)
   keep transmittance of atmosphere for rendering moon
 * increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
-* change cloud computation when viewing from space far away
+* change cloud computation when viewing from space far away (use different lod of shadow?)
 * add shadows of mountains, use shadow map of planet in cloud\_shadow?
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * reuse (parts of) shadow map?
