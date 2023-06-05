@@ -1,6 +1,6 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
-    (:require [sfsim25.cubemap :refer :all]))
+    (:require [sfsim25.cubemap :refer (cube-map-corners)]))
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"

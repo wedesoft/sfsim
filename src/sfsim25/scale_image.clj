@@ -1,7 +1,6 @@
 (ns sfsim25.scale-image
   "Convert large map image into a smaller image with half the width and height."
-  (:require [sfsim25.util :refer (slurp-image spit-image)]
-            [clojure.java.io :as io])
+  (:require [clojure.java.io :as io])
   (:import [javax.imageio ImageIO]
            [java.awt.image BufferedImage AffineTransformOp]
            [java.awt.geom AffineTransform]))

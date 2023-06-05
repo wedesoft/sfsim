@@ -1,7 +1,7 @@
 (ns sfsim25.worley
     "Create Worley noise"
     (:require [fastmath.vector :refer (vec3 add sub mag)]
-              [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats dimension-count)]
+              [sfsim25.util :refer (make-progress-bar tick-and-print dimension-count)]
               [com.climate.claypoole :refer (pfor ncpus)]))
 
 (set! *unchecked-math* true)
@@ -63,12 +63,12 @@
    (worley-noise divisions size false))
   ([divisions size progress]
    (let [grid (random-point-grid divisions size)
-         bar  (if progress (agent (make-progress-bar (* size size size) size)))]
+         bar  (if progress (agent (make-progress-bar (* size size size) size)) nil)]
      (invert-vector
        (normalize-vector
          (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
                (do
-                 (if progress (send bar tick-and-print))
+                 (when progress (send bar tick-and-print))
                  (closest-distance-to-point-in-grid grid divisions size (vec3 (+ k 0.5) (+ j 0.5) (+ i 0.5))))))))))
 
 (set! *unchecked-math* false)

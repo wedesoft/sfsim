@@ -3,8 +3,8 @@
   (:require [clojure.math :refer (cos sin ceil sqrt PI)]
             [fastmath.matrix :refer (transpose mulv)]
             [fastmath.vector :refer (vec3 add sub mag dot mult)]
-            [sfsim25.matrix :refer :all]
-            [sfsim25.util :refer :all])
+            [sfsim25.matrix :refer (oriented-matrix)]
+            [sfsim25.util :refer (sqr)])
   (:import [fastmath.vector Vec3]))
 
 (defn height

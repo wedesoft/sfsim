@@ -58,7 +58,7 @@
   (let [shader (GL20/glCreateShader shader-type)]
     (GL20/glShaderSource shader source)
     (GL20/glCompileShader shader)
-    (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
+    (when (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
       (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024)))))
     shader))
 
@@ -75,15 +75,15 @@
         tess-control-shaders    (map #(make-shader "tessellation control" % GL40/GL_TESS_CONTROL_SHADER) tess-control)
         tess-evaluation-shaders (map #(make-shader "tessellation evaluation" % GL40/GL_TESS_EVALUATION_SHADER) tess-evaluation)
         geometry-shaders        (map #(make-shader "geometry" % GL32/GL_GEOMETRY_SHADER) geometry)
-        fragment-shaders        (map #(make-shader "fragment" % GL20/GL_FRAGMENT_SHADER) fragment)]
-    (let [program (GL20/glCreateProgram)
-          shaders (concat vertex-shaders tess-control-shaders tess-evaluation-shaders geometry-shaders fragment-shaders)]
-      (doseq [shader shaders] (GL20/glAttachShader program shader))
-      (GL20/glLinkProgram program)
-      (if (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
-        (throw (Exception. (GL20/glGetProgramInfoLog program 1024))))
-      (doseq [shader shaders] (destroy-shader shader))
-      program)))
+        fragment-shaders        (map #(make-shader "fragment" % GL20/GL_FRAGMENT_SHADER) fragment)
+        program (GL20/glCreateProgram)
+        shaders (concat vertex-shaders tess-control-shaders tess-evaluation-shaders geometry-shaders fragment-shaders)]
+    (doseq [shader shaders] (GL20/glAttachShader program shader))
+    (GL20/glLinkProgram program)
+    (when (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
+      (throw (Exception. (GL20/glGetProgramInfoLog program 1024))))
+    (doseq [shader shaders] (destroy-shader shader))
+    program))
 
 (defn destroy-program
   "Delete a program and associated shaders"
@@ -224,8 +224,9 @@
   `(let [~texture (GL11/glGenTextures)]
      (with-texture ~target ~texture ~@body)))
 
-(defn generate-mipmap [texture]
+(defn generate-mipmap
   "Generate mipmap for texture and set texture min filter to linear mipmap mode"
+  [texture]
   (let [target (:target texture)]
     (with-texture target (:texture texture)
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
@@ -234,23 +235,23 @@
 (defmulti setup-interpolation (comp second vector))
 
 (defmethod setup-interpolation :nearest
-  [target interpolation]
+  [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
 
 (defmethod setup-interpolation :linear
-  [target interpolation]
+  [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
 (defmulti setup-boundary-1d identity)
 
 (defmethod setup-boundary-1d :clamp
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-1d :repeat
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
 
 (defmacro create-texture-1d
@@ -265,12 +266,12 @@
 (defmulti setup-boundary-2d identity)
 
 (defmethod setup-boundary-2d :clamp
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-2d :repeat
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
 
@@ -294,13 +295,13 @@
 (defmulti setup-boundary-3d (comp second vector))
 
 (defmethod setup-boundary-3d :clamp
-  [target boundary]
+  [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-3d :repeat
-  [target boundary]
+  [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))

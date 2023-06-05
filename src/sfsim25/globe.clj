@@ -2,8 +2,10 @@
   "Use Mercator color and elevation map tiles to generate cube map tiles for color, water, elevation, and normals."
   (:require [com.climate.claypoole :as cp]
             [fastmath.vector :refer (mag)]
-            [sfsim25.cubemap :refer :all]
-            [sfsim25.util :refer :all])
+            [sfsim25.cubemap :refer (cartesian->geodetic color-geodetic cube-coordinate cube-map normal-for-point
+                                     project-onto-globe water-geodetic)]
+            [sfsim25.util :refer (align-address cube-dir cube-path make-progress-bar set-byte! set-float! set-pixel!
+                                  set-vector3! spit-bytes spit-floats spit-image sqr tick-and-print)])
   (:import [java.io File])
   (:gen-class))
 
@@ -27,21 +29,20 @@
             scale   {:width elevation-tilesize :height elevation-tilesize :data (float-array (sqr elevation-tilesize))}
             normals {:width color-tilesize :height color-tilesize :data (float-array (* 3 (sqr color-tilesize)))}]
         (doseq [v (range elevation-tilesize) u (range elevation-tilesize)]
-          (let [j                (cube-coordinate out-level elevation-tilesize b v)
-                i                (cube-coordinate out-level elevation-tilesize a u)
-                p                (cube-map k j i)
-                point            (project-onto-globe p (min 4 in-level) width radius1 radius2)
-                [lon lat height] (cartesian->geodetic point radius1 radius2)]
+          (let [j                 (cube-coordinate out-level elevation-tilesize b v)
+                i                 (cube-coordinate out-level elevation-tilesize a u)
+                p                 (cube-map k j i)
+                point             (project-onto-globe p (min 4 in-level) width radius1 radius2)]
             (set-float! scale v u (/ (mag point) (mag p)))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
-          (let [j                (cube-coordinate out-level color-tilesize b v)
-                i                (cube-coordinate out-level color-tilesize a u)
-                p                (cube-map k j i)
-                point            (project-onto-globe p (min 4 in-level) width radius1 radius2)
-                [lon lat height] (cartesian->geodetic point radius1 radius2)
-                normal           (normal-for-point point (min 4 in-level) out-level width color-tilesize radius1 radius2)
-                color            (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)
-                wet              (water-geodetic (min 4 (+ in-level sublevel)) width lon lat)]
+          (let [j                 (cube-coordinate out-level color-tilesize b v)
+                i                 (cube-coordinate out-level color-tilesize a u)
+                p                 (cube-map k j i)
+                point             (project-onto-globe p (min 4 in-level) width radius1 radius2)
+                [lon lat _height] (cartesian->geodetic point radius1 radius2)
+                normal            (normal-for-point point (min 4 in-level) out-level width color-tilesize radius1 radius2)
+                color             (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)
+                wet               (water-geodetic (min 4 (+ in-level sublevel)) width lon lat)]
             (set-vector3! normals v u normal)
             (set-pixel! tile v u color)
             (set-byte! water v u wet)))

@@ -2,7 +2,9 @@
     "Rendering of clouds"
     (:require [comb.template :as template]
               [clojure.math :refer (pow)]
-              [sfsim25.render :refer :all]
+              [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
+                                      make-empty-float-cubemap make-empty-vector-cubemap make-program make-vertex-array-object
+                                      render-quads uniform-float uniform-int uniform-sampler use-program use-textures)]
               [sfsim25.shaders :as shaders]))
 
 (def cloud-track
@@ -73,8 +75,9 @@
   "Fragment shader for iterating cubemap warp"
   (template/fn [current-name field-method-name] (slurp "resources/shaders/clouds/iterate-cubemap-warp-fragment.glsl")))
 
-(defn make-iterate-cubemap-warp-program [current-name field-method-name shaders]
+(defn make-iterate-cubemap-warp-program
   "Create program to iteratively update cubemap warp vector field"
+  [current-name field-method-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
                 :fragment (into shaders [(iterate-cubemap-warp-fragment current-name field-method-name)
                                          shaders/cubemap-vectors shaders/interpolate-vector-cubemap
@@ -100,8 +103,9 @@
   "Fragment shader for looking up values using a cubemap warp vector field"
   (template/fn [current-name lookup-name] (slurp "resources/shaders/clouds/cubemap-warp-fragment.glsl")))
 
-(defn make-cubemap-warp-program [current-name lookup-name shaders]
+(defn make-cubemap-warp-program
   "Create program to look up values using a given cubemap warp vector field"
+  [current-name lookup-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
                 :fragment (into shaders [(cubemap-warp-fragment current-name lookup-name)
                                          shaders/cubemap-vectors shaders/interpolate-vector-cubemap
@@ -157,7 +161,7 @@
     (uniform-float update-warp "whirl" whirl)
     (uniform-float update-warp "prevailing" prevailing)
     (uniform-float update-warp "curl_scale" curl-scale)
-    (dotimes [iteration num-iterations]
+    (dotimes [_iteration num-iterations]
       (let [updated (iterate-cubemap size flow-scale update-warp (use-textures @warp worley-north worley-south))]
         (destroy-texture @warp)
         (reset! warp updated)))

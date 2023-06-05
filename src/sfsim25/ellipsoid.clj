@@ -1,7 +1,7 @@
 (ns sfsim25.ellipsoid
   "Functions dealing with ellipsoids"
   (:require [fastmath.vector :refer (vec3)]
-            [sfsim25.sphere :refer :all]))
+            [sfsim25.sphere :refer (ray-sphere-intersection)]))
 
 (defn ray-ellipsoid-intersection
   "Compute intersection of line with ellipsoid"

@@ -2,7 +2,7 @@
   "Complex algebra implementation."
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
-            [clojure.math :refer (cos sin sqrt) :as m]
+            [clojure.math :refer (cos sqrt) :as m]
             [fastmath.vector :refer (vec3 mag mult)]
             [sfsim25.util :refer (sinc sqr)])
   (:import [fastmath.vector Vec3]))
