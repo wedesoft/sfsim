@@ -58,7 +58,7 @@ float sample_point(float a, float idx, float step_size);
 float step_size(float a, float b, int num_samples);
 float lod_at_distance(float dist, float lod_offset);
 
-bool planet_shadow(vec3 point, vec3 light_direction)
+bool planet_shadow(vec3 point, vec3 light_direction)  // To be replaced with shadow map
 {
   if (dot(point, light_direction) < 0) {
     vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
