@@ -91,10 +91,11 @@ void main()
 {
   vec3 direction = normalize(fs_in.direction);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
+  vec3 background;
+  vec3 ray_scatter;
+  vec3 transmittance;
+  vec4 cloud_scatter = vec4(0, 0, 0, 1);
   if (atmosphere.y > 0) {
-    vec3 background;
-    vec3 ray_scatter;
-    vec3 transmittance;
     vec2 planet = ray_sphere(vec3(0, 0, 0), radius, fs_in.origin, direction);  // replace using planetary shader
     if (planet.y > 0) {
       vec3 point = fs_in.origin + planet.x * direction;
@@ -120,7 +121,6 @@ void main()
     };
     int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
     float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
-    vec4 cloud_scatter = vec4(0, 0, 0, 1);
     float offset = sampling_offset();
     for (int i=0; i<count; i++) {
       float l = sample_point(atmosphere.x, i + offset, step);
@@ -133,11 +133,13 @@ void main()
       if (cloud_scatter.a <= 0.01)
         break;
     };
-    fragColor = (background * transmittance + ray_scatter) * cloud_scatter.a + cloud_scatter.rgb;
   } else {
     float glare = pow(max(0, dot(direction, light_direction)), specular);
-    fragColor = vec3(glare, glare, glare);
+    background = vec3(glare, glare, glare);
+    transmittance = vec3(1.0, 1.0, 1.0);
+    ray_scatter = vec3(0.0, 0.0, 0.0);
   };
+  fragColor = (background * transmittance + ray_scatter) * cloud_scatter.a + cloud_scatter.rgb;
 }")
 
 (def fov (to-radians 60.0))
