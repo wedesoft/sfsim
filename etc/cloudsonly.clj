@@ -93,12 +93,12 @@ void main()
         highlight = 0.0;
       };
       vec3 ground = ground_radiance(point, light_direction, 1.0, cos_incidence, highlight, vec3(1, 1, 1), vec3(0.09, 0.11, 0.34));
-      vec3 transmit = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
-      background = (ground * transmit * intensity + ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point)) * amplification;
+      vec3 transmittance = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
+      background = (ground * transmittance * intensity + ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point)) * amplification;
       atmosphere.y = planet.x - atmosphere.x;
     } else {
-      vec3 transmit = transmittance_outer(fs_in.origin + atmosphere.x * direction, direction);
-      vec3 glare = pow(max(0, dot(direction, light_direction)), specular) * transmit;
+      vec3 transmittance = transmittance_outer(fs_in.origin + atmosphere.x * direction, direction);
+      vec3 glare = pow(max(0, dot(direction, light_direction)), specular) * transmittance;
       background = ray_scatter_outer(light_direction, fs_in.origin + atmosphere.x * direction, direction) * amplification + glare;
     };
     int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
@@ -117,8 +117,8 @@ void main()
           vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
           vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
           vec3 in_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point) * amplification;
-          vec3 transmit = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
-          cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmit + cloud_scatter.a * (1 - t) * in_scatter;
+          vec3 transmittance = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
+          cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
           cloud_scatter.a *= t;
         };
       }
