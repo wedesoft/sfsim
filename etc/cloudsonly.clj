@@ -73,6 +73,20 @@ float cloud_shadow(vec3 point, vec3 light_direction)
   else
     return opacity_cascade_lookup(vec4(point, 1));
 }
+vec4 cloud_transfer(vec3 point, vec3 direction, vec2 atmosphere, float step, vec4 cloud_scatter, float lod)
+{
+  float density = cloud_density(point, lod);
+  if (density > 0) {
+    float t = exp(-density * step);
+    vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
+    vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
+    vec3 in_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point) * amplification;
+    vec3 transmittance = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
+    cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
+    cloud_scatter.a *= t;
+  };
+  return cloud_scatter;
+}
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -111,16 +125,7 @@ void main()
       float r = length(point);
       if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
         float lod = lod_at_distance(l, lod_offset);
-        float density = cloud_density(point, lod);
-        if (density > 0) {
-          float t = exp(-density * step);
-          vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
-          vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-          vec3 in_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point) * amplification;
-          vec3 transmittance = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
-          cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
-          cloud_scatter.a *= t;
-        };
+        cloud_scatter = cloud_transfer(point, direction, atmosphere, step, cloud_scatter, lod);
       }
       if (cloud_scatter.a <= 0.01)
         break;
