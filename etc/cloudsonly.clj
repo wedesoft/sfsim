@@ -101,10 +101,9 @@ void main()
       vec3 glare = pow(max(0, dot(direction, light_direction)), specular) * transmit;
       background = ray_scatter_outer(light_direction, fs_in.origin + atmosphere.x * direction, direction) * amplification + glare;
     };
-    float transparency = 1.0;
     int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
     float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
-    vec3 cloud_scatter = vec3(0, 0, 0);
+    vec4 cloud_scatter = vec4(0, 0, 0, 1);
     float offset = sampling_offset();
     for (int i=0; i<count; i++) {
       float l = sample_point(atmosphere.x, i + offset, step);
@@ -119,14 +118,14 @@ void main()
           vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
           vec3 in_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point) * amplification;
           vec3 transmit = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
-          cloud_scatter = cloud_scatter + transparency * (1 - t) * scatter_amount * transmit + transparency * (1 - t) * in_scatter;
-          transparency *= t;
+          cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmit + cloud_scatter.a * (1 - t) * in_scatter;
+          cloud_scatter.a *= t;
         };
       }
-      if (transparency <= 0.01)
+      if (cloud_scatter.a <= 0.01)
         break;
     };
-    fragColor = background * transparency + cloud_scatter;
+    fragColor = background * cloud_scatter.a + cloud_scatter.rgb;
   } else {
     float glare = pow(max(0, dot(direction, light_direction)), specular);
     fragColor = vec3(glare, glare, glare);
