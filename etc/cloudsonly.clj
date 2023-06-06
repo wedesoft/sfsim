@@ -87,6 +87,24 @@ vec4 cloud_transfer(vec3 point, vec3 direction, vec2 atmosphere, float step, vec
   };
   return cloud_scatter;
 }
+vec4 sample_cloud(vec3 direction, vec2 atmosphere, vec4 cloud_scatter)
+{
+  int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
+  float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
+  float offset = sampling_offset();
+  for (int i=0; i<count; i++) {
+    float l = sample_point(atmosphere.x, i + offset, step);
+    vec3 point = fs_in.origin + l * direction;
+    float r = length(point);
+    if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
+      float lod = lod_at_distance(l, lod_offset);
+      cloud_scatter = cloud_transfer(point, direction, atmosphere, step, cloud_scatter, lod);
+    }
+    if (cloud_scatter.a <= 0.01)
+      break;
+  };
+  return cloud_scatter;
+}
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -119,20 +137,7 @@ void main()
       background = vec3(glare, glare, glare);
       ray_scatter = ray_scatter_outer(light_direction, fs_in.origin + atmosphere.x * direction, direction) * amplification;
     };
-    int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
-    float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
-    float offset = sampling_offset();
-    for (int i=0; i<count; i++) {
-      float l = sample_point(atmosphere.x, i + offset, step);
-      vec3 point = fs_in.origin + l * direction;
-      float r = length(point);
-      if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-        float lod = lod_at_distance(l, lod_offset);
-        cloud_scatter = cloud_transfer(point, direction, atmosphere, step, cloud_scatter, lod);
-      }
-      if (cloud_scatter.a <= 0.01)
-        break;
-    };
+    cloud_scatter = sample_cloud(direction, atmosphere, cloud_scatter);
   } else {
     float glare = pow(max(0, dot(direction, light_direction)), specular);
     background = vec3(glare, glare, glare);
