@@ -9,187 +9,10 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
-              [sfsim25.clouds :refer :all]))
+              [sfsim25.clouds :refer :all])
+    (:import [org.lwjgl.glfw GLFW]))
 
-(def cloud-track-probe
-  (template/fn [a b decay scatter offset density gradient lx ly lz ir ig ib]
-"#version 410 core
-out vec3 fragColor;
-float sampling_offset()
-{
-  return <%= offset %>;
-}
-vec3 transmittance_track(vec3 p, vec3 q)
-{
-  float dp = 10 - p.x;
-  float dq = 10 - q.x;
-  float transmittance = exp(-<%= decay %> * (dp - dq));
-  return vec3(transmittance, transmittance, transmittance);
-}
-vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
-{
-  float dp = 10 - p.x;
-  float amountp = <%= scatter %> * (1 - pow(2, -dp));
-  float dq = 10 - q.x;
-  float amountq = <%= scatter %> * (1 - pow(2, -dq));
-  float amount = amountp - transmittance_track(p, q).r * amountq;
-  return vec3(0, 0, amount);
-}
-float cloud_density(vec3 point, float lod)
-{
-  return <%= density %> + <%= gradient %> * point.x;
-}
-vec3 cloud_shadow(vec3 point, vec3 light, float lod)
-{
-  return vec3(0, 1, 0);
-}
-float phase(float g, float mu)
-{
-  return 1.0 - 0.5 * mu;
-}
-vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-void main()
-{
-  vec3 origin = vec3(0, 0, 0);
-  vec3 direction = vec3(1, 0, 0);
-  float a = <%= a %>;
-  float b = <%= b %>;
-  vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_track(light_direction, origin, direction, a, b, incoming);
-}
-"))
-
-(def cloud-track-test
-  (shader-test
-    (fn [program anisotropic n amount]
-        (uniform-float program "anisotropic" anisotropic)
-        (uniform-int program "cloud_samples" n)
-        (uniform-float program "cloud_scatter_amount" amount)
-        (uniform-float program "cloud_max_step" 0.1)
-        (uniform-float program "transparency_cutoff" 0.0))
-    cloud-track-probe
-    cloud-track
-    linear-sampling))
-
-(tabular "Shader for putting volumetric clouds into the atmosphere"
-         (fact (cloud-track-test [?aniso ?n ?amnt] [?a ?b ?decay ?scatter ?offs ?dens ?grad ?lx ?ly ?lz ?ir ?ig ?ib])
-               => (roughly-vector (vec3 ?or ?og ?ob) 1e-3))
-         ?a  ?b  ?n ?amnt ?decay  ?scatter ?offs ?dens ?grad ?aniso ?lx ?ly ?lz ?ir ?ig ?ib ?or      ?og                    ?ob
-         0    1  1  1     0       0        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0
-         0    0  1  1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
-         0    1  1  1     0       0        0.5   0.0   0     1      0   0   1   1   1   1   1        1                      1
-         0    1  1  1     1       0        0.5   0.0   0     1      0   0   1   1   0   0   (exp -1) 0                      0
-         9   10  1  1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
-         8    9  1  1     0       1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.25
-         8    9  1  1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
-         8    9  2  1     (log 2) 1        0.5   0.0   0     1      0   0   1   0   0   0   0        0                      0.5
-         0    1  1  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -1))         0
-         0    1  1  0.5   0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
-         0    2  1  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    2  2  1     0       0        0.5   1.0   0     1      0   0   1   0   0   0   0        (- 1 (exp -2))         0
-         0    1  1  1     0       0        0.5   1.0   0     1      1   0   0   0   0   0   0        (* 0.5 (- 1 (exp -1))) 0
-         0    1  1  1     0       0        0.5   1.0   0     0      1   0   0   0   0   0   0        (- 1 (exp -1))         0
-         0    1  1  1     0       0        0.5   0.0   2.0   0      0   0   1   0   0   0   0        (- 1 (exp -1))         0)
-
-(def sky-outer-probe
-  (template/fn [x y z dx dy dz lx ly lz ir ig ib]
-"#version 410 core
-out vec3 fragColor;
-vec3 sky_outer(vec3 light_direction, vec3 origin, vec3 direction, vec3 incoming);
-vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming)
-{
-  return vec3((origin.x + a) * 0.01, incoming.g, incoming.b);
-}
-vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
-{
-  return vec3(incoming.r, incoming.g + (b - a) * 0.01, incoming.b);
-}
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
-{
-  return vec3(incoming.r, incoming.g, incoming.b + (b - a) * 0.01);
-}
-void main()
-{
-  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  vec3 origin = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
-  vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  fragColor = sky_outer(light_direction, origin, direction, incoming);
-}"))
-
-(def sky-outer-test
-  (shader-test
-    (fn [program radius max-height cloud-bottom cloud-top]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height)
-        (uniform-float program "cloud_bottom" cloud-bottom)
-        (uniform-float program "cloud_top" cloud-top))
-    sky-outer-probe
-    sky-outer
-    shaders/ray-sphere
-    shaders/ray-shell))
-
-(tabular "Shader for determining lighting of atmosphere including clouds coming from space"
-         (fact (sky-outer-test [60 40 ?h1 ?h2] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?ir ?ig ?ib])
-               => (roughly-vector (vec3 ?or ?og ?ob) 1e-5))
-         ?x  ?y ?z ?dx ?dy ?dz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
-         110 0  0  1   0   0   10  20  1   0   0   0   0   0    0   0   0
-         110 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.1 0.0 0.0
-          90 0  0  1   0   0   10  20  1   0   0   0.1 0.0 0.0  0.9 0.0 0.0
-        -110 0  0  1   0   0    0   0  1   0   0   0.1 0.0 0.0 -1.0 0.0 0.0
-          80 0  0  1   0   0   10  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.0
-          70 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.1 0.1
-        -110 0  0  1   0   0   20  30  1   0   0   0.1 0.0 0.0  0.9 0.2 1.7)
-
-(def sky-track-probe
-  (template/fn [px py pz dx dy dz a b lx ly lz ir ig ib]
-"#version 410 core
-out vec3 fragColor;
-vec3 sky_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-vec3 cloud_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
-{
-  return vec3(incoming.r, incoming.g + (b - a) * 0.01, incoming.b);
-}
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
-{
-  return vec3(incoming.r, incoming.g, incoming.b + (b - a) * 0.01);
-}
-void main()
-{
-  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  vec3 origin = vec3(<%= px %>, <%= py %>, <%= pz %>);
-  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
-  vec3 incoming = vec3(<%= ir %>, <%= ig %>, <%= ib %>);
-  float a = <%= a %>;
-  float b = <%= b %>;
-  fragColor = sky_track(light_direction, origin, direction, a, b, incoming);
-}"))
-
-(def sky-track-test
-  (shader-test
-    (fn [program radius max-height cloud-bottom cloud-top]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height)
-        (uniform-float program "cloud_bottom" cloud-bottom)
-        (uniform-float program "cloud_top" cloud-top))
-    sky-track-probe
-    sky-track
-    shaders/ray-sphere
-    shaders/ray-shell
-    shaders/clip-shell-intersections))
-
-(tabular "Shader for determining lighting of atmosphere including clouds between two points"
-         (fact (sky-track-test [60 40 ?h1 ?h2] [?px ?py ?pz ?dx ?dy ?dz ?a ?b ?lx ?ly ?lz ?ir ?ig ?ib])
-               => (roughly-vector (vec3 ?or ?og ?ob) 1e-5))
-         ?px ?py ?pz  ?a ?b  ?dx ?dy  ?dz ?h1 ?h2 ?lx ?ly ?lz ?ir ?ig ?ib  ?or ?og ?ob
-        -120 0  -110   0  0  1   0    0   20  30  1   0   0   0   0   0    0   0   0
-        -120 0  -110   0  0  1   0    0   20  30  1   0   0   0.1 0   0    0.1 0   0
-          70 0     0   0 10 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0   0.1
-         110 0     0  10 50 -1   0    0    0   0  1   0   0   0.1 0   0    0.1 0   0.4
-          90 0     0  0  30 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.2
-         100 0     0  0  40 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0.1 0.3
-         100 0     0  0 200 -1   0    0   20  30  1   0   0   0.1 0   0    0.1 0.2 1.8)
+(GLFW/glfwInit)
 
 (def cloud-shadow-probe
   (template/fn [x y z lx ly lz]
@@ -254,29 +77,27 @@ void main()
 }"))
 
 (defn cloud-noise-test [scale octaves x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices  [0 1 3 2]
-            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
-            worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
-            program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(cloud-noise-probe x y z)
-                                              cloud-noise])
-            vao      (make-vertex-array-object program indices vertices [:point 3])
-            tex      (texture-render-color 1 1 true
-                                           (use-program program)
-                                           (uniform-sampler program "worley" 0)
-                                           (uniform-float program "detail_scale" scale)
-                                           (use-textures worley)
-                                           (render-quads vao))
-            img      (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture worley)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
+          worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
+          program  (make-program :vertex [shaders/vertex-passthrough]
+                                 :fragment [(cloud-noise-probe x y z)
+                                            cloud-noise])
+          vao      (make-vertex-array-object program indices vertices [:point 3])
+          tex      (texture-render-color 1 1 true
+                                         (use-program program)
+                                         (uniform-sampler program "worley" 0)
+                                         (uniform-float program "detail_scale" scale)
+                                         (use-textures worley)
+                                         (render-quads vao))
+          img      (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture worley)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Shader to sample 3D cloud noise texture"
          (fact ((cloud-noise-test ?scale ?octaves ?x ?y ?z) 0) => (roughly ?result 1e-5))
@@ -289,11 +110,10 @@ void main()
   (template/fn [term]
 "#version 410 core
 out vec3 fragColor;
-float step_size(float a, float b, float scaling_offset, int num_steps);
-float sample_point(float a, float scaling_offset, int idx, float step_size);
-float scaling_offset(float a, float b, int samples, float max_step);
-float initial_lod(float a, float scaling_offset, float step_size);
-float lod_increment(float step_size);
+int number_of_samples(float a, float b, float max_step);
+float step_size(float a, float b, int num_samples);
+float sample_point(float a, float idx, float step_size);
+float lod_at_distance(float dist, float lod_offset);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
@@ -309,38 +129,18 @@ void main()
 
 (tabular "Shader functions for defining linear sampling"
          (fact ((linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
-         ?term                              ?result
-         "step_size(10, 20, 0, 5)"              2
-         "sample_point(20, 0, 4, 2)"           28
-         "scaling_offset(10, 20, 10, 2.0)"      0
-         "initial_lod(10, 0, 5)"                0
-         "initial_lod(10, 0, 10)"               1
-         "lod_increment(10)"                    0)
-
-(def exponential-sampling-test
-  (shader-test
-    (fn [program]
-        (uniform-float program "cloud_scale" 100)
-        (uniform-int program "cloud_size" 20))
-    sampling-probe
-    exponential-sampling))
-
-(tabular "Shader functions for defining exponential sampling"
-         (fact ((exponential-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
-         ?term                               ?result
-         "scaling_offset(10, 20, 1, 2.0)"        0
-         "scaling_offset(10, 30, 1, 2.0)"       10
-         "scaling_offset(10, 30, 10, 2.0)"       0
-         "step_size(10, 20, 0, 1)"               2
-         "step_size(10, 40, 0, 2)"               2
-         "step_size(10, 30, 10, 1)"              2
-         "sample_point(10, 0, 1, 2)"            20
-         "sample_point(10, 10, 1, 2)"           30
-         "initial_lod(10, 0, 1.5)"               0
-         "initial_lod(10, 0, 2.0)"               1
-         "initial_lod(3, 7, 2.0)"                1
-         "lod_increment(1.0)"                    0
-         "lod_increment(2.0)"                    1)
+         ?term                          ?result
+         "number_of_samples(10, 20, 5)"  2
+         "number_of_samples(10, 20, 3)"  4
+         "number_of_samples(10, 10, 5)"  1
+         "step_size(10, 20, 2)"          5
+         "step_size(10, 20, 4)"          2.5
+         "sample_point(20, 0, 2)"       20
+         "sample_point(20, 3, 2)"       26
+         "sample_point(20, 0.5, 2)"     21
+         "lod_at_distance(1, 0)"         0
+         "lod_at_distance(1, 3)"         3
+         "lod_at_distance(2, 3)"         4)
 
 (def ray-shell-mock
 "#version 410 core
@@ -403,7 +203,7 @@ float sampling_offset()
 
 (tabular "Compute deep opacity map offsets and layers"
   (fact
-    (offscreen-render 1 1
+    (with-invisible-window
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
             ndc-to-shadow   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
@@ -413,7 +213,8 @@ float sampling_offset()
                                           :fragment [(opacity-fragment 7)
                                                      ray-shell-mock
                                                      cloud-density-mock
-                                                     sampling-offset-mock])
+                                                     sampling-offset-mock
+                                                     linear-sampling])
             vao             (make-vertex-array-object program indices vertices [:point 2])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 7)]
@@ -469,37 +270,35 @@ void main()
 }"))
 
 (defn opacity-lookup-test [offset step depth x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices         [0 1 3 2]
-            vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program         (make-program :vertex [shaders/vertex-passthrough]
-                                          :fragment [(opacity-lookup-probe x y z depth) opacity-lookup shaders/convert-2d-index
-                                                     shaders/convert-3d-index])
-            vao             (make-vertex-array-object program indices vertices [:point 3])
-            zeropad         (fn [x] [0 x 0 0])
-            opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
-            opacity-layers  (make-float-texture-3d :linear :clamp {:width 2 :height 2 :depth 7
-                                                                   :data (float-array opacity-data)})
-            offset-data     (zeropad offset)
-            opacity-offsets (make-float-texture-2d :linear :clamp {:width 2 :height 2
-                                                                   :data (float-array offset-data)})
-            tex             (texture-render-color 1 1 true
-                                                  (use-program program)
-                                                  (uniform-sampler program "opacity_offsets" 0)
-                                                  (uniform-sampler program "opacity_layers" 1)
-                                                  (uniform-float program "opacity_step" step)
-                                                  (uniform-int program "num_opacity_layers" 7)
-                                                  (uniform-int program "shadow_size" 2)
-                                                  (use-textures opacity-offsets opacity-layers)
-                                                  (render-quads vao))
-            img             (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture opacity-offsets)
-        (destroy-texture opacity-layers)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices         [0 1 3 2]
+          vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          program         (make-program :vertex [shaders/vertex-passthrough]
+                                        :fragment [(opacity-lookup-probe x y z depth) opacity-lookup shaders/convert-2d-index
+                                                   shaders/convert-3d-index])
+          vao             (make-vertex-array-object program indices vertices [:point 3])
+          zeropad         (fn [x] [0 x 0 0])
+          opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
+          opacity-layers  (make-float-texture-3d :linear :clamp {:width 2 :height 2 :depth 7
+                                                                 :data (float-array opacity-data)})
+          offset-data     (zeropad offset)
+          opacity-offsets (make-float-texture-2d :linear :clamp {:width 2 :height 2
+                                                                 :data (float-array offset-data)})
+          tex             (texture-render-color 1 1 true
+                                                (use-program program)
+                                                (uniform-sampler program "opacity_offsets" 0)
+                                                (uniform-sampler program "opacity_layers" 1)
+                                                (uniform-float program "opacity_step" step)
+                                                (uniform-int program "num_opacity_layers" 7)
+                                                (uniform-int program "shadow_size" 2)
+                                                (use-textures opacity-offsets opacity-layers)
+                                                (render-quads vao))
+          img             (rgb-texture->vectors3 tex)]
+      (destroy-texture opacity-offsets)
+      (destroy-texture opacity-layers)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Lookup values from deep opacity map taking into account offsets"
   (fact ((opacity-lookup-test ?offset ?step ?depth ?x ?y ?z) 0) => (roughly ?result 1e-6))
@@ -536,43 +335,41 @@ void main()
 }"))
 
 (defn opacity-cascade-lookup-test [n z shift-z opacities offsets select]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices         [0 1 3 2]
-            vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            inv-transform   (transformation-matrix (eye 3) (vec3 0 0 shift-z))
-            program         (make-program :vertex [shaders/vertex-passthrough]
-                                          :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n)
-                                                     opacity-lookup-mock])
-            vao             (make-vertex-array-object program indices vertices [:point 3])
-            opacity-texs    (map #(make-float-texture-3d :linear :clamp {:width 1 :height 1 :depth 1 :data (float-array [%])})
-                                 opacities)
-            offset-texs     (map #(make-float-texture-2d :linear :clamp {:width 1 :height 1 :data (float-array [%])})
-                                 offsets)
-            tex             (texture-render-color 1 1 true
-                                                  (use-program program)
-                                                  (uniform-matrix4 program "inverse_transform" inv-transform)
-                                                  (doseq [idx (range n)]
-                                                         (uniform-sampler program (str "opacity" idx) (* 2 idx))
-                                                         (uniform-sampler program (str "offset" idx) (inc (* 2 idx)))
-                                                         (uniform-float program (str "depth" idx) 200.0))
-                                                  (doseq [idx (range n)]
-                                                         (uniform-matrix4 program (str "shadow_map_matrix" idx)
-                                                                          (transformation-matrix (eye 3)
-                                                                                                 (vec3 (inc idx) 0 0))))
-                                                  (doseq [idx (range (inc n))]
-                                                         (uniform-float program (str "split" idx)
-                                                                        (+ 10.0 (/ (* 30.0 idx) n))))
-                                                  (uniform-int program "select" ({:opacity 0 :coord 1} select))
-                                                  (apply use-textures (interleave opacity-texs offset-texs))
-                                                  (render-quads vao))
-            img             (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (doseq [tex offset-texs] (destroy-texture tex))
-        (doseq [tex opacity-texs] (destroy-texture tex))
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices         [0 1 3 2]
+          vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          inv-transform   (transformation-matrix (eye 3) (vec3 0 0 shift-z))
+          program         (make-program :vertex [shaders/vertex-passthrough]
+                                        :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n)
+                                                   opacity-lookup-mock])
+          vao             (make-vertex-array-object program indices vertices [:point 3])
+          opacity-texs    (map #(make-float-texture-3d :linear :clamp {:width 1 :height 1 :depth 1 :data (float-array [%])})
+                               opacities)
+          offset-texs     (map #(make-float-texture-2d :linear :clamp {:width 1 :height 1 :data (float-array [%])})
+                               offsets)
+          tex             (texture-render-color 1 1 true
+                                                (use-program program)
+                                                (uniform-matrix4 program "inverse_transform" inv-transform)
+                                                (doseq [idx (range n)]
+                                                       (uniform-sampler program (str "opacity" idx) (* 2 idx))
+                                                       (uniform-sampler program (str "offset" idx) (inc (* 2 idx)))
+                                                       (uniform-float program (str "depth" idx) 200.0))
+                                                (doseq [idx (range n)]
+                                                       (uniform-matrix4 program (str "shadow_map_matrix" idx)
+                                                                        (transformation-matrix (eye 3)
+                                                                                               (vec3 (inc idx) 0 0))))
+                                                (doseq [idx (range (inc n))]
+                                                       (uniform-float program (str "split" idx)
+                                                                      (+ 10.0 (/ (* 30.0 idx) n))))
+                                                (uniform-int program "select" ({:opacity 0 :coord 1} select))
+                                                (apply use-textures (interleave opacity-texs offset-texs))
+                                                (render-quads vao))
+          img             (rgb-texture->vectors3 tex)]
+      (doseq [tex offset-texs] (destroy-texture tex))
+      (doseq [tex opacity-texs] (destroy-texture tex))
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
          (fact ((opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
@@ -598,26 +395,24 @@ void main()
 }"))
 
 (defn identity-cubemap-test [x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices  [0 1 3 2]
-            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
-            vao      (make-vertex-array-object program indices vertices [:point 3])
-            cubemap  (identity-cubemap 15)
-            tex      (texture-render-color 1 1 true
-                                           (use-program program)
-                                           (uniform-sampler program "cubemap" 0)
-                                           (use-textures cubemap)
-                                           (render-quads vao))
-            img      (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture cubemap)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          program  (make-program :vertex [shaders/vertex-passthrough]
+                                 :fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
+          vao      (make-vertex-array-object program indices vertices [:point 3])
+          cubemap  (identity-cubemap 15)
+          tex      (texture-render-color 1 1 true
+                                         (use-program program)
+                                         (uniform-sampler program "cubemap" 0)
+                                         (use-textures cubemap)
+                                         (render-quads vao))
+          img      (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture cubemap)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Create identity cubemap"
          (fact (identity-cubemap-test ?x ?y ?z) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
@@ -652,32 +447,30 @@ vec3 curl_field_mock(vec3 point)
     (use-textures current)))
 
 (defn iterate-cubemap-warp-test [n scale px py pz x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices  [0 1 3 2]
-            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
-            vao      (make-vertex-array-object program indices vertices [:point 3])
-            cubemap  (atom (identity-cubemap 15))
-            update   (make-iterate-cubemap-warp-program "current" "curl_field_mock" [curl-field-mock])]
-        (dotimes [i n]
-          (let [updated (update-cubemap update @cubemap scale x y z)]
-            (destroy-texture @cubemap)
-            (reset! cubemap updated)))
-        (let [tex (texture-render-color 1 1 true
-                                        (use-program program)
-                                        (uniform-sampler program "cubemap" 0)
-                                        (use-textures @cubemap)
-                                        (render-quads vao))
-              img (rgb-texture->vectors3 tex)]
-          (deliver result (get-vector3 img 0 0))
-          (destroy-texture tex)
+  (with-invisible-window
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          program  (make-program :vertex [shaders/vertex-passthrough]
+                                 :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
+          vao      (make-vertex-array-object program indices vertices [:point 3])
+          cubemap  (atom (identity-cubemap 15))
+          update   (make-iterate-cubemap-warp-program "current" "curl_field_mock" [curl-field-mock])]
+      (dotimes [i n]
+        (let [updated (update-cubemap update @cubemap scale x y z)]
           (destroy-texture @cubemap)
-          (destroy-program update)
-          (destroy-vertex-array-object vao)
-          (destroy-program program))))
-    @result))
+          (reset! cubemap updated)))
+      (let [tex (texture-render-color 1 1 true
+                                      (use-program program)
+                                      (uniform-sampler program "cubemap" 0)
+                                      (use-textures @cubemap)
+                                      (render-quads vao))
+            img (rgb-texture->vectors3 tex)]
+        (destroy-texture tex)
+        (destroy-texture @cubemap)
+        (destroy-program update)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)
+        (get-vector3 img 0 0)))))
 
 (tabular "Update normalised cubemap warp vectors using specified vectors"
          (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-3))
@@ -709,35 +502,33 @@ float lookup_mock(vec3 point)
 }")
 
 (defn cubemap-warp-test [px py pz selector]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices  [0 1 3 2]
-            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
-            vao      (make-vertex-array-object program indices vertices [:point 3])
-            vectors  [[1 0 0] [0 2 0] [0 0 4] [-1 0 0] [0 -1 0] [0 0 -1]]
-            to-data  (fn [v] (float-array (flatten (repeat 9 (reverse v)))))
-            current  (make-vector-cubemap :linear :clamp (mapv (fn [v] {:width 3 :height 3 :data (to-data v)}) vectors))
-            warp     (make-cubemap-warp-program "current" "lookup_mock" [lookup-mock])
-            warped   (cubemap-warp 3 warp
-                                   (uniform-sampler warp "current" 0)
-                                   (uniform-int warp "selector" selector)
-                                   (use-textures current))]
-        (let [tex (texture-render-color 1 1 true
-                                        (use-program program)
-                                        (uniform-sampler program "cubemap" 0)
-                                        (use-textures warped)
-                                        (render-quads vao))
-              img (rgb-texture->vectors3 tex)]
-          (deliver result ((get-vector3 img 0 0) 0))
-          (destroy-texture tex)
-          (destroy-texture warped)
-          (destroy-texture current)
-          (destroy-program warp)
-          (destroy-vertex-array-object vao)
-          (destroy-program program))))
-    @result))
+  (with-invisible-window
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          program  (make-program :vertex [shaders/vertex-passthrough]
+                                 :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
+          vao      (make-vertex-array-object program indices vertices [:point 3])
+          vectors  [[1 0 0] [0 2 0] [0 0 4] [-1 0 0] [0 -1 0] [0 0 -1]]
+          to-data  (fn [v] (float-array (flatten (repeat 9 v))))
+          current  (make-vector-cubemap :linear :clamp (mapv (fn [v] {:width 3 :height 3 :data (to-data v)}) vectors))
+          warp     (make-cubemap-warp-program "current" "lookup_mock" [lookup-mock])
+          warped   (cubemap-warp 3 warp
+                                 (uniform-sampler warp "current" 0)
+                                 (uniform-int warp "selector" selector)
+                                 (use-textures current))]
+      (let [tex (texture-render-color 1 1 true
+                                      (use-program program)
+                                      (uniform-sampler program "cubemap" 0)
+                                      (use-textures warped)
+                                      (render-quads vao))
+            img (rgb-texture->vectors3 tex)]
+        (destroy-texture tex)
+        (destroy-texture warped)
+        (destroy-texture current)
+        (destroy-program warp)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)
+        ((get-vector3 img 0 0) 0)))))
 
 (tabular "Lookup floating-point values using cubemap warp vector field"
          (fact (cubemap-warp-test ?px ?py ?pz ?selector) => (roughly ?result 1e-3))
@@ -862,7 +653,7 @@ in VS_OUT
   vec3 point;
 } fs_in;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-out vec3 fragColor;
+out vec4 fragColor;
 void main()
 {
   vec2 intersection = ray_sphere(vec3(0, 0, 0), 1, vec3(fs_in.point.xy, -1), vec3(0, 0, 1));
@@ -870,13 +661,13 @@ void main()
     vec3 p = vec3(fs_in.point.xy, -1 + intersection.x);
     float value = texture(cubemap, p).r;
     value = (value - threshold) * multiplier;
-    fragColor = vec3(value, value, 1.0);
+    fragColor = vec4(value, value, 1.0, 1.0);
   } else
-    fragColor = vec3(0, 0, 0);
+    fragColor = vec4(0, 0, 0, 1.0);
 }")
 
 (fact "Program to generate planetary cloud cover using curl noise"
-    (offscreen-render 128 128
+    (with-invisible-window
       (let [worley-size  8
             worley-north (make-float-texture-3d :linear :repeat
                                                 {:width worley-size :height worley-size :depth worley-size
@@ -904,21 +695,25 @@ void main()
                                               :cover-scale 2.0
                                               :num-iterations 50
                                               :flow-scale 1.5e-3)]
-        (setup-rendering 128 128 :cullback)  ; Need to setup viewport again after creating cubemap
-        (clear (vec3 1 0 0))
-        (use-program program)
-        (uniform-sampler program "cubemap" 0)
-        (uniform-float program "threshold" 0.3)
-        (uniform-float program "multiplier" 4.0)
-        (use-textures cubemap)
-        (render-quads vao)
-        (destroy-texture cubemap)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)
-        (destroy-texture worley-cover)
-        (destroy-texture worley-south)
-        (destroy-texture worley-north)))
-    => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.0))
+        (let [tex (texture-render-color 128 128 false
+                                        (clear (vec3 1 0 0))
+                                        (use-program program)
+                                        (uniform-sampler program "cubemap" 0)
+                                        (uniform-float program "threshold" 0.3)
+                                        (uniform-float program "multiplier" 4.0)
+                                        (use-textures cubemap)
+                                        (render-quads vao)
+                                        )
+              img (texture->image tex)]
+          (destroy-texture cubemap)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (destroy-texture worley-cover)
+          (destroy-texture worley-south)
+          (destroy-texture worley-north)
+          (destroy-texture tex)
+          img)))
+    => (is-image "test/sfsim25/fixtures/clouds/cover.png" 0.1))
 
 (def cloud-profile-probe
   (template/fn [x y z]
@@ -933,31 +728,29 @@ void main()
 }"))
 
 (defn cloud-profile-test [radius cloud-bottom cloud-top x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-      (let [indices  [0 1 3 2]
-            vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            program  (make-program :vertex [shaders/vertex-passthrough]
-                                   :fragment [(cloud-profile-probe x y z) cloud-profile shaders/convert-1d-index])
-            vao      (make-vertex-array-object program indices vertices [:point 3])
-            data     [0.0 2.0 1.0]
-            profile  (make-float-texture-1d :linear :clamp (float-array data))
-            tex      (texture-render-color 1 1 true
-                                           (use-program program)
-                                           (uniform-sampler program "profile" 0)
-                                           (uniform-int program "profile_size" 3)
-                                           (uniform-float program "radius" radius)
-                                           (uniform-float program "cloud_bottom" cloud-bottom)
-                                           (uniform-float program "cloud_top" cloud-top)
-                                           (use-textures profile)
-                                           (render-quads vao))
-            img     (rgb-texture->vectors3 tex)]
-        (deliver result (get-vector3 img 0 0))
-        (destroy-texture tex)
-        (destroy-texture profile)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          program  (make-program :vertex [shaders/vertex-passthrough]
+                                 :fragment [(cloud-profile-probe x y z) cloud-profile shaders/convert-1d-index])
+          vao      (make-vertex-array-object program indices vertices [:point 3])
+          data     [0.0 2.0 1.0]
+          profile  (make-float-texture-1d :linear :clamp (float-array data))
+          tex      (texture-render-color 1 1 true
+                                         (use-program program)
+                                         (uniform-sampler program "profile" 0)
+                                         (uniform-int program "profile_size" 3)
+                                         (uniform-float program "radius" radius)
+                                         (uniform-float program "cloud_bottom" cloud-bottom)
+                                         (uniform-float program "cloud_top" cloud-top)
+                                         (use-textures profile)
+                                         (render-quads vao))
+          img     (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture profile)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Shader for creating vertical cloud profile"
          (fact ((cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
@@ -1057,32 +850,30 @@ void main()
 }"))
 
 (defn cloud-cover-test [x y z]
-  (let [result (promise)]
-    (offscreen-render 1 1
-                      (let [indices     [0 1 3 2]
-                            vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                            datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
-                            data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
-                            cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
-                            program     (make-program :vertex [shaders/vertex-passthrough]
-                                                      :fragment [(cloud-cover-probe x y z) cloud-cover
-                                                                 shaders/interpolate-float-cubemap
-                                                                 shaders/convert-cubemap-index])
-                            vao         (make-vertex-array-object program indices vertices [:point 3])
-                            tex         (texture-render-color
-                                          1 1 true
-                                          (use-program program)
-                                          (uniform-sampler program "cover" 0)
-                                          (uniform-int program "cover_size" 2)
-                                          (use-textures cube)
-                                          (render-quads vao))
-                            img         (rgb-texture->vectors3 tex)]
-                        (deliver result (get-vector3 img 0 0))
-                        (destroy-texture tex)
-                        (destroy-texture cube)
-                        (destroy-vertex-array-object vao)
-                        (destroy-program program)))
-    @result))
+  (with-invisible-window
+    (let [indices     [0 1 3 2]
+          vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
+          data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
+          cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
+          program     (make-program :vertex [shaders/vertex-passthrough]
+                                    :fragment [(cloud-cover-probe x y z) cloud-cover
+                                               shaders/interpolate-float-cubemap
+                                               shaders/convert-cubemap-index])
+          vao         (make-vertex-array-object program indices vertices [:point 3])
+          tex         (texture-render-color
+                        1 1 true
+                        (use-program program)
+                        (uniform-sampler program "cover" 0)
+                        (uniform-int program "cover_size" 2)
+                        (use-textures cube)
+                        (render-quads vao))
+          img         (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture cube)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
 
 (tabular "Perform cloud cover lookup in cube map"
          (fact ((cloud-cover-test ?x ?y ?z) 0) => ?result)
@@ -1130,3 +921,5 @@ void main()
          1.0  0.0  2.0 0.5  0.0 0.75
          1.0  0.0  0.5 0.25 0.0 0.0
          1.0  0.5  1.0 1.0  0.0 0.5)
+
+(GLFW/glfwTerminate)

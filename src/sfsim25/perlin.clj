@@ -3,7 +3,7 @@
     (:require [clojure.math :refer (floor)]
               [fastmath.vector :refer (vec3 add sub dot mult)]
               [com.climate.claypoole :refer (pfor ncpus)]
-              [sfsim25.util :refer (make-progress-bar tick-and-print spit-floats dimension-count)]))
+              [sfsim25.util :refer (make-progress-bar tick-and-print dimension-count)]))
 
 ; improved Perlin noise algorithm
 ; https://adrianb.io/2014/08/09/perlinnoise.html
@@ -90,11 +90,11 @@
    (perlin-noise divisions size false))
   ([divisions size progress]
    (let [gradient-grid (random-gradient-grid divisions)
-         bar           (if progress (agent (make-progress-bar (* size size size) size)))]
+         bar           (if progress (agent (make-progress-bar (* size size size) size)) nil)]
      (normalize-vector
        (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
              (do
-               (if progress (send bar tick-and-print))
+               (when progress (send bar tick-and-print))
                (perlin-noise-sample gradient-grid divisions size (vec3 (+ i 0.5) (+ j 0.5) (+ k 0.5) ))))))))
 
 (set! *unchecked-math* false)

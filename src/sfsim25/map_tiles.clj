@@ -1,24 +1,21 @@
 (ns sfsim25.map-tiles
   "Split up part of Mercator map into map tiles of specified size and save them in computed file names."
-  (:import [java.io File]
-           [ij ImagePlus]
-           [ij.io Opener FileSaver])
-  (:require [sfsim25.util :refer (tile-dir tile-path)]))
+  (:require [sfsim25.util :refer (tile-dir tile-path)]
+            [clojure.java.io :as io])
+  (:import [javax.imageio ImageIO]
+           [java.io File]))
 
 (defn make-map-tiles
   "Program to generate map tiles"
-  [input-image tilesize level prefix y-offset x-offset]
+  [input-path tilesize level prefix y-offset x-offset]
   (let [dy          (bit-shift-left y-offset level)
         dx          (bit-shift-left x-offset level)
-        img         (.openImage (Opener.) input-image)
-        [w h]       [(.getWidth img) (.getHeight img)]
-        processor   (.getProcessor img)]
-    (doseq [j (range (/ h tilesize)) i (range (/ w tilesize))]
-      (.setRoi processor (* i tilesize) (* j tilesize) tilesize tilesize )
-      (let [cropped   (.crop processor)
-            tile      (ImagePlus.)
-            dir       (tile-dir prefix level (+ i dx))
-            path      (tile-path prefix level (+ j dy) (+ i dx) ".png")]
-        (.setProcessor tile cropped)
-        (.mkdirs (File. dir))
-        (.saveAsPng (FileSaver. tile) path)))))
+        img         (with-open [input-file (io/input-stream input-path)] (ImageIO/read input-file))
+        [w h]       [(.getWidth img) (.getHeight img)]]
+    (doseq [j (range (quot h tilesize)) i (range (quot w tilesize))]
+           (let [dir  (tile-dir prefix level (+ i dx))
+                 path (tile-path prefix level (+ j dy) (+ i dx) ".png")
+                 tile (.getSubimage img (* i tilesize) (* j tilesize) tilesize tilesize)]
+             (.mkdirs (File. dir))
+             (with-open [output-file (io/output-stream path)]
+               (ImageIO/write tile "png" output-file))))))

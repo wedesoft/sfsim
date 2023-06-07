@@ -12,7 +12,10 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer :all]
               [sfsim25.atmosphere :refer :all :as atmosphere])
-    (:import [fastmath.vector Vec3]))
+    (:import [fastmath.vector Vec3]
+             [org.lwjgl.glfw GLFW]))
+
+(GLFW/glfwInit)
 
 (def radius 6378000)
 (def max-height 100000)
@@ -497,27 +500,25 @@
 
 (defn transmittance-shader-test [setup probe & shaders]
   (fn [uniforms args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices       [0 1 3 2]
-                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
-                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render-color
-                                1 1 true
-                                (use-program program)
-                                (uniform-sampler program "transmittance" 0)
-                                (apply setup program uniforms)
-                                (use-textures transmittance)
-                                (render-quads vao))
-                img           (rgb-texture->vectors3 tex)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-texture transmittance)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
+      (with-invisible-window
+        (let [indices       [0 1 3 2]
+              vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
+              program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              vao           (make-vertex-array-object program indices vertices [:point 3])
+              tex           (texture-render-color
+                              1 1 true
+                              (use-program program)
+                              (uniform-sampler program "transmittance" 0)
+                              (apply setup program uniforms)
+                              (use-textures transmittance)
+                              (render-quads vao))
+              img           (rgb-texture->vectors3 tex)]
+          (destroy-texture tex)
+          (destroy-texture transmittance)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (get-vector3 img 0 0)))))
 
 (def transmittance-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
@@ -549,34 +550,62 @@ void main()
          0       0   6378000 0       0   6478000 0.976549
          6378000 0   0       6378000 0   100000  0.079658)
 
+(def transmittance-outer-probe
+  (template/fn [px py pz dx dy dz] "#version 410 core
+out vec3 fragColor;
+vec3 transmittance_outer(vec3 point, vec3 direction);
+void main()
+{
+  vec3 point = vec3(<%= px %>, <%= py %>, <%= pz %>);
+  vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
+  fragColor = transmittance_outer(point, direction);
+}"))
+
+(def transmittance-outer-test
+  (transmittance-shader-test
+    (fn [program transmittance-height-size transmittance-elevation-size radius max-height]
+        (uniform-int program "transmittance_height_size" transmittance-height-size)
+        (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
+    transmittance-outer-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
+    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
+    shaders/horizon-distance shaders/limit-quot phase-function))
+
+(tabular "Shader function to compute transmittance between point in the atmosphere and space"
+         (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
+               => (roughly ?result 1e-6))
+         ?px ?py ?pz      ?dx ?dy ?dz ?result
+         0   0    6478000 0   0   1   0.976359
+         0   0    6378000 0   0   1   0.953463
+         0   0    6378000 1   0   0   0.016916)
+
 (defn ray-scatter-shader-test [setup probe & shaders]
   (fn [uniforms args]
-      (let [result (promise)]
-        (offscreen-render 1 1
-          (let [indices       [0 1 3 2]
-                vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
-                ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
-                mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
-                program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-                vao           (make-vertex-array-object program indices vertices [:point 3])
-                tex           (texture-render-color
-                                1 1 true
-                                (use-program program)
-                                (uniform-sampler program "transmittance" 0)
-                                (uniform-sampler program "ray_scatter" 1)
-                                (uniform-sampler program "mie_strength" 2)
-                                (apply setup program uniforms)
-                                (use-textures transmittance ray-scatter mie-strength)
-                                (render-quads vao))
-                img           (rgb-texture->vectors3 tex)]
-            (deliver result (get-vector3 img 0 0))
-            (destroy-texture tex)
-            (destroy-texture ray-scatter)
-            (destroy-texture transmittance)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))
-        @result)))
+      (with-invisible-window
+        (let [indices       [0 1 3 2]
+              vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
+              ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
+              mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
+              program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              vao           (make-vertex-array-object program indices vertices [:point 3])
+              tex           (texture-render-color
+                              1 1 true
+                              (use-program program)
+                              (uniform-sampler program "transmittance" 0)
+                              (uniform-sampler program "ray_scatter" 1)
+                              (uniform-sampler program "mie_strength" 2)
+                              (apply setup program uniforms)
+                              (use-textures transmittance ray-scatter mie-strength)
+                              (render-quads vao))
+              img           (rgb-texture->vectors3 tex)]
+          (destroy-texture tex)
+          (destroy-texture ray-scatter)
+          (destroy-texture transmittance)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (get-vector3 img 0 0)))))
 
 (def ray-scatter-track-probe
   (template/fn [px py pz qx qy qz] "#version 410 core
@@ -618,6 +647,7 @@ void main()
   (template/fn [selector] "#version 410 core
 in VS_OUT
 {
+  vec3 origin;
   vec3 direction;
 } fs_in;
 out vec3 fragColor;
@@ -646,6 +676,8 @@ void main()
                                (use-program program)
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-matrix4 program "transform" ?matrix)
+                               (uniform-float program "z_far" 1.0)
+                               (uniform-float program "z_near" 0.5)
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 0.0))
@@ -653,7 +685,9 @@ void main()
          "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere/quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png"
+         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    initial "test/sfsim25/fixtures/atmosphere/origin.png"
+         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    rotated "test/sfsim25/fixtures/atmosphere/origin-rotated.png")
 
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
@@ -693,7 +727,8 @@ void main()
                                (uniform-sampler program "ray_scatter" 1)
                                (uniform-sampler program "mie_strength" 2)
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
-                               (uniform-vector3 program "origin" origin)
+                               (uniform-float program "z_near" 0.0)
+                               (uniform-float program "z_far" 1.0)
                                (uniform-matrix4 program "transform" transform)
                                (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
                                (uniform-float program "radius" radius)
@@ -745,3 +780,5 @@ void main()
          0  -1   (/ 6 (* 16 PI))
          0.5 0   (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5)))
          0.5 1   (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))
+
+(GLFW/glfwTerminate)

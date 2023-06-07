@@ -5,7 +5,10 @@
               [sfsim25.conftest :refer (record-image is-image)]
               [sfsim25.bluenoise :refer :all]
               [sfsim25.render :refer :all]
-              [sfsim25.shaders :as shaders]))
+              [sfsim25.shaders :as shaders])
+    (:import [org.lwjgl.glfw GLFW]))
+
+(GLFW/glfwInit)
 
 (fact "Generate indices for 2D array"
       (indices-2d 3) => [0 1 2 3 4 5 6 7 8])
@@ -110,3 +113,5 @@ void main()
                           (destroy-program program)
                           (destroy-texture bluenoise)))
       => (is-image "test/sfsim25/fixtures/bluenoise/result.png" 0.0))
+
+(GLFW/glfwTerminate)

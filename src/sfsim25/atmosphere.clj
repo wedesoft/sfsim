@@ -1,12 +1,10 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
     (:require [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
-              [clojure.math :refer (cos sin exp pow atan2 acos asin PI sqrt log)]
-              [sfsim25.interpolate :refer :all]
-              [sfsim25.matrix :refer :all]
-              [sfsim25.ray :refer :all]
-              [sfsim25.sphere :refer :all]
-              [sfsim25.util :refer :all])
+              [clojure.math :refer (exp pow PI sqrt log)]
+              [sfsim25.ray :refer (integral-ray)]
+              [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
+              [sfsim25.util :refer (third fourth limit-quot sqr)])
     (:import [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
@@ -41,7 +39,7 @@
 (defn surface-intersection
   "Get intersection of ray with surface of planet or nearest point if there is no intersection"
   [planet ray]
-  (let [{:sfsim25.intersection/keys [distance length]} (ray-sphere-intersection planet ray)]
+  (let [{:sfsim25.intersection/keys [distance]} (ray-sphere-intersection planet ray)]
     (add (:sfsim25.ray/origin ray) (mult (:sfsim25.ray/direction ray) distance))))
 
 (defn surface-point?
@@ -105,18 +103,18 @@
 
 (defn point-scatter-component
   "Compute single-scatter component of light at a point and given direction in atmosphere"
-  [planet scatter component steps intensity x view-direction light-direction above-horizon]
+  [planet scatter component steps intensity x view-direction light-direction _above-horizon]
   (overall-point-scatter planet scatter [component] steps intensity x view-direction light-direction))
 
 (defn strength-component
   "Compute scatter strength of component of light at a point and given direction in atmosphere"
-  [planet scatter component steps intensity x view-direction light-direction above-horizon]
+  [planet scatter component steps intensity x _view-direction light-direction _above-horizon]
   (emult (scattering planet component x)
          (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-base
   "Compute total single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
-  [planet scatter steps intensity x view-direction light-direction above-horizon]
+  [planet scatter steps intensity x view-direction light-direction _above-horizon]
   (overall-point-scatter planet scatter scatter steps intensity x view-direction light-direction))
 
 (defn ray-scatter
@@ -130,7 +128,7 @@
 
 (defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
-  [planet scatter ray-scatter surface-radiance intensity sphere-steps ray-steps x view-direction light-direction above-horizon]
+  [planet scatter ray-scatter surface-radiance _intensity sphere-steps ray-steps x view-direction light-direction _above-horizon]
   (let [normal        (normalize (sub x (:sfsim25.sphere/centre planet)))]
     (integral-sphere sphere-steps
                      normal
@@ -153,8 +151,9 @@
   (let [normal (normalize (sub x (:sfsim25.sphere/centre planet)))]
     (integral-half-sphere steps normal #(mult (ray-scatter x % light-direction true) (dot % normal)))))
 
-(defn horizon-distance [planet radius]
+(defn horizon-distance
   "Distance from point with specified radius to horizon of planet"
+  [planet radius]
   (sqrt (max 0.0 (- (sqr radius) (sqr (:sfsim25.sphere/radius planet))))))
 
 (defn elevation-to-index

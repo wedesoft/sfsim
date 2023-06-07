@@ -2,20 +2,10 @@
     "Rendering of clouds"
     (:require [comb.template :as template]
               [clojure.math :refer (pow)]
-              [sfsim25.render :refer :all]
+              [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
+                                      make-empty-float-cubemap make-empty-vector-cubemap make-program make-vertex-array-object
+                                      render-quads uniform-float uniform-int uniform-sampler use-program use-textures)]
               [sfsim25.shaders :as shaders]))
-
-(def cloud-track
-  "Shader for putting volumetric clouds into the atmosphere"
-  (slurp "resources/shaders/clouds/cloud-track.glsl"))
-
-(def sky-outer
-  "Shader for determining lighting of atmosphere including clouds coming from space"
-  (slurp "resources/shaders/clouds/sky-outer.glsl"))
-
-(def sky-track
-  "Shader for determining lighting of atmosphere including clouds between to points"
-  (slurp "resources/shaders/clouds/sky-track.glsl"))
 
 (def cloud-shadow
   "Shader for determining illumination of clouds"
@@ -32,10 +22,6 @@
 (def linear-sampling
   "Shader functions for defining linear sampling"
   (slurp "resources/shaders/clouds/linear-sampling.glsl"))
-
-(def exponential-sampling
-  "Shader functions for defining exponential sampling"
-  (slurp "resources/shaders/clouds/exponential-sampling.glsl"))
 
 (def opacity-vertex
   "Vertex shader for rendering deep opacity map"
@@ -77,8 +63,9 @@
   "Fragment shader for iterating cubemap warp"
   (template/fn [current-name field-method-name] (slurp "resources/shaders/clouds/iterate-cubemap-warp-fragment.glsl")))
 
-(defn make-iterate-cubemap-warp-program [current-name field-method-name shaders]
+(defn make-iterate-cubemap-warp-program
   "Create program to iteratively update cubemap warp vector field"
+  [current-name field-method-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
                 :fragment (into shaders [(iterate-cubemap-warp-fragment current-name field-method-name)
                                          shaders/cubemap-vectors shaders/interpolate-vector-cubemap
@@ -104,8 +91,9 @@
   "Fragment shader for looking up values using a cubemap warp vector field"
   (template/fn [current-name lookup-name] (slurp "resources/shaders/clouds/cubemap-warp-fragment.glsl")))
 
-(defn make-cubemap-warp-program [current-name lookup-name shaders]
+(defn make-cubemap-warp-program
   "Create program to look up values using a given cubemap warp vector field"
+  [current-name lookup-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
                 :fragment (into shaders [(cubemap-warp-fragment current-name lookup-name)
                                          shaders/cubemap-vectors shaders/interpolate-vector-cubemap
@@ -138,8 +126,7 @@
   "Program to generate planetary cloud cover using curl noise"
   [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves
              whirl prevailing curl-scale cover-scale num-iterations flow-scale]}]
-  (let [result      (promise)
-        warp        (atom (identity-cubemap size))
+  (let [warp        (atom (identity-cubemap size))
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
                       [(curl-vector "curl" "gradient") (shaders/gradient-3d "gradient" "flow_field" "epsilon")
@@ -162,21 +149,19 @@
     (uniform-float update-warp "whirl" whirl)
     (uniform-float update-warp "prevailing" prevailing)
     (uniform-float update-warp "curl_scale" curl-scale)
-    (dotimes [iteration num-iterations]
+    (dotimes [_iteration num-iterations]
       (let [updated (iterate-cubemap size flow-scale update-warp (use-textures @warp worley-north worley-south))]
         (destroy-texture @warp)
         (reset! warp updated)))
-    (deliver
-      result
-      (cubemap-warp size lookup
-                    (uniform-sampler lookup "current" 0)
-                    (uniform-sampler lookup "worley" 1)
-                    (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
-                    (use-textures @warp worley-cover)))
-    (destroy-program lookup)
-    (destroy-program update-warp)
-    (destroy-texture @warp)
-    @result))
+    (let [result (cubemap-warp size lookup
+                               (uniform-sampler lookup "current" 0)
+                               (uniform-sampler lookup "worley" 1)
+                               (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
+                               (use-textures @warp worley-cover))]
+      (destroy-program lookup)
+      (destroy-program update-warp)
+      (destroy-texture @warp)
+      result)))
 
 (def cloud-profile
   "Shader for looking up vertical cloud profile"

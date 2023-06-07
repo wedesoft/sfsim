@@ -3,7 +3,6 @@
   (:require [clojure.math :refer (cos sin tan pow)]
             [fastmath.matrix :as fm]
             [fastmath.vector :as fv]
-            [sfsim25.util :refer :all]
             [sfsim25.quaternion :refer (rotate-vector)])
   (:import [fastmath.vector Vec3 Vec4]
            [fastmath.matrix Mat3x3 Mat4x4]
@@ -68,7 +67,7 @@
 (defn pack-matrices
   "Pack nested vector of matrices into float array"
   [array]
-  (float-array (flatten (for [row array] (for [cell row] (reverse cell))))))
+  (float-array (flatten array)))
 
 (defn z-to-ndc
   "Convert (flipped to positive) z-coordinate to normalized device coordinate"

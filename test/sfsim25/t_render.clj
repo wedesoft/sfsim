@@ -9,8 +9,11 @@
             [sfsim25.matrix :refer :all]
             [sfsim25.shaders :as s]
             [sfsim25.render :refer :all])
-  (:import [org.lwjgl.opengl Display DisplayMode GL11 GL12 GL30 GL42]
+  (:import [org.lwjgl.opengl GL11 GL12 GL30 GL42]
+           [org.lwjgl.glfw GLFW]
            [org.lwjgl BufferUtils]))
+
+(GLFW/glfwInit)
 
 (fact "Render background color"
   (offscreen-render 160 120 (clear (vec3 1.0 0.0 0.0)))
@@ -247,10 +250,10 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (fact "Size of 1D texture"
-      (offscreen-render 64 64
-                        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
-                          (:width tex) => 4
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
+          (:width tex) => 4
+          (destroy-texture tex))))
 
 (def vertex-texture
 "#version 410 core
@@ -298,11 +301,11 @@ void main()
   :linear        :repeat   "floats-1d-linear-repeat")
 
 (fact "Size of 2D RGB texture"
-      (offscreen-render 64 64
-                        (let [tex (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
-                          (:width tex) => 2
-                          (:height tex) => 2
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
+          (:width tex) => 2
+          (:height tex) => 2
+          (destroy-texture tex))))
 
 (def fragment-texture-2d
 "#version 410 core
@@ -376,7 +379,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
-          tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 1 0 1 0 1 1 1])})]
+          tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
@@ -387,11 +390,11 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/vectors.png" 0.0))
 
 (fact "Size of 2D depth texture"
-      (offscreen-render 64 64
-                        (let [tex (make-depth-texture :linear :clamp {:width 2 :height 1 :data (float-array [0 0])})]
-                          (:width tex) => 2
-                          (:height tex) => 1
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-depth-texture :linear :clamp {:width 2 :height 1 :data (float-array [0 0])})]
+          (:width tex) => 2
+          (:height tex) => 1
+          (destroy-texture tex))))
 
 (def vertex-interpolate
 "#version 410 core
@@ -433,13 +436,13 @@ void main(void)
   => (is-image "test/sfsim25/fixtures/render/shadow-sample.png" 0.0))
 
 (fact "Size of 3D texture"
-      (offscreen-render 64 64
-                        (let [tex (make-float-texture-3d :linear :clamp
-                                                         {:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
-                          (:width tex) => 3
-                          (:height tex) => 2
-                          (:depth tex) => 1
-                          (destroy-texture tex))))
+      (with-invisible-window
+        (let [tex (make-float-texture-3d :linear :clamp
+                                         {:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
+          (:width tex) => 3
+          (:height tex) => 2
+          (:depth tex) => 1
+          (destroy-texture tex))))
 
 (def fragment-texture-3d
 "#version 410 core
@@ -593,13 +596,13 @@ void main()
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
 (fact "Render to floating-point texture (needs active OpenGL context)"
-      (offscreen-render 32 32
+      (with-invisible-window
         (let [tex (texture-render-color 8 8 true (clear (vec3 1.0 2.0 3.0)))]
           (get-vector3 (rgb-texture->vectors3 tex) 0 0) => (vec3 1.0 2.0 3.0)
           (destroy-texture tex))))
 
 (fact "Render to image texture (needs active OpenGL context)"
-      (offscreen-render 32 32
+      (with-invisible-window
         (let [tex (texture-render-color 160 120 false (clear (vec3 1.0 0.0 0.0)))
               img (texture->image tex)]
           img => (is-image "test/sfsim25/fixtures/render/red.png" 0.0)
@@ -616,7 +619,7 @@ void main()
 }")
 
 (facts "Using framebuffer to render to two color textures"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [tex1     (make-empty-float-texture-2d :linear :clamp 1 1)
                tex2     (make-empty-float-texture-2d :linear :clamp 1 1)
                indices  [0 1 3 2]
@@ -634,7 +637,7 @@ void main()
            (destroy-texture tex2))))
 
 (facts "Using framebuffer to render to layers of 3D texture"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [tex      (make-empty-float-texture-3d :linear :clamp 1 1 2)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -660,7 +663,7 @@ void main(void)
 }")
 
 (facts "Using framebuffer to render to depth texture"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [depth    (make-empty-depth-texture-2d :linear :clamp 1 1)
                indices  [2 3 1 0]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -722,31 +725,29 @@ void main()
 
 (tabular "render alpha"
          (fact
-           (let [result (promise)]
-             (offscreen-render 1 1
-               (let [indices  [0 1 3 2]
-                     vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                     program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
-                     vao      (make-vertex-array-object program indices vertices [:point 3])
-                     tex      (texture-render-color 1 1 true (use-program program) (render-quads vao))
-                     img      (rgba-texture->vectors4 tex)]
-                 (deliver result (get-vector4 img 0 0))
-                 (destroy-texture tex)
-                 (destroy-vertex-array-object vao)
-                 (destroy-program program)))
-             @result) => (roughly-vector (vec4 ?alpha 0.25 0.5 0.75) 1e-6))
+           (with-invisible-window
+             (let [indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
+                   vao      (make-vertex-array-object program indices vertices [:point 3])
+                   tex      (texture-render-color 1 1 true (use-program program) (render-quads vao))
+                   img      (rgba-texture->vectors4 tex)]
+               (destroy-texture tex)
+               (destroy-vertex-array-object vao)
+               (destroy-program program)
+               (get-vector4 img 0 0))) => (roughly-vector (vec4 0.25 0.5 0.75 ?alpha) 1e-6))
          ?alpha
          1.0
          0.0)
 
 (fact "Render empty depth map"
-      (offscreen-render 32 32
+      (with-invisible-window
         (let [tex (texture-render-depth 10 10 (clear))]
           (get-float (depth-texture->floats tex) 0 0) => 0.0
           (destroy-texture tex))))
 
 (tabular "Render back face of quad into shadow map"
-         (offscreen-render 32 32
+         (with-invisible-window
            (let [indices  (reverse [0 1 3 2])
                  vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
                  program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
@@ -797,17 +798,17 @@ void main(void)
 uniform sampler2DShadow shadow_map;
 in vec4 shadow_pos;
 in float ambient;
-out vec3 fragColor;
+out vec4 fragColor;
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
   float shade = textureProj(shadow_map, convert_shadow_index(shadow_pos, 256, 256));
   float brightness = 0.7 * shade + 0.1 * ambient + 0.1;
-  fragColor = vec3(brightness, brightness, brightness);
+  fragColor = vec4(brightness, brightness, brightness, 1.0);
 }")
 
 (fact "Shadow mapping integration test"
-      (offscreen-render 320 240
+      (with-invisible-window
         (let [projection (projection-matrix 320 240 2 5 (to-radians 90))
               transform (eye 4)
               light-vector (normalize (vec3 1 1 2))
@@ -825,22 +826,26 @@ void main(void)
                            (use-program program-shadow)
                            (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:shadow-ndc-matrix shadow))
                            (render-quads vao))]
-          (setup-rendering 320 240 :cullback); Need to set it up again because texture-render-depth has overriden the settings
-          (clear (vec3 0 0 0))
-          (use-program program-main)
-          (uniform-sampler program-main "shadow_map" 0)
-          (uniform-matrix4 program-main "projection" projection)
-          (uniform-matrix4 program-main "shadow_map_matrix" (:shadow-map-matrix shadow))
-          (use-textures shadow-map)
-          (render-quads vao)
-          (destroy-texture shadow-map)
-          (destroy-vertex-array-object vao)
-          (destroy-program program-main)
-          (destroy-program program-shadow)))
+          (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
+                tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
+            (framebuffer-render 320 240 :cullback depth [tex]
+                                (clear (vec3 0 0 0))
+                                (use-program program-main)
+                                (uniform-sampler program-main "shadow_map" 0)
+                                (uniform-matrix4 program-main "projection" projection)
+                                (uniform-matrix4 program-main "shadow_map_matrix" (:shadow-map-matrix shadow))
+                                (use-textures shadow-map)
+                                (render-quads vao))
+            (let [img (texture->image tex)]
+              (destroy-texture shadow-map)
+              (destroy-vertex-array-object vao)
+              (destroy-program program-main)
+              (destroy-program program-shadow)
+              img))))
       => (is-image "test/sfsim25/fixtures/render/shadow.png" 0.02))
 
 (fact "Create floating-point cube map and read them out"
-      (offscreen-render 16 16
+      (with-invisible-window
         (let [cubemap (make-float-cubemap :linear :clamp
                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
           (doseq [i (range 6)]
@@ -866,7 +871,7 @@ void main()
 }")
 
 (facts "Using framebuffer to render to faces of cubemap"
-       (offscreen-render 32 32
+       (with-invisible-window
          (let [tex      (make-empty-float-cubemap :linear :clamp 1)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -882,11 +887,13 @@ void main()
            (destroy-texture tex))))
 
 (fact "Create cube map of 3D vectors and read them out"
-      (offscreen-render 16 16
+      (with-invisible-window
         (let [gen-vector (fn [i] (let [i3 (* i 3)] [i3 (inc i3) (inc (inc i3))]))
               cubemap (make-vector-cubemap :linear :clamp
-                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array (reverse (gen-vector i)))})
+                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array (gen-vector i))})
                                                  (range 6)))]
           (doseq [i (range 6)]
                  (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
           (destroy-texture cubemap))))
+
+(GLFW/glfwTerminate)

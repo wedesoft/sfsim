@@ -2,7 +2,7 @@
     "N-dimensional interpolation"
     (:require [fastmath.vector :refer (add mult)]
               [clojure.math :refer (floor)]
-              [sfsim25.util :refer (comp* dimensions)]))
+              [sfsim25.util :refer (comp*)]))
 
 (set! *unchecked-math* true)
 

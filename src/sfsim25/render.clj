@@ -1,8 +1,9 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
   (:require [fastmath.matrix :refer (mat->float-array)])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
+  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
+           [org.lwjgl.glfw GLFW]
            [fastmath.matrix Mat3x3 Mat4x4]
            [fastmath.vector Vec3]))
 
@@ -16,31 +17,30 @@
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
-(defmacro offscreen-render
-  "Macro to use a pbuffer for offscreen rendering"
-  [width height & body]
-  `(let [pixels#  (BufferUtils/createIntBuffer (* ~width ~height))
-         pbuffer# (Pbuffer. ~width ~height (PixelFormat. 24 8 24 0 0) nil nil)
-         data#    (int-array (* ~width ~height))]
-     (.makeCurrent pbuffer#)
-     (setup-rendering ~width ~height :cullback)
-     (try
-       ~@body
-       (GL11/glReadPixels 0 0 ~width ~height GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE pixels#)
-       (.get pixels# data#)
-       {:width ~width :height ~height :data data#}
-       (finally
-         (.releaseContext pbuffer#)
-         (.destroy pbuffer#)))))
+(defmacro with-invisible-window
+  "Macro to create temporary invisible window to provide context"
+  [& body]
+  `(do
+     (GLFW/glfwDefaultWindowHints)
+     (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE GLFW/GLFW_FALSE)
+     (let [window# (GLFW/glfwCreateWindow 8 2 "sfsim25" 0 0)]
+       (GLFW/glfwMakeContextCurrent window#)
+       (GL/createCapabilities)
+       (let [result# (do ~@body)]
+         (GLFW/glfwDestroyWindow window#)
+         result#))))
 
 (defmacro onscreen-render
-  "Macro to use the current display for rendering"
-  [width height & body]
-  `(do
-     (Display/makeCurrent)
-     (setup-rendering ~width ~height :cullback)
+  "Macro to use the specified window for rendering"
+  [window & body]
+  `(let [width#  (int-array 1)
+         height# (int-array 1)]
+     (GLFW/glfwGetWindowSize ~window width# height#)
+     (GLFW/glfwMakeContextCurrent ~window)
+     (GL/createCapabilities)
+     (setup-rendering (aget width# 0) (aget height# 0) :cullback)
      ~@body
-     (Display/update)))
+     (GLFW/glfwSwapBuffers ~window)))
 
 (defn clear
   "Set clear color and clear color buffer as well as depth buffer"
@@ -58,7 +58,7 @@
   (let [shader (GL20/glCreateShader shader-type)]
     (GL20/glShaderSource shader source)
     (GL20/glCompileShader shader)
-    (if (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
+    (when (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
       (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024)))))
     shader))
 
@@ -75,28 +75,20 @@
         tess-control-shaders    (map #(make-shader "tessellation control" % GL40/GL_TESS_CONTROL_SHADER) tess-control)
         tess-evaluation-shaders (map #(make-shader "tessellation evaluation" % GL40/GL_TESS_EVALUATION_SHADER) tess-evaluation)
         geometry-shaders        (map #(make-shader "geometry" % GL32/GL_GEOMETRY_SHADER) geometry)
-        fragment-shaders        (map #(make-shader "fragment" % GL20/GL_FRAGMENT_SHADER) fragment)]
-    (let [program (GL20/glCreateProgram)
-          shaders (concat vertex-shaders tess-control-shaders tess-evaluation-shaders geometry-shaders fragment-shaders)]
-      (doseq [shader shaders] (GL20/glAttachShader program shader))
-      (GL20/glLinkProgram program)
-      (if (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
-        (throw (Exception. (GL20/glGetProgramInfoLog program 1024))))
-      (doseq [shader shaders] (destroy-shader shader))
-      program)))
+        fragment-shaders        (map #(make-shader "fragment" % GL20/GL_FRAGMENT_SHADER) fragment)
+        program (GL20/glCreateProgram)
+        shaders (concat vertex-shaders tess-control-shaders tess-evaluation-shaders geometry-shaders fragment-shaders)]
+    (doseq [shader shaders] (GL20/glAttachShader program shader))
+    (GL20/glLinkProgram program)
+    (when (zero? (GL20/glGetProgrami program GL20/GL_LINK_STATUS))
+      (throw (Exception. (GL20/glGetProgramInfoLog program 1024))))
+    (doseq [shader shaders] (destroy-shader shader))
+    program))
 
 (defn destroy-program
   "Delete a program and associated shaders"
   [program]
   (GL20/glDeleteProgram program))
-
-(defmacro def-make-buffer [method create-buffer]
-  "Create a buffer object for binary input/output"
-  `(defn ~method [data#]
-     (let [buffer# (~create-buffer (count data#))]
-       (.put buffer# data#)
-       (.flip buffer#)
-       buffer#)))
 
 (defn make-float-buffer
   "Create a floating-point buffer object"
@@ -179,12 +171,12 @@
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^String k ^Mat3x3 value]
-  (GL20/glUniformMatrix3 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
+  (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
   [^clojure.lang.IPersistentMap program ^String k ^Mat4x4 value]
-  (GL20/glUniformMatrix4 (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
+  (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
@@ -232,8 +224,9 @@
   `(let [~texture (GL11/glGenTextures)]
      (with-texture ~target ~texture ~@body)))
 
-(defn generate-mipmap [texture]
+(defn generate-mipmap
   "Generate mipmap for texture and set texture min filter to linear mipmap mode"
+  [texture]
   (let [target (:target texture)]
     (with-texture target (:texture texture)
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
@@ -242,23 +235,23 @@
 (defmulti setup-interpolation (comp second vector))
 
 (defmethod setup-interpolation :nearest
-  [target interpolation]
+  [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
 
 (defmethod setup-interpolation :linear
-  [target interpolation]
+  [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
 (defmulti setup-boundary-1d identity)
 
 (defmethod setup-boundary-1d :clamp
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-1d :repeat
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
 
 (defmacro create-texture-1d
@@ -273,12 +266,12 @@
 (defmulti setup-boundary-2d identity)
 
 (defmethod setup-boundary-2d :clamp
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-2d :repeat
-  [boundary]
+  [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
 
@@ -302,13 +295,13 @@
 (defmulti setup-boundary-3d (comp second vector))
 
 (defmethod setup-boundary-3d :clamp
-  [target boundary]
+  [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
 
 (defmethod setup-boundary-3d :repeat
-  [target boundary]
+  [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))
@@ -340,7 +333,7 @@
 (defn make-rgb-texture
   "Load RGB image into an OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-int-buffer interpolation boundary GL11/GL_RGB GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE))
+  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
@@ -379,7 +372,7 @@
 (defn make-vector-texture-2d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn make-float-texture-3d
   "Load floating-point 3D data into red channel of an OpenGL texture"
@@ -491,22 +484,22 @@
       {:width width :height height :depth depth :data data})))
 
 (defn rgb-texture->vectors3
-  "Extract floating-point BGR vectors from texture"
+  "Extract floating-point RGB vectors from texture"
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGR GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 
 (defn rgba-texture->vectors4
-  "Extract floating-point BGRA vectors from texture"
+  "Extract floating-point RGBA vectors from texture"
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
           data (float-array (* width height 4))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 
@@ -514,11 +507,24 @@
   "Convert texture to RGB image"
   [{:keys [target texture width height]}]
   (with-texture target texture
-    (let [buf  (BufferUtils/createIntBuffer (* width height))
-          data (int-array (* width height))]
-      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_BGRA GL11/GL_UNSIGNED_BYTE buf)
+    (let [size (* 4 width height)
+          buf  (BufferUtils/createByteBuffer size)
+          data (byte-array size)]
+      (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE buf)
       (.get buf data)
       {:width width :height height :data data})))
+
+(defmacro offscreen-render
+  "Macro to render to a texture and convert it to an image"
+  [width height & body]
+  `(with-invisible-window
+     (let [depth# (make-empty-depth-texture-2d :linear :clamp ~width ~height)
+           tex#   (make-empty-texture-2d :linear :clamp GL11/GL_RGB8 ~width ~height)]
+       (framebuffer-render ~width ~height :cullback depth# [tex#] ~@body)
+       (let [img# (texture->image tex#)]
+         (destroy-texture tex#)
+         (destroy-texture depth#)
+         img#))))
 
 (defmacro create-cubemap
   "Macro to initialise cubemap"
@@ -562,7 +568,7 @@
 (defn make-vector-cubemap
   "Load vector 2D textures into an OpenGL cubemap"
   [interpolation boundary images]
-  (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_BGR GL11/GL_FLOAT))
+  (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn make-empty-vector-cubemap
   "Create empty cubemap with faces of specified size"
@@ -576,6 +582,6 @@
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
-      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_BGR GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))

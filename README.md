@@ -4,6 +4,10 @@ This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
 
+[![Rendering of volumetric clouds](https://i1.ytimg.com/vi/XTRftiO9tEQ/hqdefault.jpg)](https://www.youtube.com/watch?v=XTRftiO9tEQ)
+
+[![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
+
 # Installation
 * Only tested on Debian 11
 * Install Java, LWJGL2, and ImageJ: `sudo apt-get install openjdk-17-jre liblwjgl-java libij-java`
@@ -26,10 +30,10 @@ Requires OpenGL 4.5.
 # Run
 
 * Run tests: `clj -M:test`
-* Run the cloud cube: `clj -M etc/cloudcube.clj`
 * Run the cloud prototype: `clj -M etc/cloudsonly.clj`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run the planet prototype: `clj -M etc/planet.clj`
+* Run main program displaying black window: `clj -M -m sfsim25.core`
 
 # External Links
 

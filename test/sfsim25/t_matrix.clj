@@ -38,7 +38,7 @@
     (project (fm/mulv m (fv/vec4    0 3.75    -5 1))) => (roughly-vector (fv/vec3 0 1 1) 1e-6)))
 
 (fact "Pack nested vector of matrices into float array"
-      (seq (pack-matrices [[(fv/vec3 1 2 3)] [(fv/vec3 4 5 6)]])) => [3.0 2.0 1.0 6.0 5.0 4.0])
+      (seq (pack-matrices [[(fv/vec3 1 2 3)] [(fv/vec3 4 5 6)]])) => [1.0 2.0 3.0 4.0 5.0 6.0])
 
 (facts "Convert z-coordinate to normalized device coordinate"
        (z-to-ndc 10 40 40) => (roughly 0.0 1e-6)

@@ -2,6 +2,7 @@
 (ns build
     (:require [clojure.tools.build.api :as b]
               [clojure.java.io :as io]
+              [clojure.java.shell :refer (sh)]
               [sfsim25.worley :as w]
               [sfsim25.perlin :as p]
               [sfsim25.scale-image :as si]
@@ -13,7 +14,8 @@
               [sfsim25.map-tiles :as mt]
               [sfsim25.elevation-tiles :as et]
               [sfsim25.globe :as g]
-              [sfsim25.util :as u]))
+              [sfsim25.util :as u])
+    (:import [org.lwjgl.glfw GLFW]))
 
 (defn worley
   "Generate 3D Worley noise textures"
@@ -37,7 +39,8 @@
 (defn cloud-cover
   "Generate cloud cover cubemap"
   [& {:keys [size] :or {size 64}}]
-  (rn/offscreen-render 1 1
+  (GLFW/glfwInit)
+  (rn/with-invisible-window
     (let [load-floats  (fn [filename] {:width size :height size :depth size :data (u/slurp-floats filename)})
           worley-north (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
           worley-south (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
@@ -60,16 +63,17 @@
       (rn/destroy-texture cubemap)
       (rn/destroy-texture worley-cover)
       (rn/destroy-texture worley-south)
-      (rn/destroy-texture worley-north))))
+      (rn/destroy-texture worley-north)
+      (GLFW/glfwTerminate))))
 
 (defn atmosphere-lut [_]
   "Generate atmospheric lookup tables"
   (al/generate-atmosphere-luts))
 
-(defn scale-image
+(defn scale-image-file
   "Scale down input PNG and save to output PNG"
   [& {:keys [input output]}]
-  (si/scale-image (str input) (str output)))
+  (si/scale-image-file (str input) (str output)))
 
 (defn scale-elevation
   "Scale down raw short-integer elevation input data and save to output raw short integers"
@@ -126,11 +130,11 @@
 (defn map-scales
   "Generate pyramid of scales for given sector of world map"
   [& {:keys [sector]}]
-  (scale-image {:input (str "world.200404.3x21600x21600." sector ".png") :output (str "world." sector "." 2 ".png")})
-  (scale-image {:input (str "world." sector "." 2 ".png") :output (str "world." sector "." 3 ".png")})
-  (scale-image {:input (str "world." sector "." 3 ".png") :output (str "world." sector "." 4 ".png")})
-  (scale-image {:input (str "world." sector "." 4 ".png") :output (str "world." sector "." 5 ".png")})
-  (scale-image {:input (str "world." sector "." 5 ".png") :output (str "world." sector "." 6 ".png")}))
+  (sh "convert" (str "world.200404.3x21600x21600." sector ".png") "-scale" "50%" (str "world." sector "." 2 ".png"))
+  (scale-image-file {:input (str "world." sector "." 2 ".png") :output (str "world." sector "." 3 ".png")})
+  (scale-image-file {:input (str "world." sector "." 3 ".png") :output (str "world." sector "." 4 ".png")})
+  (scale-image-file {:input (str "world." sector "." 4 ".png") :output (str "world." sector "." 5 ".png")})
+  (scale-image-file {:input (str "world." sector "." 5 ".png") :output (str "world." sector "." 6 ".png")}))
 
 (defn map-sector-tiles
   "Generate pyramid of map tiles for given sector of world map"

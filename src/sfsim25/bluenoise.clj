@@ -1,8 +1,7 @@
 (ns sfsim25.bluenoise
     "Functions and main program for generating blue noise"
     (:require [clojure.math :refer (exp)]
-              [com.climate.claypoole :refer (pfor ncpus)]
-              [sfsim25.util :refer (spit-floats)]))
+              [com.climate.claypoole :refer (pfor ncpus)]))
 
 ; http://cv.ulichney.com/papers/1993-void-cluster.pdf
 
@@ -30,12 +29,12 @@
 (defn argmax-with-mask
   "Return index of largest element in ARR with corresponding MASK value begin true"
   [arr mask]
-  (first (apply max-key second (filter (fn [[idx value]] (nth mask idx)) (map-indexed vector arr)))))
+  (first (apply max-key second (filter (fn [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
 
 (defn argmin-with-mask
   "Return index of smallest element in ARR with corresponding MASK value begin false"
   [arr mask]
-  (first (apply min-key second (remove (fn [[idx value]] (nth mask idx)) (map-indexed vector arr)))))
+  (first (apply min-key second (remove (fn [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
 
 (defn wrap
   "Wrap index X to be within -M/2 and +M/2"
@@ -70,13 +69,13 @@
   ([mask m f] (seed-pattern mask m f (density-array mask m f)))
   ([mask m f density]
    (let [cluster (argmax-with-mask density mask)
-         mask    (assoc mask cluster false)]
-     (let [density (density-change density m - f cluster)
-           void    (argmin-with-mask density mask)
-           mask    (assoc mask void true)]
-       (if (== cluster void)
-         mask
-         (recur mask m f (density-change density m + f void)))))))
+         mask    (assoc mask cluster false)
+         density (density-change density m - f cluster)
+         void    (argmin-with-mask density mask)
+         mask    (assoc mask void true)]
+     (if (== cluster void)
+       mask
+       (recur mask m f (density-change density m + f void))))))
 
 (defn dither-phase1
   "First phase of blue noise dithering removing true values from MASK"

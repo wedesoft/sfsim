@@ -4,7 +4,7 @@
             [fastmath.vector :refer (vec3 add sub mult dot cross mag normalize)]
             [fastmath.matrix :refer (mulv)]
             [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
-            [sfsim25.matrix :refer :all]
+            [sfsim25.matrix :refer (rotation-y rotation-z)]
             [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-short sqr)])
   (:import [fastmath.vector Vec3]))
 
@@ -12,7 +12,7 @@
 
 (defn cube-map-x
   "x-coordinate of point on cube face"
-  ^double [^long face ^double j ^double i]
+  ^double [^long face ^double _j ^double i]
   (case face
     0 (+ -1 (* 2 i))
     1 (+ -1 (* 2 i))
@@ -34,7 +34,7 @@
 
 (defn cube-map-z
   "y-coordinate of point on cube face"
-  ^double [^long face ^double j ^double i]
+  ^double [^long face ^double j ^double _i]
   (case face
     0  1
     1 (- 1 (* 2 j))

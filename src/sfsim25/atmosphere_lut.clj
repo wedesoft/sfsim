@@ -1,10 +1,12 @@
 (ns sfsim25.atmosphere-lut
     "Compute lookup tables for atmospheric scattering"
     (:require [fastmath.vector :refer (vec3 add mult dot)]
-              [sfsim25.atmosphere :refer :all]
-              [sfsim25.interpolate :refer :all]
-              [sfsim25.matrix :refer :all]
-              [sfsim25.util :refer :all]))
+              [sfsim25.atmosphere :refer (phase point-scatter point-scatter-component point-scatter-space ray-scatter
+                                          ray-scatter-space strength-component surface-radiance surface-radiance-base
+                                          surface-radiance-space transmittance transmittance-space)]
+              [sfsim25.interpolate :refer (interpolate-function make-lookup-table)]
+              [sfsim25.matrix :refer (pack-matrices)]
+              [sfsim25.util :refer (convert-4d-to-2d progress-wrap size-of-shape spit-floats)]))
 
 (def radius 6378000.0)
 (def height 35000.0)

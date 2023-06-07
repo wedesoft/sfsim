@@ -60,11 +60,11 @@
 
 (facts "Saving and loading of RGB image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
-        value     (bit-or (bit-shift-left -1 24) (bit-shift-left 1 16) (bit-shift-left 2 8) 3)]
-      (spit-image file-name {:width 4 :height 2 :data (int-array (repeat 8 value))})
+        value     [1 2 3 -1]]
+      (spit-image file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
-      (first (:data (slurp-image file-name))) => value))
+      (take 4 (:data (slurp-image file-name))) => value))
 
 (facts "Converting unsigned byte to byte and back"
   (byte->ubyte    0) =>    0
@@ -77,11 +77,14 @@
   (ubyte->byte  255) =>   -1)
 
 (facts "Reading and writing image pixels"
-  (let [img {:width 4 :height 2 :data (int-array [0 0 0 0 0 0 0 (bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
+  (get-pixel (slurp-image "test/sfsim25/fixtures/util/red.png") 0 0) => (vec3 255 0 0)
+  (get-pixel (slurp-image "test/sfsim25/fixtures/util/green.png") 0 0) => (vec3 0 255 0)
+  (get-pixel (slurp-image "test/sfsim25/fixtures/util/blue.png") 0 0) => (vec3 0 0 255)
+  (let [img {:width 4 :height 2 :data (byte-array (flatten (concat (repeat 7 [0 0 0 -1]) [[1 2 3 -1]])))}]
     (get-pixel img 1 3) => (vec3 1 2 3))
-  (let [img {:width 1 :height 1 :data (int-array [(bit-or (bit-shift-left 1 16) (bit-shift-left 2 8) 3)])}]
+  (let [img {:width 1 :height 1 :data (byte-array [1 2 3 -1])}]
     (get-pixel img 0 0) => (vec3 1 2 3))
-  (let [img {:width 4 :height 2 :data (int-array (repeat 8 0))}]
+  (let [img {:width 4 :height 2 :data (byte-array (repeat 32 0))}]
     (set-pixel! img 1 2 (vec3 253 254 255)) => anything
     (get-pixel img 1 2) => (vec3 253 254 255)))
 
@@ -109,15 +112,15 @@
     (set-byte! water 1 2 136) => anything
     (get-byte water 1 2) => 136))
 
-(facts "Reading and writing of BGR vectors"
+(facts "Reading and writing of RGB vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 24))}]
-    (get-vector3 vectors 1 2) => (vec3 20.0 19.0 18.0)
+    (get-vector3 vectors 1 2) => (vec3 18.0 19.0 20.0)
     (set-vector3! vectors 1 2 (vec3 24.5 25.5 26.5)) => anything
     (get-vector3 vectors 1 2) => (vec3 24.5 25.5 26.5)))
 
-(facts "Reading and writing of BGRA vectors"
+(facts "Reading and writing of RGBA vectors"
   (let [vectors {:width 4 :height 2 :data (float-array (range 32))}]
-    (get-vector4 vectors 1 2) => (vec4 27.0 26.0 25.0 24.0)
+    (get-vector4 vectors 1 2) => (vec4 24.0 25.0 26.0 27.0)
     (set-vector4! vectors 1 2 (vec4 1.5 2.5 3.5 4.5)) => anything
     (get-vector4 vectors 1 2) => (vec4 1.5 2.5 3.5 4.5)))
 

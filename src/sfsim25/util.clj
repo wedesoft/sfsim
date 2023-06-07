@@ -1,14 +1,13 @@
 (ns sfsim25.util
   "Various utility functions."
   (:require [clojure.java.io :as io]
-            [clojure.math :refer (sin sqrt round)]
+            [clojure.math :refer (sin)]
             [fastmath.vector :refer (vec3 vec4)]
             [progrock.core :as p])
-  (:import [java.nio ByteBuffer ByteOrder]
-           [java.io ByteArrayOutputStream]
-           [ij ImagePlus]
-           [ij.io Opener FileSaver]
-           [ij.process ImageConverter ColorProcessor FloatProcessor]
+  (:import [java.io ByteArrayOutputStream]
+           [java.nio ByteBuffer ByteOrder]
+           [org.lwjgl BufferUtils]
+           [org.lwjgl.stb STBImage STBImageWrite]
            [fastmath.vector Vec3 Vec4]))
 
 (set! *unchecked-math* true)
@@ -73,14 +72,6 @@
     (.put (.asFloatBuffer byte-buffer) float-data)
     (spit-bytes file-name (.array byte-buffer))))
 
-(defn show-floats
-  "Open a window displaying the image"
-  [{:keys [width height data]}]
-  (let [processor (FloatProcessor. width height data)
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.show img)))
-
 (defn tile-path
   "Determine file path of map tile"
   ^String [prefix level y x suffix]
@@ -113,26 +104,24 @@
 
 (defn slurp-image
   "Load an RGB image"
-  [^String file-name]
-  (let [img (.openImage (Opener.) file-name)]
-    (.convertToRGB (ImageConverter. img))
-    {:width (.getWidth img) :height (.getHeight img) :data (.getPixels (.getProcessor img))}))
+  [path]
+  (let [width (int-array 1)
+        height (int-array 1)
+        channels (int-array 1)
+        buffer (STBImage/stbi_load path width height channels 4)
+        width  (aget width 0)
+        height (aget height 0)
+        data   (byte-array (* width height 4))]
+    (.get buffer data)
+    {:data data :width width :height height :channels (aget channels 0)}))
 
 (defn spit-image
   "Save RGB image as PNG file"
-  [^String file-name {:keys [width height data]}]
-  (let [processor (ColorProcessor. width height data)
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.saveAsPng (FileSaver. img) file-name)))
-
-(defn show-image
-  "Open a window displaying the image"
-  [{:keys [width height data]}]
-  (let [processor (ColorProcessor. width height data)
-        img       (ImagePlus.)]
-    (.setProcessor img processor)
-    (.show img)))
+  [path {:keys [width height data] :as img}]
+  (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
+    (-> buffer (.put data) (.flip))
+    (STBImageWrite/stbi_write_png path width height 4 buffer (* 4 width))
+    img))
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
@@ -146,88 +135,89 @@
 
 (defn get-pixel
   "Read color value from a pixel of an image"
-  ^Vec3 [{:keys [width height data]} ^long y ^long x]
-  (let [offset (+ (* width y) x)
-        value  (aget data offset)]
-    (vec3 (bit-shift-right (bit-and 0xff0000 value) 16) (bit-shift-right (bit-and 0xff00 value) 8) (bit-and 0xff value))))
+  ^Vec3 [{:keys [width data]} ^long y ^long x]
+  (let [offset (* 4 (+ (* width y) x))]
+    (vec3 (byte->ubyte (aget data offset))
+          (byte->ubyte (aget data (inc offset)))
+          (byte->ubyte (aget data (inc (inc offset)))))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
-  [{:keys [width height data]} ^long y ^long x ^Vec3 c]
-  (let [offset (+ (* width y) x)]
-    (aset-int data offset (bit-or (bit-shift-left -1 24)
-                                  (bit-shift-left (round (c 0)) 16)
-                                  (bit-shift-left (round (c 1)) 8)
-                                  (round (c 2))))))
+  [{:keys [width data]} ^long y ^long x ^Vec3 c]
+  (let [offset (* 4 (+ (* width y) x))]
+    (aset-byte data offset (ubyte->byte (c 0)))
+    (aset-byte data (inc offset) (ubyte->byte (c 1)))
+    (aset-byte data (inc (inc offset)) (ubyte->byte (c 2)))
+    (aset-byte data (inc (inc (inc offset))) -1)))
 
 (defn get-short
   "Read value from a short integer tile"
-  [{:keys [width height data]} ^long y ^long x]
+  [{:keys [width data]} ^long y ^long x]
   (aget data (+ (* width y) x)))
 
 (defn set-short!
   "Write value to a short integer tile"
-  [{:keys [width height data]} ^long y ^long x ^long value]
+  [{:keys [width data]} ^long y ^long x ^long value]
   (aset-short data (+ (* width y) x) value))
 
 (defn get-float
   "Read value from a floating-point tile"
-  ^double [{:keys [width height data]} ^long y ^long x]
+  ^double [{:keys [width data]} ^long y ^long x]
   (aget data (+ (* width y) x)))
 
 (defn set-float!
   "Write value to a floating-point tile"
-  [{:keys [width height data]} ^long y ^long x ^double value]
+  [{:keys [width data]} ^long y ^long x ^double value]
   (aset-float data (+ (* width y) x) value))
 
 (defn get-float-3d
   "Read floating-point value from a 3D cube"
-  ^double [{:keys [width height depth data]} ^long z ^long y ^long x]
+  ^double [{:keys [width height data]} ^long z ^long y ^long x]
   (aget data (+ (* width (+ (* height z) y)) x)))
 
 (defn set-float-3d!
   "Write floating-point value to a 3D cube"
-  [{:keys [width height depth data]} z y x value]
+  [{:keys [width height data]} z y x value]
   (aset-float data (+ (* width (+ (* height z) y)) x) value))
 
 (defn get-byte
   "Read byte value from a tile"
-  ^long [{:keys [width height data]} ^long y ^long x]
+  ^long [{:keys [width data]} ^long y ^long x]
   (byte->ubyte (aget data (+ (* width y) x))))
 
 (defn set-byte!
   "Write byte value to a tile"
-  [{:keys [width height data]} ^long y ^long x ^long value]
+  [{:keys [width data]} ^long y ^long x ^long value]
   (aset-byte data (+ (* width y) x) (ubyte->byte value)))
 
 (defn get-vector3
-  "Read BGR vector from a vectors tile"
-  ^Vec3 [{:keys [width height data]} ^long y ^long x]
+  "Read RGB vector from a vectors tile"
+  ^Vec3 [{:keys [width data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (vec3 (aget data (+ offset 2)) (aget data (+ offset 1)) (aget data (+ offset 0)))))
+    (vec3 (aget data (+ offset 0)) (aget data (+ offset 1)) (aget data (+ offset 2)))))
 
 (defn set-vector3!
-  "Write BGR vector value to vectors tile"
-  [{:keys [width height data]} ^long y ^long x ^Vec3 value]
+  "Write RGB vector value to vectors tile"
+  [{:keys [width data]} ^long y ^long x ^Vec3 value]
   (let [offset (* 3 (+ (* width y) x))]
-    (aset-float data (+ offset 2) (value 0))
+    (aset-float data (+ offset 0) (value 0))
     (aset-float data (+ offset 1) (value 1))
-    (aset-float data (+ offset 0) (value 2))))
+    (aset-float data (+ offset 2) (value 2))))
 
 (defn get-vector4
-  "read BGRA vector from a vectors tile"
-  ^Vec4 [{:keys [width height data]} ^long y ^long x]
+  "read RGBA vector from a vectors tile"
+  ^Vec4 [{:keys [width data]} ^long y ^long x]
   (let [offset (* 4 (+ (* width y) x))]
-    (vec4 (aget data (+ offset 3)) (aget data (+ offset 2)) (aget data (+ offset 1)) (aget data (+ offset 0)))))
+    (vec4 (aget data (+ offset 0)) (aget data (+ offset 1)) (aget data (+ offset 2)) (aget data (+ offset 3)))))
 
 (defn set-vector4!
-  "Write BGRA vector value to vectors tile"
-  [{:keys [width height data]} ^long y ^long x ^Vec4 value]
+  "Write RGBA vector value to vectors tile"
+  [{:keys [width data]} ^long y ^long x ^Vec4 value]
   (let [offset (* 4 (+ (* width y) x))]
-    (aset-float data (+ offset 3) (value 0))
-    (aset-float data (+ offset 2) (value 1))
-    (aset-float data (+ offset 1) (value 2))
-    (aset-float data (+ offset 0) (value 3))))
+    (aset-float data (+ offset 0) (value 0))
+    (aset-float data (+ offset 1) (value 1))
+    (aset-float data (+ offset 2) (value 2))
+    (aset-float data (+ offset 3) (value 3))))
 
 (defn dissoc-in
   "Return nested hash with path removed"
