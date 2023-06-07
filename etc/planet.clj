@@ -1,6 +1,5 @@
 (require '[fastmath.vector :refer (vec3 mag emult add mult)]
          '[fastmath.matrix :refer (mulv inverse)]
-         '[clojure.core.async :refer (go-loop chan <! <!! >! >!! poll! close!)]
          '[clojure.math :refer (cos sin sqrt pow to-radians PI)]
          '[sfsim25.matrix :refer :all]
          '[sfsim25.quaternion :as q]
@@ -80,15 +79,13 @@
 (uniform-sampler program-atmosphere "ray_scatter" 1)
 (uniform-sampler program-atmosphere "mie_strength" 2)
 
-(def tree-state (chan))
-(def changes (chan))
-(def tree (atom {}))
+(def tree (atom []))
 
-(go-loop []
-         (if-let [tree (<! tree-state)]
-                 (let [increase? (partial increase-level? tilesize radius polar-radius width 60 10 5 @position)]
-                   (>! changes (update-level-of-detail tree increase? true))
-                   (recur))))
+(def changes (atom (future {:tree {} :drop [] :load []})))
+
+(defn background-tree-update [tree]
+  (let [increase? (partial increase-level? tilesize radius polar-radius width 60 10 5 @position)]
+    (update-level-of-detail tree increase? true)))
 
 (def program-planet
   (make-program :vertex [vertex-planet]
@@ -158,8 +155,6 @@
       (if-not (empty? node) (render-tile node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree (selector node))))))
-
-(>!! tree-state @tree)
 
 (def projection (projection-matrix width height z-near z-far (to-radians 60)))
 
@@ -232,9 +227,11 @@
          (onscreen-render window
                           (clear (vec3 0 1 0))
                           ; Render planet
-                          (when-let [data (poll! changes)]
-                                    (unload-tiles-from-opengl (:drop data))
-                                    (>!! tree-state (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))))
+                          (when (realized? @changes)
+                            (let [data @@changes]
+                              (unload-tiles-from-opengl (:drop data))
+                              (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))
+                              (reset! changes (future (background-tree-update @tree)))))
                           (use-program program-planet)
                           (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                           (uniform-vector3 program-planet "position" @position)
@@ -253,8 +250,7 @@
          (flush)
          (swap! t0 + dt)))
 
-(close! tree-state)
-(close! changes)
+@changes
 
 ; unload all planet tiles (vaos and textures)
 
@@ -270,3 +266,5 @@
 (GLFW/glfwTerminate)
 
 (set! *unchecked-math* false)
+
+(System/exit 0)
