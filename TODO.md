@@ -1,8 +1,7 @@
 # TODO
-* render backside of planet (as seen from light source) in separate shader and fill depth map;
+* render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
-* prototype with planet shadow
-* prototype with planet surface
+* render planet surface as well in prototype
 * integration test for clouds with atmosphere and planet with transparence
 * cloud shadow should use planet depth map instead of sphere intersection
 * test cloud shadows on ellipsoidical planet
