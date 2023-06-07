@@ -1,4 +1,5 @@
 # TODO
+* use promise in etc/planet instead of core.async
 * render backside of planet (as seen from light source) in separate shader and fill depth map; use this depth map when performing cloud-shadow lookups instead of planet intersection
 * cloud shadow should use planet depth map instead of sphere intersection
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
