@@ -7,10 +7,6 @@
                                       render-quads uniform-float uniform-int uniform-sampler use-program use-textures)]
               [sfsim25.shaders :as shaders]))
 
-(def cloud-track
-  "Shader for putting volumetric clouds into the atmosphere"
-  (slurp "resources/shaders/clouds/cloud-track.glsl"))
-
 (def cloud-shadow
   "Shader for determining illumination of clouds"
   (slurp "resources/shaders/clouds/cloud-shadow.glsl"))

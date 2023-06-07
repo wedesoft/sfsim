@@ -1,4 +1,5 @@
 # TODO
+* cloud shadow should use planet depth map instead of sphere intersection
 * make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
 * test cloud shadows on ellipsoidical planet
