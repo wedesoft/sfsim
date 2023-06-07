@@ -1,10 +1,13 @@
 # TODO
-* use promise in etc/planet instead of core.async
-* render backside of planet (as seen from light source) in separate shader and fill depth map; use this depth map when performing cloud-shadow lookups instead of planet intersection
+* render backside of planet (as seen from light source) in separate shader and fill depth map;
+  use this depth map when performing cloud-shadow lookups instead of planet intersection
+* prototype with planet shadow
+* prototype with planet surface
+* integration test for clouds with atmosphere and planet with transparence
 * cloud shadow should use planet depth map instead of sphere intersection
-* make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
-  integration test for cascaded deep opacity map
 * test cloud shadows on ellipsoidical planet
+* make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
+  integration test for cascaded deep opacity map
 * render clouds on planet, output to 3-channel transparency layer and colour layer
   low-res. offscreen render planet and background with clouds and atmosphere in front, blur?
   add cloud shadow computation to ground radiance function
