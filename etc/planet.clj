@@ -252,7 +252,7 @@
 
 @changes
 
-; unload all planet tiles (vaos and textures)
+; TODO: unload all planet tiles (vaos and textures)
 
 (destroy-program program-planet)
 (destroy-program program-atmosphere)

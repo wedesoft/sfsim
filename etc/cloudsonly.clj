@@ -4,6 +4,7 @@
          '[sfsim25.render :refer :all]
          '[sfsim25.atmosphere :refer :all]
          '[sfsim25.planet :refer :all]
+         '[sfsim25.quadtree :refer :all]
          '[sfsim25.clouds :refer :all]
          '[sfsim25.bluenoise :as bluenoise]
          '[sfsim25.matrix :refer :all]
@@ -149,6 +150,9 @@ void main()
 
 (def fov (to-radians 60.0))
 (def radius 6378000.0)
+(def polar-radius 6378000.0)
+(def tilesize 33)
+(def color-tilesize 129)
 (def max-height 35000.0)
 (def dense-height 6000.0)
 (def threshold (atom 29.0))
@@ -302,6 +306,41 @@ void main()
           {:offset opacity-offsets :layer opacity-layers}))
     matrix-cascade))
 
+(def tree (atom []))
+(def changes (atom (future {:tree {} :drop [] :load []})))
+
+(defn background-tree-update [tree]
+  (let [increase? (partial increase-level? tilesize radius polar-radius width 60 10 5 @position)]
+    (update-level-of-detail tree increase? true)))
+
+(defn load-tile-into-opengl
+  [tile]
+  (let [indices    [0 2 3 1]
+        ;vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
+        ;vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+        color-tex  (make-rgb-texture :linear :clamp (:colors tile))
+        height-tex (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:scales tile)})
+        normal-tex (make-vector-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:normals tile)})
+        water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
+    (assoc (dissoc tile :colors :scales :normals :water)
+           :vao nil :color-tex color-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
+
+(defn load-tiles-into-opengl
+  [tree paths]
+  (quadtree-update tree paths load-tile-into-opengl))
+
+(defn unload-tile-from-opengl
+  [tile]
+  (destroy-texture (:color-tex tile))
+  (destroy-texture (:height-tex tile))
+  (destroy-texture (:normal-tex tile))
+  (destroy-texture (:water-tex tile))
+  ; (destroy-vertex-array-object (:vao tile))
+  )
+
+(defn unload-tiles-from-opengl
+  [tiles]
+  (doseq [tile tiles] (unload-tile-from-opengl tile)))
 (def keystates (atom {}))
 
 (def keyboard-callback
@@ -317,6 +356,11 @@ void main()
 (def t0 (atom (System/currentTimeMillis)))
 (def n (atom 0))
 (while (not (GLFW/glfwWindowShouldClose window))
+       (when (realized? @changes)
+         (let [data @@changes]
+           (unload-tiles-from-opengl (:drop data))
+           (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))
+           (reset! changes (future (background-tree-update @tree)))))
        (let [t1 (System/currentTimeMillis)
              dt (- t1 @t0)
              ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
@@ -431,6 +475,10 @@ void main()
            (flush))
          (swap! t0 + dt)))
 
+@@changes
+
+; TODO: unload all planet tiles (vaos and textures)
+
 (destroy-texture E)
 (destroy-texture M)
 (destroy-texture S)
@@ -447,3 +495,5 @@ void main()
 (GLFW/glfwTerminate)
 
 (set! *unchecked-math* false)
+
+(System/exit 0)
