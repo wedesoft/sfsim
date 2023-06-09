@@ -591,18 +591,20 @@ void main()
 
 (def height-to-index-test
   (shader-test
-    (fn [program radius max-height]
+    (fn [program radius polar-radius max-height]
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" polar-radius)
         (uniform-float program "max_height" max-height))
-    height-to-index-probe height-to-index horizon-distance))
+    height-to-index-probe height-to-index horizon-distance polar-stretch))
 
 (tabular "Shader for converting height to index"
-         (fact ((height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
-         ?radius ?max-height ?x    ?y ?z ?result
-         4       1           4     0  0  0.0
-         4       1           5     0  0  1.0
-         4       1           4.5   0  0  0.687184
-         4       1           3.999 0  0  0.0)
+         (fact ((height-to-index-test [?radius ?polar ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
+         ?radius ?polar ?max-height ?x    ?y ?z  ?result
+         4       4      1           4     0  0   0.0
+         4       4      1           5     0  0   1.0
+         4       4      1           4.5   0  0   0.687184
+         4       4      1           3.999 0  0   0.0
+         4       2      1           0     0  2.5 1.0)
 
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
@@ -670,25 +672,28 @@ void main()
 
 (def elevation-to-index-test
   (shader-test
-    (fn [program radius max-height]
+    (fn [program radius polar-radius max-height]
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" polar-radius)
         (uniform-float program "max_height" max-height))
-    elevation-to-index-probe elevation-to-index horizon-distance limit-quot))
+    elevation-to-index-probe elevation-to-index horizon-distance limit-quot polar-stretch))
 
 (tabular "Shader for converting view direction elevation to index"
-         (fact ((elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
+         (fact ((elevation-to-index-test [?radius ?polar ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
                => (roughly ?result 1e-6))
-         ?radius ?max-height ?x ?y ?z ?dx           ?dy        ?dz ?above-horizon ?result
-         4       1           4  0  0 -1             0          0   false          0.5
-         4       1           5  0  0 -1             0          0   false          (/ 1 3)
-         4       1           5  0  0 (- (sqrt 0.5)) (sqrt 0.5) 0   false          0.222549
-         4       1           5  0  0 -0.6           0.8        0   false          0.0
-         4       1           4  0  0  1             0          0   true           (/ 2 3)
-         4       1           5  0  0  0             1          0   true           0.5
-         4       1           5  0  0 -0.6           0.8        0   true           1.0
-         4       1           4  0  0  0             1          0   true           1.0
-         4       1           5  0  0 -1             0          0   true           1.0
-         4       1           4  0  0  1             0          0   false          0.5)
+         ?radius ?polar ?max-height ?x ?y ?z  ?dx            ?dy        ?dz            ?above-horizon ?result
+         4       4      1           4  0  0  -1              0          0              false          0.5
+         4       4      1           5  0  0  -1              0          0              false          (/ 1 3)
+         4       2      1           0  0  2.5 0              0         -1              false          (/ 1 3)
+         4       4      1           5  0  0   (- (sqrt 0.5)) (sqrt 0.5) 0              false          0.222549
+         4       2      1           0  0  2.5 0              (sqrt 0.5) (- (sqrt 0.5)) false          0.307415
+         4       4      1           5  0  0  -0.6            0.8        0              false          0.0
+         4       4      1           4  0  0   1              0          0              true           (/ 2 3)
+         4       4      1           5  0  0   0              1          0              true           0.5
+         4       4      1           5  0  0  -0.6            0.8        0              true           1.0
+         4       4      1           4  0  0   0              1          0              true           1.0
+         4       4      1           5  0  0  -1              0          0              true           1.0
+         4       4      1           4  0  0   1              0          0              false          0.5)
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz above]
@@ -707,8 +712,10 @@ void main()
   (shader-test
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
-    transmittance-forward-probe transmittance-forward height-to-index horizon-distance elevation-to-index limit-quot))
+    transmittance-forward-probe transmittance-forward height-to-index horizon-distance elevation-to-index limit-quot
+    polar-stretch))
 
 (tabular "Convert point and direction to 2D lookup index in transmittance table"
          (fact (transmittance-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
@@ -735,8 +742,10 @@ void main()
   (shader-test
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
-    surface-radiance-forward-probe surface-radiance-forward height-to-index horizon-distance sun-elevation-to-index))
+    surface-radiance-forward-probe surface-radiance-forward height-to-index horizon-distance sun-elevation-to-index
+    polar-stretch))
 
 (tabular "Convert point and direction to 2D lookup index in surface radiance table"
          (fact (surface-radiance-forward-test [6378000.0 100000.0] [?x ?y ?z ?lx ?ly ?lz])
@@ -768,9 +777,10 @@ void main()
   (shader-test
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
     ray-scatter-forward-probe ray-scatter-forward height-to-index elevation-to-index horizon-distance limit-quot
-    sun-elevation-to-index sun-angle-to-index))
+    sun-elevation-to-index sun-angle-to-index polar-stretch))
 
 (tabular "Get 4D lookup index for ray scattering"
          (fact ((ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)

@@ -1,7 +1,5 @@
 # TODO
 * switch low-level functions to work on ellipsoids
-  * height\_to\_index
-  * elevation\_to\_index
   * sun\_elevation\_to\_index
   * sun\_angle\_to\_index
 * test opacity fragment shader for stretched cloud layer
