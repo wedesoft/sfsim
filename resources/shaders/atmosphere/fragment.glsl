@@ -15,14 +15,8 @@ in VS_OUT
 
 out vec3 fragColor;
 
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec2 ray_ellipsoid(vec3 centre, float radius, float polar_radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
-vec3 sky_outer(vec3 light_direction, vec3 point, vec3 direction, vec3 incoming);
-
-vec3 stretch(vec3 v)
-{
-  return vec3(v.x, v.y, v.z * radius / polar_radius);
-}
 
 // Fragment shader to render atmosphere on a background quad.
 void main()
@@ -30,13 +24,12 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   float glare = pow(max(0, dot(direction, light_direction)), specular);
   vec3 incoming = vec3(glare, glare, glare) / amplification;
-  vec3 scaled_origin = stretch(fs_in.origin);
-  vec3 scaled_direction = normalize(stretch(direction));
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, scaled_origin, scaled_direction);
+  float equator_height = radius + max_height;
+  float polar_height = polar_radius + max_height * polar_radius / radius;
+  vec2 atmosphere_intersection = ray_ellipsoid(vec3(0, 0, 0), equator_height, polar_height, origin, direction);
   if (atmosphere_intersection.y > 0) {
-    vec3 scaled_point = scaled_origin + atmosphere_intersection.x * scaled_direction;
-    vec3 scaled_light_direction = normalize(stretch(light_direction));
-    fragColor = amplification * attenuation_outer(scaled_light_direction, scaled_point, scaled_direction, 0, incoming);
+    vec3 point = fs_in.origin + atmosphere_intersection.x * direction;
+    fragColor = amplification * attenuation_outer(light_direction, point, direction, 0, incoming);
   } else {
     fragColor = amplification * incoming;
   };

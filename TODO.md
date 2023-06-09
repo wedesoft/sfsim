@@ -1,6 +1,9 @@
 # TODO
 * switch low-level functions to work on ellipsoids
-* ray-sphere -> ray-ellipsoid
+  * height\_to\_index
+  * elevation\_to\_index
+  * sun\_elevation\_to\_index
+  * sun\_angle\_to\_index
 * test opacity fragment shader for stretched cloud layer
 * render ellipsoid, stretch bounding box for shadow computation
 * render planet before atmosphere

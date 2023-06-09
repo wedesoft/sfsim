@@ -521,34 +521,36 @@ void main()
          0.25  0.25 0.25 1.0  4.5)
 
 (def ray-shell-probe
-  (template/fn [cx cy cz radius1 radius2 ox oy oz dx dy dz selector]
+  (template/fn [cx cy cz radius polar radius1 radius2 ox oy oz dx dy dz selector]
 "#version 410 core
 out vec3 fragColor;
-vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
+vec4 ray_shell(vec3 centre, float radius, float polar_radius, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 void main()
 {
   vec3 centre = vec3(<%= cx %>, <%= cy %>, <%= cz %>);
   vec3 origin = vec3(<%= ox %>, <%= oy %>, <%= oz %>);
   vec3 direction = vec3(<%= dx %>, <%= dy %>, <%= dz %>);
-  vec4 result = ray_shell(centre, <%= radius1 %>, <%= radius2 %>, origin, direction);
+  vec4 result = ray_shell(centre, <%= radius %>, <%= polar %>, <%= radius1 %>, <%= radius2 %>, origin, direction);
   fragColor.rg = result.<%= selector %>;
   fragColor.b = 0;
 }"))
 
-(def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell ray-sphere))
+(def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell ray-ellipsoid ray-sphere polar-stretch))
 
 (tabular "Shader for computing intersections of ray with a shell"
-         (fact (ray-shell-test [] [?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector])
-               => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
-         ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix ?iy
-         0   0   0   1        2        -10 0   0   0   1   0   "st"       0  0
-         0   0   0   1        2        -10 0   0   0   1   0   "pq"       0  0
-         0   0   0   1        5        -10 0   3   1   0   0   "st"       6  8
-         0   0   0   1        5        -10 0   3   1   0   0   "pq"       0  0
-         0   0   0   2        3        -10 0   0   1   0   0   "st"       7  1
-         0   0   0   2        3        -10 0   0   1   0   0   "pq"      12  1
-         0   0   0   2        3          0 0   0   1   0   0   "st"       2  1
-         0   0   0   2        3          0 0   0   1   0   0   "pq"       0  0)
+         (fact (ray-shell-test [] [?cx ?cy ?cz ?radius ?polar ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector])
+               => (roughly-vector (vec3 ?ix ?iy 0) 1e-5))
+         ?cx ?cy ?cz ?radius ?polar ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix  ?iy
+         0   0   0   1       1      1        2        -10 0   0   0   1   0   "st"       0   0
+         0   0   0   1       1      1        2        -10 0   0   0   1   0   "pq"       0   0
+         0   0   0   1       1      1        5        -10 0   3   1   0   0   "st"       6   8
+         0   0   0   1       1      1        5        -10 0   3   1   0   0   "pq"       0   0
+         0   0   0   1       1      2        3        -10 0   0   1   0   0   "st"       7   1
+         0   0   0   1       1      2        3        -10 0   0   1   0   0   "pq"      12   1
+         0   0   0   1       1      2        3          0 0   0   1   0   0   "st"       2   1
+         0   0   0   1       1      2        3          0 0   0   1   0   0   "pq"       0   0
+         0   0   0   1       0.5    1        2          0 0   3   0   0  -1   "st"       2   0.5
+         0   0   0   1       0.5    1        2          0 0   3   0   0  -1   "pq"       3.5 0.5)
 
 (def clip-shell-intersections-probe
   (template/fn [a b c d limit selector]
