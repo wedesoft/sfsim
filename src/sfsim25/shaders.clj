@@ -6,6 +6,14 @@
   "Shader function for computing intersection of ray with sphere"
   (slurp "resources/shaders/core/ray-sphere.glsl"))
 
+(def polar-stretch
+  "Stretch coordinates to convert ellipsoid computations to sphere math"
+  (slurp "resources/shaders/core/polar-stretch.glsl"))
+
+(def ray-ellipsoid
+  "Shader function for computing intersection of ray with ellipsoid"
+  (slurp "resources/shaders/core/ray-ellipsoid.glsl"))
+
 (def convert-1d-index
   "Convert 1D index to 1D texture lookup index avoiding clamping region"
   (slurp "resources/shaders/core/convert-1d-index.glsl"))

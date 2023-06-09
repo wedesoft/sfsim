@@ -13,7 +13,8 @@
 (GLFW/glfwInit)
 
 (def ray-sphere-probe
-  (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
+  (template/fn [cx cy cz ox oy oz dx dy dz]
+"#version 410 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
@@ -36,6 +37,29 @@ void main()
          0   0   0   0   0  -2   0   0   2   0.5 1.0
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
+
+(def ray-ellipsoid-probe
+  (template/fn [cx cy cz radius polar-radius ox oy oz dx dy dz]
+"#version 410 core
+out vec3 fragColor;
+vec2 ray_ellipsoid(vec3 centre, float radius, float polar_radius, vec3 origin, vec3 direction);
+void main()
+{
+  vec2 result = ray_ellipsoid(vec3(<%= cx %>, <%= cy %>, <%= cz %>),
+                              <%= radius %>, <%= polar-radius %>,
+                              vec3(<%= ox %>, <%= oy %>, <%= oz %>),
+                              vec3(<%= dx %>, <%= dy %>, <%= dz %>));
+  fragColor = vec3(result.x, result.y, 0);
+}"))
+
+(def ray-ellipsoid-test (shader-test (fn [program]) ray-ellipsoid-probe ray-ellipsoid ray-sphere polar-stretch))
+
+(tabular "Shader for intersection of ray with ellipsoid"
+         (fact (ray-ellipsoid-test [] [?cx ?cy ?cz ?radius ?polar ?ox ?oy ?oz ?dx ?dy ?dz]) => (vec3 ?ix ?iy 0))
+         ?cx ?cy ?cz ?radius ?polar ?ox ?oy ?oz ?dx ?dy ?dz ?ix ?iy
+         0   0   0   2       1     -3   0   0   1   0   0   1.0 4.0
+         0   0   0   2       1      0   0  -4   0   0   1   3.0 2.0
+         0   0   1   2       1      0   0  -4   0   0   1   4.0 2.0)
 
 (def convert-1d-index-probe
   (template/fn [x] "#version 410 core
