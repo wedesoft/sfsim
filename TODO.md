@@ -1,5 +1,7 @@
 # TODO
-* render ellipsoid
+* switch low-level functions to work on ellipsoids
+* test opacity fragment shader for stretched cloud layer
+* render ellipsoid, stretch bounding box for shadow computation
 * render planet before atmosphere
 * stretch coordinates in vertex shader?
 * render clouds in front of planet
