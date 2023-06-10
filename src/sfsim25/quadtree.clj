@@ -18,16 +18,16 @@
 
 (defn- quad-size-for-camera-position
   "Determine screen size of a quad given the camera position"
-  [tilesize radius1 radius2 width angle position face level y x]
-  (let [center   (tile-center face level y x radius1 radius2)
+  [tilesize radius width angle position face level y x]
+  (let [center   (tile-center face level y x radius)
         distance (mag (sub position center))]
-    (quad-size level tilesize radius1 width distance angle)))
+    (quad-size level tilesize radius width distance angle)))
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
-  [tilesize radius1 radius2 width angle max-size max-level position face level y x]
+  [tilesize radius width angle max-size max-level position face level y x]
   (and (< level max-level)
-       (> (quad-size-for-camera-position tilesize radius1 radius2 width angle position face level y x) max-size)))
+       (> (quad-size-for-camera-position tilesize radius width angle position face level y x) max-size)))
 
 (defn load-tile-data
   "Load data associated with a cube map tile"

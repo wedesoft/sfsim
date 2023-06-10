@@ -1,6 +1,6 @@
 # TODO
 * remove polar radius code
-  * increase-level?
+  * regenerate cube map tiles
 * test opacity fragment shader for stretched cloud layer
 * render ellipsoid, stretch bounding box for shadow computation
 * render planet before atmosphere

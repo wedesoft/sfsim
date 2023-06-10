@@ -11,9 +11,9 @@
   (quad-size 2 33 6378000.0 1024 0.0 60.0) => (/ (* 512 (/ 6378000.0 2 32)) (tan (to-radians 30.0))))
 
 (facts "Decide whether to increase quadtree level or not"
-  (increase-level? 33 6378000.0 6357000.0 1280 60.0 5 3 (vec3 200000 0 0) 5 2 0 1) => truthy
+  (increase-level? 33 6378000.0 1280 60.0 5 3 (vec3 200000 0 0) 5 2 0 1) => truthy
     (provided
-      (cubemap/tile-center 5 2 0 1 6378000.0 6357000.0) => (vec3 50000 0 0)
+      (cubemap/tile-center 5 2 0 1 6378000.0) => (vec3 50000 0 0)
       (quadtree/quad-size 2 33 6378000.0 1280 150000.0 60.0) => 10.0))
 
 (tabular "Load normals, scale factors and colors for a tile"

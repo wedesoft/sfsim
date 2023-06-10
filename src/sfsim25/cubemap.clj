@@ -76,57 +76,26 @@
 
 ; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
-  "Convert latitude and longitude to cartesian coordinates"
-  [longitude latitude height radius1 radius2]
-  (let [radius1-sqr     (sqr radius1)
-        radius2-sqr     (sqr radius2)
+  "Convert latitude and longitude to cartesian coordinates assuming a spherical Earth"
+  [longitude latitude height radius]
+  (let [distance        (+ height radius)
         cos-lat         (cos latitude)
-        sin-lat         (sin latitude)
-        vertical-radius (/ radius1-sqr (sqrt (+ (* radius1-sqr cos-lat cos-lat) (* radius2-sqr sin-lat sin-lat))))]
-    (vec3 (* (+ vertical-radius height) cos-lat (cos longitude))
-          (* (+ vertical-radius height) cos-lat (sin longitude))
-          (* (+ (* (/ radius2-sqr radius1-sqr) vertical-radius) height) sin-lat))))
+        sin-lat         (sin latitude)]
+    (vec3 (* distance cos-lat (cos longitude)) (* distance cos-lat (sin longitude)) (* distance sin-lat))))
 
-(defn project-onto-ellipsoid
+(defn project-onto-sphere
   "Project a 3D vector onto an ellipsoid"
-  ^Vec3 [^Vec3 point ^double radius1 ^double radius2]
-  (let [radius           (mag point)
-        xy-radius        (sqrt (+ (sqr (point 0)) (sqr (point 1))))
-        cos-latitude     (/ xy-radius radius)
-        sin-latitude     (/ (point 2) radius)
-        cos-longitude    (if (zero? xy-radius) 1.0 (/ (point 0) xy-radius))
-        sin-longitude    (if (zero? xy-radius) 0.0 (/ (point 1) xy-radius))
-        projected-radius (/ (* radius1 radius2) (sqrt (+ (* radius1 radius1 sin-latitude sin-latitude)
-                                                         (* radius2 radius2 cos-latitude cos-latitude))))]
-    (vec3 (* cos-latitude cos-longitude projected-radius)
-          (* cos-latitude sin-longitude projected-radius)
-          (* sin-latitude projected-radius))))
-
-(defn ellipsoid-normal
-  "Get normal vector for point on ellipsoid's surface"
-  ^Vec3 [^Vec3 point ^double radius1 ^double radius2]
-  (let [radius1-sqr (sqr radius1)
-        radius2-sqr (sqr radius2)
-        x           (/ (point 0) radius1-sqr)
-        y           (/ (point 1) radius1-sqr)
-        z           (/ (point 2) radius2-sqr)]
-    (normalize (vec3 x y z))))
+  ^Vec3 [^Vec3 point ^double radius]
+  (mult (normalize point) radius))
 
 (defn cartesian->geodetic
-  "Convert cartesian coordinates to latitude, longitude and height"
-  [^Vec3 point ^double radius1 ^double radius2]
-  (let [e         (/ (sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        lon       (atan2 (point 1) (point 0))
-        iteration (fn [^Vec3 reference-point iter]
-                    (let [surface-point (project-onto-ellipsoid reference-point radius1 radius2)
-                          normal        (ellipsoid-normal surface-point radius1 radius2)
-                          height        (dot normal (sub point surface-point))
-                          p             (sqrt (+ (sqr (surface-point 0)) (sqr (surface-point 1))))
-                          lat           (atan2 (surface-point 2) (* p (- 1.0 (* e e))))
-                          result        (add surface-point (mult normal height))
-                          error         (sub result point)]
-                      (if (or (< (mag error) 1e-6) (>= iter 10)) [lon lat height] (recur (sub surface-point error) (inc iter)))))]
-    (iteration point 0)))
+  "Convert cartesian coordinates to latitude, longitude and height assuming a spherical Earth"
+  [^Vec3 point ^double radius]
+  (let [height    (- (mag point) radius)
+        longitude (atan2 (point 1) (point 0))
+        p         (sqrt (+ (sqr (point 0)) (sqr (point 1))))
+        latitude  (atan2 (point 2) p)]
+    [longitude latitude height]))
 
 (defn map-x
   "Compute x-coordinate on raster map"
@@ -230,10 +199,10 @@
 
 (defn tile-center
   "Determine the 3D center of a cube map tile"
-  [face level b a radius1 radius2]
+  [face level b a radius]
   (let [j (cube-coordinate level 3 b 1)
         i (cube-coordinate level 3 a 1)]
-    (project-onto-ellipsoid (cube-map face j i) radius1 radius2)))
+    (project-onto-sphere (cube-map face j i) radius)))
 
 (defn color-geodetic
   "Compute interpolated RGB value for a point on the world"
@@ -253,15 +222,11 @@
 
 (defn project-onto-globe
   "Project point onto the globe with heightmap applied"
-  [point in-level width radius1 radius2]
-  (let [iteration (fn [scaled iter]
-                    (let [[lon lat] (cartesian->geodetic scaled radius1 radius2)
-                          height    (max (elevation-geodetic in-level width lon lat) 0)
-                          elevated  (geodetic->cartesian lon lat height radius1 radius2)]
-                      (if (or (< (mag (sub scaled elevated)) 1e-6) (>= iter 10))
-                        scaled
-                        (recur (mult point (/ (mag elevated) (mag point))) (inc iter)))))]
-    (iteration (project-onto-ellipsoid point radius1 radius2) 0)))
+  [point in-level width radius]
+  (let [surface-point (project-onto-sphere point radius)
+        [lon lat _]   (cartesian->geodetic surface-point radius)
+        height        (max (elevation-geodetic in-level width lon lat) 0)]
+    (geodetic->cartesian lon lat height radius)))
 
 (defn surrounding-points
   "Compute local point cloud consisting of nine points"

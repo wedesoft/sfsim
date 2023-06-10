@@ -309,7 +309,7 @@ void main()
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
 (defn background-tree-update [tree]
-  (let [increase? (partial increase-level? tilesize radius polar-radius width 60 10 5 @position)]
+  (let [increase? (partial increase-level? tilesize radius width 60 10 5 @position)]
     (update-level-of-detail tree increase? true)))
 
 (defn load-tile-into-opengl

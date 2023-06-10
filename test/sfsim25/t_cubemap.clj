@@ -92,24 +92,24 @@
 
 (tabular "Conversion from geodetic to cartesian coordinates"
   (fact
-    (geodetic->cartesian ?lon ?lat ?h 6378000.0 6357000.0) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
+    (geodetic->cartesian ?lon ?lat ?h 6378000.0) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
       ?lon     ?lat   ?h        ?x        ?y        ?z
          0        0    0 6378000.0       0.0       0.0
   (/ PI 2)        0    0       0.0 6378000.0       0.0
-         0 (/ PI 2)    0       0.0       0.0 6357000.0
+         0 (/ PI 2)    0       0.0       0.0 6378000.0
          0        0 1000 6379000.0       0.0       0.0
   (/ PI 2)        0 1000       0.0 6379000.0       0.0)
 
 (tabular "Conversion from cartesian (surface) coordinates to latitude and longitude"
   (fact
-    (cartesian->geodetic (vec3 ?x ?y ?z) 6378000.0 6357000.0) =>
+    (cartesian->geodetic (vec3 ?x ?y ?z) 6378000.0) =>
       (just (roughly ?lon 1e-6) (roughly ?lat 1e-6) (roughly ?height 1e-6)))
          ?x        ?y         ?z           ?lon         ?lat ?height
   6378000.0       0.0        0.0              0            0       0
         0.0 6378000.0        0.0       (/ PI 2)            0       0
-        0.0       0.0  6357000.0              0     (/ PI 2)       0
-        0.0       0.0  6358000.0              0     (/ PI 2)    1000
-        0.0       0.0 -6358000.0              0 (/ (- PI) 2)    1000
+        0.0       0.0  6378000.0              0     (/ PI 2)       0
+        0.0       0.0  6379000.0              0     (/ PI 2)    1000
+        0.0       0.0 -6379000.0              0 (/ (- PI) 2)    1000
   6378000.0       0.0        0.0              0            0       0
         0.0 6378000.0        0.0       (/ PI 2)            0       0
   6379000.0       0.0        0.0              0            0    1000
@@ -117,11 +117,11 @@
 
 (tabular "Project a vector onto an ellipsoid"
   (fact
-    (project-onto-ellipsoid (vec3 ?x ?y ?z) 6378000.0 6357000.0) => (roughly-vector (vec3 ?xp ?yp ?zp) 1e-6))
+    (project-onto-sphere (vec3 ?x ?y ?z) 6378000.0) => (roughly-vector (vec3 ?xp ?yp ?zp) 1e-6))
    ?x ?y ?z       ?xp       ?yp       ?zp
    1  0  0  6378000.0       0.0       0.0
    0  1  0        0.0 6378000.0       0.0
-   0  0  1        0.0       0.0 6357000.0)
+   0  0  1        0.0       0.0 6378000.0)
 
 (facts "x-coordinate on raster map"
   (map-x (- PI) 675 3) => 0.0
@@ -195,10 +195,10 @@
       (map-interpolation 5 675 135.0 45.0 get-pixel + *) => 3.875)))
 
 (fact "Determine center of cube map tile"
-  (with-redefs [cubemap/project-onto-ellipsoid (fn [^Vec3 p ^double radius1 ^double radius2]
-                                                 (fact [p radius1 radius2] => [(vec3 1.0 -0.625 -0.875) 6378000.0 6357000.0])
+  (with-redefs [cubemap/project-onto-sphere (fn [^Vec3 p ^double radius]
+                                                 (fact [p radius] => [(vec3 1.0 -0.625 -0.875) 6378000.0])
                                                  (vec3 1000 -625 -875))]
-    (tile-center 2 3 7 1 6378000.0 6357000.0) => (vec3 1000 -625 -875)))
+    (tile-center 2 3 7 1 6378000.0) => (vec3 1000 -625 -875)))
 
 (fact "Getting world map color for given longitude and latitude"
       (color-geodetic 5 675 135.0 45.0) => (vec3 3 5 7)
@@ -228,11 +228,11 @@
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
                                              (fact [in-level width lon lat] => [4 675 0.0 (/ (- PI) 2)])
                                              2777.0)]
-    (project-onto-globe (vec3 0 0 -1) 4 675 6378000 6357000) => (roughly-vector (vec3 0 0 -6359777.0) 1e-6)))
+    (project-onto-globe (vec3 0 0 -1) 4 675 6378000) => (roughly-vector (vec3 0 0 -6380777.0) 1e-6)))
 
 (fact "Clip negative height (water) to zero"
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
-    (project-onto-globe (vec3 1 0 0) 4 675 6378000 6357000) => (roughly-vector (vec3 6378000 0 0) 1e-6)))
+    (project-onto-globe (vec3 1 0 0) 4 675 6378000) => (roughly-vector (vec3 6378000 0 0) 1e-6)))
 
 (facts "Determine surrounding points for a location on the globe"
   (let [ps (atom [])]
