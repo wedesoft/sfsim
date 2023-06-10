@@ -5,7 +5,6 @@ uniform sampler2D normals;
 uniform sampler2D water;
 uniform float specular;
 uniform float radius;
-uniform float polar_radius;
 uniform float max_height;
 uniform float amplification;
 uniform vec3 water_color;
@@ -21,7 +20,7 @@ in GEO_OUT
 
 out vec3 fragColor;
 
-vec2 ray_ellipsoid(vec3 centre, float radius, float polar_radius, vec3 origin, vec3 direction);
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
@@ -41,9 +40,7 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  float equator_height = radius + max_height;
-  float polar_height = polar_radius + max_height * polar_radius / radius;
-  vec2 atmosphere_intersection = ray_ellipsoid(vec3(0, 0, 0), equator_height, polar_height, position, direction);
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, position, direction);
   vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color);
   float a = atmosphere_intersection.x;
   float b = distance(position, fs_in.point);

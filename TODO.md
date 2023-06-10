@@ -1,7 +1,6 @@
 # TODO
-* switch low-level functions to work on ellipsoids
-  * sun\_elevation\_to\_index
-  * sun\_angle\_to\_index
+* remove polar radius code
+  * increase-level?
 * test opacity fragment shader for stretched cloud layer
 * render ellipsoid, stretch bounding box for shadow computation
 * render planet before atmosphere
@@ -77,8 +76,7 @@
 * only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
 * extract functions from prototype
 * indices for planet patches and atmosphere projection plane should be the same
-* put parameters like max-height, power, specular, radius, polar-radius in a configuration file
-* radius1, radius2 -> radius, polar-radius
+* put parameters like max-height, power, specular, radius in a configuration file
 * use GMTED2010 data: https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures

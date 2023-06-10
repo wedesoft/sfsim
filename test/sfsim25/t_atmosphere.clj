@@ -537,11 +537,10 @@ void main()
         (uniform-int program "transmittance_height_size" transmittance-height-size)
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
-        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
     transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function shaders/polar-stretch))
+    shaders/horizon-distance shaders/limit-quot phase-function))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact ((transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
@@ -568,11 +567,10 @@ void main()
         (uniform-int program "transmittance_height_size" transmittance-height-size)
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
-        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
     transmittance-outer-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function shaders/polar-stretch))
+    shaders/horizon-distance shaders/limit-quot phase-function))
 
 (tabular "Shader function to compute transmittance between point in the atmosphere and space"
          (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
@@ -631,12 +629,11 @@ void main()
         (uniform-int program "light_elevation_size" light-elevation-size)
         (uniform-int program "heading_size" heading-size)
         (uniform-float program "radius" radius)
-        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
     ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
     shaders/make-2d-index-from-4d transmittance-track shaders/transmittance-forward shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/sun-elevation-to-index shaders/sun-angle-to-index phase-function shaders/polar-stretch))
+    shaders/sun-elevation-to-index shaders/sun-angle-to-index phase-function))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact ((ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)
@@ -705,12 +702,11 @@ void main()
                                    program       (make-program :vertex [vertex-atmosphere]
                                                                :fragment [fragment-atmosphere transmittance-outer
                                                                           ray-scatter-outer attenuation-outer shaders/ray-sphere
-                                                                          shaders/transmittance-forward shaders/ray-ellipsoid
+                                                                          shaders/transmittance-forward
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/interpolate-4d shaders/make-2d-index-from-4d
-                                                                          shaders/is-above-horizon
-                                                                          shaders/ray-shell shaders/polar-stretch
+                                                                          shaders/is-above-horizon shaders/ray-shell
                                                                           attenuation-track transmittance-track
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
@@ -735,7 +731,6 @@ void main()
                                (uniform-matrix4 program "transform" transform)
                                (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
                                (uniform-float program "radius" radius)
-                               (uniform-float program "polar_radius" ?polar)
                                (uniform-float program "max_height" max-height)
                                (uniform-float program "specular" 500)
                                (uniform-int program "height_size" size)
@@ -753,15 +748,14 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
-         ?x ?y              ?z                        ?polar       ?rotation   ?lx ?ly       ?lz           ?result
-         0  0               (- 0 radius max-height 1) radius       0           0   0         -1            "sun.png"
-         0  0               (- 0 radius max-height 1) radius       0           0   0          1            "space.png"
-         0  0               (* 2.5 radius)            radius       0           0   1          0            "haze.png"
-         0  radius          (* 0.5 radius)            radius       0           0   0         -1            "sunset.png"
-         0  (+ radius 1000) 0                         radius       0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
-         0  0               (- 0 radius 2)            radius       0           0   0         -1            "inside.png"
-         0  (* 3 radius)    0                         radius       (* -0.5 PI) 0   1          0            "yview.png"
-         0  (* 3 radius)    0                         (/ radius 2) (* -0.5 PI) 0   1          0            "ellipsoid.png")
+         ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?result
+         0  0               (- 0 radius max-height 1) 0           0   0         -1            "sun.png"
+         0  0               (- 0 radius max-height 1) 0           0   0          1            "space.png"
+         0  0               (* 2.5 radius)            0           0   1          0            "haze.png"
+         0  radius          (* 0.5 radius)            0           0   0         -1            "sunset.png"
+         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
+         0  0               (- 0 radius 2)            0           0   0         -1            "inside.png"
+         0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            "yview.png")
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core

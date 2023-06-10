@@ -24,13 +24,12 @@
 (def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
 
 (def radius 6378000.0)
-(def polar-radius 6357000.0)
 (def max-height 35000.0)
 (def tilesize 33)
 (def color-tilesize 129)
 
 (def light1 (atom (to-radians 0)))
-;(def position (atom (vec3 0 (* -0 radius) (+ (* 1 polar-radius) 100))))
+;(def position (atom (vec3 0 (* -0 radius) (+ (* 1 radius) 100))))
 (def orientation (atom (q/rotation (to-radians 90) (vec3 1 0 0))))
 (def position (atom (vec3 0 (* -2 radius) 0)))
 (def z-near 100)
@@ -64,7 +63,6 @@
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere attenuation-outer ray-scatter-outer transmittance-outer shaders/ray-sphere
-                           shaders/ray-ellipsoid shaders/polar-stretch
                            shaders/transmittance-forward shaders/ray-scatter-forward shaders/elevation-to-index
                            shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d shaders/interpolate-2d
@@ -93,8 +91,7 @@
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet attenuation-track shaders/ray-sphere shaders/ray-ellipsoid shaders/polar-stretch
-                           ground-radiance shaders/transmittance-forward
+                :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance shaders/transmittance-forward
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
@@ -176,7 +173,6 @@
 (uniform-float program-planet "reflectivity" 0.1)
 (uniform-float program-planet "specular" 1000)
 (uniform-float program-planet "radius" radius)
-(uniform-float program-planet "polar_radius" polar-radius)
 (uniform-float program-planet "max_height" max-height)
 (uniform-vector3 program-planet "water_color" (vec3 0.09 0.11 0.34))
 (uniform-float program-planet "amplification" 6)
@@ -186,7 +182,6 @@
 (uniform-float program-atmosphere "z_near" z-near)
 (uniform-float program-atmosphere "z_far" z-far)
 (uniform-float program-atmosphere "radius" radius)
-(uniform-float program-atmosphere "polar_radius" polar-radius)
 (uniform-float program-atmosphere "max_height" max-height)
 (uniform-float program-atmosphere "specular" 1000)
 (uniform-int program-atmosphere "height_size" height-size)
@@ -248,7 +243,7 @@
          (GLFW/glfwPollEvents)
          (print (format "\rdt: %5.3f, h: %6.0f            "
                         (* 0.001 dt)
-                        (- (mag (emult @position (vec3 1 1 (/ radius polar-radius)))) radius)))
+                        (- (mag @position) radius)))
          (flush)
          (swap! t0 + dt)))
 
