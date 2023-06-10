@@ -537,10 +537,11 @@ void main()
         (uniform-int program "transmittance_height_size" transmittance-height-size)
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
     transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function))
+    shaders/horizon-distance shaders/limit-quot phase-function shaders/polar-stretch))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact ((transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
@@ -567,10 +568,11 @@ void main()
         (uniform-int program "transmittance_height_size" transmittance-height-size)
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
     transmittance-outer-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function))
+    shaders/horizon-distance shaders/limit-quot phase-function shaders/polar-stretch))
 
 (tabular "Shader function to compute transmittance between point in the atmosphere and space"
          (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
@@ -629,11 +631,12 @@ void main()
         (uniform-int program "light_elevation_size" light-elevation-size)
         (uniform-int program "heading_size" heading-size)
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height))
     ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
     shaders/make-2d-index-from-4d transmittance-track shaders/transmittance-forward shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/sun-elevation-to-index shaders/sun-angle-to-index phase-function))
+    shaders/sun-elevation-to-index shaders/sun-angle-to-index phase-function shaders/polar-stretch))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact ((ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)
@@ -702,12 +705,12 @@ void main()
                                    program       (make-program :vertex [vertex-atmosphere]
                                                                :fragment [fragment-atmosphere transmittance-outer
                                                                           ray-scatter-outer attenuation-outer shaders/ray-sphere
-                                                                          shaders/transmittance-forward
+                                                                          shaders/transmittance-forward shaders/ray-ellipsoid
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/interpolate-4d shaders/make-2d-index-from-4d
                                                                           shaders/is-above-horizon
-                                                                          shaders/ray-shell
+                                                                          shaders/ray-shell shaders/polar-stretch
                                                                           attenuation-track transmittance-track
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance

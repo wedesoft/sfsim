@@ -2,6 +2,7 @@
 
 uniform vec3 light_direction;
 uniform float radius;
+uniform float polar_radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float cloud_max_step;
@@ -20,7 +21,7 @@ layout (location = 0) out float opacity_offset;
 layout (location = <%= (inc i) %>) out float opacity_layer_<%= i %>;
 <% ) %>
 
-vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
+vec4 ray_shell(vec3 centre, float radius, float polar_radius, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
 int number_of_samples(float a, float b, float max_step);
 float step_size(float a, float b, int num_samples);
@@ -41,7 +42,8 @@ void interpolate_opacity(float opacity_interval_begin, float opacity_interval_en
 
 void main()
 {
-  vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
+  vec4 intersections = ray_shell(vec3(0, 0, 0), radius, polar_radius, radius + cloud_bottom, radius + cloud_top,
+                                 fs_in.origin, -light_direction);
   float previous_transmittance = 1.0;
   float start_depth = 0.0;
   float previous_opacity_depth = 0.0;

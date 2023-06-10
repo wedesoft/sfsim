@@ -259,20 +259,21 @@ void main()
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
-                           ground-radiance shaders/surface-radiance-forward surface-radiance-function linear-sampling]))
+                           shaders/polar-stretch ground-radiance shaders/surface-radiance-forward surface-radiance-function
+                           linear-sampling]))
 
 (def num-opacity-layers 7)
 (def program-opacity
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                :fragment [(opacity-fragment num-opacity-layers) shaders/ray-shell cloud-density shaders/remap
+                :fragment [(opacity-fragment num-opacity-layers) cloud-density shaders/remap
                            cloud-base cloud-cover cloud-noise
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (sphere-noise "perlin_octaves")
                            (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile shaders/convert-1d-index
-                           shaders/ray-sphere bluenoise/sampling-offset linear-sampling
-                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index]))
+                           shaders/ray-shell shaders/ray-ellipsoid shaders/ray-sphere bluenoise/sampling-offset linear-sampling
+                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index shaders/polar-stretch]))
 
 (def indices [0 1 3 2])
 (def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
@@ -297,6 +298,7 @@ void main()
                               (uniform-int program-opacity "profile_size" profile-size)
                               (uniform-int program-opacity "noise_size" noise-size)
                               (uniform-float program-opacity "radius" radius)
+                              (uniform-float program-opacity "polar_radius" polar-radius)
                               (uniform-float program-opacity "cloud_bottom" cloud-bottom)
                               (uniform-float program-opacity "cloud_top" cloud-top)
                               (uniform-float program-opacity "detail_scale" detail-scale)

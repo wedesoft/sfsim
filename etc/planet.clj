@@ -64,6 +64,7 @@
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere attenuation-outer ray-scatter-outer transmittance-outer shaders/ray-sphere
+                           shaders/ray-ellipsoid shaders/polar-stretch
                            shaders/transmittance-forward shaders/ray-scatter-forward shaders/elevation-to-index
                            shaders/height-to-index shaders/horizon-distance shaders/limit-quot shaders/sun-elevation-to-index
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d shaders/interpolate-2d
@@ -92,7 +93,8 @@
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance shaders/transmittance-forward
+                :fragment [fragment-planet attenuation-track shaders/ray-sphere shaders/ray-ellipsoid shaders/polar-stretch
+                           ground-radiance shaders/transmittance-forward
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward

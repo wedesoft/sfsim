@@ -300,11 +300,13 @@ void main()
   (surface-radiance-shader-test
     (fn [program radius max-height size]
         (uniform-float program "radius" radius)
+        (uniform-float program "polar_radius" radius)
         (uniform-float program "max_height" max-height)
         (uniform-int program "surface_sun_elevation_size" size)
         (uniform-int program "surface_height_size" size))
     surface-radiance-probe surface-radiance-function shaders/surface-radiance-forward shaders/interpolate-2d
-    shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index shaders/convert-2d-index))
+    shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index shaders/convert-2d-index
+    shaders/polar-stretch))
 
 (tabular "Shader function to determine ambient light scattered by the atmosphere"
          (fact ((surface-radiance-test [radius max-height size] [?x ?y ?z ?lx ?ly ?lz]) 0) => (roughly ?value 1e-6))
@@ -418,7 +420,7 @@ float sampling_offset()
                 :fragment [fragment-planet fake-transmittance
                            shaders/interpolate-2d shaders/convert-2d-index
                            shaders/transmittance-forward shaders/elevation-to-index
-                           shaders/ray-sphere shaders/is-above-horizon
+                           shaders/ray-sphere shaders/ray-ellipsoid shaders/is-above-horizon
                            fake-ray-scatter atmosphere/attenuation-track
                            atmosphere/transmittance-outer
                            ground-radiance shaders/ray-shell
@@ -429,7 +431,8 @@ float sampling_offset()
                            shaders/surface-radiance-forward
                            shaders/sun-elevation-to-index opacity-lookup-mock
                            sampling-offset-mock
-                           surface-radiance-function]))
+                           surface-radiance-function
+                           shaders/polar-stretch]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
