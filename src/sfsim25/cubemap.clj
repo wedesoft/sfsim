@@ -64,15 +64,14 @@
 
 (defn longitude
   "Longitude of 3D point (East is positive)"
-  ^double [^Vec3 p]
-  (atan2 (p 1) (p 0)))
+  ^double [^Vec3 point]
+  (atan2 (point 1) (point 0)))
 
 (defn latitude
   "Latitude of 3D point"
-  ^double [^Vec3 point ^double radius1 ^double radius2]
-  (let [e (/ (sqrt (- (sqr radius1) (sqr radius2))) radius1)
-        p (sqrt (+ (sqr (point 0)) (sqr (point 1))))]
-    (atan2 (point 2) (* p (- 1.0 (* e e))))))
+  ^double [^Vec3 point]
+  (let [p (sqrt (+ (sqr (point 0)) (sqr (point 1))))]
+    (atan2 (point 2) p)))
 
 ; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
@@ -142,13 +141,13 @@
 
 (defn offset-latitude
   "Determine latitudinal offset for computing normal vector"
-  ^Vec3 [p level tilesize radius1 radius2]
+  ^Vec3 [^Vec3 p ^long level ^long tilesize]
   (let [lon  (longitude p)
-        lat  (latitude p radius1 radius2)
+        lat  (latitude p)
         norm (mag p)
         v    (vec3 0 0 (/ (* norm PI) (* 2 tilesize (bit-shift-left 1 level))))
         vs   (mulv (rotation-z lon) (mulv (rotation-y (- lat)) v))]
-    (vec3 (vs 0) (vs 1) (/ (* (vs 2) radius2) radius1))))
+    vs))
 
 (def world-map-tile
   "Load and cache map tiles"
@@ -222,7 +221,7 @@
 
 (defn project-onto-globe
   "Project point onto the globe with heightmap applied"
-  [point in-level width radius]
+  [^Vec3 point ^long in-level ^long width ^double radius]
   (let [surface-point (project-onto-sphere point radius)
         [lon lat _]   (cartesian->geodetic surface-point radius)
         height        (max (elevation-geodetic in-level width lon lat) 0)]
@@ -230,17 +229,17 @@
 
 (defn surrounding-points
   "Compute local point cloud consisting of nine points"
-  [p in-level out-level width tilesize radius1 radius2]
+  [p in-level out-level width tilesize radius]
   (let [d1 (offset-longitude p out-level tilesize)
-        d2 (offset-latitude p out-level tilesize radius1 radius2)]
+        d2 (offset-latitude p out-level tilesize)]
     (for [dj [-1 0 1] di [-1 0 1]]
          (let [ps (add p (add (mult d2 dj) (mult d1 di)))]
-           (project-onto-globe ps in-level width radius1 radius2)))))
+           (project-onto-globe ps in-level width radius)))))
 
 (defn normal-for-point
   "Estimate normal vector for a point on the world"
-  [p in-level out-level width tilesize radius1 radius2]
-  (let [pc (surrounding-points p in-level out-level width tilesize radius1 radius2)
+  [p in-level out-level width tilesize radius]
+  (let [pc (surrounding-points p in-level out-level width tilesize radius)
         sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
         sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
         n1 (reduce add (map mult pc sx))

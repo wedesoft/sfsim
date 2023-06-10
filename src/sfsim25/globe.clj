@@ -20,8 +20,7 @@
         sublevel           2
         subsample          (bit-shift-left 1 sublevel)
         color-tilesize     (inc (* subsample (dec elevation-tilesize)))
-        radius1            6378000.0
-        radius2            6357000.0
+        radius             6378000.0
         bar                (agent (make-progress-bar (* 6 n n) 1))]
     (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
       (let [tile    {:width color-tilesize :height color-tilesize :data (byte-array (* 4 (sqr color-tilesize)))}
@@ -32,15 +31,15 @@
           (let [j                 (cube-coordinate out-level elevation-tilesize b v)
                 i                 (cube-coordinate out-level elevation-tilesize a u)
                 p                 (cube-map k j i)
-                point             (project-onto-globe p (min 4 in-level) width radius1 radius2)]
+                point             (project-onto-globe p (min 4 in-level) width radius)]
             (set-float! scale v u (/ (mag point) (mag p)))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
           (let [j                 (cube-coordinate out-level color-tilesize b v)
                 i                 (cube-coordinate out-level color-tilesize a u)
                 p                 (cube-map k j i)
-                point             (project-onto-globe p (min 4 in-level) width radius1 radius2)
-                [lon lat _height] (cartesian->geodetic point radius1 radius2)
-                normal            (normal-for-point point (min 4 in-level) out-level width color-tilesize radius1 radius2)
+                point             (project-onto-globe p (min 4 in-level) width radius)
+                [lon lat _height] (cartesian->geodetic point radius)
+                normal            (normal-for-point point (min 4 in-level) out-level width color-tilesize radius)
                 color             (color-geodetic (min 5 (+ in-level sublevel)) width lon lat)
                 wet               (water-geodetic (min 4 (+ in-level sublevel)) width lon lat)]
             (set-vector3! normals v u normal)

@@ -4,7 +4,6 @@
 * test opacity fragment shader for stretched cloud layer
 * render ellipsoid, stretch bounding box for shadow computation
 * render planet before atmosphere
-* stretch coordinates in vertex shader?
 * render clouds in front of planet
 * render shadows of planet
 * render backside of planet (as seen from light source) into shadow depth map using separate shader
@@ -12,7 +11,6 @@
 * render planet surface as well in prototype
 * integration test for clouds with atmosphere and planet with transparence
 * cloud shadow should use planet depth map instead of sphere intersection
-* test cloud shadows on ellipsoidical planet
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
 * render clouds on planet, output to 3-channel transparency layer and colour layer
@@ -23,6 +21,7 @@
 * increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
 * change cloud computation when viewing from space far away (use different lod of shadow?)
 * add shadows of mountains, use shadow map of planet in cloud\_shadow?
+* reduce number of intermediate values to increase OpenGL performance
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * reuse (parts of) shadow map?
 * limit opacity mapping and cloud sampling

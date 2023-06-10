@@ -86,9 +86,9 @@
   (longitude (vec3 0 1 0)) => (roughly (/ PI 2) 1e-6))
 
 (facts "Latitude of 3D point"
-  (latitude (vec3 0 6378000 0) 6378000 6357000) => (roughly 0        1e-6)
-  (latitude (vec3 0 0 6357000) 6378000 6357000) => (roughly (/ PI 2) 1e-6)
-  (latitude (vec3 6378000 0 0) 6378000 6357000) => (roughly 0        1e-6))
+  (latitude (vec3 0 6378000 0)) => (roughly 0        1e-6)
+  (latitude (vec3 0 0 6357000)) => (roughly (/ PI 2) 1e-6)
+  (latitude (vec3 6378000 0 0)) => (roughly 0        1e-6))
 
 (tabular "Conversion from geodetic to cartesian coordinates"
   (fact
@@ -148,12 +148,11 @@
   (offset-longitude (vec3 0 -2 0) 1 675) => (roughly-vector (vec3 (/ (* 2 PI) (* 4 675)) 0 0) 1e-6))
 
 (facts "Offset in latitudinal direction"
-  (offset-latitude (vec3 1 0 0) 0 675 1 1)     => (roughly-vector (vec3 0 0 (/ (* 2 PI) (* 4 675))) 1e-6)
-  (offset-latitude (vec3 0 0 1) 0 675 1 1)     => (roughly-vector (vec3 (/ (* -2 PI) (* 4 675)) 0 0) 1e-6)
-  (offset-latitude (vec3 2 0 0) 0 675 1 1)     => (roughly-vector (vec3 0 0 (/ (* 4 PI) (* 4 675))) 1e-6)
-  (offset-latitude (vec3 2 0 0) 1 675 1 1)     => (roughly-vector (vec3 0 0 (/ (* 2 PI) (* 4 675))) 1e-6)
-  (offset-latitude (vec3 0 -1e-8 1) 0 675 1 1) => (roughly-vector (vec3 0 (/ (* 2 PI) (* 4 675)) 0) 1e-6)
-  (offset-latitude (vec3 1 0 0) 0 675 1 0.5)   => (roughly-vector (vec3 0 0 (/ PI (* 4 675))) 1e-6))
+  (offset-latitude (vec3 1 0 0) 0 675)     => (roughly-vector (vec3 0 0 (/ (* 2 PI) (* 4 675))) 1e-6)
+  (offset-latitude (vec3 0 0 1) 0 675)     => (roughly-vector (vec3 (/ (* -2 PI) (* 4 675)) 0 0) 1e-6)
+  (offset-latitude (vec3 2 0 0) 0 675)     => (roughly-vector (vec3 0 0 (/ (* 4 PI) (* 4 675))) 1e-6)
+  (offset-latitude (vec3 2 0 0) 1 675)     => (roughly-vector (vec3 0 0 (/ (* 2 PI) (* 4 675))) 1e-6)
+  (offset-latitude (vec3 0 -1e-8 1) 0 675) => (roughly-vector (vec3 0 (/ (* 2 PI) (* 4 675)) 0) 1e-6))
 
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
@@ -239,14 +238,14 @@
     (with-redefs [cubemap/offset-longitude (fn [^Vec3 p ^long level ^long tilesize]
                                              (fact [p level tilesize] => [(vec3 1 0 0) 7 33])
                                              (vec3 0 0 -0.1))
-                  cubemap/offset-latitude  (fn [p level tilesize radius1 radius2]
-                                             (fact [p level tilesize radius1 radius2] => [(vec3 1 0 0) 7 33 6378000 6357000])
+                  cubemap/offset-latitude  (fn [^Vec3 p ^long level ^long tilesize]
+                                             (fact [p level tilesize] => [(vec3 1 0 0) 7 33])
                                              (vec3 0 0.1 0))
-                  cubemap/project-onto-globe (fn [p in-level width radius1 radius2]
-                                               (fact [in-level width radius1 radius2] => [5 675 6378000 6357000])
+                  cubemap/project-onto-globe (fn [^Vec3 p ^long in-level ^long width ^double radius]
+                                               (fact [in-level width radius] => [5 675 6378000.0])
                                                (swap! ps conj p)
                                                (mult p 2))]
-      (let [pts (surrounding-points (vec3 1 0 0) 5 7 675 33 6378000 6357000)]
+      (let [pts (surrounding-points (vec3 1 0 0) 5 7 675 33 6378000.0)]
         (doseq [j [-1 0 1] i [-1 0 1]]
           (let [k (+ (* 3 (inc j)) (inc i))]
             (vec3 2 (* 0.2 j) (* -0.2 i)) => (roughly-vector (nth pts k) 1e-6)
@@ -254,16 +253,16 @@
 
 (fact "Get normal vector for point on flat part of elevation map"
   (with-redefs [cubemap/surrounding-points (fn [& args]
-                                             (fact args => [(vec3 1 0 0) 5 7 675 33 6378000 6357000])
+                                             (fact args => [(vec3 1 0 0) 5 7 675 33 6378000])
                                              (for [j [-1 0 1] i [-1 0 1]] (vec3 6378000 j (- i))))]
-    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000 6357000) => (vec3 1 0 0)))
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000) => (vec3 1 0 0)))
 
 (fact "Get normal vector for point on elevation map sloped in longitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (vec3 (+ 6378000 i) j (- i))))]
-    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000 6357000) =>
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000) =>
     (roughly-vector (vec3 (sqrt 0.5) 0 (sqrt 0.5)) 1e-6)))
 
 (fact "Get normal vector for point on elevation map sloped in latitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (vec3 (+ 6378000 j) j (- i))))]
-    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000 6357000) =>
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000) =>
     (roughly-vector (vec3 (sqrt 0.5) (- (sqrt 0.5)) 0) 1e-6)))
