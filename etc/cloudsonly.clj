@@ -24,7 +24,7 @@
 (GLFW/glfwDefaultWindowHints)
 (def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
 
-(def fragment
+(def fragment-clouds
 "#version 410 core
 uniform float stepsize;
 uniform float radius;
@@ -231,9 +231,10 @@ void main()
 
 (def num-steps 3)
 
-(def program
+(def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment cloud-density shaders/remap (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                :fragment [fragment-clouds cloud-density shaders/remap
+                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            cloud-base cloud-cover cloud-noise
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
@@ -305,6 +306,46 @@ void main()
           {:offset opacity-offsets :layer opacity-layers}))
     matrix-cascade))
 
+(def program-planet
+  (make-program :vertex [vertex-planet]
+                :tess-control [tess-control-planet]
+                :tess-evaluation [tess-evaluation-planet]
+                :geometry [geometry-planet]
+                :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance shaders/transmittance-forward
+                           transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
+                           shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
+                           ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
+                           shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/ray-shell
+                           shaders/clip-shell-intersections phase-function shaders/surface-radiance-forward
+                           transmittance-outer surface-radiance-function]))
+
+(use-program program-planet)
+(uniform-sampler program-planet "transmittance"    0)
+(uniform-sampler program-planet "ray_scatter"      1)
+(uniform-sampler program-planet "mie_strength"     2)
+(uniform-sampler program-planet "surface_radiance" 3)
+(uniform-sampler program-planet "heightfield"      4)
+(uniform-sampler program-planet "colors"           5)
+(uniform-sampler program-planet "normals"          6)
+(uniform-sampler program-planet "water"            7)
+(uniform-int program-planet "high_detail" (dec tilesize))
+(uniform-int program-planet "low_detail" (quot (dec tilesize) 2))
+(uniform-int program-planet "height_size" height-size)
+(uniform-int program-planet "elevation_size" elevation-size)
+(uniform-int program-planet "light_elevation_size" light-elevation-size)
+(uniform-int program-planet "heading_size" heading-size)
+(uniform-int program-planet "transmittance_height_size" transmittance-height-size)
+(uniform-int program-planet "transmittance_elevation_size" transmittance-elevation-size)
+(uniform-int program-planet "surface_height_size" surface-height-size)
+(uniform-int program-planet "surface_sun_elevation_size" surface-sun-elevation-size)
+(uniform-float program-planet "albedo" 0.9)
+(uniform-float program-planet "reflectivity" 0.1)
+(uniform-float program-planet "specular" 1000)
+(uniform-float program-planet "radius" radius)
+(uniform-float program-planet "max_height" max-height)
+(uniform-vector3 program-planet "water_color" (vec3 0.09 0.11 0.34))
+(uniform-float program-planet "amplification" 6)
+
 (def tree (atom []))
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
@@ -316,8 +357,7 @@ void main()
   [tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        nil
-        ; vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+        vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
         color-tex  (make-rgb-texture :linear :clamp (:colors tile))
         height-tex (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:scales tile)})
         normal-tex (make-vector-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:normals tile)})
@@ -335,8 +375,7 @@ void main()
   (destroy-texture (:height-tex tile))
   (destroy-texture (:normal-tex tile))
   (destroy-texture (:water-tex tile))
-  ; (destroy-vertex-array-object (:vao tile))
-  )
+  (destroy-vertex-array-object (:vao tile)))
 
 (defn unload-tiles-from-opengl
   [tiles]
@@ -350,6 +389,24 @@ void main()
              (swap! keystates assoc k true))
            (if (= action GLFW/GLFW_RELEASE)
              (swap! keystates assoc k false)))))
+
+(defn render-tile
+  [tile]
+  (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
+                           (if (:sfsim25.quadtree/left  tile) 2 0)
+                           (if (:sfsim25.quadtree/down  tile) 4 0)
+                           (if (:sfsim25.quadtree/right tile) 8 0))]
+    (uniform-int program-planet "neighbours" neighbours)
+    (use-textures T S M E (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
+    (render-patches (:vao tile))))
+
+(defn render-tree
+  [node]
+  (if node
+    (if (is-leaf? node)
+      (if-not (empty? node) (render-tile node))
+      (doseq [selector [:0 :1 :2 :3 :4 :5]]
+        (render-tree (selector node))))))
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
@@ -366,7 +423,7 @@ void main()
              ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
              rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
              rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
-             v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 10 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -10 0))
+             v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 100 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -100 0))
              l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
              tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
              to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
@@ -394,7 +451,7 @@ void main()
                              (sqrt (- (sqr norm-pos) (sqr radius))))
                indices    [0 1 3 2]
                vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-               vao        (make-vertex-array-object program indices vertices [:point 3])
+               vao        (make-vertex-array-object program-atmosphere indices vertices [:point 3])
                light-dir  (vec3 0 (cos @light) (sin @light))
                projection (projection-matrix width height z-near (+ z-far 1) fov)
                lod-offset (/ (log (/ (tan (/ fov 2)) (/ width 2) (/ detail-scale worley-size))) (log 2))
@@ -405,62 +462,70 @@ void main()
                tex-cas    (opacity-cascade matrix-cas light-dir scatter-am)]
            (onscreen-render window
                             (clear (vec3 0 1 0))
-                            (use-program program)
-                            (uniform-sampler program "worley" 0)
-                            (uniform-sampler program "perlin" 1)
-                            (uniform-sampler program "profile" 2)
-                            (uniform-sampler program "bluenoise" 3)
-                            (uniform-sampler program "cover" 4)
-                            (uniform-sampler program "transmittance" 5)
-                            (uniform-sampler program "ray_scatter" 6)
-                            (uniform-sampler program "mie_strength" 7)
-                            (uniform-sampler program "surface_radiance" 8)
+                            ; Render planet
+                            (use-program program-planet)
+                            (uniform-matrix4 program-planet "projection" projection)
+                            (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
+                            (uniform-vector3 program-planet "position" @position)
+                            (uniform-vector3 program-planet "light_direction" light-dir)
+                            (render-tree @tree)
+                            ; Render atmosphere and clouds
+                            (use-program program-atmosphere)
+                            (uniform-sampler program-atmosphere "worley" 0)
+                            (uniform-sampler program-atmosphere "perlin" 1)
+                            (uniform-sampler program-atmosphere "profile" 2)
+                            (uniform-sampler program-atmosphere "bluenoise" 3)
+                            (uniform-sampler program-atmosphere "cover" 4)
+                            (uniform-sampler program-atmosphere "transmittance" 5)
+                            (uniform-sampler program-atmosphere "ray_scatter" 6)
+                            (uniform-sampler program-atmosphere "mie_strength" 7)
+                            (uniform-sampler program-atmosphere "surface_radiance" 8)
                             (doseq [i (range num-steps)]
-                                   (uniform-sampler program (str "offset" i) (+ (* 2 i) 9))
-                                   (uniform-sampler program (str "opacity" i) (+ (* 2 i) 10)))
+                                   (uniform-sampler program-atmosphere (str "offset" i) (+ (* 2 i) 9))
+                                   (uniform-sampler program-atmosphere (str "opacity" i) (+ (* 2 i) 10)))
                             (doseq [[idx item] (map-indexed vector splits)]
-                                   (uniform-float program (str "split" idx) item))
+                                   (uniform-float program-atmosphere (str "split" idx) item))
                             (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                   (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                   (uniform-float program (str "depth" idx) (:depth item)))
-                            (uniform-int program "cover_size" 512)
-                            (uniform-matrix4 program "projection" projection)
-                            (uniform-matrix4 program "transform" transform)
-                            (uniform-matrix4 program "inverse_transform" (inverse transform))
-                            (uniform-float program "z_near" (+ 1 z-near))
-                            (uniform-float program "z_far" z-far)
-                            (uniform-int program "profile_size" profile-size)
-                            (uniform-int program "noise_size" noise-size)
-                            (uniform-int program "height_size" height-size)
-                            (uniform-int program "elevation_size" elevation-size)
-                            (uniform-int program "light_elevation_size" light-elevation-size)
-                            (uniform-int program "heading_size" heading-size)
-                            (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
-                            (uniform-int program "transmittance_height_size" transmittance-height-size)
-                            (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
-                            (uniform-int program "surface_height_size" surface-height-size)
-                            (uniform-float program "albedo" 0.9)
-                            (uniform-float program "reflectivity" 0.1)
-                            (uniform-float program "stepsize" @step)
-                            (uniform-int program "num_opacity_layers" num-opacity-layers)
-                            (uniform-int program "shadow_size" shadow-size)
-                            (uniform-float program "radius" radius)
-                            (uniform-float program "max_height" max-height)
-                            (uniform-float program "cloud_bottom" cloud-bottom)
-                            (uniform-float program "cloud_top" cloud-top)
-                            (uniform-float program "cloud_multiplier" @cloud-multiplier)
-                            (uniform-float program "cover_multiplier" @cover-multiplier)
-                            (uniform-float program "cap" @cap)
-                            (uniform-float program "opacity_step" @opacity-step)
-                            (uniform-float program "cloud_threshold" @threshold)
-                            (uniform-float program "detail_scale" detail-scale)
-                            (uniform-float program "cloud_scale" cloud-scale)
-                            (uniform-float program "lod_offset" lod-offset)
-                            (uniform-float program "dense_height" dense-height)
-                            (uniform-float program "anisotropic" @anisotropic)
-                            (uniform-float program "specular" 1000)
-                            (uniform-float program "amplification" 6)
-                            (uniform-vector3 program "light_direction" light-dir)
+                                   (uniform-matrix4 program-atmosphere (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+                                   (uniform-float program-atmosphere (str "depth" idx) (:depth item)))
+                            (uniform-int program-atmosphere "cover_size" 512)
+                            (uniform-matrix4 program-atmosphere "projection" projection)
+                            (uniform-matrix4 program-atmosphere "transform" transform)
+                            (uniform-matrix4 program-atmosphere "inverse_transform" (inverse transform))
+                            (uniform-float program-atmosphere "z_near" (+ 1 z-near))
+                            (uniform-float program-atmosphere "z_far" z-far)
+                            (uniform-int program-atmosphere "profile_size" profile-size)
+                            (uniform-int program-atmosphere "noise_size" noise-size)
+                            (uniform-int program-atmosphere "height_size" height-size)
+                            (uniform-int program-atmosphere "elevation_size" elevation-size)
+                            (uniform-int program-atmosphere "light_elevation_size" light-elevation-size)
+                            (uniform-int program-atmosphere "heading_size" heading-size)
+                            (uniform-int program-atmosphere "transmittance_elevation_size" transmittance-elevation-size)
+                            (uniform-int program-atmosphere "transmittance_height_size" transmittance-height-size)
+                            (uniform-int program-atmosphere "surface_sun_elevation_size" surface-sun-elevation-size)
+                            (uniform-int program-atmosphere "surface_height_size" surface-height-size)
+                            (uniform-float program-atmosphere "albedo" 0.9)
+                            (uniform-float program-atmosphere "reflectivity" 0.1)
+                            (uniform-float program-atmosphere "stepsize" @step)
+                            (uniform-int program-atmosphere "num_opacity_layers" num-opacity-layers)
+                            (uniform-int program-atmosphere "shadow_size" shadow-size)
+                            (uniform-float program-atmosphere "radius" radius)
+                            (uniform-float program-atmosphere "max_height" max-height)
+                            (uniform-float program-atmosphere "cloud_bottom" cloud-bottom)
+                            (uniform-float program-atmosphere "cloud_top" cloud-top)
+                            (uniform-float program-atmosphere "cloud_multiplier" @cloud-multiplier)
+                            (uniform-float program-atmosphere "cover_multiplier" @cover-multiplier)
+                            (uniform-float program-atmosphere "cap" @cap)
+                            (uniform-float program-atmosphere "opacity_step" @opacity-step)
+                            (uniform-float program-atmosphere "cloud_threshold" @threshold)
+                            (uniform-float program-atmosphere "detail_scale" detail-scale)
+                            (uniform-float program-atmosphere "cloud_scale" cloud-scale)
+                            (uniform-float program-atmosphere "lod_offset" lod-offset)
+                            (uniform-float program-atmosphere "dense_height" dense-height)
+                            (uniform-float program-atmosphere "anisotropic" @anisotropic)
+                            (uniform-float program-atmosphere "specular" 1000)
+                            (uniform-float program-atmosphere "amplification" 6)
+                            (uniform-vector3 program-atmosphere "light_direction" light-dir)
                             (apply use-textures W L P B C T S M E (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                             (render-quads vao))
            (doseq [{:keys [offset layer]} tex-cas]
@@ -488,9 +553,10 @@ void main()
 (destroy-texture P)
 (destroy-texture W)
 (destroy-vertex-array-object opacity-vao)
+(destroy-program program-planet)
 (destroy-program program-opacity)
 (destroy-program program-planet)
-(destroy-program program)
+(destroy-program program-atmosphere)
 
 (GLFW/glfwDestroyWindow window)
 (GLFW/glfwTerminate)
