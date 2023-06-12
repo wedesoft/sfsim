@@ -141,6 +141,7 @@ uniform float amplification;
 uniform vec3 water_color;
 uniform vec3 position;
 uniform vec3 light_direction;
+uniform vec3 origin;
 
 in GEO_OUT
 {
@@ -154,7 +155,9 @@ out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
+vec3 transmittance_track(vec3 p, vec3 q);
+vec3 transmittance_outer(vec3 point, vec3 direction);
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 
 // Render planet surface as seen through the atmosphere.
 void main()
@@ -171,11 +174,15 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, position, direction);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color);
-  float a = atmosphere_intersection.x;
-  float b = distance(position, fs_in.point);
-  fragColor = amplification * attenuation_track(light_direction, position, direction, a, b, incoming);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, position, direction);
+  vec3 ground = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color);
+  vec3 transmittance = transmittance_track(position + atmosphere.x * direction, fs_in.point);
+  // vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
+  vec3 intensity = transmittance_outer(fs_in.point, light_direction);
+  vec3 background = ground * intensity * amplification;
+  vec3 ray_scatter = ray_scatter_track(light_direction, position + atmosphere.x * direction, fs_in.point) * amplification;
+  vec4 cloud_scatter = vec4(0, 0, 0, 1);
+  fragColor = (background * transmittance + ray_scatter) * cloud_scatter.a + cloud_scatter.rgb;
 }")
 
 (def fov (to-radians 60.0))
