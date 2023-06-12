@@ -1,10 +1,6 @@
 # TODO
-* remove polar radius code
-  * regenerate cube map tiles
-* test opacity fragment shader for stretched cloud layer
-* render ellipsoid, stretch bounding box for shadow computation
-* render planet before atmosphere
 * render clouds in front of planet
+* regenerate cube map tiles
 * render shadows of planet
 * render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
