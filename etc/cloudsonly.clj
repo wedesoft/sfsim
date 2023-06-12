@@ -114,29 +114,10 @@ void main()
   vec3 transmittance;
   vec4 cloud_scatter = vec4(0, 0, 0, 1);
   if (atmosphere.y > 0) {
-    vec2 planet = ray_sphere(vec3(0, 0, 0), radius, fs_in.origin, direction);  // replace using planetary shader
-    if (planet.y > 0) {
-      vec3 point = fs_in.origin + planet.x * direction;
-      float intensity = cloud_shadow(point, light_direction);
-      vec3 normal = normalize(point);
-      float cos_incidence = max(dot(light_direction, normal), 0);
-      float highlight;
-      if (cos_incidence > 0) {
-        highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular);
-      } else {
-        highlight = 0.0;
-      };
-      vec3 ground = ground_radiance(point, light_direction, 1.0, cos_incidence, highlight, vec3(1, 1, 1), vec3(0.09, 0.11, 0.34));
-      transmittance = transmittance_track(fs_in.origin + atmosphere.x * direction, point);
-      background = ground * intensity * amplification;
-      ray_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, point) * amplification;
-      atmosphere.y = planet.x - atmosphere.x;
-    } else {
-      transmittance = transmittance_outer(fs_in.origin + atmosphere.x * direction, direction);
-      float glare = pow(max(0, dot(direction, light_direction)), specular);
-      background = vec3(glare, glare, glare);
-      ray_scatter = ray_scatter_outer(light_direction, fs_in.origin + atmosphere.x * direction, direction) * amplification;
-    };
+    transmittance = transmittance_outer(fs_in.origin + atmosphere.x * direction, direction);
+    float glare = pow(max(0, dot(direction, light_direction)), specular);
+    background = vec3(glare, glare, glare);
+    ray_scatter = ray_scatter_outer(light_direction, fs_in.origin + atmosphere.x * direction, direction) * amplification;
     cloud_scatter = sample_cloud(fs_in.origin, direction, light_direction, atmosphere, cloud_scatter);
   } else {
     float glare = pow(max(0, dot(direction, light_direction)), specular);
