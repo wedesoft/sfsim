@@ -1,5 +1,4 @@
 # TODO
-cloud textures, opacity maps, splits, depths, bluenoise?
 * render clouds in front of planet
 * regenerate cube map tiles
 * render shadows of planet
