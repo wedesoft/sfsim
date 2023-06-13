@@ -133,7 +133,6 @@
 * point sprites for stars, atmospheric flicker using sprite arrays
 * point light sources
 * cloud erosion
-* project on sphere
 * view matrix, model matrix stack, light position
 * multiple rigid or flexible objects
 * thrusters
