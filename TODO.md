@@ -1,4 +1,5 @@
 # TODO
+* use function for profile instead of texture
 * render clouds in front of planet
 * regenerate cube map tiles
 * render shadows of planet
