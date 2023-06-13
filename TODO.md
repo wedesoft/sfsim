@@ -2,13 +2,13 @@
 * use function for profile instead of texture to free up a texture slot
 * render shadow of clouds on landscape
 * regenerate cube map tiles
+* integration tests and unit tests for current prototype code
 * combine offset and opacity texture to free up texture indices
 * render clouds and atmosphere with transparency before rendering planet and sun
 * render shadows of planet
 * render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
 * render planet surface as well in prototype
-* integration test for clouds with atmosphere and planet with transparence
 * cloud shadow should use planet depth map instead of sphere intersection
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
