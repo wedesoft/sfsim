@@ -1,10 +1,10 @@
 # TODO
-* use function for profile instead of texture
+* use function for profile instead of texture to free up a texture slot
+* combine offset and opacity texture to free up texture indices
 * render clouds in front of planet
 * regenerate cube map tiles
 * render shadows of planet
 * render backside of planet (as seen from light source) into shadow depth map using separate shader
-* combine offset and opacity texture to free up texture indices
   use this depth map when performing cloud-shadow lookups instead of planet intersection
 * render planet surface as well in prototype
 * integration test for clouds with atmosphere and planet with transparence
