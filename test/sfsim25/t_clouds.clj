@@ -727,38 +727,24 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn cloud-profile-test [radius cloud-bottom cloud-top x y z]
-  (with-invisible-window
-    (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program  (make-program :vertex [shaders/vertex-passthrough]
-                                 :fragment [(cloud-profile-probe x y z) cloud-profile shaders/convert-1d-index])
-          vao      (make-vertex-array-object program indices vertices [:point 3])
-          data     [0.0 2.0 1.0]
-          profile  (make-float-texture-1d :linear :clamp (float-array data))
-          tex      (texture-render-color 1 1 true
-                                         (use-program program)
-                                         (uniform-sampler program "profile" 0)
-                                         (uniform-int program "profile_size" 3)
-                                         (uniform-float program "radius" radius)
-                                         (uniform-float program "cloud_bottom" cloud-bottom)
-                                         (uniform-float program "cloud_top" cloud-top)
-                                         (use-textures profile)
-                                         (render-quads vao))
-          img     (rgb-texture->vectors3 tex)]
-      (destroy-texture tex)
-      (destroy-texture profile)
-      (destroy-vertex-array-object vao)
-      (destroy-program program)
-      (get-vector3 img 0 0))))
+(def cloud-profile-test
+  (shader-test
+    (fn [program radius cloud-bottom cloud-top]
+        (uniform-float program "radius" radius)
+        (uniform-float program "cloud_bottom" cloud-bottom)
+        (uniform-float program "cloud_top" cloud-top))
+    cloud-profile-probe cloud-profile))
 
 (tabular "Shader for creating vertical cloud profile"
-         (fact ((cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
-         ?radius ?bottom ?top ?x  ?y  ?z ?result
-         100     10      14   110 0   0  0.0
-         100     10      14   112 0   0  2.0
-         100     10      14   0   112 0  2.0
-         100     10      14   111 0   0  1.0)
+         (fact ((cloud-profile-test [?radius ?bottom ?top] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         ?radius ?bottom ?top ?x    ?y  ?z ?result
+         100     10      18   110   0   0  0.0
+         100     10      18   110.5 0   0  0.5
+         100     10      18   111   0   0  1.0
+         100     10      18   113.5 0   0  0.7
+         100     10      18   116   0   0  0.4
+         100     10      18   117   0   0  0.2
+         100     10      18   118   0   0  0.0)
 
 (def sphere-noise-probe
   (template/fn [x y z]

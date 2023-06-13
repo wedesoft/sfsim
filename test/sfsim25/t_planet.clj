@@ -440,7 +440,6 @@ float sampling_offset()
   (uniform-sampler program "surface_radiance" 5)
   (uniform-sampler program "water" 6)
   (uniform-sampler program "worley" 7)
-  (uniform-sampler program "profile" 8)
   (uniform-float program "specular" 100)
   (uniform-float program "max_height" 100000)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
@@ -496,16 +495,14 @@ float sampling_offset()
                                                    {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
                                    worley        (make-float-texture-3d :linear :repeat
-                                                                        {:width 2 :height 2 :depth 2 :data worley-data})
-                                   profile-data  (float-array [0 1 1 1 1 1 1 0])
-                                   profile       (make-float-texture-1d :linear :clamp profile-data)]
+                                                                        {:width 2 :height 2 :depth 2 :data worley-data})]
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl radius ?dist ?lx ?ly ?lz ?a)
-                               (use-textures colors normals transmittance ray-scatter mie-strength radiance water worley profile)
+                               (use-textures colors normals transmittance ray-scatter mie-strength radiance water worley)
                                (render-quads vao)
-                               (doseq [tex [profile worley water radiance ray-scatter mie-strength transmittance normals colors]]
+                               (doseq [tex [worley water radiance ray-scatter mie-strength transmittance normals colors]]
                                       (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))

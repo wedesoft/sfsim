@@ -1,5 +1,4 @@
 # TODO
-* use function for profile instead of texture to free up a texture slot
 * render shadow of clouds on landscape
 * regenerate cube map tiles
 * integration tests and unit tests for current prototype code
