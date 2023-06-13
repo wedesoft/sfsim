@@ -1,5 +1,4 @@
 # TODO
-* render shadow of clouds on landscape
 * regenerate cube map tiles
 * integration tests and unit tests for current prototype code
 * combine offset and opacity texture to free up texture indices
