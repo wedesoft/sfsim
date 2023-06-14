@@ -366,9 +366,9 @@ void main()
                            shaders/ray-shell shaders/ray-sphere bluenoise/sampling-offset linear-sampling
                            shaders/interpolate-float-cubemap shaders/convert-cubemap-index]))
 
-(def indices [0 1 3 2])
+(def opacity-indices [0 1 3 2])
 (def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
-(def opacity-vao (make-vertex-array-object program-opacity indices opacity-vertices [:point 2]))
+(def opacity-vao (make-vertex-array-object program-opacity opacity-indices opacity-vertices [:point 2]))
 
 (defn opacity-cascade [matrix-cascade light-direction scatter-amount]
   (mapv
@@ -426,8 +426,7 @@ void main()
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (sphere-noise "perlin_octaves") (shaders/lookup-3d "lookup_perlin" "perlin")
-                           ]))
+                           (sphere-noise "perlin_octaves") (shaders/lookup-3d "lookup_perlin" "perlin")]))
 
 (use-program program-planet)
 (uniform-sampler program-planet "transmittance"    0)

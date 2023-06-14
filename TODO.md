@@ -1,6 +1,6 @@
 # TODO
-* regenerate cube map tiles
 * integration tests and unit tests for current prototype code
+* move planet.clj into core
 * combine offset and opacity texture to free up texture indices
 * render clouds and atmosphere with transparency before rendering planet and sun
 * render shadows of planet
@@ -10,6 +10,7 @@
 * cloud shadow should use planet depth map instead of sphere intersection
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
+* try Java image IO for cubemap tile level 6
 * render clouds on planet, output to 3-channel transparency layer and colour layer
   low-res. offscreen render planet and background with clouds and atmosphere in front, blur?
   add cloud shadow computation to ground radiance function
