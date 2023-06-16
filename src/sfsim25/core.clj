@@ -242,7 +242,7 @@ void main()
     highlight = 0.0;
   };
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, position, direction);
-  atmosphere.y = min(distance(position, fs_in.point), depth) - atmosphere.x;
+  atmosphere.y = min(distance(position, fs_in.point) - atmosphere.x, depth);
   vec3 ground = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * 0.7;
   vec3 transmittance = transmittance_track(position + atmosphere.x * direction, fs_in.point);
   vec3 intensity = cloud_shadow(fs_in.point, light_direction) * transmittance_outer(fs_in.point, light_direction);
