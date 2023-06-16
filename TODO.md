@@ -1,10 +1,11 @@
 # TODO
-* clamp atmosphere sampling for planet
-* use shell intersection to limit cloud sampling
 * integration tests and unit tests for current prototype code
+* point offset for planet shader
+* use shell intersection to limit cloud sampling
 * combine offset and opacity texture to free up texture indices
 * render clouds and atmosphere with transparency before rendering planet and sun
 * render shadows of planet
+* adapt opacity step depending on sun angle?
 * render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
 * render planet surface as well in prototype
