@@ -212,6 +212,7 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
   int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
   float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
   float offset = sampling_offset();
+  count = max(0, min(count, 1500)); // TODO: limit atmosphere.y instead?
   for (int i=0; i<count; i++) {
     float l = sample_point(atmosphere.x, i + offset, step);
     vec3 point = origin + l * direction;
