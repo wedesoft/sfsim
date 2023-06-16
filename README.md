@@ -31,7 +31,6 @@ Requires OpenGL 4.5.
 
 * Run tests: `clj -M:test`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
-* Run the planet prototype: `clj -M etc/planet.clj`
 * Run main program displaying black window: `clj -M -m sfsim25.core`
 
 # External Links
