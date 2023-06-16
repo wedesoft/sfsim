@@ -74,18 +74,15 @@ float cloud_shadow(vec3 point, vec3 light_direction)
     return opacity_cascade_lookup(vec4(point, 1));
 }
 
-vec4 cloud_transfer(vec3 origin, vec3 point, vec3 direction, vec3 light_direction, vec2 atmosphere, float step, vec4 cloud_scatter, float lod)
+vec4 cloud_transfer(vec3 origin, vec3 point, vec3 direction, vec3 light_direction, vec2 atmosphere, float step, vec4 cloud_scatter, float density)
 {
-  float density = cloud_density(point, lod);
-  if (density > 0) {
-    float t = exp(-density * step);
-    vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
-    vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-    vec3 in_scatter = ray_scatter_track(light_direction, origin + atmosphere.x * direction, point) * amplification;
-    vec3 transmittance = transmittance_track(origin + atmosphere.x * direction, point);
-    cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
-    cloud_scatter.a *= t;
-  };
+  float t = exp(-density * step);
+  vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
+  vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
+  vec3 in_scatter = ray_scatter_track(light_direction, origin + atmosphere.x * direction, point) * amplification;
+  vec3 transmittance = transmittance_track(origin + atmosphere.x * direction, point);
+  cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
+  cloud_scatter.a *= t;
   return cloud_scatter;
 }
 
@@ -100,7 +97,9 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
     float r = length(point);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float lod = lod_at_distance(l, lod_offset);
-      cloud_scatter = cloud_transfer(origin, point, direction, light_direction, atmosphere, step, cloud_scatter, lod);
+      float density = cloud_density(point, lod);
+      if (density > 0)
+        cloud_scatter = cloud_transfer(origin, point, direction, light_direction, atmosphere, step, cloud_scatter, density);
     }
     if (cloud_scatter.a <= 0.01)
       break;
@@ -193,18 +192,15 @@ float cloud_shadow(vec3 point, vec3 light_direction)
     return opacity_cascade_lookup(vec4(point, 1));
 }
 
-vec4 cloud_transfer(vec3 origin, vec3 point, vec3 direction, vec3 light_direction, vec2 atmosphere, float step, vec4 cloud_scatter, float lod)
+vec4 cloud_transfer(vec3 origin, vec3 point, vec3 direction, vec3 light_direction, vec2 atmosphere, float step, vec4 cloud_scatter, float density)
 {
-  float density = cloud_density(point, lod);
-  if (density > 0) {
-    float t = exp(-density * step);
-    vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
-    vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-    vec3 in_scatter = ray_scatter_track(light_direction, origin + atmosphere.x * direction, point) * amplification;
-    vec3 transmittance = transmittance_track(origin + atmosphere.x * direction, point);
-    cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
-    cloud_scatter.a *= t;
-  };
+  float t = exp(-density * step);
+  vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
+  vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
+  vec3 in_scatter = ray_scatter_track(light_direction, origin + atmosphere.x * direction, point) * amplification;
+  vec3 transmittance = transmittance_track(origin + atmosphere.x * direction, point);
+  cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
+  cloud_scatter.a *= t;
   return cloud_scatter;
 }
 
@@ -219,7 +215,9 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
     float r = length(point);
     if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
       float lod = lod_at_distance(l, lod_offset);
-      cloud_scatter = cloud_transfer(origin, point, direction, light_direction, atmosphere, step, cloud_scatter, lod);
+      float density = cloud_density(point, lod);
+      if (density > 0)
+        cloud_scatter = cloud_transfer(origin, point, direction, light_direction, atmosphere, step, cloud_scatter, density);
     }
     if (cloud_scatter.a <= 0.01)
       break;
