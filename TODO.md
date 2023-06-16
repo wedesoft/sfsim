@@ -1,6 +1,7 @@
 # TODO
+* clamp atmosphere sampling for planet
+* use shell intersection to limit cloud sampling
 * integration tests and unit tests for current prototype code
-* move planet.clj into core
 * combine offset and opacity texture to free up texture indices
 * render clouds and atmosphere with transparency before rendering planet and sun
 * render shadows of planet
