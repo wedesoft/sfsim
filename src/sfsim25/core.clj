@@ -150,6 +150,7 @@ uniform float stepsize;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float lod_offset;
+uniform float depth;
 
 in GEO_OUT
 {
@@ -212,7 +213,6 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
   int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
   float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
   float offset = sampling_offset();
-  count = max(0, min(count, 1500)); // TODO: limit atmosphere.y instead?
   for (int i=0; i<count; i++) {
     float l = sample_point(atmosphere.x, i + offset, step);
     vec3 point = origin + l * direction;
@@ -242,7 +242,7 @@ void main()
     highlight = 0.0;
   };
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, position, direction);
-  atmosphere.y = distance(position, fs_in.point) - atmosphere.x;
+  atmosphere.y = min(distance(position, fs_in.point), depth) - atmosphere.x;
   vec3 ground = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * 0.7;
   vec3 transmittance = transmittance_track(position + atmosphere.x * direction, fs_in.point);
   vec3 intensity = cloud_shadow(fs_in.point, light_direction) * transmittance_outer(fs_in.point, light_direction);
@@ -605,6 +605,7 @@ void main()
                                 (uniform-float program-planet "lod_offset" lod-offset)
                                 (uniform-float program-planet "dense_height" dense-height)
                                 (uniform-float program-planet "anisotropic" @anisotropic)
+                                (uniform-float program-planet "depth" depth)
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (doseq [i (range num-steps)]
                                        (uniform-sampler program-planet (str "offset" i) (+ (* 2 i) 12))
