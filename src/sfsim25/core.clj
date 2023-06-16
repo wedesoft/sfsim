@@ -74,14 +74,13 @@ float cloud_shadow(vec3 point, vec3 light_direction)
     return opacity_cascade_lookup(vec4(point, 1));
 }
 
-vec4 cloud_transfer(vec3 origin, vec3 point, vec3 direction, vec3 light_direction, vec2 atmosphere, float step, vec4 cloud_scatter, float density)
+vec4 cloud_transfer(vec3 start, vec3 point, vec3 light_direction, float scatter_amount, float step, vec4 cloud_scatter, float density)
 {
   vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
-  vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-  vec3 in_scatter = ray_scatter_track(light_direction, origin + atmosphere.x * direction, point) * amplification;
-  vec3 transmittance = transmittance_track(origin + atmosphere.x * direction, point);
+  vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
+  vec3 transmittance = transmittance_track(start, point);
   float t = exp(-density * step);
-  cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
+  cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * intensity * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
   cloud_scatter.a *= t;
   return cloud_scatter;
 }
@@ -91,6 +90,8 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
   int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
   float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
   float offset = sampling_offset();
+  vec3 start = origin + atmosphere.x * direction;
+  float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
   for (int i=0; i<count; i++) {
     float l = sample_point(atmosphere.x, i + offset, step);
     vec3 point = origin + l * direction;
@@ -99,7 +100,7 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
       float lod = lod_at_distance(l, lod_offset);
       float density = cloud_density(point, lod);
       if (density > 0)
-        cloud_scatter = cloud_transfer(origin, point, direction, light_direction, atmosphere, step, cloud_scatter, density);
+        cloud_scatter = cloud_transfer(start, point, light_direction, scatter_amount, step, cloud_scatter, density);
     }
     if (cloud_scatter.a <= 0.01)
       break;
@@ -192,14 +193,13 @@ float cloud_shadow(vec3 point, vec3 light_direction)
     return opacity_cascade_lookup(vec4(point, 1));
 }
 
-vec4 cloud_transfer(vec3 origin, vec3 point, vec3 direction, vec3 light_direction, vec2 atmosphere, float step, vec4 cloud_scatter, float density)
+vec4 cloud_transfer(vec3 start, vec3 point, vec3 light_direction, float scatter_amount, float step, vec4 cloud_scatter, float density)
 {
   vec3 intensity = cloud_shadow(point, light_direction) * transmittance_outer(point, light_direction);
-  vec3 scatter_amount = (anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic) * intensity;
-  vec3 in_scatter = ray_scatter_track(light_direction, origin + atmosphere.x * direction, point) * amplification;
-  vec3 transmittance = transmittance_track(origin + atmosphere.x * direction, point);
+  vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
+  vec3 transmittance = transmittance_track(start, point);
   float t = exp(-density * step);
-  cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
+  cloud_scatter.rgb = cloud_scatter.rgb + cloud_scatter.a * (1 - t) * scatter_amount * intensity * transmittance + cloud_scatter.a * (1 - t) * in_scatter;
   cloud_scatter.a *= t;
   return cloud_scatter;
 }
@@ -209,6 +209,8 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
   int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
   float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
   float offset = sampling_offset();
+  vec3 start = origin + atmosphere.x * direction;
+  float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
   for (int i=0; i<count; i++) {
     float l = sample_point(atmosphere.x, i + offset, step);
     vec3 point = origin + l * direction;
@@ -217,7 +219,7 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
       float lod = lod_at_distance(l, lod_offset);
       float density = cloud_density(point, lod);
       if (density > 0)
-        cloud_scatter = cloud_transfer(origin, point, direction, light_direction, atmosphere, step, cloud_scatter, density);
+        cloud_scatter = cloud_transfer(start, point, light_direction, scatter_amount, step, cloud_scatter, density);
     }
     if (cloud_scatter.a <= 0.01)
       break;
@@ -540,7 +542,7 @@ void main()
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
                  rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
-                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 100 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -100 10))
+                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 100 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -100 1))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
