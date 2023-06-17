@@ -383,6 +383,7 @@ in vec3 point;
 in vec2 colorcoord;
 in vec2 heightcoord;
 uniform float radius;
+uniform vec3 position;
 out GEO_OUT
 {
   vec3 origin;
@@ -393,6 +394,7 @@ out GEO_OUT
 void main()
 {
   gl_Position = vec4(point, 1);
+  vs_out.origin = position;
   vs_out.colorcoord = colorcoord;
   vs_out.heightcoord = heightcoord;
   vs_out.point = vec3(0, 0, radius);
@@ -473,6 +475,8 @@ float sampling_offset()
   (uniform-float program "albedo" ?albedo)
   (uniform-float program "reflectivity" ?refl)
   (uniform-float program "radius" radius)
+  (uniform-float program "z_near" 0.0)
+  (uniform-vector3 program "position" (vec3 0 0 (+ ?radius ?dist)))
   (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
                                                               (vec3 0 0 (+ ?radius ?dist))))
   (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
