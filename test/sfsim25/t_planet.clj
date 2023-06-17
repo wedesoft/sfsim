@@ -95,8 +95,10 @@ void main()
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" ?neighbours)
+                               (uniform-matrix4 program "transform" (eye 4))
                                (uniform-matrix4 program "inverse_transform" (eye 4))
                                (uniform-matrix4 program "projection" (eye 4))
+                               (uniform-float program "z_near" 0.0)
                                (use-textures heightfield)
                                (raster-lines (render-patches vao))
                                (destroy-texture heightfield)
@@ -113,6 +115,7 @@ void main()
   (template/fn [selector] "#version 410 core
 in GEO_OUT
 {
+  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -147,18 +150,21 @@ void main()
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" 15)
+                               (uniform-matrix4 program "transform" (eye 4))
                                (uniform-matrix4 program "inverse_transform" (eye 4))
                                (uniform-matrix4 program "projection" (eye 4))
+                               (uniform-float program "z_near" 0.5)
                                (use-textures heightfield)
                                (render-patches vao)
                                (destroy-texture heightfield)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 0.02))
-         ?selector                           ?scale ?result
-         "frag_in.colorcoord"                1.0    "test/sfsim25/fixtures/planet/color-coords.png"
-         "frag_in.heightcoord"               1.0    "test/sfsim25/fixtures/planet/height-coords.png"
-         "frag_in.point.xy + vec2(0.5, 0.5)" 1.0    "test/sfsim25/fixtures/planet/point.png"
-         "frag_in.point.xy + vec2(0.5, 0.5)" 1.1    "test/sfsim25/fixtures/planet/scaled-point.png")
+         ?selector                            ?scale ?result
+         "frag_in.colorcoord"                 1.0    "test/sfsim25/fixtures/planet/color-coords.png"
+         "frag_in.heightcoord"                1.0    "test/sfsim25/fixtures/planet/height-coords.png"
+         "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/sfsim25/fixtures/planet/point.png"
+         "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/sfsim25/fixtures/planet/scaled-point.png"
+         "frag_in.origin.xy + vec2(0.5, 0.5)" 1.0    "test/sfsim25/fixtures/planet/origin.png")
 
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -182,9 +188,12 @@ void main()
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
+                          (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
+                                                                                      (vec3 -0.1 0 0)))
                           (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
                                                                                              (vec3 0.1 0 0)))
                           (uniform-matrix4 program "projection" (eye 4))
+                          (uniform-float program "z_near" 0.0)
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
@@ -214,9 +223,13 @@ void main()
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
+                          (uniform-float program "z_near" 0.0)
+                          (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
+                                                                                      (vec3 0 0 2)))
                           (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
                                                                                              (vec3 0 0 -2)))
                           (uniform-matrix4 program "projection" (projection-matrix 256 256 1 3 (/ PI 3)))
+                          (uniform-float program "z_near" 0.0)
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
@@ -246,8 +259,10 @@ void main()
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
+                          (uniform-matrix4 program "transform" (eye 4))
                           (uniform-matrix4 program "inverse_transform" (eye 4))
                           (uniform-matrix4 program "projection" (eye 4))
+                          (uniform-float program "z_near" 0.0)
                           (use-textures heightfield)
                           (raster-lines (render-patches vao))
                           (destroy-texture heightfield)
@@ -370,6 +385,7 @@ in vec2 heightcoord;
 uniform float radius;
 out GEO_OUT
 {
+  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -457,7 +473,10 @@ float sampling_offset()
   (uniform-float program "albedo" ?albedo)
   (uniform-float program "reflectivity" ?refl)
   (uniform-float program "radius" radius)
-  (uniform-vector3 program "position" (vec3 0 0 (+ ?radius ?dist)))
+  (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
+                                                              (vec3 0 0 (+ ?radius ?dist))))
+  (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
+                                                                      (vec3 0 0 (- 0 ?radius ?dist))))
   (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
   (uniform-float program "amplification" ?a))
 

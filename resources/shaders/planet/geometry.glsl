@@ -2,6 +2,7 @@
 layout(triangles) in;
 in TES_OUT
 {
+  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -9,6 +10,7 @@ in TES_OUT
 layout(triangle_strip, max_vertices = 3) out;
 out GEO_OUT
 {
+  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -18,16 +20,19 @@ out GEO_OUT
 void main(void)
 {
   gl_Position = gl_in[0].gl_Position;
+  geo_out.origin = geo_in[0].origin;
   geo_out.colorcoord = geo_in[0].colorcoord;
   geo_out.heightcoord = geo_in[0].heightcoord;
   geo_out.point = geo_in[0].point;
   EmitVertex();
   gl_Position = gl_in[1].gl_Position;
+  geo_out.origin = geo_in[1].origin;
   geo_out.colorcoord = geo_in[1].colorcoord;
   geo_out.heightcoord = geo_in[1].heightcoord;
   geo_out.point = geo_in[1].point;
   EmitVertex();
   gl_Position = gl_in[2].gl_Position;
+  geo_out.origin = geo_in[2].origin;
   geo_out.colorcoord = geo_in[2].colorcoord;
   geo_out.heightcoord = geo_in[2].heightcoord;
   geo_out.point = geo_in[2].point;

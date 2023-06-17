@@ -8,11 +8,11 @@ uniform float radius;
 uniform float max_height;
 uniform float amplification;
 uniform vec3 water_color;
-uniform vec3 position;
 uniform vec3 light_direction;
 
 in GEO_OUT
 {
+  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -29,7 +29,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 void main()
 {
   vec3 normal = texture(normals, fs_in.colorcoord).xyz;
-  vec3 direction = normalize(fs_in.point - position);
+  vec3 direction = normalize(fs_in.point - fs_in.origin);
   vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
   float wet = texture(water, fs_in.colorcoord).r;
   float cos_incidence = dot(light_direction, normal);
@@ -40,9 +40,9 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, position, direction);
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
   vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color);
   float a = atmosphere_intersection.x;
-  float b = distance(position, fs_in.point);
-  fragColor = amplification * attenuation_track(light_direction, position, direction, a, b, incoming);
+  float b = distance(fs_in.origin, fs_in.point);
+  fragColor = amplification * attenuation_track(light_direction, fs_in.origin, direction, a, b, incoming);
 }

@@ -142,7 +142,6 @@ uniform float radius;
 uniform float max_height;
 uniform float amplification;
 uniform vec3 water_color;
-uniform vec3 position;
 uniform vec3 light_direction;
 uniform vec3 origin;
 uniform float anisotropic;
@@ -154,6 +153,7 @@ uniform float depth;
 
 in GEO_OUT
 {
+  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -230,7 +230,7 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
 void main()
 {
   vec3 normal = texture(normals, fs_in.colorcoord).xyz;
-  vec3 direction = normalize(fs_in.point - position);
+  vec3 direction = normalize(fs_in.point - fs_in.origin);
   vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
   float wet = texture(water, fs_in.colorcoord).r;
   float cos_incidence = dot(light_direction, normal);
@@ -241,15 +241,15 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, position, direction);
-  atmosphere.y = min(distance(position, fs_in.point) - atmosphere.x, depth);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
+  atmosphere.y = min(distance(fs_in.origin, fs_in.point) - atmosphere.x, depth);
   vec3 ground = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * 0.7;
-  vec3 transmittance = transmittance_track(position + atmosphere.x * direction, fs_in.point);
+  vec3 transmittance = transmittance_track(fs_in.origin + atmosphere.x * direction, fs_in.point);
   vec3 intensity = cloud_shadow(fs_in.point, light_direction) * transmittance_outer(fs_in.point, light_direction);
   vec3 background = ground * intensity * amplification;
-  vec3 ray_scatter = ray_scatter_track(light_direction, position + atmosphere.x * direction, fs_in.point) * amplification;
+  vec3 ray_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, fs_in.point) * amplification;
   vec4 cloud_scatter = vec4(0, 0, 0, 1);
-  cloud_scatter = sample_cloud(position, direction, light_direction, atmosphere, cloud_scatter);
+  cloud_scatter = sample_cloud(fs_in.origin, direction, light_direction, atmosphere, cloud_scatter);
   fragColor = (background * transmittance + ray_scatter) * cloud_scatter.a + cloud_scatter.rgb;
 }")
 
@@ -584,9 +584,8 @@ void main()
                                 ; Render planet
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
+                                (uniform-matrix4 program-planet "transform" transform)
                                 (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
-                                (uniform-matrix4 program-planet "transform" transform); TODO: required?
-                                (uniform-vector3 program-planet "position" @position)
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (uniform-float program-planet "stepsize" @step)
                                 (uniform-int program-planet "num_opacity_layers" num-opacity-layers)
@@ -606,6 +605,7 @@ void main()
                                 (uniform-float program-planet "dense_height" dense-height)
                                 (uniform-float program-planet "anisotropic" @anisotropic)
                                 (uniform-float program-planet "depth" depth)
+                                (uniform-float program-planet "z_near" (+ 1 z-near))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (doseq [i (range num-steps)]
                                        (uniform-sampler program-planet (str "offset" i) (+ (* 2 i) 12))

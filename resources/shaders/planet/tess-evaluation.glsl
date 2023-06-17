@@ -5,6 +5,8 @@ layout(quads, equal_spacing, ccw) in;
 uniform sampler2D heightfield;
 uniform mat4 projection;
 uniform mat4 inverse_transform;
+uniform mat4 transform;
+uniform float z_near;
 
 in TCS_OUT
 {
@@ -14,6 +16,7 @@ in TCS_OUT
 
 out TES_OUT
 {
+  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -35,5 +38,7 @@ void main()
   vec3 cube_point = mix(a, b, gl_TessCoord.y).xyz;
   vec3 point = scale * cube_point;
   tes_out.point = point;
-  gl_Position = projection * inverse_transform * vec4(point, 1);
+  vec4 transformed_point = inverse_transform * vec4(point, 1);
+  tes_out.origin = (transform * vec4(transformed_point.xyz * (-z_near / transformed_point.z), 1)).xyz;
+  gl_Position = projection * transformed_point;
 }
