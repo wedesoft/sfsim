@@ -1,5 +1,5 @@
 # TODO
-* point offset for planet shader
+* point offset for planet shader, how to test?
 * integration tests and unit tests for current prototype code
 * combine offset and opacity texture to free up texture indices
 * use shell intersection to limit cloud sampling
