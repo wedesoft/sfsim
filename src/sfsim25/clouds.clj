@@ -178,3 +178,7 @@
 (def cloud-density
   "Compute cloud density at given point"
   (slurp "resources/shaders/clouds/cloud-density.glsl"))
+
+(def cloud-transfer
+  "Single cloud scattering update step"
+  (slurp "resources/shaders/clouds/cloud-transfer.glsl"))

@@ -908,4 +908,70 @@ void main()
          1.0  0.0  0.5 0.25 0.0 0.0
          1.0  0.5  1.0 1.0  0.0 0.5)
 
+(def cloud-transfer-probe
+  (template/fn [red alpha density stepsize selector scatter]
+"#version 410 core
+uniform float shadow;
+uniform float transmittance;
+uniform float atmosphere;
+uniform float in_scatter;
+float cloud_shadow(vec3 point)
+{
+  return shadow;
+}
+vec3 transmittance_outer(vec3 point, vec3 direction)
+{
+  return direction * transmittance;
+}
+vec3 transmittance_track(vec3 p, vec3 q)
+{
+  return (q - p) * atmosphere;
+}
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
+{
+  return (q - p) * in_scatter;
+}
+vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
+out vec3 fragColor;
+void main()
+{
+  vec3 start = vec3(1, 0, 0);
+  vec3 point = vec3(2, 0, 0);
+  vec4 cloud_scatter = vec4(<%= red %>, 0, 0, <%= alpha %>);
+  fragColor.r = cloud_transfer(start, point, <%= scatter %>, <%= stepsize %>, cloud_scatter, <%= density %>).<%= selector %>;
+}"))
+
+(def cloud-transfer-test
+  (shader-test
+    (fn [program shadow transmittance atmosphere in-scatter amplification]
+        (uniform-float program "shadow" shadow)
+        (uniform-float program "transmittance" transmittance)
+        (uniform-float program "atmosphere" atmosphere)
+        (uniform-float program "in_scatter" in-scatter)
+        (uniform-float program "amplification" amplification)
+        (uniform-vector3 program "light_direction" (vec3 1 0 0)))
+    cloud-transfer-probe
+    cloud-transfer))
+
+(tabular "Shader function to increment scattering caused by clouds"
+         (fact ((cloud-transfer-test [?shadow ?transmit ?atmos ?inscatter ?amp]
+                                     [?red ?alpha ?density ?stepsize ?selector ?scatter]) 0)
+               => (roughly ?result 1e-6))
+         ?shadow ?transmit ?atmos ?inscatter ?amp ?red ?alpha ?density  ?stepsize ?scatter ?selector ?result
+         1.0     1.0       1.0    0.0        1.0  0.0  1.0    0.0       1.0       1.0      "r"       0.0
+         1.0     1.0       1.0    0.0        1.0  0.5  1.0    0.0       1.0       1.0      "r"       0.5
+         1.0     1.0       1.0    0.0        1.0  1.0  0.5    0.0       1.0       1.0      "a"       0.5
+         1.0     1.0       1.0    0.0        1.0  1.0  1.0    0.0       1.0       1.0      "a"       1.0
+         1.0     1.0       1.0    0.0        1.0  1.0  0.5    (log 2.0) 1.0       1.0      "a"       0.25
+         1.0     1.0       1.0    0.0        1.0  1.0  0.5    (log 2.0) 2.0       1.0      "a"       0.125
+         1.0     1.0       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.5
+         1.0     1.0       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       0.5      "r"       0.25
+         0.5     1.0       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     0.5       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     1.0       1.0    0.0        1.0  0.0  0.5    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     1.0       0.5    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     1.0       1.0    0.5        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.75
+         1.0     1.0       1.0    0.5        1.0  0.0  0.5    (log 2.0) 1.0       1.0      "r"       0.375
+         1.0     1.0       1.0    0.5        2.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       1.0)
+
 (GLFW/glfwTerminate)
