@@ -22,58 +22,24 @@
 (def width 960)
 (def height 540)
 
-(def fragment-atmosphere-enhanced
+(def sample-cloud
 "#version 410 core
-uniform float stepsize;
+
 uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
-uniform float dense_height;
-uniform float max_height;
-uniform float lod_offset;
+uniform float stepsize;
 uniform float anisotropic;
-uniform float specular;
-uniform float amplification;
-uniform vec3 light_direction;
-in VS_OUT
-{
-  vec3 origin;
-  vec3 direction;
-} fs_in;
-out vec3 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-float cloud_density(vec3 point, float lod);
-float phase(float g, float mu);
-float opacity_cascade_lookup(vec4 point);
-float sampling_offset();
-vec3 transmittance_track(vec3 p, vec3 q);
-vec3 transmittance_outer(vec3 point, vec3 direction);
-vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
-vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
-                     vec3 land_color, vec3 water_color);
+uniform float lod_offset;
+
 int number_of_samples(float a, float b, float max_step);
-float sample_point(float a, float idx, float step_size);
 float step_size(float a, float b, int num_samples);
+float sampling_offset();
+float sample_point(float a, float idx, float step_size);
+float phase(float g, float mu);
 float lod_at_distance(float dist, float lod_offset);
+float cloud_density(vec3 point, float lod);
 vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
-
-bool planet_shadow(vec3 point)  // To be replaced with shadow map
-{
-  if (dot(point, light_direction) < 0) {
-    vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
-    return planet_intersection.y > 0;
-  } else
-    return false;
-}
-
-float cloud_shadow(vec3 point)
-{
-  if (planet_shadow(point))
-    return 0.0;
-  else
-    return opacity_cascade_lookup(vec4(point, 1));
-}
 
 vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter)
 {
@@ -96,6 +62,47 @@ vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosp
       break;
   };
   return cloud_scatter;
+}")
+
+(def fragment-atmosphere-enhanced
+"#version 410 core
+uniform float radius;
+uniform float dense_height;
+uniform float max_height;
+uniform float specular;
+uniform float amplification;
+uniform vec3 light_direction;
+in VS_OUT
+{
+  vec3 origin;
+  vec3 direction;
+} fs_in;
+out vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+float opacity_cascade_lookup(vec4 point);
+vec3 transmittance_track(vec3 p, vec3 q);
+vec3 transmittance_outer(vec3 point, vec3 direction);
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
+vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction);
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
+                     vec3 land_color, vec3 water_color);
+vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
+
+bool planet_shadow(vec3 point)  // To be replaced with shadow map
+{
+  if (dot(point, light_direction) < 0) {
+    vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
+    return planet_intersection.y > 0;
+  } else
+    return false;
+}
+
+float cloud_shadow(vec3 point)
+{
+  if (planet_shadow(point))
+    return 0.0;
+  else
+    return opacity_cascade_lookup(vec4(point, 1));
 }
 
 void main()
@@ -134,11 +141,6 @@ uniform float amplification;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform vec3 origin;
-uniform float anisotropic;
-uniform float stepsize;
-uniform float cloud_bottom;
-uniform float cloud_top;
-uniform float lod_offset;
 uniform float depth;
 
 in GEO_OUT
@@ -158,14 +160,7 @@ vec3 transmittance_track(vec3 p, vec3 q);
 vec3 transmittance_outer(vec3 point, vec3 direction);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 float opacity_cascade_lookup(vec4 point);
-float cloud_density(vec3 point, float lod);
-float phase(float g, float mu);
-int number_of_samples(float a, float b, float max_step);
-float sample_point(float a, float idx, float step_size);
-float step_size(float a, float b, int num_samples);
-float sampling_offset();
-float lod_at_distance(float dist, float lod_offset);
-vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
+vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
 
 bool planet_shadow(vec3 point)  // To be replaced with shadow map
 {
@@ -182,29 +177,6 @@ float cloud_shadow(vec3 point)
     return 0.0;
   else
     return opacity_cascade_lookup(vec4(point, 1));
-}
-
-vec4 sample_cloud(vec3 origin, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter)
-{
-  int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
-  float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
-  float offset = sampling_offset();
-  vec3 start = origin + atmosphere.x * direction;
-  float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
-  for (int i=0; i<count; i++) {
-    float l = sample_point(atmosphere.x, i + offset, step);
-    vec3 point = origin + l * direction;
-    float r = length(point);
-    if (r >= radius + cloud_bottom && r <= radius + cloud_top) {
-      float lod = lod_at_distance(l, lod_offset);
-      float density = cloud_density(point, lod);
-      if (density > 0)
-        cloud_scatter = cloud_transfer(start, point, scatter_amount, step, cloud_scatter, density);
-    }
-    if (cloud_scatter.a <= 0.01)
-      break;
-  };
-  return cloud_scatter;
 }
 
 void main()
@@ -333,7 +305,7 @@ void main()
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
                            ground-radiance shaders/surface-radiance-forward surface-radiance-function
-                           linear-sampling cloud-transfer]))
+                           linear-sampling cloud-transfer sample-cloud]))
 
 (def program-opacity
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
@@ -408,7 +380,7 @@ void main()
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (sphere-noise "perlin_octaves") (shaders/lookup-3d "lookup_perlin" "perlin")
-                           cloud-transfer]))
+                           cloud-transfer sample-cloud]))
 
 (use-program program-planet)
 (uniform-sampler program-planet "transmittance"    0)
