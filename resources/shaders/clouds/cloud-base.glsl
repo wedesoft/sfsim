@@ -17,7 +17,7 @@ float cloud_base(vec3 point)
       float profile = cloud_profile(point);
       return (cover + clouds - cloud_threshold) * profile;
     } else
-      return cover + clouds - cloud_threshold;
+      return 0.0;
   } else
     return cover + cloud_multiplier - cloud_threshold;
 }
