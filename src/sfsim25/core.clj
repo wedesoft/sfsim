@@ -533,7 +533,7 @@ void main()
                    indices    [0 1 3 2]
                    vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
                    vao        (make-vertex-array-object program-atmosphere indices vertices [:point 3])
-                   light-dir  (vec3 0 (cos @light) (sin @light))
+                   light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix width height z-near (+ z-far 1) fov)
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ width 2) (/ detail-scale worley-size))) (log 2))
                    transform  (transformation-matrix (quaternion->matrix @orientation) @position)
