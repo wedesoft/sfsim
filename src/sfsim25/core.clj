@@ -58,7 +58,7 @@ float step_size(float a, float b, int num_samples);
 float lod_at_distance(float dist, float lod_offset);
 vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
 
-bool planet_shadow(vec3 point, vec3 light_direction)  // To be replaced with shadow map
+bool planet_shadow(vec3 point)  // To be replaced with shadow map
 {
   if (dot(point, light_direction) < 0) {
     vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
@@ -69,7 +69,7 @@ bool planet_shadow(vec3 point, vec3 light_direction)  // To be replaced with sha
 
 float cloud_shadow(vec3 point)
 {
-  if (planet_shadow(point, light_direction))
+  if (planet_shadow(point))
     return 0.0;
   else
     return opacity_cascade_lookup(vec4(point, 1));
@@ -167,7 +167,7 @@ float sampling_offset();
 float lod_at_distance(float dist, float lod_offset);
 vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
 
-bool planet_shadow(vec3 point, vec3 light_direction)  // To be replaced with shadow map
+bool planet_shadow(vec3 point)  // To be replaced with shadow map
 {
   if (dot(point, light_direction) < 0) {
     vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
@@ -178,7 +178,7 @@ bool planet_shadow(vec3 point, vec3 light_direction)  // To be replaced with sha
 
 float cloud_shadow(vec3 point)
 {
-  if (planet_shadow(point, light_direction))
+  if (planet_shadow(point))
     return 0.0;
   else
     return opacity_cascade_lookup(vec4(point, 1));
