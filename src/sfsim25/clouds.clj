@@ -182,3 +182,7 @@
 (def cloud-transfer
   "Single cloud scattering update step"
   (slurp "resources/shaders/clouds/cloud-transfer.glsl"))
+
+(def sample-cloud
+  "Shader to sample the cloud layer and apply cloud scattering update steps"
+  (slurp "resources/shaders/clouds/sample-cloud.glsl"))

@@ -974,4 +974,64 @@ void main()
          1.0     1.0       1.0    0.5        1.0  0.0  0.5    (log 2.0) 1.0       1.0      "r"       0.375
          1.0     1.0       1.0    0.5        2.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       1.0)
 
+(def sample-cloud-probe
+  (template/fn [atmosphere-begin atmosphere-length density red alpha selector]
+"#version 410 core
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
+out vec3 fragColor;
+float sampling_offset()
+{
+  return 0.5;
+}
+float phase(float g, float mu)
+{
+  return 1.0;
+}
+float cloud_density(vec3 point, float lod)
+{
+  return <%= density %>;
+}
+vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density)
+{
+  float transparency = pow(0.5, density * stepsize);
+  cloud_scatter.a *= transparency;
+  return cloud_scatter;
+}
+void main()
+{
+  vec3 origin = vec3(3, 0, 0);
+  vec3 start = vec3(5, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  vec3 light_direction = vec3(0, 1, 0);
+  vec2 atmosphere = vec2(<%= atmosphere-begin %>, <%= atmosphere-length %>);
+  vec4 cloud_scatter = vec4(<%= red %>, 0, 0, <%= alpha %>);
+  fragColor.r = sample_cloud(origin, start, direction, light_direction, atmosphere, cloud_scatter).<%= selector %>;
+}"))
+
+(def sample-cloud-test
+  (shader-test
+    (fn [program cloud-step opacity-cutoff]
+        (uniform-float program "cloud_step" cloud-step)
+        (uniform-float program "lod_offset" 0.0)
+        (uniform-float program "anisotropic" 0.5)
+        (uniform-float program "opacity_cutoff" opacity-cutoff))
+    sample-cloud-probe
+    sample-cloud
+    linear-sampling))
+
+(tabular "Shader to sample the cloud layer and apply cloud scattering update steps"
+         (fact ((sample-cloud-test [?step ?cutoff] [?begin ?length ?density ?red ?alpha ?selector]) 0)
+               => (roughly ?result 1e-6))
+         ?begin ?length ?step ?density ?red ?alpha ?selector ?cutoff ?result
+         2.0    0.0     1.0   1.0      0.0  1.0    "r"       0.0     0.0
+         2.0    0.0     1.0   1.0      1.0  1.0    "r"       0.0     1.0
+         2.0    0.0     1.0   1.0      1.0  1.0    "a"       0.0     1.0
+         2.0    0.0     1.0   1.0      1.0  0.8    "a"       0.0     0.8
+         2.0    1.0     1.0   1.0      0.0  1.0    "a"       0.0     0.5
+         2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.0     0.25
+         2.0    2.0     2.0   1.0      0.0  1.0    "a"       0.0     0.25
+         2.0    2.0     1.0   0.5      0.0  1.0    "a"       0.0     0.5
+         2.0    1.0     1.0   0.0      0.0  1.0    "a"       0.0     1.0
+         2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.5     0.5)
+
 (GLFW/glfwTerminate)

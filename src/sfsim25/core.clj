@@ -22,44 +22,6 @@
 (def width 960)
 (def height 540)
 
-(def sample-cloud
-"#version 410 core
-
-uniform float radius;
-uniform float cloud_bottom;
-uniform float cloud_top;
-uniform float stepsize;
-uniform float anisotropic;
-uniform float lod_offset;
-
-int number_of_samples(float a, float b, float max_step);
-float step_size(float a, float b, int num_samples);
-float sampling_offset();
-float sample_point(float a, float idx, float step_size);
-float phase(float g, float mu);
-float lod_at_distance(float dist, float lod_offset);
-float cloud_density(vec3 point, float lod);
-vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
-
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter)
-{
-  int count = number_of_samples(atmosphere.x, atmosphere.x + atmosphere.y, stepsize);
-  float step = step_size(atmosphere.x, atmosphere.x + atmosphere.y, count);
-  float offset = sampling_offset();
-  float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
-  for (int i=0; i<count; i++) {
-    float l = sample_point(atmosphere.x, i + offset, step);
-    vec3 point = origin + l * direction;
-    float lod = lod_at_distance(l, lod_offset);
-    float density = cloud_density(point, lod);
-    if (density > 0)
-      cloud_scatter = cloud_transfer(start, point, scatter_amount, step, cloud_scatter, density);
-    if (cloud_scatter.a <= 0.01)
-      break;
-  };
-  return cloud_scatter;
-}")
-
 (def fragment-atmosphere-enhanced
 "#version 410 core
 uniform float radius;
@@ -549,7 +511,8 @@ void main()
                                 (uniform-matrix4 program-planet "transform" transform)
                                 (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
-                                (uniform-float program-planet "stepsize" @step)
+                                (uniform-float program-planet "cloud_step" @step)
+                                (uniform-float program-planet "opacity_cutoff" 0.05)
                                 (uniform-int program-planet "num_opacity_layers" num-opacity-layers)
                                 (uniform-int program-planet "shadow_size" shadow-size)
                                 (uniform-float program-planet "radius" radius)
@@ -613,7 +576,8 @@ void main()
                                 (uniform-int program-atmosphere "surface_height_size" surface-height-size)
                                 (uniform-float program-atmosphere "albedo" 0.9)
                                 (uniform-float program-atmosphere "reflectivity" 0.1)
-                                (uniform-float program-atmosphere "stepsize" @step)
+                                (uniform-float program-atmosphere "cloud_step" @step)
+                                (uniform-float program-atmosphere "opacity_cutoff" 0.05)
                                 (uniform-int program-atmosphere "num_opacity_layers" num-opacity-layers)
                                 (uniform-int program-atmosphere "shadow_size" shadow-size)
                                 (uniform-float program-atmosphere "radius" radius)

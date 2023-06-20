@@ -1,6 +1,5 @@
 # TODO
-* test Bitbucket SSH key
-* integration tests and unit tests for current prototype code
+* integration tests for current prototype code
 * combine offset and opacity texture to free up texture indices
 * use shell intersection to limit cloud sampling
 * render clouds and atmosphere with transparency before rendering planet and sun
