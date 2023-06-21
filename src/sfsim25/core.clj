@@ -48,6 +48,7 @@ vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_in
                      vec3 land_color, vec3 water_color);
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
+vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
 
 bool planet_shadow(vec3 point)  // To be replaced with shadow map
 {
@@ -69,27 +70,21 @@ float cloud_shadow(vec3 point)
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
-  vec3 background;
-  vec3 ray_scatter;
-  vec3 transmittance;
-  vec4 cloud_scatter = vec4(0, 0, 0, 1);
-  if (atmosphere.y > 0) {
-    transmittance = transmittance_outer(fs_in.origin + atmosphere.x * direction, direction);
-    float glare = pow(max(0, dot(direction, light_direction)), specular);
-    background = vec3(glare, glare, glare);
-    ray_scatter = ray_scatter_outer(light_direction, fs_in.origin + atmosphere.x * direction, direction) * amplification;
+  float glare = pow(max(0, dot(direction, light_direction)), specular);
+  vec3 incoming = vec3(glare, glare, glare);
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
+  if (atmosphere_intersection.y > 0) {
+    incoming = attenuation_outer(light_direction, fs_in.origin, direction, atmosphere_intersection.x, incoming);
     vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, direction);
-    vec3 start = fs_in.origin + atmosphere.x * direction;
-    cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.st, cloud_scatter);
-    cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.pq, cloud_scatter);
-  } else {
-    float glare = pow(max(0, dot(direction, light_direction)), specular);
-    background = vec3(glare, glare, glare);
-    transmittance = vec3(1.0, 1.0, 1.0);
-    ray_scatter = vec3(0.0, 0.0, 0.0);
+    vec3 start = fs_in.origin + atmosphere_intersection.x * direction;
+    vec4 cloud_scatter = vec4(0, 0, 0, 1);
+    if (intersect.t > 0)
+      cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.st, cloud_scatter);
+    if (intersect.q > 0)
+      cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.pq, cloud_scatter);
+    incoming = incoming * cloud_scatter.a + cloud_scatter.rgb;
   };
-  fragColor = (background * transmittance + ray_scatter) * cloud_scatter.a + cloud_scatter.rgb;
+  fragColor = incoming;
 }")
 
 (def fragment-planet-enhanced
@@ -197,8 +192,6 @@ void main()
 (def series (take 5 (iterate #(* % 0.8) 1.0)))
 (def sum-series (apply + series))
 (def perlin-octaves (mapv #(/ % sum-series) series))
-(def z-near 10.0)
-(def z-far (* radius 2))
 (def mix 0.8)
 (def opacity-step (atom 250.0))
 (def step (atom 400.0))
@@ -275,7 +268,7 @@ void main()
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
-                           ground-radiance shaders/surface-radiance-forward surface-radiance-function
+                           ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer
                            linear-sampling cloud-transfer sample-cloud shaders/ray-shell]))
 
 (def program-opacity
@@ -469,7 +462,7 @@ void main()
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
                  rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
-                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 100 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -100 1))
+                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 2 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -2 0))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
@@ -492,7 +485,7 @@ void main()
              (swap! step + (* dt ts))
              (let [norm-pos   (mag @position)
                    dist       (- norm-pos radius cloud-top)
-                   z-near     (max 10.0 (* 0.4 dist))
+                   z-near     (max 100.0 (* 0.4 dist))
                    z-far      (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
                    indices    [0 1 3 2]
@@ -533,7 +526,7 @@ void main()
                                 (uniform-float program-planet "dense_height" dense-height)
                                 (uniform-float program-planet "anisotropic" @anisotropic)
                                 (uniform-float program-planet "depth" depth)
-                                (uniform-float program-planet "z_near" (+ 1 z-near))
+                                (uniform-float program-planet "z_near" (+ 1.0 z-near))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (doseq [i (range num-steps)]
                                        (uniform-sampler program-planet (str "offset" i) (+ (* 2 i) 12))
@@ -566,7 +559,7 @@ void main()
                                 (uniform-matrix4 program-atmosphere "projection" projection)
                                 (uniform-matrix4 program-atmosphere "transform" transform)
                                 (uniform-matrix4 program-atmosphere "inverse_transform" (inverse transform))
-                                (uniform-float program-atmosphere "z_near" (+ 1 z-near))
+                                (uniform-float program-atmosphere "z_near" (+ 1.0 z-near))
                                 (uniform-float program-atmosphere "z_far" z-far)
                                 (uniform-int program-atmosphere "noise_size" noise-size)
                                 (uniform-int program-atmosphere "height_size" height-size)

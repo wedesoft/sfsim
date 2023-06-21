@@ -1,4 +1,6 @@
 # TODO
+* attenuation track with amplification
+* visual bugs due to new origin computation?
 * integration tests for current prototype code
 * combine offset and opacity texture to free up texture indices
 * use shell intersection to limit cloud sampling
