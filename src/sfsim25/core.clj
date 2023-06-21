@@ -40,10 +40,6 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 float opacity_cascade_lookup(vec4 point);
-vec3 transmittance_track(vec3 p, vec3 q);
-vec3 transmittance_outer(vec3 point, vec3 direction);
-vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
-vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
@@ -117,13 +113,11 @@ out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
                      vec3 land_color, vec3 water_color);
-vec3 transmittance_track(vec3 p, vec3 q);
-vec3 transmittance_outer(vec3 point, vec3 direction);
-vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 float opacity_cascade_lookup(vec4 point);
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 
 bool planet_shadow(vec3 point)  // To be replaced with shadow map
 {
@@ -156,19 +150,17 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
+  cos_incidence *= cloud_shadow(fs_in.point); // TODO: fix this hack
+  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * amplification;
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
   atmosphere.y = min(distance(fs_in.origin, fs_in.point) - atmosphere.x, depth);
-  vec3 ground = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * 0.7;
-  vec3 transmittance = transmittance_track(fs_in.origin + atmosphere.x * direction, fs_in.point);
-  vec3 intensity = cloud_shadow(fs_in.point) * transmittance_outer(fs_in.point, light_direction);
-  vec3 background = ground * intensity * amplification;
-  vec3 ray_scatter = ray_scatter_track(light_direction, fs_in.origin + atmosphere.x * direction, fs_in.point) * amplification;
-  vec4 cloud_scatter = vec4(0, 0, 0, 1);
+  incoming = attenuation_track(light_direction, fs_in.origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
   vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, direction);
-  intersect = clip_shell_intersections (intersect, atmosphere.x + atmosphere.y);
+  intersect = clip_shell_intersections(intersect, atmosphere.x + atmosphere.y);
   vec3 start = fs_in.origin + atmosphere.x * direction;
+  vec4 cloud_scatter = vec4(0, 0, 0, 1);
   cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.st, cloud_scatter);
-  fragColor = (background * transmittance + ray_scatter) * cloud_scatter.a + cloud_scatter.rgb;
+  fragColor = incoming * cloud_scatter.a + cloud_scatter.rgb;
 }")
 
 (def fov (to-radians 60.0))

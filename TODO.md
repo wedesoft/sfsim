@@ -1,6 +1,6 @@
 # TODO
-* attenuation track with amplification
 * visual bugs due to new origin computation?
+* ground radiance shadow code with cos\_incidence good?
 * integration tests for current prototype code
 * combine offset and opacity texture to free up texture indices
 * use shell intersection to limit cloud sampling

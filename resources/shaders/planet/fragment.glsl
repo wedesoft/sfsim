@@ -41,8 +41,8 @@ void main()
     highlight = 0.0;
   };
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color);
+  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * amplification;
   float a = atmosphere_intersection.x;
   float b = distance(fs_in.origin, fs_in.point);
-  fragColor = amplification * attenuation_track(light_direction, fs_in.origin, direction, a, b, incoming);
+  fragColor = attenuation_track(light_direction, fs_in.origin, direction, a, b, incoming);
 }
