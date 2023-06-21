@@ -454,8 +454,11 @@ void main()
   "Space flight simulator main function"
   [& _args]
   (let [t0 (atom (System/currentTimeMillis))
-        n  (atom 0)]
+        n  (atom 0)
+        w  (int-array 1)
+        h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
+           (GLFW/glfwGetWindowSize window w h)
            (when (realized? @changes)
              (let [data @@changes]
                (unload-tiles-from-opengl (:drop data))
@@ -496,7 +499,7 @@ void main()
                    vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
                    vao        (make-vertex-array-object program-atmosphere indices vertices [:point 3])
                    light-dir  (vec3 (cos @light) (sin @light) 0)
-                   projection (projection-matrix width height z-near (+ z-far 1) fov)
+                   projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ width 2) (/ detail-scale worley-size))) (log 2))
                    transform  (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
