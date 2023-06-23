@@ -1,10 +1,9 @@
 # TODO
 * ground radiance shadow code with cos\_incidence good?
 * integration tests for current prototype code
-* combine offset and opacity texture to free up texture indices, use 3 opacity maps, or render clouds separately first already?
-* use shell intersection to limit cloud sampling
-* render clouds and atmosphere with transparency before rendering planet and sun
+* render clouds and atmosphere with transparency before rendering planet and sun, switch back to 3 opacity maps
 * render shadows of planet
+* combine offset and opacity texture to free up texture indices?
 * adapt opacity step depending on sun angle?
 * render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
