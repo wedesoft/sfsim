@@ -1,5 +1,4 @@
 # TODO
-* visual bugs due to new origin computation (can't linear interpolate a projected point)
 * ground radiance shadow code with cos\_incidence good?
 * integration tests for current prototype code
 * combine offset and opacity texture to free up texture indices
