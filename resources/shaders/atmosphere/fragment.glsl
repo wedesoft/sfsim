@@ -4,10 +4,10 @@ uniform vec3 light_direction;
 uniform float radius;
 uniform float max_height;
 uniform float specular;
+uniform vec3 origin;
 
 in VS_OUT
 {
-  vec3 origin;
   vec3 direction;
 } fs_in;
 
@@ -22,9 +22,9 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   float glare = pow(max(0, dot(direction, light_direction)), specular);
   vec3 incoming = vec3(glare, glare, glare);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   if (atmosphere_intersection.y > 0) {
-    vec3 point = fs_in.origin + atmosphere_intersection.x * direction;
+    vec3 point = origin + atmosphere_intersection.x * direction;
     incoming = attenuation_outer(light_direction, point, direction, 0, incoming);
   };
   fragColor = incoming;

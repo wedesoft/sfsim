@@ -31,10 +31,10 @@ uniform float dense_height;
 uniform float max_height;
 uniform float specular;
 uniform float amplification;
+uniform vec3 origin;
 uniform vec3 light_direction;
 in VS_OUT
 {
-  vec3 origin;
   vec3 direction;
 } fs_in;
 out vec3 fragColor;
@@ -68,16 +68,16 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   float glare = pow(max(0, dot(direction, light_direction)), specular);
   vec3 incoming = vec3(glare, glare, glare);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   if (atmosphere_intersection.y > 0) {
-    incoming = attenuation_outer(light_direction, fs_in.origin, direction, atmosphere_intersection.x, incoming);
-    vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, direction);
-    vec3 start = fs_in.origin + atmosphere_intersection.x * direction;
+    incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
+    vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
+    vec3 start = origin + atmosphere_intersection.x * direction;
     vec4 cloud_scatter = vec4(0, 0, 0, 1);
     if (intersect.t > 0)
-      cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.st, cloud_scatter);
+      cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.st, cloud_scatter);
     if (intersect.q > 0)
-      cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.pq, cloud_scatter);
+      cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.pq, cloud_scatter);
     incoming = incoming * cloud_scatter.a + cloud_scatter.rgb;
   };
   fragColor = incoming;
@@ -102,7 +102,6 @@ uniform float depth;
 
 in GEO_OUT
 {
-  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -139,7 +138,7 @@ float cloud_shadow(vec3 point)
 void main()
 {
   vec3 normal = texture(normals, fs_in.colorcoord).xyz;
-  vec3 direction = normalize(fs_in.point - fs_in.origin);
+  vec3 direction = normalize(fs_in.point - origin);
   vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
   float wet = texture(water, fs_in.colorcoord).r;
   float cos_incidence = dot(light_direction, normal);
@@ -152,14 +151,14 @@ void main()
   };
   cos_incidence *= cloud_shadow(fs_in.point); // TODO: fix this hack
   vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * amplification;
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, fs_in.origin, direction);
-  atmosphere.y = min(distance(fs_in.origin, fs_in.point) - atmosphere.x, depth);
-  incoming = attenuation_track(light_direction, fs_in.origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
-  vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  atmosphere.y = min(distance(origin, fs_in.point) - atmosphere.x, depth);
+  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
   intersect = clip_shell_intersections(intersect, atmosphere.x + atmosphere.y);
-  vec3 start = fs_in.origin + atmosphere.x * direction;
+  vec3 start = origin + atmosphere.x * direction;
   vec4 cloud_scatter = vec4(0, 0, 0, 1);
-  cloud_scatter = sample_cloud(fs_in.origin, start, direction, light_direction, intersect.st, cloud_scatter);
+  cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.st, cloud_scatter);
   fragColor = incoming * cloud_scatter.a + cloud_scatter.rgb;
 }")
 
@@ -497,6 +496,7 @@ void main()
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
                                 (uniform-matrix4 program-planet "transform" transform)
+                                (uniform-vector3 program-planet "origin" @position)
                                 (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (uniform-float program-planet "cloud_step" @step)
@@ -550,6 +550,7 @@ void main()
                                 (uniform-int program-atmosphere "cover_size" 512)
                                 (uniform-matrix4 program-atmosphere "projection" projection)
                                 (uniform-matrix4 program-atmosphere "transform" transform)
+                                (uniform-vector3 program-atmosphere "origin" @position)
                                 (uniform-matrix4 program-atmosphere "inverse_transform" (inverse transform))
                                 (uniform-float program-atmosphere "z_near" (+ 1.0 z-near))
                                 (uniform-float program-atmosphere "z_far" z-far)

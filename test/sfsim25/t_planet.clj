@@ -115,7 +115,6 @@ void main()
   (template/fn [selector] "#version 410 core
 in GEO_OUT
 {
-  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -163,8 +162,7 @@ void main()
          "frag_in.colorcoord"                 1.0    "test/sfsim25/fixtures/planet/color-coords.png"
          "frag_in.heightcoord"                1.0    "test/sfsim25/fixtures/planet/height-coords.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/sfsim25/fixtures/planet/point.png"
-         "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/sfsim25/fixtures/planet/scaled-point.png"
-         "frag_in.origin.xy + vec2(0.5, 0.5)" 1.0    "test/sfsim25/fixtures/planet/origin.png")
+         "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/sfsim25/fixtures/planet/scaled-point.png")
 
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -383,10 +381,8 @@ in vec3 point;
 in vec2 colorcoord;
 in vec2 heightcoord;
 uniform float radius;
-uniform vec3 position;
 out GEO_OUT
 {
-  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -394,7 +390,6 @@ out GEO_OUT
 void main()
 {
   gl_Position = vec4(point, 1);
-  vs_out.origin = position;
   vs_out.colorcoord = colorcoord;
   vs_out.heightcoord = heightcoord;
   vs_out.point = vec3(0, 0, radius);
@@ -476,7 +471,7 @@ float sampling_offset()
   (uniform-float program "reflectivity" ?refl)
   (uniform-float program "radius" radius)
   (uniform-float program "z_near" 0.0)
-  (uniform-vector3 program "position" (vec3 0 0 (+ ?radius ?dist)))
+  (uniform-vector3 program "origin" (vec3 0 0 (+ ?radius ?dist)))
   (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
                                                               (vec3 0 0 (+ ?radius ?dist))))
   (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)

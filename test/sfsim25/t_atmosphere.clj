@@ -647,7 +647,6 @@ void main()
   (template/fn [selector] "#version 410 core
 in VS_OUT
 {
-  vec3 origin;
   vec3 direction;
 } fs_in;
 out vec3 fragColor;
@@ -685,9 +684,7 @@ void main()
          "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere/quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png"
-         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    initial "test/sfsim25/fixtures/atmosphere/origin.png"
-         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    rotated "test/sfsim25/fixtures/atmosphere/origin-rotated.png")
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
 
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
@@ -729,6 +726,7 @@ void main()
                                (uniform-float program "z_near" 0.0)
                                (uniform-float program "z_far" 1.0)
                                (uniform-matrix4 program "transform" transform)
+                               (uniform-vector3 program "origin" origin)
                                (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
                                (uniform-float program "radius" radius)
                                (uniform-float program "max_height" max-height)

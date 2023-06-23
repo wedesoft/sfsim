@@ -16,7 +16,6 @@ in TCS_OUT
 
 out TES_OUT
 {
-  vec3 origin;
   vec2 colorcoord;
   vec2 heightcoord;
   vec3 point;
@@ -39,6 +38,5 @@ void main()
   vec3 point = scale * cube_point;
   tes_out.point = point;
   vec4 transformed_point = inverse_transform * vec4(point, 1);
-  tes_out.origin = (transform * vec4(transformed_point.xyz * (-z_near / transformed_point.z), 1)).xyz;
   gl_Position = projection * transformed_point;
 }
