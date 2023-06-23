@@ -1,5 +1,4 @@
 # TODO
-* ground radiance shadow code with cos\_incidence good?
 * integration tests for current prototype code
 * render clouds and atmosphere with transparency before rendering planet and sun, switch back to 3 opacity maps
 * render shadows of planet

@@ -327,7 +327,7 @@ void main()
          0  0  (+ radius 1000) 0   0   1   0.639491)
 
 (def ground-radiance-probe
-  (template/fn [x y z cos-incidence highlight lx ly lz water cr cg cb]
+  (template/fn [x y z incidence-frac highlight lx ly lz water cr cg cb]
 "#version 410 core
 out vec3 fragColor;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction)
@@ -338,7 +338,7 @@ vec3 transmittance_outer (vec3 point, vec3 direction)
 {
   return vec3(1, 0, 0);
 }
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
                      vec3 land_color, vec3 water_color);
 void main()
 {
@@ -346,7 +346,7 @@ void main()
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
   vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
   vec3 water_color = vec3(0.1, 0.2, 0.4);
-  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= cos-incidence %>, <%= highlight %>, land_color, water_color);
+  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= incidence-frac %>, <%= highlight %>, land_color, water_color);
 }"))
 
 (def ground-radiance-test
@@ -364,17 +364,17 @@ void main()
 
 (tabular "Shader function to compute light emitted from ground"
          (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5]
-                                           [?x ?y ?z ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
+                                           [?x ?y ?z ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
-         ?albedo ?x ?y ?z       ?cos-incidence ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
-         1       0  0  6378000  1              0          0   0   1   0      0   0   0   0           0  0
-         1       0  0  6378000  1              0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         0.9     0  0  6378000  1              0          0   0   1   0      1   1   1   0.9         0  0.9
-         1       0  0  6378000  0              0          1   0   0   0      1   1   1   0           0  1.0
-         1       0  0  6378000  1              0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
-         1       0  0  6378000  0              0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
-         1       0  0  6378000  1              0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         1       0  0  6378000  1              0          0   0  -1   0      1   1   1   0           0  1)
+         ?albedo ?x ?y ?z       ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
+         1       0  0  6378000  1               0          0   0   1   0      0   0   0   0           0  0
+         1       0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
+         0.9     0  0  6378000  1               0          0   0   1   0      1   1   1   0.9         0  0.9
+         1       0  0  6378000  0               0          1   0   0   0      1   1   1   0           0  1.0
+         1       0  0  6378000  1               0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
+         1       0  0  6378000  0               0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
+         1       0  0  6378000  1               0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
+         1       0  0  6378000  1               0          0   0  -1   0      1   1   1   0           0  1)
 
 (def vertex-planet-probe "#version 410 core
 in vec3 point;

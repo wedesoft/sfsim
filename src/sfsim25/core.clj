@@ -40,8 +40,6 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 float opacity_cascade_lookup(vec4 point);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
-                     vec3 land_color, vec3 water_color);
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
@@ -110,7 +108,7 @@ in GEO_OUT
 out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
                      vec3 land_color, vec3 water_color);
 float opacity_cascade_lookup(vec4 point);
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
@@ -149,8 +147,8 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  cos_incidence *= cloud_shadow(fs_in.point); // TODO: fix this hack
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * amplification;
+  float incidence_fraction = cos_incidence * cloud_shadow(fs_in.point);
+  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color) * amplification;
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   atmosphere.y = min(distance(origin, fs_in.point) - atmosphere.x, depth);
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);

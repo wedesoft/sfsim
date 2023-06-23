@@ -21,7 +21,7 @@ in GEO_OUT
 out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float cos_incidence, float highlight,
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
                      vec3 land_color, vec3 water_color);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 
