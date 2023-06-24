@@ -24,8 +24,7 @@ void main()
   vec3 incoming = vec3(glare, glare, glare);
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   if (atmosphere_intersection.y > 0) {
-    vec3 point = origin + atmosphere_intersection.x * direction;
-    incoming = attenuation_outer(light_direction, point, direction, 0, incoming);
+    incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
   };
   fragColor = incoming;
 }
