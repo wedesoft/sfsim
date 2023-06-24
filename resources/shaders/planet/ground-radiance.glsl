@@ -2,6 +2,7 @@
 
 float M_PI = 3.14159265358;
 uniform float albedo;
+uniform float amplification;
 uniform float reflectivity;
 
 bool is_above_horizon(vec3 point, vec3 direction);
@@ -20,5 +21,7 @@ vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incide
     direct_light = vec3(0, 0, 0);
   vec3 ambient_light = surface_radiance_function(point, light_direction);
   vec3 color = land_color * (1 - water) + water_color * water;
-  return (albedo / M_PI) * color * (incidence_fraction * direct_light + ambient_light) + (water * reflectivity * highlight) * direct_light;
+  vec3 diffuse = (albedo / M_PI) * color * (incidence_fraction * direct_light + ambient_light);
+  vec3 specular = (water * reflectivity * highlight) * direct_light;
+  return (diffuse + specular) * amplification;
 }

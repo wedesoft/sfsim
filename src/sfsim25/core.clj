@@ -29,7 +29,6 @@ uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float max_height;
 uniform float specular;
-uniform float amplification;
 uniform vec3 origin;
 uniform vec3 light_direction;
 in VS_OUT
@@ -91,7 +90,6 @@ uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
 uniform float max_height;
-uniform float amplification;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform vec3 origin;
@@ -147,7 +145,7 @@ void main()
     highlight = 0.0;
   };
   float incidence_fraction = cos_incidence * cloud_shadow(fs_in.point);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color) * amplification;
+  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   atmosphere.y = min(distance(origin, fs_in.point) - atmosphere.x, depth);
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);

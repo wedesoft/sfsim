@@ -351,30 +351,32 @@ void main()
 
 (def ground-radiance-test
   (shader-test
-    (fn [program radius max-height elevation-size height-size albedo reflectivity]
+    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height)
         (uniform-int program "elevation_size" elevation-size)
         (uniform-int program "height_size" height-size)
         (uniform-float program "albedo" albedo)
-        (uniform-float program "reflectivity" reflectivity))
+        (uniform-float program "reflectivity" reflectivity)
+        (uniform-float program "amplification" amplification))
     ground-radiance-probe ground-radiance shaders/elevation-to-index shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
     shaders/sun-elevation-to-index))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5]
+         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl]
                                            [?x ?y ?z ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
-         ?albedo ?x ?y ?z       ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
-         1       0  0  6378000  1               0          0   0   1   0      0   0   0   0           0  0
-         1       0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         0.9     0  0  6378000  1               0          0   0   1   0      1   1   1   0.9         0  0.9
-         1       0  0  6378000  0               0          1   0   0   0      1   1   1   0           0  1.0
-         1       0  0  6378000  1               0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
-         1       0  0  6378000  0               0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
-         1       0  0  6378000  1               0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         1       0  0  6378000  1               0          0   0  -1   0      1   1   1   0           0  1)
+         ?albedo ?ampl ?x ?y ?z       ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
+         1       1     0  0  6378000  1               0          0   0   1   0      0   0   0   0           0  0
+         1       1     0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
+         1       2     0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.4         0  1.6
+         0.9     1     0  0  6378000  1               0          0   0   1   0      1   1   1   0.9         0  0.9
+         1       1     0  0  6378000  0               0          1   0   0   0      1   1   1   0           0  1.0
+         1       1     0  0  6378000  1               0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
+         1       1     0  0  6378000  0               0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
+         1       1     0  0  6378000  1               0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
+         1       1     0  0  6378000  1               0          0   0  -1   0      1   1   1   0           0  1.0)
 
 (def vertex-planet-probe "#version 410 core
 in vec3 point;

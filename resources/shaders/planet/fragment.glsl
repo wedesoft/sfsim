@@ -6,7 +6,6 @@ uniform sampler2D water;
 uniform float specular;
 uniform float radius;
 uniform float max_height;
-uniform float amplification;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform vec3 origin;
@@ -41,7 +40,7 @@ void main()
     highlight = 0.0;
   };
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color) * amplification;
+  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color);
   float a = atmosphere_intersection.x;
   float b = distance(origin, fs_in.point);
   fragColor = attenuation_track(light_direction, origin, direction, a, b, incoming);
