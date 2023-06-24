@@ -27,7 +27,6 @@
 uniform float radius;
 uniform float cloud_bottom;
 uniform float cloud_top;
-uniform float dense_height;
 uniform float max_height;
 uniform float specular;
 uniform float amplification;
@@ -165,7 +164,6 @@ void main()
 (def tilesize 33)
 (def color-tilesize 129)
 (def max-height 35000.0)
-(def dense-height 6000.0)
 (def threshold (atom 19.5))
 (def anisotropic (atom 0.2))
 (def cloud-bottom 2000)
@@ -303,7 +301,6 @@ void main()
                               (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
                               (uniform-float program-opacity "cap" @cap)
                               (uniform-float program-opacity "cloud_threshold" @threshold)
-                              (uniform-float program-opacity "dense_height" dense-height)
                               (uniform-float program-opacity "scatter_amount" scatter-amount)
                               (uniform-float program-opacity "depth" depth)
                               (uniform-float program-opacity "opacity_step" @opacity-step)
@@ -513,7 +510,6 @@ void main()
                                 (uniform-float program-planet "detail_scale" detail-scale)
                                 (uniform-float program-planet "cloud_scale" cloud-scale)
                                 (uniform-float program-planet "lod_offset" lod-offset)
-                                (uniform-float program-planet "dense_height" dense-height)
                                 (uniform-float program-planet "anisotropic" @anisotropic)
                                 (uniform-float program-planet "depth" depth)
                                 (uniform-vector3 program-planet "light_direction" light-dir)
@@ -576,7 +572,6 @@ void main()
                                 (uniform-float program-atmosphere "detail_scale" detail-scale)
                                 (uniform-float program-atmosphere "cloud_scale" cloud-scale)
                                 (uniform-float program-atmosphere "lod_offset" lod-offset)
-                                (uniform-float program-atmosphere "dense_height" dense-height)
                                 (uniform-float program-atmosphere "anisotropic" @anisotropic)
                                 (uniform-float program-atmosphere "specular" 1000)
                                 (uniform-float program-atmosphere "amplification" 6)
