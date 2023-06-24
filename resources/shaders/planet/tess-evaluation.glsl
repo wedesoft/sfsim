@@ -5,8 +5,6 @@ layout(quads, equal_spacing, ccw) in;
 uniform sampler2D heightfield;
 uniform mat4 projection;
 uniform mat4 inverse_transform;
-uniform mat4 transform;
-uniform float z_near;
 
 in TCS_OUT
 {

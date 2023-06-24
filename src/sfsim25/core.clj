@@ -488,7 +488,6 @@ void main()
                                 ; Render planet
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
-                                (uniform-matrix4 program-planet "transform" transform)
                                 (uniform-vector3 program-planet "origin" @position)
                                 (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-planet "light_direction" light-dir)

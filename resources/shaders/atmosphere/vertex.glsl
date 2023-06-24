@@ -2,8 +2,6 @@
 
 uniform mat4 projection;
 uniform mat4 transform;
-uniform float z_near;
-uniform float z_far;
 in vec3 point;
 
 out VS_OUT
