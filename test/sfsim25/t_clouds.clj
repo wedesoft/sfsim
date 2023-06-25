@@ -9,6 +9,7 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
+              [sfsim25.atmosphere :refer (vertex-atmosphere)]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
               [sfsim25.clouds :refer :all])
     (:import [org.lwjgl.glfw GLFW]))
@@ -1065,7 +1066,7 @@ vec4 clip_shell_intersections(vec4 intersections, float limit)
 }
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter)
 {
-  return vec4(atmosphere.y, 0, 0, 0.5);
+  return vec4(atmosphere.y, 0, 0, 0.25);
 }
 void main()
 {
@@ -1077,6 +1078,50 @@ void main()
   vec3 start = origin + atmosphere.x * direction;
   vec4 cloud_scatter = vec4(0, 0, 0, 1);
   cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.st, cloud_scatter);
+  fragColor = vec4(cloud_scatter.rgb, 1 - cloud_scatter.a);
+}")
+
+(def fragment-atmosphere-clouds
+"#version 410 core
+uniform float radius;
+uniform float cloud_bottom;
+uniform float cloud_top;
+uniform float max_height;
+uniform vec3 origin;
+uniform vec3 light_direction;
+in VS_OUT
+{
+  vec3 direction;
+} fs_in;
+out vec4 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  if (length(direction.xy) <= 0.5)
+    return vec2(origin.z - radius, 2 * radius);
+  else
+    return vec2(0, 0);
+}
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter)
+{
+  return vec4(0, atmosphere.y, 0, 1 - atmosphere.y / 2);
+}
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  return vec4(origin.z - radius - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
+}
+void main()
+{
+  vec3 direction = normalize(fs_in.direction);
+  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  vec4 cloud_scatter = vec4(0, 0, 0, 1);
+  if (atmosphere_intersection.y > 0) {
+    vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
+    vec3 start = origin + atmosphere_intersection.x * direction;
+    if (intersect.t > 0)
+      cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.st, cloud_scatter);
+    if (intersect.q > 0)
+      cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.pq, cloud_scatter);
+  };
   fragColor = vec4(cloud_scatter.rgb, 1 - cloud_scatter.a);
 }")
 
@@ -1097,32 +1142,49 @@ void main()
                                     :tess-control [tess-control-planet]
                                     :tess-evaluation [tess-evaluation-planet]
                                     :geometry [geometry-planet]
-                                    :fragment [fragment-planet-clouds ])
+                                    :fragment [fragment-planet-clouds])
           indices     [0 1 3 2]
           vertices    [-1 -1 5, 1 -1 5, -1 1 5, 1 1 5]
           tile        (make-vertex-array-object planet indices vertices [:point 3])
-          tex         (texture-render-color width height true
-                                            (clear (vec3 0 0 0) 0)
-                                            (use-program planet)
-                                            (uniform-sampler planet "heightfield" 0)
-                                            (uniform-matrix4 planet "projection" projection)
-                                            (uniform-matrix4 planet "inverse_transform" (inverse transform))
-                                            (uniform-vector3 planet "origin" origin)
-                                            (uniform-vector3 planet "light_direction" (vec3 1 0 0))
-                                            (uniform-float planet "radius" 5)
-                                            (uniform-float planet "max_height" 4)
-                                            (uniform-float planet "cloud_bottom" 1)
-                                            (uniform-float planet "cloud_top" 2)
-                                            (uniform-float planet "depth" 3)
-                                            (uniform-int planet "neighbours" 15)
-                                            (uniform-int planet "high_detail" (dec tilesize))
-                                            (uniform-int planet "low_detail" (quot (dec tilesize) 2))
-                                            (use-textures heightfield)
-                                            (render-patches tile))
+          atmosphere  (make-program :vertex [vertex-atmosphere]
+                                    :fragment [fragment-atmosphere-clouds])
+          indices     [0 1 3 2]
+          vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+          vao         (make-vertex-array-object atmosphere indices vertices [:point 3])
+          tex         (texture-render-color-depth width height true
+                                                  (clear (vec3 0 0 0) 0)
+                                                  (use-program planet)
+                                                  (uniform-sampler planet "heightfield" 0)
+                                                  (uniform-matrix4 planet "projection" projection)
+                                                  (uniform-matrix4 planet "inverse_transform" (inverse transform))
+                                                  (uniform-vector3 planet "origin" origin)
+                                                  (uniform-vector3 planet "light_direction" (vec3 1 0 0))
+                                                  (uniform-float planet "radius" 5)
+                                                  (uniform-float planet "max_height" 4)
+                                                  (uniform-float planet "cloud_bottom" 1)
+                                                  (uniform-float planet "cloud_top" 2)
+                                                  (uniform-float planet "depth" 3)
+                                                  (uniform-int planet "neighbours" 15)
+                                                  (uniform-int planet "high_detail" (dec tilesize))
+                                                  (uniform-int planet "low_detail" (quot (dec tilesize) 2))
+                                                  (use-textures heightfield)
+                                                  (render-patches tile)
+                                                  (use-program atmosphere)
+                                                  (uniform-matrix4 atmosphere "projection" projection)
+                                                  (uniform-matrix4 atmosphere "transform" transform)
+                                                  (uniform-vector3 atmosphere "origin" origin)
+                                                  (uniform-float atmosphere "radius" 5)
+                                                  (uniform-float atmosphere "max_height" 4)
+                                                  (uniform-float atmosphere "cloud_bottom" 1)
+                                                  (uniform-float atmosphere "cloud_top" 2)
+                                                  (render-quads vao))
           img        (texture->image tex)]
       (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program atmosphere)
       (destroy-vertex-array-object tile)
       (destroy-program planet)
+      (destroy-texture heightfield)
       img)) => (is-image "test/sfsim25/fixtures/clouds/overlay.png" 0.0))
 
 (GLFW/glfwTerminate)

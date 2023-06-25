@@ -449,6 +449,16 @@
      (framebuffer-render ~width ~height :cullback nil [texture#] ~@body)
      texture#))
 
+(defmacro texture-render-color-depth
+  "Macro to render to a 2D color texture using ad depth buffer"
+  [width height floating-point & body]
+  `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
+         texture#        (make-empty-texture-2d :linear :clamp internalformat# ~width ~height)
+         depth#          (make-empty-depth-texture-2d :linear :clamp ~width ~height)]
+     (framebuffer-render ~width ~height :cullback depth# [texture#] ~@body)
+     (destroy-texture depth#)
+     texture#))
+
 (defmacro texture-render-depth
   "Macro to create shadow map"
   [width height & body]
