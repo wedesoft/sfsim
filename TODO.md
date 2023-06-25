@@ -1,4 +1,6 @@
 # TODO
+* unit-tested function to get depth-limited cloud intersection in front of planet
+* rename atmosphere parameter for sample\_cloud
 * integration tests for current prototype code
 * render clouds and atmosphere with transparency before rendering planet and sun, switch back to 3 opacity maps
 * render shadows of planet

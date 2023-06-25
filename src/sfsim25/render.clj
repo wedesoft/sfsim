@@ -48,7 +48,9 @@
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
    (GL11/glClear GL11/GL_DEPTH_BUFFER_BIT))
   ([color]
-   (GL11/glClearColor (color 0) (color 1) (color 2) 1.0)
+   (clear color 1.0))
+  ([color alpha]
+   (GL11/glClearColor (color 0) (color 1) (color 2) alpha)
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
    (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))))
 
