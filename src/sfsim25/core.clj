@@ -38,7 +38,7 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 float opacity_cascade_lookup(vec4 point);
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 cloud_shell, vec4 cloud_scatter);
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
 
@@ -71,9 +71,9 @@ void main()
     vec3 start = origin + atmosphere_intersection.x * direction;
     vec4 cloud_scatter = vec4(0, 0, 0, 1);
     if (intersect.t > 0)
-      cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.st, cloud_scatter);
+      cloud_scatter = sample_cloud(origin, start, direction, intersect.st, cloud_scatter);
     if (intersect.q > 0)
-      cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.pq, cloud_scatter);
+      cloud_scatter = sample_cloud(origin, start, direction, intersect.pq, cloud_scatter);
     incoming = incoming * cloud_scatter.a + cloud_scatter.rgb;
   };
   fragColor = incoming;
@@ -108,7 +108,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
                      vec3 land_color, vec3 water_color);
 float opacity_cascade_lookup(vec4 point);
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 cloud_shell, vec4 cloud_scatter);
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
@@ -153,7 +153,7 @@ void main()
   intersect = clip_shell_intersections(intersect, atmosphere.x + atmosphere.y);
   vec3 start = origin + atmosphere.x * direction;
   vec4 cloud_scatter = vec4(0, 0, 0, 1);
-  cloud_scatter = sample_cloud(origin, start, direction, light_direction, intersect.st, cloud_scatter);
+  cloud_scatter = sample_cloud(origin, start, direction, intersect.st, cloud_scatter);
   fragColor = incoming * cloud_scatter.a + cloud_scatter.rgb;
 }")
 
