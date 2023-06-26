@@ -1,5 +1,4 @@
 # TODO
-* rename atmosphere parameter for sample\_cloud
 * sample cloud should use uniform for light\_direction
 * make tested cloud\_overlay method using lots of uniforms and call it from the integration tested shaders
 * render clouds and atmosphere with transparency before rendering planet and sun, switch back to 3 opacity maps

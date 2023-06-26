@@ -977,9 +977,9 @@ void main()
          1.0     1.0       1.0    0.5        2.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       1.0)
 
 (def sample-cloud-probe
-  (template/fn [atmosphere-begin atmosphere-length density red alpha selector]
+  (template/fn [cloud-begin cloud-length density red alpha selector]
 "#version 410 core
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter);
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 cloud_shell, vec4 cloud_scatter);
 out vec3 fragColor;
 float sampling_offset()
 {
@@ -1005,9 +1005,9 @@ void main()
   vec3 start = vec3(5, 0, 0);
   vec3 direction = vec3(1, 0, 0);
   vec3 light_direction = vec3(0, 1, 0);
-  vec2 atmosphere = vec2(<%= atmosphere-begin %>, <%= atmosphere-length %>);
+  vec2 cloud_shell = vec2(<%= cloud-begin %>, <%= cloud-length %>);
   vec4 cloud_scatter = vec4(<%= red %>, 0, 0, <%= alpha %>);
-  fragColor.r = sample_cloud(origin, start, direction, light_direction, atmosphere, cloud_scatter).<%= selector %>;
+  fragColor.r = sample_cloud(origin, start, direction, light_direction, cloud_shell, cloud_scatter).<%= selector %>;
 }"))
 
 (def sample-cloud-test
@@ -1064,9 +1064,9 @@ vec4 clip_shell_intersections(vec4 intersections, float limit)
 {
   return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
 }
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter)
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 cloud_shell, vec4 cloud_scatter)
 {
-  return vec4(atmosphere.y, 0, 0, 0.25);
+  return vec4(cloud_shell.y, 0, 0, 0.25);
 }
 void main()
 {
@@ -1101,9 +1101,9 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
   else
     return vec2(0, 0);
 }
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 atmosphere, vec4 cloud_scatter)
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec3 light_direction, vec2 cloud_shell, vec4 cloud_scatter)
 {
-  return vec4(0, atmosphere.y, 0, 1 - atmosphere.y / 2);
+  return vec4(0, cloud_shell.y, 0, 1 - cloud_shell.y / 2);
 }
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
