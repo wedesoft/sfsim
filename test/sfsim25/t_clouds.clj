@@ -1036,15 +1036,66 @@ void main()
          2.0    1.0     1.0   0.0      0.0  1.0    "a"       0.0     1.0
          2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.5     0.5)
 
+(def cloud-planet-probe
+  (template/fn [z selector]
+"#version 410 core
+uniform float radius;
+out vec4 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  float start = max(origin.z - radius, 0);
+  float end = max(origin.z + radius, 0);
+  return vec2(start, (start - end) / direction.z);
+}
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  float start = max(origin.z - outer_radius, 0);
+  float end = max(origin.z - inner_radius, 0);
+  return vec4(start, (start - end) / direction.z, 0, 0);
+}
+vec4 clip_shell_intersections(vec4 intersections, float limit)
+{
+  return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
+}
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
+{
+  return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
+}
+vec4 cloud_planet(vec3 point);
+void main()
+{
+  vec3 point = vec3(0, 0, <%= z %>);
+  vec4 result = cloud_planet(point);
+  fragColor.r = result.<%= selector %>;
+}"))
+
+(def cloud-planet-test
+  (shader-test
+    (fn [program origin depth]
+        (uniform-float program "radius" 10)
+        (uniform-float program "max_height" 3)
+        (uniform-float program "cloud_bottom" 1)
+        (uniform-float program "cloud_top" 2)
+        (uniform-float program "depth" depth)
+        (uniform-vector3 program "origin" (vec3 0 0 origin)))
+    cloud-planet-probe
+    cloud-planet))
+
+(tabular "Shader to compute pixel of cloud foreground overlay for planet"
+         (fact ((cloud-planet-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
+         ?origin ?z ?depth ?selector ?result
+         11      10 100    "g"        0.0
+         11      10 100    "a"        0.0
+         12      10 100    "g"        1.0
+         12      10 100    "a"        1.0
+         12      10 100    "r"       12.0
+         14      10 100    "r"       13.0
+         13      10 100    "a"        1.0
+         13      10   1.5  "a"        0.5)
+
 (def fragment-planet-clouds
 "#version 410 core
 uniform float radius;
-uniform float max_height;
-uniform float cloud_bottom;
-uniform float cloud_top;
-uniform float depth;
-uniform vec3 origin;
-uniform vec3 light_direction;
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -1058,7 +1109,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 }
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
-  return vec4(origin.z - radius - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
+  return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
 vec4 clip_shell_intersections(vec4 intersections, float limit)
 {
@@ -1068,17 +1119,10 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(cloud_shell.y, 0, 0, 0.25);
 }
+vec4 cloud_planet(vec3 point);
 void main()
 {
-  vec3 direction = normalize(fs_in.point - origin);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = min(distance(origin, fs_in.point) - atmosphere.x, depth);
-  vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
-  intersect = clip_shell_intersections(intersect, atmosphere.x + atmosphere.y);
-  vec3 start = origin + atmosphere.x * direction;
-  vec4 cloud_scatter = vec4(0, 0, 0, 1);
-  cloud_scatter = sample_cloud(origin, start, direction, intersect.st, cloud_scatter);
-  fragColor = vec4(cloud_scatter.rgb, 1 - cloud_scatter.a);
+  fragColor = cloud_planet(fs_in.point);
 }")
 
 (def fragment-atmosphere-clouds
@@ -1141,7 +1185,7 @@ void main()
                                     :tess-control [tess-control-planet]
                                     :tess-evaluation [tess-evaluation-planet]
                                     :geometry [geometry-planet]
-                                    :fragment [fragment-planet-clouds])
+                                    :fragment [fragment-planet-clouds cloud-planet])
           indices     [0 1 3 2]
           vertices    [-1 -1 5, 1 -1 5, -1 1 5, 1 1 5]
           tile        (make-vertex-array-object planet indices vertices [:point 3])

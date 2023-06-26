@@ -186,3 +186,7 @@
 (def sample-cloud
   "Shader to sample the cloud layer and apply cloud scattering update steps"
   (slurp "resources/shaders/clouds/sample-cloud.glsl"))
+
+(def cloud-planet
+  "Shader to compute pixel of cloud foreground overlay for planet"
+  (slurp "resources/shaders/clouds/cloud-planet.glsl"))
