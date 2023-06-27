@@ -1,5 +1,4 @@
 # TODO
-* make tested cloud\_overlay method using lots of uniforms and call it from the integration tested shaders
 * render clouds and atmosphere with transparency before rendering planet and sun, switch back to 3 opacity maps
 * use jpeg for tiles, increase resolution of tiles, use Java Image IO for more robustness
 * render shadows of planet

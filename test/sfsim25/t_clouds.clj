@@ -1040,7 +1040,7 @@ void main()
   (template/fn [z selector]
 "#version 410 core
 uniform float radius;
-out vec4 fragColor;
+out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   float start = max(origin.z - radius, 0);
@@ -1093,9 +1093,74 @@ void main()
          13      10 100    "a"        1.0
          13      10   1.5  "a"        0.5)
 
+(def cloud-atmosphere-probe
+  (template/fn [dz selector]
+"#version 410 core
+out vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  if (direction.z > 0) {
+    float start = 0;
+    float end = max(radius - origin.z, 0);
+    return vec2(start, end - start);
+  } else {
+    float start = max(origin.z - radius, 0);
+    float end = max(radius + origin.z, 0);
+    return vec2(start, end - start);
+  }
+}
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  if (direction.z > 0) {
+    float start = max(inner_radius - origin.z, 0);
+    float end = max(outer_radius - origin.z, 0);
+    return vec4(start, end - start, 0, 0);
+  } else {
+    float start1 = max(origin.z - outer_radius, 0);
+    float end1 = max(origin.z - inner_radius, 0);
+    float start2 = max(origin.z + inner_radius, 0);
+    float end2 = max(origin.z + outer_radius, 0);
+    return vec4(start1, end1 - start1, start2, end2 - start2);
+  }
+}
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
+{
+  return vec4(start.z, cloud_scatter.g + cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
+}
+vec4 cloud_atmosphere(vec3 fs_in_direction);
+void main()
+{
+  vec3 direction = vec3(0, 0, <%= dz %>);
+  vec4 result = cloud_atmosphere(direction);
+  fragColor.r = result.<%= selector %>;
+}"))
+
+(def cloud-atmosphere-test
+  (shader-test
+    (fn [program z]
+        (uniform-float program "radius" 10)
+        (uniform-float program "max_height" 3)
+        (uniform-float program "cloud_bottom" 1)
+        (uniform-float program "cloud_top" 2)
+        (uniform-vector3 program "origin" (vec3 0 0 z)))
+    cloud-atmosphere-probe
+    cloud-atmosphere))
+
+(tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
+         (fact ((cloud-atmosphere-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
+         ?z   ?dz ?selector ?result
+         14    1  "g"        0.0
+         14    1  "a"        0.0
+         11    1  "g"        1.0
+         11    1  "a"        1.0
+         11.5  1  "g"        0.5
+         11.5  1  "a"        0.5
+         13   -1  "g"        2.0
+         12   -1  "r"       12.0
+         15   -1  "r"       13.0)
+
 (def fragment-planet-clouds
 "#version 410 core
-uniform float radius;
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -1127,11 +1192,6 @@ void main()
 
 (def fragment-atmosphere-clouds
 "#version 410 core
-uniform float radius;
-uniform float cloud_bottom;
-uniform float cloud_top;
-uniform float max_height;
-uniform vec3 origin;
 in VS_OUT
 {
   vec3 direction;
@@ -1150,22 +1210,12 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 }
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
-  return vec4(origin.z - radius - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
+  return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
+vec4 cloud_atmosphere(vec3 fs_in_direction);
 void main()
 {
-  vec3 direction = normalize(fs_in.direction);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  vec4 cloud_scatter = vec4(0, 0, 0, 1);
-  if (atmosphere_intersection.y > 0) {
-    vec4 intersect = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);
-    vec3 start = origin + atmosphere_intersection.x * direction;
-    if (intersect.t > 0)
-      cloud_scatter = sample_cloud(origin, start, direction, intersect.st, cloud_scatter);
-    if (intersect.q > 0)
-      cloud_scatter = sample_cloud(origin, start, direction, intersect.pq, cloud_scatter);
-  };
-  fragColor = vec4(cloud_scatter.rgb, 1 - cloud_scatter.a);
+  fragColor = cloud_atmosphere(fs_in.direction);
 }")
 
 (fact "Test rendering of cloud overlay image"
@@ -1190,7 +1240,7 @@ void main()
           vertices    [-1 -1 5, 1 -1 5, -1 1 5, 1 1 5]
           tile        (make-vertex-array-object planet indices vertices [:point 3])
           atmosphere  (make-program :vertex [vertex-atmosphere]
-                                    :fragment [fragment-atmosphere-clouds])
+                                    :fragment [fragment-atmosphere-clouds cloud-atmosphere])
           indices     [0 1 3 2]
           vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao         (make-vertex-array-object atmosphere indices vertices [:point 3])
