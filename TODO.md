@@ -1,11 +1,11 @@
 # TODO
 * make tested cloud\_overlay method using lots of uniforms and call it from the integration tested shaders
 * render clouds and atmosphere with transparency before rendering planet and sun, switch back to 3 opacity maps
+* use jpeg for tiles, increase resolution of tiles, use Java Image IO for more robustness
 * render shadows of planet
-* combine offset and opacity texture to free up texture indices?
-* adapt opacity step depending on sun angle?
-* render backside of planet (as seen from light source) into shadow depth map using separate shader
+  render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
+* adapt opacity step depending on sun angle?
 * when building maps put intermediate files into a common subdirectory (tmp?)
 * render planet surface as well in prototype
 * cloud shadow should use planet depth map instead of sphere intersection
