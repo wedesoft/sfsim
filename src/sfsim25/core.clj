@@ -85,7 +85,7 @@ void main()
   if (atmosphere_intersection.y > 0) {
     incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
     vec4 cloud_scatter = texture(clouds, gl_FragCoord.xy / vec2(clouds_width, clouds_height));
-    incoming = incoming * cloud_scatter.a + cloud_scatter.rgb;
+    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
   };
   fragColor = incoming;
 }")
@@ -164,7 +164,7 @@ void main()
   atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
   vec4 cloud_scatter = texture(clouds, gl_FragCoord.xy / vec2(clouds_width, clouds_height));
-  fragColor = incoming * cloud_scatter.a + cloud_scatter.rgb;
+  fragColor = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
 }")
 
 (def fov (to-radians 60.0))
@@ -187,7 +187,7 @@ void main()
 (def series (take 5 (iterate #(* % 0.8) 1.0)))
 (def sum-series (apply + series))
 (def perlin-octaves (mapv #(/ % sum-series) series))
-(def mix 0.8)
+(def mix 0.5)
 (def opacity-step (atom 250.0))
 (def step (atom 400.0))
 (def worley-size 64)
@@ -209,7 +209,7 @@ void main()
 (def position (atom (vec3 0 (* (cos theta) r) (* (sin theta) r))))
 (def orientation (atom (q/rotation (to-radians 25) (vec3 1 0 0))))
 (def light (atom (* 0.25 PI)))
-(def num-steps 3)
+(def num-steps 2)
 (def num-opacity-layers 7)
 
 (GLFW/glfwInit)
@@ -326,52 +326,86 @@ void main()
                            transmittance-outer surface-radiance-function shaders/convert-1d-index
                            (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
 
-(def cloud-planet-program (make-program :vertex [vertex-planet]
-                                        :tess-control [tess-control-planet]
-                                        :tess-evaluation [tess-evaluation-planet]
-                                        :geometry [geometry-planet]
-                                        :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
-                                                   shaders/clip-shell-intersections sample-cloud linear-sampling
-                                                   bluenoise/sampling-offset phase-function cloud-density cloud-base
-                                                   cloud-transfer cloud-cover cloud-noise shaders/interpolate-float-cubemap
-                                                   shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
-                                                   (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
-                                                   (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                                                   (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
-                                                   cloud-shadow cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
-                                                   (opacity-cascade-lookup num-steps) opacity-lookup
-                                                   shaders/convert-2d-index transmittance-outer
-                                                   shaders/convert-3d-index shaders/transmittance-forward
-                                                   transmittance-track shaders/height-to-index shaders/interpolate-2d
-                                                   shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
-                                                   shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
-                                                   shaders/sun-elevation-to-index shaders/interpolate-4d
-                                                   shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
+(def program-cloud-planet
+  (make-program :vertex [vertex-planet]
+                :tess-control [tess-control-planet]
+                :tess-evaluation [tess-evaluation-planet]
+                :geometry [geometry-planet]
+                :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
+                           shaders/clip-shell-intersections sample-cloud linear-sampling
+                           bluenoise/sampling-offset phase-function cloud-density cloud-base
+                           cloud-transfer cloud-cover cloud-noise shaders/interpolate-float-cubemap
+                           shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
+                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
+                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
+                           cloud-shadow cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
+                           (opacity-cascade-lookup num-steps) opacity-lookup
+                           shaders/convert-2d-index transmittance-outer
+                           shaders/convert-3d-index shaders/transmittance-forward
+                           transmittance-track shaders/height-to-index shaders/interpolate-2d
+                           shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
+                           shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
+                           shaders/sun-elevation-to-index shaders/interpolate-4d
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
 
-;(uniform-sampler program-atmosphere "worley" 0)
-;(uniform-sampler program-atmosphere "perlin" 1)
-;(uniform-sampler program-atmosphere "bluenoise" 2)
-;(uniform-sampler program-atmosphere "cover" 3)
-;(uniform-float program-planet "depth" depth)
-;(uniform-float program-planet "cloud_step" @step)
-;(uniform-float program-planet "cloud_multiplier" @cloud-multiplier)
-;(uniform-float program-planet "cover_multiplier" @cover-multiplier)
-;(uniform-float program-planet "cap" @cap)
-;(uniform-float program-planet "cloud_threshold" @threshold)
-;(uniform-float program-planet "lod_offset" lod-offset)
-;(uniform-float program-planet "anisotropic" @anisotropic)
-;
+(use-program program-cloud-planet)
+(uniform-sampler program-cloud-planet "heightfield"      0)
+(uniform-sampler program-cloud-planet "colors"           1); TODO: not needed
+(uniform-sampler program-cloud-planet "normals"          2); TODO: not needed
+(uniform-sampler program-cloud-planet "water"            3); TODO: not needed
+(uniform-sampler program-cloud-planet "transmittance"    4)
+(uniform-sampler program-cloud-planet "ray_scatter"      5)
+(uniform-sampler program-cloud-planet "mie_strength"     6)
+(uniform-sampler program-cloud-planet "surface_radiance" 7); TODO: needed?
+(uniform-sampler program-cloud-planet "worley"           8)
+(uniform-sampler program-cloud-planet "perlin"           9)
+(uniform-sampler program-cloud-planet "bluenoise"       10)
+(uniform-sampler program-cloud-planet "cover"           11)
+(doseq [i (range num-steps)]
+       (uniform-sampler program-cloud-planet (str "offset" i) (+ (* 2 i) 12))
+       (uniform-sampler program-cloud-planet (str "opacity" i) (+ (* 2 i) 13)))
+(uniform-float program-cloud-planet "radius" radius)
+(uniform-float program-cloud-planet "max_height" max-height)
+(uniform-float program-cloud-planet "cloud_bottom" cloud-bottom)
+(uniform-float program-cloud-planet "cloud_top" cloud-top)
+(uniform-float program-cloud-planet "cloud_scale" cloud-scale)
+(uniform-float program-cloud-planet "detail_scale" detail-scale)
+(uniform-float program-cloud-planet "depth" depth)
+(uniform-int program-cloud-planet "cover_size" 512)
+(uniform-int program-cloud-planet "noise_size" noise-size)
+(uniform-int program-cloud-planet "high_detail" (dec tilesize))
+(uniform-int program-cloud-planet "low_detail" (quot (dec tilesize) 2))
+(uniform-int program-cloud-planet "height_size" height-size)
+(uniform-int program-cloud-planet "elevation_size" elevation-size)
+(uniform-int program-cloud-planet "light_elevation_size" light-elevation-size)
+(uniform-int program-cloud-planet "heading_size" heading-size)
+(uniform-int program-cloud-planet "transmittance_height_size" transmittance-height-size)
+(uniform-int program-cloud-planet "transmittance_elevation_size" transmittance-elevation-size)
+(uniform-int program-cloud-planet "surface_height_size" surface-height-size)
+(uniform-int program-cloud-planet "surface_sun_elevation_size" surface-sun-elevation-size)
+(uniform-float program-cloud-planet "albedo" 0.9)
+(uniform-float program-cloud-planet "reflectivity" 0.1)
+(uniform-float program-cloud-planet "specular" 1000)
+(uniform-float program-cloud-planet "radius" radius)
+(uniform-float program-cloud-planet "max_height" max-height)
+(uniform-vector3 program-cloud-planet "water_color" (vec3 0.09 0.11 0.34))
+(uniform-float program-cloud-planet "amplification" 6)
+(uniform-float program-cloud-planet "opacity_cutoff" 0.05)
+(uniform-int program-cloud-planet "num_opacity_layers" num-opacity-layers)
+(uniform-int program-cloud-planet "shadow_size" shadow-size)
+
 ;use-textures W L B C
 
 (use-program program-planet)
-(uniform-sampler program-planet "transmittance"    0)
-(uniform-sampler program-planet "ray_scatter"      1)
-(uniform-sampler program-planet "mie_strength"     2)
-(uniform-sampler program-planet "surface_radiance" 3)
-(uniform-sampler program-planet "heightfield"      4)
-(uniform-sampler program-planet "colors"           5)
-(uniform-sampler program-planet "normals"          6)
-(uniform-sampler program-planet "water"            7)
+(uniform-sampler program-planet "heightfield"      0)
+(uniform-sampler program-planet "colors"           1)
+(uniform-sampler program-planet "normals"          2)
+(uniform-sampler program-planet "water"            3)
+(uniform-sampler program-planet "transmittance"    4)
+(uniform-sampler program-planet "ray_scatter"      5)
+(uniform-sampler program-planet "mie_strength"     6)
+(uniform-sampler program-planet "surface_radiance" 7)
 (uniform-sampler program-planet "clouds"           8)
 (doseq [i (range num-steps)]
        (uniform-sampler program-planet (str "offset" i) (+ (* 2 i) 9))
@@ -400,10 +434,6 @@ void main()
 (uniform-int program-planet "shadow_size" shadow-size)
 (uniform-float program-planet "radius" radius)
 (uniform-float program-planet "max_height" max-height)
-(uniform-float program-planet "cloud_bottom" cloud-bottom)
-(uniform-float program-planet "cloud_top" cloud-top)
-(uniform-float program-planet "detail_scale" detail-scale)
-(uniform-float program-planet "cloud_scale" cloud-scale)
 
 (use-program program-atmosphere)
 (uniform-sampler program-atmosphere "transmittance" 0)
@@ -431,10 +461,6 @@ void main()
 (uniform-int program-atmosphere "shadow_size" shadow-size)
 (uniform-float program-atmosphere "radius" radius)
 (uniform-float program-atmosphere "max_height" max-height)
-(uniform-float program-atmosphere "cloud_bottom" cloud-bottom)
-(uniform-float program-atmosphere "cloud_top" cloud-top)
-(uniform-float program-atmosphere "cloud_scale" cloud-scale)
-(uniform-float program-atmosphere "detail_scale" detail-scale)
 (uniform-float program-atmosphere "specular" 1000)
 (uniform-float program-atmosphere "amplification" 6)
 
@@ -450,12 +476,13 @@ void main()
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+        vao-cloud  (make-vertex-array-object program-cloud-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
         color-tex  (make-rgb-texture :linear :clamp (:colors tile))
         height-tex (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:scales tile)})
         normal-tex (make-vector-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:normals tile)})
         water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
     (assoc (dissoc tile :colors :scales :normals :water)
-           :vao vao :color-tex color-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
+           :vao vao :vao-cloud vao-cloud :color-tex color-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
 
 (defn load-tiles-into-opengl
   [tree paths]
@@ -483,22 +510,22 @@ void main()
              (swap! keystates assoc k false)))))
 
 (defn render-tile
-  [tile other-textures]
+  [tile target other-textures]
   (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet "neighbours" neighbours)
-    (apply use-textures T S M E (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile) other-textures)
-    (render-patches (:vao tile))))
+    (apply use-textures (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile) other-textures)
+    (render-patches (target tile))))
 
 (defn render-tree
-  [node other-textures]
+  [node target other-textures]
   (if node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile node other-textures))
+      (if-not (empty? node) (render-tile node target other-textures))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
-        (render-tree (selector node) other-textures)))))
+        (render-tree (selector node) target other-textures)))))
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
@@ -558,8 +585,31 @@ void main()
                    splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                    tex-cas    (opacity-cascade matrix-cas light-dir scatter-am)
-                   clouds     (texture-render-color-depth (quot (aget w 0) 2) (quot (aget h 0) 2) true
-                                                          (clear (vec3 0 0 0) 1))]
+                   clouds     (texture-render-color-depth
+                                (quot (aget w 0) 2) (quot (aget h 0) 2) true
+                                (clear (vec3 0 0 0) 0)
+                                ; Render clouds under the horizon
+                                (use-program program-cloud-planet)
+                                (uniform-float program-cloud-planet "cloud_step" @step)
+                                (uniform-float program-cloud-planet "cloud_multiplier" @cloud-multiplier)
+                                (uniform-float program-cloud-planet "cover_multiplier" @cover-multiplier)
+                                (uniform-float program-cloud-planet "cap" @cap)
+                                (uniform-float program-cloud-planet "cloud_threshold" @threshold)
+                                (uniform-float program-cloud-planet "lod_offset" lod-offset)
+                                (uniform-float program-cloud-planet "anisotropic" @anisotropic)
+                                (uniform-matrix4 program-cloud-planet "projection" projection)
+                                (uniform-vector3 program-cloud-planet "origin" @position)
+                                (uniform-matrix4 program-cloud-planet "transform" transform)
+                                (uniform-matrix4 program-cloud-planet "inverse_transform" (inverse transform))
+                                (uniform-vector3 program-cloud-planet "light_direction" light-dir)
+                                (uniform-float program-cloud-planet "opacity_step" @opacity-step)
+                                (doseq [[idx item] (map-indexed vector splits)]
+                                       (uniform-float program-cloud-planet (str "split" idx) item))
+                                (doseq [[idx item] (map-indexed vector matrix-cas)]
+                                       (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+                                       (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
+                                (render-tree @tree :vao-cloud (into [T S M E W L B C] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))))]
+               ;(spit-image "test.png" (texture->image clouds))
                (onscreen-render window
                                 (clear (vec3 0 1 0))
                                 ; Render planet
@@ -569,15 +619,14 @@ void main()
                                 (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (uniform-float program-planet "opacity_step" @opacity-step)
-                                (uniform-float program-planet "clouds_width" (quot (aget w 0) 2))
-                                (uniform-float program-planet "clouds_height" (quot (aget h 0) 2))
-                                (uniform-vector3 program-planet "light_direction" light-dir)
+                                (uniform-int program-planet "clouds_width" (aget w 0))
+                                (uniform-int program-planet "clouds_height" (aget h 0))
                                 (doseq [[idx item] (map-indexed vector splits)]
                                        (uniform-float program-planet (str "split" idx) item))
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (render-tree @tree (conj (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas) clouds))
+                                (render-tree @tree :vao (into [T S M E clouds] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas)))
                                 ; Render atmosphere and clouds
                                 (use-program program-atmosphere)
                                 (doseq [[idx item] (map-indexed vector splits)]
@@ -590,8 +639,8 @@ void main()
                                 (uniform-vector3 program-atmosphere "origin" @position)
                                 (uniform-matrix4 program-atmosphere "inverse_transform" (inverse transform))
                                 (uniform-float program-atmosphere "opacity_step" @opacity-step)
-                                (uniform-float program-atmosphere "clouds_width" (quot (aget w 0) 2))
-                                (uniform-float program-atmosphere "clouds_height" (quot (aget h 0) 2))
+                                (uniform-int program-atmosphere "clouds_width" (aget w 0))
+                                (uniform-int program-atmosphere "clouds_height" (aget h 0))
                                 (uniform-vector3 program-atmosphere "light_direction" light-dir)
                                 (apply use-textures T S M E clouds (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                                 (render-quads vao))
@@ -617,7 +666,7 @@ void main()
   (destroy-texture B)
   (destroy-texture W)
   (destroy-vertex-array-object opacity-vao)
-  (destroy-program cloud-planet-program)
+  (destroy-program program-cloud-planet)
   (destroy-program program-planet)
   (destroy-program program-opacity)
   (destroy-program program-planet)
