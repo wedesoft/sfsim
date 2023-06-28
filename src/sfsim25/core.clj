@@ -22,6 +22,40 @@
 (def width 960)
 (def height 540)
 
+(def fragment-planet-clouds
+"#version 410 core
+uniform float radius;
+uniform vec3 light_direction;
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec2 heightcoord;
+  vec3 point;
+} fs_in;
+out vec4 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+float opacity_cascade_lookup(vec4 point);
+bool planet_shadow(vec3 point)  // To be replaced with shadow map
+{
+  if (dot(point, light_direction) < 0) {
+    vec2 planet_intersection = ray_sphere(vec3(0, 0, 0), radius, point, light_direction);
+    return planet_intersection.y > 0;
+  } else
+    return false;
+}
+float cloud_shadow(vec3 point)
+{
+  if (planet_shadow(point))
+    return 0.0;
+  else
+    return opacity_cascade_lookup(vec4(point, 1));
+}
+vec4 cloud_planet(vec3 point);
+void main()
+{
+  fragColor = cloud_planet(fs_in.point);
+}")
+
 (def fragment-atmosphere-enhanced
 "#version 410 core
 uniform sampler2D clouds;
@@ -215,22 +249,15 @@ void main()
 
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere-enhanced cloud-density shaders/remap
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
-                           cloud-base cloud-cover cloud-noise
-                           (shaders/lookup-3d-lod "lookup_3d" "worley")
-                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (sphere-noise "perlin_octaves")
-                           (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile phase-function
+                :fragment [fragment-atmosphere-enhanced
                            shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
-                           opacity-lookup shaders/convert-2d-index shaders/convert-3d-index bluenoise/sampling-offset
-                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index transmittance-track
+                           opacity-lookup shaders/convert-2d-index
+                           transmittance-track phase-function
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
-                           ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer
-                           linear-sampling cloud-transfer sample-cloud shaders/ray-shell]))
+                           ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer]))
 
 (def program-opacity
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
@@ -290,21 +317,36 @@ void main()
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
                 :fragment [fragment-planet-enhanced attenuation-track shaders/ray-sphere ground-radiance
-                           shaders/transmittance-forward
+                           shaders/transmittance-forward phase-function
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/make-2d-index-from-4d shaders/is-above-horizon
-                           shaders/clip-shell-intersections phase-function shaders/surface-radiance-forward
-                           transmittance-outer surface-radiance-function shaders/convert-1d-index shaders/remap
-                           (opacity-cascade-lookup num-steps) opacity-lookup cloud-density shaders/convert-3d-index
-                           cloud-base linear-sampling cloud-cover cloud-noise bluenoise/sampling-offset
-                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index cloud-profile
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley")
-                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (sphere-noise "perlin_octaves") (shaders/lookup-3d "lookup_perlin" "perlin")
-                           cloud-transfer sample-cloud shaders/ray-shell]))
+                           shaders/clip-shell-intersections shaders/surface-radiance-forward
+                           transmittance-outer surface-radiance-function shaders/convert-1d-index
+                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
+
+(def cloud-planet-program (make-program :vertex [vertex-planet]
+                                        :tess-control [tess-control-planet]
+                                        :tess-evaluation [tess-evaluation-planet]
+                                        :geometry [geometry-planet]
+                                        :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
+                                                   shaders/clip-shell-intersections sample-cloud linear-sampling
+                                                   bluenoise/sampling-offset phase-function cloud-density cloud-base
+                                                   cloud-transfer cloud-cover cloud-noise shaders/interpolate-float-cubemap
+                                                   shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
+                                                   (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                                                   (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
+                                                   (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
+                                                   cloud-shadow cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
+                                                   (opacity-cascade-lookup num-steps) opacity-lookup
+                                                   shaders/convert-2d-index transmittance-outer
+                                                   shaders/convert-3d-index shaders/transmittance-forward
+                                                   transmittance-track shaders/height-to-index shaders/interpolate-2d
+                                                   shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
+                                                   shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
+                                                   shaders/sun-elevation-to-index shaders/interpolate-4d
+                                                   shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
 
 ;(uniform-sampler program-atmosphere "worley" 0)
 ;(uniform-sampler program-atmosphere "perlin" 1)
@@ -517,7 +559,7 @@ void main()
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                    tex-cas    (opacity-cascade matrix-cas light-dir scatter-am)
                    clouds     (texture-render-color-depth (quot (aget w 0) 2) (quot (aget h 0) 2) true
-                                                          (clear (vec3 0.5 0 0) 0.5))]
+                                                          (clear (vec3 0 0 0) 1))]
                (onscreen-render window
                                 (clear (vec3 0 1 0))
                                 ; Render planet
@@ -575,6 +617,7 @@ void main()
   (destroy-texture B)
   (destroy-texture W)
   (destroy-vertex-array-object opacity-vao)
+  (destroy-program cloud-planet-program)
   (destroy-program program-planet)
   (destroy-program program-opacity)
   (destroy-program program-planet)
