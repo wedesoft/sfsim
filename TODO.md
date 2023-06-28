@@ -1,6 +1,7 @@
 # TODO
 * render clouds and atmosphere with transparency before rendering planet and sun, switch back to 3 opacity maps
 * use jpeg for tiles, increase resolution of tiles, use Java Image IO for more robustness
+* Windows installer
 * render shadows of planet
   render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
