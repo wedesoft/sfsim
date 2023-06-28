@@ -121,6 +121,7 @@ void main()
   float incidence_fraction = cos_incidence * cloud_shadow(fs_in.point);
   vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
   vec4 cloud_scatter = vec4(0, 0, 0, 1);
   fragColor = incoming * cloud_scatter.a + cloud_scatter.rgb;
