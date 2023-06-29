@@ -14,7 +14,7 @@
             [sfsim25.quaternion :as q]
             [sfsim25.util :refer :all]
             [sfsim25.shaders :as shaders])
-  (:import [org.lwjgl.opengl GL]
+  (:import [org.lwjgl.opengl GL GL11 GL13]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
   (:gen-class))
 
@@ -280,6 +280,14 @@ void main()
 (def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data data}))
 
+(defn use-textures-enhanced
+  "Specify textures to be used in the next rendering operation"
+  [& textures]
+  (doseq [[i texture] (map list (range) textures)]
+         (when texture
+           (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
+           (GL11/glBindTexture (:target texture) (:texture texture)))))
+
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere-enhanced
@@ -378,6 +386,7 @@ void main()
 (uniform-float program-opacity "cloud_top" cloud-top)
 (uniform-float program-opacity "detail_scale" detail-scale)
 (uniform-float program-opacity "cloud_scale" cloud-scale)
+(use-textures W L B C)
 
 (use-program program-cloud-planet)
 (uniform-sampler program-cloud-planet "heightfield"      0)
@@ -548,7 +557,6 @@ void main()
                               (uniform-float program-opacity "depth" depth)
                               (uniform-float program-opacity "opacity_step" opac-step)
                               (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
-                              (use-textures W L B C)
                               (render-quads opacity-vao))
           {:offset opacity-offsets :layer opacity-layers}))
     matrix-cascade))
@@ -598,40 +606,40 @@ void main()
              (swap! keystates assoc k false)))))
 
 (defn render-tile
-  [tile other-textures]
+  [tile]
   (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet "neighbours" neighbours)
-    (apply use-textures (:height-tex tile) other-textures)
+    (use-textures (:height-tex tile))
     (render-patches (:vao tile))))
 
 (defn render-tree
-  [node other-textures]
+  [node]
   (if node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile node other-textures))
+      (if-not (empty? node) (render-tile node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
-        (render-tree (selector node) other-textures)))))
+        (render-tree (selector node))))))
 
 (defn render-tile-color
-  [tile other-textures]
+  [tile]
   (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet "neighbours" neighbours)
-    (apply use-textures (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile) other-textures)
+    (use-textures (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile))
     (render-patches (:vao tile))))
 
 (defn render-tree-color
-  [node other-textures]
+  [node]
   (if node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile-color node other-textures))
+      (if-not (empty? node) (render-tile-color node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
-        (render-tree-color (selector node) other-textures)))))
+        (render-tree-color (selector node))))))
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
@@ -716,7 +724,8 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
-                                (render-tree @tree (into [T S M W L B C] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas)))
+                                (apply use-textures-enhanced nil T S M W L B C (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
+                                (render-tree @tree)
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
@@ -756,7 +765,8 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (render-tree-color @tree (into [T S M E clouds] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas)))
+                                (apply use-textures-enhanced nil nil nil nil T S M E clouds (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
+                                (render-tree-color @tree)
                                 ; Render atmosphere with cloud overlay
                                 (use-program program-atmosphere)
                                 (doseq [[idx item] (map-indexed vector splits)]
