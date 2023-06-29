@@ -35,5 +35,6 @@ void main()
   vec3 cube_point = mix(a, b, gl_TessCoord.y).xyz;
   vec3 point = scale * cube_point;
   tes_out.point = point;
-  gl_Position = projection * inverse_transform * vec4(point, 1);
+  vec4 transformed_point = inverse_transform * vec4(point, 1);
+  gl_Position = projection * transformed_point;
 }

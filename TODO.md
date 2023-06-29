@@ -1,8 +1,16 @@
 # TODO
+* use jpeg for tiles, increase resolution of tiles, use Java Image IO for more robustness
+* Windows installer
+* render shadows of planet
+  render backside of planet (as seen from light source) into shadow depth map using separate shader
+  use this depth map when performing cloud-shadow lookups instead of planet intersection
+* adapt opacity step depending on sun angle?
+* when building maps put intermediate files into a common subdirectory (tmp?)
+* render planet surface as well in prototype
 * cloud shadow should use planet depth map instead of sphere intersection
-* make cloud prototype more modular, remove any unused shaders, separate cloud\_shadow and transmittance\_outer,
+* make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
-* test cloud shadows on ellipsoidical planet
+* try Java image IO for cubemap tile level 6
 * render clouds on planet, output to 3-channel transparency layer and colour layer
   low-res. offscreen render planet and background with clouds and atmosphere in front, blur?
   add cloud shadow computation to ground radiance function
@@ -11,6 +19,7 @@
 * increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
 * change cloud computation when viewing from space far away (use different lod of shadow?)
 * add shadows of mountains, use shadow map of planet in cloud\_shadow?
+* reduce number of intermediate values to increase OpenGL performance
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * reuse (parts of) shadow map?
 * limit opacity mapping and cloud sampling
@@ -64,8 +73,7 @@
 * only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
 * extract functions from prototype
 * indices for planet patches and atmosphere projection plane should be the same
-* put parameters like max-height, power, specular, radius, polar-radius in a configuration file
-* radius1, radius2 -> radius, polar-radius
+* put parameters like max-height, power, specular, radius in a configuration file
 * use GMTED2010 data: https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
@@ -124,7 +132,6 @@
 * point sprites for stars, atmospheric flicker using sprite arrays
 * point light sources
 * cloud erosion
-* project on sphere
 * view matrix, model matrix stack, light position
 * multiple rigid or flexible objects
 * thrusters

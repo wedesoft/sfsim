@@ -3,7 +3,6 @@ all10
 target
 world
 elevation
-globe
 world.*.png
 elevation.*.raw
 .cpcache

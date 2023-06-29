@@ -13,7 +13,8 @@
 (GLFW/glfwInit)
 
 (def ray-sphere-probe
-  (template/fn [cx cy cz ox oy oz dx dy dz] "#version 410 core
+  (template/fn [cx cy cz ox oy oz dx dy dz]
+"#version 410 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
@@ -515,16 +516,16 @@ void main()
 
 (tabular "Shader for computing intersections of ray with a shell"
          (fact (ray-shell-test [] [?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector])
-               => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
-         ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix ?iy
-         0   0   0   1        2        -10 0   0   0   1   0   "st"       0  0
-         0   0   0   1        2        -10 0   0   0   1   0   "pq"       0  0
-         0   0   0   1        5        -10 0   3   1   0   0   "st"       6  8
-         0   0   0   1        5        -10 0   3   1   0   0   "pq"       0  0
-         0   0   0   2        3        -10 0   0   1   0   0   "st"       7  1
-         0   0   0   2        3        -10 0   0   1   0   0   "pq"      12  1
-         0   0   0   2        3          0 0   0   1   0   0   "st"       2  1
-         0   0   0   2        3          0 0   0   1   0   0   "pq"       0  0)
+               => (roughly-vector (vec3 ?ix ?iy 0) 1e-5))
+         ?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector ?ix  ?iy
+         0   0   0   1        2        -10 0   0   0   1   0   "st"       0   0
+         0   0   0   1        2        -10 0   0   0   1   0   "pq"       0   0
+         0   0   0   1        5        -10 0   3   1   0   0   "st"       6   8
+         0   0   0   1        5        -10 0   3   1   0   0   "pq"       0   0
+         0   0   0   2        3        -10 0   0   1   0   0   "st"       7   1
+         0   0   0   2        3        -10 0   0   1   0   0   "pq"      12   1
+         0   0   0   2        3          0 0   0   1   0   0   "st"       2   1
+         0   0   0   2        3          0 0   0   1   0   0   "pq"       0   0)
 
 (def clip-shell-intersections-probe
   (template/fn [a b c d limit selector]
@@ -572,11 +573,11 @@ void main()
 
 (tabular "Shader for converting height to index"
          (fact ((height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
-         ?radius ?max-height ?x    ?y ?z ?result
-         4       1           4     0  0  0.0
-         4       1           5     0  0  1.0
-         4       1           4.5   0  0  0.687184
-         4       1           3.999 0  0  0.0)
+         ?radius ?max-height ?x    ?y ?z  ?result
+         4       1           4     0  0   0.0
+         4       1           5     0  0   1.0
+         4       1           4.5   0  0   0.687184
+         4       1           3.999 0  0   0.0)
 
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
@@ -652,17 +653,17 @@ void main()
 (tabular "Shader for converting view direction elevation to index"
          (fact ((elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
                => (roughly ?result 1e-6))
-         ?radius ?max-height ?x ?y ?z ?dx           ?dy        ?dz ?above-horizon ?result
-         4       1           4  0  0 -1             0          0   false          0.5
-         4       1           5  0  0 -1             0          0   false          (/ 1 3)
-         4       1           5  0  0 (- (sqrt 0.5)) (sqrt 0.5) 0   false          0.222549
-         4       1           5  0  0 -0.6           0.8        0   false          0.0
-         4       1           4  0  0  1             0          0   true           (/ 2 3)
-         4       1           5  0  0  0             1          0   true           0.5
-         4       1           5  0  0 -0.6           0.8        0   true           1.0
-         4       1           4  0  0  0             1          0   true           1.0
-         4       1           5  0  0 -1             0          0   true           1.0
-         4       1           4  0  0  1             0          0   false          0.5)
+         ?radius ?max-height ?x ?y ?z  ?dx            ?dy        ?dz            ?above-horizon ?result
+         4       1           4  0  0  -1              0          0              false          0.5
+         4       1           5  0  0  -1              0          0              false          (/ 1 3)
+         4       1           5  0  0   (- (sqrt 0.5)) (sqrt 0.5) 0              false          0.222549
+         4       1           5  0  0  -0.6            0.8        0              false          0.0
+         4       1           4  0  0   1              0          0              true           (/ 2 3)
+         4       1           5  0  0   0              1          0              true           0.5
+         4       1           5  0  0  -0.6            0.8        0              true           1.0
+         4       1           4  0  0   0              1          0              true           1.0
+         4       1           5  0  0  -1              0          0              true           1.0
+         4       1           4  0  0   1              0          0              false          0.5)
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz above]

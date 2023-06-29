@@ -647,7 +647,6 @@ void main()
   (template/fn [selector] "#version 410 core
 in VS_OUT
 {
-  vec3 origin;
   vec3 direction;
 } fs_in;
 out vec3 fragColor;
@@ -685,9 +684,7 @@ void main()
          "vec3(1, 1, 1)"                         initial "test/sfsim25/fixtures/atmosphere/quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png"
-         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    initial "test/sfsim25/fixtures/atmosphere/origin.png"
-         "fs_in.origin + vec3(0.5, 0.5, 1.5)"    rotated "test/sfsim25/fixtures/atmosphere/origin-rotated.png")
+         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
 
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
@@ -706,8 +703,7 @@ void main()
                                                                           shaders/elevation-to-index shaders/ray-scatter-forward
                                                                           shaders/interpolate-2d shaders/convert-2d-index
                                                                           shaders/interpolate-4d shaders/make-2d-index-from-4d
-                                                                          shaders/is-above-horizon
-                                                                          shaders/ray-shell
+                                                                          shaders/is-above-horizon shaders/ray-shell
                                                                           attenuation-track transmittance-track
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
@@ -730,9 +726,9 @@ void main()
                                (uniform-float program "z_near" 0.0)
                                (uniform-float program "z_far" 1.0)
                                (uniform-matrix4 program "transform" transform)
+                               (uniform-vector3 program "origin" origin)
                                (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
                                (uniform-float program "radius" radius)
-                               (uniform-float program "polar_radius" ?polar)
                                (uniform-float program "max_height" max-height)
                                (uniform-float program "specular" 500)
                                (uniform-int program "height_size" size)
@@ -750,15 +746,14 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
-         ?x ?y              ?z                        ?polar       ?rotation   ?lx ?ly       ?lz           ?result
-         0  0               (- 0 radius max-height 1) radius       0           0   0         -1            "sun.png"
-         0  0               (- 0 radius max-height 1) radius       0           0   0          1            "space.png"
-         0  0               (* 2.5 radius)            radius       0           0   1          0            "haze.png"
-         0  radius          (* 0.5 radius)            radius       0           0   0         -1            "sunset.png"
-         0  (+ radius 1000) 0                         radius       0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
-         0  0               (- 0 radius 2)            radius       0           0   0         -1            "inside.png"
-         0  (* 3 radius)    0                         radius       (* -0.5 PI) 0   1          0            "yview.png"
-         0  (* 3 radius)    0                         (/ radius 2) (* -0.5 PI) 0   1          0            "ellipsoid.png")
+         ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?result
+         0  0               (- 0 radius max-height 1) 0           0   0         -1            "sun.png"
+         0  0               (- 0 radius max-height 1) 0           0   0          1            "space.png"
+         0  0               (* 2.5 radius)            0           0   1          0            "haze.png"
+         0  radius          (* 0.5 radius)            0           0   0         -1            "sunset.png"
+         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
+         0  0               (- 0 radius 2)            0           0   0         -1            "inside.png"
+         0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            "yview.png")
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core

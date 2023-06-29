@@ -178,3 +178,19 @@
 (def cloud-density
   "Compute cloud density at given point"
   (slurp "resources/shaders/clouds/cloud-density.glsl"))
+
+(def cloud-transfer
+  "Single cloud scattering update step"
+  (slurp "resources/shaders/clouds/cloud-transfer.glsl"))
+
+(def sample-cloud
+  "Shader to sample the cloud layer and apply cloud scattering update steps"
+  (slurp "resources/shaders/clouds/sample-cloud.glsl"))
+
+(def cloud-planet
+  "Shader to compute pixel of cloud foreground overlay for planet"
+  (slurp "resources/shaders/clouds/cloud-planet.glsl"))
+
+(def cloud-atmosphere
+  "Shader to compute pixel of cloud foreground overlay for atmosphere"
+  (slurp "resources/shaders/clouds/cloud-atmosphere.glsl"))

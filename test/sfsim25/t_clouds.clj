@@ -2,12 +2,14 @@
     (:require [midje.sweet :refer :all]
               [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image)]
               [comb.template :as template]
-              [clojure.math :refer (exp log sin cos asin)]
+              [clojure.math :refer (exp log sin cos asin to-radians)]
               [fastmath.vector :refer (vec3)]
-              [fastmath.matrix :refer (mat3x3 eye)]
+              [fastmath.matrix :refer (mat3x3 eye inverse)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
+              [sfsim25.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
+              [sfsim25.atmosphere :refer (vertex-atmosphere)]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
               [sfsim25.clouds :refer :all])
     (:import [org.lwjgl.glfw GLFW]))
@@ -727,38 +729,24 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn cloud-profile-test [radius cloud-bottom cloud-top x y z]
-  (with-invisible-window
-    (let [indices  [0 1 3 2]
-          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program  (make-program :vertex [shaders/vertex-passthrough]
-                                 :fragment [(cloud-profile-probe x y z) cloud-profile shaders/convert-1d-index])
-          vao      (make-vertex-array-object program indices vertices [:point 3])
-          data     [0.0 2.0 1.0]
-          profile  (make-float-texture-1d :linear :clamp (float-array data))
-          tex      (texture-render-color 1 1 true
-                                         (use-program program)
-                                         (uniform-sampler program "profile" 0)
-                                         (uniform-int program "profile_size" 3)
-                                         (uniform-float program "radius" radius)
-                                         (uniform-float program "cloud_bottom" cloud-bottom)
-                                         (uniform-float program "cloud_top" cloud-top)
-                                         (use-textures profile)
-                                         (render-quads vao))
-          img     (rgb-texture->vectors3 tex)]
-      (destroy-texture tex)
-      (destroy-texture profile)
-      (destroy-vertex-array-object vao)
-      (destroy-program program)
-      (get-vector3 img 0 0))))
+(def cloud-profile-test
+  (shader-test
+    (fn [program radius cloud-bottom cloud-top]
+        (uniform-float program "radius" radius)
+        (uniform-float program "cloud_bottom" cloud-bottom)
+        (uniform-float program "cloud_top" cloud-top))
+    cloud-profile-probe cloud-profile))
 
 (tabular "Shader for creating vertical cloud profile"
-         (fact ((cloud-profile-test ?radius ?bottom ?top ?x ?y ?z) 0) => (roughly ?result 1e-5))
-         ?radius ?bottom ?top ?x  ?y  ?z ?result
-         100     10      14   110 0   0  0.0
-         100     10      14   112 0   0  2.0
-         100     10      14   0   112 0  2.0
-         100     10      14   111 0   0  1.0)
+         (fact ((cloud-profile-test [?radius ?bottom ?top] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
+         ?radius ?bottom ?top ?x    ?y  ?z ?result
+         100     10      18   110   0   0  0.0
+         100     10      18   110.5 0   0  0.5
+         100     10      18   111   0   0  1.0
+         100     10      18   113.5 0   0  0.7
+         100     10      18   116   0   0  0.4
+         100     10      18   117   0   0  0.2
+         100     10      18   118   0   0  0.0)
 
 (def sphere-noise-probe
   (template/fn [x y z]
@@ -836,7 +824,7 @@ void main()
           1.0     1.0     0.5       1000  1  0  0.9
           1.0     1.0     0.5        950  1  0  0.45
           1.0     1.0     3.0       1000 -1  0 -1.0
-          1.0     1.0     1.5        950  1  0 -0.1)
+          1.0     1.0     1.5        950  1  0  0.0)
 
 (def cloud-cover-probe
   (template/fn [x y z]
@@ -921,5 +909,375 @@ void main()
          1.0  0.0  2.0 0.5  0.0 0.75
          1.0  0.0  0.5 0.25 0.0 0.0
          1.0  0.5  1.0 1.0  0.0 0.5)
+
+(def cloud-transfer-probe
+  (template/fn [red alpha density stepsize selector scatter]
+"#version 410 core
+uniform float shadow;
+uniform float transmittance;
+uniform float atmosphere;
+uniform float in_scatter;
+float cloud_shadow(vec3 point)
+{
+  return shadow;
+}
+vec3 transmittance_outer(vec3 point, vec3 direction)
+{
+  return direction * transmittance;
+}
+vec3 transmittance_track(vec3 p, vec3 q)
+{
+  return (q - p) * atmosphere;
+}
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
+{
+  return (q - p) * in_scatter;
+}
+vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
+out vec3 fragColor;
+void main()
+{
+  vec3 start = vec3(1, 0, 0);
+  vec3 point = vec3(2, 0, 0);
+  vec4 cloud_scatter = vec4(<%= red %>, 0, 0, <%= alpha %>);
+  fragColor.r = cloud_transfer(start, point, <%= scatter %>, <%= stepsize %>, cloud_scatter, <%= density %>).<%= selector %>;
+}"))
+
+(def cloud-transfer-test
+  (shader-test
+    (fn [program shadow transmittance atmosphere in-scatter amplification]
+        (uniform-float program "shadow" shadow)
+        (uniform-float program "transmittance" transmittance)
+        (uniform-float program "atmosphere" atmosphere)
+        (uniform-float program "in_scatter" in-scatter)
+        (uniform-float program "amplification" amplification)
+        (uniform-vector3 program "light_direction" (vec3 1 0 0)))
+    cloud-transfer-probe
+    cloud-transfer))
+
+(tabular "Shader function to increment scattering caused by clouds"
+         (fact ((cloud-transfer-test [?shadow ?transmit ?atmos ?inscatter ?amp]
+                                     [?red ?alpha ?density ?stepsize ?selector ?scatter]) 0)
+               => (roughly ?result 1e-6))
+         ?shadow ?transmit ?atmos ?inscatter ?amp ?red ?alpha ?density  ?stepsize ?scatter ?selector ?result
+         1.0     1.0       1.0    0.0        1.0  0.0  1.0    0.0       1.0       1.0      "r"       0.0
+         1.0     1.0       1.0    0.0        1.0  0.5  1.0    0.0       1.0       1.0      "r"       0.5
+         1.0     1.0       1.0    0.0        1.0  1.0  0.5    0.0       1.0       1.0      "a"       0.5
+         1.0     1.0       1.0    0.0        1.0  1.0  1.0    0.0       1.0       1.0      "a"       1.0
+         1.0     1.0       1.0    0.0        1.0  1.0  0.5    (log 2.0) 1.0       1.0      "a"       0.25
+         1.0     1.0       1.0    0.0        1.0  1.0  0.5    (log 2.0) 2.0       1.0      "a"       0.125
+         1.0     1.0       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.5
+         1.0     1.0       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       0.5      "r"       0.25
+         0.5     1.0       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     0.5       1.0    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     1.0       1.0    0.0        1.0  0.0  0.5    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     1.0       0.5    0.0        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.25
+         1.0     1.0       1.0    0.5        1.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       0.75
+         1.0     1.0       1.0    0.5        1.0  0.0  0.5    (log 2.0) 1.0       1.0      "r"       0.375
+         1.0     1.0       1.0    0.5        2.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       1.0)
+
+(def sample-cloud-probe
+  (template/fn [cloud-begin cloud-length density red alpha selector]
+"#version 410 core
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
+out vec3 fragColor;
+float sampling_offset()
+{
+  return 0.5;
+}
+float phase(float g, float mu)
+{
+  return 1.0;
+}
+float cloud_density(vec3 point, float lod)
+{
+  return <%= density %>;
+}
+vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density)
+{
+  float transparency = pow(0.5, density * stepsize);
+  cloud_scatter.a *= transparency;
+  return cloud_scatter;
+}
+void main()
+{
+  vec3 origin = vec3(3, 0, 0);
+  vec3 start = vec3(5, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  vec2 cloud_shell = vec2(<%= cloud-begin %>, <%= cloud-length %>);
+  vec4 cloud_scatter = vec4(<%= red %>, 0, 0, <%= alpha %>);
+  fragColor.r = sample_cloud(origin, start, direction, cloud_shell, cloud_scatter).<%= selector %>;
+}"))
+
+(def sample-cloud-test
+  (shader-test
+    (fn [program cloud-step opacity-cutoff]
+        (uniform-float program "cloud_step" cloud-step)
+        (uniform-float program "lod_offset" 0.0)
+        (uniform-float program "anisotropic" 0.5)
+        (uniform-vector3 program "light_direction" (vec3 0 1 0))
+        (uniform-float program "opacity_cutoff" opacity-cutoff))
+    sample-cloud-probe
+    sample-cloud
+    linear-sampling))
+
+(tabular "Shader to sample the cloud layer and apply cloud scattering update steps"
+         (fact ((sample-cloud-test [?step ?cutoff] [?begin ?length ?density ?red ?alpha ?selector]) 0)
+               => (roughly ?result 1e-6))
+         ?begin ?length ?step ?density ?red ?alpha ?selector ?cutoff ?result
+         2.0    0.0     1.0   1.0      0.0  1.0    "r"       0.0     0.0
+         2.0    0.0     1.0   1.0      1.0  1.0    "r"       0.0     1.0
+         2.0    0.0     1.0   1.0      1.0  1.0    "a"       0.0     1.0
+         2.0    0.0     1.0   1.0      1.0  0.8    "a"       0.0     0.8
+         2.0    1.0     1.0   1.0      0.0  1.0    "a"       0.0     0.5
+         2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.0     0.25
+         2.0    2.0     2.0   1.0      0.0  1.0    "a"       0.0     0.25
+         2.0    2.0     1.0   0.5      0.0  1.0    "a"       0.0     0.5
+         2.0    1.0     1.0   0.0      0.0  1.0    "a"       0.0     1.0
+         2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.5     0.5)
+
+(def cloud-planet-probe
+  (template/fn [z selector]
+"#version 410 core
+uniform float radius;
+out vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  float start = max(origin.z - radius, 0);
+  float end = max(origin.z + radius, 0);
+  return vec2(start, (start - end) / direction.z);
+}
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  float start = max(origin.z - outer_radius, 0);
+  float end = max(origin.z - inner_radius, 0);
+  return vec4(start, (start - end) / direction.z, 0, 0);
+}
+vec4 clip_shell_intersections(vec4 intersections, float limit)
+{
+  return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
+}
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
+{
+  return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
+}
+vec4 cloud_planet(vec3 point);
+void main()
+{
+  vec3 point = vec3(0, 0, <%= z %>);
+  vec4 result = cloud_planet(point);
+  fragColor.r = result.<%= selector %>;
+}"))
+
+(def cloud-planet-test
+  (shader-test
+    (fn [program origin depth]
+        (uniform-float program "radius" 10)
+        (uniform-float program "max_height" 3)
+        (uniform-float program "cloud_bottom" 1)
+        (uniform-float program "cloud_top" 2)
+        (uniform-float program "depth" depth)
+        (uniform-vector3 program "origin" (vec3 0 0 origin)))
+    cloud-planet-probe
+    cloud-planet))
+
+(tabular "Shader to compute pixel of cloud foreground overlay for planet"
+         (fact ((cloud-planet-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
+         ?origin ?z ?depth ?selector ?result
+         11      10 100    "g"        0.0
+         11      10 100    "a"        0.0
+         12      10 100    "g"        1.0
+         12      10 100    "a"        1.0
+         12      10 100    "r"       12.0
+         14      10 100    "r"       13.0
+         13      10 100    "a"        1.0
+         13      10   1.5  "a"        0.5)
+
+(def cloud-atmosphere-probe
+  (template/fn [dz selector]
+"#version 410 core
+out vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  if (direction.z > 0) {
+    float start = 0;
+    float end = max(radius - origin.z, 0);
+    return vec2(start, end - start);
+  } else {
+    float start = max(origin.z - radius, 0);
+    float end = max(radius + origin.z, 0);
+    return vec2(start, end - start);
+  }
+}
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  if (direction.z > 0) {
+    float start = max(inner_radius - origin.z, 0);
+    float end = max(outer_radius - origin.z, 0);
+    return vec4(start, end - start, 0, 0);
+  } else {
+    float start1 = max(origin.z - outer_radius, 0);
+    float end1 = max(origin.z - inner_radius, 0);
+    float start2 = max(origin.z + inner_radius, 0);
+    float end2 = max(origin.z + outer_radius, 0);
+    return vec4(start1, end1 - start1, start2, end2 - start2);
+  }
+}
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
+{
+  return vec4(start.z, cloud_scatter.g + cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
+}
+vec4 cloud_atmosphere(vec3 fs_in_direction);
+void main()
+{
+  vec3 direction = vec3(0, 0, <%= dz %>);
+  vec4 result = cloud_atmosphere(direction);
+  fragColor.r = result.<%= selector %>;
+}"))
+
+(def cloud-atmosphere-test
+  (shader-test
+    (fn [program z]
+        (uniform-float program "radius" 10)
+        (uniform-float program "max_height" 3)
+        (uniform-float program "cloud_bottom" 1)
+        (uniform-float program "cloud_top" 2)
+        (uniform-vector3 program "origin" (vec3 0 0 z)))
+    cloud-atmosphere-probe
+    cloud-atmosphere))
+
+(tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
+         (fact ((cloud-atmosphere-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
+         ?z   ?dz ?selector ?result
+         14    1  "g"        0.0
+         14    1  "a"        0.0
+         11    1  "g"        1.0
+         11    1  "a"        1.0
+         11.5  1  "g"        0.5
+         11.5  1  "a"        0.5
+         13   -1  "g"        2.0
+         12   -1  "r"       12.0
+         15   -1  "r"       13.0)
+
+(def fragment-planet-clouds
+"#version 410 core
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec2 heightcoord;
+  vec3 point;
+} fs_in;
+out vec4 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  return vec2(origin.z - radius, 2 * radius);
+}
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
+}
+vec4 clip_shell_intersections(vec4 intersections, float limit)
+{
+  return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
+}
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
+{
+  return vec4(cloud_shell.y, 0, 0, 0.25);
+}
+vec4 cloud_planet(vec3 point);
+void main()
+{
+  fragColor = cloud_planet(fs_in.point);
+}")
+
+(def fragment-atmosphere-clouds
+"#version 410 core
+in VS_OUT
+{
+  vec3 direction;
+} fs_in;
+out vec4 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  if (length(direction.xy) <= 0.5)
+    return vec2(origin.z - radius, 2 * radius);
+  else
+    return vec2(0, 0);
+}
+vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
+{
+  return vec4(0, cloud_shell.y, 0, 1 - cloud_shell.y / 2);
+}
+vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
+{
+  return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
+}
+vec4 cloud_atmosphere(vec3 fs_in_direction);
+void main()
+{
+  fragColor = cloud_atmosphere(fs_in.direction);
+}")
+
+(fact "Test rendering of cloud overlay image"
+  (with-invisible-window
+    (let [width       160
+          height      120
+          fov         (to-radians 60.0)
+          z-near      1.0
+          z-far       100.0
+          tilesize    33
+          heightfield (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize
+                                                             :data (float-array (repeat (* tilesize tilesize) 1))})
+          projection  (projection-matrix width height z-near (+ z-far 1) fov)
+          origin      (vec3 0 0 10)
+          transform   (transformation-matrix (eye 3) origin)
+          planet      (make-program :vertex [vertex-planet]
+                                    :tess-control [tess-control-planet]
+                                    :tess-evaluation [tess-evaluation-planet]
+                                    :geometry [geometry-planet]
+                                    :fragment [fragment-planet-clouds cloud-planet])
+          indices     [0 1 3 2]
+          vertices    [-1 -1 5, 1 -1 5, -1 1 5, 1 1 5]
+          tile        (make-vertex-array-object planet indices vertices [:point 3])
+          atmosphere  (make-program :vertex [vertex-atmosphere]
+                                    :fragment [fragment-atmosphere-clouds cloud-atmosphere])
+          indices     [0 1 3 2]
+          vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+          vao         (make-vertex-array-object atmosphere indices vertices [:point 3])
+          tex         (texture-render-color-depth width height true
+                                                  (clear (vec3 0 0 0) 0)
+                                                  (use-program planet)
+                                                  (uniform-sampler planet "heightfield" 0)
+                                                  (uniform-matrix4 planet "projection" projection)
+                                                  (uniform-matrix4 planet "inverse_transform" (inverse transform))
+                                                  (uniform-vector3 planet "origin" origin)
+                                                  (uniform-vector3 planet "light_direction" (vec3 1 0 0))
+                                                  (uniform-float planet "radius" 5)
+                                                  (uniform-float planet "max_height" 4)
+                                                  (uniform-float planet "cloud_bottom" 1)
+                                                  (uniform-float planet "cloud_top" 2)
+                                                  (uniform-float planet "depth" 3)
+                                                  (uniform-int planet "neighbours" 15)
+                                                  (uniform-int planet "high_detail" (dec tilesize))
+                                                  (uniform-int planet "low_detail" (quot (dec tilesize) 2))
+                                                  (use-textures heightfield)
+                                                  (render-patches tile)
+                                                  (use-program atmosphere)
+                                                  (uniform-matrix4 atmosphere "projection" projection)
+                                                  (uniform-matrix4 atmosphere "transform" transform)
+                                                  (uniform-vector3 atmosphere "origin" origin)
+                                                  (uniform-float atmosphere "radius" 5)
+                                                  (uniform-float atmosphere "max_height" 4)
+                                                  (uniform-float atmosphere "cloud_bottom" 1)
+                                                  (uniform-float atmosphere "cloud_top" 2)
+                                                  (render-quads vao))
+          img        (texture->image tex)]
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program atmosphere)
+      (destroy-vertex-array-object tile)
+      (destroy-program planet)
+      (destroy-texture heightfield)
+      img)) => (is-image "test/sfsim25/fixtures/clouds/overlay.png" 0.0))
 
 (GLFW/glfwTerminate)

@@ -11,7 +11,7 @@ float cloud_density(vec3 point, float lod)
   float base = cloud_base(point);
   float result;
   if (base <= 0.0)
-    result = 0.0;
+    result = base;
   else {
     float noise = cloud_noise(point, lod);
     if (noise <= 1.0 - base)
