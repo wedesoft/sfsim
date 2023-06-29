@@ -746,7 +746,6 @@ void main()
                                        (uniform-float program-cloud-atmosphere (str "depth" idx) (:depth item)))
                                 (apply use-textures T S M W L B C (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))
                                 (render-quads vao))]
-               ;(spit-image "test.png" (texture->image clouds))
                (onscreen-render window
                                 (clear (vec3 0 1 0))
                                 ; Render planet with cloud overlay
