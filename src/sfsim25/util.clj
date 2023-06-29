@@ -123,6 +123,14 @@
     (STBImageWrite/stbi_write_png path width height 4 buffer (* 4 width))
     img))
 
+(defn spit-jpg
+  "Save RGB image as JPEG file"
+  [path {:keys [width height data] :as img}]
+  (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
+    (-> buffer (.put data) (.flip))
+    (STBImageWrite/stbi_write_jpg path width height 4 buffer (* 4 width))
+    img))
+
 (defn byte->ubyte
   "Convert byte to unsigned byte"
   ^long [^long b]

@@ -58,8 +58,16 @@
   (sqr 2) => 4.0
   (sqr 3) => 9.0)
 
-(facts "Saving and loading of RGB image"
+(facts "Saving and loading of PNG image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
+        value     [1 2 3 -1]]
+      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
+      (:width  (slurp-image file-name)) => 4
+      (:height (slurp-image file-name)) => 2
+      (take 4 (:data (slurp-image file-name))) => value))
+
+(facts "Saving and loading of JPEG image"
+  (let [file-name (.getPath (File/createTempFile "spit" ".jpg"))
         value     [1 2 3 -1]]
       (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
       (:width  (slurp-image file-name)) => 4
