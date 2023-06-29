@@ -175,10 +175,10 @@ void main()
 (def threshold (atom 19.5))
 (def anisotropic (atom 0.2))
 (def cloud-bottom 2000)
-(def cloud-top 3500)
+(def cloud-top 4000)
 (def cloud-multiplier (atom 15.0))
 (def cover-multiplier (atom 26.0))
-(def cap (atom 0.02))
+(def cap (atom 0.01))
 (def detail-scale 5000)
 (def cloud-scale 200000)
 (def series (take 5 (iterate #(* % 0.8) 1.0)))
@@ -476,13 +476,12 @@ void main()
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
-        vao-cloud  (make-vertex-array-object program-cloud-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
         color-tex  (make-rgb-texture :linear :clamp (:colors tile))
         height-tex (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:scales tile)})
         normal-tex (make-vector-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:normals tile)})
         water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
     (assoc (dissoc tile :colors :scales :normals :water)
-           :vao vao :vao-cloud vao-cloud :color-tex color-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
+           :vao vao :color-tex color-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
 
 (defn load-tiles-into-opengl
   [tree paths]
@@ -510,22 +509,22 @@ void main()
              (swap! keystates assoc k false)))))
 
 (defn render-tile
-  [tile target other-textures]
+  [tile other-textures]
   (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet "neighbours" neighbours)
     (apply use-textures (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile) other-textures)
-    (render-patches (target tile))))
+    (render-patches (:vao tile))))
 
 (defn render-tree
-  [node target other-textures]
+  [node other-textures]
   (if node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile node target other-textures))
+      (if-not (empty? node) (render-tile node other-textures))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
-        (render-tree (selector node) target other-textures)))))
+        (render-tree (selector node) other-textures)))))
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
@@ -608,7 +607,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
-                                (render-tree @tree :vao-cloud (into [T S M E W L B C] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))))]
+                                (render-tree @tree (into [T S M E W L B C] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))))]
                ;(spit-image "test.png" (texture->image clouds))
                (onscreen-render window
                                 (clear (vec3 0 1 0))
@@ -626,7 +625,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (render-tree @tree :vao (into [T S M E clouds] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas)))
+                                (render-tree @tree (into [T S M E clouds] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas)))
                                 ; Render atmosphere and clouds
                                 (use-program program-atmosphere)
                                 (doseq [[idx item] (map-indexed vector splits)]
