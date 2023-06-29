@@ -191,7 +191,7 @@ void main()
 (def opacity-step (atom 250.0))
 (def step (atom 400.0))
 (def worley-size 64)
-(def shadow-size 1024)
+(def shadow-size 384)
 (def noise-size 64)
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
@@ -209,7 +209,7 @@ void main()
 (def position (atom (vec3 0 (* (cos theta) r) (* (sin theta) r))))
 (def orientation (atom (q/rotation (to-radians 25) (vec3 1 0 0))))
 (def light (atom (* 0.25 PI)))
-(def num-steps 2)
+(def num-steps 3)
 (def num-opacity-layers 7)
 
 (GLFW/glfwInit)
@@ -275,6 +275,20 @@ void main()
 (def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
 (def opacity-vao (make-vertex-array-object program-opacity opacity-indices opacity-vertices [:point 2]))
 
+(use-program program-opacity)
+(uniform-sampler program-opacity "worley" 0)
+(uniform-sampler program-opacity "perlin" 1)
+(uniform-sampler program-opacity "bluenoise" 2)
+(uniform-sampler program-opacity "cover" 3)
+(uniform-int program-opacity "cover_size" 512)
+(uniform-int program-opacity "shadow_size" shadow-size)
+(uniform-int program-opacity "noise_size" noise-size)
+(uniform-float program-opacity "radius" radius)
+(uniform-float program-opacity "cloud_bottom" cloud-bottom)
+(uniform-float program-opacity "cloud_top" cloud-top)
+(uniform-float program-opacity "detail_scale" detail-scale)
+(uniform-float program-opacity "cloud_scale" cloud-scale)
+
 (defn opacity-cascade [matrix-cascade light-direction scatter-amount]
   (mapv
     (fn [{:keys [shadow-ndc-matrix depth scale]}]
@@ -283,19 +297,7 @@ void main()
               detail          (/ (log (/ (/ scale shadow-size) (/ detail-scale worley-size))) (log 2))]
           (framebuffer-render shadow-size shadow-size :cullback nil [opacity-offsets opacity-layers]
                               (use-program program-opacity)
-                              (uniform-sampler program-opacity "worley" 0)
-                              (uniform-sampler program-opacity "perlin" 1)
-                              (uniform-sampler program-opacity "bluenoise" 2)
-                              (uniform-sampler program-opacity "cover" 3)
-                              (uniform-int program-opacity "cover_size" 512)
                               (uniform-float program-opacity "level_of_detail" detail)
-                              (uniform-int program-opacity "shadow_size" shadow-size)
-                              (uniform-int program-opacity "noise_size" noise-size)
-                              (uniform-float program-opacity "radius" radius)
-                              (uniform-float program-opacity "cloud_bottom" cloud-bottom)
-                              (uniform-float program-opacity "cloud_top" cloud-top)
-                              (uniform-float program-opacity "detail_scale" detail-scale)
-                              (uniform-float program-opacity "cloud_scale" cloud-scale)
                               (uniform-matrix4 program-opacity "ndc_to_shadow" (inverse shadow-ndc-matrix))
                               (uniform-vector3 program-opacity "light_direction" light-direction)
                               (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
@@ -351,19 +353,16 @@ void main()
 
 (use-program program-cloud-planet)
 (uniform-sampler program-cloud-planet "heightfield"      0)
-(uniform-sampler program-cloud-planet "colors"           1); TODO: not needed
-(uniform-sampler program-cloud-planet "normals"          2); TODO: not needed
-(uniform-sampler program-cloud-planet "water"            3); TODO: not needed
-(uniform-sampler program-cloud-planet "transmittance"    4)
-(uniform-sampler program-cloud-planet "ray_scatter"      5)
-(uniform-sampler program-cloud-planet "mie_strength"     6)
-(uniform-sampler program-cloud-planet "worley"           7)
-(uniform-sampler program-cloud-planet "perlin"           8)
-(uniform-sampler program-cloud-planet "bluenoise"        9)
-(uniform-sampler program-cloud-planet "cover"           10)
+(uniform-sampler program-cloud-planet "transmittance"    1)
+(uniform-sampler program-cloud-planet "ray_scatter"      2)
+(uniform-sampler program-cloud-planet "mie_strength"     3)
+(uniform-sampler program-cloud-planet "worley"           4)
+(uniform-sampler program-cloud-planet "perlin"           5)
+(uniform-sampler program-cloud-planet "bluenoise"        6)
+(uniform-sampler program-cloud-planet "cover"            7)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-cloud-planet (str "offset" i) (+ (* 2 i) 11))
-       (uniform-sampler program-cloud-planet (str "opacity" i) (+ (* 2 i) 12)))
+       (uniform-sampler program-cloud-planet (str "offset" i) (+ (* 2 i) 8))
+       (uniform-sampler program-cloud-planet (str "opacity" i) (+ (* 2 i) 9)))
 (uniform-float program-cloud-planet "radius" radius)
 (uniform-float program-cloud-planet "max_height" max-height)
 (uniform-float program-cloud-planet "cloud_bottom" cloud-bottom)
@@ -512,7 +511,7 @@ void main()
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
     (uniform-int program-planet "neighbours" neighbours)
-    (apply use-textures (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile) other-textures)
+    (apply use-textures (:height-tex tile) other-textures)
     (render-patches (:vao tile))))
 
 (defn render-tree
@@ -522,6 +521,24 @@ void main()
       (if-not (empty? node) (render-tile node other-textures))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree (selector node) other-textures)))))
+
+(defn render-tile-color
+  [tile other-textures]
+  (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
+                           (if (:sfsim25.quadtree/left  tile) 2 0)
+                           (if (:sfsim25.quadtree/down  tile) 4 0)
+                           (if (:sfsim25.quadtree/right tile) 8 0))]
+    (uniform-int program-planet "neighbours" neighbours)
+    (apply use-textures (:height-tex tile) (:color-tex tile) (:normal-tex tile) (:water-tex tile) other-textures)
+    (render-patches (:vao tile))))
+
+(defn render-tree-color
+  [node other-textures]
+  (if node
+    (if (is-leaf? node)
+      (if-not (empty? node) (render-tile-color node other-textures))
+      (doseq [selector [:0 :1 :2 :3 :4 :5]]
+        (render-tree-color (selector node) other-textures)))))
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
@@ -622,7 +639,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (render-tree @tree (into [T S M E clouds] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas)))
+                                (render-tree-color @tree (into [T S M E clouds] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas)))
                                 ; Render atmosphere and clouds
                                 (use-program program-atmosphere)
                                 (doseq [[idx item] (map-indexed vector splits)]
