@@ -191,7 +191,7 @@ void main()
 (def opacity-step (atom 250.0))
 (def step (atom 400.0))
 (def worley-size 64)
-(def shadow-size 512)
+(def shadow-size 1024)
 (def noise-size 64)
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
@@ -357,14 +357,13 @@ void main()
 (uniform-sampler program-cloud-planet "transmittance"    4)
 (uniform-sampler program-cloud-planet "ray_scatter"      5)
 (uniform-sampler program-cloud-planet "mie_strength"     6)
-(uniform-sampler program-cloud-planet "surface_radiance" 7); TODO: needed?
-(uniform-sampler program-cloud-planet "worley"           8)
-(uniform-sampler program-cloud-planet "perlin"           9)
-(uniform-sampler program-cloud-planet "bluenoise"       10)
-(uniform-sampler program-cloud-planet "cover"           11)
+(uniform-sampler program-cloud-planet "worley"           7)
+(uniform-sampler program-cloud-planet "perlin"           8)
+(uniform-sampler program-cloud-planet "bluenoise"        9)
+(uniform-sampler program-cloud-planet "cover"           10)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-cloud-planet (str "offset" i) (+ (* 2 i) 12))
-       (uniform-sampler program-cloud-planet (str "opacity" i) (+ (* 2 i) 13)))
+       (uniform-sampler program-cloud-planet (str "offset" i) (+ (* 2 i) 11))
+       (uniform-sampler program-cloud-planet (str "opacity" i) (+ (* 2 i) 12)))
 (uniform-float program-cloud-planet "radius" radius)
 (uniform-float program-cloud-planet "max_height" max-height)
 (uniform-float program-cloud-planet "cloud_bottom" cloud-bottom)
@@ -394,8 +393,6 @@ void main()
 (uniform-float program-cloud-planet "opacity_cutoff" 0.05)
 (uniform-int program-cloud-planet "num_opacity_layers" num-opacity-layers)
 (uniform-int program-cloud-planet "shadow_size" shadow-size)
-
-;use-textures W L B C
 
 (use-program program-planet)
 (uniform-sampler program-planet "heightfield"      0)
@@ -607,7 +604,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
-                                (render-tree @tree (into [T S M E W L B C] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))))]
+                                (render-tree @tree (into [T S M W L B C] (mapcat (fn [{:keys [offset layer]}] [offset layer]) tex-cas))))]
                ;(spit-image "test.png" (texture->image clouds))
                (onscreen-render window
                                 (clear (vec3 0 1 0))
