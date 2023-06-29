@@ -61,7 +61,7 @@
 (facts "Saving and loading of RGB image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
         value     [1 2 3 -1]]
-      (spit-image file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
+      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
       (take 4 (:data (slurp-image file-name))) => value))

@@ -5,7 +5,7 @@
             [sfsim25.cubemap :refer (cartesian->geodetic color-geodetic cube-coordinate cube-map normal-for-point
                                      project-onto-globe water-geodetic)]
             [sfsim25.util :refer (align-address cube-dir cube-path make-progress-bar set-byte! set-float! set-pixel!
-                                  set-vector3! spit-bytes spit-floats spit-image sqr tick-and-print)])
+                                  set-vector3! spit-bytes spit-floats spit-png sqr tick-and-print)])
   (:import [java.io File])
   (:gen-class))
 
@@ -46,7 +46,7 @@
             (set-pixel! tile v u color)
             (set-byte! water v u wet)))
         (.mkdirs (File. (cube-dir "data/globe" k out-level a)))
-        (spit-image (cube-path "data/globe" k out-level b a ".png") tile)
+        (spit-png (cube-path "data/globe" k out-level b a ".png") tile)
         (spit-bytes (cube-path "data/globe" k out-level b a ".water") (:data water))
         (spit-floats (cube-path "data/globe" k out-level b a ".scale") (:data scale))
         (spit-floats (cube-path "data/globe" k out-level b a ".normals") (:data normals))
