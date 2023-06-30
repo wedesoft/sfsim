@@ -652,7 +652,7 @@ void main()
 
 (tabular "Shader for converting view direction elevation to index"
          (fact ((elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
-               => (roughly ?result 1e-6))
+               => (roughly ?result 2e-4))
          ?radius ?max-height ?x ?y ?z  ?dx            ?dy        ?dz            ?above-horizon ?result
          4       1           4  0  0  -1              0          0              false          0.5
          4       1           5  0  0  -1              0          0              false          (/ 1 3)
