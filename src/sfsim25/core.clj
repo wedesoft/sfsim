@@ -610,7 +610,7 @@ void main()
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
                            (if (:sfsim25.quadtree/right tile) 8 0))]
-    (uniform-int program-planet "neighbours" neighbours)
+    (uniform-int program-cloud-planet "neighbours" neighbours)
     (use-textures (:height-tex tile))
     (render-patches (:vao tile))))
 
