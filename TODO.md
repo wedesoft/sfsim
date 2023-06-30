@@ -1,4 +1,5 @@
 # TODO
+* bug when threshold high
 * compress normals
 * Windows installer
 * render shadows of planet
