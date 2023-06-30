@@ -174,14 +174,6 @@ float cloud_density(vec3 point, float lod)
     return 0.0;
 }")
 
-(def sampling-offset-mock
-"#version 410 core
-uniform float offset;
-float sampling_offset()
-{
-  return offset;
-}")
-
 (defn setup-opacity-fragment-static-uniforms
   [program]
   (uniform-int program "shadow_size" 3)
@@ -190,14 +182,13 @@ float sampling_offset()
   (uniform-float program "cloud_top" 200))
 
 (defn setup-opacity-fragment-dynamic-uniforms [program ndc-to-shadow light-direction shells multiplier scatter
-                                               depth offset cloudstep opacitystep start lod]
+                                               depth cloudstep opacitystep start lod]
   (uniform-matrix4 program "ndc_to_shadow" ndc-to-shadow)
   (uniform-vector3 program "light_direction" light-direction)
   (uniform-int program "num_shell_intersections" shells)
   (uniform-float program "cloud_multiplier" multiplier)
   (uniform-float program "scatter_amount" scatter)
   (uniform-float program "depth" depth)
-  (uniform-float program "offset" offset)
   (uniform-float program "cloud_max_step" cloudstep)
   (uniform-float program "opacity_step" opacitystep)
   (uniform-float program "density_start" start)
@@ -215,7 +206,6 @@ float sampling_offset()
                                           :fragment [(opacity-fragment 7)
                                                      ray-shell-mock
                                                      cloud-density-mock
-                                                     sampling-offset-mock
                                                      linear-sampling])
             vao             (make-vertex-array-object program indices vertices [:point 2])
             opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)
@@ -224,7 +214,7 @@ float sampling_offset()
                             (use-program program)
                             (setup-opacity-fragment-static-uniforms program)
                             (setup-opacity-fragment-dynamic-uniforms program ndc-to-shadow light-direction ?shells ?multiplier
-                                                                     ?scatter ?depth ?offset ?cloudstep ?opacitystep ?start
+                                                                     ?scatter ?depth ?cloudstep ?opacitystep ?start
                                                                      ?lod)
                             (render-quads vao))
         ({:offset (get-float (float-texture-2d->floats opacity-offsets) 1 ?px)
@@ -233,29 +223,28 @@ float sampling_offset()
         (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?shells ?px ?depth ?cloudstep ?opacitystep ?scatter ?offset ?start ?multiplier ?lod ?z   ?selector ?layer ?result
-  2       1    1000   50         50          0        0.5      1200  0.02        0.0  1200 :offset   0      1
-  2       1    1000   50         50          0        0.5      1200  0.02        0.0  1400 :offset   0      (- 1 0.2)
-  2       0    1000   50         50          0        0.5      1200  0.02        0.0  1400 :offset   0      (- 1 0.201)
-  2       1    1000   50         50          0        0.5      1150  0.02        0.0  1200 :offset   0      (- 1 0.05)
-  2       1   10000   50         50          0        0.5     -9999  0.02        0.0  1200 :offset   0      0.0
-  2       1    1000   50         50          0        0.5      1200  0.02        0.0  1200 :layer    0      1.0
-  2       1    1000   50         50          0        0.5      1200  0.02        0.0  1200 :layer    1      (exp -1)
-  2       1    1000   50         50          0        0.5      1200  0.02        1.0  1200 :layer    1      (exp -0.5)
-  2       1    1000   50         50          0.5      0.5      1200  0.02        0.0  1200 :layer    1      (exp -0.5)
-  2       1    1000   50         50          0        0.5      1200  0.02        0.0  1400 :layer    1      (exp -1)
-  2       1    1000   50         25          0        0.5      1200  0.02        0.0  1200 :layer    1      (/ (+ 1 (exp -1)) 2)
-  2       1    1000   50         50          0        0.5      1200  0.02        0.0  1200 :layer    2      (exp -2)
-  2       1    1000   50         50          0        0.5      1200  0.02        0.0  1200 :layer    3      (exp -2)
-  2       1   10000   50         50          0        0.5         0  0.02        0.0  1200 :offset   0      (- 1 0.23)
-  2       1   10000   50         50          0        0.5         0  0.02        0.0  1200 :layer    0      1.0
-  2       1   10000   50         50          0        0.5         0  0.02        0.0  1200 :layer    1      (exp -1)
-  2       1   10000   50         50          0        0.5         0  0.02        0.0  1200 :layer    2      (exp -2)
-  2       1   10000   50         50          0        0.5         0  0.02        0.0  1200 :layer    3      (exp -2)
-  2       1   10000   50         50          0        0.5         0  0.02        0.0  1200 :layer    6      (exp -2)
-  2       1   10000   50         50          0        0.5     -9999  0.02        0.0  1200 :layer    6      1.0
-  1       1   10000   50         50          0        0.5     -1000  0.02        0.0  1200 :offset   0      (- 1 0.22)
-  1       1   10000   50         50          0        0.0     -1000  0.02        0.0  1200 :offset   0      (- 1 0.225))
+  ?shells ?px ?depth ?cloudstep ?opacitystep ?scatter ?start ?multiplier ?lod ?z   ?selector ?layer ?result
+  2       1    1000   50         50          0         1200  0.02        0.0  1200 :offset   0      1
+  2       1    1000   50         50          0         1200  0.02        0.0  1400 :offset   0      (- 1 0.2)
+  2       0    1000   50         50          0         1200  0.02        0.0  1400 :offset   0      (- 1 0.201)
+  2       1    1000   50         50          0         1150  0.02        0.0  1200 :offset   0      (- 1 0.05)
+  2       1   10000   50         50          0        -9999  0.02        0.0  1200 :offset   0      0.0
+  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    0      1.0
+  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    1      (exp -1)
+  2       1    1000   50         50          0         1200  0.02        1.0  1200 :layer    1      (exp -0.5)
+  2       1    1000   50         50          0.5       1200  0.02        0.0  1200 :layer    1      (exp -0.5)
+  2       1    1000   50         50          0         1200  0.02        0.0  1400 :layer    1      (exp -1)
+  2       1    1000   50         25          0         1200  0.02        0.0  1200 :layer    1      (/ (+ 1 (exp -1)) 2)
+  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    2      (exp -2)
+  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    3      (exp -2)
+  2       1   10000   50         50          0            0  0.02        0.0  1200 :offset   0      (- 1 0.23)
+  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    0      1.0
+  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    1      (exp -1)
+  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    2      (exp -2)
+  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    3      (exp -2)
+  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    6      (exp -2)
+  2       1   10000   50         50          0        -9999  0.02        0.0  1200 :layer    6      1.0
+  1       1   10000   50         50          0        -1000  0.02        0.0  1200 :offset   0      (- 1 0.22))
 
 (def opacity-lookup-probe
   (template/fn [x y z depth]
