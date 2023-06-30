@@ -699,8 +699,10 @@ void main()
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                    opac-step  (/ @opacity-step (max 0.1 (/ (dot light-dir @position) (mag @position))))
                    tex-cas    (opacity-cascade matrix-cas light-dir scatter-am opac-step)
+                   w2         (quot (aget w 0) 2)
+                   h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
-                                (quot (aget w 0) 2) (quot (aget h 0) 2) true
+                                w2 h2 true
                                 (clear (vec3 0 0 0) 0)
                                 ; Render clouds under the horizon
                                 (use-program program-cloud-planet)
