@@ -1226,8 +1226,8 @@ void main()
                                     :geometry [geometry-planet]
                                     :fragment [fragment-planet-clouds cloud-planet])
           indices     [0 1 3 2]
-          vertices    [-1 -1 5, 1 -1 5, -1 1 5, 1 1 5]
-          tile        (make-vertex-array-object planet indices vertices [:point 3])
+          vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
+          tile        (make-vertex-array-object planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
           atmosphere  (make-program :vertex [vertex-atmosphere]
                                     :fragment [fragment-atmosphere-clouds cloud-atmosphere])
           indices     [0 1 3 2]
