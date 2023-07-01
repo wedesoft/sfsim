@@ -74,6 +74,19 @@
       (:height (slurp-image file-name)) => 2
       (take 4 (:data (slurp-image file-name))) => value))
 
+(fact "Save normal vectors"
+      (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
+        (spit-normals file-name {:width 2 :height 1 :data (float-array [1.0 0.0 0.0 0.0 -1.0 0.0])}) => anything
+        (let [normals (slurp-normals file-name)
+              n1      (get-vector3 normals 0 0)
+              n2      (get-vector3 normals 0 1)]
+          (:width normals)  => 2
+          (:height normals) => 1
+          (n1 0)            => (roughly  1.0 1e-2)
+          (n1 1)            => (roughly  0.0 1e-2)
+          (n2 0)            => (roughly  0.0 1e-2)
+          (n2 1)            => (roughly -1.0 1e-2))))
+
 (facts "Converting unsigned byte to byte and back"
   (byte->ubyte    0) =>    0
   (byte->ubyte  127) =>  127

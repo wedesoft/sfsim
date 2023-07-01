@@ -19,13 +19,13 @@
 (tabular "Load normals, scale factors and colors for a tile"
   (fact (?k (load-tile-data 3 2 2 1)) => ?result
     (provided
-      (util/slurp-image "data/globe/3/2/1/2.png") => "2.png"
+      (util/slurp-image "data/globe/3/2/1/2.jpg") => "2.jpg"
       (util/slurp-floats "data/globe/3/2/1/2.scale") => "2.scale"
-      (util/slurp-floats "data/globe/3/2/1/2.normals") => "2.normals"
+      (util/slurp-normals "data/globe/3/2/1/2.png") => "2.png"
       (util/slurp-bytes "data/globe/3/2/1/2.water") => "2.water"))
   ?k       ?result
-  :colors  "2.png"
-  :normals "2.normals"
+  :colors  "2.jpg"
+  :normals "2.png"
   :water   "2.water"
   :face    3
   :level   2
