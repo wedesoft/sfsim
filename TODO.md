@@ -1,5 +1,6 @@
 # TODO
 * bug when threshold high
+* memory leak in STB image library
 * Windows installer
 * render shadows of planet
   render backside of planet (as seen from light source) into shadow depth map using separate shader
