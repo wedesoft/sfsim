@@ -27,10 +27,12 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 // Render planet surface as seen through the atmosphere.
 void main()
 {
-  vec3 normal = texture(normals, fs_in.colorcoord).xyz;
+  vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
+  vec3 water_normal = normalize(fs_in.point);
   vec3 direction = normalize(fs_in.point - origin);
   vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
   float wet = texture(water, fs_in.colorcoord).r;
+  vec3 normal = mix(land_normal, water_normal, wet);
   float cos_incidence = dot(light_direction, normal);
   float highlight;
   if (cos_incidence > 0) {
