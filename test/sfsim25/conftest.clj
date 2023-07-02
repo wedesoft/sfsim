@@ -45,7 +45,7 @@
   "Use this test function to record the image the first time."
   [filename tolerance]
   (fn [other]
-      (spit-image filename other)))
+      (spit-png filename other)))
 
 (defn shader-test [setup probe & shaders]
   (fn [uniforms args]

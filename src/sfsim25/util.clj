@@ -115,13 +115,44 @@
     (.get buffer data)
     {:data data :width width :height height :channels (aget channels 0)}))
 
-(defn spit-image
+(defn spit-png
   "Save RGB image as PNG file"
   [path {:keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
     (-> buffer (.put data) (.flip))
     (STBImageWrite/stbi_write_png path width height 4 buffer (* 4 width))
     img))
+
+(defn spit-jpg
+  "Save RGB image as JPEG file"
+  [path {:keys [width height data] :as img}]
+  (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
+    (-> buffer (.put data) (.flip))
+    (STBImageWrite/stbi_write_jpg path width height 4 buffer (* 4 width))
+    img))
+
+(defn- add-alpha-byte
+  "Convert RGB byte sequence to RGBA"
+  [data]
+  (flatten (map (comp #(conj % 255) vec) (partition 3 data))))
+
+(defn spit-normals
+  "Compress normals to PNG and save"
+  [path {:keys [width height data]}]
+  (spit-png path {:width width :height height
+                  :data (byte-array (add-alpha-byte (map (fn [x] (Math/round (- (* x 127.5) 0.5))) data)))}))
+
+(defn- drop-alpha-byte
+  "Convert RGB byte sequence to RGBA"
+  [data]
+  (flatten (map #(take 3 %) (partition 4 data))))
+
+(defn slurp-normals
+  "Convert PNG to normal vectors"
+  [path]
+  (let [{:keys [width height data]} (slurp-image path)]
+    {:width width :height height
+     :data (float-array (drop-alpha-byte (map (fn [x] (/ (+ x 0.5) 127.5)) data)))}))
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"

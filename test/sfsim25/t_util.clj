@@ -58,13 +58,34 @@
   (sqr 2) => 4.0
   (sqr 3) => 9.0)
 
-(facts "Saving and loading of RGB image"
+(facts "Saving and loading of PNG image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
         value     [1 2 3 -1]]
-      (spit-image file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
+      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
       (take 4 (:data (slurp-image file-name))) => value))
+
+(facts "Saving and loading of JPEG image"
+  (let [file-name (.getPath (File/createTempFile "spit" ".jpg"))
+        value     [1 2 3 -1]]
+      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
+      (:width  (slurp-image file-name)) => 4
+      (:height (slurp-image file-name)) => 2
+      (take 4 (:data (slurp-image file-name))) => value))
+
+(fact "Save normal vectors"
+      (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
+        (spit-normals file-name {:width 2 :height 1 :data (float-array [1.0 0.0 0.0 0.0 -1.0 0.0])}) => anything
+        (let [normals (slurp-normals file-name)
+              n1      (get-vector3 normals 0 0)
+              n2      (get-vector3 normals 0 1)]
+          (:width normals)  => 2
+          (:height normals) => 1
+          (n1 0)            => (roughly  1.0 1e-2)
+          (n1 1)            => (roughly  0.0 1e-2)
+          (n2 0)            => (roughly  0.0 1e-2)
+          (n2 1)            => (roughly -1.0 1e-2))))
 
 (facts "Converting unsigned byte to byte and back"
   (byte->ubyte    0) =>    0

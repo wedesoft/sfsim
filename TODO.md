@@ -1,5 +1,6 @@
 # TODO
-* use jpeg for tiles, increase resolution of tiles, use Java Image IO for more robustness
+* compute accurate water normal from point
+* bug when threshold high
 * Windows installer
 * render shadows of planet
   render backside of planet (as seen from light source) into shadow depth map using separate shader
