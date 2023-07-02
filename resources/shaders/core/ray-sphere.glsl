@@ -6,7 +6,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
   vec3 pos = origin - centre;
   float direction_sqr = dot(direction, direction);
   float direction_pos = dot(direction, pos);
-  float discriminant = pow(direction_pos, 2.0) - direction_sqr * (dot(pos, pos) - radius * radius);
+  float discriminant = direction_pos * direction_pos - direction_sqr * (dot(pos, pos) - radius * radius);
   if (discriminant > 0) {
     float half_length = sqrt(discriminant) / direction_sqr;
     float middle = -dot(direction, pos) / direction_sqr;
