@@ -3,7 +3,7 @@
   (:require [fastmath.vector :refer (sub mag)]
             [clojure.math :refer (tan to-radians)]
             [sfsim25.cubemap :refer (tile-center)]
-            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes dissoc-in)]))
+            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes slurp-normals dissoc-in)]))
 
 (set! *unchecked-math* true)
 
@@ -36,10 +36,10 @@
    :level   level
    :y       y
    :x       x
-   :colors  (slurp-image  (cube-path "data/globe" face level y x ".png"))
-   :scales  (slurp-floats (cube-path "data/globe" face level y x ".scale"))
-   :normals (slurp-floats  (cube-path "data/globe" face level y x ".normals"))
-   :water   (slurp-bytes  (cube-path "data/globe" face level y x ".water"))})
+   :colors  (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
+   :scales  (slurp-floats  (cube-path "data/globe" face level y x ".scale"))
+   :normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
+   :water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
 
 (defn sub-tiles-info
   "Get metadata for sub tiles of cube map tile"

@@ -1,7 +1,7 @@
 (ns sfsim25.util
   "Various utility functions."
   (:require [clojure.java.io :as io]
-            [clojure.math :refer (sin)]
+            [clojure.math :refer (sin round)]
             [fastmath.vector :refer (vec3 vec4)]
             [progrock.core :as p])
   (:import [java.io ByteArrayOutputStream]
@@ -130,6 +130,33 @@
     (-> buffer (.put data) (.flip))
     (STBImageWrite/stbi_write_jpg path width height 4 buffer (* 4 width))
     img))
+
+(defn spit-normals
+  "Compress normals to PNG and save"
+  [path {:keys [width height data] :as img}]
+  (let [buffer    (BufferUtils/createByteBuffer (count data))
+        byte-data (byte-array (count data))]
+    (doseq [i (range (count data))]
+           (aset-byte ^bytes byte-data ^long i ^byte (round (- (* (aget ^floats data ^long i) 127.5) 0.5))))
+    (-> buffer (.put byte-data) (.flip))
+    (STBImageWrite/stbi_write_png path width height 3 buffer (* 3 width))
+    img))
+
+(defn slurp-normals
+  "Convert PNG to normal vectors"
+  [path]
+  (let [width     (int-array 1)
+        height    (int-array 1)
+        channels  (int-array 1)
+        buffer    (STBImage/stbi_load path width height channels 3)
+        width     (aget width 0)
+        height    (aget height 0)
+        byte-data (byte-array (* width height 3))
+        data      (float-array (* width height 3))]
+    (.get buffer byte-data)
+    (doseq [i (range (count data))]
+           (aset-float ^floats data ^long i ^float (/ (+ (aget ^bytes byte-data ^long i) 0.5) 127.5)))
+    {:width width :height height :data data}))
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
