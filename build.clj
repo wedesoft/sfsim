@@ -217,7 +217,8 @@
   (cube-map {:in-level 0 :out-level 2})
   (cube-map {:in-level 1 :out-level 3})
   (cube-map {:in-level 2 :out-level 4})
-  (cube-map {:in-level 3 :out-level 5}))
+  (cube-map {:in-level 3 :out-level 5})
+  (cube-map {:in-level 4 :out-level 6}))
 
 (defn clean [_]
   "Clean secondary files"
