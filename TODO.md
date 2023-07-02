@@ -1,5 +1,4 @@
 # TODO
-* compute accurate water normal from point
 * bug when threshold high
 * Windows installer
 * render shadows of planet

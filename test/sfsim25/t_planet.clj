@@ -535,10 +535,10 @@ float sampling_offset()
          "white"   0.9     2  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "amplify"
          "white"   PI      1  1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
          "white"   PI      1  1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   1   "water"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   0   "water"
          "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
          "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0  -1   "reflection3"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0  -1   0   0   1   "reflection3"
          "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
          "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
          "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter")
