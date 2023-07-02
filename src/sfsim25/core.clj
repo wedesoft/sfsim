@@ -795,7 +795,6 @@ void main()
                               @threshold @opacity-step @anisotropic @cloud-multiplier @cover-multiplier @cap @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
-  @@changes
   ; TODO: unload all planet tiles (vaos and textures)
   (destroy-texture E)
   (destroy-texture M)
