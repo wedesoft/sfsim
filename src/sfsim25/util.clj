@@ -113,6 +113,7 @@
         height (aget height 0)
         data   (byte-array (* width height 4))]
     (.get buffer data)
+    (.flip buffer)
     (STBImage/stbi_image_free buffer)
     {:data data :width width :height height :channels (aget channels 0)}))
 
@@ -155,6 +156,7 @@
         byte-data (byte-array (* width height 3))
         data      (float-array (* width height 3))]
     (.get buffer byte-data)
+    (.flip buffer)
     (STBImage/stbi_image_free buffer)
     (doseq [i (range (count data))]
            (aset-float ^floats data ^long i ^float (/ (+ (aget ^bytes byte-data ^long i) 0.5) 127.5)))
