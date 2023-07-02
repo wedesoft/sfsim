@@ -1,0 +1,8 @@
+{
+  "platform": "windows64",
+  "jdk": "C:/Program Files/Eclipse Adoptium/jdk-17.0.7.7-hotspot",
+  "executable": "sfsim25",
+  "classpath": ["target/sfsim25.jar"],
+  "mainclass": "sfsim25.core",
+  "output": "out-windows"
+}
