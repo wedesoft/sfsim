@@ -3,13 +3,27 @@
   (:require [clojure.math :refer (to-radians cos sin tan PI sqrt log)]
             [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer :all]
-            [sfsim25.atmosphere :refer :all]
-            [sfsim25.planet :refer :all]
-            [sfsim25.quadtree :refer :all]
-            [sfsim25.clouds :refer :all]
+            [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object
+                                    framebuffer-render generate-mipmap make-empty-float-texture-2d
+                                    make-empty-float-texture-3d make-float-cubemap make-float-texture-2d
+                                    make-float-texture-3d make-program make-rgb-texture make-ubyte-texture-2d
+                                    make-vector-texture-2d make-vertex-array-object onscreen-render render-patches
+                                    render-quads texture-render-color-depth uniform-float uniform-int
+                                    uniform-matrix4 uniform-sampler uniform-vector3 use-program use-textures)]
+            [sfsim25.atmosphere :refer (attenuation-outer attenuation-track phase phase-function ray-scatter-outer
+                                        ray-scatter-track transmittance-outer transmittance-track
+                                        vertex-atmosphere)]
+            [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
+                                    surface-radiance-function tess-control-planet tess-evaluation-planet
+                                    vertex-planet)]
+            [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
+            [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
+                                    cloud-profile cloud-shadow cloud-transfer linear-sampling
+                                    opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
+                                    sample-cloud sphere-noise)]
             [sfsim25.bluenoise :as bluenoise]
-            [sfsim25.matrix :refer :all]
+            [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
+                                    transformation-matrix)]
             [sfsim25.quaternion :as q]
             [sfsim25.util :refer (slurp-floats sqr)]
             [sfsim25.shaders :as shaders])
