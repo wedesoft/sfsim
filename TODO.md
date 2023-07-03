@@ -1,5 +1,4 @@
 # TODO
-* bug when threshold high
 * put new shader stuff under test
 * integration test rendering of cube map tree
 * render shadows of planet

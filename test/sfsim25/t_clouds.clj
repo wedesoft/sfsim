@@ -171,7 +171,7 @@ float cloud_density(vec3 point, float lod)
   if (point.z <= density_start)
     return cloud_multiplier * pow(0.5, lod);
   else
-    return 0.0;
+    return -1.0;
 }")
 
 (defn setup-opacity-fragment-static-uniforms
