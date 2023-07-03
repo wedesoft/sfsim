@@ -3,15 +3,29 @@
   (:require [clojure.math :refer (to-radians cos sin tan PI sqrt log)]
             [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer :all]
-            [sfsim25.atmosphere :refer :all]
-            [sfsim25.planet :refer :all]
-            [sfsim25.quadtree :refer :all]
-            [sfsim25.clouds :refer :all]
+            [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object
+                                    framebuffer-render generate-mipmap make-empty-float-texture-2d
+                                    make-empty-float-texture-3d make-float-cubemap make-float-texture-2d
+                                    make-float-texture-3d make-program make-rgb-texture make-ubyte-texture-2d
+                                    make-vector-texture-2d make-vertex-array-object onscreen-render render-patches
+                                    render-quads texture-render-color-depth uniform-float uniform-int
+                                    uniform-matrix4 uniform-sampler uniform-vector3 use-program use-textures)]
+            [sfsim25.atmosphere :refer (attenuation-outer attenuation-track phase phase-function ray-scatter-outer
+                                        ray-scatter-track transmittance-outer transmittance-track
+                                        vertex-atmosphere)]
+            [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
+                                    surface-radiance-function tess-control-planet tess-evaluation-planet
+                                    vertex-planet)]
+            [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
+            [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
+                                    cloud-profile cloud-shadow cloud-transfer linear-sampling
+                                    opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
+                                    sample-cloud sphere-noise)]
             [sfsim25.bluenoise :as bluenoise]
-            [sfsim25.matrix :refer :all]
+            [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
+                                    transformation-matrix)]
             [sfsim25.quaternion :as q]
-            [sfsim25.util :refer :all]
+            [sfsim25.util :refer (slurp-floats sqr)]
             [sfsim25.shaders :as shaders])
   (:import [org.lwjgl.opengl GL GL11 GL13]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -218,9 +232,9 @@ void main()
 (def series (take 5 (iterate #(* % 0.8) 1.0)))
 (def sum-series (apply + series))
 (def octaves (mapv #(/ % sum-series) series))
-(def series (take 5 (iterate #(* % 0.8) 1.0)))
-(def sum-series (apply + series))
-(def perlin-octaves (mapv #(/ % sum-series) series))
+(def perlin-series (take 5 (iterate #(* % 0.8) 1.0)))
+(def perlin-sum-series (apply + perlin-series))
+(def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
 (def mix 0.5)
 (def opacity-step (atom 250.0))
 (def step (atom 400.0))
@@ -258,28 +272,28 @@ void main()
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap W)
 
-(def data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
-                            (slurp-floats "data/clouds/perlin.raw")
-                            (slurp-floats "data/clouds/worley-cover.raw"))))
-(def L (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def worley-data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
+                                   (slurp-floats "data/clouds/perlin.raw")
+                                   (slurp-floats "data/clouds/worley-cover.raw"))))
+(def L (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data worley-data}))
 
-(def data (slurp-floats "data/bluenoise.raw"))
-(def B (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data data}))
+(def noise-data (slurp-floats "data/bluenoise.raw"))
+(def B (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
 
 (def cover (map (fn [i] {:width 512 :height 512 :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
 (def C (make-float-cubemap :linear :clamp cover))
 
-(def data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def T (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data data}))
+(def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def T (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
 
-(def data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def S (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+(def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(def S (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
 
-(def data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data data}))
+(def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
+(def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data mie-data}))
 
-(def data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data data}))
+(def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
+(def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
 (defn use-textures-enhanced
   "Specify textures to be used in the next rendering operation"
@@ -601,9 +615,9 @@ void main()
 (def keyboard-callback
   (proxy [GLFWKeyCallback] []
          (invoke [window k scancode action mods]
-           (if (= action GLFW/GLFW_PRESS)
+           (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
-           (if (= action GLFW/GLFW_RELEASE)
+           (when (= action GLFW/GLFW_RELEASE)
              (swap! keystates assoc k false)))))
 
 (defn render-tile
@@ -618,9 +632,9 @@ void main()
 
 (defn render-tree
   [node]
-  (if node
+  (when node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile node))
+      (when-not (empty? node) (render-tile node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree (selector node))))))
 
@@ -636,9 +650,9 @@ void main()
 
 (defn render-tree-color
   [node]
-  (if node
+  (when node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile-color node))
+      (when-not (empty? node) (render-tile-color node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree-color (selector node))))))
 
