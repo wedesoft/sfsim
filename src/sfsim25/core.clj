@@ -11,7 +11,7 @@
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer :all]
             [sfsim25.quaternion :as q]
-            [sfsim25.util :refer :all]
+            [sfsim25.util :refer (slurp-floats sqr)]
             [sfsim25.shaders :as shaders])
   (:import [org.lwjgl.opengl GL GL11 GL13]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -601,9 +601,9 @@ void main()
 (def keyboard-callback
   (proxy [GLFWKeyCallback] []
          (invoke [window k scancode action mods]
-           (if (= action GLFW/GLFW_PRESS)
+           (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
-           (if (= action GLFW/GLFW_RELEASE)
+           (when (= action GLFW/GLFW_RELEASE)
              (swap! keystates assoc k false)))))
 
 (defn render-tile
@@ -618,9 +618,9 @@ void main()
 
 (defn render-tree
   [node]
-  (if node
+  (when node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile node))
+      (when-not (empty? node) (render-tile node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree (selector node))))))
 
@@ -636,9 +636,9 @@ void main()
 
 (defn render-tree-color
   [node]
-  (if node
+  (when node
     (if (is-leaf? node)
-      (if-not (empty? node) (render-tile-color node))
+      (when-not (empty? node) (render-tile-color node))
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree-color (selector node))))))
 
