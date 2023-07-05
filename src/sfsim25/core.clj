@@ -73,12 +73,12 @@ float planet_shadow(vec3 point)
   float z = -(inverse_transform * vec4(point, 1)).z;
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = textureProj(shadow_map0, shadow_pos, 1.0);  // TODO: convert shadow index
+    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
     return shade;
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = textureProj(shadow_map1, shadow_pos, 1.0);  // TODO: convert shadow index
+    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
     return shade;
   };
   return 1.0;
@@ -114,12 +114,12 @@ float planet_shadow(vec3 point)
   float z = -(inverse_transform * vec4(point, 1)).z;
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = textureProj(shadow_map0, shadow_pos, 1.0);  // TODO: convert shadow index
+    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
     return shade;
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = textureProj(shadow_map1, shadow_pos, 1.0);  // TODO: convert shadow index
+    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
     return shade;
   };
   return 1.0;
@@ -214,12 +214,12 @@ float planet_shadow(vec3 point)
   float z = -(inverse_transform * vec4(point, 1)).z;
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = textureProj(shadow_map0, shadow_pos, 1.0);  // TODO: convert shadow index
+    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
     return shade;
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = textureProj(shadow_map1, shadow_pos, 1.0);  // TODO: convert shadow index
+    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
     return shade;
   };
   return 1.0;
@@ -803,8 +803,6 @@ void main()
                    opac-step  (/ @opacity-step (max 0.1 (/ (dot light-dir @position) (mag @position))))
                    opacities  (opacity-cascade matrix-cas light-dir scatter-am opac-step)
                    shadows    (shadow-cascade matrix-cas @tree)  ; TODO: side-effect on opacity cascade if run before (making sky black as well)
-                   _          (generate-mipmap (shadows 0))
-                   _          (generate-mipmap (shadows 1))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
