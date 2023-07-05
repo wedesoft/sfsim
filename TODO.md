@@ -1,7 +1,8 @@
 # TODO
+* cascaded shadow maps
+* render shadows of planet
 * put new shader stuff under test
 * integration test rendering of cube map tree
-* render shadows of planet
   render backside of planet (as seen from light source) into shadow depth map using separate shader
   use this depth map when performing cloud-shadow lookups instead of planet intersection
 * when building maps put intermediate files into a common subdirectory (tmp?)
