@@ -1,6 +1,6 @@
 (ns sfsim25.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (to-radians cos sin tan PI sqrt log)]
+  (:require [clojure.math :refer (to-radians cos sin tan PI sqrt log exp)]
             [fastmath.matrix :refer (inverse eye)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
             [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object
@@ -192,6 +192,7 @@ uniform vec3 light_direction;
 uniform mat4 inverse_transform;
 uniform vec3 origin;
 uniform float depth;
+uniform float bias;
 
 in GEO_OUT
 {
@@ -215,7 +216,7 @@ float planet_shadow(vec3 point)
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
     float val = texture(shadow_map0, shadow_pos.xy).r;  // TODO: convert shadow index
-    if (val < shadow_pos.z + 0.0001)
+    if (val < shadow_pos.z + bias)
       return 1.0;
     else
       return 0.0;
@@ -223,7 +224,7 @@ float planet_shadow(vec3 point)
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
     float val = texture(shadow_map1, shadow_pos.xy).r;  // TODO: convert shadow index
-    if (val < shadow_pos.z + 0.0001)
+    if (val < shadow_pos.z + bias)
       return 1.0;
     else
       return 0.0;
@@ -750,6 +751,8 @@ void main()
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
+(def bias (atom -3.0))
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -786,7 +789,8 @@ void main()
              (swap! threshold + (* dt tr))
              (swap! opacity-step + (* dt to))
              (swap! anisotropic + (* dt ta))
-             (swap! cloud-multiplier + (* dt tm))
+             ; (swap! cloud-multiplier + (* dt tm))
+             (swap! bias + (* dt tm))
              (swap! cover-multiplier + (* dt tg))
              (swap! cap + (* dt tc))
              (swap! step + (* dt ts))
@@ -868,6 +872,7 @@ void main()
                                 (uniform-float program-planet "opacity_step" opac-step)
                                 (uniform-int program-planet "clouds_width" (aget w 0))
                                 (uniform-int program-planet "clouds_height" (aget h 0))
+                                (uniform-float program-planet "bias" (exp @bias))
                                 (doseq [[idx item] (map-indexed vector splits)]
                                        (uniform-float program-planet (str "split" idx) item))
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
@@ -902,8 +907,8 @@ void main()
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, mult (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @anisotropic @cloud-multiplier @cover-multiplier @cap @step (* dt 0.001)))
+               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, bias (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
+                              @threshold @opacity-step @anisotropic @bias @cover-multiplier @cap @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
