@@ -1,4 +1,5 @@
 # TODO
+* cullback for shadow as well?
 * put new shader stuff under test
 * integration test rendering of cube map tree
   render backside of planet (as seen from light source) into shadow depth map using separate shader
