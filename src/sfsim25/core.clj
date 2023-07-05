@@ -174,8 +174,8 @@ uniform sampler2D colors;
 uniform sampler2D normals;
 uniform sampler2D water;
 uniform sampler2D clouds;
-uniform sampler2DShadow shadow_map0;
-uniform sampler2DShadow shadow_map1;
+uniform sampler2D shadow_map0;
+uniform sampler2D shadow_map1;
 uniform mat4 shadow_map_matrix0;
 uniform mat4 shadow_map_matrix1;
 uniform float split1;
@@ -214,13 +214,19 @@ float planet_shadow(vec3 point)
   float z = -(inverse_transform * vec4(point, 1)).z;
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
-    return shade;
+    float val = texture(shadow_map0, shadow_pos.xy).r;  // TODO: convert shadow index
+    if (val < shadow_pos.z + 0.0001)
+      return 1.0;
+    else
+      return 0.0;
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
-    return shade;
+    float val = texture(shadow_map1, shadow_pos.xy).r;  // TODO: convert shadow index
+    if (val < shadow_pos.z + 0.0001)
+      return 1.0;
+    else
+      return 0.0;
   };
   return 1.0;
 }
