@@ -263,8 +263,10 @@ void main()
 (def radius 6378000.0)
 (def tilesize 33)
 (def color-tilesize 129)
-(def max-height 35000.0)
-(def threshold (atom 17.0))
+; (def max-height 35000.0)
+(def max-height 700000.0)
+; (def threshold (atom 17.0))
+(def threshold (atom 30.0))
 (def anisotropic (atom 0.1))
 (def cloud-bottom 2000)
 (def cloud-top 4000)
@@ -643,7 +645,7 @@ void main()
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
 (defn background-tree-update [tree]
-  (let [increase? (partial increase-level? tilesize radius width 60 10 5 @position)]
+  (let [increase? (partial increase-level? tilesize radius width 60 10 1 @position)]
     (update-level-of-detail tree increase? true)))
 
 (defn load-tile-into-opengl
