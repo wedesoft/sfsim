@@ -37,6 +37,37 @@
 (def width 1280)
 (def height 720)
 
+(def overall-shadow
+"#version 410 core
+uniform sampler2DShadow shadow_map0;
+uniform sampler2DShadow shadow_map1;
+uniform mat4 shadow_map_matrix0;
+uniform mat4 shadow_map_matrix1;
+uniform float split1;
+uniform float split2;
+uniform mat4 inverse_transform;
+uniform vec3 light_direction;
+float opacity_cascade_lookup(vec4 point);
+float planet_shadow(vec3 point)
+{
+  float z = -(inverse_transform * vec4(point, 1)).z;
+  if (z <= split1) {
+    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
+    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
+    return shade;
+  };
+  if (z <= split2) {
+    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
+    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
+    return shade;
+  };
+  return 1.0;
+}
+float cloud_shadow(vec3 point)
+{
+  return planet_shadow(point) * opacity_cascade_lookup(vec4(point, 1));
+}")
+
 (def fragment-shadow-planet
 "#version 410 core
 in GEO_OUT
@@ -51,15 +82,6 @@ void main()
 
 (def fragment-planet-clouds
 "#version 410 core
-uniform float radius;
-uniform sampler2DShadow shadow_map0;
-uniform sampler2DShadow shadow_map1;
-uniform mat4 shadow_map_matrix0;
-uniform mat4 shadow_map_matrix1;
-uniform float split1;
-uniform float split2;
-uniform mat4 inverse_transform;
-uniform vec3 light_direction;
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -67,26 +89,6 @@ in GEO_OUT
   vec3 point;
 } fs_in;
 out vec4 fragColor;
-float opacity_cascade_lookup(vec4 point);
-float planet_shadow(vec3 point)
-{
-  float z = -(inverse_transform * vec4(point, 1)).z;
-  if (z <= split1) {
-    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
-    return shade;
-  };
-  if (z <= split2) {
-    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
-    return shade;
-  };
-  return 1.0;
-}
-float cloud_shadow(vec3 point)
-{
-  return planet_shadow(point) * opacity_cascade_lookup(vec4(point, 1));
-}
 vec4 cloud_planet(vec3 point);
 void main()
 {
@@ -95,39 +97,10 @@ void main()
 
 (def fragment-atmosphere-clouds
 "#version 410 core
-uniform float radius;
-uniform sampler2DShadow shadow_map0;
-uniform sampler2DShadow shadow_map1;
-uniform mat4 shadow_map_matrix0;
-uniform mat4 shadow_map_matrix1;
-uniform float split1;
-uniform float split2;
-uniform mat4 inverse_transform;
-uniform vec3 light_direction;
 in VS_OUT
 {
   vec3 direction;
 } fs_in;
-float opacity_cascade_lookup(vec4 point);
-float planet_shadow(vec3 point)
-{
-  float z = -(inverse_transform * vec4(point, 1)).z;
-  if (z <= split1) {
-    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
-    return shade;
-  };
-  if (z <= split2) {
-    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
-    return shade;
-  };
-  return 1.0;
-}
-float cloud_shadow(vec3 point)
-{
-  return planet_shadow(point) * opacity_cascade_lookup(vec4(point, 1));
-}
 out vec4 fragColor;
 vec4 cloud_atmosphere(vec3 fs_in_direction);
 void main()
@@ -174,12 +147,6 @@ uniform sampler2D colors;
 uniform sampler2D normals;
 uniform sampler2D water;
 uniform sampler2D clouds;
-uniform sampler2DShadow shadow_map0;
-uniform sampler2DShadow shadow_map1;
-uniform mat4 shadow_map_matrix0;
-uniform mat4 shadow_map_matrix1;
-uniform float split1;
-uniform float split2;
 uniform int clouds_width;
 uniform int clouds_height;
 uniform float specular;
@@ -210,23 +177,7 @@ float opacity_cascade_lookup(vec4 point);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-float planet_shadow(vec3 point)
-{
-  float z = -(inverse_transform * vec4(point, 1)).z;
-  if (z <= split1) {
-    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    return textureProj(shadow_map0, shadow_pos - vec4(0, 0, bias, 0));  // TODO: convert shadow index
-  };
-  if (z <= split2) {
-    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    return textureProj(shadow_map1, shadow_pos - vec4(0, 0, bias, 0));  // TODO: convert shadow index
-  };
-  return 1.0;
-}
-float cloud_shadow(vec3 point)
-{
-  return planet_shadow(point) * opacity_cascade_lookup(vec4(point, 1));
-}
+float cloud_shadow(vec3 point);
 void main()
 {
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
@@ -379,10 +330,10 @@ void main()
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
-                           shaders/make-2d-index-from-4d shaders/is-above-horizon
-                           shaders/clip-shell-intersections shaders/surface-radiance-forward
-                           transmittance-outer surface-radiance-function shaders/convert-1d-index
-                           (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index]))
+                           shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
+                           shaders/surface-radiance-forward transmittance-outer surface-radiance-function
+                           shaders/convert-1d-index (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index
+                           overall-shadow]))
 
 (def program-shadow-planet
   (make-program :vertex [vertex-planet]
@@ -397,22 +348,18 @@ void main()
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
                 :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
-                           shaders/clip-shell-intersections sample-cloud linear-sampling
-                           bluenoise/sampling-offset phase-function cloud-density cloud-base
-                           cloud-transfer cloud-cover cloud-noise shaders/interpolate-float-cubemap
-                           shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
+                           shaders/clip-shell-intersections sample-cloud linear-sampling bluenoise/sampling-offset
+                           phase-function cloud-density cloud-base cloud-transfer cloud-cover cloud-noise
+                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
-                           cloud-shadow cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
-                           (opacity-cascade-lookup num-steps) opacity-lookup
-                           shaders/convert-2d-index transmittance-outer
-                           shaders/convert-3d-index shaders/transmittance-forward
-                           transmittance-track shaders/height-to-index shaders/interpolate-2d
-                           shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
-                           shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
-                           shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
+                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-shadow cloud-profile
+                           (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps) opacity-lookup
+                           shaders/convert-2d-index transmittance-outer shaders/convert-3d-index shaders/transmittance-forward
+                           transmittance-track shaders/height-to-index shaders/interpolate-2d shaders/is-above-horizon
+                           ray-scatter-track shaders/horizon-distance shaders/elevation-to-index shaders/ray-scatter-forward
+                           shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d shaders/sun-angle-to-index
+                           shaders/make-2d-index-from-4d overall-shadow]))
 
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
@@ -431,7 +378,8 @@ void main()
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
                            shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
                            shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d
+                           overall-shadow]))
 
 (use-program program-opacity)
 (uniform-sampler program-opacity "worley" 0)
