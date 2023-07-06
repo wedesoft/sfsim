@@ -190,7 +190,6 @@ uniform float max_height;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform mat4 inverse_transform;
-uniform mat4 inverse_transform2;
 uniform vec3 origin;
 uniform float depth;
 uniform float bias;
@@ -213,7 +212,7 @@ vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 float planet_shadow(vec3 point)
 {
-  float z = -(inverse_transform2 * vec4(point, 1)).z;
+  float z = -(inverse_transform * vec4(point, 1)).z;
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
     return textureProj(shadow_map0, shadow_pos - vec4(0, 0, bias, 0));  // TODO: convert shadow index
@@ -738,7 +737,6 @@ void main()
                               (clear)
                               (use-program program-shadow-planet)
                               (uniform-matrix4 program-shadow-planet "inverse_transform" shadow-ndc-matrix)  ; TODO: shrink
-                              (uniform-matrix4 program-shadow-planet "inverse_transform2" (inverse transform))
                               (uniform-matrix4 program-shadow-planet "projection" (eye 4))
                               (render-tree-depth tree)))
     matrix-cascade))
