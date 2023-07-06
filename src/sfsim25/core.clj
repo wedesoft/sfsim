@@ -174,8 +174,8 @@ uniform sampler2D colors;
 uniform sampler2D normals;
 uniform sampler2D water;
 uniform sampler2D clouds;
-uniform sampler2D shadow_map0;
-uniform sampler2D shadow_map1;
+uniform sampler2DShadow shadow_map0;
+uniform sampler2DShadow shadow_map1;
 uniform mat4 shadow_map_matrix0;
 uniform mat4 shadow_map_matrix1;
 uniform float split1;
@@ -190,6 +190,7 @@ uniform float max_height;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform mat4 inverse_transform;
+uniform mat4 inverse_transform2;
 uniform vec3 origin;
 uniform float depth;
 uniform float bias;
@@ -212,22 +213,14 @@ vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 float planet_shadow(vec3 point)
 {
-  float z = -(inverse_transform * vec4(point, 1)).z;
+  float z = -(inverse_transform2 * vec4(point, 1)).z;
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float val = texture(shadow_map0, shadow_pos.xy).r;  // TODO: convert shadow index
-    if (val < shadow_pos.z + bias)
-      return 1.0;
-    else
-      return 0.0;
+    return textureProj(shadow_map0, shadow_pos - vec4(0, 0, bias, 0));  // TODO: convert shadow index
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float val = texture(shadow_map1, shadow_pos.xy).r;  // TODO: convert shadow index
-    if (val < shadow_pos.z + bias)
-      return 1.0;
-    else
-      return 0.0;
+    return textureProj(shadow_map1, shadow_pos - vec4(0, 0, bias, 0));  // TODO: convert shadow index
   };
   return 1.0;
 }
@@ -738,20 +731,21 @@ void main()
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree-color (selector node))))))
 
-(defn shadow-cascade [matrix-cascade tree]
+(defn shadow-cascade [matrix-cascade transform tree]
   (mapv
     (fn [{:keys [shadow-ndc-matrix]}]
         (texture-render-depth shadow-size shadow-size
                               (clear)
                               (use-program program-shadow-planet)
                               (uniform-matrix4 program-shadow-planet "inverse_transform" shadow-ndc-matrix)  ; TODO: shrink
+                              (uniform-matrix4 program-shadow-planet "inverse_transform2" (inverse transform))
                               (uniform-matrix4 program-shadow-planet "projection" (eye 4))
                               (render-tree-depth tree)))
     matrix-cascade))
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
-(def bias (atom -3.0))
+(def bias (atom -7.0))
 
 (defn -main
   "Space flight simulator main function"
@@ -812,7 +806,7 @@ void main()
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                    opac-step  (/ @opacity-step (max 0.1 (/ (dot light-dir @position) (mag @position))))
                    opacities  (opacity-cascade matrix-cas light-dir scatter-am opac-step)
-                   shadows    (shadow-cascade matrix-cas @tree)  ; TODO: side-effect on opacity cascade if run before (making sky black as well)
+                   shadows    (shadow-cascade matrix-cas transform @tree)  ; TODO: side-effect on opacity cascade if run before (making sky black as well)
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
