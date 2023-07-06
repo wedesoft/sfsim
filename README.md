@@ -8,6 +8,8 @@ Requires OpenGL 4.5.
 
 [![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
 
+[![Planetary cloud cover with volumetric clouds with shadows using deep opacity maps](https://i.ytimg.com/vi/NKnfXzeLr7I/hqdefault.jpg)](https://www.youtube.com/watch?v=NKnfXzeLr7I)
+
 # Installation
 
 * Only tested on Debian 12 and Windows 11
