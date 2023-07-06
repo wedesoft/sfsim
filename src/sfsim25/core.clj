@@ -39,6 +39,8 @@
 
 (def overall-shadow
 "#version 410 core
+uniform int shadow_size;
+uniform float bias;
 uniform sampler2DShadow shadow_map0;
 uniform sampler2DShadow shadow_map1;
 uniform mat4 shadow_map_matrix0;
@@ -50,15 +52,24 @@ uniform vec3 light_direction;
 float opacity_cascade_lookup(vec4 point);
 float planet_shadow(vec3 point)
 {
+  float texel_size = 1.0 / shadow_size;
   float z = -(inverse_transform * vec4(point, 1)).z;
   if (z <= split1) {
-    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = textureProj(shadow_map0, shadow_pos);  // TODO: convert shadow index
+    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);  // TODO: convert shadow index
+    float shade = 0.0;
+    for (int y=-1; y<=1; y++)
+      for (int x=-1; x<=1; x++)
+        shade += textureProj(shadow_map0, shadow_pos + vec4(x, y, 0, 0) * texel_size - vec4(0, 0, bias, 0));
+    shade /= 9.0;
     return shade;
   };
   if (z <= split2) {
-    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = textureProj(shadow_map1, shadow_pos);  // TODO: convert shadow index
+    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);  // TODO: convert shadow index
+    float shade = 0.0;
+    for (int y=-1; y<=1; y++)
+      for (int x=-1; x<=1; x++)
+        shade += textureProj(shadow_map1, shadow_pos + vec4(x, y, 0, 0) * texel_size - vec4(0, 0, bias, 0));
+    shade /= 9.0;
     return shade;
   };
   return 1.0;
@@ -159,7 +170,6 @@ uniform vec3 light_direction;
 uniform mat4 inverse_transform;
 uniform vec3 origin;
 uniform float depth;
-uniform float bias;
 
 in GEO_OUT
 {
@@ -173,7 +183,6 @@ out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
                      vec3 land_color, vec3 water_color);
-float opacity_cascade_lookup(vec4 point);
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
