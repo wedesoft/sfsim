@@ -8,15 +8,11 @@ float <%= method-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") paramet
 {
   float texel_size = 1.0 / (shadow_size - 1);
   float result = 0.0;
-  point.x -= texel_size;
-  point.y -= texel_size;
-  for (int y=-1; y<=1; y++) {
+  for (int y=-1; y<=1; y++)
     for (int x=-1; x<=1; x++) {
-      result += <%= base-function-name %>(<%= (apply str (map #(str (% 1) ", ") parameters)) %>point);
-      point.x += texel_size;
+      <%= point-type %> sampling_point = point;
+      point.xy += vec2(x * texel_size, y * texel_size);
+      result += <%= base-function-name %>(<%= (apply str (map #(str (% 1) ", ") parameters)) %>sampling_point);
     };
-    point.x -= texel_size * 3;
-    point.y += texel_size;
-  };
   return result / 9.0;
 }
