@@ -178,6 +178,79 @@ void main()
          -0.75  0.5  0 -1  1  0
          -0.75 -0.5  1 -1 -1  1)
 
+(def shadow-lookup-probe
+  (template/fn [lookup-depth]
+"#version 410 core
+uniform sampler2DShadow shadows;
+out vec3 fragColor;
+float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
+void main()
+{
+  vec4 pos = vec4(0.5, 0.5, <%= lookup-depth %>, 1.0);
+  float shade = shadow_lookup(shadows, pos);
+  fragColor = vec3(shade, shade, shade);
+}"))
+
+(defn shadow-lookup-test [shadow-depth lookup-depth bias]
+  (with-invisible-window
+    (let [indices   [0 1 3 2]
+          vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          data      (repeat 4 shadow-depth)
+          shadows   (make-depth-texture :linear :clamp {:width 2 :height 2 :data (float-array data)})
+          program   (make-program :vertex [vertex-passthrough]
+                                  :fragment [(shadow-lookup-probe lookup-depth) shadow-lookup convert-shadow-index])
+          vao       (make-vertex-array-object program indices vertices [:point 3])
+          tex       (texture-render-color
+                      1 1 true
+                      (use-program program)
+                      (uniform-sampler program "shadows" 0)
+                      (uniform-int program "shadow_size" 2)
+                      (uniform-float program "shadow_bias" bias)
+                      (use-textures shadows)
+                      (render-quads vao))
+          img       (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture shadows)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
+
+(tabular "Shrink sampling index to cover full NDC space"
+         (fact ((shadow-lookup-test ?depth ?z ?bias) 0) => (roughly ?result 1e-6))
+         ?depth ?z  ?bias ?result
+         0.5    1.0 0.0    1.0
+         0.5    0.0 0.0    0.0
+         0.5    0.6 0.2    0.0)
+
+(def percentage-closer-filtering-probe
+  (template/fn [x]
+"#version 410 core
+out vec3 fragColor;
+float f(float scale, vec3 point)
+{
+  return max(point.x * scale, 0);
+}
+float averaged(float scale, vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= x %>, 0, 0);
+  float result = averaged(3.0, point);
+  fragColor = vec3(result, result, result);
+}"))
+
+(def percentage-closer-filtering-test
+  (shader-test
+    (fn [program shadow-size]
+        (uniform-int program "shadow_size" shadow-size))
+    percentage-closer-filtering-probe (percentage-closer-filtering "vec3" "averaged" "f" [["float" "scale"]])))
+
+(tabular "Local averaging of shadow to reduce aliasing"
+         (fact ((percentage-closer-filtering-test [?size] [?x]) 0) => (roughly ?result 1e-6))
+         ?size ?x ?result
+         2     0.0 1.0
+         3     0.0 0.5
+         2     1.0 3.0)
+
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core
 out vec3 fragColor;

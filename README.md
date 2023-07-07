@@ -8,12 +8,18 @@ Requires OpenGL 4.5.
 
 [![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
 
+[![Planetary cloud cover with volumetric clouds with shadows using deep opacity maps](https://i.ytimg.com/vi/NKnfXzeLr7I/hqdefault.jpg)](https://www.youtube.com/watch?v=NKnfXzeLr7I)
+
 # Installation
-* Only tested on Debian 11
+
+* Only tested on Debian 12 and Windows 11
 * Install Java, LWJGL2, and ImageJ: `sudo apt-get install openjdk-17-jre liblwjgl-java libij-java`
 * [Install Clojure 1.11](https://clojure.org/guides/install_clojure)
+* Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
+* Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
 
 # Build
+
 * Build Worley noise: `clj -T:build worley`
 * Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`
@@ -25,7 +31,9 @@ Requires OpenGL 4.5.
 * Convert map sectors into pyramid of tiles: `clj -T:build map-sectors`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
-* Perform all build steps above: `clj -T:build`
+* Perform all build steps above: `clj -T:build all`
+* Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json`
+* Create Windows installer: `makensis nsis-config.nsi`
 
 # Run
 
