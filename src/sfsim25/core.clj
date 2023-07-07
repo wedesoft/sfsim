@@ -59,20 +59,20 @@ float planet_shadow(vec3 point)
     return 1.0;
   }
   if (z <= split1) {
-    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);  // TODO: convert shadow index
+    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
     float shade = 0.0;
     for (int y=-1; y<=1; y++)
       for (int x=-1; x<=1; x++)
-        shade += shadow_lookup(shadow_map0, shadow_pos + vec4(x, y, 0, 0));
+        shade += shadow_lookup(shadow_map0, shadow_pos + vec4(x, y, 0, 0) * texel_size);
     shade /= 9.0;
     return shade;
   };
   if (z <= split2) {
-    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);  // TODO: convert shadow index
+    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
     float shade = 0.0;
     for (int y=-1; y<=1; y++)
       for (int x=-1; x<=1; x++)
-        shade += shadow_lookup(shadow_map1, shadow_pos + vec4(x, y, 0, 0));
+        shade += shadow_lookup(shadow_map1, shadow_pos + vec4(x, y, 0, 0) * texel_size);
     shade /= 9.0;
     return shade;
   };
