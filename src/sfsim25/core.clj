@@ -45,6 +45,7 @@ uniform sampler2DShadow shadow_map0;
 uniform sampler2DShadow shadow_map1;
 uniform mat4 shadow_map_matrix0;
 uniform mat4 shadow_map_matrix1;
+uniform float split0;
 uniform float split1;
 uniform float split2;
 uniform mat4 inverse_transform;
@@ -54,6 +55,9 @@ float planet_shadow(vec3 point)
 {
   float texel_size = 1.0 / shadow_size;
   float z = -(inverse_transform * vec4(point, 1)).z;
+  if (z <= split0) {
+    return 1.0;
+  }
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);  // TODO: convert shadow index
     float shade = 0.0;
