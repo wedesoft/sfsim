@@ -1,6 +1,4 @@
 # TODO
-* test percentage closer filtering
-  percentage closer filtering wrapper to call from opacity\_cascade\_lookup
 * test cascaded shadow map
 * cullback for shadow as well?
 * put new shader stuff under test
