@@ -40,7 +40,6 @@
 (def overall-shadow
 "#version 410 core
 uniform int shadow_size;
-uniform float shadow_bias;
 uniform sampler2DShadow shadow_map0;
 uniform sampler2DShadow shadow_map1;
 uniform mat4 shadow_map_matrix0;
@@ -64,7 +63,7 @@ float planet_shadow(vec3 point)
     float shade = 0.0;
     for (int y=-1; y<=1; y++)
       for (int x=-1; x<=1; x++)
-        shade += shadow_lookup(shadow_map0, shadow_pos + vec4(x, y, 0, 0) - vec4(0, 0, shadow_bias, 0));
+        shade += shadow_lookup(shadow_map0, shadow_pos + vec4(x, y, 0, 0));
     shade /= 9.0;
     return shade;
   };
@@ -73,7 +72,7 @@ float planet_shadow(vec3 point)
     float shade = 0.0;
     for (int y=-1; y<=1; y++)
       for (int x=-1; x<=1; x++)
-        shade += shadow_lookup(shadow_map1, shadow_pos + vec4(x, y, 0, 0) - vec4(0, 0, shadow_bias, 0));
+        shade += shadow_lookup(shadow_map1, shadow_pos + vec4(x, y, 0, 0));
     shade /= 9.0;
     return shade;
   };
