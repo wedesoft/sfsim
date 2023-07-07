@@ -34,6 +34,10 @@
   "Grow sampling index to cover full NDC space"
   (slurp "resources/shaders/core/grow-shadow-index.glsl"))
 
+(def shadow-lookup
+  "Perform lookup in a shadow map including moving shadow index out of clamping region"
+  (slurp "resources/shaders/core/shadow-lookup.glsl"))
+
 (def make-2d-index-from-4d
   "Convert 4D index to 2D indices for part-manual interpolation"
   (slurp "resources/shaders/core/make-2d-index-from-4d.glsl"))

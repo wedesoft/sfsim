@@ -769,7 +769,7 @@ in vec3 point;
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
-  gl_Position = shrink_shadow_index(shadow_ndc_matrix * vec4(point, 1), 256, 256);
+  gl_Position = shrink_shadow_index(shadow_ndc_matrix * vec4(point, 1), 128, 128);
 }
 ")
 
@@ -799,10 +799,10 @@ uniform sampler2DShadow shadow_map;
 in vec4 shadow_pos;
 in float ambient;
 out vec4 fragColor;
-vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
+float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
 void main(void)
 {
-  float shade = textureProj(shadow_map, convert_shadow_index(shadow_pos, 256, 256));
+  float shade = shadow_lookup(shadow_map, shadow_pos);
   float brightness = 0.7 * shade + 0.1 * ambient + 0.1;
   fragColor = vec4(brightness, brightness, brightness, 1.0);
 }")
@@ -818,10 +818,10 @@ void main(void)
                         -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
                         -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
               program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index] :fragment [fragment-shadow])
-              program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene s/convert-shadow-index])
+              program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene s/shadow-lookup s/convert-shadow-index])
               vao (make-vertex-array-object program-main indices vertices [:point 3])
               shadow-map (texture-render-depth
-                           256 256
+                           128 128
                            (clear)
                            (use-program program-shadow)
                            (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:shadow-ndc-matrix shadow))
@@ -832,6 +832,7 @@ void main(void)
                                 (clear (vec3 0 0 0))
                                 (use-program program-main)
                                 (uniform-sampler program-main "shadow_map" 0)
+                                (uniform-int program-main "shadow_size" 128)
                                 (uniform-matrix4 program-main "projection" projection)
                                 (uniform-matrix4 program-main "shadow_map_matrix" (:shadow-map-matrix shadow))
                                 (use-textures shadow-map)

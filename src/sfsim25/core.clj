@@ -40,7 +40,7 @@
 (def overall-shadow
 "#version 410 core
 uniform int shadow_size;
-uniform float bias;
+uniform float shadow_bias;
 uniform sampler2DShadow shadow_map0;
 uniform sampler2DShadow shadow_map1;
 uniform mat4 shadow_map_matrix0;
@@ -51,6 +51,7 @@ uniform float split2;
 uniform mat4 inverse_transform;
 uniform vec3 light_direction;
 float opacity_cascade_lookup(vec4 point);
+float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
 float planet_shadow(vec3 point)
 {
   float texel_size = 1.0 / shadow_size;
@@ -63,7 +64,7 @@ float planet_shadow(vec3 point)
     float shade = 0.0;
     for (int y=-1; y<=1; y++)
       for (int x=-1; x<=1; x++)
-        shade += textureProj(shadow_map0, shadow_pos + vec4(x, y, 0, 0) * texel_size - vec4(0, 0, bias, 0));
+        shade += shadow_lookup(shadow_map0, shadow_pos + vec4(x, y, 0, 0) - vec4(0, 0, shadow_bias, 0));
     shade /= 9.0;
     return shade;
   };
@@ -72,7 +73,7 @@ float planet_shadow(vec3 point)
     float shade = 0.0;
     for (int y=-1; y<=1; y++)
       for (int x=-1; x<=1; x++)
-        shade += textureProj(shadow_map1, shadow_pos + vec4(x, y, 0, 0) * texel_size - vec4(0, 0, bias, 0));
+        shade += shadow_lookup(shadow_map1, shadow_pos + vec4(x, y, 0, 0) - vec4(0, 0, shadow_bias, 0));
     shade /= 9.0;
     return shade;
   };
@@ -227,7 +228,7 @@ void main()
 (def cloud-top 4000)
 (def cloud-multiplier (atom 10.0))
 (def cover-multiplier (atom 26.0))
-(def cap (atom 0.0125))
+(def cap (atom 0.025))
 (def detail-scale 4000)
 (def cloud-scale 100000)
 (def series (take 4 (iterate #(* % 0.7) 1.0)))
@@ -238,7 +239,7 @@ void main()
 (def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
 (def mix 0.5)
 (def opacity-step (atom 250.0))
-(def step (atom 400.0))
+(def step (atom 100.0))
 (def worley-size 64)
 (def shadow-size 512)
 (def noise-size 64)
@@ -346,7 +347,7 @@ void main()
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
                            shaders/surface-radiance-forward transmittance-outer surface-radiance-function
                            shaders/convert-1d-index (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index
-                           overall-shadow]))
+                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index]))
 
 (def program-shadow-planet
   (make-program :vertex [vertex-planet]
@@ -372,7 +373,7 @@ void main()
                            transmittance-track shaders/height-to-index shaders/interpolate-2d shaders/is-above-horizon
                            ray-scatter-track shaders/horizon-distance shaders/elevation-to-index shaders/ray-scatter-forward
                            shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d shaders/sun-angle-to-index
-                           shaders/make-2d-index-from-4d overall-shadow]))
+                           shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup shaders/convert-shadow-index]))
 
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
@@ -392,7 +393,7 @@ void main()
                            shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
                            shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d
-                           overall-shadow]))
+                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index]))
 
 (use-program program-opacity)
 (uniform-sampler program-opacity "worley" 0)
@@ -704,7 +705,7 @@ void main()
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
-(def bias (atom -7.0))
+(def shadow-bias (atom -7.0))
 
 (defn -main
   "Space flight simulator main function"
@@ -743,7 +744,7 @@ void main()
              (swap! opacity-step + (* dt to))
              (swap! anisotropic + (* dt ta))
              ; (swap! cloud-multiplier + (* dt tm))
-             (swap! bias + (* dt tm))
+             (swap! shadow-bias + (* dt tm))
              (swap! cover-multiplier + (* dt tg))
              (swap! cap + (* dt tc))
              (swap! step + (* dt ts))
@@ -825,7 +826,7 @@ void main()
                                 (uniform-float program-planet "opacity_step" opac-step)
                                 (uniform-int program-planet "clouds_width" (aget w 0))
                                 (uniform-int program-planet "clouds_height" (aget h 0))
-                                (uniform-float program-planet "bias" (exp @bias))
+                                (uniform-float program-planet "shadow_bias" (exp @shadow-bias))
                                 (doseq [[idx item] (map-indexed vector splits)]
                                        (uniform-float program-planet (str "split" idx) item))
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
@@ -861,7 +862,7 @@ void main()
              (swap! n inc)
              (when (zero? (mod @n 10))
                (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, bias (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @anisotropic @bias @cover-multiplier @cap @step (* dt 0.001)))
+                              @threshold @opacity-step @anisotropic @shadow-bias @cover-multiplier @cap @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
