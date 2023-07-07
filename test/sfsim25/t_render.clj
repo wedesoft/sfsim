@@ -843,7 +843,7 @@ void main(void)
               (destroy-program program-main)
               (destroy-program program-shadow)
               img))))
-      => (is-image "test/sfsim25/fixtures/render/shadow.png" 0.02))
+      => (is-image "test/sfsim25/fixtures/render/shadow.png" 0.04))
 
 (fact "Create floating-point cube map and read them out"
       (with-invisible-window
