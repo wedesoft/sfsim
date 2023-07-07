@@ -11,7 +11,7 @@ float <%= method-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") paramet
   for (int y=-1; y<=1; y++)
     for (int x=-1; x<=1; x++) {
       <%= point-type %> sampling_point = point;
-      point.xy += vec2(x * texel_size, y * texel_size);
+      sampling_point.xy += vec2(x * texel_size, y * texel_size);
       result += <%= base-function-name %>(<%= (apply str (map #(str (% 1) ", ") parameters)) %>sampling_point);
     };
   return result / 9.0;

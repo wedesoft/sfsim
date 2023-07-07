@@ -228,12 +228,12 @@ void main()
 out vec3 fragColor;
 float f(float scale, vec3 point)
 {
-  return max(point.x * scale, 0);
+  return max(point.x * scale, 0.0);
 }
 float averaged(float scale, vec3 point);
 void main()
 {
-  vec3 point = vec3(<%= x %>, 0, 0);
+  vec3 point = vec3(<%= x %>, 0.0, 0.0);
   float result = averaged(3.0, point);
   fragColor = vec3(result, result, result);
 }"))
