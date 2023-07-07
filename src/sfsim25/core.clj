@@ -60,11 +60,11 @@ float planet_shadow(vec3 point)
   }
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    return average_shadow (shadow_map0, shadow_pos);
+    return average_shadow(shadow_map0, shadow_pos);
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    return average_shadow (shadow_map0, shadow_pos);
+    return average_shadow(shadow_map0, shadow_pos);
   };
   return 1.0;
 }
