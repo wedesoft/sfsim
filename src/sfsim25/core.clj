@@ -50,7 +50,7 @@ uniform float split2;
 uniform mat4 inverse_transform;
 uniform vec3 light_direction;
 float opacity_cascade_lookup(vec4 point);
-float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
+float average_shadow(sampler2DShadow shadow_map, vec4 shadow_pos);
 float planet_shadow(vec3 point)
 {
   float texel_size = 1.0 / shadow_size;
@@ -60,21 +60,11 @@ float planet_shadow(vec3 point)
   }
   if (z <= split1) {
     vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    float shade = 0.0;
-    for (int y=-1; y<=1; y++)
-      for (int x=-1; x<=1; x++)
-        shade += shadow_lookup(shadow_map0, shadow_pos + vec4(x, y, 0, 0) * texel_size);
-    shade /= 9.0;
-    return shade;
+    return average_shadow (shadow_map0, shadow_pos);
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    float shade = 0.0;
-    for (int y=-1; y<=1; y++)
-      for (int x=-1; x<=1; x++)
-        shade += shadow_lookup(shadow_map1, shadow_pos + vec4(x, y, 0, 0) * texel_size);
-    shade /= 9.0;
-    return shade;
+    return average_shadow (shadow_map0, shadow_pos);
   };
   return 1.0;
 }
@@ -346,7 +336,8 @@ void main()
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
                            shaders/surface-radiance-forward transmittance-outer surface-radiance-function
                            shaders/convert-1d-index (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index
-                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index]))
+                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])]))
 
 (def program-shadow-planet
   (make-program :vertex [vertex-planet]
@@ -372,7 +363,8 @@ void main()
                            transmittance-track shaders/height-to-index shaders/interpolate-2d shaders/is-above-horizon
                            ray-scatter-track shaders/horizon-distance shaders/elevation-to-index shaders/ray-scatter-forward
                            shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d shaders/sun-angle-to-index
-                           shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup shaders/convert-shadow-index]))
+                           shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])]))
 
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
@@ -392,7 +384,8 @@ void main()
                            shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
                            shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d
-                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index]))
+                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])]))
 
 (use-program program-opacity)
 (uniform-sampler program-opacity "worley" 0)
