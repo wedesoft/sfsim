@@ -179,7 +179,8 @@ void main()
          -0.75 -0.5  1 -1 -1  1)
 
 (def shadow-lookup-probe
-  (template/fn [lookup-depth] "#version 410 core
+  (template/fn [lookup-depth]
+"#version 410 core
 uniform sampler2DShadow shadows;
 out vec3 fragColor;
 float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
@@ -220,6 +221,35 @@ void main()
          0.5    1.0 0.0    1.0
          0.5    0.0 0.0    0.0
          0.5    0.6 0.2    0.0)
+
+(def percentage-closer-filtering-probe
+  (template/fn [x]
+"#version 410 core
+out vec3 fragColor;
+float f(float scale, vec3 point)
+{
+  return max(point.x * scale, 0);
+}
+float averaged(float scale, vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= x %>, 0, 0);
+  float result = averaged(3.0, point);
+  fragColor = vec3(result, result, result);
+}"))
+
+(def percentage-closer-filtering-test
+  (shader-test
+    (fn [program shadow-size]
+        (uniform-int program "shadow_size" shadow-size))
+    percentage-closer-filtering-probe (percentage-closer-filtering "vec3" "averaged" "f" [["float" "scale"]])))
+
+(tabular "Local averaging of shadow to reduce aliasing"
+         (fact ((percentage-closer-filtering-test [?size] [?x]) 0) => (roughly ?result 1e-6))
+         ?size ?x ?result
+         2     0.0 1.0
+         3     0.0 0.5
+         2     1.0 3.0)
 
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector] "#version 410 core
