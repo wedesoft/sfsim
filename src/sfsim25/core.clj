@@ -298,9 +298,8 @@ void main()
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere-enhanced
-                           shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps)
-                           opacity-lookup shaders/convert-2d-index
-                           transmittance-track phase-function
+                           shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps "opacity_lookup")
+                           opacity-lookup shaders/convert-2d-index transmittance-track phase-function
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
@@ -335,8 +334,8 @@ void main()
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
                            shaders/surface-radiance-forward transmittance-outer surface-radiance-function
-                           shaders/convert-1d-index (opacity-cascade-lookup num-steps) opacity-lookup shaders/convert-3d-index
-                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           shaders/convert-1d-index (opacity-cascade-lookup num-steps "opacity_lookup") opacity-lookup
+                           shaders/convert-3d-index overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])]))
 
 (def program-shadow-planet
@@ -358,12 +357,13 @@ void main()
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-shadow cloud-profile
-                           (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps) opacity-lookup
-                           shaders/convert-2d-index transmittance-outer shaders/convert-3d-index shaders/transmittance-forward
-                           transmittance-track shaders/height-to-index shaders/interpolate-2d shaders/is-above-horizon
-                           ray-scatter-track shaders/horizon-distance shaders/elevation-to-index shaders/ray-scatter-forward
-                           shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d shaders/sun-angle-to-index
-                           shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps "opacity_lookup")
+                           opacity-lookup shaders/convert-2d-index transmittance-outer shaders/convert-3d-index
+                           shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
+                           shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
+                           shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup
+                           shaders/convert-shadow-index
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])]))
 
 (def program-cloud-atmosphere
@@ -376,7 +376,7 @@ void main()
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
                            cloud-shadow cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
-                           (opacity-cascade-lookup num-steps) opacity-lookup
+                           (opacity-cascade-lookup num-steps "opacity_lookup") opacity-lookup
                            shaders/convert-2d-index transmittance-outer
                            shaders/convert-3d-index shaders/transmittance-forward
                            transmittance-track shaders/height-to-index shaders/interpolate-2d

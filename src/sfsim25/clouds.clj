@@ -37,7 +37,7 @@
 
 (def opacity-cascade-lookup
   "Perform opacity (transparency) lookup in cascade of deep opacity maps"
-  (template/fn [n] (slurp "resources/shaders/clouds/opacity-cascade-lookup.glsl")))
+  (template/fn [n base-function] (slurp "resources/shaders/clouds/opacity-cascade-lookup.glsl")))
 
 (def identity-cubemap-fragment
   "Fragment shader to render identity cubemap"
