@@ -1,4 +1,5 @@
 # TODO
+* try resources with JAR file
 * test cascaded shadow map
 * cullback for shadow as well?
 * put new shader stuff under test

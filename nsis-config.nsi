@@ -24,9 +24,6 @@ Section "sfsim25 (required)"
   SetOutPath $INSTDIR
   File "logo.ico"
   File /r "out-windows\*.*"
-  # Write resources
-  SetOutPath "$INSTDIR\resources"
-  File /r "resources\*.*"
   # Write data
   SetOutPath "$INSTDIR\data"
   File /r "data\*.*"

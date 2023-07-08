@@ -4,5 +4,6 @@
   "executable": "sfsim25",
   "classpath": ["target/sfsim25.jar"],
   "mainclass": "sfsim25.core",
+  "resources": ["resources"],
   "output": "out-windows"
 }

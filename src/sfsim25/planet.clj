@@ -1,6 +1,7 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
-    (:require [sfsim25.cubemap :refer (cube-map-corners)]))
+    (:require [clojure.java.io :as io]
+              [sfsim25.cubemap :refer (cube-map-corners)]))
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
@@ -17,28 +18,28 @@
 
 (def vertex-planet
   "Pass through vertices, height field coordinates, and color texture coordinates"
-  (slurp "resources/shaders/planet/vertex.glsl"))
+  (slurp (io/resource "shaders/planet/vertex.glsl")))
 
 (def tess-control-planet
   "Tessellation control shader to control outer tessellation of quad using a uniform integer"
-  (slurp "resources/shaders/planet/tess-control.glsl"))
+  (slurp (io/resource "shaders/planet/tess-control.glsl")))
 
 (def tess-evaluation-planet
   "Tessellation evaluation shader to generate output points of tessellated quad"
-  (slurp "resources/shaders/planet/tess-evaluation.glsl"))
+  (slurp (io/resource "shaders/planet/tess-evaluation.glsl")))
 
 (def geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
-  (slurp "resources/shaders/planet/geometry.glsl"))
+  (slurp (io/resource "shaders/planet/geometry.glsl")))
 
 (def surface-radiance-function
   "Shader function to determine ambient light scattered by the atmosphere"
-  (slurp "resources/shaders/planet/surface-radiance.glsl"))
+  (slurp (io/resource "shaders/planet/surface-radiance.glsl")))
 
 (def ground-radiance
   "Shader function to compute light emitted from ground"
-  (slurp "resources/shaders/planet/ground-radiance.glsl"))
+  (slurp (io/resource "shaders/planet/ground-radiance.glsl")))
 
 (def fragment-planet
   "Fragment shader to render planetary surface"
-  (slurp "resources/shaders/planet/fragment.glsl"))
+  (slurp (io/resource "shaders/planet/fragment.glsl")))
