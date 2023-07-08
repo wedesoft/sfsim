@@ -208,19 +208,17 @@ float cloud_density(vec3 point, float lod)
                                                      cloud-density-mock
                                                      linear-sampling])
             vao             (make-vertex-array-object program indices vertices [:point 2])
-            opacity-offsets (make-empty-float-texture-2d :linear :clamp 3 3)
-            opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 7)]
-        (framebuffer-render 3 3 :cullback nil [opacity-offsets opacity-layers]
+            opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 8)
+            index           ({:offset 0 :layer (inc ?layer)} ?selector)]
+        (framebuffer-render 3 3 :cullback nil [opacity-layers]
                             (use-program program)
                             (setup-opacity-fragment-static-uniforms program)
                             (setup-opacity-fragment-dynamic-uniforms program ndc-to-shadow light-direction ?shells ?multiplier
                                                                      ?scatter ?depth ?cloudstep ?opacitystep ?start
                                                                      ?lod)
                             (render-quads vao))
-        ({:offset (get-float (float-texture-2d->floats opacity-offsets) 1 ?px)
-          :layer (get-float-3d (float-texture-3d->floats opacity-layers) ?layer 1 ?px)} ?selector) => (roughly ?result 1e-6)
+        (get-float-3d (float-texture-3d->floats opacity-layers) index 1 ?px) => (roughly ?result 1e-6)
         (destroy-texture opacity-layers)
-        (destroy-texture opacity-offsets)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
   ?shells ?px ?depth ?cloudstep ?opacitystep ?scatter ?start ?multiplier ?lod ?z   ?selector ?layer ?result
@@ -250,13 +248,12 @@ float cloud_density(vec3 point, float lod)
   (template/fn [x y z depth]
 "#version 410 core
 out vec3 fragColor;
-uniform sampler2D opacity_offsets;
 uniform sampler3D opacity_layers;
-float opacity_lookup(sampler2D offsets, sampler3D layers, float depth, vec3 opacity_map_coords);
+float opacity_lookup(sampler3D layers, float depth, vec3 opacity_map_coords);
 void main()
 {
   vec3 opacity_map_coords = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float result = opacity_lookup(opacity_offsets, opacity_layers, <%= depth %>, opacity_map_coords);
+  float result = opacity_lookup(opacity_layers, <%= depth %>, opacity_map_coords);
   fragColor = vec3(result, result, result);
 }"))
 
@@ -269,23 +266,19 @@ void main()
                                                    shaders/convert-3d-index])
           vao             (make-vertex-array-object program indices vertices [:point 3])
           zeropad         (fn [x] [0 x 0 0])
-          opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
-          opacity-layers  (make-float-texture-3d :linear :clamp {:width 2 :height 2 :depth 7
-                                                                 :data (float-array opacity-data)})
           offset-data     (zeropad offset)
-          opacity-offsets (make-float-texture-2d :linear :clamp {:width 2 :height 2
-                                                                 :data (float-array offset-data)})
+          opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
+          data            (concat offset-data opacity-data)
+          opacity-layers  (make-float-texture-3d :linear :clamp {:width 2 :height 2 :depth 8 :data (float-array data)})
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
-                                                (uniform-sampler program "opacity_offsets" 0)
-                                                (uniform-sampler program "opacity_layers" 1)
+                                                (uniform-sampler program "opacity_layers" 0)
                                                 (uniform-float program "opacity_step" step)
                                                 (uniform-int program "num_opacity_layers" 7)
                                                 (uniform-int program "shadow_size" 2)
-                                                (use-textures opacity-offsets opacity-layers)
+                                                (use-textures opacity-layers)
                                                 (render-quads vao))
           img             (rgb-texture->vectors3 tex)]
-      (destroy-texture opacity-offsets)
       (destroy-texture opacity-layers)
       (destroy-vertex-array-object vao)
       (destroy-program program)
@@ -305,10 +298,10 @@ void main()
 (def opacity-lookup-mock
 "#version 410 core
 uniform int select;
-float opacity_lookup(sampler2D offsets, sampler3D layers, float depth, vec3 opacity_map_coords)
+float opacity_lookup(sampler3D layers, float depth, vec3 opacity_map_coords)
 {
   if (select == 0)
-    return texture(layers, vec3(0.5, 0.5, 0.5)).r;
+    return texture(layers, vec3(0.5, 0.5, 0.75)).r;
   else
     return opacity_map_coords.x;
 }")
@@ -334,16 +327,14 @@ void main()
                                         :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n "opacity_lookup")
                                                    opacity-lookup-mock])
           vao             (make-vertex-array-object program indices vertices [:point 3])
-          opacity-texs    (map #(make-float-texture-3d :linear :clamp {:width 1 :height 1 :depth 1 :data (float-array [%])})
-                               opacities)
-          offset-texs     (map #(make-float-texture-2d :linear :clamp {:width 1 :height 1 :data (float-array [%])})
-                               offsets)
+          opacity-texs    (map #(make-float-texture-3d :linear :clamp
+                                                       {:width 1 :height 1 :depth 1 :data (float-array [%1 %2])})
+                               opacities offsets)
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
                                                 (uniform-matrix4 program "inverse_transform" inv-transform)
                                                 (doseq [idx (range n)]
-                                                       (uniform-sampler program (str "opacity" idx) (* 2 idx))
-                                                       (uniform-sampler program (str "offset" idx) (inc (* 2 idx)))
+                                                       (uniform-sampler program (str "opacity" idx) idx)
                                                        (uniform-float program (str "depth" idx) 200.0))
                                                 (doseq [idx (range n)]
                                                        (uniform-matrix4 program (str "shadow_map_matrix" idx)
@@ -353,10 +344,9 @@ void main()
                                                        (uniform-float program (str "split" idx)
                                                                       (+ 10.0 (/ (* 30.0 idx) n))))
                                                 (uniform-int program "select" ({:opacity 0 :coord 1} select))
-                                                (apply use-textures (interleave opacity-texs offset-texs))
+                                                (apply use-textures opacity-texs)
                                                 (render-quads vao))
           img             (rgb-texture->vectors3 tex)]
-      (doseq [tex offset-texs] (destroy-texture tex))
       (doseq [tex opacity-texs] (destroy-texture tex))
       (destroy-vertex-array-object vao)
       (destroy-program program)

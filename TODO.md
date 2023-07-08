@@ -1,4 +1,5 @@
 # TODO
+* put opacity map and offsets into one texture, increase size of shadow cascade
 * test cascaded shadow map
 * put new shader stuff under test
 * integration test rendering of cube map tree
