@@ -10,39 +10,39 @@
 
 (def cloud-shadow
   "Shader for determining illumination of clouds"
-  (slurp (io/resource "shaders/clouds/cloud-shadow.glsl")))
+  (slurp "resources/shaders/clouds/cloud-shadow.glsl"))
 
 (def cloud-noise
   "Shader for sampling 3D cloud noise"
-  (slurp (io/resource "shaders/clouds/cloud-noise.glsl")))
+  (slurp "resources/shaders/clouds/cloud-noise.glsl"))
 
 (def cloud-base
   "Shader for determining cloud density at specified point"
-  (slurp (io/resource "shaders/clouds/cloud-base.glsl")))
+  (slurp "resources/shaders/clouds/cloud-base.glsl"))
 
 (def linear-sampling
   "Shader functions for defining linear sampling"
-  (slurp (io/resource "shaders/clouds/linear-sampling.glsl")))
+  (slurp "resources/shaders/clouds/linear-sampling.glsl"))
 
 (def opacity-vertex
   "Vertex shader for rendering deep opacity map"
-  (slurp (io/resource "shaders/clouds/opacity-vertex.glsl")))
+  (slurp "resources/shaders/clouds/opacity-vertex.glsl"))
 
 (def opacity-fragment
   "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
-  (template/fn [num-layers] (slurp (io/resource "shaders/clouds/opacity-fragment.glsl"))))
+  (template/fn [num-layers] (slurp "resources/shaders/clouds/opacity-fragment.glsl")))
 
 (def opacity-lookup
   "Shader function for looking up transmittance value from deep opacity map"
-  (slurp (io/resource "shaders/clouds/opacity-lookup.glsl")))
+  (slurp "resources/shaders/clouds/opacity-lookup.glsl"))
 
 (def opacity-cascade-lookup
   "Perform opacity (transparency) lookup in cascade of deep opacity maps"
-  (template/fn [n base-function] (slurp (io/resource "shaders/clouds/opacity-cascade-lookup.glsl"))))
+  (template/fn [n base-function] (slurp "resources/shaders/clouds/opacity-cascade-lookup.glsl")))
 
 (def identity-cubemap-fragment
   "Fragment shader to render identity cubemap"
-  (slurp (io/resource "shaders/clouds/identity-cubemap-fragment.glsl")))
+  (slurp "resources/shaders/clouds/identity-cubemap-fragment.glsl"))
 
 (defn identity-cubemap
   "Create identity cubemap"
@@ -62,7 +62,7 @@
 
 (def iterate-cubemap-warp-fragment
   "Fragment shader for iterating cubemap warp"
-  (template/fn [current-name field-method-name] (slurp (io/resource "shaders/clouds/iterate-cubemap-warp-fragment.glsl"))))
+  (template/fn [current-name field-method-name] (slurp "resources/shaders/clouds/iterate-cubemap-warp-fragment.glsl")))
 
 (defn make-iterate-cubemap-warp-program
   "Create program to iteratively update cubemap warp vector field"
@@ -90,7 +90,7 @@
 
 (def cubemap-warp-fragment
   "Fragment shader for looking up values using a cubemap warp vector field"
-  (template/fn [current-name lookup-name] (slurp (io/resource "shaders/clouds/cubemap-warp-fragment.glsl"))))
+  (template/fn [current-name lookup-name] (slurp "resources/shaders/clouds/cubemap-warp-fragment.glsl")))
 
 (defn make-cubemap-warp-program
   "Create program to look up values using a given cubemap warp vector field"
@@ -117,11 +117,11 @@
 
 (def curl-vector
   "Shader for computing curl vectors from a noise function"
-  (template/fn [method-name gradient-name] (slurp (io/resource "shaders/clouds/curl-vector.glsl"))))
+  (template/fn [method-name gradient-name] (slurp "resources/shaders/clouds/curl-vector.glsl")))
 
 (def flow-field
   "Shader to create potential field for generating curl noise for global cloud cover"
-  (slurp (io/resource "shaders/clouds/flow-field.glsl")))
+  (slurp "resources/shaders/clouds/flow-field.glsl"))
 
 (defn cloud-cover-cubemap
   "Program to generate planetary cloud cover using curl noise"
@@ -166,32 +166,32 @@
 
 (def cloud-profile
   "Shader for looking up vertical cloud profile"
-  (slurp (io/resource "shaders/clouds/cloud-profile.glsl")))
+  (slurp "resources/shaders/clouds/cloud-profile.glsl"))
 
 (def sphere-noise
   "Sample 3D noise on the surface of a sphere"
-  (template/fn [base-noise] (slurp (io/resource "shaders/clouds/sphere-noise.glsl"))))
+  (template/fn [base-noise] (slurp "resources/shaders/clouds/sphere-noise.glsl")))
 
 (def cloud-cover
   "Perform cloud cover lookup in cube map"
-  (slurp (io/resource "shaders/clouds/cloud-cover.glsl")))
+  (slurp "resources/shaders/clouds/cloud-cover.glsl"))
 
 (def cloud-density
   "Compute cloud density at given point"
-  (slurp (io/resource "shaders/clouds/cloud-density.glsl")))
+  (slurp "resources/shaders/clouds/cloud-density.glsl"))
 
 (def cloud-transfer
   "Single cloud scattering update step"
-  (slurp (io/resource "shaders/clouds/cloud-transfer.glsl")))
+  (slurp "resources/shaders/clouds/cloud-transfer.glsl"))
 
 (def sample-cloud
   "Shader to sample the cloud layer and apply cloud scattering update steps"
-  (slurp (io/resource "shaders/clouds/sample-cloud.glsl")))
+  (slurp "resources/shaders/clouds/sample-cloud.glsl"))
 
 (def cloud-planet
   "Shader to compute pixel of cloud foreground overlay for planet"
-  (slurp (io/resource "shaders/clouds/cloud-planet.glsl")))
+  (slurp "resources/shaders/clouds/cloud-planet.glsl"))
 
 (def cloud-atmosphere
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
-  (slurp (io/resource "shaders/clouds/cloud-atmosphere.glsl")))
+  (slurp "resources/shaders/clouds/cloud-atmosphere.glsl"))

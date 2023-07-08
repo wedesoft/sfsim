@@ -1,7 +1,6 @@
 (ns sfsim25.bluenoise
     "Functions and main program for generating blue noise"
-    (:require [clojure.java.io :as io]
-              [clojure.math :refer (exp)]
+    (:require [clojure.math :refer (exp)]
               [com.climate.claypoole :refer (pfor ncpus)]))
 
 ; http://cv.ulichney.com/papers/1993-void-cluster.pdf
@@ -128,6 +127,6 @@
 
 (def sampling-offset
   "Shader for sampling blue noise texture"
-  (slurp (io/resource "shaders/bluenoise/sampling-offset.glsl")))
+  (slurp "resources/shaders/bluenoise/sampling-offset.glsl"))
 
 (set! *unchecked-math* false)
