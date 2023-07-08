@@ -1,6 +1,7 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
-    (:require [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
+    (:require [clojure.java.io :as io]
+              [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
               [clojure.math :refer (exp pow PI sqrt log)]
               [sfsim25.ray :refer (integral-ray)]
               [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
@@ -305,38 +306,38 @@
 
 (def transmittance-outer
   "Shader function to compute transmittance between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/transmittance-outer.glsl"))
+  (slurp (io/resource "shaders/atmosphere/transmittance-outer.glsl")))
 
 (def transmittance-track
   "Shader function to compute transmittance between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/transmittance-track.glsl"))
+  (slurp (io/resource "shaders/atmosphere/transmittance-track.glsl")))
 
 (def ray-scatter-outer
   "Shader function to determine in-scattered light between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/ray-scatter-outer.glsl"))
+  (slurp (io/resource "shaders/atmosphere/ray-scatter-outer.glsl")))
 
 (def ray-scatter-track
   "Shader function to determine in-scattered light between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/ray-scatter-track.glsl"))
+  (slurp (io/resource "shaders/atmosphere/ray-scatter-track.glsl")))
 
 (def attenuation-outer
   "Shader function combining transmittance and in-scattered light between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/attenuation-outer.glsl"))
+  (slurp (io/resource "shaders/atmosphere/attenuation-outer.glsl")))
 
 (def attenuation-track
   "Shader function combining transmittance and in-scattered light between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/attenuation-track.glsl"))
+  (slurp (io/resource "shaders/atmosphere/attenuation-track.glsl")))
 
 (def vertex-atmosphere
   "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
-  (slurp "resources/shaders/atmosphere/vertex.glsl"))
+  (slurp (io/resource "shaders/atmosphere/vertex.glsl")))
 
 (def fragment-atmosphere
   "Fragment shader for rendering atmosphere and sun"
-  (slurp "resources/shaders/atmosphere/fragment.glsl"))
+  (slurp (io/resource "shaders/atmosphere/fragment.glsl")))
 
 (def phase-function
   "Shader function for scattering phase function"
-  (slurp "resources/shaders/atmosphere/phase-function.glsl"))
+  (slurp (io/resource "shaders/atmosphere/phase-function.glsl")))
 
 (set! *unchecked-math* false)

@@ -1,10 +1,11 @@
 (ns sfsim25.conftest
     (:require [clojure.math :refer (sqrt)]
               [fastmath.matrix :as fm]
-              [midje.sweet :refer (roughly)]
-              [sfsim25.render :refer :all]
+              [sfsim25.render :refer (make-program make-vertex-array-object render-quads rgb-texture->vectors3
+                                      texture-render-color use-program with-invisible-window destroy-program destroy-texture
+                                      destroy-vertex-array-object)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer :all]))
+              [sfsim25.util :refer (get-vector3 slurp-image spit-png)]))
 
 (defn roughly-matrix
   "Compare matrix with expected value."
@@ -31,8 +32,7 @@
   "Compare RGB components of image and ignore alpha values."
   [filename tolerance]
   (fn [other]
-      (let [{:keys [width height data]} (slurp-image filename)
-            size                        (* width height)]
+      (let [{:keys [width height data]} (slurp-image filename)]
         (and (== (:width other) width)
              (== (:height other) height)
              (let [avg-dist (average-rgba-dist (:data other) data)]
@@ -43,7 +43,7 @@
 
 (defn record-image
   "Use this test function to record the image the first time."
-  [filename tolerance]
+  [filename _]
   (fn [other]
       (spit-png filename other)))
 
@@ -54,7 +54,10 @@
               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               program  (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
               vao      (make-vertex-array-object program indices vertices [:point 3])
-              tex      (texture-render-color 1 1 true (use-program program) (apply setup program uniforms) (render-quads vao))
+              tex      (texture-render-color 1 1 true
+                                             (use-program program)
+                                             (apply setup program uniforms)
+                                             (render-quads vao))
               img      (rgb-texture->vectors3 tex)]
           (destroy-texture tex)
           (destroy-vertex-array-object vao)

@@ -171,7 +171,7 @@ float cloud_density(vec3 point, float lod)
   if (point.z <= density_start)
     return cloud_multiplier * pow(0.5, lod);
   else
-    return 0.0;
+    return -1.0;
 }")
 
 (defn setup-opacity-fragment-static-uniforms
@@ -331,7 +331,7 @@ void main()
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           inv-transform   (transformation-matrix (eye 3) (vec3 0 0 shift-z))
           program         (make-program :vertex [shaders/vertex-passthrough]
-                                        :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n)
+                                        :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n "opacity_lookup")
                                                    opacity-lookup-mock])
           vao             (make-vertex-array-object program indices vertices [:point 3])
           opacity-texs    (map #(make-float-texture-3d :linear :clamp {:width 1 :height 1 :depth 1 :data (float-array [%])})

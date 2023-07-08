@@ -55,9 +55,13 @@ void main()
         float s = sample_point(start_segment, i + 0.5, stepsize);
         vec3 sample_point = fs_in.origin - s * light_direction;
         float density = cloud_density(sample_point, level_of_detail);
+        float transmittance;
         // Compute this on the CPU: scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic)
-        float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
-        float transmittance = previous_transmittance * transmittance_step;
+        if (density > 0.0) {
+          float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
+          transmittance = previous_transmittance * transmittance_step;
+        } else
+          transmittance = previous_transmittance;
         if (previous_transmittance == 1.0) {
           start_depth = start_segment + i * stepsize;
         };

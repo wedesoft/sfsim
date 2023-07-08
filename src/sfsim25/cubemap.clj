@@ -1,7 +1,7 @@
 (ns sfsim25.cubemap
   "Conversions from cube coordinates (face, j, i) to geodetic coordinates (longitude, latitude)."
   (:require [clojure.core.memoize :as z]
-            [fastmath.vector :refer (vec3 add sub mult dot cross mag normalize)]
+            [fastmath.vector :refer (vec3 add mult cross mag normalize)]
             [fastmath.matrix :refer (mulv)]
             [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
             [sfsim25.matrix :refer (rotation-y rotation-z)]
