@@ -12,8 +12,10 @@
         org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.2"}
         org.lwjgl/lwjgl-stb {:mvn/version "3.3.2"}
         org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.3.2"}}
- :paths ["src"]
- :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3"
+ :paths [:clj-paths :resource-paths]
+ :aliases {:clj-paths ["src"]
+           :resource-paths ["resources"]
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3"
                                                          :git/sha "e537cd1f3ac65c4cbc5001dce00a636d0006da39"}
                           sfsim25/sfsim25 {:local/root "."}}
                    :ns-default build
