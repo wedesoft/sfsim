@@ -42,11 +42,14 @@
 uniform int shadow_size;
 uniform sampler2DShadow shadow_map0;
 uniform sampler2DShadow shadow_map1;
+uniform sampler2DShadow shadow_map2;
 uniform mat4 shadow_map_matrix0;
 uniform mat4 shadow_map_matrix1;
+uniform mat4 shadow_map_matrix2;
 uniform float split0;
 uniform float split1;
 uniform float split2;
+uniform float split3;
 uniform mat4 inverse_transform;
 uniform vec3 light_direction;
 float opacity_cascade_lookup(vec4 point);
@@ -64,7 +67,11 @@ float planet_shadow(vec3 point)
   };
   if (z <= split2) {
     vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    return average_shadow(shadow_map0, shadow_pos);
+    return average_shadow(shadow_map1, shadow_pos);
+  };
+  if (z <= split3) {
+    vec4 shadow_pos = shadow_map_matrix2 * vec4(point, 1);
+    return average_shadow(shadow_map2, shadow_pos);
   };
   return 1.0;
 }
@@ -249,7 +256,7 @@ void main()
 ; (def position (atom (vec3 0 0 (* 2 r))))
 (def orientation (atom (q/rotation (to-radians 25) (vec3 1 0 0))))
 (def light (atom (* 0.95 PI)))
-(def num-steps 2)
+(def num-steps 3)
 (def num-opacity-layers 7)
 
 (GLFW/glfwInit)
@@ -429,8 +436,9 @@ void main()
 (uniform-sampler program-cloud-planet "cover"            7)
 (uniform-sampler program-cloud-planet "shadow_map0"      8)
 (uniform-sampler program-cloud-planet "shadow_map1"      9)
+(uniform-sampler program-cloud-planet "shadow_map2"     10)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-cloud-planet (str "opacity" i) (+ i 10)))
+       (uniform-sampler program-cloud-planet (str "opacity" i) (+ i 11)))
 (uniform-float program-cloud-planet "radius" radius)
 (uniform-float program-cloud-planet "max_height" max-height)
 (uniform-float program-cloud-planet "cloud_bottom" cloud-bottom)
@@ -471,8 +479,9 @@ void main()
 (uniform-sampler program-cloud-atmosphere "cover"            6)
 (uniform-sampler program-cloud-atmosphere "shadow_map0"      7)
 (uniform-sampler program-cloud-atmosphere "shadow_map1"      8)
+(uniform-sampler program-cloud-atmosphere "shadow_map2"      9)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-cloud-atmosphere (str "opacity" i) (+ i 9)))
+       (uniform-sampler program-cloud-atmosphere (str "opacity" i) (+ i 10)))
 (uniform-float program-cloud-atmosphere "radius" radius)
 (uniform-float program-cloud-atmosphere "max_height" max-height)
 (uniform-float program-cloud-atmosphere "cloud_bottom" cloud-bottom)
@@ -515,8 +524,9 @@ void main()
 (uniform-sampler program-planet "clouds"           8)
 (uniform-sampler program-planet "shadow_map0"      9)
 (uniform-sampler program-planet "shadow_map1"     10)
+(uniform-sampler program-planet "shadow_map2"     11)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-planet (str "opacity" i) (+ i 11)))
+       (uniform-sampler program-planet (str "opacity" i) (+ i 12)))
 (uniform-int program-planet "cover_size" 512)
 (uniform-int program-planet "noise_size" noise-size)
 (uniform-int program-planet "high_detail" (dec tilesize))
@@ -789,7 +799,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures-enhanced nil T S M W L B C (shadows 0) (shadows 1) opacities)
+                                (apply use-textures-enhanced nil T S M W L B C (concat shadows opacities))
                                 (render-tree @tree)
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
@@ -811,7 +821,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-atmosphere (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-atmosphere (str "depth" idx) (:depth item)))
-                                (apply use-textures T S M W L B C (shadows 0) (shadows 1) opacities)
+                                (apply use-textures T S M W L B C (concat shadows opacities))
                                 (render-quads vao))]
                (onscreen-render window
                                 (clear (vec3 0 1 0))
@@ -830,7 +840,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures-enhanced nil nil nil nil T S M E clouds (shadows 0) (shadows 1) opacities)
+                                (apply use-textures-enhanced nil nil nil nil T S M E clouds (concat shadows opacities))
                                 (render-tree-color @tree)
                                 ; Render atmosphere with cloud overlay
                                 (use-program program-atmosphere)
