@@ -32,7 +32,8 @@ Requires OpenGL 4.5.
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
 * Perform all build steps above: `clj -T:build all`
-* Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json`
+* Build JAR file: `clj -T:build uber`
+* Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json` (delete out-windows folder first)
 * Create Windows installer: `makensis nsis-config.nsi`
 
 # Run
