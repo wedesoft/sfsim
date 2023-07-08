@@ -12,7 +12,7 @@
         org.lwjgl/lwjgl-glfw$natives-windows {:mvn/version "3.3.2"}
         org.lwjgl/lwjgl-stb {:mvn/version "3.3.2"}
         org.lwjgl/lwjgl-stb$natives-windows {:mvn/version "3.3.2"}}
- :paths [:clj-paths :resource-paths] 
+ :paths [:clj-paths :resource-paths]
  :aliases {:clj-paths ["src"]
            :resource-paths ["resources"]
            :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3"
