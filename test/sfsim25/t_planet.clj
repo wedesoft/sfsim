@@ -4,7 +4,7 @@
               [comb.template :as template]
               [clojure.math :refer (PI exp pow)]
               [fastmath.vector :refer (vec3 mult dot mag)]
-              [fastmath.matrix :refer (eye)]
+              [fastmath.matrix :refer (eye inverse)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.atmosphere :as atmosphere]
               [sfsim25.render :refer :all]
@@ -542,5 +542,50 @@ float sampling_offset()
          "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
          "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
          "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter")
+
+(def fragment-white-tree
+"#version 410 core
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec2 heightcoord;
+  vec3 point;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}")
+
+(fact "Render a planetary tile using the specified texture keys and neighbour tessellation"
+      (offscreen-render 256 256
+        (let [program    (make-program :vertex [vertex-planet]
+                                       :tess-control [tess-control-planet]
+                                       :tess-evaluation [tess-evaluation-planet]
+                                       :geometry [geometry-planet]
+                                       :fragment [fragment-white-tree])
+              indices    [0 2 3 1]
+              face       0
+              vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
+              height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array (repeat (* 9 9) 0.5))})
+              vao        (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+              transform  (transformation-matrix (eye 3) (vec3 0 0 2))
+              projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
+              neighbours {:sfsim25.quadtree/up    true
+                          :sfsim25.quadtree/left  true
+                          :sfsim25.quadtree/down  false
+                          :sfsim25.quadtree/right true}
+              tile       (merge {:vao vao :height-tex height-tex} neighbours)]
+          (use-program program)
+          (clear (vec3 0 0 0))
+          (uniform-sampler program "heightfield" 0)
+          (uniform-int program "high_detail" 8)
+          (uniform-int program "low_detail" 4)
+          (uniform-matrix4 program "inverse_transform" (inverse transform))
+          (uniform-matrix4 program "projection" projection)
+          (raster-lines (render-tile program tile [:height-tex]))
+          (destroy-texture height-tex)
+          (destroy-vertex-array-object vao)
+          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/tile.png" 0.0))
 
 (GLFW/glfwTerminate)
