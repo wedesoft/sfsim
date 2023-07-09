@@ -1,10 +1,10 @@
 # TODO
-* test cascaded shadow map
+* refactor and test render-tree methods
+  integration test rendering of cube map tree
+* test cascaded shadow map, opacity cascade
 * put new shader stuff under test
-* integration test rendering of cube map tree
+* constant texel size across opacity cascade?
 * when building maps put intermediate files into a common subdirectory (tmp?)
-* render planet surface as well in prototype
-* cloud shadow should use planet depth map instead of sphere intersection
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
 * try Java image IO for cubemap tile level 6
