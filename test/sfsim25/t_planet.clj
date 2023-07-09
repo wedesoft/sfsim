@@ -557,35 +557,42 @@ void main()
   fragColor = vec3(1, 1, 1);
 }")
 
-(fact "Render a planetary tile using the specified texture keys and neighbour tessellation"
-      (offscreen-render 256 256
-        (let [program    (make-program :vertex [vertex-planet]
-                                       :tess-control [tess-control-planet]
-                                       :tess-evaluation [tess-evaluation-planet]
-                                       :geometry [geometry-planet]
-                                       :fragment [fragment-white-tree])
-              indices    [0 2 3 1]
-              face       0
-              vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
-              height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array (repeat (* 9 9) 0.5))})
-              vao        (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
-              transform  (transformation-matrix (eye 3) (vec3 0 0 2))
-              projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
-              neighbours {:sfsim25.quadtree/up    true
-                          :sfsim25.quadtree/left  true
-                          :sfsim25.quadtree/down  false
-                          :sfsim25.quadtree/right true}
-              tile       (merge {:vao vao :height-tex height-tex} neighbours)]
-          (use-program program)
-          (clear (vec3 0 0 0))
-          (uniform-sampler program "heightfield" 0)
-          (uniform-int program "high_detail" 8)
-          (uniform-int program "low_detail" 4)
-          (uniform-matrix4 program "inverse_transform" (inverse transform))
-          (uniform-matrix4 program "projection" projection)
-          (raster-lines (render-tile program tile [:height-tex]))
-          (destroy-texture height-tex)
-          (destroy-vertex-array-object vao)
-          (destroy-program program))) => (is-image "test/sfsim25/fixtures/planet/tile.png" 0.0))
+(tabular "Render a planetary tile using the specified texture keys and neighbour tessellation"
+         (fact
+           (offscreen-render 256 256
+                             (let [program    (make-program :vertex [vertex-planet]
+                                                            :tess-control [tess-control-planet]
+                                                            :tess-evaluation [tess-evaluation-planet]
+                                                            :geometry [geometry-planet]
+                                                            :fragment [fragment-white-tree])
+                                   indices    [0 2 3 1]
+                                   face       0
+                                   vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
+                                   height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array (repeat (* 9 9) 0.5))})
+                                   vao        (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+                                   transform  (transformation-matrix (eye 3) (vec3 0 0 2))
+                                   projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
+                                   neighbours {:sfsim25.quadtree/up    ?up
+                                               :sfsim25.quadtree/left  ?left
+                                               :sfsim25.quadtree/down  ?down
+                                               :sfsim25.quadtree/right ?right}
+                                   tile       (merge {:vao vao :height-tex height-tex} neighbours)]
+                               (use-program program)
+                               (clear (vec3 0 0 0))
+                               (uniform-sampler program "heightfield" 0)
+                               (uniform-int program "high_detail" 8)
+                               (uniform-int program "low_detail" 4)
+                               (uniform-matrix4 program "inverse_transform" (inverse transform))
+                               (uniform-matrix4 program "projection" projection)
+                               (raster-lines (render-tile program tile [:height-tex]))
+                               (destroy-texture height-tex)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
+         ?up   ?left ?down ?right ?result
+         true  true  true  true   "tile.png"
+         false true  true  true   "tile-up.png"
+         true  false true  true   "tile-left.png"
+         true  true  false true   "tile-down.png"
+         true  true  true  false  "tile-right.png")
 
 (GLFW/glfwTerminate)
