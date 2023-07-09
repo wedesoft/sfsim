@@ -5,13 +5,24 @@
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [fastmath.vector :refer (vec3 mult emult add dot)]
               [fastmath.matrix :refer (eye)]
-              [sfsim25.matrix :refer :all]
+              [sfsim25.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
               [sfsim25.sphere :as sphere]
-              [sfsim25.interpolate :refer :all]
-              [sfsim25.render :refer :all]
+              [sfsim25.interpolate :refer (make-lookup-table)]
+              [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object make-program
+                                      make-vector-texture-2d make-vertex-array-object offscreen-render render-quads
+                                      rgb-texture->vectors3 texture-render-color uniform-float uniform-int uniform-matrix4
+                                      uniform-sampler uniform-vector3 use-program use-textures with-invisible-window)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer :all]
-              [sfsim25.atmosphere :refer :all :as atmosphere])
+              [sfsim25.util :refer (convert-4d-to-2d get-vector3 third)]
+              [sfsim25.atmosphere :refer (atmosphere-intersection attenuation-outer attenuation-track elevation-to-index
+                                          extinction fragment-atmosphere height-to-index horizon-distance index-to-elevation
+                                          index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
+                                          phase phase-function point-scatter point-scatter-base point-scatter-component
+                                          point-scatter-space ray-extremity ray-scatter ray-scatter-outer ray-scatter-space
+                                          ray-scatter-track scattering strength-component sun-angle-to-index
+                                          sun-elevation-to-index surface-intersection surface-point? surface-radiance
+                                          surface-radiance-base surface-radiance-space transmittance transmittance-outer
+                                          transmittance-space transmittance-track vertex-atmosphere extinction) :as atmosphere])
     (:import [fastmath.vector Vec3]
              [org.lwjgl.glfw GLFW]))
 

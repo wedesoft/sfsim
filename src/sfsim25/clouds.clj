@@ -1,7 +1,6 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
-    (:require [clojure.java.io :as io]
-              [comb.template :as template]
+    (:require [comb.template :as template]
               [clojure.math :refer (pow)]
               [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
                                       make-empty-float-cubemap make-empty-vector-cubemap make-program make-vertex-array-object

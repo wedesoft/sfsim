@@ -1,31 +1,24 @@
 # TODO
-* put opacity map and offsets into one texture, increase size of shadow cascade
-* test cascaded shadow map
+* integration test render-tree method
+* heightcoord needed in geometry shader output?
+* special shaders for planet shadow
+* use vectors instead of hashmap for quad tree
+* test cascaded shadow map, opacity cascade
+* integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * put new shader stuff under test
-* integration test rendering of cube map tree
-  render backside of planet (as seen from light source) into shadow depth map using separate shader
-  use this depth map when performing cloud-shadow lookups instead of planet intersection
+* mipmaps for all cloud textures and octaves
+* constant texel size across opacity cascade to prevent step in opacity?
 * when building maps put intermediate files into a common subdirectory (tmp?)
-* render planet surface as well in prototype
-* cloud shadow should use planet depth map instead of sphere intersection
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
-* try Java image IO for cubemap tile level 6
-* render clouds on planet, output to 3-channel transparency layer and colour layer
-  low-res. offscreen render planet and background with clouds and atmosphere in front, blur?
-  add cloud shadow computation to ground radiance function
-  apply cloud texture when rendering atmosphere and planet at high resolution (upscale and use transmittance when rendering planet)
-  keep transmittance of atmosphere for rendering moon
 * increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
 * change cloud computation when viewing from space far away (use different lod of shadow?)
-* add shadows of mountains, use shadow map of planet in cloud\_shadow?
 * reduce number of intermediate values to increase OpenGL performance
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * reuse (parts of) shadow map?
-* limit opacity mapping and cloud sampling
-* powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric_Rendering/
+* powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
-  https://www.youtube.com/watch?v=Qj_tK_mdRcA
+  https://www.youtube.com/watch?v=Qj\_tK\_mdRcA
 * uniform random offsets for Worley noises
 * configuration (edn) file for clouds?
 * ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
@@ -33,14 +26,11 @@
 * hot spots for map
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * use GMTED2010 or STRM90 elevation data:
-  * https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
-  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d_e.htm
-  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30_e.htm
-* does opacity fragment shader need to limit offsets to bounding box?
-* use rgb for scattering and a for transmittance when creating low-resolution cloud image?
-* integration test planet shader with non-trivial lookup tables? convert prototype to tested code
+  * https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
+  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
+  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
 * deferred decals for rendering runway
-  https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/
+  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
 * microtextures, bump maps
 * how to render water, waves
 * render stars
@@ -53,7 +43,7 @@
   * create windows using blending
   * http://www.ioaircraft.com/hypersonic/ranger.php
   * http://www.ioaircraft.com/hypersonic/raven.php
-  * https://www.russianspaceweb.com/spiral_orbiter_design.html
+  * https://www.russianspaceweb.com/spiral\_orbiter\_design.html
 * 3D cockpit
   * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
   * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
@@ -74,7 +64,6 @@
 * extract functions from prototype
 * indices for planet patches and atmosphere projection plane should be the same
 * put parameters like max-height, power, specular, radius in a configuration file
-* use GMTED2010 data: https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
 * improve rendering of sun

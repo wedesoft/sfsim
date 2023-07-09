@@ -1,6 +1,7 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
-    (:require [sfsim25.cubemap :refer (cube-map-corners)]))
+    (:require [sfsim25.cubemap :refer (cube-map-corners)]
+              [sfsim25.render :refer (uniform-int use-textures render-patches)]))
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
@@ -42,3 +43,14 @@
 (def fragment-planet
   "Fragment shader to render planetary surface"
   (slurp "resources/shaders/planet/fragment.glsl"))
+
+(defn render-tile
+  "Render a planetary tile using the specified texture keys and neighbour tessellation"
+  [program tile texture-keys]
+  (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
+                           (if (:sfsim25.quadtree/left  tile) 2 0)
+                           (if (:sfsim25.quadtree/down  tile) 4 0)
+                           (if (:sfsim25.quadtree/right tile) 8 0))]
+    (uniform-int program "neighbours" neighbours)
+    (apply use-textures (map tile texture-keys))
+    (render-patches (:vao tile))))

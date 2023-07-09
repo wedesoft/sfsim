@@ -105,6 +105,7 @@
 (facts "Update tiles of quad tree"
   (quadtree-update {:3 {}} [] identity) => {:3 {}}
   (quadtree-update {:3 {:id 5}} [[:3]] #(update % :id inc)) => {:3 {:id 6}}
+  (quadtree-update {:3 {:5 {:id 7}}} [[:3 :5]] #(update % :id inc)) => {:3 {:5 {:id 8}}}
   (quadtree-update {:3 {:id 5}} [[:3]] #(update %1 :id (partial + %2)) [2]) => {:3 {:id 7}})
 
 (defn keyword->int [x] (Integer/parseInt (name x)))
