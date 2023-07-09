@@ -15,7 +15,7 @@
                                         vertex-atmosphere)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
-                                    vertex-planet)]
+                                    vertex-planet render-tile)]
             [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
                                     cloud-profile cloud-shadow cloud-transfer linear-sampling
@@ -636,16 +636,6 @@ void main()
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)
              (swap! keystates assoc k false)))))
-
-(defn render-tile
-  [program tile texture-keys]
-  (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
-                           (if (:sfsim25.quadtree/left  tile) 2 0)
-                           (if (:sfsim25.quadtree/down  tile) 4 0)
-                           (if (:sfsim25.quadtree/right tile) 8 0))]
-    (uniform-int program "neighbours" neighbours)
-    (apply use-textures (map tile texture-keys))
-    (render-patches (:vao tile))))
 
 (defn render-tree
   [program node texture-keys]
