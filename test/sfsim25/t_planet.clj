@@ -587,7 +587,7 @@ void main()
                                (raster-lines (render-tile program tile [:height-tex]))
                                (destroy-texture height-tex)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (record-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
          ?up   ?left ?down ?right ?result
          true  true  true  true   "tile.png"
          false true  true  true   "tile-up.png"
