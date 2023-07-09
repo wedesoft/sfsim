@@ -1,7 +1,6 @@
 (ns sfsim25.shaders
   "Module with functions to use in shaders"
-  (:require [clojure.java.io :as io]
-            [comb.template :as template]))
+  (:require [comb.template :as template]))
 
 (def ray-sphere
   "Shader function for computing intersection of ray with sphere"

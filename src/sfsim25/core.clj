@@ -4,13 +4,12 @@
             [fastmath.matrix :refer (inverse eye)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
             [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object
-                                    framebuffer-render generate-mipmap make-empty-float-texture-2d
-                                    make-empty-float-texture-3d make-float-cubemap make-float-texture-2d
-                                    make-float-texture-3d make-program make-rgb-texture make-ubyte-texture-2d
-                                    make-vector-texture-2d make-vertex-array-object onscreen-render render-patches
-                                    render-quads texture-render-color-depth uniform-float uniform-int
+                                    framebuffer-render generate-mipmap make-empty-float-texture-3d make-float-cubemap
+                                    make-float-texture-2d make-float-texture-3d make-program make-rgb-texture
+                                    make-ubyte-texture-2d make-vector-texture-2d make-vertex-array-object onscreen-render
+                                    render-patches render-quads texture-render-color-depth uniform-float uniform-int
                                     uniform-matrix4 uniform-sampler uniform-vector3 use-program use-textures
-                                    texture-render-depth float-texture-2d->floats)]
+                                    texture-render-depth)]
             [sfsim25.atmosphere :refer (attenuation-outer attenuation-track phase phase-function ray-scatter-outer
                                         ray-scatter-track transmittance-outer transmittance-track
                                         vertex-atmosphere)]
@@ -700,7 +699,7 @@ void main()
       (doseq [selector [:0 :1 :2 :3 :4 :5]]
         (render-tree-color (selector node))))))
 
-(defn shadow-cascade [matrix-cascade transform tree]
+(defn shadow-cascade [matrix-cascade tree]
   (mapv
     (fn [{:keys [shadow-ndc-matrix]}]
         (texture-render-depth shadow-size shadow-size
@@ -774,7 +773,7 @@ void main()
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                    opac-step  (/ @opacity-step (max 0.1 (/ (dot light-dir @position) (mag @position))))
                    opacities  (opacity-cascade matrix-cas light-dir scatter-am opac-step)
-                   shadows    (shadow-cascade matrix-cas transform @tree)  ; TODO: side-effect on opacity cascade if run before (making sky black as well)
+                   shadows    (shadow-cascade matrix-cas @tree)  ; TODO: side-effect on opacity cascade if run before (making sky black as well)
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
