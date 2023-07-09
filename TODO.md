@@ -1,5 +1,5 @@
 # TODO
-* refactor and (integration) test render-tree methods
+* integration test render-tree methods
 * special shaders for planet shadow
 * use vectors instead of hashmap for quad tree
 * test cascaded shadow map, opacity cascade
