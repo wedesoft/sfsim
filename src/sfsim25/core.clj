@@ -293,14 +293,6 @@ void main()
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
-(defn use-textures-enhanced
-  "Specify textures to be used in the next rendering operation"
-  [& textures]
-  (doseq [[i texture] (map list (range) textures)]
-         (when texture
-           (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
-           (GL11/glBindTexture (:target texture) (:texture texture)))))
-
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere-enhanced
@@ -798,7 +790,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures-enhanced nil T S M W L B C (concat shadows opacities))
+                                (apply use-textures nil T S M W L B C (concat shadows opacities))
                                 (render-tree @tree)
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
@@ -839,7 +831,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures-enhanced nil nil nil nil T S M E clouds (concat shadows opacities))
+                                (apply use-textures nil nil nil nil T S M E clouds (concat shadows opacities))
                                 (render-tree-color @tree)
                                 ; Render atmosphere with cloud overlay
                                 (use-program program-atmosphere)

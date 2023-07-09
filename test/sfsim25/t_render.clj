@@ -493,7 +493,7 @@ void main()
     fragColor = texture(tex2, uv_fragment).rgb;
 }")
 
-(fact "Test use of two textures"
+(fact "Test use of two textures and nil placeholder"
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
@@ -505,7 +505,8 @@ void main()
       (use-program program)
       (uniform-sampler program "tex1" 0)
       (uniform-sampler program "tex2" 1)
-      (use-textures tex1 tex2)
+      (use-textures nil tex2)
+      (use-textures tex1)
       (render-quads vao)
       (destroy-texture tex2)
       (destroy-texture tex1)

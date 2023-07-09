@@ -398,8 +398,9 @@
   "Specify textures to be used in the next rendering operation"
   [& textures]
   (doseq [[i texture] (map list (range) textures)]
-    (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
-    (GL11/glBindTexture (:target texture) (:texture texture))))
+         (when texture
+           (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
+           (GL11/glBindTexture (:target texture) (:texture texture)))))
 
 (defn- list-texture-layers
   "Return 2D textures and each layer of 3D textures"
