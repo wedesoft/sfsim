@@ -13,7 +13,6 @@ uniform vec3 origin;
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 

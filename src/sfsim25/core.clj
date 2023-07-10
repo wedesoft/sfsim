@@ -84,7 +84,6 @@ float cloud_shadow(vec3 point)
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 void main()
@@ -96,7 +95,6 @@ void main()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 out vec4 fragColor;
@@ -174,7 +172,6 @@ uniform float depth;
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 

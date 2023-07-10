@@ -1143,7 +1143,6 @@ void main()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 out vec4 fragColor;

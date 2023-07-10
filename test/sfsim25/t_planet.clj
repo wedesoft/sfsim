@@ -116,7 +116,6 @@ void main()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } frag_in;
 out vec3 fragColor;
@@ -160,7 +159,6 @@ void main()
                                (destroy-program program))) => (is-image ?result 0.02))
          ?selector                            ?scale ?result
          "frag_in.colorcoord"                 1.0    "test/sfsim25/fixtures/planet/color-coords.png"
-         "frag_in.heightcoord"                1.0    "test/sfsim25/fixtures/planet/height-coords.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/sfsim25/fixtures/planet/point.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/sfsim25/fixtures/planet/scaled-point.png")
 
@@ -381,19 +379,16 @@ void main()
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
 in vec2 colorcoord;
-in vec2 heightcoord;
 uniform float radius;
 out GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } vs_out;
 void main()
 {
   gl_Position = vec4(point, 1);
   vs_out.colorcoord = colorcoord;
-  vs_out.heightcoord = heightcoord;
   vs_out.point = vec3(0, 0, radius);
 }")
 
@@ -548,7 +543,6 @@ float sampling_offset()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 out vec3 fragColor;
