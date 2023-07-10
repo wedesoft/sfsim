@@ -1,8 +1,6 @@
 # TODO
-* integration test render-tree method
 * heightcoord needed in geometry shader output?
 * special shaders for planet shadow
-* use vectors instead of hashmap for quad tree
 * test cascaded shadow map, opacity cascade
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * put new shader stuff under test
