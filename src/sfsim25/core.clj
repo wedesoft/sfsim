@@ -15,7 +15,7 @@
                                         vertex-atmosphere)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tile)]
+                                    vertex-planet render-tree)]
             [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
                                     cloud-profile cloud-shadow cloud-transfer linear-sampling
@@ -636,14 +636,6 @@ void main()
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)
              (swap! keystates assoc k false)))))
-
-(defn render-tree
-  [program node texture-keys]
-  (when node
-    (if (is-leaf? node)
-      (when-not (empty? node) (render-tile program node texture-keys))
-      (doseq [selector [:0 :1 :2 :3 :4 :5]]
-        (render-tree program (selector node) texture-keys)))))
 
 (defn shadow-cascade [matrix-cascade tree]
   (mapv

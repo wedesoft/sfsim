@@ -19,6 +19,7 @@
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj\_tK\_mdRcA
+* shadow mapping improvements http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
 * uniform random offsets for Worley noises
 * configuration (edn) file for clouds?
 * ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl

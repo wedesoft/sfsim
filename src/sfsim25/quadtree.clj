@@ -57,7 +57,14 @@
 (defn is-leaf?
   "Check whether specified tree node is a leaf"
   [node]
-  (not (or (nil? node) (contains? node :0) (contains? node :1) (contains? node :2) (contains? node :3))))
+  (not
+    (or (nil? node)
+        (contains? node :0)
+        (contains? node :1)
+        (contains? node :2)
+        (contains? node :3)
+        (contains? node :4)
+        (contains? node :5))))
 
 (defn- is-flat?
   "Check whether node has four leafs"

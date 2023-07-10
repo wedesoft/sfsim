@@ -52,7 +52,9 @@
   (is-leaf? {:0 {}}) => false
   (is-leaf? {:1 {}}) => false
   (is-leaf? {:2 {}}) => false
-  (is-leaf? {:3 {}}) => false)
+  (is-leaf? {:3 {}}) => false
+  (is-leaf? {:4 {}}) => false
+  (is-leaf? {:5 {}}) => false)
 
 (facts "Determine list of tiles to remove"
   (let [quad     {:5 {:face 2 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}

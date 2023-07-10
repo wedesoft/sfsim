@@ -568,8 +568,10 @@ void main()
                                    indices    [0 2 3 1]
                                    face       0
                                    vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
-                                   height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array (repeat (* 9 9) 0.5))})
-                                   vao        (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+                                   data       (float-array (repeat (* 9 9) 0.5))
+                                   height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data data})
+                                   vao        (make-vertex-array-object program indices vertices
+                                                                        [:point 3 :heightcoord 2 :colorcoord 2])
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
                                    neighbours {:sfsim25.quadtree/up    ?up
@@ -594,5 +596,24 @@ void main()
          true  false true  true   "tile-left.png"
          true  true  false true   "tile-down.png"
          true  true  true  false  "tile-right.png")
+
+(defn render-tile-calls [program node texture-keys]
+  (let [calls (atom [])]
+    (with-redefs [render-tile (fn [program tile texture-keys] (swap! calls conj [program tile texture-keys]))]
+      (render-tree program node texture-keys)
+      @calls)))
+
+(tabular "Call each tile in tree to be rendered"
+         (fact (render-tile-calls ?program ?node ?texture-keys) => ?result)
+         ?program ?node               ?texture-keys ?result
+         :program {}                  [:height-tex] []
+         :program {:vao 42}           [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:0 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:1 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:2 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:3 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:4 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:5 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:3 {:2 {:vao 42}}} [:height-tex] [[:program {:vao 42} [:height-tex]]])
 
 (GLFW/glfwTerminate)
