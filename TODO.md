@@ -1,6 +1,6 @@
 # TODO
-* special shaders for planet shadow
 * test new fragment shaders including clouds
+* special shaders for planet shadow
 * test cascaded shadow map, opacity cascade
 * introduce variation to cloud height
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
