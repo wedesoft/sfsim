@@ -5,6 +5,7 @@ world
 elevation
 world.*.png
 elevation.*.raw
+.clj-kondo
 .cpcache
 .eastwood
 .lein-*
@@ -15,3 +16,4 @@ elevation.*.raw
 *.so
 *.jar
 *.tgz
+*.log
