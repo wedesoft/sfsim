@@ -12,7 +12,7 @@
                                     texture-render-depth)]
             [sfsim25.atmosphere :refer (attenuation-outer attenuation-track phase phase-function ray-scatter-outer
                                         ray-scatter-track transmittance-outer transmittance-track
-                                        vertex-atmosphere)]
+                                        vertex-atmosphere fragment-atmosphere)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree)]
@@ -115,35 +115,6 @@ vec4 cloud_atmosphere(vec3 fs_in_direction);
 void main()
 {
   fragColor = cloud_atmosphere(fs_in.direction);
-}")
-
-(def fragment-atmosphere-enhanced
-"#version 410 core
-uniform float radius;
-uniform float max_height;
-uniform float specular;
-uniform vec3 origin;
-uniform vec3 light_direction;
-in VS_OUT
-{
-  vec3 direction;
-} fs_in;
-out vec3 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
-vec4 cloud_overlay();
-void main()
-{
-  vec3 direction = normalize(fs_in.direction);
-  float glare = pow(max(0, dot(direction, light_direction)), specular);
-  vec3 incoming = vec3(glare, glare, glare);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  if (atmosphere_intersection.y > 0) {
-    incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
-    vec4 cloud_scatter = cloud_overlay();
-    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
-  };
-  fragColor = incoming;
 }")
 
 (def fragment-planet-enhanced
@@ -286,8 +257,8 @@ void main()
 
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere-enhanced
-                           shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps "average_opacity")
+                :fragment [fragment-atmosphere shaders/convert-1d-index shaders/ray-sphere
+                           (opacity-cascade-lookup num-steps "average_opacity")
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            opacity-lookup shaders/convert-2d-index transmittance-track phase-function cloud-overlay

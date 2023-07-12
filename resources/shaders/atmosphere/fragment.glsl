@@ -15,6 +15,7 @@ out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
+vec4 cloud_overlay();
 
 vec3 sun_color(vec3 direction)
 {
@@ -30,6 +31,8 @@ void main()
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   if (atmosphere_intersection.y > 0) {
     incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
+    vec4 cloud_scatter = cloud_overlay();
+    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
   };
   fragColor = incoming;
 }

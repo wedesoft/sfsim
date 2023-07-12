@@ -1,5 +1,5 @@
 # TODO
-* test new fragment shaders including clouds
+* test new fragment shaders for planet including clouds
 * special shaders for planet shadow
 * test cascaded shadow map, opacity cascade
 * introduce variation to cloud height
