@@ -22,6 +22,8 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
                      vec3 land_color, vec3 water_color);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
+vec4 cloud_overlay();
+float overall_shadow(vec3 point);
 
 // Render planet surface as seen through the atmosphere.
 void main()
@@ -40,9 +42,11 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, cos_incidence, highlight, land_color, water_color);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  float a = atmosphere_intersection.x;
-  float b = distance(origin, fs_in.point);
-  fragColor = attenuation_track(light_direction, origin, direction, a, b, incoming);
+  float incidence_fraction = cos_incidence * overall_shadow(fs_in.point);
+  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
+  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  vec4 cloud_scatter = cloud_overlay();
+  fragColor = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
 }

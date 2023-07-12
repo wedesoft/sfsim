@@ -15,10 +15,10 @@
                                         vertex-atmosphere fragment-atmosphere)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tree)]
+                                    vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
-                                    cloud-profile cloud-shadow cloud-transfer linear-sampling
+                                    cloud-profile cloud-transfer linear-sampling
                                     opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
                                     sample-cloud sphere-noise cloud-overlay)]
             [sfsim25.bluenoise :as bluenoise]
@@ -74,7 +74,7 @@ float planet_shadow(vec3 point)
   };
   return 1.0;
 }
-float cloud_shadow(vec3 point)
+float overall_shadow(vec3 point)
 {
   return planet_shadow(point) * opacity_cascade_lookup(vec4(point, 1));
 }")
@@ -115,63 +115,6 @@ vec4 cloud_atmosphere(vec3 fs_in_direction);
 void main()
 {
   fragColor = cloud_atmosphere(fs_in.direction);
-}")
-
-(def fragment-planet-enhanced
-"#version 410 core
-uniform sampler2D colors;
-uniform sampler2D normals;
-uniform sampler2D water;
-uniform float specular;
-uniform float radius;
-uniform float cloud_bottom;
-uniform float cloud_top;
-uniform float max_height;
-uniform vec3 water_color;
-uniform vec3 light_direction;
-uniform mat4 inverse_transform;
-uniform vec3 origin;
-uniform float depth;
-
-in GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-} fs_in;
-
-out vec3 fragColor;
-
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
-                     vec3 land_color, vec3 water_color);
-vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
-vec4 clip_shell_intersections(vec4 intersections, float limit);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-float cloud_shadow(vec3 point);
-vec4 cloud_overlay();
-void main()
-{
-  vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
-  vec3 water_normal = normalize(fs_in.point);
-  vec3 direction = normalize(fs_in.point - origin);
-  vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
-  float wet = texture(water, fs_in.colorcoord).r;
-  vec3 normal = mix(land_normal, water_normal, wet);
-  float cos_incidence = dot(light_direction, normal);
-  float highlight;
-  if (cos_incidence > 0) {
-    highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular);
-  } else {
-    cos_incidence = 0.0;
-    highlight = 0.0;
-  };
-  float incidence_fraction = cos_incidence * cloud_shadow(fs_in.point);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
-  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
-  vec4 cloud_scatter = cloud_overlay();
-  fragColor = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
 }")
 
 (def fov (to-radians 60.0))
@@ -289,7 +232,7 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet-enhanced attenuation-track shaders/ray-sphere ground-radiance
+                :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance
                            shaders/transmittance-forward phase-function cloud-overlay
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
@@ -321,7 +264,7 @@ void main()
                            shaders/interpolate-float-cubemap shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-shadow cloud-profile
+                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-profile
                            (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps "average_opacity")
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
@@ -343,7 +286,7 @@ void main()
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
-                           cloud-shadow cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
+                           cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
                            (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])

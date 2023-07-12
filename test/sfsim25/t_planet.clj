@@ -422,23 +422,31 @@ float sampling_offset()
   return 0.5;
 }")
 
+(def cloud-overlay-mock
+"#version 410 core
+uniform float clouds;
+vec4 cloud_overlay()
+{
+  return vec4(clouds, clouds, clouds, clouds);
+}")
+
+(def overall-shadow-mock
+"#version 410 core
+uniform float shadow;
+float overall_shadow(vec3 point)
+{
+  return shadow;
+}")
+
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
-                :fragment [fragment-planet fake-transmittance
-                           shaders/interpolate-2d shaders/convert-2d-index
-                           shaders/transmittance-forward shaders/elevation-to-index
-                           shaders/ray-sphere shaders/is-above-horizon
-                           fake-ray-scatter atmosphere/attenuation-track
-                           atmosphere/transmittance-outer
-                           ground-radiance shaders/ray-shell
-                           atmosphere/phase-function
-                           shaders/clip-shell-intersections
-                           shaders/ray-scatter-forward shaders/height-to-index
-                           shaders/horizon-distance shaders/limit-quot
-                           shaders/surface-radiance-forward
-                           shaders/sun-elevation-to-index opacity-lookup-mock
-                           sampling-offset-mock
-                           surface-radiance-function]))
+                :fragment [fragment-planet fake-transmittance shaders/interpolate-2d shaders/convert-2d-index
+                           shaders/transmittance-forward shaders/elevation-to-index shaders/ray-sphere shaders/is-above-horizon
+                           fake-ray-scatter atmosphere/attenuation-track atmosphere/transmittance-outer ground-radiance
+                           shaders/ray-shell atmosphere/phase-function shaders/clip-shell-intersections
+                           shaders/ray-scatter-forward shaders/height-to-index shaders/horizon-distance shaders/limit-quot
+                           shaders/surface-radiance-forward shaders/sun-elevation-to-index opacity-lookup-mock
+                           sampling-offset-mock surface-radiance-function cloud-overlay-mock overall-shadow-mock]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
@@ -454,7 +462,7 @@ float sampling_offset()
   (uniform-float program "max_height" 100000)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
 
-(defn setup-uniforms [program size ?albedo ?refl ?radius ?dist ?lx ?ly ?lz ?a]
+(defn setup-uniforms [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
   ; Moved this code out of the test below, otherwise method is too large
   (uniform-int program "height_size" size)
   (uniform-int program "elevation_size" size)
@@ -466,6 +474,8 @@ float sampling_offset()
   (uniform-int program "surface_sun_elevation_size" size)
   (uniform-float program "albedo" ?albedo)
   (uniform-float program "reflectivity" ?refl)
+  (uniform-float program "clouds" ?clouds)
+  (uniform-float program "shadow" ?shd)
   (uniform-float program "radius" radius)
   (uniform-float program "z_near" 0.0)
   (uniform-vector3 program "origin" (vec3 0 0 (+ ?radius ?dist)))
@@ -514,7 +524,7 @@ float sampling_offset()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (setup-static-uniforms program)
-                               (setup-uniforms program size ?albedo ?refl radius ?dist ?lx ?ly ?lz ?a)
+                               (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
                                (use-textures colors normals transmittance ray-scatter mie-strength radiance water worley)
                                (render-quads vao)
                                (doseq [tex [worley water radiance ray-scatter mie-strength transmittance normals colors]]
@@ -522,21 +532,23 @@ float sampling_offset()
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
-         ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     1  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
-         "white"   0.9     2  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "amplify"
-         "white"   PI      1  1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
-         "white"   PI      1  1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   0   "water"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0  -1   0   0   1   "reflection3"
-         "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter")
+         ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "colors"
+         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9     1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9     2  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "amplify"
+         "white"   PI      1  1   0   0   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "transmit"
+         "white"   PI      1  1   1   1   0.4 0.6 0.8   0       100 0   0     0       1.0  0   1   0   0   0   1   "ambient"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0       1.0  0   0   1   0   0   0   "water"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0  -1   0   0   1   "reflection3"
+         "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0       1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       0.5  0   0   1   0   0   1   "shadow")
 
 (def fragment-white-tree
 "#version 410 core

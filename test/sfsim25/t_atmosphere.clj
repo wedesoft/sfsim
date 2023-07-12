@@ -704,9 +704,7 @@ vec4 cloud_overlay()
 {
   float brightness = <%= alpha %>;
   return vec4(brightness, brightness, brightness, <%= alpha %>);
-}
-")
-  )
+}"))
 
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact

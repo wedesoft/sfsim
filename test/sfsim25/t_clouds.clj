@@ -16,51 +16,6 @@
 
 (GLFW/glfwInit)
 
-(def cloud-shadow-probe
-  (template/fn [x y z lx ly lz]
-"#version 410 core
-out vec3 fragColor;
-uniform float radius;
-uniform float max_height;
-vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
-vec3 transmittance_outer(vec3 point, vec3 direction)
-{
-  if (point.y == 0)
-    return vec3(1, 1, 1) * (point.x - radius) / max_height;
-  else
-    return vec3(1, 1, 1) * abs(point.x) / (radius + max_height);
-}
-float opacity_cascade_lookup(vec4 point)
-{
-  return length(point) < 110 ? 0.5 : 1.0;
-}
-void main()
-{
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_shadow(point, light_direction, 0);
-}"))
-
-(def cloud-shadow-test
-  (shader-test
-    (fn [program radius max-height]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height))
-    cloud-shadow-probe
-    cloud-shadow
-    shaders/ray-sphere
-    shaders/ray-shell))
-
-(tabular "Shader for determining illumination of clouds"
-         (fact (cloud-shadow-test [?radius ?h] [?x ?y ?z ?lx ?ly ?lz])
-               => (roughly-vector (vec3 ?or ?og ?ob) 1e-3))
-         ?radius ?h  ?x   ?y ?z ?lx ?ly ?lz ?or   ?og   ?ob
-         100     20  120   0  0  1   0   0   1     1     1
-         100     20 -120   0  0  1   0   0   0     0     0
-         100     20 -120 110  0  1   0   0   0.4   0.4   0.4
-         100     20  110   0  0  1   0   0   0.5   0.5   0.5
-         100     20  105   0  0  1   0   0   0.125 0.125 0.125)
-
 (def cloud-noise-probe
   (template/fn [x y z]
 "#version 410 core
@@ -894,7 +849,7 @@ uniform float shadow;
 uniform float transmittance;
 uniform float atmosphere;
 uniform float in_scatter;
-float cloud_shadow(vec3 point)
+float overall_shadow(vec3 point)
 {
   return shadow;
 }
@@ -1284,6 +1239,6 @@ void main()
           (render-quads vao)
           (destroy-vertex-array-object vao)
           (destroy-program program)
-          (destroy-texture clouds))) => (record-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
+          (destroy-texture clouds))) => (is-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
 
 (GLFW/glfwTerminate)
