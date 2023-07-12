@@ -768,7 +768,7 @@ vec4 cloud_overlay()
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-           => (record-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
+           => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
          ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?cloud ?result
          0  0               (- 0 radius max-height 1) 0           0   0         -1            0.0    "sun.png"
          0  0               (- 0 radius max-height 1) 0           0   0          1            0.0    "space.png"
