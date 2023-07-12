@@ -15,12 +15,12 @@
                                         vertex-atmosphere)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tile)]
+                                    vertex-planet render-tree)]
             [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
                                     cloud-profile cloud-shadow cloud-transfer linear-sampling
                                     opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
-                                    sample-cloud sphere-noise)]
+                                    sample-cloud sphere-noise cloud-overlay)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
@@ -84,7 +84,6 @@ float cloud_shadow(vec3 point)
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 void main()
@@ -96,7 +95,6 @@ void main()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 out vec4 fragColor;
@@ -121,12 +119,7 @@ void main()
 
 (def fragment-atmosphere-enhanced
 "#version 410 core
-uniform sampler2D clouds;
-uniform int clouds_width;
-uniform int clouds_height;
 uniform float radius;
-uniform float cloud_bottom;
-uniform float cloud_top;
 uniform float max_height;
 uniform float specular;
 uniform vec3 origin;
@@ -138,6 +131,7 @@ in VS_OUT
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
+vec4 cloud_overlay();
 void main()
 {
   vec3 direction = normalize(fs_in.direction);
@@ -146,7 +140,7 @@ void main()
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   if (atmosphere_intersection.y > 0) {
     incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
-    vec4 cloud_scatter = texture(clouds, gl_FragCoord.xy / vec2(clouds_width, clouds_height));
+    vec4 cloud_scatter = cloud_overlay();
     incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
   };
   fragColor = incoming;
@@ -157,9 +151,6 @@ void main()
 uniform sampler2D colors;
 uniform sampler2D normals;
 uniform sampler2D water;
-uniform sampler2D clouds;
-uniform int clouds_width;
-uniform int clouds_height;
 uniform float specular;
 uniform float radius;
 uniform float cloud_bottom;
@@ -174,7 +165,6 @@ uniform float depth;
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 
@@ -187,6 +177,7 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 float cloud_shadow(vec3 point);
+vec4 cloud_overlay();
 void main()
 {
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
@@ -208,7 +199,7 @@ void main()
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
-  vec4 cloud_scatter = texture(clouds, gl_FragCoord.xy / vec2(clouds_width, clouds_height));
+  vec4 cloud_scatter = cloud_overlay();
   fragColor = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
 }")
 
@@ -299,7 +290,7 @@ void main()
                            shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps "average_opacity")
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
-                           opacity-lookup shaders/convert-2d-index transmittance-track phase-function
+                           opacity-lookup shaders/convert-2d-index transmittance-track phase-function cloud-overlay
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
@@ -328,7 +319,7 @@ void main()
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
                 :fragment [fragment-planet-enhanced attenuation-track shaders/ray-sphere ground-radiance
-                           shaders/transmittance-forward phase-function
+                           shaders/transmittance-forward phase-function cloud-overlay
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
@@ -637,14 +628,6 @@ void main()
            (when (= action GLFW/GLFW_RELEASE)
              (swap! keystates assoc k false)))))
 
-(defn render-tree
-  [program node texture-keys]
-  (when node
-    (if (is-leaf? node)
-      (when-not (empty? node) (render-tile program node texture-keys))
-      (doseq [selector [:0 :1 :2 :3 :4 :5]]
-        (render-tree program (selector node) texture-keys)))))
-
 (defn shadow-cascade [matrix-cascade tree]
   (mapv
     (fn [{:keys [shadow-ndc-matrix]}]
@@ -777,8 +760,8 @@ void main()
                                 (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (uniform-float program-planet "opacity_step" opac-step)
-                                (uniform-int program-planet "clouds_width" (aget w 0))
-                                (uniform-int program-planet "clouds_height" (aget h 0))
+                                (uniform-int program-planet "window_width" (aget w 0))
+                                (uniform-int program-planet "window_height" (aget h 0))
                                 (uniform-float program-planet "shadow_bias" (exp @shadow-bias))
                                 (doseq [[idx item] (map-indexed vector splits)]
                                        (uniform-float program-planet (str "split" idx) item))
@@ -799,8 +782,8 @@ void main()
                                 (uniform-vector3 program-atmosphere "origin" @position)
                                 (uniform-matrix4 program-atmosphere "inverse_transform" (inverse transform))
                                 (uniform-float program-atmosphere "opacity_step" opac-step)
-                                (uniform-int program-atmosphere "clouds_width" (aget w 0))
-                                (uniform-int program-atmosphere "clouds_height" (aget h 0))
+                                (uniform-int program-atmosphere "window_width" (aget w 0))
+                                (uniform-int program-atmosphere "window_height" (aget h 0))
                                 (uniform-vector3 program-atmosphere "light_direction" light-dir)
                                 (apply use-textures T S M E clouds opacities)
                                 (render-quads vao))

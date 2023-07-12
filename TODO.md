@@ -1,9 +1,8 @@
 # TODO
-* integration test render-tree method
-* heightcoord needed in geometry shader output?
+* test new fragment shaders including clouds
 * special shaders for planet shadow
-* use vectors instead of hashmap for quad tree
 * test cascaded shadow map, opacity cascade
+* introduce variation to cloud height
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * put new shader stuff under test
 * mipmaps for all cloud textures and octaves
@@ -19,6 +18,7 @@
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj\_tK\_mdRcA
+* shadow mapping improvements http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
 * uniform random offsets for Worley noises
 * configuration (edn) file for clouds?
 * ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl

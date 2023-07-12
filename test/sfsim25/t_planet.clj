@@ -116,7 +116,6 @@ void main()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } frag_in;
 out vec3 fragColor;
@@ -160,7 +159,6 @@ void main()
                                (destroy-program program))) => (is-image ?result 0.02))
          ?selector                            ?scale ?result
          "frag_in.colorcoord"                 1.0    "test/sfsim25/fixtures/planet/color-coords.png"
-         "frag_in.heightcoord"                1.0    "test/sfsim25/fixtures/planet/height-coords.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/sfsim25/fixtures/planet/point.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/sfsim25/fixtures/planet/scaled-point.png")
 
@@ -381,19 +379,16 @@ void main()
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
 in vec2 colorcoord;
-in vec2 heightcoord;
 uniform float radius;
 out GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } vs_out;
 void main()
 {
   gl_Position = vec4(point, 1);
   vs_out.colorcoord = colorcoord;
-  vs_out.heightcoord = heightcoord;
   vs_out.point = vec3(0, 0, radius);
 }")
 
@@ -548,7 +543,6 @@ float sampling_offset()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 out vec3 fragColor;
@@ -568,8 +562,10 @@ void main()
                                    indices    [0 2 3 1]
                                    face       0
                                    vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
-                                   height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array (repeat (* 9 9) 0.5))})
-                                   vao        (make-vertex-array-object program indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+                                   data       (float-array (repeat (* 9 9) 0.5))
+                                   height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data data})
+                                   vao        (make-vertex-array-object program indices vertices
+                                                                        [:point 3 :heightcoord 2 :colorcoord 2])
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
                                    neighbours {:sfsim25.quadtree/up    ?up
@@ -594,5 +590,24 @@ void main()
          true  false true  true   "tile-left.png"
          true  true  false true   "tile-down.png"
          true  true  true  false  "tile-right.png")
+
+(defn render-tile-calls [program node texture-keys]
+  (let [calls (atom [])]
+    (with-redefs [render-tile (fn [program tile texture-keys] (swap! calls conj [program tile texture-keys]))]
+      (render-tree program node texture-keys)
+      @calls)))
+
+(tabular "Call each tile in tree to be rendered"
+         (fact (render-tile-calls ?program ?node ?texture-keys) => ?result)
+         ?program ?node               ?texture-keys ?result
+         :program {}                  [:height-tex] []
+         :program {:vao 42}           [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:0 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:1 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:2 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:3 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:4 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:5 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:3 {:2 {:vao 42}}} [:height-tex] [[:program {:vao 42} [:height-tex]]])
 
 (GLFW/glfwTerminate)

@@ -1,6 +1,7 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
     (:require [sfsim25.cubemap :refer (cube-map-corners)]
+              [sfsim25.quadtree :refer (is-leaf?)]
               [sfsim25.render :refer (uniform-int use-textures render-patches)]))
 
 (defn make-cube-map-tile-vertices
@@ -54,3 +55,12 @@
     (uniform-int program "neighbours" neighbours)
     (apply use-textures (map tile texture-keys))
     (render-patches (:vao tile))))
+
+(defn render-tree
+  "Call each tile in tree to be rendered"
+  [program node texture-keys]
+  (when-not (empty? node)
+            (if (is-leaf? node)
+              (render-tile program node texture-keys)
+              (doseq [selector [:0 :1 :2 :3 :4 :5]]
+                     (render-tree program (selector node) texture-keys)))))

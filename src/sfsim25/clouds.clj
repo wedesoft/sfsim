@@ -194,3 +194,7 @@
 (def cloud-atmosphere
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
   (slurp "resources/shaders/clouds/cloud-atmosphere.glsl"))
+
+(def cloud-overlay
+  "Shader function to lookup cloud overlay values in lower resolution texture"
+  (slurp "resources/shaders/clouds/cloud-overlay.glsl"))

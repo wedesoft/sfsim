@@ -333,9 +333,14 @@
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer))))
 
 (defn make-rgb-texture
-  "Load RGB image into an OpenGL texture"
+  "Load image into an RGB OpenGL texture"
   [interpolation boundary image]
   (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
+
+(defn make-rgba-texture
+  "Load image into an RGBA OpenGL texture"
+  [interpolation boundary image]
+  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGBA GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
