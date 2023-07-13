@@ -38,45 +38,11 @@
 
 (def overall-shadow
 "#version 410 core
-uniform int shadow_size;
-uniform sampler2DShadow shadow_map0;
-uniform sampler2DShadow shadow_map1;
-uniform sampler2DShadow shadow_map2;
-uniform mat4 shadow_map_matrix0;
-uniform mat4 shadow_map_matrix1;
-uniform mat4 shadow_map_matrix2;
-uniform float split0;
-uniform float split1;
-uniform float split2;
-uniform float split3;
-uniform mat4 inverse_transform;
-uniform vec3 light_direction;
 float opacity_cascade_lookup(vec4 point);
-float average_shadow(sampler2DShadow shadow_map, vec4 shadow_pos);
-float planet_shadow(vec3 point)
-{
-  float texel_size = 1.0 / shadow_size;
-  float z = -(inverse_transform * vec4(point, 1)).z;
-  if (z <= split0) {
-    return 1.0;
-  }
-  if (z <= split1) {
-    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    return average_shadow(shadow_map0, shadow_pos);
-  };
-  if (z <= split2) {
-    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    return average_shadow(shadow_map1, shadow_pos);
-  };
-  if (z <= split3) {
-    vec4 shadow_pos = shadow_map_matrix2 * vec4(point, 1);
-    return average_shadow(shadow_map2, shadow_pos);
-  };
-  return 1.0;
-}
+float shadow_cascade_lookup(vec4 point);
 float overall_shadow(vec3 point)
 {
-  return planet_shadow(point) * opacity_cascade_lookup(vec4(point, 1));
+  return shadow_cascade_lookup(vec4(point, 1)) * opacity_cascade_lookup(vec4(point, 1));
 }")
 
 (def fragment-shadow-planet
@@ -243,6 +209,7 @@ void main()
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            shaders/convert-3d-index overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
@@ -273,7 +240,7 @@ void main()
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
                            shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup
-                           shaders/convert-shadow-index
+                           shaders/convert-shadow-index (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
@@ -298,6 +265,7 @@ void main()
                            shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d
                            overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
@@ -548,7 +516,7 @@ void main()
         (texture-render-depth shadow-size shadow-size
                               (clear)
                               (use-program program-shadow-planet)
-                              (uniform-matrix4 program-shadow-planet "inverse_transform" shadow-ndc-matrix)  ; TODO: shrink
+                              (uniform-matrix4 program-shadow-planet "inverse_transform" shadow-ndc-matrix)  ; TODO: grow/shrink
                               (uniform-matrix4 program-shadow-planet "projection" (eye 4))
                               (render-tree program-shadow-planet tree [:height-tex])))
     matrix-cascade))

@@ -7,7 +7,7 @@
               [fastmath.matrix :refer (mat3x3 eye inverse)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
-              [sfsim25.matrix :refer :all]
+              [sfsim25.matrix :refer (transformation-matrix projection-matrix)]
               [sfsim25.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
               [sfsim25.atmosphere :refer (vertex-atmosphere)]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
@@ -300,6 +300,7 @@ void main()
                                                 (apply use-textures opacity-texs)
                                                 (render-quads vao))
           img             (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
       (doseq [tex opacity-texs] (destroy-texture tex))
       (destroy-vertex-array-object vao)
       (destroy-program program)
