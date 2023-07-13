@@ -229,7 +229,7 @@ uniform int selector;
 float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos)
 {
   if (selector == 0)
-    return textureProj(shadow_map, vec4(0, 0, 0.5, 1));
+    return textureProj(shadow_map, vec4(0.5, 0.5, 0.5, 1));
   else
     return shadow_pos.x;
 }")
@@ -255,7 +255,7 @@ void main()
                                       :fragment [(shadow-cascade-lookup-probe z) (shadow-cascade-lookup n "shadow_lookup")
                                                  shadow-lookup-mock])
           vao              (make-vertex-array-object program indices vertices [:point 3])
-          shadow-texs   (map #(make-float-texture-2d :linear :clamp {:width 1 :height 1 :data (float-array [%])}) shadows)
+          shadow-texs   (map #(make-depth-texture :linear :clamp {:width 1 :height 1 :data (float-array [%])}) shadows)
           tex           (texture-render-color 1 1 true
                                               (use-program program)
                                               (uniform-matrix4 program "inverse_transform" inv-transform)
@@ -279,14 +279,19 @@ void main()
 
 (tabular "Perform shadow lookup in cascade of shadow maps"
          (fact ((shadow-cascade-lookup-test ?n ?z ?shift-z ?shadows ?selector) 0) => (roughly ?result 1e-6))
-         ?n ?z ?shift-z ?shadows ?selector ?result
-         1  0    0       [0.0]   0          1.0
-         1 -30   0       [1.0]   0          0.0
-         1 -50   0       [1.0]   0          1.0
-         1 -30   0       [1.0]   1          1.0
-         2 -15   0       [1.0]   1          1.0
-         2 -35   0       [1.0]   1          2.0
-         1 -50  20       [1.0]   0          0.0)
+         ?n ?z ?shift-z ?shadows   ?selector ?result
+         1  0    0       [0.0]     0          1.0
+         1 -25   0       [1.0]     0          0.0
+         1 -25   0       [0.0]     0          1.0
+         1 -50   0       [1.0]     0          1.0
+         1 -25   0       [1.0]     1          1.0
+         2 -15   0       [1.0 1.0] 1          1.0
+         2 -35   0       [1.0 1.0] 1          2.0
+         1 -50  20       [1.0]     0          0.0
+         2 -15   0       [0.0 1.0] 0          1.0
+         2 -15   0       [1.0 1.0] 0          0.0
+         2 -35   0       [1.0 0.0] 0          1.0
+         2 -35   0       [1.0 1.0] 0          0.0)
 
 (def percentage-closer-filtering-probe
   (template/fn [x]
