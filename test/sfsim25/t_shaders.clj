@@ -4,9 +4,10 @@
             [comb.template :as template]
             [clojure.math :refer (cos sin PI sqrt)]
             [fastmath.vector :refer (vec3 div ediv dot mag cross)]
+            [fastmath.matrix :refer (eye)]
             [sfsim25.render :refer :all]
             [sfsim25.shaders :refer :all]
-            [sfsim25.matrix :refer (orthogonal)]
+            [sfsim25.matrix :refer (orthogonal transformation-matrix)]
             [sfsim25.util :refer (get-float get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl.glfw GLFW]))
 
@@ -221,6 +222,76 @@ void main()
          0.5    1.0 0.0    1.0
          0.5    0.0 0.0    0.0
          0.5    0.6 0.2    0.0)
+
+(def shadow-lookup-mock
+"#version 410 core
+uniform int selector;
+float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos)
+{
+  if (selector == 0)
+    return textureProj(shadow_map, vec4(0.5, 0.5, 0.5, 1));
+  else
+    return shadow_pos.x;
+}")
+
+(def shadow-cascade-lookup-probe
+  (template/fn [z]
+"#version 410 core
+out vec3 fragColor;
+float shadow_cascade_lookup(vec4 point);
+void main()
+{
+  vec4 point = vec4(0, 0, <%= z %>, 1);
+  float result = shadow_cascade_lookup(point);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(defn shadow-cascade-lookup-test [n z shift-z shadows selector]
+  (with-invisible-window
+    (let [indices       [0 1 3 2]
+          vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          inv-transform (transformation-matrix (eye 3) (vec3 0 0 shift-z))
+          program       (make-program :vertex [vertex-passthrough]
+                                      :fragment [(shadow-cascade-lookup-probe z) (shadow-cascade-lookup n "shadow_lookup")
+                                                 shadow-lookup-mock])
+          vao              (make-vertex-array-object program indices vertices [:point 3])
+          shadow-texs   (map #(make-depth-texture :linear :clamp {:width 1 :height 1 :data (float-array [%])}) shadows)
+          tex           (texture-render-color 1 1 true
+                                              (use-program program)
+                                              (uniform-matrix4 program "inverse_transform" inv-transform)
+                                              (uniform-int program "selector" selector)
+                                              (doseq [idx (range n)]
+                                                     (uniform-sampler program (str "shadow_map" idx) idx)
+                                                     (uniform-matrix4 program (str "shadow_map_matrix" idx)
+                                                                      (transformation-matrix (eye 3)
+                                                                                             (vec3 (inc idx) 0 0))))
+                                              (doseq [idx (range (inc n))]
+                                                     (uniform-float program (str "split" idx)
+                                                                    (+ 10.0 (/ (* 30.0 idx) n))))
+                                              (apply use-textures shadow-texs)
+                                              (render-quads vao))
+          img           (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (doseq [tex shadow-texs] (destroy-texture tex))
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      (get-vector3 img 0 0))))
+
+(tabular "Perform shadow lookup in cascade of shadow maps"
+         (fact ((shadow-cascade-lookup-test ?n ?z ?shift-z ?shadows ?selector) 0) => (roughly ?result 1e-6))
+         ?n ?z ?shift-z ?shadows   ?selector ?result
+         1  0    0       [0.0]     0          1.0
+         1 -25   0       [1.0]     0          0.0
+         1 -25   0       [0.0]     0          1.0
+         1 -50   0       [1.0]     0          1.0
+         1 -25   0       [1.0]     1          1.0
+         2 -15   0       [1.0 1.0] 1          1.0
+         2 -35   0       [1.0 1.0] 1          2.0
+         1 -50  20       [1.0]     0          0.0
+         2 -15   0       [0.0 1.0] 0          1.0
+         2 -15   0       [1.0 1.0] 0          0.0
+         2 -35   0       [1.0 0.0] 0          1.0
+         2 -35   0       [1.0 1.0] 0          0.0)
 
 (def percentage-closer-filtering-probe
   (template/fn [x]

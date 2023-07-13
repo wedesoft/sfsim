@@ -38,6 +38,10 @@
   "Perform lookup in a shadow map including moving shadow index out of clamping region"
   (slurp "resources/shaders/core/shadow-lookup.glsl"))
 
+(def shadow-cascade-lookup
+  "Perform shadow lookup in cascade of shadow maps"
+  (template/fn [n base-function] (slurp "resources/shaders/core/shadow-cascade-lookup.glsl")))
+
 (def percentage-closer-filtering
   "Local averaging of shadow to reduce aliasing"
   (template/fn [point-type method-name base-function-name parameters]

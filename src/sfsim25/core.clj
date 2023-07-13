@@ -12,13 +12,13 @@
                                     texture-render-depth)]
             [sfsim25.atmosphere :refer (attenuation-outer attenuation-track phase phase-function ray-scatter-outer
                                         ray-scatter-track transmittance-outer transmittance-track
-                                        vertex-atmosphere)]
+                                        vertex-atmosphere fragment-atmosphere)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tree)]
+                                    vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
-                                    cloud-profile cloud-shadow cloud-transfer linear-sampling
+                                    cloud-profile cloud-transfer linear-sampling
                                     opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
                                     sample-cloud sphere-noise cloud-overlay)]
             [sfsim25.bluenoise :as bluenoise]
@@ -38,45 +38,11 @@
 
 (def overall-shadow
 "#version 410 core
-uniform int shadow_size;
-uniform sampler2DShadow shadow_map0;
-uniform sampler2DShadow shadow_map1;
-uniform sampler2DShadow shadow_map2;
-uniform mat4 shadow_map_matrix0;
-uniform mat4 shadow_map_matrix1;
-uniform mat4 shadow_map_matrix2;
-uniform float split0;
-uniform float split1;
-uniform float split2;
-uniform float split3;
-uniform mat4 inverse_transform;
-uniform vec3 light_direction;
 float opacity_cascade_lookup(vec4 point);
-float average_shadow(sampler2DShadow shadow_map, vec4 shadow_pos);
-float planet_shadow(vec3 point)
+float shadow_cascade_lookup(vec4 point);
+float overall_shadow(vec3 point)
 {
-  float texel_size = 1.0 / shadow_size;
-  float z = -(inverse_transform * vec4(point, 1)).z;
-  if (z <= split0) {
-    return 1.0;
-  }
-  if (z <= split1) {
-    vec4 shadow_pos = shadow_map_matrix0 * vec4(point, 1);
-    return average_shadow(shadow_map0, shadow_pos);
-  };
-  if (z <= split2) {
-    vec4 shadow_pos = shadow_map_matrix1 * vec4(point, 1);
-    return average_shadow(shadow_map1, shadow_pos);
-  };
-  if (z <= split3) {
-    vec4 shadow_pos = shadow_map_matrix2 * vec4(point, 1);
-    return average_shadow(shadow_map2, shadow_pos);
-  };
-  return 1.0;
-}
-float cloud_shadow(vec3 point)
-{
-  return planet_shadow(point) * opacity_cascade_lookup(vec4(point, 1));
+  return shadow_cascade_lookup(vec4(point, 1)) * opacity_cascade_lookup(vec4(point, 1));
 }")
 
 (def fragment-shadow-planet
@@ -115,92 +81,6 @@ vec4 cloud_atmosphere(vec3 fs_in_direction);
 void main()
 {
   fragColor = cloud_atmosphere(fs_in.direction);
-}")
-
-(def fragment-atmosphere-enhanced
-"#version 410 core
-uniform float radius;
-uniform float max_height;
-uniform float specular;
-uniform vec3 origin;
-uniform vec3 light_direction;
-in VS_OUT
-{
-  vec3 direction;
-} fs_in;
-out vec3 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
-vec4 cloud_overlay();
-void main()
-{
-  vec3 direction = normalize(fs_in.direction);
-  float glare = pow(max(0, dot(direction, light_direction)), specular);
-  vec3 incoming = vec3(glare, glare, glare);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  if (atmosphere_intersection.y > 0) {
-    incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
-    vec4 cloud_scatter = cloud_overlay();
-    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
-  };
-  fragColor = incoming;
-}")
-
-(def fragment-planet-enhanced
-"#version 410 core
-uniform sampler2D colors;
-uniform sampler2D normals;
-uniform sampler2D water;
-uniform float specular;
-uniform float radius;
-uniform float cloud_bottom;
-uniform float cloud_top;
-uniform float max_height;
-uniform vec3 water_color;
-uniform vec3 light_direction;
-uniform mat4 inverse_transform;
-uniform vec3 origin;
-uniform float depth;
-
-in GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-} fs_in;
-
-out vec3 fragColor;
-
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
-                     vec3 land_color, vec3 water_color);
-vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
-vec4 clip_shell_intersections(vec4 intersections, float limit);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
-float cloud_shadow(vec3 point);
-vec4 cloud_overlay();
-void main()
-{
-  vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
-  vec3 water_normal = normalize(fs_in.point);
-  vec3 direction = normalize(fs_in.point - origin);
-  vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
-  float wet = texture(water, fs_in.colorcoord).r;
-  vec3 normal = mix(land_normal, water_normal, wet);
-  float cos_incidence = dot(light_direction, normal);
-  float highlight;
-  if (cos_incidence > 0) {
-    highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular);
-  } else {
-    cos_incidence = 0.0;
-    highlight = 0.0;
-  };
-  float incidence_fraction = cos_incidence * cloud_shadow(fs_in.point);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
-  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
-  vec4 cloud_scatter = cloud_overlay();
-  fragColor = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
 }")
 
 (def fov (to-radians 60.0))
@@ -286,8 +166,8 @@ void main()
 
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere-enhanced
-                           shaders/convert-1d-index shaders/ray-sphere (opacity-cascade-lookup num-steps "average_opacity")
+                :fragment [fragment-atmosphere shaders/convert-1d-index shaders/ray-sphere
+                           (opacity-cascade-lookup num-steps "average_opacity")
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            opacity-lookup shaders/convert-2d-index transmittance-track phase-function cloud-overlay
@@ -318,7 +198,7 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet-enhanced attenuation-track shaders/ray-sphere ground-radiance
+                :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance
                            shaders/transmittance-forward phase-function cloud-overlay
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
@@ -329,6 +209,7 @@ void main()
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            shaders/convert-3d-index overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
@@ -350,7 +231,7 @@ void main()
                            shaders/interpolate-float-cubemap shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-shadow cloud-profile
+                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-profile
                            (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps "average_opacity")
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
@@ -359,7 +240,7 @@ void main()
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
                            shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup
-                           shaders/convert-shadow-index
+                           shaders/convert-shadow-index (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
@@ -372,7 +253,7 @@ void main()
                            (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
-                           cloud-shadow cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
+                           cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
                            (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
                            (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
@@ -384,6 +265,7 @@ void main()
                            shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d
                            overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
@@ -634,7 +516,7 @@ void main()
         (texture-render-depth shadow-size shadow-size
                               (clear)
                               (use-program program-shadow-planet)
-                              (uniform-matrix4 program-shadow-planet "inverse_transform" shadow-ndc-matrix)  ; TODO: shrink
+                              (uniform-matrix4 program-shadow-planet "inverse_transform" shadow-ndc-matrix)  ; TODO: grow/shrink
                               (uniform-matrix4 program-shadow-planet "projection" (eye 4))
                               (render-tree program-shadow-planet tree [:height-tex])))
     matrix-cascade))

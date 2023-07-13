@@ -1,12 +1,10 @@
 # TODO
-* test new fragment shaders including clouds
-* special shaders for planet shadow
-* test cascaded shadow map, opacity cascade
+* can we use vec3 for shadow and opacity maps?
+* special shaders for planet shadow, grow/shrink shadow index, test cascaded shadow map, opacity cascade
+* constant texel size across opacity cascade to prevent step in opacity?
+* mipmaps for all cloud textures and octaves
 * introduce variation to cloud height
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
-* put new shader stuff under test
-* mipmaps for all cloud textures and octaves
-* constant texel size across opacity cascade to prevent step in opacity?
 * when building maps put intermediate files into a common subdirectory (tmp?)
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
   integration test for cascaded deep opacity map
@@ -14,7 +12,6 @@
 * change cloud computation when viewing from space far away (use different lod of shadow?)
 * reduce number of intermediate values to increase OpenGL performance
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* reuse (parts of) shadow map?
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj\_tK\_mdRcA

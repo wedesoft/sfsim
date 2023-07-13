@@ -697,6 +697,15 @@ void main()
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
 
+(def cloud-overlay-mock
+(template/fn [alpha]
+"#version 410 core
+vec4 cloud_overlay()
+{
+  float brightness = <%= alpha %>;
+  return vec4(brightness, brightness, brightness, <%= alpha %>);
+}"))
+
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
            (offscreen-render 256 256
@@ -719,7 +728,8 @@ void main()
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
-                                                                          shaders/sun-angle-to-index])
+                                                                          shaders/sun-angle-to-index
+                                                                          (cloud-overlay-mock ?cloud)])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})
@@ -757,14 +767,15 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
-         ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?result
-         0  0               (- 0 radius max-height 1) 0           0   0         -1            "sun.png"
-         0  0               (- 0 radius max-height 1) 0           0   0          1            "space.png"
-         0  0               (* 2.5 radius)            0           0   1          0            "haze.png"
-         0  radius          (* 0.5 radius)            0           0   0         -1            "sunset.png"
-         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
-         0  0               (- 0 radius 2)            0           0   0         -1            "inside.png"
-         0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            "yview.png")
+         ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?cloud ?result
+         0  0               (- 0 radius max-height 1) 0           0   0         -1            0.0    "sun.png"
+         0  0               (- 0 radius max-height 1) 0           0   0          1            0.0    "space.png"
+         0  0               (* 2.5 radius)            0           0   1          0            0.0    "haze.png"
+         0  radius          (* 0.5 radius)            0           0   0         -1            0.0    "sunset.png"
+         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) 0.0    "sunset2.png"
+         0  0               (- 0 radius 2)            0           0   0         -1            0.0    "inside.png"
+         0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            0.0    "yview.png"
+         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) 0.5    "cloudy.png")
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core

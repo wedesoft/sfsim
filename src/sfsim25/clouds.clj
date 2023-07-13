@@ -7,10 +7,6 @@
                                       render-quads uniform-float uniform-int uniform-sampler use-program use-textures)]
               [sfsim25.shaders :as shaders]))
 
-(def cloud-shadow
-  "Shader for determining illumination of clouds"
-  (slurp "resources/shaders/clouds/cloud-shadow.glsl"))
-
 (def cloud-noise
   "Shader for sampling 3D cloud noise"
   (slurp "resources/shaders/clouds/cloud-noise.glsl"))
