@@ -445,23 +445,23 @@ void main()
 (uniform-float program-atmosphere "amplification" 6)
 
 (defn opacity-cascade [matrix-cascade light-direction scatter-amount opac-step]
+  (use-program program-opacity)
+  (uniform-vector3 program-opacity "light_direction" light-direction)
+  (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
+  (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
+  (uniform-float program-opacity "cap" @cap)
+  (uniform-float program-opacity "cloud_threshold" @threshold)
+  (uniform-float program-opacity "scatter_amount" scatter-amount)
+  (uniform-float program-opacity "opacity_step" opac-step)
+  (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
   (mapv
     (fn [{:keys [shadow-ndc-matrix depth scale]}]
         (let [opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size (inc num-opacity-layers))
               detail          (/ (log (/ (/ scale shadow-size) (/ detail-scale worley-size))) (log 2))]
           (framebuffer-render shadow-size shadow-size :cullback nil [opacity-layers]
-                              (use-program program-opacity)
                               (uniform-float program-opacity "level_of_detail" detail)
                               (uniform-matrix4 program-opacity "ndc_to_shadow" (inverse shadow-ndc-matrix))
-                              (uniform-vector3 program-opacity "light_direction" light-direction)
-                              (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
-                              (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
-                              (uniform-float program-opacity "cap" @cap)
-                              (uniform-float program-opacity "cloud_threshold" @threshold)
-                              (uniform-float program-opacity "scatter_amount" scatter-amount)
                               (uniform-float program-opacity "depth" depth)
-                              (uniform-float program-opacity "opacity_step" opac-step)
-                              (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
                               (render-quads opacity-vao))
           opacity-layers))
     matrix-cascade))
