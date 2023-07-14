@@ -212,9 +212,27 @@ void main()
                            (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
+(def vertex-shadow-planet
+"#version 410 core
+uniform int shadow_size;
+in vec3 point;
+in vec2 heightcoord;
+in vec2 colorcoord;
+out VS_OUT
+{
+  vec2 heightcoord;
+  vec2 colorcoord;
+} vs_out;
+vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
+void main()
+{
+  gl_Position = grow_shadow_index(vec4(point, 1), shadow_size, shadow_size);
+  vs_out.heightcoord = heightcoord;
+  vs_out.colorcoord = colorcoord;
+}")
 
 (def program-shadow-planet
-  (make-program :vertex [vertex-planet]
+  (make-program :vertex [vertex-shadow-planet shaders/grow-shadow-index]
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
@@ -288,6 +306,7 @@ void main()
 (uniform-sampler program-shadow-planet "heightfield"    0)
 (uniform-int program-shadow-planet "high_detail" (dec tilesize))
 (uniform-int program-shadow-planet "low_detail" (quot (dec tilesize) 2))
+(uniform-int program-shadow-planet "shadow_size" shadow-size)
 
 (use-program program-cloud-planet)
 (uniform-sampler program-cloud-planet "heightfield"      0)
