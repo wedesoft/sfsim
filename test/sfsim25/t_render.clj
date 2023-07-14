@@ -771,8 +771,7 @@ vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
   gl_Position = shrink_shadow_index(shadow_ndc_matrix * vec4(point, 1), 128, 128);
-}
-")
+}")
 
 (def fragment-shadow
 "#version 410 core
@@ -783,26 +782,27 @@ void main(void)
 (def vertex-scene
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 shadow_map_matrix;
 in vec3 point;
-out vec4 shadow_pos;
+out vec4 pos;
 out float ambient;
 void main(void)
 {
   gl_Position = projection * vec4(point, 1);
-  shadow_pos = shadow_map_matrix * vec4(point, 1);
+  pos = vec4(point, 1);
   ambient = -point.z - 3;
 }")
 
 (def fragment-scene
 "#version 410 core
 uniform sampler2DShadow shadow_map;
-in vec4 shadow_pos;
+uniform mat4 shadow_map_matrix;
+in vec4 pos;
 in float ambient;
 out vec4 fragColor;
 float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
 void main(void)
 {
+  vec4 shadow_pos = shadow_map_matrix * pos;
   float shade = shadow_lookup(shadow_map, shadow_pos);
   float brightness = 0.7 * shade + 0.1 * ambient + 0.1;
   fragColor = vec4(brightness, brightness, brightness, 1.0);
@@ -810,23 +810,25 @@ void main(void)
 
 (fact "Shadow mapping integration test"
       (with-invisible-window
-        (let [projection (projection-matrix 320 240 2 5 (to-radians 90))
-              transform (eye 4)
-              light-vector (normalize (vec3 1 1 2))
-              shadow (shadow-matrices projection transform light-vector 1)
-              indices [0 1 3 2 6 7 5 4 8 9 11 10]
-              vertices [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
-                        -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
-                        -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
-              program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index] :fragment [fragment-shadow])
-              program-main (make-program :vertex [vertex-scene] :fragment [fragment-scene s/shadow-lookup s/convert-shadow-index])
-              vao (make-vertex-array-object program-main indices vertices [:point 3])
-              shadow-map (texture-render-depth
-                           128 128
-                           (clear)
-                           (use-program program-shadow)
-                           (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:shadow-ndc-matrix shadow))
-                           (render-quads vao))]
+        (let [projection     (projection-matrix 320 240 2 5 (to-radians 90))
+              transform      (eye 4)
+              light-vector   (normalize (vec3 1 1 2))
+              shadow-mat     (shadow-matrices projection transform light-vector 1)
+              indices        [0 1 3 2 6 7 5 4 8 9 11 10]
+              vertices       [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
+                              -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
+                              -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
+              program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
+                                           :fragment [fragment-shadow])
+              program-main   (make-program :vertex [vertex-scene]
+                                           :fragment [fragment-scene s/shadow-lookup s/convert-shadow-index])
+              vao            (make-vertex-array-object program-main indices vertices [:point 3])
+              shadow-map     (texture-render-depth
+                               128 128
+                               (clear)
+                               (use-program program-shadow)
+                               (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:shadow-ndc-matrix shadow-mat))
+                               (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
                 tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
             (framebuffer-render 320 240 :cullback depth [tex]
@@ -835,11 +837,65 @@ void main(void)
                                 (uniform-sampler program-main "shadow_map" 0)
                                 (uniform-int program-main "shadow_size" 128)
                                 (uniform-matrix4 program-main "projection" projection)
-                                (uniform-matrix4 program-main "shadow_map_matrix" (:shadow-map-matrix shadow))
+                                (uniform-matrix4 program-main "shadow_map_matrix" (:shadow-map-matrix shadow-mat))
                                 (use-textures shadow-map)
                                 (render-quads vao))
             (let [img (texture->image tex)]
               (destroy-texture shadow-map)
+              (destroy-vertex-array-object vao)
+              (destroy-program program-main)
+              (destroy-program program-shadow)
+              img))))
+      => (is-image "test/sfsim25/fixtures/render/shadow.png" 0.04))
+
+(def fragment-scene-cascade
+"#version 410 core
+in vec4 pos;
+in float ambient;
+out vec4 fragColor;
+float shadow_cascade_lookup(vec4 point);
+void main(void)
+{
+  float shade = shadow_cascade_lookup(pos);
+  float brightness = 0.7 * shade + 0.1 * ambient + 0.1;
+  fragColor = vec4(brightness, brightness, brightness, 1.0);
+}")
+
+(fact "Shadow cascade integration test"
+      (with-invisible-window
+        (let [projection     (projection-matrix 320 240 2 5 (to-radians 90))
+              transform      (eye 4)
+              num-steps      1
+              light-vector   (normalize (vec3 1 1 2))
+              shadow-mats    (shadow-matrix-cascade projection transform light-vector 1 0.5 2 5 num-steps)
+              indices        [0 1 3 2 6 7 5 4 8 9 11 10]
+              vertices       [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
+                              -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
+                              -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
+              program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
+                                           :fragment [fragment-shadow])
+              program-main   (make-program :vertex [vertex-scene]
+                                           :fragment [fragment-scene-cascade (s/shadow-cascade-lookup num-steps "shadow_lookup")
+                                                      s/shadow-lookup s/convert-shadow-index])
+              vao            (make-vertex-array-object program-main indices vertices [:point 3])
+              shadow-maps    (shadow-cascade 128 128 shadow-mats program-shadow (render-quads vao))]
+          (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
+                tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
+            (framebuffer-render 320 240 :cullback depth [tex]
+                                (clear (vec3 0 0 0))
+                                (use-program program-main)
+                                (uniform-sampler program-main "shadow_map0" 0)
+                                (uniform-float program-main "split0" 0.0)
+                                (uniform-float program-main "split1" 50.0)
+                                (uniform-int program-main "shadow_size" 128)
+                                (uniform-matrix4 program-main "projection" projection)
+                                (uniform-matrix4 program-main "inverse_transform" (eye 4))
+                                (uniform-matrix4 program-main "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
+                                (apply use-textures shadow-maps)
+                                (render-quads vao))
+            (let [img (texture->image tex)]
+              (doseq [shadow-map shadow-maps]
+                     (destroy-texture shadow-map))
               (destroy-vertex-array-object vao)
               (destroy-program program-main)
               (destroy-program program-shadow)

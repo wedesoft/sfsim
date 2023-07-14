@@ -44,7 +44,7 @@
 
 (def percentage-closer-filtering
   "Local averaging of shadow to reduce aliasing"
-  (template/fn [point-type method-name base-function-name parameters]
+  (template/fn [method-name base-function-name parameters]
                (slurp "resources/shaders/core/percentage-closer-filtering.glsl")))
 
 (def make-2d-index-from-4d

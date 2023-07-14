@@ -297,14 +297,14 @@ void main()
   (template/fn [x]
 "#version 410 core
 out vec3 fragColor;
-float f(float scale, vec3 point)
+float f(float scale, vec4 point)
 {
   return max(point.x * scale, 0.0);
 }
-float averaged(float scale, vec3 point);
+float averaged(float scale, vec4 point);
 void main()
 {
-  vec3 point = vec3(<%= x %>, 0.0, 0.0);
+  vec4 point = vec4(<%= x %>, 0.0, 0.0, 1.0);
   float result = averaged(3.0, point);
   fragColor = vec3(result, result, result);
 }"))
@@ -313,7 +313,7 @@ void main()
   (shader-test
     (fn [program shadow-size]
         (uniform-int program "shadow_size" shadow-size))
-    percentage-closer-filtering-probe (percentage-closer-filtering "vec3" "averaged" "f" [["float" "scale"]])))
+    percentage-closer-filtering-probe (percentage-closer-filtering "averaged" "f" [["float" "scale"]])))
 
 (tabular "Local averaging of shadow to reduce aliasing"
          (fact ((percentage-closer-filtering-test [?size] [?x]) 0) => (roughly ?result 1e-6))
