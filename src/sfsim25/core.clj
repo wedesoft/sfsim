@@ -223,16 +223,16 @@ out VS_OUT
   vec2 heightcoord;
   vec2 colorcoord;
 } vs_out;
-vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
+vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
-  gl_Position = grow_shadow_index(vec4(point, 1), shadow_size, shadow_size);
+  gl_Position = shrink_shadow_index(vec4(point, 1), shadow_size, shadow_size);
   vs_out.heightcoord = heightcoord;
   vs_out.colorcoord = colorcoord;
 }")
 
 (def program-shadow-planet
-  (make-program :vertex [vertex-shadow-planet shaders/grow-shadow-index]
+  (make-program :vertex [vertex-shadow-planet shaders/shrink-shadow-index]
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
