@@ -202,10 +202,10 @@ float cloud_density(vec3 point, float lod)
 "#version 410 core
 out vec3 fragColor;
 uniform sampler3D opacity_layers;
-float opacity_lookup(sampler3D layers, float depth, vec3 opacity_map_coords);
+float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords);
 void main()
 {
-  vec3 opacity_map_coords = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec4 opacity_map_coords = vec4(<%= x %>, <%= y %>, <%= z %>, 1.0);
   float result = opacity_lookup(opacity_layers, <%= depth %>, opacity_map_coords);
   fragColor = vec3(result, result, result);
 }"))
@@ -251,7 +251,7 @@ void main()
 (def opacity-lookup-mock
 "#version 410 core
 uniform int select;
-float opacity_lookup(sampler3D layers, float depth, vec3 opacity_map_coords)
+float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords)
 {
   if (select == 0)
     return texture(layers, vec3(0.5, 0.5, 0.75)).r;
@@ -850,7 +850,7 @@ uniform float shadow;
 uniform float transmittance;
 uniform float atmosphere;
 uniform float in_scatter;
-float overall_shadow(vec3 point)
+float overall_shadow(vec4 point)
 {
   return shadow;
 }

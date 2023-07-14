@@ -2,16 +2,15 @@
 
 uniform int shadow_size;
 
-float <%= base-function-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") parameters)) %><%= point-type %> point);
+float <%= base-function-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") parameters)) %>vec4 point);
 
-float <%= method-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") parameters)) %><%= point-type %> point)
+float <%= method-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") parameters)) %>vec4 point)
 {
   float texel_size = 1.0 / (shadow_size - 1);
   float result = 0.0;
   for (int y=-1; y<=1; y++)
     for (int x=-1; x<=1; x++) {
-      <%= point-type %> sampling_point = point;
-      sampling_point.xy += vec2(x * texel_size, y * texel_size);
+      vec4 sampling_point = point + vec4(x * texel_size, y * texel_size, 0, 0);
       result += <%= base-function-name %>(<%= (apply str (map #(str (% 1) ", ") parameters)) %>sampling_point);
     };
   return result / 9.0;

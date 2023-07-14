@@ -40,9 +40,9 @@
 "#version 410 core
 float opacity_cascade_lookup(vec4 point);
 float shadow_cascade_lookup(vec4 point);
-float overall_shadow(vec3 point)
+float overall_shadow(vec4 point)
 {
-  return shadow_cascade_lookup(vec4(point, 1)) * opacity_cascade_lookup(vec4(point, 1));
+  return shadow_cascade_lookup(point) * opacity_cascade_lookup(point);
 }")
 
 (def fragment-shadow-planet
@@ -168,7 +168,7 @@ void main()
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere shaders/convert-1d-index shaders/ray-sphere
                            (opacity-cascade-lookup num-steps "average_opacity")
-                           (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
+                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            opacity-lookup shaders/convert-2d-index transmittance-track phase-function cloud-overlay
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
@@ -206,11 +206,11 @@ void main()
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
                            shaders/surface-radiance-forward transmittance-outer surface-radiance-function
                            shaders/convert-1d-index (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-                           (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
+                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            shaders/convert-3d-index overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
                            (shaders/shadow-cascade-lookup num-steps "average_shadow")
-                           (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
+                           (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
 (def program-shadow-planet
@@ -233,7 +233,7 @@ void main()
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-profile
                            (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps "average_opacity")
-                           (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
+                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            opacity-lookup shaders/convert-2d-index transmittance-outer shaders/convert-3d-index
                            shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
@@ -241,7 +241,7 @@ void main()
                            shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup
                            shaders/convert-shadow-index (shaders/shadow-cascade-lookup num-steps "average_shadow")
-                           (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
+                           (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
 (def program-cloud-atmosphere
@@ -255,7 +255,7 @@ void main()
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
                            cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
                            (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-                           (shaders/percentage-closer-filtering "vec3" "average_opacity" "opacity_lookup"
+                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            shaders/convert-2d-index transmittance-outer
                            shaders/convert-3d-index shaders/transmittance-forward
@@ -266,7 +266,7 @@ void main()
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d
                            overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
                            (shaders/shadow-cascade-lookup num-steps "average_shadow")
-                           (shaders/percentage-closer-filtering "vec4" "average_shadow" "shadow_lookup"
+                           (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
 (use-program program-opacity)

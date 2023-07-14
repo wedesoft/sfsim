@@ -433,7 +433,7 @@ vec4 cloud_overlay()
 (def overall-shadow-mock
 "#version 410 core
 uniform float shadow;
-float overall_shadow(vec3 point)
+float overall_shadow(vec4 point)
 {
   return shadow;
 }")

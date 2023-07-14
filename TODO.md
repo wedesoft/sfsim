@@ -1,5 +1,4 @@
 # TODO
-* can we use vec3 for shadow and opacity maps?
 * special shaders for planet shadow, grow/shrink shadow index, test cascaded shadow map, opacity cascade
 * constant texel size across opacity cascade to prevent step in opacity?
 * mipmaps for all cloud textures and octaves
