@@ -1,5 +1,7 @@
 # TODO
 * test opacity cascade
+* level of detail in opacity cascade
+* only have size instead of width and height for shadow cascade?
 * night lights: https://earthobservatory.nasa.gov/features/NightLights/page3.php
 * constant texel size across opacity cascade to prevent step in opacity?
 * mipmaps for all cloud textures and octaves

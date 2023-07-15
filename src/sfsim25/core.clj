@@ -18,7 +18,7 @@
                                     vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
-                                    cloud-profile cloud-transfer linear-sampling
+                                    cloud-profile cloud-transfer linear-sampling opacity-cascade
                                     opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
                                     sample-cloud sphere-noise cloud-overlay)]
             [sfsim25.bluenoise :as bluenoise]
@@ -463,27 +463,27 @@ void main()
 (uniform-float program-atmosphere "specular" 1000)
 (uniform-float program-atmosphere "amplification" 6)
 
-(defn opacity-cascade [matrix-cascade light-direction scatter-amount opac-step]
-  (use-program program-opacity)
-  (uniform-vector3 program-opacity "light_direction" light-direction)
-  (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
-  (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
-  (uniform-float program-opacity "cap" @cap)
-  (uniform-float program-opacity "cloud_threshold" @threshold)
-  (uniform-float program-opacity "scatter_amount" scatter-amount)
-  (uniform-float program-opacity "opacity_step" opac-step)
-  (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
-  (mapv
-    (fn [{:keys [shadow-ndc-matrix depth scale]}]
-        (let [opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size (inc num-opacity-layers))
-              detail          (/ (log (/ (/ scale shadow-size) (/ detail-scale worley-size))) (log 2))]
-          (framebuffer-render shadow-size shadow-size :cullback nil [opacity-layers]
-                              (uniform-float program-opacity "level_of_detail" detail)
-                              (uniform-matrix4 program-opacity "ndc_to_shadow" (inverse shadow-ndc-matrix))
-                              (uniform-float program-opacity "depth" depth)
-                              (render-quads opacity-vao))
-          opacity-layers))
-    matrix-cascade))
+;(defn opacity-cascade [matrix-cascade light-direction scatter-amount opac-step]
+;  (use-program program-opacity)
+;  (uniform-vector3 program-opacity "light_direction" light-direction)
+;  (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
+;  (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
+;  (uniform-float program-opacity "cap" @cap)
+;  (uniform-float program-opacity "cloud_threshold" @threshold)
+;  (uniform-float program-opacity "scatter_amount" scatter-amount)
+;  (uniform-float program-opacity "opacity_step" opac-step)
+;  (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
+;  (mapv
+;    (fn [{:keys [shadow-ndc-matrix depth scale]}]
+;        (let [opacity-layers  (make-empty-float-texture-3d :linear :clamp shadow-size shadow-size (inc num-opacity-layers))
+;              level-of-detail (/ (log (/ (/ scale shadow-size) (/ detail-scale worley-size))) (log 2))]
+;          (framebuffer-render shadow-size shadow-size :cullback nil [opacity-layers]
+;                              (uniform-float program-opacity "level_of_detail" level-of-detail)
+;                              (uniform-matrix4 program-opacity "ndc_to_shadow" (inverse shadow-ndc-matrix))
+;                              (uniform-float program-opacity "depth" depth)
+;                              (render-quads opacity-vao))
+;          opacity-layers))
+;    matrix-cascade))
 
 (def tree (atom []))
 (def changes (atom (future {:tree {} :drop [] :load []})))
@@ -591,7 +591,16 @@ void main()
                    splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                    opac-step  (/ @opacity-step (max 0.1 (/ (dot light-dir @position) (mag @position))))
-                   opacities  (opacity-cascade matrix-cas light-dir scatter-am opac-step)
+                   opacities  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale worley-size) program-opacity
+                                               (uniform-vector3 program-opacity "light_direction" light-dir)
+                                               (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
+                                               (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
+                                               (uniform-float program-opacity "cap" @cap)
+                                               (uniform-float program-opacity "cloud_threshold" @threshold)
+                                               (uniform-float program-opacity "scatter_amount" scatter-am)
+                                               (uniform-float program-opacity "opacity_step" opac-step)
+                                               (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
+                                               (render-quads opacity-vao))
                    shadows    (shadow-cascade shadow-size shadow-size matrix-cas program-shadow-planet
                                               (uniform-matrix4 program-shadow-planet "projection" (eye 4))
                                               (render-tree program-shadow-planet @tree [:height-tex]))
