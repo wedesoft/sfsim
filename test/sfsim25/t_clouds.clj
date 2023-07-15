@@ -1269,12 +1269,12 @@ void main()
 "#version 410 core
 uniform mat4 inverse_transform;
 in vec4 pos;
-out vec3 fragColor;
+out vec4 fragColor;
 float opacity_cascade_lookup(vec4 point);
 void main()
 {
   float value = 0.9 * opacity_cascade_lookup(pos) + 0.1;
-  fragColor = vec3(value, value, value);
+  fragColor = vec4(value, value, value, 1.0);
 }")
 
 (fact "Render cascade of deep opacity maps"
@@ -1302,32 +1302,35 @@ void main()
                                             (uniform-float program-opac "cloud_max_step" 0.05)
                                             (uniform-float program-opac "opacity_step" 0.1)
                                             (uniform-float program-opac "scatter_amount" 0.5)
-                                            (render-quads vao))]
-          ; (println (set (:data (float-texture-3d->floats (opacity-maps 0)))))
-          (offscreen-render 320 240
-            (let [indices   [0 1 3 2]
-                  vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
-                  program   (make-program :vertex [vertex-render-opacity]
-                                          :fragment [fragment-render-opacity (opacity-cascade-lookup num-steps "opacity_lookup")
-                                                     opacity-lookup shaders/convert-2d-index shaders/convert-3d-index])
-                  vao       (make-vertex-array-object program indices vertices [:point 3])]
-              (clear (vec3 0 0 0) 0)
-              (use-program program)
-              (uniform-sampler program "opacity0" 0)
-              (uniform-float program "opacity_step" 0.1)
-              (uniform-int program "shadow_size" shadow-size)
-              (uniform-int program "num_opacity_layers" num-layers)
-              (uniform-matrix4 program "projection" projection)
-              (uniform-matrix4 program "transform" transform)
-              (uniform-matrix4 program "inverse_transform" (inverse transform))
-              (uniform-float program "split0" z-near)
-              (uniform-float program "split1" z-far)
-              (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
-              (uniform-float program "depth0" (:depth (shadow-mats 0)))
-              (apply use-textures opacity-maps)
-              (render-quads vao)
-              (destroy-vertex-array-object vao)
-              (destroy-program program))) => (record-image "o.png" 0.0)
+                                            (render-quads vao))
+              tex          (texture-render-color-depth 320 240 false
+                             (let [indices   [0 1 3 2]
+                                   vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
+                                   program   (make-program :vertex [vertex-render-opacity]
+                                                           :fragment [fragment-render-opacity
+                                                                      (opacity-cascade-lookup num-steps "opacity_lookup")
+                                                                      opacity-lookup shaders/convert-2d-index
+                                                                      shaders/convert-3d-index])
+                                   vao       (make-vertex-array-object program indices vertices [:point 3])]
+                               (clear (vec3 0 0 0) 0)
+                               (use-program program)
+                               (uniform-sampler program "opacity0" 0)
+                               (uniform-float program "opacity_step" 0.1)
+                               (uniform-int program "shadow_size" shadow-size)
+                               (uniform-int program "num_opacity_layers" num-layers)
+                               (uniform-matrix4 program "projection" projection)
+                               (uniform-matrix4 program "transform" transform)
+                               (uniform-matrix4 program "inverse_transform" (inverse transform))
+                               (uniform-float program "split0" z-near)
+                               (uniform-float program "split1" z-far)
+                               (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
+                               (uniform-float program "depth0" (:depth (shadow-mats 0)))
+                               (apply use-textures opacity-maps)
+                               (render-quads vao)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program)))]
+          (texture->image tex) => (is-image "test/sfsim25/fixtures/clouds/cascade.png" 0.0)
+          (destroy-texture tex)
           (doseq [opacity-map opacity-maps]
                  (destroy-texture opacity-map))
           (destroy-vertex-array-object vao)
