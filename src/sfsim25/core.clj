@@ -45,6 +45,25 @@ float overall_shadow(vec4 point)
   return shadow_cascade_lookup(point) * opacity_cascade_lookup(point);
 }")
 
+(def vertex-shadow-planet
+"#version 410 core
+uniform int shadow_size;
+in vec3 point;
+in vec2 heightcoord;
+in vec2 colorcoord;
+out VS_OUT
+{
+  vec2 heightcoord;
+  vec2 colorcoord;
+} vs_out;
+vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
+void main()
+{
+  gl_Position = shrink_shadow_index(vec4(point, 1), shadow_size, shadow_size);
+  vs_out.heightcoord = heightcoord;
+  vs_out.colorcoord = colorcoord;
+}")
+
 (def fragment-shadow-planet
 "#version 410 core
 in GEO_OUT
@@ -212,25 +231,6 @@ void main()
                            (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
-(def vertex-shadow-planet
-"#version 410 core
-uniform int shadow_size;
-in vec3 point;
-in vec2 heightcoord;
-in vec2 colorcoord;
-out VS_OUT
-{
-  vec2 heightcoord;
-  vec2 colorcoord;
-} vs_out;
-vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
-void main()
-{
-  gl_Position = shrink_shadow_index(vec4(point, 1), shadow_size, shadow_size);
-  vs_out.heightcoord = heightcoord;
-  vs_out.colorcoord = colorcoord;
-}")
-
 (def program-shadow-planet
   (make-program :vertex [vertex-shadow-planet shaders/shrink-shadow-index]
                 :tess-control [tess-control-planet]
