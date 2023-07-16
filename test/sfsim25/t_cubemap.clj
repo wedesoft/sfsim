@@ -157,8 +157,8 @@
 (fact "Load (and cache) map tile"
   (world-map-tile 2 3 5) => :map-tile
     (provided
-      (util/slurp-image "world235.png") => :map-tile :times irrelevant
-      (util/tile-path "world" 2 3 5 ".png") => "world235.png" :times irrelevant))
+      (util/slurp-image "tmp/day235.png") => :map-tile :times irrelevant
+      (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day235.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
   (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
