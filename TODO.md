@@ -1,5 +1,5 @@
 # TODO
-* test opacity cascade
+* pack water texture into colors transparency channel?
 * level of detail in opacity cascade
 * only have size instead of width and height for shadow cascade?
 * night lights: https://earthobservatory.nasa.gov/features/NightLights/page3.php

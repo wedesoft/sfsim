@@ -153,7 +153,7 @@
   "Load and cache map tiles"
   (z/lru
     (fn [^long in-level ^long ty ^long tx]
-      (slurp-image (tile-path "world" in-level ty tx ".png")))
+      (slurp-image (tile-path "tmp/day" in-level ty tx ".png")))
     :lru/threshold 128))
 
 (def elevation-tile
