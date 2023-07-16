@@ -7,7 +7,7 @@
               [fastmath.matrix :refer (mat3x3 eye inverse)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
-              [sfsim25.matrix :refer (transformation-matrix projection-matrix)]
+              [sfsim25.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
               [sfsim25.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
               [sfsim25.atmosphere :refer (vertex-atmosphere)]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
@@ -1241,5 +1241,99 @@ void main()
           (destroy-vertex-array-object vao)
           (destroy-program program)
           (destroy-texture clouds))) => (is-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
+
+(def opacity-cascade-mocks
+"#version 410 core
+float cloud_density(vec3 point, float lod)
+{
+  if (abs(point.x) < 0.5 && abs(point.y) < 0.5)
+    return 3.0;
+  else
+    return 0.0;
+}")
+
+(def vertex-render-opacity
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+uniform mat4 inverse_transform;
+in vec3 point;
+out vec4 pos;
+void main()
+{
+  pos = vec4(point, 1);
+  gl_Position = projection * inverse_transform * pos;
+}")
+
+(def fragment-render-opacity
+"#version 410 core
+uniform mat4 inverse_transform;
+in vec4 pos;
+out vec4 fragColor;
+float opacity_cascade_lookup(vec4 point);
+void main()
+{
+  float value = 0.9 * opacity_cascade_lookup(pos) + 0.1;
+  fragColor = vec4(value, value, value, 1.0);
+}")
+
+(fact "Render cascade of deep opacity maps"
+      (with-invisible-window
+        (let [indices      [0 1 3 2]
+              vertices     [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+              num-steps    1
+              num-layers   7
+              shadow-size  128
+              z-near       1.0
+              z-far        6.0
+              projection   (projection-matrix 320 240 z-near z-far (to-radians 45))
+              transform    (transformation-matrix (eye 3) (vec3 0 0 4))
+              light        (vec3 0 0 1)
+              shadow-mats  (shadow-matrix-cascade projection transform light 5 0.5 z-near z-far num-steps)
+              program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
+                                         :fragment [(opacity-fragment num-layers) shaders/ray-shell shaders/ray-sphere
+                                                    linear-sampling opacity-cascade-mocks])
+              vao          (make-vertex-array-object program-opac indices vertices [:point 2])
+              opacity-maps (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
+                                            (uniform-vector3 program-opac "light_direction" light)
+                                            (uniform-float program-opac "radius" 0.25)
+                                            (uniform-float program-opac "cloud_bottom" 0.25)
+                                            (uniform-float program-opac "cloud_top" 0.75)
+                                            (uniform-float program-opac "cloud_max_step" 0.05)
+                                            (uniform-float program-opac "opacity_step" 0.1)
+                                            (uniform-float program-opac "scatter_amount" 0.5)
+                                            (render-quads vao))
+              tex          (texture-render-color-depth 320 240 false
+                             (let [indices   [0 1 3 2]
+                                   vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
+                                   program   (make-program :vertex [vertex-render-opacity]
+                                                           :fragment [fragment-render-opacity
+                                                                      (opacity-cascade-lookup num-steps "opacity_lookup")
+                                                                      opacity-lookup shaders/convert-2d-index
+                                                                      shaders/convert-3d-index])
+                                   vao       (make-vertex-array-object program indices vertices [:point 3])]
+                               (clear (vec3 0 0 0) 0)
+                               (use-program program)
+                               (uniform-sampler program "opacity0" 0)
+                               (uniform-float program "opacity_step" 0.1)
+                               (uniform-int program "shadow_size" shadow-size)
+                               (uniform-int program "num_opacity_layers" num-layers)
+                               (uniform-matrix4 program "projection" projection)
+                               (uniform-matrix4 program "transform" transform)
+                               (uniform-matrix4 program "inverse_transform" (inverse transform))
+                               (uniform-float program "split0" z-near)
+                               (uniform-float program "split1" z-far)
+                               (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
+                               (uniform-float program "depth0" (:depth (shadow-mats 0)))
+                               (apply use-textures opacity-maps)
+                               (render-quads vao)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program)))]
+          (texture->image tex) => (is-image "test/sfsim25/fixtures/clouds/cascade.png" 0.0)
+          (destroy-texture tex)
+          (doseq [opacity-map opacity-maps]
+                 (destroy-texture opacity-map))
+          (destroy-vertex-array-object vao)
+          (destroy-program program-opac))))
 
 (GLFW/glfwTerminate)

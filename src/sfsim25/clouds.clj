@@ -1,10 +1,12 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
     (:require [comb.template :as template]
-              [clojure.math :refer (pow)]
+              [clojure.math :refer (pow log)]
+              [fastmath.matrix :refer (inverse)]
               [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
                                       make-empty-float-cubemap make-empty-vector-cubemap make-program make-vertex-array-object
-                                      render-quads uniform-float uniform-int uniform-sampler use-program use-textures)]
+                                      render-quads uniform-float uniform-int uniform-sampler uniform-matrix4 use-program
+                                      use-textures make-empty-float-texture-3d)]
               [sfsim25.shaders :as shaders]))
 
 (def cloud-noise
@@ -194,3 +196,20 @@
 (def cloud-overlay
   "Shader function to lookup cloud overlay values in lower resolution texture"
   (slurp "resources/shaders/clouds/cloud-overlay.glsl"))
+
+(defmacro opacity-cascade
+  "Render cascade of deep opacity maps"
+  [size num-opacity-layers matrix-cascade voxel-size program & body]
+  `(mapv
+     (fn [opacity-level#]
+         (let [opacity-layers#  (make-empty-float-texture-3d :linear :clamp ~size ~size (inc ~num-opacity-layers))
+               level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
+           (framebuffer-render ~size ~size :cullback nil [opacity-layers#]
+                               (use-program ~program)
+                               (uniform-int ~program "shadow_size" ~size)
+                               (uniform-float ~program "level_of_detail" level-of-detail#)
+                               (uniform-matrix4 ~program "ndc_to_shadow" (inverse (:shadow-ndc-matrix opacity-level#)))
+                               (uniform-float ~program "depth" (:depth opacity-level#))
+                               ~@body)
+           opacity-layers#))
+     ~matrix-cascade))

@@ -91,6 +91,17 @@
              (io/input-stream url)
              (io/file filename)))))
 
+(defn download-blackmarble
+  "Download some NASA Blackmarble data from https://earthobservatory.nasa.gov/features/NightLights/page3.php"
+  [_]
+  (doseq [sector ["A1" "A2" "B1" "B2" "C1" "C2" "D1" "D2"]]
+         (let [filename (str "BlackMarble_2016_" sector ".jpg")
+               url      (str "https://eoimages.gsfc.nasa.gov/images/imagerecords/144000/144898/" filename)]
+           (.println *err* (str "Downloading " url " ..."))
+           (io/copy
+             (io/input-stream url)
+             (io/file filename)))))
+
 (defn download-elevation
   "Download NOAA elevation data from https://www.ngdc.noaa.gov/mgg/topo/gltiles.html"
   [_]
@@ -262,6 +273,7 @@
   (cloud-cover)
   (atmosphere-lut)
   (download-bluemarble)
+  (download-blackmarble)
   (download-elevation)
   (extract-elevation)
   (map-sectors)
