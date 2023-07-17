@@ -155,10 +155,10 @@
   (offset-latitude (vec3 0 -1e-8 1) 0 675) => (roughly-vector (vec3 0 (/ (* 2 PI) (* 4 675)) 0) 1e-6))
 
 (fact "Load (and cache) map tile"
-  (world-map-tile 2 3 5) => :map-tile
+  (world-map-tile "tmp/day" 2 3 5) => :map-tile
     (provided
-      (util/slurp-image "world235.png") => :map-tile :times irrelevant
-      (util/tile-path "world" 2 3 5 ".png") => "world235.png" :times irrelevant))
+      (util/slurp-image "tmp/day/2/3/5.png") => :map-tile :times irrelevant
+      (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
   (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
@@ -170,8 +170,8 @@
 (facts "Read pixels from world map tile"
   (with-redefs [cubemap/world-map-tile list
                 util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
-    (world-map-pixel 240 320 5 675) => '(get-pixel (5 0 0) 240 320)
-    (world-map-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => '(get-pixel (5 2 1) 240 320)))
+    ((world-map-pixel "tmp/day") 240 320 5 675) => '(get-pixel ("tmp/day" 5 0 0) 240 320)
+    ((world-map-pixel "tmp/day") (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => '(get-pixel ("tmp/day" 5 2 1) 240 320)))
 
 (facts "Read pixels from elevation tile"
   (let [args (atom nil)]
@@ -199,10 +199,15 @@
                                                  (vec3 1000 -625 -875))]
     (tile-center 2 3 7 1 6378000.0) => (vec3 1000 -625 -875)))
 
-(fact "Getting world map color for given longitude and latitude"
-      (color-geodetic 5 675 135.0 45.0) => (vec3 3 5 7)
+(fact "Getting world map day color for given longitude and latitude"
+      (color-geodetic-day 5 675 135.0 45.0) => (vec3 3 5 7)
       (provided
-        (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel add mult) => (vec3 3 5 7)))
+        (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel-day add mult) => (vec3 3 5 7)))
+
+(fact "Getting world map night color for given longitude and latitude"
+      (color-geodetic-night 5 675 135.0 45.0) => (vec3 3 5 7)
+      (provided
+        (cubemap/map-interpolation 5 675 135.0 45.0 world-map-pixel-night add mult) => (vec3 3 5 7)))
 
 (fact "Getting elevation value for given longitude and latitude"
   (elevation-geodetic 5 675 135.0 45.0) => 42.0

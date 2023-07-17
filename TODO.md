@@ -1,5 +1,7 @@
 # TODO
-* test opacity cascade
+* add night color to ground radiance function?
+* pack water texture into colors transparency channel?
+* color-tex -> day-tex
 * level of detail in opacity cascade
 * only have size instead of width and height for shadow cascade?
 * night lights: https://earthobservatory.nasa.gov/features/NightLights/page3.php

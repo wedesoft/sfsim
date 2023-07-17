@@ -1,9 +1,11 @@
 all10g.zip
 all10
 target
-world
+tmp
 elevation
 world.*.png
+BlackMarble_2016_*.jpg
+blackmarble.*.png
 elevation.*.raw
 .clj-kondo
 .cpcache
