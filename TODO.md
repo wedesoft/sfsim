@@ -1,5 +1,5 @@
 # TODO
-* add night color to ground radiance function?
+* method for initialising window and making context current and stuff
 * pack water texture into colors transparency channel?
 * color-tex -> day-tex
 * level of detail in opacity cascade
