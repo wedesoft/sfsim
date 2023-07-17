@@ -541,7 +541,7 @@ float overall_shadow(vec4 point)
                                       (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-           => (record-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
+           => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
          ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
          "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "fragment"
          "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "colors"
