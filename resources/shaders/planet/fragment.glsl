@@ -33,7 +33,7 @@ void main()
   vec3 water_normal = normalize(fs_in.point);
   vec3 direction = normalize(fs_in.point - origin);
   vec3 day_color = texture(colors, fs_in.colorcoord).rgb;
-  vec3 night_color = texture(night, fs_in.colorcoord).rgb;
+  vec3 night_color = max(texture(night, fs_in.colorcoord).rgb - 0.3, 0.0) / 0.7 * 0.5;
   float wet = texture(water, fs_in.colorcoord).r;
   vec3 normal = mix(land_normal, water_normal, wet);
   float cos_incidence = dot(light_direction, normal);
@@ -44,7 +44,7 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  float night_ambience = clamp((0.1 - cos_incidence) / 0.1, 0.0, 1.0);
+  float night_ambience = clamp((0.05 - cos_incidence) / 0.05, 0.0, 1.0);
   vec3 land_color = mix(day_color, day_color + night_color, night_ambience);
   float incidence_fraction = cos_incidence * overall_shadow(vec4(fs_in.point, 1));
   vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color) + night_ambience * night_color;
