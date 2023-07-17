@@ -325,56 +325,63 @@ void main()
          0  0  (+ radius 1000) 0   0   1   0.639491)
 
 (def ground-radiance-probe
-  (template/fn [x y z incidence-frac highlight lx ly lz water cr cg cb]
+  (template/fn [x y z incidence-frac cos-normal highlight lx ly lz water cr cg cb]
 "#version 410 core
 out vec3 fragColor;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
   return vec3(0, 0, 1);
 }
-vec3 transmittance_outer (vec3 point, vec3 direction)
+vec3 transmittance_outer(vec3 point, vec3 direction)
 {
   return vec3(1, 0, 0);
 }
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
-                     vec3 land_color, vec3 water_color);
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float cos_normal,
+                     float highlight, vec3 land_color, vec3 night_color, vec3 water_color);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
   vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
   vec3 water_color = vec3(0.1, 0.2, 0.4);
-  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= incidence-frac %>, <%= highlight %>, land_color, water_color);
+  vec3 night_color = vec3(0.0, 1.0, 0.0);
+  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= incidence-frac %>, <%= cos-normal %>, <%= highlight %>,
+                              land_color, night_color, water_color);
 }"))
 
 (def ground-radiance-test
   (shader-test
-    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification]
+    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification night-start]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height)
         (uniform-int program "elevation_size" elevation-size)
         (uniform-int program "height_size" height-size)
         (uniform-float program "albedo" albedo)
         (uniform-float program "reflectivity" reflectivity)
-        (uniform-float program "amplification" amplification))
+        (uniform-float program "amplification" amplification)
+        (uniform-float program "night_start" night-start))
     ground-radiance-probe ground-radiance shaders/elevation-to-index shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
     shaders/sun-elevation-to-index))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl]
-                                           [?x ?y ?z ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
+         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl 0.05]
+                                           [?x ?y ?z ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
-         ?albedo ?ampl ?x ?y ?z       ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
-         1       1     0  0  6378000  1               0          0   0   1   0      0   0   0   0           0  0
-         1       1     0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         1       2     0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.4         0  1.6
-         0.9     1     0  0  6378000  1               0          0   0   1   0      1   1   1   0.9         0  0.9
-         1       1     0  0  6378000  0               0          1   0   0   0      1   1   1   0           0  1.0
-         1       1     0  0  6378000  1               0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
-         1       1     0  0  6378000  0               0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
-         1       1     0  0  6378000  1               0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         1       1     0  0  6378000  1               0          0   0  -1   0      1   1   1   0           0  1.0)
+         ?albedo ?ampl ?x ?y ?z       ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g         ?b
+         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0   0   0   0           0          0
+         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1       2     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.4         0          1.6
+         0.9     1     0  0  6378000  1          1.0      0          0   0   1   0      1   1   1   0.9         0          0.9
+         1       1     0  0  6378000  0          1.0      0          1   0   0   0      1   1   1   0           0          1.0
+         1       1     0  0  6378000  1          1.0      0          0   0   1   1      0.2 0.5 0.8 0.1         0          0.4
+         1       1     0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
+         1       1     0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1       1     0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
+         1       1     0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           PI         0.0
+         1       1     0  0  6378000  0          0.025    0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
+         1       1     0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0
+         )
 
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
@@ -484,6 +491,7 @@ float overall_shadow(vec4 point)
   (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
                                                                       (vec3 0 0 (- 0 ?radius ?dist))))
   (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
+  (uniform-float program "night_start" 0.05)
   (uniform-float program "amplification" ?a))
 
 (def planet-indices [0 1 3 2])
@@ -533,7 +541,7 @@ float overall_shadow(vec4 point)
                                       (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-           => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
+           => (record-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
          ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
          "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "fragment"
          "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "colors"
