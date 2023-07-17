@@ -7,7 +7,7 @@
               [fastmath.matrix :refer (mat3x3 eye inverse)]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders]
-              [sfsim25.matrix :refer :all]
+              [sfsim25.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
               [sfsim25.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
               [sfsim25.atmosphere :refer (vertex-atmosphere)]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
@@ -15,51 +15,6 @@
     (:import [org.lwjgl.glfw GLFW]))
 
 (GLFW/glfwInit)
-
-(def cloud-shadow-probe
-  (template/fn [x y z lx ly lz]
-"#version 410 core
-out vec3 fragColor;
-uniform float radius;
-uniform float max_height;
-vec3 cloud_shadow(vec3 point, vec3 light_direction, float lod);
-vec3 transmittance_outer(vec3 point, vec3 direction)
-{
-  if (point.y == 0)
-    return vec3(1, 1, 1) * (point.x - radius) / max_height;
-  else
-    return vec3(1, 1, 1) * abs(point.x) / (radius + max_height);
-}
-float opacity_cascade_lookup(vec4 point)
-{
-  return length(point) < 110 ? 0.5 : 1.0;
-}
-void main()
-{
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  fragColor = cloud_shadow(point, light_direction, 0);
-}"))
-
-(def cloud-shadow-test
-  (shader-test
-    (fn [program radius max-height]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height))
-    cloud-shadow-probe
-    cloud-shadow
-    shaders/ray-sphere
-    shaders/ray-shell))
-
-(tabular "Shader for determining illumination of clouds"
-         (fact (cloud-shadow-test [?radius ?h] [?x ?y ?z ?lx ?ly ?lz])
-               => (roughly-vector (vec3 ?or ?og ?ob) 1e-3))
-         ?radius ?h  ?x   ?y ?z ?lx ?ly ?lz ?or   ?og   ?ob
-         100     20  120   0  0  1   0   0   1     1     1
-         100     20 -120   0  0  1   0   0   0     0     0
-         100     20 -120 110  0  1   0   0   0.4   0.4   0.4
-         100     20  110   0  0  1   0   0   0.5   0.5   0.5
-         100     20  105   0  0  1   0   0   0.125 0.125 0.125)
 
 (def cloud-noise-probe
   (template/fn [x y z]
@@ -84,9 +39,7 @@ void main()
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
           worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
-          program  (make-program :vertex [shaders/vertex-passthrough]
-                                 :fragment [(cloud-noise-probe x y z)
-                                            cloud-noise])
+          program  (make-program :vertex [shaders/vertex-passthrough] :fragment [(cloud-noise-probe x y z) cloud-noise])
           vao      (make-vertex-array-object program indices vertices [:point 3])
           tex      (texture-render-color 1 1 true
                                          (use-program program)
@@ -249,10 +202,10 @@ float cloud_density(vec3 point, float lod)
 "#version 410 core
 out vec3 fragColor;
 uniform sampler3D opacity_layers;
-float opacity_lookup(sampler3D layers, float depth, vec3 opacity_map_coords);
+float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords);
 void main()
 {
-  vec3 opacity_map_coords = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec4 opacity_map_coords = vec4(<%= x %>, <%= y %>, <%= z %>, 1.0);
   float result = opacity_lookup(opacity_layers, <%= depth %>, opacity_map_coords);
   fragColor = vec3(result, result, result);
 }"))
@@ -298,7 +251,7 @@ void main()
 (def opacity-lookup-mock
 "#version 410 core
 uniform int select;
-float opacity_lookup(sampler3D layers, float depth, vec3 opacity_map_coords)
+float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords)
 {
   if (select == 0)
     return texture(layers, vec3(0.5, 0.5, 0.75)).r;
@@ -347,6 +300,7 @@ void main()
                                                 (apply use-textures opacity-texs)
                                                 (render-quads vao))
           img             (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
       (doseq [tex opacity-texs] (destroy-texture tex))
       (destroy-vertex-array-object vao)
       (destroy-program program)
@@ -896,7 +850,7 @@ uniform float shadow;
 uniform float transmittance;
 uniform float atmosphere;
 uniform float in_scatter;
-float cloud_shadow(vec3 point)
+float overall_shadow(vec4 point)
 {
   return shadow;
 }
@@ -1143,7 +1097,6 @@ void main()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } fs_in;
 out vec4 fragColor;
@@ -1258,5 +1211,129 @@ void main()
       (destroy-program planet)
       (destroy-texture heightfield)
       img)) => (is-image "test/sfsim25/fixtures/clouds/overlay.png" 0.0))
+
+(def fragment-overlay-lookup
+"#version 410 core
+out vec3 fragColor;
+vec4 cloud_overlay();
+void main()
+{
+  vec4 clouds = cloud_overlay();
+  fragColor = 0.5 * (1 - clouds.a) + clouds.rgb;
+}")
+
+(fact "Test pixel lookup in cloud overlay"
+      (offscreen-render 60 40
+        (let [indices  [0 1 3 2]
+              vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
+              img      {:width 2 :height 2 :data (byte-array data)}
+              clouds   (make-rgba-texture :linear :clamp img)
+              program  (make-program :vertex [shaders/vertex-passthrough] :fragment [fragment-overlay-lookup cloud-overlay])
+              vao      (make-vertex-array-object program indices vertices [:point 3])]
+          (use-program program)
+          (uniform-sampler program "clouds" 0)
+          (uniform-int program "window_width" 64)
+          (uniform-int program "window_height" 40)
+          (use-textures clouds)
+          (clear (vec3 0 0 0))
+          (render-quads vao)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (destroy-texture clouds))) => (is-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
+
+(def opacity-cascade-mocks
+"#version 410 core
+float cloud_density(vec3 point, float lod)
+{
+  if (abs(point.x) < 0.5 && abs(point.y) < 0.5)
+    return 3.0;
+  else
+    return 0.0;
+}")
+
+(def vertex-render-opacity
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+uniform mat4 inverse_transform;
+in vec3 point;
+out vec4 pos;
+void main()
+{
+  pos = vec4(point, 1);
+  gl_Position = projection * inverse_transform * pos;
+}")
+
+(def fragment-render-opacity
+"#version 410 core
+uniform mat4 inverse_transform;
+in vec4 pos;
+out vec4 fragColor;
+float opacity_cascade_lookup(vec4 point);
+void main()
+{
+  float value = 0.9 * opacity_cascade_lookup(pos) + 0.1;
+  fragColor = vec4(value, value, value, 1.0);
+}")
+
+(fact "Render cascade of deep opacity maps"
+      (with-invisible-window
+        (let [indices      [0 1 3 2]
+              vertices     [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+              num-steps    1
+              num-layers   7
+              shadow-size  128
+              z-near       1.0
+              z-far        6.0
+              projection   (projection-matrix 320 240 z-near z-far (to-radians 45))
+              transform    (transformation-matrix (eye 3) (vec3 0 0 4))
+              light        (vec3 0 0 1)
+              shadow-mats  (shadow-matrix-cascade projection transform light 5 0.5 z-near z-far num-steps)
+              program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
+                                         :fragment [(opacity-fragment num-layers) shaders/ray-shell shaders/ray-sphere
+                                                    linear-sampling opacity-cascade-mocks])
+              vao          (make-vertex-array-object program-opac indices vertices [:point 2])
+              opacity-maps (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
+                                            (uniform-vector3 program-opac "light_direction" light)
+                                            (uniform-float program-opac "radius" 0.25)
+                                            (uniform-float program-opac "cloud_bottom" 0.25)
+                                            (uniform-float program-opac "cloud_top" 0.75)
+                                            (uniform-float program-opac "cloud_max_step" 0.05)
+                                            (uniform-float program-opac "opacity_step" 0.1)
+                                            (uniform-float program-opac "scatter_amount" 0.5)
+                                            (render-quads vao))
+              tex          (texture-render-color-depth 320 240 false
+                             (let [indices   [0 1 3 2]
+                                   vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
+                                   program   (make-program :vertex [vertex-render-opacity]
+                                                           :fragment [fragment-render-opacity
+                                                                      (opacity-cascade-lookup num-steps "opacity_lookup")
+                                                                      opacity-lookup shaders/convert-2d-index
+                                                                      shaders/convert-3d-index])
+                                   vao       (make-vertex-array-object program indices vertices [:point 3])]
+                               (clear (vec3 0 0 0) 0)
+                               (use-program program)
+                               (uniform-sampler program "opacity0" 0)
+                               (uniform-float program "opacity_step" 0.1)
+                               (uniform-int program "shadow_size" shadow-size)
+                               (uniform-int program "num_opacity_layers" num-layers)
+                               (uniform-matrix4 program "projection" projection)
+                               (uniform-matrix4 program "transform" transform)
+                               (uniform-matrix4 program "inverse_transform" (inverse transform))
+                               (uniform-float program "split0" z-near)
+                               (uniform-float program "split1" z-far)
+                               (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
+                               (uniform-float program "depth0" (:depth (shadow-mats 0)))
+                               (apply use-textures opacity-maps)
+                               (render-quads vao)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program)))]
+          (texture->image tex) => (is-image "test/sfsim25/fixtures/clouds/cascade.png" 0.0)
+          (destroy-texture tex)
+          (doseq [opacity-map opacity-maps]
+                 (destroy-texture opacity-map))
+          (destroy-vertex-array-object vao)
+          (destroy-program program-opac))))
 
 (GLFW/glfwTerminate)

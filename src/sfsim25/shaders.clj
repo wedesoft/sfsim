@@ -1,7 +1,6 @@
 (ns sfsim25.shaders
   "Module with functions to use in shaders"
-  (:require [clojure.java.io :as io]
-            [comb.template :as template]))
+  (:require [comb.template :as template]))
 
 (def ray-sphere
   "Shader function for computing intersection of ray with sphere"
@@ -39,9 +38,13 @@
   "Perform lookup in a shadow map including moving shadow index out of clamping region"
   (slurp "resources/shaders/core/shadow-lookup.glsl"))
 
+(def shadow-cascade-lookup
+  "Perform shadow lookup in cascade of shadow maps"
+  (template/fn [n base-function] (slurp "resources/shaders/core/shadow-cascade-lookup.glsl")))
+
 (def percentage-closer-filtering
   "Local averaging of shadow to reduce aliasing"
-  (template/fn [point-type method-name base-function-name parameters]
+  (template/fn [method-name base-function-name parameters]
                (slurp "resources/shaders/core/percentage-closer-filtering.glsl")))
 
 (def make-2d-index-from-4d

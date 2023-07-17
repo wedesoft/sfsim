@@ -5,13 +5,24 @@
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [fastmath.vector :refer (vec3 mult emult add dot)]
               [fastmath.matrix :refer (eye)]
-              [sfsim25.matrix :refer :all]
+              [sfsim25.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
               [sfsim25.sphere :as sphere]
-              [sfsim25.interpolate :refer :all]
-              [sfsim25.render :refer :all]
+              [sfsim25.interpolate :refer (make-lookup-table)]
+              [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object make-program
+                                      make-vector-texture-2d make-vertex-array-object offscreen-render render-quads
+                                      rgb-texture->vectors3 texture-render-color uniform-float uniform-int uniform-matrix4
+                                      uniform-sampler uniform-vector3 use-program use-textures with-invisible-window)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer :all]
-              [sfsim25.atmosphere :refer :all :as atmosphere])
+              [sfsim25.util :refer (convert-4d-to-2d get-vector3 third)]
+              [sfsim25.atmosphere :refer (atmosphere-intersection attenuation-outer attenuation-track elevation-to-index
+                                          extinction fragment-atmosphere height-to-index horizon-distance index-to-elevation
+                                          index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
+                                          phase phase-function point-scatter point-scatter-base point-scatter-component
+                                          point-scatter-space ray-extremity ray-scatter ray-scatter-outer ray-scatter-space
+                                          ray-scatter-track scattering strength-component sun-angle-to-index
+                                          sun-elevation-to-index surface-intersection surface-point? surface-radiance
+                                          surface-radiance-base surface-radiance-space transmittance transmittance-outer
+                                          transmittance-space transmittance-track vertex-atmosphere extinction) :as atmosphere])
     (:import [fastmath.vector Vec3]
              [org.lwjgl.glfw GLFW]))
 
@@ -686,6 +697,15 @@ void main()
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/sfsim25/fixtures/atmosphere/direction.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/sfsim25/fixtures/atmosphere/rotated.png")
 
+(def cloud-overlay-mock
+(template/fn [alpha]
+"#version 410 core
+vec4 cloud_overlay()
+{
+  float brightness = <%= alpha %>;
+  return vec4(brightness, brightness, brightness, <%= alpha %>);
+}"))
+
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
            (offscreen-render 256 256
@@ -708,7 +728,8 @@ void main()
                                                                           ray-scatter-track phase-function
                                                                           shaders/height-to-index shaders/horizon-distance
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
-                                                                          shaders/sun-angle-to-index])
+                                                                          shaders/sun-angle-to-index
+                                                                          (cloud-overlay-mock ?cloud)])
                                    variables     [:point 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})
@@ -746,14 +767,15 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
-         ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?result
-         0  0               (- 0 radius max-height 1) 0           0   0         -1            "sun.png"
-         0  0               (- 0 radius max-height 1) 0           0   0          1            "space.png"
-         0  0               (* 2.5 radius)            0           0   1          0            "haze.png"
-         0  radius          (* 0.5 radius)            0           0   0         -1            "sunset.png"
-         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) "sunset2.png"
-         0  0               (- 0 radius 2)            0           0   0         -1            "inside.png"
-         0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            "yview.png")
+         ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?cloud ?result
+         0  0               (- 0 radius max-height 1) 0           0   0         -1            0.0    "sun.png"
+         0  0               (- 0 radius max-height 1) 0           0   0          1            0.0    "space.png"
+         0  0               (* 2.5 radius)            0           0   1          0            0.0    "haze.png"
+         0  radius          (* 0.5 radius)            0           0   0         -1            0.0    "sunset.png"
+         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) 0.0    "sunset2.png"
+         0  0               (- 0 radius 2)            0           0   0         -1            0.0    "inside.png"
+         0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            0.0    "yview.png"
+         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) 0.5    "cloudy.png")
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core

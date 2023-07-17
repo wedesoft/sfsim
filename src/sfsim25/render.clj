@@ -333,9 +333,14 @@
       (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer))))
 
 (defn make-rgb-texture
-  "Load RGB image into an OpenGL texture"
+  "Load image into an RGB OpenGL texture"
   [interpolation boundary image]
   (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
+
+(defn make-rgba-texture
+  "Load image into an RGBA OpenGL texture"
+  [interpolation boundary image]
+  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGBA GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
@@ -398,8 +403,9 @@
   "Specify textures to be used in the next rendering operation"
   [& textures]
   (doseq [[i texture] (map list (range) textures)]
-    (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
-    (GL11/glBindTexture (:target texture) (:texture texture))))
+         (when texture
+           (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
+           (GL11/glBindTexture (:target texture) (:texture texture)))))
 
 (defn- list-texture-layers
   "Return 2D textures and each layer of 3D textures"
@@ -464,6 +470,18 @@
   [width height & body]
   `(let [tex# (make-empty-depth-texture-2d :linear :clamp ~width ~height)]
      (framebuffer-render ~width ~height :cullfront tex# [] ~@body tex#)))
+
+(defmacro shadow-cascade
+  "Render cascaded shadow map"
+  [width height matrix-cascade program & body]
+  `(mapv
+     (fn [shadow-level#]
+         (texture-render-depth ~width ~height
+                               (clear)
+                               (use-program ~program)
+                               (uniform-matrix4 ~program "shadow_ndc_matrix" (:shadow-ndc-matrix shadow-level#))
+                               ~@body))
+     ~matrix-cascade))
 
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"

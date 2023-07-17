@@ -37,6 +37,7 @@
    :y       y
    :x       x
    :colors  (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
+   :night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
    :scales  (slurp-floats  (cube-path "data/globe" face level y x ".scale"))
    :normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
    :water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
@@ -57,7 +58,14 @@
 (defn is-leaf?
   "Check whether specified tree node is a leaf"
   [node]
-  (not (or (nil? node) (contains? node :0) (contains? node :1) (contains? node :2) (contains? node :3))))
+  (not
+    (or (nil? node)
+        (contains? node :0)
+        (contains? node :1)
+        (contains? node :2)
+        (contains? node :3)
+        (contains? node :4)
+        (contains? node :5))))
 
 (defn- is-flat?
   "Check whether node has four leafs"

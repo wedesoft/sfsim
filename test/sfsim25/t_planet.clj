@@ -4,7 +4,7 @@
               [comb.template :as template]
               [clojure.math :refer (PI exp pow)]
               [fastmath.vector :refer (vec3 mult dot mag)]
-              [fastmath.matrix :refer (eye)]
+              [fastmath.matrix :refer (eye inverse)]
               [sfsim25.cubemap :as cubemap]
               [sfsim25.atmosphere :as atmosphere]
               [sfsim25.render :refer :all]
@@ -116,7 +116,6 @@ void main()
 in GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } frag_in;
 out vec3 fragColor;
@@ -160,7 +159,6 @@ void main()
                                (destroy-program program))) => (is-image ?result 0.02))
          ?selector                            ?scale ?result
          "frag_in.colorcoord"                 1.0    "test/sfsim25/fixtures/planet/color-coords.png"
-         "frag_in.heightcoord"                1.0    "test/sfsim25/fixtures/planet/height-coords.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/sfsim25/fixtures/planet/point.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/sfsim25/fixtures/planet/scaled-point.png")
 
@@ -327,73 +325,77 @@ void main()
          0  0  (+ radius 1000) 0   0   1   0.639491)
 
 (def ground-radiance-probe
-  (template/fn [x y z incidence-frac highlight lx ly lz water cr cg cb]
+  (template/fn [x y z incidence-frac cos-normal highlight lx ly lz water cr cg cb]
 "#version 410 core
 out vec3 fragColor;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
   return vec3(0, 0, 1);
 }
-vec3 transmittance_outer (vec3 point, vec3 direction)
+vec3 transmittance_outer(vec3 point, vec3 direction)
 {
   return vec3(1, 0, 0);
 }
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float highlight,
-                     vec3 land_color, vec3 water_color);
+vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float cos_normal,
+                     float highlight, vec3 land_color, vec3 night_color, vec3 water_color);
 void main()
 {
   vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
   vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
   vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
   vec3 water_color = vec3(0.1, 0.2, 0.4);
-  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= incidence-frac %>, <%= highlight %>, land_color, water_color);
+  vec3 night_color = vec3(0.0, 1.0, 0.0);
+  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= incidence-frac %>, <%= cos-normal %>, <%= highlight %>,
+                              land_color, night_color, water_color);
 }"))
 
 (def ground-radiance-test
   (shader-test
-    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification]
+    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification night-start]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height)
         (uniform-int program "elevation_size" elevation-size)
         (uniform-int program "height_size" height-size)
         (uniform-float program "albedo" albedo)
         (uniform-float program "reflectivity" reflectivity)
-        (uniform-float program "amplification" amplification))
+        (uniform-float program "amplification" amplification)
+        (uniform-float program "night_start" night-start))
     ground-radiance-probe ground-radiance shaders/elevation-to-index shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
     shaders/sun-elevation-to-index))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl]
-                                           [?x ?y ?z ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
+         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl 0.05]
+                                           [?x ?y ?z ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
-         ?albedo ?ampl ?x ?y ?z       ?incidence-frac ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g ?b
-         1       1     0  0  6378000  1               0          0   0   1   0      0   0   0   0           0  0
-         1       1     0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         1       2     0  0  6378000  1               0          0   0   1   0      0.2 0.5 0.8 0.4         0  1.6
-         0.9     1     0  0  6378000  1               0          0   0   1   0      1   1   1   0.9         0  0.9
-         1       1     0  0  6378000  0               0          1   0   0   0      1   1   1   0           0  1.0
-         1       1     0  0  6378000  1               0          0   0   1   1      0.2 0.5 0.8 0.1         0  0.4
-         1       1     0  0  6378000  0               0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0  0.4
-         1       1     0  0  6378000  1               0.5        0   0   1   0      0.2 0.5 0.8 0.2         0  0.8
-         1       1     0  0  6378000  1               0          0   0  -1   0      1   1   1   0           0  1.0)
+         ?albedo ?ampl ?x ?y ?z       ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g         ?b
+         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0   0   0   0           0          0
+         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1       2     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.4         0          1.6
+         0.9     1     0  0  6378000  1          1.0      0          0   0   1   0      1   1   1   0.9         0          0.9
+         1       1     0  0  6378000  0          1.0      0          1   0   0   0      1   1   1   0           0          1.0
+         1       1     0  0  6378000  1          1.0      0          0   0   1   1      0.2 0.5 0.8 0.1         0          0.4
+         1       1     0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
+         1       1     0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1       1     0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
+         1       1     0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           PI         0.0
+         1       1     0  0  6378000  0          0.025    0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
+         1       1     0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0
+         )
 
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
 in vec2 colorcoord;
-in vec2 heightcoord;
 uniform float radius;
 out GEO_OUT
 {
   vec2 colorcoord;
-  vec2 heightcoord;
   vec3 point;
 } vs_out;
 void main()
 {
   gl_Position = vec4(point, 1);
   vs_out.colorcoord = colorcoord;
-  vs_out.heightcoord = heightcoord;
   vs_out.point = vec3(0, 0, radius);
 }")
 
@@ -427,23 +429,31 @@ float sampling_offset()
   return 0.5;
 }")
 
+(def cloud-overlay-mock
+"#version 410 core
+uniform float clouds;
+vec4 cloud_overlay()
+{
+  return vec4(clouds, clouds, clouds, clouds);
+}")
+
+(def overall-shadow-mock
+"#version 410 core
+uniform float shadow;
+float overall_shadow(vec4 point)
+{
+  return shadow;
+}")
+
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
-                :fragment [fragment-planet fake-transmittance
-                           shaders/interpolate-2d shaders/convert-2d-index
-                           shaders/transmittance-forward shaders/elevation-to-index
-                           shaders/ray-sphere shaders/is-above-horizon
-                           fake-ray-scatter atmosphere/attenuation-track
-                           atmosphere/transmittance-outer
-                           ground-radiance shaders/ray-shell
-                           atmosphere/phase-function
-                           shaders/clip-shell-intersections
-                           shaders/ray-scatter-forward shaders/height-to-index
-                           shaders/horizon-distance shaders/limit-quot
-                           shaders/surface-radiance-forward
-                           shaders/sun-elevation-to-index opacity-lookup-mock
-                           sampling-offset-mock
-                           surface-radiance-function]))
+                :fragment [fragment-planet fake-transmittance shaders/interpolate-2d shaders/convert-2d-index
+                           shaders/transmittance-forward shaders/elevation-to-index shaders/ray-sphere shaders/is-above-horizon
+                           fake-ray-scatter atmosphere/attenuation-track atmosphere/transmittance-outer ground-radiance
+                           shaders/ray-shell atmosphere/phase-function shaders/clip-shell-intersections
+                           shaders/ray-scatter-forward shaders/height-to-index shaders/horizon-distance shaders/limit-quot
+                           shaders/surface-radiance-forward shaders/sun-elevation-to-index opacity-lookup-mock
+                           sampling-offset-mock surface-radiance-function cloud-overlay-mock overall-shadow-mock]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
@@ -459,7 +469,7 @@ float sampling_offset()
   (uniform-float program "max_height" 100000)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
 
-(defn setup-uniforms [program size ?albedo ?refl ?radius ?dist ?lx ?ly ?lz ?a]
+(defn setup-uniforms [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
   ; Moved this code out of the test below, otherwise method is too large
   (uniform-int program "height_size" size)
   (uniform-int program "elevation_size" size)
@@ -471,6 +481,8 @@ float sampling_offset()
   (uniform-int program "surface_sun_elevation_size" size)
   (uniform-float program "albedo" ?albedo)
   (uniform-float program "reflectivity" ?refl)
+  (uniform-float program "clouds" ?clouds)
+  (uniform-float program "shadow" ?shd)
   (uniform-float program "radius" radius)
   (uniform-float program "z_near" 0.0)
   (uniform-vector3 program "origin" (vec3 0 0 (+ ?radius ?dist)))
@@ -479,6 +491,7 @@ float sampling_offset()
   (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
                                                                       (vec3 0 0 (- 0 ?radius ?dist))))
   (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
+  (uniform-float program "night_start" 0.05)
   (uniform-float program "amplification" ?a))
 
 (def planet-indices [0 1 3 2])
@@ -497,6 +510,8 @@ float sampling_offset()
                                    size          7
                                    colors        (make-rgb-texture :linear :clamp
                                                    (slurp-image (str "test/sfsim25/fixtures/planet/" ?colors ".png")))
+                                   night         (make-rgb-texture :linear :clamp
+                                                   (slurp-image (str "test/sfsim25/fixtures/planet/night.png")))
                                    normals       (make-vector-texture-2d :linear :clamp
                                                    {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nx ?ny ?nz])))})
                                    transmittance (make-vector-texture-2d :linear :clamp
@@ -519,7 +534,7 @@ float sampling_offset()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (setup-static-uniforms program)
-                               (setup-uniforms program size ?albedo ?refl radius ?dist ?lx ?ly ?lz ?a)
+                               (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
                                (use-textures colors normals transmittance ray-scatter mie-strength radiance water worley)
                                (render-quads vao)
                                (doseq [tex [worley water radiance ray-scatter mie-strength transmittance normals colors]]
@@ -527,20 +542,94 @@ float sampling_offset()
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
-         ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "fragment"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "colors"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     1  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "albedo"
-         "white"   0.9     2  1   1   1   0   0   0     0       100 0   0     0   0   1   0   0   1   "amplify"
-         "white"   PI      1  1   0   0   0   0   0     0       100 0   0     0   0   1   0   0   1   "transmit"
-         "white"   PI      1  1   1   1   0.4 0.6 0.8   0       100 0   0     0   1   0   0   0   1   "ambient"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0   0   1   0   0   0   "water"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0   1   0   0   1   "reflection1"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0.6 0.8 0   0   1   "reflection2"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0   0  -1   0   0   1   "reflection3"
-         "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0   0   1   0   0   1   "scatter")
+         ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "colors"
+         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9     1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9     2  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "amplify"
+         "white"   PI      1  1   0   0   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "transmit"
+         "pattern" PI      1  1   1   1   0.2 0.3 0.5   0       100 0   0     0       1.0  0   0   1   0   0   1   "ambient"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0       1.0  0   0   1   0   0   0   "water"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "pattern" PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0  -1   0   0   1   "reflection3"
+         "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0       1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       0.5  0   0   1   0   0   1   "shadow")
+
+(def fragment-white-tree
+"#version 410 core
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec3 point;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}")
+
+(tabular "Render a planetary tile using the specified texture keys and neighbour tessellation"
+         (fact
+           (offscreen-render 256 256
+                             (let [program    (make-program :vertex [vertex-planet]
+                                                            :tess-control [tess-control-planet]
+                                                            :tess-evaluation [tess-evaluation-planet]
+                                                            :geometry [geometry-planet]
+                                                            :fragment [fragment-white-tree])
+                                   indices    [0 2 3 1]
+                                   face       0
+                                   vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
+                                   data       (float-array (repeat (* 9 9) 0.5))
+                                   height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data data})
+                                   vao        (make-vertex-array-object program indices vertices
+                                                                        [:point 3 :heightcoord 2 :colorcoord 2])
+                                   transform  (transformation-matrix (eye 3) (vec3 0 0 2))
+                                   projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
+                                   neighbours {:sfsim25.quadtree/up    ?up
+                                               :sfsim25.quadtree/left  ?left
+                                               :sfsim25.quadtree/down  ?down
+                                               :sfsim25.quadtree/right ?right}
+                                   tile       (merge {:vao vao :height-tex height-tex} neighbours)]
+                               (use-program program)
+                               (clear (vec3 0 0 0))
+                               (uniform-sampler program "heightfield" 0)
+                               (uniform-int program "high_detail" 8)
+                               (uniform-int program "low_detail" 4)
+                               (uniform-matrix4 program "inverse_transform" (inverse transform))
+                               (uniform-matrix4 program "projection" projection)
+                               (raster-lines (render-tile program tile [:height-tex]))
+                               (destroy-texture height-tex)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
+         ?up   ?left ?down ?right ?result
+         true  true  true  true   "tile.png"
+         false true  true  true   "tile-up.png"
+         true  false true  true   "tile-left.png"
+         true  true  false true   "tile-down.png"
+         true  true  true  false  "tile-right.png")
+
+(defn render-tile-calls [program node texture-keys]
+  (let [calls (atom [])]
+    (with-redefs [render-tile (fn [program tile texture-keys] (swap! calls conj [program tile texture-keys]))]
+      (render-tree program node texture-keys)
+      @calls)))
+
+(tabular "Call each tile in tree to be rendered"
+         (fact (render-tile-calls ?program ?node ?texture-keys) => ?result)
+         ?program ?node               ?texture-keys ?result
+         :program {}                  [:height-tex] []
+         :program {:vao 42}           [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:0 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:1 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:2 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:3 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:4 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:5 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
+         :program {:3 {:2 {:vao 42}}} [:height-tex] [[:program {:vao 42} [:height-tex]]])
 
 (GLFW/glfwTerminate)

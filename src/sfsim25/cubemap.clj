@@ -152,8 +152,8 @@
 (def world-map-tile
   "Load and cache map tiles"
   (z/lru
-    (fn [^long in-level ^long ty ^long tx]
-      (slurp-image (tile-path "world" in-level ty tx ".png")))
+    (fn [^String prefix ^long in-level ^long ty ^long tx]
+      (slurp-image (tile-path prefix in-level ty tx ".png")))
     :lru/threshold 128))
 
 (def elevation-tile
@@ -167,13 +167,18 @@
 
 (defn world-map-pixel
   "Get world map RGB value for a given pixel coordinate"
-  [^long dy ^long dx ^long in-level ^long width]
-  (let [ty  (quot dy width)
-        tx  (quot dx width)
-        py  (mod dy width)
-        px  (mod dx width)
-        img (world-map-tile in-level ty tx)]
-    (get-pixel img py px)))
+  [prefix]
+  (fn [^long dy ^long dx ^long in-level ^long width]
+      (let [ty  (quot dy width)
+            tx  (quot dx width)
+            py  (mod dy width)
+            px  (mod dx width)
+            img (world-map-tile prefix in-level ty tx)]
+        (get-pixel img py px))))
+
+(def world-map-pixel-day (world-map-pixel "tmp/day"))
+
+(def world-map-pixel-night (world-map-pixel "tmp/night"))
 
 (defn elevation-pixel
   "Get elevation value for given pixel coordinates"
@@ -203,10 +208,15 @@
         i (cube-coordinate level 3 a 1)]
     (project-onto-sphere (cube-map face j i) radius)))
 
-(defn color-geodetic
-  "Compute interpolated RGB value for a point on the world"
+(defn color-geodetic-day
+  "Compute interpolated daytime RGB value for a point on the world"
   [^long in-level ^long width ^double lon ^double lat]
-  (map-interpolation in-level width lon lat world-map-pixel add mult))
+  (map-interpolation in-level width lon lat world-map-pixel-day add mult))
+
+(defn color-geodetic-night
+  "Compute interpolated nighttime RGB value for a point on the world"
+  [^long in-level ^long width ^double lon ^double lat]
+  (map-interpolation in-level width lon lat world-map-pixel-night add mult))
 
 (defn elevation-geodetic
   "Compute interpolated elevation value for a point on the world (-500 for water)"

@@ -3,22 +3,25 @@
 uniform mat4 inverse_transform;
 
 <% (doseq [i (range n)] %>
-uniform sampler3D opacity<%= i %>;
+uniform sampler2DShadow shadow_map<%= i %>;
 uniform mat4 shadow_map_matrix<%= i %>;
-uniform float depth<%= i %>;
 <% ) %>
 <% (doseq [i (range (inc n))] %>
 uniform float split<%= i %>;
 <% ) %>
 
-float <%= base-function %>(sampler3D layers, float depth, vec4 opacity_map_coords);
-float opacity_cascade_lookup(vec4 point)
+float <%= base-function %>(sampler2DShadow shadow_map, vec4 shadow_pos);
+
+float shadow_cascade_lookup(vec4 point)
 {
   float z = -(inverse_transform * point).z;
+  if (z <= split0) {
+    return 1.0;
+  };
 <% (doseq [i (range n)] %>
   if (z <= split<%= (inc i) %>) {
-    vec4 map_coords = shadow_map_matrix<%= i %> * point;
-    return <%= base-function %>(opacity<%= i %>, depth<%= i %>, map_coords);
+    vec4 shadow_pos = shadow_map_matrix<%= i %> * point;
+    return <%= base-function %>(shadow_map<%= i %>, shadow_pos);
   };
 <% ) %>
   return 1.0;

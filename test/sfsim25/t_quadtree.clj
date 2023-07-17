@@ -20,11 +20,13 @@
   (fact (?k (load-tile-data 3 2 2 1)) => ?result
     (provided
       (util/slurp-image "data/globe/3/2/1/2.jpg") => "2.jpg"
+      (util/slurp-image "data/globe/3/2/1/2.night.jpg") => "2.night.jpg"
       (util/slurp-floats "data/globe/3/2/1/2.scale") => "2.scale"
       (util/slurp-normals "data/globe/3/2/1/2.png") => "2.png"
       (util/slurp-bytes "data/globe/3/2/1/2.water") => "2.water"))
   ?k       ?result
   :colors  "2.jpg"
+  :night   "2.night.jpg"
   :normals "2.png"
   :water   "2.water"
   :face    3
@@ -52,7 +54,9 @@
   (is-leaf? {:0 {}}) => false
   (is-leaf? {:1 {}}) => false
   (is-leaf? {:2 {}}) => false
-  (is-leaf? {:3 {}}) => false)
+  (is-leaf? {:3 {}}) => false
+  (is-leaf? {:4 {}}) => false
+  (is-leaf? {:5 {}}) => false)
 
 (facts "Determine list of tiles to remove"
   (let [quad     {:5 {:face 2 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}
@@ -105,6 +109,7 @@
 (facts "Update tiles of quad tree"
   (quadtree-update {:3 {}} [] identity) => {:3 {}}
   (quadtree-update {:3 {:id 5}} [[:3]] #(update % :id inc)) => {:3 {:id 6}}
+  (quadtree-update {:3 {:5 {:id 7}}} [[:3 :5]] #(update % :id inc)) => {:3 {:5 {:id 8}}}
   (quadtree-update {:3 {:id 5}} [[:3]] #(update %1 :id (partial + %2)) [2]) => {:3 {:id 7}})
 
 (defn keyword->int [x] (Integer/parseInt (name x)))

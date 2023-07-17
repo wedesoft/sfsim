@@ -26,9 +26,11 @@ Requires OpenGL 4.5.
 * Build cloud cover: `clj -T:build cloud-cover`
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
+* Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
 * Download NOAA elevation data: `clj -T:build download-elevation`
 * Extract elevation data: `clj -T:build extract-elevation`
-* Convert map sectors into pyramid of tiles: `clj -T:build map-sectors`
+* Convert day map sectors into pyramid of tiles: `clj -T:build map-sectors-day`
+* Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
 * Perform all build steps above: `clj -T:build all`
