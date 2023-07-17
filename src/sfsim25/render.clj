@@ -36,7 +36,6 @@
   `(let [width#  (int-array 1)
          height# (int-array 1)]
      (GLFW/glfwGetWindowSize ~window width# height#)
-     ; call (GLFW/glfwMakeContextCurrent ~window) and (GL/createCapabilities) after creating window
      (setup-rendering (aget width# 0) (aget height# 0) :cullback)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))
