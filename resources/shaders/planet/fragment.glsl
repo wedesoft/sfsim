@@ -1,6 +1,7 @@
 #version 410 core
 
 uniform sampler2D colors;
+uniform sampler2D night;
 uniform sampler2D normals;
 uniform sampler2D water;
 uniform float specular;
@@ -31,7 +32,8 @@ void main()
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 water_normal = normalize(fs_in.point);
   vec3 direction = normalize(fs_in.point - origin);
-  vec3 land_color = texture(colors, fs_in.colorcoord).rgb;
+  vec3 day_color = texture(colors, fs_in.colorcoord).rgb;
+  vec3 night_color = texture(night, fs_in.colorcoord).rgb;
   float wet = texture(water, fs_in.colorcoord).r;
   vec3 normal = mix(land_normal, water_normal, wet);
   float cos_incidence = dot(light_direction, normal);
@@ -42,8 +44,10 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
+  float night_ambience = clamp((0.1 - cos_incidence) / 0.1, 0.0, 1.0);
+  vec3 land_color = mix(day_color, day_color + night_color, night_ambience);
   float incidence_fraction = cos_incidence * overall_shadow(vec4(fs_in.point, 1));
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color);
+  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, highlight, land_color, water_color) + night_ambience * night_color;
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
