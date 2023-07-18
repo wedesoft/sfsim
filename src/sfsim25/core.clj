@@ -20,7 +20,7 @@
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
                                     cloud-profile cloud-transfer linear-sampling opacity-cascade
                                     opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
-                                    sample-cloud sphere-noise cloud-overlay)]
+                                    sample-cloud sphere-noise cloud-overlay overall-shadow)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
@@ -35,15 +35,6 @@
 
 (def width 1280)
 (def height 720)
-
-(def overall-shadow
-"#version 410 core
-float opacity_cascade_lookup(vec4 point);
-float shadow_cascade_lookup(vec4 point);
-float overall_shadow(vec4 point)
-{
-  return shadow_cascade_lookup(point) * opacity_cascade_lookup(point);
-}")
 
 (def vertex-shadow-planet
 "#version 410 core

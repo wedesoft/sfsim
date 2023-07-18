@@ -213,3 +213,7 @@
                                ~@body)
            opacity-layers#))
      ~matrix-cascade))
+
+(def overall-shadow
+  "Multiply shadows to get overall shadow"
+  (slurp "resources/shaders/clouds/overall-shadow.glsl"))

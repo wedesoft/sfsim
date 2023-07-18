@@ -1336,4 +1336,36 @@ void main()
           (destroy-vertex-array-object vao)
           (destroy-program program-opac))))
 
+(def overall-shadow-probe
+  (template/fn []
+"#version 410 core
+uniform float opacity;
+uniform float shadow;
+out vec3 fragColor;
+float opacity_cascade_lookup(vec4 point)
+{
+  return opacity;
+}
+float shadow_cascade_lookup(vec4 point)
+{
+  return shadow;
+}
+float overall_shadow(vec4 point);
+void main()
+{
+  float result = overall_shadow(vec4(1, 2, 4, 1));
+  fragColor = vec3(result, result, result);
+}"))
+
+(def overall-shadow-test
+  (shader-test
+    (fn [program opacity shadow]
+        (uniform-float program "opacity" opacity)
+        (uniform-float program "shadow" shadow))
+    overall-shadow-probe
+    overall-shadow))
+
+(fact "Multiply shadows to get overall shadow"
+      ((overall-shadow-test [2.0 3.0] []) 0) => 6.0)
+
 (GLFW/glfwTerminate)
