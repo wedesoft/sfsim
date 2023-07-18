@@ -5,15 +5,14 @@
 * color-tex -> day-tex
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
+  change cloud computation when viewing from space far away (use different lod of shadow?)
 * only have size instead of width and height for shadow cascade?
 * constant texel size across opacity cascade to prevent step in opacity?
 * introduce variation to cloud height
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * when building maps put intermediate files into a common subdirectory (tmp?)
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
-  integration test for cascaded deep opacity map
 * increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
-* change cloud computation when viewing from space far away (use different lod of shadow?)
 * reduce number of intermediate values to increase OpenGL performance
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
