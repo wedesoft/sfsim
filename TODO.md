@@ -1,5 +1,4 @@
 # TODO
-* fully amplify night textures after dawn (use clamped remap)
 * add tested overall shadow method
 * method for initialising window and making context current and stuff
 * color-tex -> day-tex

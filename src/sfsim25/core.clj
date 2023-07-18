@@ -124,7 +124,7 @@ void main()
 (def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
 (def mix 0.8)
 (def opacity-step (atom 250.0))
-(def step (atom 100.0))
+(def step (atom 400.0))
 (def worley-size 64)
 (def shadow-size 512)
 (def noise-size 64)
@@ -219,7 +219,7 @@ void main()
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
                 :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance
-                           shaders/transmittance-forward phase-function cloud-overlay
+                           shaders/transmittance-forward phase-function cloud-overlay shaders/remap
                            transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
                            shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
@@ -425,7 +425,8 @@ void main()
 (uniform-int program-planet "surface_height_size" surface-height-size)
 (uniform-int program-planet "surface_sun_elevation_size" surface-sun-elevation-size)
 (uniform-float program-planet "albedo" 0.9)
-(uniform-float program-planet "night_start" 0.1)
+(uniform-float program-planet "dawn_start" -0.2)
+(uniform-float program-planet "dawn_end" 0.0)
 (uniform-float program-planet "reflectivity" 0.1)
 (uniform-float program-planet "specular" 1000)
 (uniform-float program-planet "radius" radius)

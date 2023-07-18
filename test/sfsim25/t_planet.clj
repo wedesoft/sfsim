@@ -351,7 +351,7 @@ void main()
 
 (def ground-radiance-test
   (shader-test
-    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification night-start]
+    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification dawn-start dawn-end]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height)
         (uniform-int program "elevation_size" elevation-size)
@@ -359,13 +359,14 @@ void main()
         (uniform-float program "albedo" albedo)
         (uniform-float program "reflectivity" reflectivity)
         (uniform-float program "amplification" amplification)
-        (uniform-float program "night_start" night-start))
+        (uniform-float program "dawn_start" dawn-start)
+        (uniform-float program "dawn_end" dawn-end))
     ground-radiance-probe ground-radiance shaders/elevation-to-index shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/sun-elevation-to-index))
+    shaders/sun-elevation-to-index shaders/remap))
 
 (tabular "Shader function to compute light emitted from ground"
-         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl 0.05]
+         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl -0.05 0.05]
                                            [?x ?y ?z ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
          ?albedo ?ampl ?x ?y ?z       ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g         ?b
@@ -378,10 +379,9 @@ void main()
          1       1     0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
          1       1     0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
          1       1     0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
-         1       1     0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           PI         0.0
-         1       1     0  0  6378000  0          0.025    0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
-         1       1     0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0
-         )
+         1       1     0  0  6378000  0         -0.05     0          0   0   1   0      0   0   0   0           PI         0.0
+         1       1     0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
+         1       1     0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0)
 
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
@@ -453,7 +453,7 @@ float overall_shadow(vec4 point)
                            shaders/ray-shell atmosphere/phase-function shaders/clip-shell-intersections
                            shaders/ray-scatter-forward shaders/height-to-index shaders/horizon-distance shaders/limit-quot
                            shaders/surface-radiance-forward shaders/sun-elevation-to-index opacity-lookup-mock
-                           sampling-offset-mock surface-radiance-function cloud-overlay-mock overall-shadow-mock]))
+                           sampling-offset-mock surface-radiance-function cloud-overlay-mock overall-shadow-mock shaders/remap]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
@@ -491,7 +491,8 @@ float overall_shadow(vec4 point)
   (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
                                                                       (vec3 0 0 (- 0 ?radius ?dist))))
   (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
-  (uniform-float program "night_start" 0.05)
+  (uniform-float program "dawn_start" -0.05)
+  (uniform-float program "dawn_end" 0.05)
   (uniform-float program "amplification" ?a))
 
 (def planet-indices [0 1 3 2])
