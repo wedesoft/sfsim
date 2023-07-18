@@ -1,7 +1,6 @@
 # TODO
 * add tested overall shadow method
 * method for initialising window and making context current and stuff
-* color-tex -> day-tex
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)

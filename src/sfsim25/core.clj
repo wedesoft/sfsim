@@ -398,7 +398,7 @@ void main()
 
 (use-program program-planet)
 (uniform-sampler program-planet "heightfield"      0)
-(uniform-sampler program-planet "colors"           1)
+(uniform-sampler program-planet "day"              1)
 (uniform-sampler program-planet "night"            2)
 (uniform-sampler program-planet "normals"          3)
 (uniform-sampler program-planet "water"            4)
@@ -479,13 +479,13 @@ void main()
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
-        color-tex  (make-rgb-texture :linear :clamp (:colors tile))
+        day-tex    (make-rgb-texture :linear :clamp (:day tile))
         night-tex  (make-rgb-texture :linear :clamp (:night tile))
         height-tex (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:scales tile)})
         normal-tex (make-vector-texture-2d :linear :clamp (:normals tile))
         water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
-    (assoc (dissoc tile :colors :night :scales :normals :water)
-           :vao vao :color-tex color-tex :night-tex night-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
+    (assoc (dissoc tile :day :night :scales :normals :water)
+           :vao vao :day-tex day-tex :night-tex night-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
 
 (defn load-tiles-into-opengl
   [tree paths]
@@ -493,7 +493,7 @@ void main()
 
 (defn unload-tile-from-opengl
   [tile]
-  (destroy-texture (:color-tex tile))
+  (destroy-texture (:day-tex tile))
   (destroy-texture (:night-tex tile))
   (destroy-texture (:height-tex tile))
   (destroy-texture (:normal-tex tile))
@@ -654,7 +654,7 @@ void main()
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
                                 (apply use-textures nil nil nil nil nil T S M E clouds (concat shadows opacities))
-                                (render-tree program-planet @tree [:height-tex :color-tex :night-tex :normal-tex :water-tex])
+                                (render-tree program-planet @tree [:height-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
                                 (use-program program-atmosphere)
                                 (doseq [[idx item] (map-indexed vector splits)]

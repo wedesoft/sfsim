@@ -457,14 +457,15 @@ float overall_shadow(vec4 point)
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
-  (uniform-sampler program "colors" 0)
-  (uniform-sampler program "normals" 1)
-  (uniform-sampler program "transmittance" 2)
-  (uniform-sampler program "ray_scatter" 3)
-  (uniform-sampler program "mie_strength" 4)
-  (uniform-sampler program "surface_radiance" 5)
-  (uniform-sampler program "water" 6)
-  (uniform-sampler program "worley" 7)
+  (uniform-sampler program "day" 0)
+  (uniform-sampler program "night" 1)
+  (uniform-sampler program "normals" 2)
+  (uniform-sampler program "transmittance" 3)
+  (uniform-sampler program "ray_scatter" 4)
+  (uniform-sampler program "mie_strength" 5)
+  (uniform-sampler program "surface_radiance" 6)
+  (uniform-sampler program "water" 7)
+  (uniform-sampler program "worley" 8)
   (uniform-float program "specular" 100)
   (uniform-float program "max_height" 100000)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
@@ -509,7 +510,7 @@ float overall_shadow(vec4 point)
                                    vao           (make-vertex-array-object program planet-indices planet-vertices variables)
                                    radius        6378000
                                    size          7
-                                   colors        (make-rgb-texture :linear :clamp
+                                   day           (make-rgb-texture :linear :clamp
                                                    (slurp-image (str "test/sfsim25/fixtures/planet/" ?colors ".png")))
                                    night         (make-rgb-texture :linear :clamp
                                                    (slurp-image (str "test/sfsim25/fixtures/planet/night.png")))
@@ -536,9 +537,9 @@ float overall_shadow(vec4 point)
                                (use-program program)
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
-                               (use-textures colors normals transmittance ray-scatter mie-strength radiance water worley)
+                               (use-textures day night normals transmittance ray-scatter mie-strength radiance water worley)
                                (render-quads vao)
-                               (doseq [tex [worley water radiance ray-scatter mie-strength transmittance normals colors]]
+                               (doseq [tex [worley water radiance ray-scatter mie-strength transmittance normals night day]]
                                       (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
