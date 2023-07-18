@@ -47,7 +47,7 @@
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
-  [program tile texture-keys]
+  [^clojure.lang.IPersistentMap program ^clojure.lang.IPersistentMap tile ^clojure.lang.PersistentVector texture-keys]
   (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
                            (if (:sfsim25.quadtree/left  tile) 2 0)
                            (if (:sfsim25.quadtree/down  tile) 4 0)
@@ -58,7 +58,7 @@
 
 (defn render-tree
   "Call each tile in tree to be rendered"
-  [program node texture-keys]
+  [^clojure.lang.IPersistentMap program ^clojure.lang.IPersistentMap node ^clojure.lang.PersistentVector texture-keys]
   (when-not (empty? node)
             (if (is-leaf? node)
               (render-tile program node texture-keys)

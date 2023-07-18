@@ -615,21 +615,22 @@ void main()
 
 (defn render-tile-calls [program node texture-keys]
   (let [calls (atom [])]
-    (with-redefs [render-tile (fn [program tile texture-keys] (swap! calls conj [program tile texture-keys]))]
+    (with-redefs [render-tile (fn [^long program ^clojure.lang.IPersistentMap tile ^clojure.lang.PersistentVector texture-keys]
+                                  (swap! calls conj [program tile texture-keys]))]
       (render-tree program node texture-keys)
       @calls)))
 
 (tabular "Call each tile in tree to be rendered"
          (fact (render-tile-calls ?program ?node ?texture-keys) => ?result)
          ?program ?node               ?texture-keys ?result
-         :program {}                  [:height-tex] []
-         :program {:vao 42}           [:height-tex] [[:program {:vao 42} [:height-tex]]]
-         :program {:0 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
-         :program {:1 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
-         :program {:2 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
-         :program {:3 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
-         :program {:4 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
-         :program {:5 {:vao 42}}      [:height-tex] [[:program {:vao 42} [:height-tex]]]
-         :program {:3 {:2 {:vao 42}}} [:height-tex] [[:program {:vao 42} [:height-tex]]])
+         1234     {}                  [:height-tex] []
+         1234     {:vao 42}           [:height-tex] [[1234 {:vao 42} [:height-tex]]]
+         1234     {:0 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
+         1234     {:1 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
+         1234     {:2 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
+         1234     {:3 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
+         1234     {:4 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
+         1234     {:5 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
+         1234     {:3 {:2 {:vao 42}}} [:height-tex] [[1234 {:vao 42} [:height-tex]]])
 
 (GLFW/glfwTerminate)

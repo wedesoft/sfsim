@@ -89,7 +89,7 @@
 
 (defn destroy-program
   "Delete a program and associated shaders"
-  [program]
+  [^long program]
   (GL20/glDeleteProgram program))
 
 (defn make-float-buffer
@@ -115,7 +115,10 @@
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
-  [program indices vertices attributes]
+  [^long program
+   ^clojure.lang.PersistentVector indices
+   ^clojure.lang.PersistentVector vertices
+   ^clojure.lang.PersistentVector attributes]
   (let [vertex-array-object (GL30/glGenVertexArrays)]
     (GL30/glBindVertexArray vertex-array-object)
     (let [array-buffer (GL15/glGenBuffers)
@@ -129,8 +132,8 @@
             stride          (apply + sizes)
             offsets         (reductions + (cons 0 (butlast sizes)))]
         (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
-          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^int program (name attribute)) ^int size
-                                      GL11/GL_FLOAT false ^int (* stride Float/BYTES) ^int (* offset Float/BYTES))
+          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program (name attribute)) ^long size
+                                      GL11/GL_FLOAT false ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
         {:vertex-array-object vertex-array-object
          :array-buffer        array-buffer
@@ -140,7 +143,7 @@
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
-  [{:keys [^int vertex-array-object ^int array-buffer ^int index-buffer ^int ncols]}]
+  [{:keys [^long vertex-array-object ^long array-buffer ^long index-buffer ^long ncols]}]
   (GL30/glBindVertexArray vertex-array-object)
   (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
@@ -152,56 +155,56 @@
 
 (defn use-program
   "Use specified shader program"
-  [program]
-  (GL20/glUseProgram ^int program))
+  [^long program]
+  (GL20/glUseProgram ^long program))
 
 (defn uniform-float
   "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^double value]
-  (GL20/glUniform1f (GL20/glGetUniformLocation ^int program ^String k) value))
+  [^long program ^String k ^double value]
+  (GL20/glUniform1f (GL20/glGetUniformLocation ^long program ^String k) value))
 
 (defn uniform-int
   "Set uniform integer variable in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
+  [^long program ^String k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^long program ^String k) value))
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^Vec3 value]
-  (GL20/glUniform3f (GL20/glGetUniformLocation ^int program ^String k) (value 0) (value 1) (value 2)))
+  [^long program ^String k ^Vec3 value]
+  (GL20/glUniform3f (GL20/glGetUniformLocation ^long program ^String k) (value 0) (value 1) (value 2)))
 
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^Mat3x3 value]
-  (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
+  [^long program ^String k ^Mat3x3 value]
+  (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^long program ^String k) true (make-float-buffer (mat->float-array value))))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^Mat4x4 value]
-  (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^int program ^String k) true (make-float-buffer (mat->float-array value))))
+  [^long program ^String k ^Mat4x4 value]
+  (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^long program ^String k) true (make-float-buffer (mat->float-array value))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
-  [^clojure.lang.IPersistentMap program ^String k ^long value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^int program ^String k) value))
+  [^long program ^String k ^long value]
+  (GL20/glUniform1i (GL20/glGetUniformLocation ^long program ^String k) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
   [vertex-array-object]
-  (GL30/glBindVertexArray ^int (:vertex-array-object vertex-array-object)))
+  (GL30/glBindVertexArray ^long (:vertex-array-object vertex-array-object)))
 
 (defn render-quads
   "Render one or more quads"
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_QUADS ^int (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL11/GL_QUADS ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-patches
   "Render one or more tessellated quads"
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES ^int (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL40/GL_PATCHES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
@@ -397,12 +400,12 @@
 (defn destroy-texture
   "Delete an OpenGL texture"
   [texture]
-  (GL11/glDeleteTextures ^int (:texture texture)))
+  (GL11/glDeleteTextures ^long (:texture texture)))
 
 (defn use-texture
   "Set texture with specified index"
-  [index texture]
-  (GL13/glActiveTexture (+ ^int GL13/GL_TEXTURE0 ^int index))
+  [^long index texture]
+  (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
   (GL11/glBindTexture (:target texture) (:texture texture)))
 
 (defn use-textures
