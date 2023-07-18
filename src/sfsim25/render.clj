@@ -399,13 +399,17 @@
   [texture]
   (GL11/glDeleteTextures ^int (:texture texture)))
 
+(defn use-texture
+  "Set texture with specified index"
+  [index texture]
+  (GL13/glActiveTexture (+ ^int GL13/GL_TEXTURE0 ^int index))
+  (GL11/glBindTexture (:target texture) (:texture texture)))
+
 (defn use-textures
   "Specify textures to be used in the next rendering operation"
   [& textures]
-  (doseq [[i texture] (map list (range) textures)]
-         (when texture
-           (GL13/glActiveTexture (+ ^int GL13/GL_TEXTURE0 ^int i))
-           (GL11/glBindTexture (:target texture) (:texture texture)))))
+  (doseq [[index texture] (map-indexed vector textures)]
+         (when texture (use-texture index texture))))
 
 (defn- list-texture-layers
   "Return 2D textures and each layer of 3D textures"
