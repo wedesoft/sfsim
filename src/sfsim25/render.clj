@@ -7,6 +7,8 @@
            [fastmath.matrix Mat3x3 Mat4x4]
            [fastmath.vector Vec3]))
 
+(set! *unchecked-math* true)
+
 (defn setup-rendering
   "Common code for setting up rendering"
   [width height culling]
@@ -402,7 +404,7 @@
   [& textures]
   (doseq [[i texture] (map list (range) textures)]
          (when texture
-           (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 i))
+           (GL13/glActiveTexture (+ ^int GL13/GL_TEXTURE0 ^int i))
            (GL11/glBindTexture (:target texture) (:texture texture)))))
 
 (defn- list-texture-layers
@@ -613,3 +615,5 @@
       (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
+
+(set! *unchecked-math* false)
