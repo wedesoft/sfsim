@@ -3,7 +3,7 @@
   (:require [clojure.math :refer (to-radians cos sin tan PI sqrt log exp)]
             [fastmath.matrix :refer (inverse eye)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object
+            [sfsim25.render :refer (make-window destroy-window clear destroy-program destroy-texture destroy-vertex-array-object
                                     framebuffer-render generate-mipmap make-empty-float-texture-3d make-float-cubemap
                                     make-float-texture-2d make-float-texture-3d make-program make-rgb-texture
                                     make-ubyte-texture-2d make-vector-texture-2d make-vertex-array-object onscreen-render
@@ -141,12 +141,9 @@ void main()
 (def num-opacity-layers 7)
 
 (GLFW/glfwInit)
-(GLFW/glfwDefaultWindowHints)
-(def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
 
-(GLFW/glfwMakeContextCurrent window)
+(def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
-(GL/createCapabilities)
 
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
@@ -693,6 +690,6 @@ void main()
   (destroy-program program-planet)
   (destroy-program program-opacity)
   (destroy-program program-atmosphere)
-  (GLFW/glfwDestroyWindow window)
+  (destroy-window window)
   (GLFW/glfwTerminate)
   (System/exit 0))
