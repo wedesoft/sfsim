@@ -878,7 +878,7 @@ void main(void)
                                            :fragment [fragment-scene-cascade (s/shadow-cascade-lookup num-steps "shadow_lookup")
                                                       s/shadow-lookup s/convert-shadow-index])
               vao            (make-vertex-array-object program-main indices vertices [:point 3])
-              shadow-maps    (shadow-cascade 128 128 shadow-mats program-shadow (render-quads vao))]
+              shadow-maps    (shadow-cascade 128 shadow-mats program-shadow (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
                 tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
             (framebuffer-render 320 240 :cullback depth [tex]

@@ -495,10 +495,10 @@
 
 (defmacro shadow-cascade
   "Render cascaded shadow map"
-  [width height matrix-cascade program & body]
+  [size matrix-cascade program & body]
   `(mapv
      (fn [shadow-level#]
-         (texture-render-depth ~width ~height
+         (texture-render-depth ~size ~size
                                (clear)
                                (use-program ~program)
                                (uniform-matrix4 ~program "shadow_ndc_matrix" (:shadow-ndc-matrix shadow-level#))
