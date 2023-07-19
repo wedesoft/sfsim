@@ -1,9 +1,7 @@
 # TODO
-* method for initialising window and making context current and stuff
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
-* only have size instead of width and height for shadow cascade?
 * constant texel size across opacity cascade to prevent step in opacity?
 * introduce variation to cloud height
 * integration test planet shader with non-trivial lookup tables? convert prototype to tested code

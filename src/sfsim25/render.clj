@@ -32,6 +32,21 @@
          (GLFW/glfwDestroyWindow window#)
          result#))))
 
+(defn make-window
+  "Method to create a window and make the context current and create the capabilities"
+  [title width height]
+  (GLFW/glfwDefaultWindowHints)
+  (let [window (GLFW/glfwCreateWindow width height "scratch" 0 0)]
+    (GLFW/glfwMakeContextCurrent window)
+    (GLFW/glfwShowWindow window)
+    (GL/createCapabilities)
+    window))
+
+(defn destroy-window
+  "Destroy the window"
+  [window]
+  (GLFW/glfwDestroyWindow window))
+
 (defmacro onscreen-render
   "Macro to use the specified window for rendering"
   [window & body]
@@ -480,10 +495,10 @@
 
 (defmacro shadow-cascade
   "Render cascaded shadow map"
-  [width height matrix-cascade program & body]
+  [size matrix-cascade program & body]
   `(mapv
      (fn [shadow-level#]
-         (texture-render-depth ~width ~height
+         (texture-render-depth ~size ~size
                                (clear)
                                (use-program ~program)
                                (uniform-matrix4 ~program "shadow_ndc_matrix" (:shadow-ndc-matrix shadow-level#))

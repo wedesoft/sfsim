@@ -3,7 +3,7 @@
   (:require [clojure.math :refer (to-radians cos sin tan PI sqrt log exp)]
             [fastmath.matrix :refer (inverse eye)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object
+            [sfsim25.render :refer (make-window destroy-window clear destroy-program destroy-texture destroy-vertex-array-object
                                     framebuffer-render generate-mipmap make-empty-float-texture-3d make-float-cubemap
                                     make-float-texture-2d make-float-texture-3d make-program make-rgb-texture
                                     make-ubyte-texture-2d make-vector-texture-2d make-vertex-array-object onscreen-render
@@ -47,13 +47,51 @@ out VS_OUT
   vec2 heightcoord;
   vec2 colorcoord;
 } vs_out;
+vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
-  gl_Position = shrink_shadow_index(vec4(point, 1), shadow_size, shadow_size);
+  // gl_Position = grow_shadow_index(vec4(point, 1), shadow_size, shadow_size);
+  gl_Position = vec4(point, 1);
   vs_out.heightcoord = heightcoord;
   vs_out.colorcoord = colorcoord;
 }")
+
+(def tess-evaluation-shadow-planet
+"#version 410 core
+layout(quads, equal_spacing, ccw) in;
+uniform sampler2D heightfield;
+uniform mat4 shadow_ndc_matrix;
+in TCS_OUT
+{
+  vec2 heightcoord;
+  vec2 colorcoord;
+} tes_in[];
+
+out TES_OUT
+{
+  vec2 colorcoord;
+  vec3 point;
+} tes_out;
+
+// Use heightfield to determine coordinates of tessellated points.
+void main()
+{
+  vec2 colorcoord_a = mix(tes_in[0].colorcoord, tes_in[1].colorcoord, gl_TessCoord.x);
+  vec2 colorcoord_b = mix(tes_in[3].colorcoord, tes_in[2].colorcoord, gl_TessCoord.x);
+  tes_out.colorcoord = mix(colorcoord_a, colorcoord_b, gl_TessCoord.y);
+  vec2 heightcoord_a = mix(tes_in[0].heightcoord, tes_in[1].heightcoord, gl_TessCoord.x);
+  vec2 heightcoord_b = mix(tes_in[3].heightcoord, tes_in[2].heightcoord, gl_TessCoord.x);
+  vec2 heightcoord = mix(heightcoord_a, heightcoord_b, gl_TessCoord.y);
+  float scale = texture(heightfield, heightcoord).r;
+  vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
+  vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
+  vec3 cube_point = mix(a, b, gl_TessCoord.y).xyz;
+  vec3 point = scale * cube_point;
+  tes_out.point = point;
+  vec4 transformed_point = shadow_ndc_matrix * vec4(point, 1);
+  gl_Position = transformed_point;
+}" )
 
 (def fragment-shadow-planet
 "#version 410 core
@@ -114,8 +152,8 @@ void main()
 (def perlin-sum-series (apply + perlin-series))
 (def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
 (def mix 0.8)
-(def opacity-step (atom 250.0))
-(def step (atom 400.0))
+(def opacity-step (atom 400.0))
+(def step (atom 300.0))
 (def worley-size 64)
 (def shadow-size 512)
 (def noise-size 64)
@@ -132,21 +170,18 @@ void main()
 (def surface-sun-elevation-size 63)
 (def theta (to-radians 25))
 (def r (+ radius cloud-bottom -750))
-; (def position (atom (vec3 0 (* (cos theta) r) (* (sin theta) r))))
-(def position (atom (vec3 (* 1.0 r) 0 (* 0.7 r))))
-; (def orientation (atom (q/rotation (to-radians 25) (vec3 1 0 0))))
-(def orientation (atom (q/rotation (to-radians 90) (vec3 0 1 0))))
+(def position (atom (vec3 0 (* (cos theta) r) (* (sin theta) r))))
+; (def position (atom (vec3 (* 1.0 r) 0 (* 0.7 r))))
+(def orientation (atom (q/rotation (to-radians 25) (vec3 1 0 0))))
+; (def orientation (atom (q/rotation (to-radians 90) (vec3 0 1 0))))
 (def light (atom 1.4945))
 (def num-steps 3)
 (def num-opacity-layers 7)
 
 (GLFW/glfwInit)
-(GLFW/glfwDefaultWindowHints)
-(def window (GLFW/glfwCreateWindow width height "scratch" 0 0))
 
-(GLFW/glfwMakeContextCurrent window)
+(def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
-(GL/createCapabilities)
 
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def W (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
@@ -224,9 +259,9 @@ void main()
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 (def program-shadow-planet
-  (make-program :vertex [vertex-shadow-planet shaders/shrink-shadow-index]
+  (make-program :vertex [vertex-shadow-planet shaders/shrink-shadow-index shaders/grow-shadow-index]
                 :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-planet]
+                :tess-evaluation [tess-evaluation-shadow-planet]
                 :geometry [geometry-planet]
                 :fragment [fragment-shadow-planet]))
 
@@ -565,7 +600,9 @@ void main()
                    matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
                    splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
-                   opac-step  (/ @opacity-step (max 0.1 (/ (dot light-dir @position) (mag @position))))
+                   cos-light  (/ (dot light-dir @position) (mag @position))
+                   sin-light  (sqrt (- 1 (sqr cos-light)))
+                   opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
                    opacities  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale worley-size) program-opacity
                                                (uniform-vector3 program-opacity "light_direction" light-dir)
                                                (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
@@ -576,7 +613,7 @@ void main()
                                                (uniform-float program-opacity "opacity_step" opac-step)
                                                (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
                                                (render-quads opacity-vao))
-                   shadows    (shadow-cascade shadow-size shadow-size matrix-cas program-shadow-planet
+                   shadows    (shadow-cascade shadow-size matrix-cas program-shadow-planet
                                               (uniform-matrix4 program-shadow-planet "projection" (eye 4))
                                               (render-tree program-shadow-planet @tree [:height-tex]))
                    w2         (quot (aget w 0) 2)
@@ -691,6 +728,6 @@ void main()
   (destroy-program program-planet)
   (destroy-program program-opacity)
   (destroy-program program-atmosphere)
-  (GLFW/glfwDestroyWindow window)
+  (destroy-window window)
   (GLFW/glfwTerminate)
   (System/exit 0))
