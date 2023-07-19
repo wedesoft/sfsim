@@ -1,6 +1,6 @@
 #version 410 core
 
-uniform sampler2D colors;
+uniform sampler2D day;
 uniform sampler2D night;
 uniform sampler2D normals;
 uniform sampler2D water;
@@ -32,7 +32,7 @@ void main()
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 water_normal = normalize(fs_in.point);
   vec3 direction = normalize(fs_in.point - origin);
-  vec3 day_color = texture(colors, fs_in.colorcoord).rgb;
+  vec3 day_color = texture(day, fs_in.colorcoord).rgb;
   vec3 night_color = max(texture(night, fs_in.colorcoord).rgb - 0.3, 0.0) / 0.7;
   float wet = texture(water, fs_in.colorcoord).r;
   vec3 normal = mix(land_normal, water_normal, wet);

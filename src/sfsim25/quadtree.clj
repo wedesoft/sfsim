@@ -36,7 +36,7 @@
    :level   level
    :y       y
    :x       x
-   :colors  (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
+   :day     (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
    :night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
    :scales  (slurp-floats  (cube-path "data/globe" face level y x ".scale"))
    :normals (slurp-normals (cube-path "data/globe" face level y x ".png"))

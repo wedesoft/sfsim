@@ -25,7 +25,7 @@
       (util/slurp-normals "data/globe/3/2/1/2.png") => "2.png"
       (util/slurp-bytes "data/globe/3/2/1/2.water") => "2.water"))
   ?k       ?result
-  :colors  "2.jpg"
+  :day     "2.jpg"
   :night   "2.night.jpg"
   :normals "2.png"
   :water   "2.water"
