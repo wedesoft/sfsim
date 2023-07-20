@@ -38,7 +38,6 @@
 
 (def vertex-shadow-planet
 "#version 410 core
-uniform int shadow_size;
 in vec3 point;
 in vec2 heightcoord;
 in vec2 colorcoord;
@@ -47,11 +46,8 @@ out VS_OUT
   vec2 heightcoord;
   vec2 colorcoord;
 } vs_out;
-vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
-vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
 {
-  // gl_Position = grow_shadow_index(vec4(point, 1), shadow_size, shadow_size);
   gl_Position = vec4(point, 1);
   vs_out.heightcoord = heightcoord;
   vs_out.colorcoord = colorcoord;
@@ -62,6 +58,7 @@ void main()
 layout(quads, equal_spacing, ccw) in;
 uniform sampler2D heightfield;
 uniform mat4 shadow_ndc_matrix;
+uniform int shadow_size;
 in TCS_OUT
 {
   vec2 heightcoord;
@@ -73,6 +70,8 @@ out TES_OUT
   vec2 colorcoord;
   vec3 point;
 } tes_out;
+
+vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 
 // Use heightfield to determine coordinates of tessellated points.
 void main()
@@ -90,7 +89,7 @@ void main()
   vec3 point = scale * cube_point;
   tes_out.point = point;
   vec4 transformed_point = shadow_ndc_matrix * vec4(point, 1);
-  gl_Position = transformed_point;
+  gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
 }" )
 
 (def fragment-shadow-planet
@@ -259,9 +258,9 @@ void main()
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 (def program-shadow-planet
-  (make-program :vertex [vertex-shadow-planet shaders/shrink-shadow-index shaders/grow-shadow-index]
+  (make-program :vertex [vertex-shadow-planet]
                 :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-shadow-planet]
+                :tess-evaluation [tess-evaluation-shadow-planet shaders/shrink-shadow-index]
                 :geometry [geometry-planet]
                 :fragment [fragment-shadow-planet]))
 
