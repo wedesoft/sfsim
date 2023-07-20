@@ -1,7 +1,8 @@
 # TODO
-* approach ground with wheel to see whether floating point accuracy is sufficient and check that shadow map has enough detail
-* deferred decals for rendering runway
-  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
+* problem with shadow mapping creating dark bar at bottom for nearby terrain
+* render textured cube to see whether floating point accuracy is sufficient
+  https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
+* render shadow of cube
 * ground collisions
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
@@ -10,7 +11,8 @@
   * http://www.ioaircraft.com/hypersonic/ranger.php
   * http://www.ioaircraft.com/hypersonic/raven.php
   * https://www.russianspaceweb.com/spiral\_orbiter\_design.html
-* problem with shadow mapping creating dark bar at bottom for nearby terrain
+* deferred decals for rendering runway
+  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
 * constant texel size across opacity cascade to prevent step in opacity?
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
@@ -48,18 +50,15 @@
     * earth
   * aerobrake/base roll-reversal, speed-height-distance profile
   * heading alignment cylinder
-* shadow mapping improvements http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
 * glTextureStorage2D levels correct for mipmaps?
 * when building maps put intermediate files into a common subdirectory (tmp?)
 * uniform random offsets for Worley noises to generate different cloud cover for each game
-* use configuration (edn) files
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
 * only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
 * extract functions from prototype
 * render building on top of ground
-* indices for planet patches and atmosphere projection plane should be the same
-* put parameters like max-height, power, specular, radius in a configuration file
+* put parameters like max-height, power, specular, radius in a configuration (edn?) file
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
 * improve rendering of sun
