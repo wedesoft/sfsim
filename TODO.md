@@ -1,4 +1,5 @@
 # TODO
+* add type hints to interpolate.clj
 * split up shadow-matrices function?
 * break down neighbour-path into more functions?
 * should load tile data accept path prefix?
