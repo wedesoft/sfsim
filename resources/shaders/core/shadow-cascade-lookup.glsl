@@ -15,9 +15,6 @@ float <%= base-function %>(sampler2DShadow shadow_map, vec4 shadow_pos);
 float shadow_cascade_lookup(vec4 point)
 {
   float z = -(inverse_transform * point).z;
-  if (z <= split0) {
-    return 1.0;
-  };
 <% (doseq [i (range n)] %>
   if (z <= split<%= (inc i) %>) {
     vec4 shadow_pos = shadow_map_matrix<%= i %> * point;
