@@ -1,8 +1,8 @@
 # TODO
-* problem with shadow mapping creating dark bar at bottom for nearby terrain
 * render textured cube to see whether floating point accuracy is sufficient
   https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
 * render shadow of cube
+* problem with shadow mapping creating dark bar at bottom for nearby terrain
 * ground collisions
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
