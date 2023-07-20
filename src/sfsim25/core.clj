@@ -588,7 +588,7 @@ void main()
              (GL11/glFinish)
              (let [norm-pos   (mag @position)
                    dist       (- norm-pos radius cloud-top)
-                   z-near     (max 10.0 (* 0.4 dist))
+                   z-near     (max 1.0 (* 0.4 dist))
                    z-far      (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
                    indices    [0 1 3 2]
