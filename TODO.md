@@ -1,4 +1,8 @@
 # TODO
+* add type hints to interpolate.clj
+* split up shadow-matrices function?
+* break down neighbour-path into more functions?
+* should load tile data accept path prefix?
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
@@ -13,6 +17,7 @@
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
   [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
   https://www.youtube.com/watch?v=Qj\_tK\_mdRcA
+* add exceptions for all OpenGL stuff
 * shadow mapping improvements http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
 * uniform random offsets for Worley noises
 * configuration (edn) file for clouds?
