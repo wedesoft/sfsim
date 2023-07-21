@@ -9,7 +9,6 @@
            [sfsim25.quaternion Quaternion]))
 
 (set! *unchecked-math* true)
-(set! *warn-on-reflection* true)
 
 (defn rotation-x
   "Rotation matrix around x-axis"
@@ -78,9 +77,9 @@
 
 (defn frustum-corners
   "Determine corners of OpenGL frustum (or part of frustum)"
-  ([projection-matrix]
+  ([^Mat4x4 projection-matrix]
    (frustum-corners projection-matrix 1.0 0.0))
-  ([projection-matrix ndc1 ndc2]
+  ([^Mat4x4 projection-matrix ^double ndc1 ^double ndc2]
    (let [minv (fm/inverse projection-matrix)]
      (mapv #(fm/mulv minv %)
            [(fv/vec4 -1.0 -1.0 ndc1 1.0)
@@ -147,7 +146,7 @@
                (o 0 0) (o 0 1) (o 0 2) 0
                      0       0       0 1)))
 
-(defn- transform-frustum-corners
+(defn- transform-point-list
   "Apply transform to frustum corners"
   [matrix corners]
   (map #(fm/mulv matrix %) corners))
@@ -161,8 +160,8 @@
   "Determine bounding box for rotated frustum"
   [transform light-matrix projection-matrix longest-shadow ndc1 ndc2]
   (let [corners         (frustum-corners projection-matrix ndc1 ndc2)
-        rotated-corners (transform-frustum-corners transform corners)
-        light-corners   (transform-frustum-corners light-matrix rotated-corners)]
+        rotated-corners (transform-point-list transform corners)
+        light-corners   (transform-point-list light-matrix rotated-corners)]
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
 (defn shadow-matrices
@@ -184,12 +183,12 @@
 
 (defn split-linear
   "Perform linear z-split for frustum"
-  [near far num-steps step]
+  [^double near ^double far ^long num-steps ^long step]
   (+ near (/ (* (- far near) step) num-steps)))
 
 (defn split-exponential
   "Perform exponential z-split for frustum"
-  [near far num-steps step]
+  [^double near ^double far ^long num-steps ^long step]
   (* near (pow (/ far near) (/ step num-steps))))
 
 (defn split-mixed
@@ -206,5 +205,4 @@
               (shadow-matrices projection-matrix transform light-vector longest-shadow ndc1 ndc2)))
         (range num-steps)))
 
-(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
