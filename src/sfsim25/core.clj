@@ -1,22 +1,21 @@
 (ns sfsim25.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (to-radians cos sin tan PI sqrt log exp)]
+  (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
             [fastmath.matrix :refer (inverse eye)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
             [sfsim25.render :refer (make-window destroy-window clear destroy-program destroy-texture destroy-vertex-array-object
-                                    framebuffer-render generate-mipmap make-empty-float-texture-3d make-float-cubemap
-                                    make-float-texture-2d make-float-texture-3d make-program make-rgb-texture
-                                    make-ubyte-texture-2d make-vector-texture-2d make-vertex-array-object onscreen-render
-                                    render-patches render-quads texture-render-color-depth uniform-float uniform-int
-                                    uniform-matrix4 uniform-sampler uniform-vector3 use-program use-textures
-                                    shadow-cascade)]
+                                    generate-mipmap make-float-cubemap make-float-texture-2d make-float-texture-3d
+                                    make-program make-rgb-texture make-ubyte-texture-2d make-vector-texture-2d
+                                    make-vertex-array-object onscreen-render render-quads texture-render-color-depth
+                                    uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
+                                    use-textures shadow-cascade)]
             [sfsim25.atmosphere :refer (attenuation-outer attenuation-track phase phase-function ray-scatter-outer
                                         ray-scatter-track transmittance-outer transmittance-track
                                         vertex-atmosphere fragment-atmosphere)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet)]
-            [sfsim25.quadtree :refer (increase-level? is-leaf? quadtree-update update-level-of-detail)]
+            [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
                                     cloud-profile cloud-transfer linear-sampling opacity-cascade
                                     opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
@@ -27,11 +26,12 @@
             [sfsim25.quaternion :as q]
             [sfsim25.util :refer (slurp-floats sqr)]
             [sfsim25.shaders :as shaders])
-  (:import [org.lwjgl.opengl GL GL11 GL13]
+  (:import [org.lwjgl.opengl GL11]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
   (:gen-class))
 
 (set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 (def width 1280)
 (def height 720)
@@ -552,7 +552,7 @@ void main()
         w  (int-array 1)
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
-           (GLFW/glfwGetWindowSize window w h)
+           (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
            (when (realized? @changes)
              (let [data @@changes]
                (unload-tiles-from-opengl (:drop data))
