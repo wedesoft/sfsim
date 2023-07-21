@@ -71,7 +71,7 @@
 
 (defn z-to-ndc
   "Convert (flipped to positive) z-coordinate to normalized device coordinate"
-  [near far z]
+  [^double near ^double far ^double z]
   (let [a (/ (* far near) (- far near))
         b (/ near (- far near))]
     (/ (- a (* z b)) z)))
