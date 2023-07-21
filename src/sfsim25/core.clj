@@ -137,9 +137,10 @@ void main()
 (def max-height 35000.0)
 (def threshold (atom 18.2))
 (def anisotropic (atom 0.25))
+(def shadow-bias (exp -6.0))
 (def cloud-bottom 2000)
 (def cloud-top 5000)
-(def cloud-multiplier (atom 10.0))
+(def cloud-multiplier 10.0)
 (def cover-multiplier (atom 26.0))
 (def cap (atom 0.005))
 (def detail-scale 4000)
@@ -314,6 +315,46 @@ void main()
                            (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
+
+(def vertex-cube
+"#version 410 core
+uniform float shift;
+uniform mat4 projection;
+in vec3 point;
+void main()
+{
+  gl_Position = projection * (vec4(point, 1) + vec4(0, shift, -20, 0));
+}")
+
+(def fragment-cube
+"#version 410 core
+out vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1, 1, 1);
+}")
+
+(def cube-indices [0 1 2 3
+                   1 5 6 2
+                   5 4 7 6
+                   4 0 3 7
+                   3 2 6 7
+                   4 5 1 0])
+
+(def cube-vertices [-0.5 -0.5  0.5
+                     0.5 -0.5  0.5
+                     0.5  0.5  0.5
+                    -0.5  0.5  0.5
+                    -0.5 -0.5 -0.5
+                     0.5 -0.5 -0.5
+                     0.5  0.5 -0.5
+                    -0.5  0.5 -0.5])
+
+(def program-cube
+  (make-program :vertex [vertex-cube]
+                :fragment [fragment-cube]))
+
+(def cube-vao (make-vertex-array-object program-cube cube-indices cube-vertices [:point 3]))
 
 (use-program program-opacity)
 (uniform-sampler program-opacity "worley" 0)
@@ -542,7 +583,8 @@ void main()
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
-(def shadow-bias (atom -7.0))
+
+(def shift (atom 0.0))
 
 (defn -main
   "Space flight simulator main function"
@@ -580,8 +622,7 @@ void main()
              (swap! threshold + (* dt tr))
              (swap! opacity-step + (* dt to))
              (swap! anisotropic + (* dt ta))
-             ; (swap! cloud-multiplier + (* dt tm))
-             (swap! shadow-bias + (* dt tm))
+             (swap! shift + (* 0.5 dt tm))
              (swap! cover-multiplier + (* dt tg))
              (swap! cap + (* dt tc))
              (swap! step + (* dt ts))
@@ -606,7 +647,7 @@ void main()
                    opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
                    opacities  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale worley-size) program-opacity
                                                (uniform-vector3 program-opacity "light_direction" light-dir)
-                                               (uniform-float program-opacity "cloud_multiplier" @cloud-multiplier)
+                                               (uniform-float program-opacity "cloud_multiplier" cloud-multiplier)
                                                (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
                                                (uniform-float program-opacity "cap" @cap)
                                                (uniform-float program-opacity "cloud_threshold" @threshold)
@@ -625,7 +666,7 @@ void main()
                                 ; Render clouds under the horizon
                                 (use-program program-cloud-planet)
                                 (uniform-float program-cloud-planet "cloud_step" @step)
-                                (uniform-float program-cloud-planet "cloud_multiplier" @cloud-multiplier)
+                                (uniform-float program-cloud-planet "cloud_multiplier" cloud-multiplier)
                                 (uniform-float program-cloud-planet "cover_multiplier" @cover-multiplier)
                                 (uniform-float program-cloud-planet "cap" @cap)
                                 (uniform-float program-cloud-planet "cloud_threshold" @threshold)
@@ -646,7 +687,7 @@ void main()
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
-                                (uniform-float program-cloud-atmosphere "cloud_multiplier" @cloud-multiplier)
+                                (uniform-float program-cloud-atmosphere "cloud_multiplier" cloud-multiplier)
                                 (uniform-float program-cloud-atmosphere "cover_multiplier" @cover-multiplier)
                                 (uniform-float program-cloud-atmosphere "cap" @cap)
                                 (uniform-float program-cloud-atmosphere "cloud_threshold" @threshold)
@@ -666,7 +707,12 @@ void main()
                                 (apply use-textures T S M W L B C (concat shadows opacities))
                                 (render-quads vao))]
                (onscreen-render window
-                                (clear (vec3 0 1 0))
+                                (clear (vec3 0 1 0) 0)
+                                ; Render cube
+                                (use-program program-cube)
+                                (uniform-float program-cube "shift" @shift)
+                                (uniform-matrix4 program-cube "projection" projection)
+                                (render-quads cube-vao)
                                 ; Render planet with cloud overlay
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
@@ -676,7 +722,7 @@ void main()
                                 (uniform-float program-planet "opacity_step" opac-step)
                                 (uniform-int program-planet "window_width" (aget w 0))
                                 (uniform-int program-planet "window_height" (aget h 0))
-                                (uniform-float program-planet "shadow_bias" (exp @shadow-bias))
+                                (uniform-float program-planet "shadow_bias" shadow-bias)
                                 (doseq [[idx item] (map-indexed vector splits)]
                                        (uniform-float program-planet (str "split" idx) item))
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
@@ -710,8 +756,8 @@ void main()
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, bias (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @anisotropic @shadow-bias @cover-multiplier @cap @step (* dt 0.001)))
+               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, shift (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
+                              @threshold @opacity-step @anisotropic @shift @cover-multiplier @cap @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
@@ -722,7 +768,9 @@ void main()
   (destroy-texture C)
   (destroy-texture B)
   (destroy-texture W)
+  (destroy-vertex-array-object cube-vao)
   (destroy-vertex-array-object opacity-vao)
+  (destroy-program program-cube)
   (destroy-program program-cloud-atmosphere)
   (destroy-program program-cloud-planet)
   (destroy-program program-shadow-planet)
