@@ -141,7 +141,7 @@ void main()
 (def cloud-bottom 2000)
 (def cloud-top 5000)
 (def cloud-multiplier 10.0)
-(def cover-multiplier (atom 26.0))
+(def cover-multiplier 26.0)
 (def cap (atom 0.005))
 (def detail-scale 4000)
 (def cloud-scale 100000)
@@ -318,12 +318,13 @@ void main()
 
 (def vertex-cube
 "#version 410 core
-uniform float shift;
+uniform float shift_y;
+uniform float shift_z;
 uniform mat4 projection;
 in vec3 point;
 void main()
 {
-  gl_Position = projection * (vec4(point, 1) + vec4(0, shift, -10, 0));
+  gl_Position = projection * (vec4(point, 1) + vec4(0, shift_y, shift_z - 10, 0));
 }")
 
 (def fragment-cube
@@ -584,7 +585,8 @@ void main()
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
 
-(def shift (atom 0.0))
+(def shift-y (atom 0.0))
+(def shift-z (atom 0.0))
 
 (defn -main
   "Space flight simulator main function"
@@ -605,7 +607,7 @@ void main()
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
                  rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
-                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 50 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -50 0))
+                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 0.001 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -0.001 0))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
@@ -622,8 +624,8 @@ void main()
              (swap! threshold + (* dt tr))
              (swap! opacity-step + (* dt to))
              (swap! anisotropic + (* dt ta))
-             (swap! shift + (* 0.5 dt tm))
-             (swap! cover-multiplier + (* dt tg))
+             (swap! shift-y + (* 0.5 dt tm))
+             (swap! shift-z + (* 0.5 dt tg))
              (swap! cap + (* dt tc))
              (swap! step + (* dt ts))
              (GL11/glFinish)
@@ -648,7 +650,7 @@ void main()
                    opacities  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale worley-size) program-opacity
                                                (uniform-vector3 program-opacity "light_direction" light-dir)
                                                (uniform-float program-opacity "cloud_multiplier" cloud-multiplier)
-                                               (uniform-float program-opacity "cover_multiplier" @cover-multiplier)
+                                               (uniform-float program-opacity "cover_multiplier" cover-multiplier)
                                                (uniform-float program-opacity "cap" @cap)
                                                (uniform-float program-opacity "cloud_threshold" @threshold)
                                                (uniform-float program-opacity "scatter_amount" scatter-am)
@@ -667,7 +669,7 @@ void main()
                                 (use-program program-cloud-planet)
                                 (uniform-float program-cloud-planet "cloud_step" @step)
                                 (uniform-float program-cloud-planet "cloud_multiplier" cloud-multiplier)
-                                (uniform-float program-cloud-planet "cover_multiplier" @cover-multiplier)
+                                (uniform-float program-cloud-planet "cover_multiplier" cover-multiplier)
                                 (uniform-float program-cloud-planet "cap" @cap)
                                 (uniform-float program-cloud-planet "cloud_threshold" @threshold)
                                 (uniform-float program-cloud-planet "lod_offset" lod-offset)
@@ -688,7 +690,7 @@ void main()
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
                                 (uniform-float program-cloud-atmosphere "cloud_multiplier" cloud-multiplier)
-                                (uniform-float program-cloud-atmosphere "cover_multiplier" @cover-multiplier)
+                                (uniform-float program-cloud-atmosphere "cover_multiplier" cover-multiplier)
                                 (uniform-float program-cloud-atmosphere "cap" @cap)
                                 (uniform-float program-cloud-atmosphere "cloud_threshold" @threshold)
                                 (uniform-float program-cloud-atmosphere "lod_offset" lod-offset)
@@ -710,7 +712,8 @@ void main()
                                 (clear (vec3 0 1 0) 0)
                                 ; Render cube
                                 (use-program program-cube)
-                                (uniform-float program-cube "shift" @shift)
+                                (uniform-float program-cube "shift_y" @shift-y)
+                                (uniform-float program-cube "shift_z" @shift-z)
                                 (uniform-matrix4 program-cube "projection" projection)
                                 (render-quads cube-vao)
                                 ; Render planet with cloud overlay
@@ -756,8 +759,8 @@ void main()
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, shift (r/f) %.1f, cov (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @anisotropic @shift @cover-multiplier @cap @step (* dt 0.001)))
+               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, dy (r/f) %.1f, dz (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
+                              @threshold @opacity-step @anisotropic @shift-y @shift-z @cap @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
