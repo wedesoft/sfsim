@@ -18,7 +18,6 @@
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
 * introduce variation to cloud height
-* integration test planet shader with non-trivial lookup tables? convert prototype to tested code
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
