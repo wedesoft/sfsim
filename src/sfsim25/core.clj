@@ -323,7 +323,7 @@ uniform mat4 projection;
 in vec3 point;
 void main()
 {
-  gl_Position = projection * (vec4(point, 1) + vec4(0, shift, -20, 0));
+  gl_Position = projection * (vec4(point, 1) + vec4(0, shift, -10, 0));
 }")
 
 (def fragment-cube
