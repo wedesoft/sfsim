@@ -2,13 +2,15 @@
     "N-dimensional interpolation"
     (:require [fastmath.vector :refer (add mult)]
               [clojure.math :refer (floor)]
-              [sfsim25.util :refer (comp*)]))
+              [sfsim25.util :refer (comp*)])
+    (:import [fastmath.protocols VectorProto])
+    )
 
 (set! *unchecked-math* true)
 
 (defn- linear-forward
   "Linear mapping onto interpolation table of given shape"
-  [minima maxima shape]
+  [^clojure.lang.ISeq minima ^clojure.lang.ISeq maxima ^clojure.lang.ISeq shape]
   (fn [& point] (map (fn [^double x ^double a ^double b ^long n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
 
 (defn- linear-backward
@@ -18,7 +20,7 @@
 
 (defn linear-space
   "Create forward and backward mapping for linear sampling"
-  [minima maxima shape]
+  [^clojure.lang.ISeq minima ^clojure.lang.ISeq maxima ^clojure.lang.ISeq shape]
   {::forward (linear-forward minima maxima shape) ::backward (linear-backward minima maxima shape) ::shape shape})
 
 (defn- sample-function
@@ -40,12 +42,12 @@
 
 (defn mix
   "Linear mixing of values"
-  [a b ^double scalar]
+  [^VectorProto a ^VectorProto b ^double scalar]
   (add (mult a (- 1 scalar)) (mult b scalar)))
 
 (defn- interpolate-value
   "Linear interpolation for point in table"
-  [lookup-table ^clojure.lang.PersistentVector point]
+  [lookup-table ^clojure.lang.PersistentVector ^clojure.lang.ISeq point]
   (if (seq point)
     (let [size       (count lookup-table)
           [c & args] point

@@ -1,42 +1,9 @@
 # TODO
-* add type hints to interpolate.clj
-* split up shadow-matrices function?
-* break down neighbour-path into more functions?
-* should load tile data accept path prefix?
-* level of detail in opacity cascade, cloud brightness flickering at large distance?
-  mipmaps for all cloud textures and octaves
-  change cloud computation when viewing from space far away (use different lod of shadow?)
-* constant texel size across opacity cascade to prevent step in opacity?
-* introduce variation to cloud height
-* integration test planet shader with non-trivial lookup tables? convert prototype to tested code
-* when building maps put intermediate files into a common subdirectory (tmp?)
-* make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
-* increase stepsize between clouds (also only sample low-resolution noise), increase shadow depth if possible
-* reduce number of intermediate values to increase OpenGL performance
-* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
-  [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
-  https://www.youtube.com/watch?v=Qj\_tK\_mdRcA
-* add exceptions for all OpenGL stuff
-* shadow mapping improvements http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
-* uniform random offsets for Worley noises
-* configuration (edn) file for clouds?
-* ACES tone mapping: https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
-* glTextureStorage2D levels correct for mipmaps?
-* hot spots for map
-* use Earth explorer data: https://earthexplorer.usgs.gov/
-* use GMTED2010 or STRM90 elevation data:
-  * https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
-  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
-  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
-* deferred decals for rendering runway
-  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
-* microtextures, bump maps
-* how to render water, waves
-* render stars
-  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
-  * Skydome scaled to ZFAR * 0.5
-  * no skydome and just stars as pixels?
+* render textured cube to see whether floating point accuracy is sufficient
+  https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
+* render shadow of cube
+* problem with shadow mapping creating dark bar at bottom for nearby terrain
+* ground collisions
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
   * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
@@ -44,6 +11,32 @@
   * http://www.ioaircraft.com/hypersonic/ranger.php
   * http://www.ioaircraft.com/hypersonic/raven.php
   * https://www.russianspaceweb.com/spiral\_orbiter\_design.html
+* deferred decals for rendering runway
+  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
+* constant texel size across opacity cascade to prevent step in opacity?
+* level of detail in opacity cascade, cloud brightness flickering at large distance?
+  mipmaps for all cloud textures and octaves
+  change cloud computation when viewing from space far away (use different lod of shadow?)
+* introduce variation to cloud height
+* integration test planet shader with non-trivial lookup tables? convert prototype to tested code
+* make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
+* amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
+* powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
+  [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
+  https://www.youtube.com/watch?v=Qj\_tK\_mdRcA
+* add exceptions for all OpenGL stuff
+* hot spots for map
+* use Earth explorer data: https://earthexplorer.usgs.gov/
+* use GMTED2010 or STRM90 elevation data:
+  * https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
+  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
+  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
+* microtextures, bump maps
+* how to render water, waves
+* render stars
+  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
+  * Skydome scaled to ZFAR * 0.5
+  * no skydome and just stars as pixels?
 * 3D cockpit
   * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
   * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
@@ -57,13 +50,15 @@
     * earth
   * aerobrake/base roll-reversal, speed-height-distance profile
   * heading alignment cylinder
-* plan work
+* glTextureStorage2D levels correct for mipmaps?
+* when building maps put intermediate files into a common subdirectory (tmp?)
+* uniform random offsets for Worley noises to generate different cloud cover for each game
 * ground\_radiance assumes sun brightness of one -> use one everywhere?
 * use different normal for ground\_radiance? needs to be parallel to radius vector?
 * only render sun glare when sun is above horizon, use single (normalised?) color from transmittance
 * extract functions from prototype
-* indices for planet patches and atmosphere projection plane should be the same
-* put parameters like max-height, power, specular, radius in a configuration file
+* render building on top of ground
+* put parameters like max-height, power, specular, radius in a configuration (edn?) file
 * find water land mask data: https://lpdaac.usgs.gov/products/mod44wv006/
 * night-time textures
 * improve rendering of sun
@@ -75,7 +70,6 @@
 * use data-centric APIs
 * use glTexSubImage2D?
 * use ZGC (short pause garbage collector for Java)
-* redesign floating point math of height maps
 * improve performance of quaternions (see fastmath implementation)
 * Get scale-image to work on large images
 * use short integers for normal vector textures?
@@ -117,10 +111,8 @@
 * multisampling
 * windows (blending, reflections), greyscale cameras, MFDs
 * frame buffer objects for non-blocking data transfer
-* skybox for nebulas
 * point sprites for stars, atmospheric flicker using sprite arrays
 * point light sources
-* cloud erosion
 * view matrix, model matrix stack, light position
 * multiple rigid or flexible objects
 * thrusters

@@ -9,7 +9,6 @@
            [sfsim25.quaternion Quaternion]))
 
 (set! *unchecked-math* true)
-(set! *warn-on-reflection* true)
 
 (defn rotation-x
   "Rotation matrix around x-axis"
@@ -71,16 +70,16 @@
 
 (defn z-to-ndc
   "Convert (flipped to positive) z-coordinate to normalized device coordinate"
-  [near far z]
+  [^double near ^double far ^double z]
   (let [a (/ (* far near) (- far near))
         b (/ near (- far near))]
     (/ (- a (* z b)) z)))
 
 (defn frustum-corners
   "Determine corners of OpenGL frustum (or part of frustum)"
-  ([projection-matrix]
+  ([^Mat4x4 projection-matrix]
    (frustum-corners projection-matrix 1.0 0.0))
-  ([projection-matrix ndc1 ndc2]
+  ([^Mat4x4 projection-matrix ^double ndc1 ^double ndc2]
    (let [minv (fm/inverse projection-matrix)]
      (mapv #(fm/mulv minv %)
            [(fv/vec4 -1.0 -1.0 ndc1 1.0)
@@ -147,17 +146,34 @@
                (o 0 0) (o 0 1) (o 0 2) 0
                      0       0       0 1)))
 
+(defn- transform-point-list
+  "Apply transform to frustum corners"
+  [matrix corners]
+  (map #(fm/mulv matrix %) corners))
+
+(defn- span-of-box
+  "Get vector of box dimensions"
+  [bounding-box]
+  (fv/sub (:toprightfar bounding-box) (:bottomleftnear bounding-box)))
+
+(defn- bounding-box-for-rotated-frustum
+  "Determine bounding box for rotated frustum"
+  [transform light-matrix projection-matrix longest-shadow ndc1 ndc2]
+  (let [corners         (frustum-corners projection-matrix ndc1 ndc2)
+        rotated-corners (transform-point-list transform corners)
+        light-corners   (transform-point-list light-matrix rotated-corners)]
+    (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
+
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
   ([projection-matrix transform light-vector longest-shadow]
    (shadow-matrices projection-matrix transform light-vector longest-shadow 1.0 0.0))
   ([projection-matrix transform light-vector longest-shadow ndc1 ndc2]
-   (let [points       (map #(fm/mulv transform %) (frustum-corners projection-matrix ndc1 ndc2))
-         light-matrix (orient-to-light light-vector)
-         bbox         (expand-bounding-box-near (bounding-box (map #(fm/mulv light-matrix %) points)) longest-shadow)
-         shadow-ndc   (shadow-box-to-ndc bbox)
-         shadow-map   (shadow-box-to-map bbox)
-         span         (fv/sub (:toprightfar bbox) (:bottomleftnear bbox))
+   (let [light-matrix (orient-to-light light-vector)
+         bounding-box (bounding-box-for-rotated-frustum transform light-matrix projection-matrix longest-shadow ndc1 ndc2)
+         shadow-ndc   (shadow-box-to-ndc bounding-box)
+         shadow-map   (shadow-box-to-map bounding-box)
+         span         (span-of-box bounding-box)
          scale        (* 0.5 (+ (span 0) (span 1)))
          depth        (- (span 2))]
      {:shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
@@ -167,12 +183,12 @@
 
 (defn split-linear
   "Perform linear z-split for frustum"
-  [near far num-steps step]
+  [^double near ^double far ^long num-steps ^long step]
   (+ near (/ (* (- far near) step) num-steps)))
 
 (defn split-exponential
   "Perform exponential z-split for frustum"
-  [near far num-steps step]
+  [^double near ^double far ^long num-steps ^long step]
   (* near (pow (/ far near) (/ step num-steps))))
 
 (defn split-mixed
@@ -189,5 +205,4 @@
               (shadow-matrices projection-matrix transform light-vector longest-shadow ndc1 ndc2)))
         (range num-steps)))
 
-(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

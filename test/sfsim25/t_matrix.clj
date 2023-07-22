@@ -155,9 +155,9 @@
          => (roughly-vector (fv/vec4 1 0 0.5 1) 1e-6)))
 
 (facts "Linear frustum split"
-       (split-linear 10 40 2 0) => 10
-       (split-linear 10 40 2 2) => 40
-       (split-linear 10 40 2 1) => 25)
+       (split-linear 10 40 2 0) => 10.0
+       (split-linear 10 40 2 2) => 40.0
+       (split-linear 10 40 2 1) => 25.0)
 
 (facts "Exponential frustum split"
        (split-exponential 10 40 2 0) => 10.0
