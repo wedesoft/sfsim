@@ -1,6 +1,7 @@
 # TODO
-* render textured cube to see whether floating point accuracy is sufficient
+* find fix for accuracy problems with ground
   https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
+* render object in a second pass if z-near for planet is too big
 * render shadow of cube
 * problem with shadow mapping creating dark bar at bottom for nearby terrain
 * ground collisions
