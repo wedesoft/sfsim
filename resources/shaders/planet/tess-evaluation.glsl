@@ -18,7 +18,7 @@ out TES_OUT
   vec3 point;
 } tes_out;
 
-// Use heightfield to determine coordinates of tessellated points.
+// Use surface pointcloud to determine coordinates of tessellated points.
 void main()
 {
   vec2 colorcoord_a = mix(tes_in[0].colorcoord, tes_in[1].colorcoord, gl_TessCoord.x);

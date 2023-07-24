@@ -56,7 +56,7 @@ void main()
 (def tess-evaluation-shadow-planet
 "#version 410 core
 layout(quads, equal_spacing, ccw) in;
-uniform sampler2D heightfield;
+uniform sampler2D surface;
 uniform mat4 shadow_ndc_matrix;
 uniform int shadow_size;
 in TCS_OUT
@@ -73,7 +73,7 @@ out TES_OUT
 
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 
-// Use heightfield to determine coordinates of tessellated points.
+// Use surface pointcloud to determine coordinates of tessellated points.
 void main()
 {
   vec2 colorcoord_a = mix(tes_in[0].colorcoord, tes_in[1].colorcoord, gl_TessCoord.x);
@@ -82,11 +82,7 @@ void main()
   vec2 heightcoord_a = mix(tes_in[0].heightcoord, tes_in[1].heightcoord, gl_TessCoord.x);
   vec2 heightcoord_b = mix(tes_in[3].heightcoord, tes_in[2].heightcoord, gl_TessCoord.x);
   vec2 heightcoord = mix(heightcoord_a, heightcoord_b, gl_TessCoord.y);
-  float scale = texture(heightfield, heightcoord).r;
-  vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
-  vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
-  vec3 cube_point = mix(a, b, gl_TessCoord.y).xyz;
-  vec3 point = scale * cube_point;
+  vec3 point = texture(surface, heightcoord).xyz;
   tes_out.point = point;
   vec4 transformed_point = shadow_ndc_matrix * vec4(point, 1);
   gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
@@ -373,13 +369,13 @@ void main()
 (use-textures W L B C)
 
 (use-program program-shadow-planet)
-(uniform-sampler program-shadow-planet "heightfield"    0)
+(uniform-sampler program-shadow-planet "surface" 0)
 (uniform-int program-shadow-planet "high_detail" (dec tilesize))
 (uniform-int program-shadow-planet "low_detail" (quot (dec tilesize) 2))
 (uniform-int program-shadow-planet "shadow_size" shadow-size)
 
 (use-program program-cloud-planet)
-(uniform-sampler program-cloud-planet "heightfield"      0)
+(uniform-sampler program-cloud-planet "surface"          0)
 (uniform-sampler program-cloud-planet "transmittance"    1)
 (uniform-sampler program-cloud-planet "ray_scatter"      2)
 (uniform-sampler program-cloud-planet "mie_strength"     3)
@@ -466,7 +462,7 @@ void main()
 (uniform-int program-cloud-atmosphere "shadow_size" shadow-size)
 
 (use-program program-planet)
-(uniform-sampler program-planet "heightfield"      0)
+(uniform-sampler program-planet "surface"          0)
 (uniform-sampler program-planet "day"              1)
 (uniform-sampler program-planet "night"            2)
 (uniform-sampler program-planet "normals"          3)
@@ -550,11 +546,11 @@ void main()
         vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
         day-tex    (make-rgb-texture :linear :clamp (:day tile))
         night-tex  (make-rgb-texture :linear :clamp (:night tile))
-        height-tex (make-float-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:scales tile)})
+        surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
         normal-tex (make-vector-texture-2d :linear :clamp (:normals tile))
         water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
-    (assoc (dissoc tile :day :night :scales :normals :water)
-           :vao vao :day-tex day-tex :night-tex night-tex :height-tex height-tex :normal-tex normal-tex :water-tex water-tex)))
+    (assoc (dissoc tile :day :night :surface :normals :water)
+           :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
 
 (defn load-tiles-into-opengl
   [tree paths]
@@ -564,7 +560,7 @@ void main()
   [tile]
   (destroy-texture (:day-tex tile))
   (destroy-texture (:night-tex tile))
-  (destroy-texture (:height-tex tile))
+  (destroy-texture (:surf-tex tile))
   (destroy-texture (:normal-tex tile))
   (destroy-texture (:water-tex tile))
   (destroy-vertex-array-object (:vao tile)))
@@ -659,7 +655,7 @@ void main()
                                                (render-quads opacity-vao))
                    shadows    (shadow-cascade shadow-size matrix-cas program-shadow-planet
                                               (uniform-matrix4 program-shadow-planet "projection" (eye 4))
-                                              (render-tree program-shadow-planet @tree [:height-tex]))
+                                              (render-tree program-shadow-planet @tree [:surf-tex]))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
@@ -685,7 +681,7 @@ void main()
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
                                 (apply use-textures nil T S M W L B C (concat shadows opacities))
-                                (render-tree program-cloud-planet @tree [:height-tex])
+                                (render-tree program-cloud-planet @tree [:surf-tex])
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
@@ -732,7 +728,7 @@ void main()
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
                                 (apply use-textures nil nil nil nil nil T S M E clouds (concat shadows opacities))
-                                (render-tree program-planet @tree [:height-tex :day-tex :night-tex :normal-tex :water-tex])
+                                (render-tree program-planet @tree [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
                                 (use-program program-atmosphere)
                                 (doseq [[idx item] (map-indexed vector splits)]

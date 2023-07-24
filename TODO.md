@@ -1,6 +1,6 @@
 # TODO
+* set patch transformation matrix in render-tile, accept camera extrinsic in render-tree, shadow-cascade
 * generate .surf files
-* set patch transformation matrix in render-tile, accept camera extrinsic
 * delete .scale files
 * heightcoord -> surfacecoord
 * .jpg -> .day.jpg
