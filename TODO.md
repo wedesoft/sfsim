@@ -1,4 +1,7 @@
 # TODO
+* generate .surf files
+* set patch transformation matrix in render-tile, accept camera extrinsic
+* delete .scale files
 * heightcoord -> surfacecoord
 * .jpg -> .day.jpg
 * elevation-tilesize -> surface-tilesize
