@@ -1,7 +1,9 @@
 # TODO
 * heightcoord -> surfacecoord
+* .jpg -> .day.jpg
+* elevation-tilesize -> surface-tilesize
 * inverse\_transform -> patch\_transform, compute on CPU with double precision: inverse camera transform times translation of patch
-* use tile-center to offset tiles
+* use tile-center with double accuracy to offset tiles
 * store water in png format
 * find fix for accuracy problems with ground
   https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds

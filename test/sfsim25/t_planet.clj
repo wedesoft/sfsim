@@ -632,14 +632,14 @@ void main()
 (tabular "Call each tile in tree to be rendered"
          (fact (render-tile-calls ?program ?node ?texture-keys) => ?result)
          ?program ?node               ?texture-keys ?result
-         1234     {}                  [:height-tex] []
-         1234     {:vao 42}           [:height-tex] [[1234 {:vao 42} [:height-tex]]]
-         1234     {:0 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
-         1234     {:1 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
-         1234     {:2 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
-         1234     {:3 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
-         1234     {:4 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
-         1234     {:5 {:vao 42}}      [:height-tex] [[1234 {:vao 42} [:height-tex]]]
-         1234     {:3 {:2 {:vao 42}}} [:height-tex] [[1234 {:vao 42} [:height-tex]]])
+         1234     {}                  [:surf-tex]   []
+         1234     {:vao 42}           [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
+         1234     {:0 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
+         1234     {:1 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
+         1234     {:2 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
+         1234     {:3 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
+         1234     {:4 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
+         1234     {:5 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
+         1234     {:3 {:2 {:vao 42}}} [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]])
 
 (GLFW/glfwTerminate)

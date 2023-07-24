@@ -38,7 +38,7 @@
    :x       x
    :day     (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
    :night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
-   :scales  (slurp-floats  (cube-path "data/globe" face level y x ".scale"))
+   :surface (slurp-floats  (cube-path "data/globe" face level y x ".surf"))
    :normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
    :water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
 
