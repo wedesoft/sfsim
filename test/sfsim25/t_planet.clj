@@ -76,22 +76,23 @@ void main()
          (fact
            (offscreen-render 256 256
                              (let [indices     [0 1 3 2]
-                                   vertices    [-0.5 -0.5 0.5 0 0 0 0
-                                                 0.5 -0.5 0.5 0 0 0 0
-                                                -0.5  0.5 0.5 0 0 0 0
-                                                 0.5  0.5 0.5 0 0 0 0]
+                                   vertices    [-0.5 -0.5 0.5 0.25 0.25 0 0,
+                                                 0.5 -0.5 0.5 0.75 0.25 0 0,
+                                                -0.5  0.5 0.5 0.25 0.75 0 0,
+                                                 0.5  0.5 0.5 0.75 0.75 0 0]
                                    program     (make-program :vertex [vertex-planet]
                                                              :tess-control [tess-control-planet]
                                                              :tess-evaluation [tess-evaluation-planet]
                                                              :geometry [geometry-planet]
                                                              :fragment [fragment-white])
-                                   variables   [:point 3 :heightcoord 2 :colorcoord 2]
+                                   variables   [:point 3 :surfacecoord 2 :colorcoord 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
-                                   heightfield (make-float-texture-2d :linear :clamp
-                                                                      {:width 1 :height 1 :data (float-array [1.0])})]
+                                   data        [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5]
+                                   surface     (make-vector-texture-2d :linear :clamp
+                                                                       {:width 2 :height 2 :data (float-array data)})]
                                (clear (vec3 0 0 0))
                                (use-program program)
-                               (uniform-sampler program "heightfield" 0)
+                               (uniform-sampler program "surface" 0)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" ?neighbours)
@@ -99,9 +100,9 @@ void main()
                                (uniform-matrix4 program "inverse_transform" (eye 4))
                                (uniform-matrix4 program "projection" (eye 4))
                                (uniform-float program "z_near" 0.0)
-                               (use-textures heightfield)
+                               (use-textures surface)
                                (raster-lines (render-patches vao))
-                               (destroy-texture heightfield)
+                               (destroy-texture surface)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 5.0))
          ?neighbours ?result
@@ -129,10 +130,10 @@ void main()
          (fact
            (offscreen-render 256 256
                              (let [indices     [0 1 3 2]
-                                   vertices    [-0.5 -0.5 0.5 0.125 0.125 0.25 0.25
-                                                 0.5 -0.5 0.5 0.875 0.125 0.75 0.25
-                                                -0.5  0.5 0.5 0.125 0.875 0.25 0.75
-                                                 0.5  0.5 0.5 0.875 0.875 0.75 0.75]
+                                   vertices    [-0.5 -0.5 0.5 0.25 0.25 0.25 0.25,
+                                                 0.5 -0.5 0.5 0.75 0.25 0.75 0.25,
+                                                -0.5  0.5 0.5 0.25 0.75 0.25 0.75,
+                                                 0.5  0.5 0.5 0.75 0.75 0.75 0.75]
                                    program     (make-program :vertex [vertex-planet]
                                                              :tess-control [tess-control-planet]
                                                              :tess-evaluation [tess-evaluation-planet]
@@ -140,11 +141,12 @@ void main()
                                                              :fragment [(texture-coordinates-probe ?selector)])
                                    variables   [:point 3 :heightcoord 2 :colorcoord 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
-                                   heightfield (make-float-texture-2d :linear :clamp
-                                                                      {:width 1 :height 1 :data (float-array [?scale])})]
+                                   data        (map #(* % ?scale) [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5])
+                                   surface     (make-vector-texture-2d :linear :clamp
+                                                                       {:width 2 :height 2 :data (float-array data)})]
                                (clear (vec3 0 0 0))
                                (use-program program)
-                               (uniform-sampler program "heightfield" 0)
+                               (uniform-sampler program "surface" 0)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" 15)
@@ -152,9 +154,9 @@ void main()
                                (uniform-matrix4 program "inverse_transform" (eye 4))
                                (uniform-matrix4 program "projection" (eye 4))
                                (uniform-float program "z_near" 0.5)
-                               (use-textures heightfield)
+                               (use-textures surface)
                                (render-patches vao)
-                               (destroy-texture heightfield)
+                               (destroy-texture surface)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 0.02))
          ?selector                            ?scale ?result
@@ -165,22 +167,23 @@ void main()
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.6 -0.5 0.5 0 0 0 0
-                                            0.4 -0.5 0.5 0 0 0 0
-                                           -0.6  0.5 0.5 0 0 0 0
-                                            0.4  0.5 0.5 0 0 0 0]
+                              vertices    [-0.6 -0.5 0.5 0.25 0.25 0 0
+                                            0.4 -0.5 0.5 0.75 0.25 0 0
+                                           -0.6  0.5 0.5 0.25 0.75 0 0
+                                            0.4  0.5 0.5 0.75 0.75 0 0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]
                                                         :geometry [geometry-planet]
                                                         :fragment [fragment-white])
                               variables   [:point 3 :heightcoord 2 :colorcoord 2]
+                              data        [-0.6 -0.5 0.5, 0.4 -0.5 0.5, -0.6  0.5 0.5, 0.4  0.5 0.5]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              heightfield (make-float-texture-2d :linear :clamp
-                                                                 {:width 1 :height 1 :data (float-array [1.0])})]
+                              surface     (make-vector-texture-2d :linear :clamp
+                                                                  {:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
-                          (uniform-sampler program "heightfield" 0)
+                          (uniform-sampler program "surface" 0)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -190,9 +193,9 @@ void main()
                                                                                              (vec3 0.1 0 0)))
                           (uniform-matrix4 program "projection" (eye 4))
                           (uniform-float program "z_near" 0.0)
-                          (use-textures heightfield)
+                          (use-textures surface)
                           (raster-lines (render-patches vao))
-                          (destroy-texture heightfield)
+                          (destroy-texture surface)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
       => (is-image "test/sfsim25/fixtures/planet/tessellation.png" 5.0))
@@ -200,10 +203,10 @@ void main()
 (fact "Apply projection matrix to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.5 -0.5 0 0 0 0 0
-                                            0.5 -0.5 0 0 0 0 0
-                                           -0.5  0.5 0 0 0 0 0
-                                            0.5  0.5 0 0 0 0 0]
+                              vertices    [-0.5 -0.5 0 0.25 0.25 0 0
+                                            0.5 -0.5 0 0.75 0.25 0 0
+                                           -0.5  0.5 0 0.25 0.75 0 0
+                                            0.5  0.5 0 0.75 0.75 0 0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]
@@ -211,11 +214,12 @@ void main()
                                                         :fragment [fragment-white])
                               variables   [:point 3 :heightcoord 2 :colorcoord 2]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              heightfield (make-float-texture-2d :linear :clamp
-                                                                 {:width 1 :height 1 :data (float-array [1.0])})]
+                              data        [-0.5 -0.5 0, 0.5 -0.5 0, -0.5  0.5 0, 0.5  0.5 0]
+                              surface     (make-vector-texture-2d :linear :clamp
+                                                                  {:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
-                          (uniform-sampler program "heightfield" 0)
+                          (uniform-sampler program "surface" 0)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -226,9 +230,9 @@ void main()
                                                                                              (vec3 0 0 -2)))
                           (uniform-matrix4 program "projection" (projection-matrix 256 256 1 3 (/ PI 3)))
                           (uniform-float program "z_near" 0.0)
-                          (use-textures heightfield)
+                          (use-textures surface)
                           (raster-lines (render-patches vao))
-                          (destroy-texture heightfield)
+                          (destroy-texture surface)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
       => (is-image "test/sfsim25/fixtures/planet/projection.png" 0.9))
@@ -247,11 +251,12 @@ void main()
                                                         :fragment [fragment-white])
                               variables   [:point 3 :heightcoord 2 :colorcoord 2]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              heightfield (make-float-texture-2d :linear :clamp
-                                                                 {:width 2 :height 2 :data (float-array [0.5 1.0 1.5 2.0])})]
+                              data        [-0.25 -0.25 0.25, 0.5 -0.5 0.5, -0.75 0.75 0.75, 1.0 1.0 1.0]
+                              surface     (make-vector-texture-2d :linear :clamp
+                                                                  {:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
-                          (uniform-sampler program "heightfield" 0)
+                          (uniform-sampler program "surface" 0)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -259,9 +264,9 @@ void main()
                           (uniform-matrix4 program "inverse_transform" (eye 4))
                           (uniform-matrix4 program "projection" (eye 4))
                           (uniform-float program "z_near" 0.0)
-                          (use-textures heightfield)
+                          (use-textures surface)
                           (raster-lines (render-patches vao))
-                          (destroy-texture heightfield)
+                          (destroy-texture surface)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
       => (is-image "test/sfsim25/fixtures/planet/heightfield.png" 1.6))
@@ -586,8 +591,10 @@ void main()
                                    indices    [0 2 3 1]
                                    face       0
                                    vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
-                                   data       (float-array (repeat (* 9 9) 0.5))
-                                   height-tex (make-float-texture-2d :linear :clamp {:width 9 :height 9 :data data})
+                                   data       (flatten
+                                                (for [y (range 1.0 -1.25 -0.25) x (range -1.0 1.25 0.25)]
+                                                     [(* x 0.5) (* y 0.5) 0.5]))
+                                   surf-tex   (make-vector-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array data)})
                                    vao        (make-vertex-array-object program indices vertices
                                                                         [:point 3 :heightcoord 2 :colorcoord 2])
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2))
@@ -596,16 +603,16 @@ void main()
                                                :sfsim25.quadtree/left  ?left
                                                :sfsim25.quadtree/down  ?down
                                                :sfsim25.quadtree/right ?right}
-                                   tile       (merge {:vao vao :height-tex height-tex} neighbours)]
+                                   tile       (merge {:vao vao :surf-tex surf-tex} neighbours)]
                                (use-program program)
                                (clear (vec3 0 0 0))
-                               (uniform-sampler program "heightfield" 0)
+                               (uniform-sampler program "surface" 0)
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "inverse_transform" (inverse transform))
                                (uniform-matrix4 program "projection" projection)
-                               (raster-lines (render-tile program tile [:height-tex]))
-                               (destroy-texture height-tex)
+                               (raster-lines (render-tile program tile [:surf-tex]))
+                               (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
          ?up   ?left ?down ?right ?result
