@@ -537,7 +537,7 @@ void main()
 
 (defn background-tree-update [tree]
   (let [increase? (partial increase-level? tilesize radius width 60 10 6 @position)]
-    (update-level-of-detail tree increase? true)))
+    (update-level-of-detail tree radius increase? true)))
 
 (defn load-tile-into-opengl
   [tile]
