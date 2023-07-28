@@ -1,5 +1,5 @@
 # TODO
-* set patch transformation matrix in render-tile, accept camera extrinsic in render-tree, shadow-cascade
+* accept camera extrinsic in shadow-cascade
 * generate .surf files
 * delete .scale files
 * heightcoord -> surfacecoord

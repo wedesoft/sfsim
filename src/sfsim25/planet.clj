@@ -1,8 +1,11 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
-    (:require [sfsim25.cubemap :refer (cube-map-corners)]
+    (:require [fastmath.matrix :refer (mulm eye)]
+              [sfsim25.matrix :refer (transformation-matrix)]
+              [sfsim25.cubemap :refer (cube-map-corners)]
               [sfsim25.quadtree :refer (is-leaf?)]
-              [sfsim25.render :refer (uniform-int use-textures render-patches)]))
+              [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches)])
+    (:import [fastmath.matrix Mat4x4]))
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
@@ -47,20 +50,23 @@
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.IPersistentMap tile ^clojure.lang.PersistentVector texture-keys]
-  (let [neighbours (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
-                           (if (:sfsim25.quadtree/left  tile) 2 0)
-                           (if (:sfsim25.quadtree/down  tile) 4 0)
-                           (if (:sfsim25.quadtree/right tile) 8 0))]
+  [^long program ^clojure.lang.IPersistentMap tile ^Mat4x4 transform ^clojure.lang.PersistentVector texture-keys]
+  (let [neighbours  (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
+                            (if (:sfsim25.quadtree/left  tile) 2 0)
+                            (if (:sfsim25.quadtree/down  tile) 4 0)
+                            (if (:sfsim25.quadtree/right tile) 8 0))
+        tile-center (:center tile)]
     (uniform-int program "neighbours" neighbours)
+    (uniform-vector3 program "tile_center" tile-center)
+    (uniform-matrix4 program "recenter_and_transform" (mulm transform (transformation-matrix (eye 3) tile-center)))
     (apply use-textures (map tile texture-keys))
     (render-patches (:vao tile))))
 
 (defn render-tree
   "Call each tile in tree to be rendered"
-  [^clojure.lang.IPersistentMap program ^clojure.lang.IPersistentMap node ^clojure.lang.PersistentVector texture-keys]
+  [^long program ^clojure.lang.IPersistentMap node ^Mat4x4 transform ^clojure.lang.PersistentVector texture-keys]
   (when-not (empty? node)
             (if (is-leaf? node)
-              (render-tile program node texture-keys)
+              (render-tile program node transform texture-keys)
               (doseq [selector [:0 :1 :2 :3 :4 :5]]
-                     (render-tree program (selector node) texture-keys)))))
+                     (render-tree program (selector node) transform texture-keys)))))

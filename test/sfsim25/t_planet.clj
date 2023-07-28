@@ -13,7 +13,8 @@
               [sfsim25.interpolate :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all])
-    (:import [org.lwjgl.glfw GLFW]))
+    (:import [org.lwjgl.glfw GLFW]
+             [fastmath.matrix Mat4x4]))
 
 (GLFW/glfwInit)
 
@@ -150,8 +151,8 @@ void main()
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" 15)
-                               (uniform-matrix4 program "transform" (eye 4))
-                               (uniform-matrix4 program "inverse_transform" (eye 4))
+                               (uniform-matrix4 program "recenter_and_transform" (eye 4))
+                               (uniform-vector3 program "tile_center" (vec3 0 0 0))
                                (uniform-matrix4 program "projection" (eye 4))
                                (uniform-float program "z_near" 0.5)
                                (use-textures surface)
@@ -597,21 +598,20 @@ void main()
                                    surf-tex   (make-vector-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array data)})
                                    vao        (make-vertex-array-object program indices vertices
                                                                         [:point 3 :heightcoord 2 :colorcoord 2])
-                                   transform  (transformation-matrix (eye 3) (vec3 0 0 2))
+                                   transform  (transformation-matrix (eye 3) (vec3 0 0 2.5))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
                                    neighbours {:sfsim25.quadtree/up    ?up
                                                :sfsim25.quadtree/left  ?left
                                                :sfsim25.quadtree/down  ?down
                                                :sfsim25.quadtree/right ?right}
-                                   tile       (merge {:vao vao :surf-tex surf-tex} neighbours)]
+                                   tile       (merge {:vao vao :surf-tex surf-tex :center (vec3 0 0 0.5)} neighbours)]
                                (use-program program)
                                (clear (vec3 0 0 0))
                                (uniform-sampler program "surface" 0)
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
-                               (uniform-matrix4 program "inverse_transform" (inverse transform))
                                (uniform-matrix4 program "projection" projection)
-                               (raster-lines (render-tile program tile [:surf-tex]))
+                               (raster-lines (render-tile program tile (inverse transform) [:surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
@@ -622,24 +622,25 @@ void main()
          true  true  false true   "tile-down.png"
          true  true  true  false  "tile-right.png")
 
-(defn render-tile-calls [program node texture-keys]
+(defn render-tile-calls [program node transform texture-keys]
   (let [calls (atom [])]
-    (with-redefs [render-tile (fn [^long program ^clojure.lang.IPersistentMap tile ^clojure.lang.PersistentVector texture-keys]
-                                  (swap! calls conj [program tile texture-keys]))]
-      (render-tree program node texture-keys)
+    (with-redefs [render-tile (fn [^long program ^clojure.lang.IPersistentMap tile ^Mat4x4 transform
+                                   ^clojure.lang.PersistentVector texture-keys]
+                                  (swap! calls conj [program tile transform texture-keys]))]
+      (render-tree program node transform texture-keys)
       @calls)))
 
 (tabular "Call each tile in tree to be rendered"
-         (fact (render-tile-calls ?program ?node ?texture-keys) => ?result)
-         ?program ?node               ?texture-keys ?result
-         1234     {}                  [:surf-tex]   []
-         1234     {:vao 42}           [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
-         1234     {:0 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
-         1234     {:1 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
-         1234     {:2 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
-         1234     {:3 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
-         1234     {:4 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
-         1234     {:5 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]]
-         1234     {:3 {:2 {:vao 42}}} [:surf-tex]   [[1234 {:vao 42} [:surf-tex]]])
+         (fact (render-tile-calls ?program ?node ?transform ?texture-keys) => ?result)
+         ?program ?transform ?node               ?texture-keys ?result
+         1234     :transform {}                  [:surf-tex]   []
+         1234     :transform {:vao 42}           [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
+         1234     :transform {:0 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
+         1234     :transform {:1 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
+         1234     :transform {:2 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
+         1234     :transform {:3 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
+         1234     :transform {:4 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
+         1234     :transform {:5 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
+         1234     :transform {:3 {:2 {:vao 42}}} [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]])
 
 (GLFW/glfwTerminate)

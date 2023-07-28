@@ -4,7 +4,8 @@ layout(quads, equal_spacing, ccw) in;
 
 uniform sampler2D surface;
 uniform mat4 projection;
-uniform mat4 inverse_transform;
+uniform vec3 tile_center;
+uniform mat4 recenter_and_transform;
 
 in TCS_OUT
 {
@@ -27,8 +28,8 @@ void main()
   vec2 heightcoord_a = mix(tes_in[0].heightcoord, tes_in[1].heightcoord, gl_TessCoord.x);
   vec2 heightcoord_b = mix(tes_in[3].heightcoord, tes_in[2].heightcoord, gl_TessCoord.x);
   vec2 heightcoord = mix(heightcoord_a, heightcoord_b, gl_TessCoord.y);
-  vec3 point = texture(surface, heightcoord).xyz;
-  tes_out.point = point;
-  vec4 transformed_point = inverse_transform * vec4(point, 1);
+  vec3 vector = texture(surface, heightcoord).xyz;
+  tes_out.point = tile_center + vector;
+  vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
   gl_Position = projection * transformed_point;
 }
