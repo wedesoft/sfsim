@@ -537,7 +537,7 @@ void main()
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
 (defn background-tree-update [tree]
-  (let [increase? (partial increase-level? tilesize radius width 60 10 1 @position)]
+  (let [increase? (partial increase-level? tilesize radius width 60 10 2 @position)]
     (update-level-of-detail tree radius increase? true)))
 
 (defn load-tile-into-opengl
@@ -655,9 +655,8 @@ void main()
                                                (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
                                                (render-quads opacity-vao))
                    shadows    (shadow-cascade shadow-size matrix-cas program-shadow-planet
-                                              (fn [shadow-ndc-matrix]
-                                                  (uniform-matrix4 program-shadow-planet "projection" (eye 4))
-                                                  (render-tree program-shadow-planet @tree shadow-ndc-matrix [:surf-tex])))
+                                              (fn [transform]
+                                                  (render-tree program-shadow-planet @tree transform [:surf-tex])))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
