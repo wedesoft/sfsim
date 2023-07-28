@@ -1,5 +1,7 @@
 # TODO
 * accept camera extrinsic in shadow-cascade
+* naming for transform and inverse transform
+* opacity cascade as higher level function?
 * generate .surf files
 * delete .scale files
 * heightcoord -> surfacecoord

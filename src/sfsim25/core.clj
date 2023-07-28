@@ -57,7 +57,8 @@ void main()
 "#version 410 core
 layout(quads, equal_spacing, ccw) in;
 uniform sampler2D surface;
-uniform mat4 shadow_ndc_matrix;
+uniform vec3 tile_center;
+uniform mat4 recenter_and_transform;
 uniform int shadow_size;
 in TCS_OUT
 {
@@ -82,9 +83,9 @@ void main()
   vec2 heightcoord_a = mix(tes_in[0].heightcoord, tes_in[1].heightcoord, gl_TessCoord.x);
   vec2 heightcoord_b = mix(tes_in[3].heightcoord, tes_in[2].heightcoord, gl_TessCoord.x);
   vec2 heightcoord = mix(heightcoord_a, heightcoord_b, gl_TessCoord.y);
-  vec3 point = texture(surface, heightcoord).xyz;
-  tes_out.point = point;
-  vec4 transformed_point = shadow_ndc_matrix * vec4(point, 1);
+  vec3 vector = texture(surface, heightcoord).xyz;
+  tes_out.point = tile_center + vector;
+  vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
   gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
 }" )
 
@@ -536,7 +537,7 @@ void main()
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
 (defn background-tree-update [tree]
-  (let [increase? (partial increase-level? tilesize radius width 60 10 6 @position)]
+  (let [increase? (partial increase-level? tilesize radius width 60 10 1 @position)]
     (update-level-of-detail tree radius increase? true)))
 
 (defn load-tile-into-opengl
@@ -603,7 +604,7 @@ void main()
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
                  rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
-                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 0.001 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -0.001 0))
+                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 50 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -50 0))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
@@ -654,8 +655,9 @@ void main()
                                                (uniform-float program-opacity "cloud_max_step" (* 0.5 opac-step))
                                                (render-quads opacity-vao))
                    shadows    (shadow-cascade shadow-size matrix-cas program-shadow-planet
-                                              (uniform-matrix4 program-shadow-planet "projection" (eye 4))
-                                              (render-tree program-shadow-planet @tree [:surf-tex]))
+                                              (fn [shadow-ndc-matrix]
+                                                  (uniform-matrix4 program-shadow-planet "projection" (eye 4))
+                                                  (render-tree program-shadow-planet @tree shadow-ndc-matrix [:surf-tex])))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
@@ -672,7 +674,6 @@ void main()
                                 (uniform-float program-cloud-planet "anisotropic" @anisotropic)
                                 (uniform-matrix4 program-cloud-planet "projection" projection)
                                 (uniform-vector3 program-cloud-planet "origin" @position)
-                                (uniform-matrix4 program-cloud-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-cloud-planet "light_direction" light-dir)
                                 (uniform-float program-cloud-planet "opacity_step" opac-step)
                                 (doseq [[idx item] (map-indexed vector splits)]
@@ -681,7 +682,7 @@ void main()
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
                                 (apply use-textures nil T S M W L B C (concat shadows opacities))
-                                (render-tree program-cloud-planet @tree [:surf-tex])
+                                (render-tree program-cloud-planet @tree (inverse transform) [:surf-tex])
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
@@ -716,7 +717,6 @@ void main()
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
                                 (uniform-vector3 program-planet "origin" @position)
-                                (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (uniform-float program-planet "opacity_step" opac-step)
                                 (uniform-int program-planet "window_width" (aget w 0))
@@ -728,7 +728,8 @@ void main()
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
                                 (apply use-textures nil nil nil nil nil T S M E clouds (concat shadows opacities))
-                                (render-tree program-planet @tree [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
+                                (render-tree program-planet @tree (inverse transform)
+                                             [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
                                 (use-program program-atmosphere)
                                 (doseq [[idx item] (map-indexed vector splits)]

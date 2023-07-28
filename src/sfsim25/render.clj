@@ -493,17 +493,16 @@
   `(let [tex# (make-empty-depth-texture-2d :linear :clamp ~width ~height)]
      (framebuffer-render ~width ~height :cullfront tex# [] ~@body tex#)))
 
-(defmacro shadow-cascade
+(defn shadow-cascade
   "Render cascaded shadow map"
-  [size matrix-cascade program & body]
-  `(mapv
-     (fn [shadow-level#]
-         (texture-render-depth ~size ~size
-                               (clear)
-                               (use-program ~program)
-                               (uniform-matrix4 ~program "shadow_ndc_matrix" (:shadow-ndc-matrix shadow-level#))
-                               ~@body))
-     ~matrix-cascade))
+  [size matrix-cascade program fun]
+  (mapv
+    (fn [shadow-level]
+        (texture-render-depth size size
+                              (clear)
+                              (use-program program)
+                              (fun (:shadow-ndc-matrix shadow-level))))
+    matrix-cascade))
 
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
