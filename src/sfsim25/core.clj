@@ -537,7 +537,7 @@ void main()
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
 (defn background-tree-update [tree]
-  (let [increase? (partial increase-level? tilesize radius width 60 10 2 @position)]
+  (let [increase? (partial increase-level? tilesize radius width 60 10 6 @position)]
     (update-level-of-detail tree radius increase? true)))
 
 (defn load-tile-into-opengl
@@ -673,6 +673,7 @@ void main()
                                 (uniform-float program-cloud-planet "anisotropic" @anisotropic)
                                 (uniform-matrix4 program-cloud-planet "projection" projection)
                                 (uniform-vector3 program-cloud-planet "origin" @position)
+                                (uniform-matrix4 program-cloud-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-cloud-planet "light_direction" light-dir)
                                 (uniform-float program-cloud-planet "opacity_step" opac-step)
                                 (doseq [[idx item] (map-indexed vector splits)]
@@ -716,6 +717,7 @@ void main()
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
                                 (uniform-vector3 program-planet "origin" @position)
+                                (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (uniform-float program-planet "opacity_step" opac-step)
                                 (uniform-int program-planet "window_width" (aget w 0))
