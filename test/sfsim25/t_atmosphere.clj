@@ -685,7 +685,7 @@ void main()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
-                               (uniform-matrix4 program "transform" ?matrix)
+                               (uniform-matrix4 program "extrinsics" ?matrix)
                                (uniform-float program "z_far" 1.0)
                                (uniform-float program "z_near" 0.5)
                                (render-quads vao)
@@ -715,7 +715,7 @@ vec4 cloud_overlay()
                                                   -0.5  0.5 -1
                                                    0.5  0.5 -1]
                                    origin        (vec3 ?x ?y ?z)
-                                   transform     (transformation-matrix (rotation-x ?rotation) origin)
+                                   extrinsics    (transformation-matrix (rotation-x ?rotation) origin)
                                    program       (make-program :vertex [vertex-atmosphere]
                                                                :fragment [fragment-atmosphere transmittance-outer
                                                                           ray-scatter-outer attenuation-outer shaders/ray-sphere
@@ -746,7 +746,7 @@ vec4 cloud_overlay()
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-float program "z_near" 0.0)
                                (uniform-float program "z_far" 1.0)
-                               (uniform-matrix4 program "transform" transform)
+                               (uniform-matrix4 program "extrinsics" extrinsics)
                                (uniform-vector3 program "origin" origin)
                                (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
                                (uniform-float program "radius" radius)
