@@ -1,6 +1,5 @@
 # TODO
-* naming for transform and inverse transform
-* opacity cascade as higher level function (same as shadow-cascade)?
+* naming for transform and inverse transform: transform -> extrinsics in shaders
 * use png for water
 * heightcoord -> surfacecoord
 * .jpg -> .day.jpg

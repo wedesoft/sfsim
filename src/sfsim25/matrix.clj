@@ -158,19 +158,19 @@
 
 (defn- bounding-box-for-rotated-frustum
   "Determine bounding box for rotated frustum"
-  [transform light-matrix projection-matrix longest-shadow ndc1 ndc2]
+  [extrinsics light-matrix projection-matrix longest-shadow ndc1 ndc2]
   (let [corners         (frustum-corners projection-matrix ndc1 ndc2)
-        rotated-corners (transform-point-list transform corners)
+        rotated-corners (transform-point-list extrinsics corners)
         light-corners   (transform-point-list light-matrix rotated-corners)]
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
-  ([projection-matrix transform light-vector longest-shadow]
-   (shadow-matrices projection-matrix transform light-vector longest-shadow 1.0 0.0))
-  ([projection-matrix transform light-vector longest-shadow ndc1 ndc2]
+  ([projection-matrix extrinsics light-vector longest-shadow]
+   (shadow-matrices projection-matrix extrinsics light-vector longest-shadow 1.0 0.0))
+  ([projection-matrix extrinsics light-vector longest-shadow ndc1 ndc2]
    (let [light-matrix (orient-to-light light-vector)
-         bounding-box (bounding-box-for-rotated-frustum transform light-matrix projection-matrix longest-shadow ndc1 ndc2)
+         bounding-box (bounding-box-for-rotated-frustum extrinsics light-matrix projection-matrix longest-shadow ndc1 ndc2)
          shadow-ndc   (shadow-box-to-ndc bounding-box)
          shadow-map   (shadow-box-to-map bounding-box)
          span         (span-of-box bounding-box)
@@ -198,11 +198,11 @@
 
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices"
-  [projection-matrix transform light-vector longest-shadow mix near far num-steps]
+  [projection-matrix extrinsics light-vector longest-shadow mix near far num-steps]
   (mapv (fn [idx]
             (let [ndc1 (z-to-ndc near far (split-mixed mix near far num-steps idx))
                   ndc2 (z-to-ndc near far (split-mixed mix near far num-steps (inc idx)))]
-              (shadow-matrices projection-matrix transform light-vector longest-shadow ndc1 ndc2)))
+              (shadow-matrices projection-matrix extrinsics light-vector longest-shadow ndc1 ndc2)))
         (range num-steps)))
 
 (set! *unchecked-math* false)
