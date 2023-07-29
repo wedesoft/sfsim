@@ -765,12 +765,12 @@ void main()
 
 (def vertex-shadow
 "#version 410 core
-uniform mat4 shadow_ndc_matrix;
+uniform mat4 transform;
 in vec3 point;
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
-  gl_Position = shrink_shadow_index(shadow_ndc_matrix * vec4(point, 1), 128, 128);
+  gl_Position = shrink_shadow_index(transform * vec4(point, 1), 128, 128);
 }")
 
 (def fragment-shadow
@@ -827,7 +827,7 @@ void main(void)
                                128 128
                                (clear)
                                (use-program program-shadow)
-                               (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:shadow-ndc-matrix shadow-mat))
+                               (uniform-matrix4 program-shadow "transform" (:shadow-ndc-matrix shadow-mat))
                                (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
                 tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
@@ -878,7 +878,10 @@ void main(void)
                                            :fragment [fragment-scene-cascade (s/shadow-cascade-lookup num-steps "shadow_lookup")
                                                       s/shadow-lookup s/convert-shadow-index])
               vao            (make-vertex-array-object program-main indices vertices [:point 3])
-              shadow-maps    (shadow-cascade 128 shadow-mats program-shadow (render-quads vao))]
+              shadow-maps    (shadow-cascade 128 shadow-mats program-shadow
+                                             (fn [shadow-ndc-matrix]
+                                                 (uniform-matrix4 program-shadow "transform" shadow-ndc-matrix)
+                                                 (render-quads vao)))]
           (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
                 tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
             (framebuffer-render 320 240 :cullback depth [tex]

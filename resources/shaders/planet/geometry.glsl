@@ -12,7 +12,7 @@ out GEO_OUT
   vec3 point;
 } geo_out;
 
-// Shader to output triangles with texture and heightfield coordinates.
+// Shader to output triangles with texture and surface point cloud coordinates.
 void main(void)
 {
   gl_Position = gl_in[0].gl_Position;

@@ -37,14 +37,15 @@ void main()
   float wet = texture(water, fs_in.colorcoord).r;
   vec3 normal = mix(land_normal, water_normal, wet);
   float cos_incidence = dot(light_direction, normal);
+  float shadow = overall_shadow(vec4(fs_in.point, 1));
   float highlight;
   if (cos_incidence > 0) {
-    highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular);
+    highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular) * shadow;
   } else {
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  float incidence_fraction = cos_incidence * overall_shadow(vec4(fs_in.point, 1));
+  float incidence_fraction = cos_incidence * shadow;
   float cos_normal = dot(light_direction, water_normal);
   vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, cos_normal, highlight,
                                   day_color, night_color, water_color);
