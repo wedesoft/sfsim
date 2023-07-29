@@ -1,8 +1,7 @@
 # TODO
 * naming for transform and inverse transform
 * opacity cascade as higher level function (same as shadow-cascade)?
-* generate .surf files
-* delete .scale files
+* use png for water
 * heightcoord -> surfacecoord
 * .jpg -> .day.jpg
 * elevation-tilesize -> surface-tilesize
