@@ -1,5 +1,4 @@
 # TODO
-* naming for transform and inverse transform: inverse-transform -> transform
 * use png for water
 * heightcoord -> surfacecoord
 * .jpg -> .day.jpg

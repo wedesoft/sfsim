@@ -275,7 +275,7 @@ void main()
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          inv-transform   (transformation-matrix (eye 3) (vec3 0 0 shift-z))
+          transform       (transformation-matrix (eye 3) (vec3 0 0 shift-z))
           program         (make-program :vertex [shaders/vertex-passthrough]
                                         :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n "opacity_lookup")
                                                    opacity-lookup-mock])
@@ -285,7 +285,7 @@ void main()
                                opacities offsets)
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
-                                                (uniform-matrix4 program "inverse_transform" inv-transform)
+                                                (uniform-matrix4 program "transform" transform)
                                                 (doseq [idx (range n)]
                                                        (uniform-sampler program (str "opacity" idx) idx)
                                                        (uniform-float program (str "depth" idx) 200.0))
@@ -1256,18 +1256,18 @@ float cloud_density(vec3 point, float lod)
 (def vertex-render-opacity
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 inverse_transform;
+uniform mat4 transform;
 in vec3 point;
 out vec4 pos;
 void main()
 {
   pos = vec4(point, 1);
-  gl_Position = projection * inverse_transform * pos;
+  gl_Position = projection * transform * pos;
 }")
 
 (def fragment-render-opacity
 "#version 410 core
-uniform mat4 inverse_transform;
+uniform mat4 transform;
 in vec4 pos;
 out vec4 fragColor;
 float opacity_cascade_lookup(vec4 point);
@@ -1319,7 +1319,7 @@ void main()
                                (uniform-int program "shadow_size" shadow-size)
                                (uniform-int program "num_opacity_layers" num-layers)
                                (uniform-matrix4 program "projection" projection)
-                               (uniform-matrix4 program "inverse_transform" (inverse extrinsics))
+                               (uniform-matrix4 program "transform" (inverse extrinsics))
                                (uniform-float program "split0" z-near)
                                (uniform-float program "split1" z-far)
                                (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
