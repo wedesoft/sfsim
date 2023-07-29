@@ -39,17 +39,17 @@
 (def vertex-shadow-planet
 "#version 410 core
 in vec3 point;
-in vec2 heightcoord;
+in vec2 surfacecoord;
 in vec2 colorcoord;
 out VS_OUT
 {
-  vec2 heightcoord;
+  vec2 surfacecoord;
   vec2 colorcoord;
 } vs_out;
 void main()
 {
   gl_Position = vec4(point, 1);
-  vs_out.heightcoord = heightcoord;
+  vs_out.surfacecoord = surfacecoord;
   vs_out.colorcoord = colorcoord;
 }")
 
@@ -62,7 +62,7 @@ uniform mat4 recenter_and_transform;
 uniform int shadow_size;
 in TCS_OUT
 {
-  vec2 heightcoord;
+  vec2 surfacecoord;
   vec2 colorcoord;
 } tes_in[];
 
@@ -80,10 +80,10 @@ void main()
   vec2 colorcoord_a = mix(tes_in[0].colorcoord, tes_in[1].colorcoord, gl_TessCoord.x);
   vec2 colorcoord_b = mix(tes_in[3].colorcoord, tes_in[2].colorcoord, gl_TessCoord.x);
   tes_out.colorcoord = mix(colorcoord_a, colorcoord_b, gl_TessCoord.y);
-  vec2 heightcoord_a = mix(tes_in[0].heightcoord, tes_in[1].heightcoord, gl_TessCoord.x);
-  vec2 heightcoord_b = mix(tes_in[3].heightcoord, tes_in[2].heightcoord, gl_TessCoord.x);
-  vec2 heightcoord = mix(heightcoord_a, heightcoord_b, gl_TessCoord.y);
-  vec3 vector = texture(surface, heightcoord).xyz;
+  vec2 surfacecoord_a = mix(tes_in[0].surfacecoord, tes_in[1].surfacecoord, gl_TessCoord.x);
+  vec2 surfacecoord_b = mix(tes_in[3].surfacecoord, tes_in[2].surfacecoord, gl_TessCoord.x);
+  vec2 surfacecoord = mix(surfacecoord_a, surfacecoord_b, gl_TessCoord.y);
+  vec3 vector = texture(surface, surfacecoord).xyz;
   tes_out.point = tile_center + vector;
   vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
   gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
@@ -544,7 +544,7 @@ void main()
   [tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+        vao        (make-vertex-array-object program-planet indices vertices [:point 3 :surfacecoord 2 :colorcoord 2])
         day-tex    (make-rgb-texture :linear :clamp (:day tile))
         night-tex  (make-rgb-texture :linear :clamp (:night tile))
         surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})

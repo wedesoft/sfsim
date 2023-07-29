@@ -1,9 +1,6 @@
 # TODO
-* use png for water
-* heightcoord -> surfacecoord
 * .jpg -> .day.jpg
 * elevation-tilesize -> surface-tilesize
-* store water in png format
 * find fix for accuracy problems with ground
   https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
 * render object in a second pass if z-near for planet is too big
@@ -19,6 +16,7 @@
   * https://www.russianspaceweb.com/spiral\_orbiter\_design.html
 * deferred decals for rendering runway
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
+* use 1-channel png for water?
 * constant texel size across opacity cascade to prevent step in opacity?
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
