@@ -31,14 +31,15 @@
 
 (defn load-tile-data
   "Load data associated with a cube map tile"
-  [face level y x]
+  [face level y x radius]
   {:face    face
    :level   level
    :y       y
    :x       x
+   :center  (tile-center face level y x radius)
    :day     (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
    :night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
-   :scales  (slurp-floats  (cube-path "data/globe" face level y x ".scale"))
+   :surface (slurp-floats  (cube-path "data/globe" face level y x ".surf"))
    :normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
    :water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
 
@@ -52,8 +53,8 @@
 
 (defn load-tiles-data
   "Load a set of tiles"
-  [metadata]
-  (map (fn [{:keys [face level y x]}] (load-tile-data face level y x)) metadata))
+  [metadata radius]
+  (map (fn [{:keys [face level y x]}] (load-tile-data face level y x radius)) metadata))
 
 (defn is-leaf?
   "Check whether specified tree node is a leaf"
@@ -203,10 +204,10 @@
 
 (defn update-level-of-detail
   "Return tree with updated level of detail (LOD), a list of dropped tiles and a list of new paths"
-  [tree increase-level-fun? neighbours?]
+  [tree radius increase-level-fun? neighbours?]
   (let [drop-list (tiles-to-drop tree increase-level-fun?)
         load-list (tiles-to-load tree increase-level-fun?)
-        new-tiles (load-tiles-data (tiles-meta-data load-list))
+        new-tiles (load-tiles-data (tiles-meta-data load-list) radius)
         check     (if neighbours? check-neighbours identity)]
     {:tree (check (quadtree-add (quadtree-drop tree drop-list) load-list new-tiles))
      :drop (quadtree-extract tree drop-list)

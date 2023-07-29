@@ -1,6 +1,16 @@
 # TODO
-* render textured cube to see whether floating point accuracy is sufficient
+* naming for transform and inverse transform
+* opacity cascade as higher level function (same as shadow-cascade)?
+* use png for water
+* heightcoord -> surfacecoord
+* .jpg -> .day.jpg
+* elevation-tilesize -> surface-tilesize
+* inverse\_transform -> patch\_transform, compute on CPU with double precision: inverse camera transform times translation of patch
+* use tile-center with double accuracy to offset tiles
+* store water in png format
+* find fix for accuracy problems with ground
   https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
+* render object in a second pass if z-near for planet is too big
 * render shadow of cube
 * problem with shadow mapping creating dark bar at bottom for nearby terrain
 * ground collisions

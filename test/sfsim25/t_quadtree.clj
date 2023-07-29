@@ -17,22 +17,25 @@
       (quadtree/quad-size 2 33 6378000.0 1280 150000.0 60.0) => 10.0))
 
 (tabular "Load normals, scale factors and colors for a tile"
-  (fact (?k (load-tile-data 3 2 2 1)) => ?result
+  (fact (?k (load-tile-data 3 2 2 1 6378000.0)) => ?result
     (provided
-      (util/slurp-image "data/globe/3/2/1/2.jpg") => "2.jpg"
+      (util/slurp-image "data/globe/3/2/1/2.jpg")       => "2.jpg"
       (util/slurp-image "data/globe/3/2/1/2.night.jpg") => "2.night.jpg"
-      (util/slurp-floats "data/globe/3/2/1/2.scale") => "2.scale"
-      (util/slurp-normals "data/globe/3/2/1/2.png") => "2.png"
-      (util/slurp-bytes "data/globe/3/2/1/2.water") => "2.water"))
+      (util/slurp-floats "data/globe/3/2/1/2.surf")     => "2.surf"
+      (util/slurp-normals "data/globe/3/2/1/2.png")     => "2.png"
+      (util/slurp-bytes "data/globe/3/2/1/2.water")     => "2.water"
+      (cubemap/tile-center 3 2 2 1 6378000.0)           => :tile-center))
   ?k       ?result
   :day     "2.jpg"
   :night   "2.night.jpg"
+  :surface "2.surf"
   :normals "2.png"
   :water   "2.water"
   :face    3
   :level   2
   :y       2
-  :x       1)
+  :x       1
+  :center  :tile-center)
 
 (tabular "Get information for loading sub tiles"
   (fact (nth (sub-tiles-info 3 2 2 1) ?i) => ?result)
@@ -43,10 +46,10 @@
   3  {:face 3 :level 3 :y 5 :x 3})
 
 (fact "Load multiple tiles"
-  (load-tiles-data [{:face 3 :level 2 :y 3 :x 1} {:face 2 :level 3 :y 1 :x 0}]) => [:data-a :data-b]
+  (load-tiles-data [{:face 3 :level 2 :y 3 :x 1} {:face 2 :level 3 :y 1 :x 0}] 6378000.0) => [:data-a :data-b]
     (provided
-      (load-tile-data 3 2 3 1) => :data-a
-      (load-tile-data 2 3 1 0) => :data-b))
+      (load-tile-data 3 2 3 1 6378000.0) => :data-a
+      (load-tile-data 2 3 1 0 6378000.0) => :data-b))
 
 (facts "Check whether specified tree node is a leaf"
   (is-leaf? {:data "test"}) => true
@@ -199,16 +202,17 @@
   (get-in (check-neighbours {:5 {:1 {} :3 {}}}) [:5 :1 :sfsim25.quadtree/down]) => true)
 
 (facts "Update level of detail (LOD)"
-  (with-redefs [quadtree/load-tile-data (fn [face level y x] (fact face => 2 level => 1) {:id (+ (* y 2) x 1)})]
+  (with-redefs [quadtree/load-tile-data (fn [face level y x radius] (fact face => 2 level => 1) {:id (+ (* y 2) x 1)})]
     (let [face     (fn [f] {:face f, :level 0, :y 0, :x 0})
           flat     {:0 (face 0), :1 (face 1), :2 (face 2), :3 (face 3), :4 (face 4), :5 (face 5)}
           quad     (fn [f] (merge (face f) {:0 {:id 1} :1 {:id 2} :2 {:id 3} :3 {:id 4}}))
-          one-face {:0 (face 0), :1 (face 1), :2 (quad 2) , :3 (face 3), :4 (face 4), :5 (face 5)}]
-      (:tree (update-level-of-detail flat (constantly false) false)) => flat
-      (:drop (update-level-of-detail flat (constantly false) false)) => []
-      (:drop (update-level-of-detail one-face (constantly false) false)) => [{:id 1} {:id 2} {:id 3} {:id 4}]
-      (:tree (update-level-of-detail one-face (constantly false) false)) => flat
-      (:load (update-level-of-detail flat (constantly false) false)) => []
-      (:load (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => [[:2 :0] [:2 :1] [:2 :2] [:2 :3]]
-      (:tree (update-level-of-detail flat #(= %& [2 0 0 0]) false)) => one-face
-      (get-in (update-level-of-detail flat (constantly false) true) [:tree :2 :sfsim25.quadtree/up]) => true)))
+          one-face {:0 (face 0), :1 (face 1), :2 (quad 2) , :3 (face 3), :4 (face 4), :5 (face 5)}
+          radius   6378000.0]
+      (:tree (update-level-of-detail flat radius (constantly false) false)) => flat
+      (:drop (update-level-of-detail flat radius (constantly false) false)) => []
+      (:drop (update-level-of-detail one-face radius (constantly false) false)) => [{:id 1} {:id 2} {:id 3} {:id 4}]
+      (:tree (update-level-of-detail one-face radius (constantly false) false)) => flat
+      (:load (update-level-of-detail flat radius (constantly false) false)) => []
+      (:load (update-level-of-detail flat radius #(= %& [2 0 0 0]) false)) => [[:2 :0] [:2 :1] [:2 :2] [:2 :3]]
+      (:tree (update-level-of-detail flat radius #(= %& [2 0 0 0]) false)) => one-face
+      (get-in (update-level-of-detail flat radius (constantly false) true) [:tree :2 :sfsim25.quadtree/up]) => true)))
