@@ -275,7 +275,7 @@ void main()
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          inv-transform   (transformation-matrix (eye 3) (vec3 0 0 shift-z))
+          transform       (transformation-matrix (eye 3) (vec3 0 0 shift-z))
           program         (make-program :vertex [shaders/vertex-passthrough]
                                         :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n "opacity_lookup")
                                                    opacity-lookup-mock])
@@ -285,7 +285,7 @@ void main()
                                opacities offsets)
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
-                                                (uniform-matrix4 program "inverse_transform" inv-transform)
+                                                (uniform-matrix4 program "transform" transform)
                                                 (doseq [idx (range n)]
                                                        (uniform-sampler program (str "opacity" idx) idx)
                                                        (uniform-float program (str "depth" idx) 200.0))
@@ -1162,7 +1162,7 @@ void main()
           surface     (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (float-array data)})
           projection  (projection-matrix width height z-near (+ z-far 1) fov)
           origin      (vec3 0 0 10)
-          transform   (transformation-matrix (eye 3) origin)
+          extrinsics  (transformation-matrix (eye 3) origin)
           planet      (make-program :vertex [vertex-planet]
                                     :tess-control [tess-control-planet]
                                     :tess-evaluation [tess-evaluation-planet]
@@ -1170,7 +1170,7 @@ void main()
                                     :fragment [fragment-planet-clouds cloud-planet])
           indices     [0 1 3 2]
           vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
-          tile        (make-vertex-array-object planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+          tile        (make-vertex-array-object planet indices vertices [:point 3 :surfacecoord 2 :colorcoord 2])
           atmosphere  (make-program :vertex [vertex-atmosphere]
                                     :fragment [fragment-atmosphere-clouds cloud-atmosphere])
           indices     [0 1 3 2]
@@ -1182,7 +1182,7 @@ void main()
                                                   (uniform-sampler planet "surface" 0)
                                                   (uniform-matrix4 planet "projection" projection)
                                                   (uniform-vector3 planet "tile_center" (vec3 0 0 0))
-                                                  (uniform-matrix4 planet "recenter_and_transform" (inverse transform))
+                                                  (uniform-matrix4 planet "recenter_and_transform" (inverse extrinsics))
                                                   (uniform-vector3 planet "origin" origin)
                                                   (uniform-vector3 planet "light_direction" (vec3 1 0 0))
                                                   (uniform-float planet "radius" 5)
@@ -1197,7 +1197,7 @@ void main()
                                                   (render-patches tile)
                                                   (use-program atmosphere)
                                                   (uniform-matrix4 atmosphere "projection" projection)
-                                                  (uniform-matrix4 atmosphere "transform" transform)
+                                                  (uniform-matrix4 atmosphere "extrinsics" extrinsics)
                                                   (uniform-vector3 atmosphere "origin" origin)
                                                   (uniform-float atmosphere "radius" 5)
                                                   (uniform-float atmosphere "max_height" 4)
@@ -1257,18 +1257,17 @@ float cloud_density(vec3 point, float lod)
 "#version 410 core
 uniform mat4 projection;
 uniform mat4 transform;
-uniform mat4 inverse_transform;
 in vec3 point;
 out vec4 pos;
 void main()
 {
   pos = vec4(point, 1);
-  gl_Position = projection * inverse_transform * pos;
+  gl_Position = projection * transform * pos;
 }")
 
 (def fragment-render-opacity
 "#version 410 core
-uniform mat4 inverse_transform;
+uniform mat4 transform;
 in vec4 pos;
 out vec4 fragColor;
 float opacity_cascade_lookup(vec4 point);
@@ -1288,9 +1287,9 @@ void main()
               z-near       1.0
               z-far        6.0
               projection   (projection-matrix 320 240 z-near z-far (to-radians 45))
-              transform    (transformation-matrix (eye 3) (vec3 0 0 4))
+              extrinsics   (transformation-matrix (eye 3) (vec3 0 0 4))
               light        (vec3 0 0 1)
-              shadow-mats  (shadow-matrix-cascade projection transform light 5 0.5 z-near z-far num-steps)
+              shadow-mats  (shadow-matrix-cascade projection extrinsics light 5 0.5 z-near z-far num-steps)
               program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                                          :fragment [(opacity-fragment num-layers) shaders/ray-shell shaders/ray-sphere
                                                     linear-sampling opacity-cascade-mocks])
@@ -1320,8 +1319,7 @@ void main()
                                (uniform-int program "shadow_size" shadow-size)
                                (uniform-int program "num_opacity_layers" num-layers)
                                (uniform-matrix4 program "projection" projection)
-                               (uniform-matrix4 program "transform" transform)
-                               (uniform-matrix4 program "inverse_transform" (inverse transform))
+                               (uniform-matrix4 program "transform" (inverse extrinsics))
                                (uniform-float program "split0" z-near)
                                (uniform-float program "split1" z-far)
                                (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))

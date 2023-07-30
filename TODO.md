@@ -1,19 +1,4 @@
 # TODO
-* naming for transform and inverse transform
-* opacity cascade as higher level function (same as shadow-cascade)?
-* use png for water
-* heightcoord -> surfacecoord
-* .jpg -> .day.jpg
-* elevation-tilesize -> surface-tilesize
-* inverse\_transform -> patch\_transform, compute on CPU with double precision: inverse camera transform times translation of patch
-* use tile-center with double accuracy to offset tiles
-* store water in png format
-* find fix for accuracy problems with ground
-  https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
-* render object in a second pass if z-near for planet is too big
-* render shadow of cube
-* problem with shadow mapping creating dark bar at bottom for nearby terrain
-* ground collisions
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
   * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
@@ -21,8 +6,16 @@
   * http://www.ioaircraft.com/hypersonic/ranger.php
   * http://www.ioaircraft.com/hypersonic/raven.php
   * https://www.russianspaceweb.com/spiral\_orbiter\_design.html
+* render shadow of cube
+* .jpg -> .day.jpg
+* find fix for accuracy problems with ground
+  https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
+* render object in a second pass if z-near for planet is too big
+* problem with shadow mapping creating dark bar at bottom for nearby terrain
+* ground collisions
 * deferred decals for rendering runway
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
+* use 1-channel png for water?
 * constant texel size across opacity cascade to prevent step in opacity?
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves

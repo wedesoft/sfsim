@@ -39,17 +39,17 @@
 (def vertex-shadow-planet
 "#version 410 core
 in vec3 point;
-in vec2 heightcoord;
+in vec2 surfacecoord;
 in vec2 colorcoord;
 out VS_OUT
 {
-  vec2 heightcoord;
+  vec2 surfacecoord;
   vec2 colorcoord;
 } vs_out;
 void main()
 {
   gl_Position = vec4(point, 1);
-  vs_out.heightcoord = heightcoord;
+  vs_out.surfacecoord = surfacecoord;
   vs_out.colorcoord = colorcoord;
 }")
 
@@ -62,7 +62,7 @@ uniform mat4 recenter_and_transform;
 uniform int shadow_size;
 in TCS_OUT
 {
-  vec2 heightcoord;
+  vec2 surfacecoord;
   vec2 colorcoord;
 } tes_in[];
 
@@ -80,10 +80,10 @@ void main()
   vec2 colorcoord_a = mix(tes_in[0].colorcoord, tes_in[1].colorcoord, gl_TessCoord.x);
   vec2 colorcoord_b = mix(tes_in[3].colorcoord, tes_in[2].colorcoord, gl_TessCoord.x);
   tes_out.colorcoord = mix(colorcoord_a, colorcoord_b, gl_TessCoord.y);
-  vec2 heightcoord_a = mix(tes_in[0].heightcoord, tes_in[1].heightcoord, gl_TessCoord.x);
-  vec2 heightcoord_b = mix(tes_in[3].heightcoord, tes_in[2].heightcoord, gl_TessCoord.x);
-  vec2 heightcoord = mix(heightcoord_a, heightcoord_b, gl_TessCoord.y);
-  vec3 vector = texture(surface, heightcoord).xyz;
+  vec2 surfacecoord_a = mix(tes_in[0].surfacecoord, tes_in[1].surfacecoord, gl_TessCoord.x);
+  vec2 surfacecoord_b = mix(tes_in[3].surfacecoord, tes_in[2].surfacecoord, gl_TessCoord.x);
+  vec2 surfacecoord = mix(surfacecoord_a, surfacecoord_b, gl_TessCoord.y);
+  vec3 vector = texture(surface, surfacecoord).xyz;
   tes_out.point = tile_center + vector;
   vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
   gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
@@ -544,7 +544,7 @@ void main()
   [tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object program-planet indices vertices [:point 3 :heightcoord 2 :colorcoord 2])
+        vao        (make-vertex-array-object program-planet indices vertices [:point 3 :surfacecoord 2 :colorcoord 2])
         day-tex    (make-rgb-texture :linear :clamp (:day tile))
         night-tex  (make-rgb-texture :linear :clamp (:night tile))
         surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
@@ -637,8 +637,8 @@ void main()
                    light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
-                   transform  (transformation-matrix (quaternion->matrix @orientation) @position)
-                   matrix-cas (shadow-matrix-cascade projection transform light-dir depth mix z-near z-far num-steps)
+                   extrinsics (transformation-matrix (quaternion->matrix @orientation) @position)
+                   matrix-cas (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
                    splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
                    scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
                    cos-light  (/ (dot light-dir @position) (mag @position))
@@ -673,7 +673,7 @@ void main()
                                 (uniform-float program-cloud-planet "anisotropic" @anisotropic)
                                 (uniform-matrix4 program-cloud-planet "projection" projection)
                                 (uniform-vector3 program-cloud-planet "origin" @position)
-                                (uniform-matrix4 program-cloud-planet "inverse_transform" (inverse transform))
+                                (uniform-matrix4 program-cloud-planet "transform" (inverse extrinsics))
                                 (uniform-vector3 program-cloud-planet "light_direction" light-dir)
                                 (uniform-float program-cloud-planet "opacity_step" opac-step)
                                 (doseq [[idx item] (map-indexed vector splits)]
@@ -682,7 +682,7 @@ void main()
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
                                 (apply use-textures nil T S M W L B C (concat shadows opacities))
-                                (render-tree program-cloud-planet @tree (inverse transform) [:surf-tex])
+                                (render-tree program-cloud-planet @tree (inverse extrinsics) [:surf-tex])
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
@@ -694,8 +694,8 @@ void main()
                                 (uniform-float program-cloud-atmosphere "anisotropic" @anisotropic)
                                 (uniform-matrix4 program-cloud-atmosphere "projection" projection)
                                 (uniform-vector3 program-cloud-atmosphere "origin" @position)
-                                (uniform-matrix4 program-cloud-atmosphere "transform" transform)
-                                (uniform-matrix4 program-cloud-atmosphere "inverse_transform" (inverse transform))
+                                (uniform-matrix4 program-cloud-atmosphere "extrinsics" extrinsics)
+                                (uniform-matrix4 program-cloud-atmosphere "transform" (inverse extrinsics))
                                 (uniform-vector3 program-cloud-atmosphere "light_direction" light-dir)
                                 (uniform-float program-cloud-atmosphere "opacity_step" opac-step)
                                 (doseq [[idx item] (map-indexed vector splits)]
@@ -717,7 +717,7 @@ void main()
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
                                 (uniform-vector3 program-planet "origin" @position)
-                                (uniform-matrix4 program-planet "inverse_transform" (inverse transform))
+                                (uniform-matrix4 program-planet "transform" (inverse extrinsics))
                                 (uniform-vector3 program-planet "light_direction" light-dir)
                                 (uniform-float program-planet "opacity_step" opac-step)
                                 (uniform-int program-planet "window_width" (aget w 0))
@@ -729,7 +729,7 @@ void main()
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
                                 (apply use-textures nil nil nil nil nil T S M E clouds (concat shadows opacities))
-                                (render-tree program-planet @tree (inverse transform)
+                                (render-tree program-planet @tree (inverse extrinsics)
                                              [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
                                 (use-program program-atmosphere)
@@ -739,9 +739,9 @@ void main()
                                        (uniform-matrix4 program-atmosphere (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-atmosphere (str "depth" idx) (:depth item)))
                                 (uniform-matrix4 program-atmosphere "projection" projection)
-                                (uniform-matrix4 program-atmosphere "transform" transform)
+                                (uniform-matrix4 program-atmosphere "extrinsics" extrinsics)
                                 (uniform-vector3 program-atmosphere "origin" @position)
-                                (uniform-matrix4 program-atmosphere "inverse_transform" (inverse transform))
+                                (uniform-matrix4 program-atmosphere "transform" (inverse extrinsics))
                                 (uniform-float program-atmosphere "opacity_step" opac-step)
                                 (uniform-int program-atmosphere "window_width" (aget w 0))
                                 (uniform-int program-atmosphere "window_height" (aget h 0))

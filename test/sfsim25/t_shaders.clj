@@ -250,7 +250,7 @@ void main()
   (with-invisible-window
     (let [indices       [0 1 3 2]
           vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          inv-transform (transformation-matrix (eye 3) (vec3 0 0 shift-z))
+          transform     (transformation-matrix (eye 3) (vec3 0 0 shift-z))
           program       (make-program :vertex [vertex-passthrough]
                                       :fragment [(shadow-cascade-lookup-probe z) (shadow-cascade-lookup n "shadow_lookup")
                                                  shadow-lookup-mock])
@@ -258,7 +258,7 @@ void main()
           shadow-texs   (map #(make-depth-texture :linear :clamp {:width 1 :height 1 :data (float-array [%])}) shadows)
           tex           (texture-render-color 1 1 true
                                               (use-program program)
-                                              (uniform-matrix4 program "inverse_transform" inv-transform)
+                                              (uniform-matrix4 program "transform" transform)
                                               (uniform-int program "selector" selector)
                                               (doseq [idx (range n)]
                                                      (uniform-sampler program (str "shadow_map" idx) idx)

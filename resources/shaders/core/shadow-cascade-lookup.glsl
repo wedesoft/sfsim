@@ -1,6 +1,6 @@
 #version 410 core
 
-uniform mat4 inverse_transform;
+uniform mat4 transform;
 
 <% (doseq [i (range n)] %>
 uniform sampler2DShadow shadow_map<%= i %>;
@@ -14,7 +14,7 @@ float <%= base-function %>(sampler2DShadow shadow_map, vec4 shadow_pos);
 
 float shadow_cascade_lookup(vec4 point)
 {
-  float z = -(inverse_transform * point).z;
+  float z = -(transform * point).z;
 <% (doseq [i (range n)] %>
   if (z <= split<%= (inc i) %>) {
     vec4 shadow_pos = shadow_map_matrix<%= i %> * point;

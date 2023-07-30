@@ -65,7 +65,7 @@ void main()
                                           0.5  0.5 0.5 0 0 0 0]
                               program   (make-program :vertex [vertex-planet]
                                                       :fragment [fragment-white])
-                              variables [:point 3 :heightcoord 2 :colorcoord 2]
+                              variables [:point 3 :surfacecoord 2 :colorcoord 2]
                               vao       (make-vertex-array-object program indices vertices variables)]
                           (clear (vec3 0 0 0))
                           (use-program program)
@@ -98,7 +98,6 @@ void main()
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" ?neighbours)
                                (uniform-matrix4 program "transform" (eye 4))
-                               (uniform-matrix4 program "inverse_transform" (eye 4))
                                (uniform-matrix4 program "projection" (eye 4))
                                (uniform-float program "z_near" 0.0)
                                (use-textures surface)
@@ -140,7 +139,7 @@ void main()
                                                              :tess-evaluation [tess-evaluation-planet]
                                                              :geometry [geometry-planet]
                                                              :fragment [(texture-coordinates-probe ?selector)])
-                                   variables   [:point 3 :heightcoord 2 :colorcoord 2]
+                                   variables   [:point 3 :surfacecoord 2 :colorcoord 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    data        (map #(* % ?scale) [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5])
                                    surface     (make-vector-texture-2d :linear :clamp
@@ -177,7 +176,7 @@ void main()
                                                         :tess-evaluation [tess-evaluation-planet]
                                                         :geometry [geometry-planet]
                                                         :fragment [fragment-white])
-                              variables   [:point 3 :heightcoord 2 :colorcoord 2]
+                              variables   [:point 3 :surfacecoord 2 :colorcoord 2]
                               data        [-0.6 -0.5 0.5, 0.4 -0.5 0.5, -0.6  0.5 0.5, 0.4  0.5 0.5]
                               vao         (make-vertex-array-object program indices vertices variables)
                               surface     (make-vector-texture-2d :linear :clamp
@@ -188,10 +187,7 @@ void main()
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
-                          (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
-                                                                                      (vec3 -0.1 0 0)))
-                          (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
-                                                                                             (vec3 0.1 0 0)))
+                          (uniform-matrix4 program "transform" (transformation-matrix (eye 3) (vec3 0.1 0 0)))
                           (uniform-matrix4 program "projection" (eye 4))
                           (uniform-float program "z_near" 0.0)
                           (use-textures surface)
@@ -213,7 +209,7 @@ void main()
                                                         :tess-evaluation [tess-evaluation-planet]
                                                         :geometry [geometry-planet]
                                                         :fragment [fragment-white])
-                              variables   [:point 3 :heightcoord 2 :colorcoord 2]
+                              variables   [:point 3 :surfacecoord 2 :colorcoord 2]
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.5 -0.5 0, 0.5 -0.5 0, -0.5  0.5 0, 0.5  0.5 0]
                               surface     (make-vector-texture-2d :linear :clamp
@@ -225,10 +221,7 @@ void main()
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
                           (uniform-float program "z_near" 0.0)
-                          (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
-                                                                                      (vec3 0 0 2)))
-                          (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
-                                                                                             (vec3 0 0 -2)))
+                          (uniform-matrix4 program "transform" (transformation-matrix (eye 3) (vec3 0 0 -2)))
                           (uniform-matrix4 program "projection" (projection-matrix 256 256 1 3 (/ PI 3)))
                           (uniform-float program "z_near" 0.0)
                           (use-textures surface)
@@ -250,7 +243,7 @@ void main()
                                                         :tess-evaluation [tess-evaluation-planet]
                                                         :geometry [geometry-planet]
                                                         :fragment [fragment-white])
-                              variables   [:point 3 :heightcoord 2 :colorcoord 2]
+                              variables   [:point 3 :surfacecoord 2 :colorcoord 2]
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.25 -0.25 0.25, 0.5 -0.5 0.5, -0.75 0.75 0.75, 1.0 1.0 1.0]
                               surface     (make-vector-texture-2d :linear :clamp
@@ -262,7 +255,6 @@ void main()
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
                           (uniform-matrix4 program "transform" (eye 4))
-                          (uniform-matrix4 program "inverse_transform" (eye 4))
                           (uniform-matrix4 program "projection" (eye 4))
                           (uniform-float program "z_near" 0.0)
                           (use-textures surface)
@@ -493,10 +485,7 @@ float overall_shadow(vec4 point)
   (uniform-float program "radius" radius)
   (uniform-float program "z_near" 0.0)
   (uniform-vector3 program "origin" (vec3 0 0 (+ ?radius ?dist)))
-  (uniform-matrix4 program "transform" (transformation-matrix (eye 3)
-                                                              (vec3 0 0 (+ ?radius ?dist))))
-  (uniform-matrix4 program "inverse_transform" (transformation-matrix (eye 3)
-                                                                      (vec3 0 0 (- 0 ?radius ?dist))))
+  (uniform-matrix4 program "transform" (transformation-matrix (eye 3) (vec3 0 0 (- 0 ?radius ?dist))))
   (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
   (uniform-float program "dawn_start" -0.05)
   (uniform-float program "dawn_end" 0.05)
@@ -512,7 +501,7 @@ float overall_shadow(vec4 point)
          (fact
            (offscreen-render 256 256
                              (let [program       (make-planet-program)
-                                   variables     [:point 3 :colorcoord 2 :heightcoord 2]
+                                   variables     [:point 3 :colorcoord 2 :surfacecoord 2]
                                    vao           (make-vertex-array-object program planet-indices planet-vertices variables)
                                    radius        6378000
                                    size          7
@@ -597,7 +586,7 @@ void main()
                                                      [(* x 0.5) (* y 0.5) 0.5]))
                                    surf-tex   (make-vector-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array data)})
                                    vao        (make-vertex-array-object program indices vertices
-                                                                        [:point 3 :heightcoord 2 :colorcoord 2])
+                                                                        [:point 3 :surfacecoord 2 :colorcoord 2])
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2.5))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
                                    neighbours {:sfsim25.quadtree/up    ?up
