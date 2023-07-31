@@ -1,7 +1,7 @@
 (require '[clojure.reflect :as r]
          '[clojure.pprint :as p])
 
-(import '[org.lwjgl.assimp Assimp AIMesh])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer])
 (import '[org.lwjgl.system MemoryUtil])
 
 (defn all-methods [x]
@@ -22,6 +22,7 @@
 (.limit buffer)
 
 (def mesh (AIMesh/create ^long (.get buffer 0)))
+(.dataString (.mName mesh))
 (.mNumFaces mesh)
 (.mNumVertices mesh)
 
@@ -38,6 +39,9 @@
 
 (def normals (.mNormals mesh))
 (map (fn [i] (let [normal (.get normals i)] [(.x normal) (.y normal) (.z normal)])) (range 24))
+
+;(def texcoords (AIVector3D/create ^long (.get (.mTextureCoords mesh) 0)))
+;[(.x texcoords) (.y texcoords) (.z texcoords)]
 
 (Assimp/aiReleaseImport scene)
 
