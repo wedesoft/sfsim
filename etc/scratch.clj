@@ -1,22 +1,45 @@
 (require '[clojure.reflect :as r]
-         '[sfsim25.util :refer :all]
-         '[clojure.java.io :as io])
+         '[clojure.pprint :as p])
 
-(import '[javax.imageio ImageIO]
-        '[java.io File]
-        '[java.awt.image BufferedImage]
-        '[org.lwjgl.stb STBImage STBImageWrite])
+(import '[org.lwjgl.assimp Assimp AIMesh])
+(import '[org.lwjgl.system MemoryUtil])
 
-(def img (with-open [input-file (io/input-stream "/tmp/himalayas.jpg")] (ImageIO/read input-file)))
-(def img (with-open [input-file (io/input-stream "test/sfsim25/fixtures/clouds/overlay.png")] (ImageIO/read input-file)))
+(defn all-methods [x]
+  (->> x r/reflect
+       :members
+       (filter :return-type)
+       (map :name)
+       sort
+       (map #(str "." %) )
+       distinct
+       (map symbol)))
 
-(def tmp (BufferedImage. (.getWidth img) (.getHeight img) (BufferedImage/TYPE_4BYTE_ABGR)))
-(.drawImage (.createGraphics tmp) img 0 0 (.getWidth img) (.getHeight img) nil)
+(def scene (Assimp/aiImportFile "etc/cube.gltf" Assimp/aiProcess_Triangulate))
+(.dataString (.mName scene))
+(.mNumMeshes scene)
 
-(def t {:width (.getWidth img) :height (.getHeight img) :data (.getData (.getDataBuffer (.getRaster tmp)))})
+(def buffer (.mMeshes scene))
+(.limit buffer)
 
-(slurp-image "/tmp/himalayas.jpg")
+(def mesh (AIMesh/create ^long (.get buffer 0)))
+(.mNumFaces mesh)
+(.mNumVertices mesh)
 
-(get-pixel img 0 0)
+(def faces (.mFaces mesh))
+(.limit faces)
 
-(spit-png "/tmp/t.png" t)
+(def face (.get faces 0))
+(.mNumIndices face)
+
+(map (fn [i] (let [face (.get faces i) indices (.mIndices face)] (map #(.get indices %) (range 3)))) (range 12))
+
+(def vertices (.mVertices mesh))
+(map (fn [i] (let [vertex (.get vertices i)] [(.x vertex) (.y vertex) (.z vertex)])) (range 24))
+
+(def normals (.mNormals mesh))
+(map (fn [i] (let [normal (.get normals i)] [(.x normal) (.y normal) (.z normal)])) (range 24))
+
+(Assimp/aiReleaseImport scene)
+
+; (def ptr (MemoryUtil/memAllocPointer 1))
+; (MemoryUtil/memFree ptr)
