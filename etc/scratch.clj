@@ -1,7 +1,7 @@
 (require '[clojure.reflect :as r]
          '[clojure.pprint :as p])
 
-(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIMaterial])
 (import '[org.lwjgl.system MemoryUtil])
 
 (defn all-methods [x]
@@ -42,6 +42,8 @@
 
 (def texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) 24))
 (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (.y texcoord) (.z texcoord)])) (range 24))
+
+(def material (AIMaterial/create ^long (.get (.mMaterials scene) 0)))
 
 (Assimp/aiReleaseImport scene)
 
