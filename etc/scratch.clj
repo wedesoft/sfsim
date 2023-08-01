@@ -40,8 +40,8 @@
 (def normals (.mNormals mesh))
 (map (fn [i] (let [normal (.get normals i)] [(.x normal) (.y normal) (.z normal)])) (range 24))
 
-;(def texcoords (AIVector3D/create ^long (.get (.mTextureCoords mesh) 0)))
-;[(.x texcoords) (.y texcoords) (.z texcoords)]
+(def texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) 24))
+(map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (.y texcoord) (.z texcoord)])) (range 24))
 
 (Assimp/aiReleaseImport scene)
 
