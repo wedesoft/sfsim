@@ -1,8 +1,11 @@
+; https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/chapter27/chapter27.html
+; https://github.com/LWJGL/lwjgl3/issues/558
+
 (require '[clojure.reflect :as r]
          '[clojure.pprint :as p])
 
-(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIMaterial])
-(import '[org.lwjgl.system MemoryUtil])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIMaterial AIString AITexture])
+(import '[org.lwjgl.stb STBImage])
 
 (defn all-methods [x]
   (->> x r/reflect
@@ -13,6 +16,8 @@
        (map #(str "." %) )
        distinct
        (map symbol)))
+
+(all-methods Assimp)
 
 (def scene (Assimp/aiImportFile "etc/cube.gltf" Assimp/aiProcess_Triangulate))
 (.dataString (.mName scene))
@@ -45,7 +50,29 @@
 
 (def material (AIMaterial/create ^long (.get (.mMaterials scene) 0)))
 
-(Assimp/aiReleaseImport scene)
+(.get (.mProperties material) 0)
 
-; (def ptr (MemoryUtil/memAllocPointer 1))
-; (MemoryUtil/memFree ptr)
+(Assimp/aiGetMaterialTextureCount material Assimp/aiTextureType_DIFFUSE)
+
+(def path (AIString/calloc))
+(Assimp/aiGetMaterialTexture material Assimp/aiTextureType_DIFFUSE 0 path nil nil nil nil nil nil)
+(.dataString path)
+
+(def texture (AITexture/create ^long (.get (.mTextures scene) 0)))
+(.mHeight texture)
+(.mWidth texture)
+(def data (.pcDataCompressed texture))
+
+(def width (int-array 1))
+(def height (int-array 1))
+(def channels (int-array 1))
+(def buffer (STBImage/stbi_load_from_memory data width height channels 4))
+(def width (aget width 0))
+(def height (aget height 0))
+(def b (byte-array (* width height 4)))
+(.get buffer b)
+(.flip buffer)
+(STBImage/stbi_image_free buffer)
+(def img {:data b :width width :height height :channels (aget channels 0)})
+
+(Assimp/aiReleaseImport scene)
