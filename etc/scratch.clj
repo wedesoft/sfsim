@@ -129,7 +129,7 @@ void main()
 (def indices (flatten (map (fn [i] (let [face (.get faces i) indices (.mIndices face)] (map #(.get indices %) (range 3)))) (range 12))))
 (def p (map (fn [i] (let [vertex (.get vertices i)] [(.x vertex) (.y vertex) (.z vertex)])) (range 24)))
 (def n (map (fn [i] (let [normal (.get normals i)] [(.x normal) (.y normal) (.z normal)])) (range 24)))
-(def t (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (.y texcoord)])) (range 24)))
+(def t (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (- 1.0 (.y texcoord))])) (range 24)))
 (def verts (flatten (map concat p n t)))
 
 (def vao (make-vertex-array-object program indices verts [:point 3 :normal 3 :texcoord 2]))
