@@ -569,6 +569,7 @@ void main()
 (defn unload-tiles-from-opengl
   [tiles]
   (doseq [tile tiles] (unload-tile-from-opengl tile)))
+
 (def keystates (atom {}))
 
 (def keyboard-callback
