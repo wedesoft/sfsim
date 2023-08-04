@@ -27,7 +27,7 @@
                     "index" : 0
                 },
                 "metallicFactor" : 0,
-                "roughnessFactor" : 0.5
+                "roughnessFactor" : 0.10000000149011612
             }
         }
     ],
