@@ -9,7 +9,7 @@
          '[sfsim25.matrix :refer (projection-matrix transformation-matrix quaternion->matrix)]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIMaterial AIString AITexture])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIMaterial AIString AITexture AIMaterialProperty])
 (import '[org.lwjgl.stb STBImage])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 (import '[org.lwjgl.opengl GL11 GL30])
@@ -37,6 +37,7 @@
 (.dataString (.mName mesh))
 (.mNumFaces mesh)
 (.mNumVertices mesh)
+(.mMaterialIndex mesh)
 
 (def faces (.mFaces mesh))
 (.limit faces)
@@ -55,9 +56,29 @@
 (def texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) 24))
 (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (.y texcoord) (.z texcoord)])) (range 24))
 
+(.mNumMaterials scene)
 (def material (AIMaterial/create ^long (.get (.mMaterials scene) 0)))
 
-(.get (.mProperties material) 0)
+(def properties (map #(AIMaterialProperty/create (.get (.mProperties material) %)) (range (.mNumProperties material))))
+
+Assimp/AI_MATKEY_SPECULAR_FACTOR
+
+(defn read-property [prop]
+  (case (.mType prop)
+    4  (.getFloat (.mData prop))
+    nil))
+
+(map (fn [prop] (.dataString (.mKey prop))) properties)
+(map (fn [prop] [(.getFloat (.mData prop))]) properties)
+(map (fn [prop] [(.dataString (.mKey prop)) (read-property prop) (.mDataLength prop)]) properties)
+
+(def property (nth properties 20))
+{(.dataString (.mKey property)) (.getFloat (.mData property))}
+
+(def property (nth properties 20))
+(.dataString (.mKey property))
+(.mData property)
+(.getFloat (.mData property))
 
 (Assimp/aiGetMaterialTextureCount material Assimp/aiTextureType_DIFFUSE)
 
