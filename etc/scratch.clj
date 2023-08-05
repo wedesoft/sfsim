@@ -10,6 +10,7 @@
          '[sfsim25.quaternion :as q])
 
 (import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty])
+(import '[org.lwjgl PointerBuffer])
 (import '[org.lwjgl.stb STBImage])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 (import '[org.lwjgl.opengl GL11 GL30])
@@ -73,20 +74,25 @@ Assimp/AI_MATKEY_SPECULAR_FACTOR
       16 [(.getFloat data) (.getFloat data) (.getFloat data) (.getFloat data)]
       nil)))
 
-(sort (map (fn [prop] (.dataString (.mKey prop))) properties))
+(map (fn [prop] (.dataString (.mKey prop))) properties)
 (map (fn [prop] [(.dataString (.mKey prop)) (read-property prop) (.mDataLength prop)]) properties)
 
-(def p (java.nio.ByteBuffer/allocate 16))
-;(def c (AIColor4D$Buffer. p))
-;(Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_DIFFUSE 0 0 ^long (.get c 0))
+(def color (AIColor4D/create))
+(Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_AMBIENT Assimp/aiTextureType_NONE 0 color)
+(Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_DIFFUSE Assimp/aiTextureType_NONE 0 color)
+(Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_SPECULAR Assimp/aiTextureType_NONE 0 color)
 
-(def property (nth properties 20))
-{(.dataString (.mKey property)) (.getFloat (.mData property))}
+(def p (PointerBuffer/allocateDirect 1))
+(Assimp/aiGetMaterialProperty material Assimp/AI_MATKEY_ROUGHNESS_FACTOR 0 0 p)
+(.getFloat (.mData (AIMaterialProperty/create ^long (.get p 0))))
 
-(def property (nth properties 20))
-(.dataString (.mKey property))
-(.mData property)
-(.getFloat (.mData property))
+(def p (PointerBuffer/allocateDirect 1))
+(Assimp/aiGetMaterialProperty material Assimp/AI_MATKEY_METALLIC_FACTOR 0 0 p)
+(.getFloat (.mData (AIMaterialProperty/create ^long (.get p 0))))
+
+(def p (PointerBuffer/allocateDirect 1))
+(Assimp/aiGetMaterialProperty material Assimp/AI_MATKEY_SPECULAR_FACTOR 0 0 p)
+(.getFloat (.mData (AIMaterialProperty/create ^long (.get p 0))))
 
 (Assimp/aiGetMaterialTextureCount material Assimp/aiTextureType_DIFFUSE)
 
@@ -118,7 +124,7 @@ Assimp/AI_MATKEY_SPECULAR_FACTOR
 (def window (make-window "cube" w h))
 (GLFW/glfwShowWindow window)
 
-(def tex (make-rgba-texture :linear :clamp img))
+(def tex (make-rgba-texture :linear :repeat img))
 
 (def vertex-shader
 "#version 410 core
