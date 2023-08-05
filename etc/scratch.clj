@@ -9,7 +9,7 @@
          '[sfsim25.matrix :refer (projection-matrix transformation-matrix quaternion->matrix)]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIMaterial AIString AITexture AIMaterialProperty])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty])
 (import '[org.lwjgl.stb STBImage])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 (import '[org.lwjgl.opengl GL11 GL30])
@@ -39,6 +39,8 @@
 (.mNumVertices mesh)
 (.mMaterialIndex mesh)
 
+(map #(.get (.mColors mesh) %) (range 8))
+
 (def faces (.mFaces mesh))
 (.limit faces)
 
@@ -64,13 +66,19 @@
 Assimp/AI_MATKEY_SPECULAR_FACTOR
 
 (defn read-property [prop]
-  (case (.mType prop)
-    4  (.getFloat (.mData prop))
-    nil))
+  (let [data (.mData prop)]
+    (case (.mDataLength prop)
+      4  (.getFloat data)
+      12 [(.getFloat data) (.getFloat data) (.getFloat data)]
+      16 [(.getFloat data) (.getFloat data) (.getFloat data) (.getFloat data)]
+      nil)))
 
-(map (fn [prop] (.dataString (.mKey prop))) properties)
-(map (fn [prop] [(.getFloat (.mData prop))]) properties)
+(sort (map (fn [prop] (.dataString (.mKey prop))) properties))
 (map (fn [prop] [(.dataString (.mKey prop)) (read-property prop) (.mDataLength prop)]) properties)
+
+(def p (java.nio.ByteBuffer/allocate 16))
+;(def c (AIColor4D$Buffer. p))
+;(Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_DIFFUSE 0 0 ^long (.get c 0))
 
 (def property (nth properties 20))
 {(.dataString (.mKey property)) (.getFloat (.mData property))}
@@ -174,11 +182,11 @@ void main()
        (let [t1 (System/currentTimeMillis)
              dt (- t1 @t0)
              ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
-             rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
+             rb (if (@keystates GLFW/GLFW_KEY_KP_6) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_4) -0.001 0))
              rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))]
-         (swap! orientation q/* (q/rotation (* dt ra) (v/vec3 1 0 0)))
-         (swap! orientation q/* (q/rotation (* dt rb) (v/vec3 0 1 0)))
-         (swap! orientation q/* (q/rotation (* dt rc) (v/vec3 0 0 1)))
+         (swap! orientation #(q/* %2 %1) (q/rotation (* dt ra) (v/vec3 1 0 0)))
+         (swap! orientation #(q/* %2 %1) (q/rotation (* dt rb) (v/vec3 0 1 0)))
+         (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
          (onscreen-render window
                           (clear (v/vec3 0 1 0) 0)
                           (use-program program)
