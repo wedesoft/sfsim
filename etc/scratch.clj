@@ -64,18 +64,7 @@
 
 (def properties (map #(AIMaterialProperty/create (.get (.mProperties material) %)) (range (.mNumProperties material))))
 
-Assimp/AI_MATKEY_SPECULAR_FACTOR
-
-(defn read-property [prop]
-  (let [data (.mData prop)]
-    (case (.mDataLength prop)
-      4  (.getFloat data)
-      12 [(.getFloat data) (.getFloat data) (.getFloat data)]
-      16 [(.getFloat data) (.getFloat data) (.getFloat data) (.getFloat data)]
-      nil)))
-
 (map (fn [prop] (.dataString (.mKey prop))) properties)
-(map (fn [prop] [(.dataString (.mKey prop)) (read-property prop) (.mDataLength prop)]) properties)
 
 (def color (AIColor4D/create))
 (Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_AMBIENT Assimp/aiTextureType_NONE 0 color)
@@ -92,7 +81,6 @@ Assimp/AI_MATKEY_SPECULAR_FACTOR
 
 (def p (PointerBuffer/allocateDirect 1))
 (Assimp/aiGetMaterialProperty material Assimp/AI_MATKEY_SPECULAR_FACTOR 0 0 p)
-(.getFloat (.mData (AIMaterialProperty/create ^long (.get p 0))))
 
 (Assimp/aiGetMaterialTextureCount material Assimp/aiTextureType_DIFFUSE)
 
