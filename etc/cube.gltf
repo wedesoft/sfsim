@@ -27,9 +27,9 @@
 			"extensions":{
 				"KHR_materials_specular":{
 					"specularColorFactor":[
-						0.8000000119209288,
-						0.8000000119209288,
-						0.8000000119209288
+						0.4000000059604644,
+						0.4000000059604644,
+						0.4000000059604644
 					]
 				}
 			},
@@ -38,8 +38,8 @@
 				"baseColorTexture":{
 					"index":0
 				},
-				"metallicFactor":0,
-				"roughnessFactor":0.1818181872367859
+				"metallicFactor":0.10000000149011612,
+				"roughnessFactor":0.30000001192092896
 			}
 		}
 	],
