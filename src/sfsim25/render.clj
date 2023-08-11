@@ -36,7 +36,7 @@
   "Method to create a window and make the context current and create the capabilities"
   [title width height]
   (GLFW/glfwDefaultWindowHints)
-  (let [window (GLFW/glfwCreateWindow width height "scratch" 0 0)]
+  (let [window (GLFW/glfwCreateWindow width height title 0 0)]
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
     (GL/createCapabilities)

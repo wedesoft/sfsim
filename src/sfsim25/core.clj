@@ -1,7 +1,7 @@
 (ns sfsim25.core
   "Space flight simulator main program."
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
-            [fastmath.matrix :refer (inverse eye)]
+            [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
             [sfsim25.render :refer (make-window destroy-window clear destroy-program destroy-texture destroy-vertex-array-object
                                     generate-mipmap make-float-cubemap make-float-texture-2d make-float-texture-3d
