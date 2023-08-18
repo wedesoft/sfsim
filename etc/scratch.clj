@@ -9,7 +9,7 @@
          '[sfsim25.matrix :refer (projection-matrix transformation-matrix quaternion->matrix)]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty AINode])
 (import '[org.lwjgl PointerBuffer])
 (import '[org.lwjgl.stb STBImage])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -27,9 +27,20 @@
 
 (all-methods Assimp)
 
-(def scene (Assimp/aiImportFile "etc/cube.gltf" Assimp/aiProcess_Triangulate))
+(def scene (Assimp/aiImportFile "etc/cube3.glb" Assimp/aiProcess_Triangulate))
 (.dataString (.mName scene))
 (.mNumMeshes scene)
+
+(def root (.mRootNode scene))
+(def m1 (.mTransformation root))
+(.mMeshes root)
+(.dataString (.mName root))
+(.get (.mMeshes root) 0)
+(.mNumChildren root)
+(def child (AINode/create ^long (.get (.mChildren root) 0)))
+(def m2 (.mTransformation child))
+(.dataString (.mName child))
+(.get (.mMeshes child) 0)
 
 (def buffer (.mMeshes scene))
 (.limit buffer)
