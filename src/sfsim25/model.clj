@@ -1,7 +1,7 @@
 (ns sfsim25.model
     "Import glTF models into Clojure"
     (:require [fastmath.matrix :refer (mat4x4)])
-    (:import [org.lwjgl.assimp Assimp]))
+    (:import [org.lwjgl.assimp Assimp AIMesh]))
 
 (defn- decode-matrix
   "Convert AIMatrix4x4 to mat4x4"
@@ -17,8 +17,27 @@
   {:name (.dataString (.mName node))
    :transform (decode-matrix (.mTransformation node))})
 
+(defn- decode-face
+  "Get indices from face"
+  [face]
+  (let [indices (.mIndices face)]
+    (map #(.get indices %) (range (.mNumIndices face)))))
+
+(defn- decode-indices
+  [mesh]
+  (let [faces (.mFaces mesh)]
+    (vec (mapcat #(decode-face (.get faces %)) (range (.mNumFaces mesh))))))
+
+(defn- decode-mesh
+  "Fetch vertex and index data for mesh with given index"
+  [scene i]
+  (let [buffer (.mMeshes scene)
+        mesh   (AIMesh/create ^long (.get buffer i))]
+    {:indices (decode-indices mesh)}))
+
 (defn read-gltf
   "Import a glTF model file"
   [filename]
   (let [scene (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)]
-    {:root (decode-node (.mRootNode scene))}))
+    {:root (decode-node (.mRootNode scene))
+     :meshes (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))}))
