@@ -70,6 +70,8 @@
 (def texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) 24))
 (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (.y texcoord) (.z texcoord)])) (range 24))
 
+(.mMaterialIndex mesh)
+
 (.mNumMaterials scene)
 (def material (AIMaterial/create ^long (.get (.mMaterials scene) 0)))
 
