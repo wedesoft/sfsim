@@ -43,6 +43,6 @@
        1.0 -1.0 -1.0 0.0 -1.0  0.0])
 
 (fact "Vertex attributes of textureless cube"
-      (:attributes (first (:meshes scene))) => [:vertex 3 :normal 3])
+      (:attributes (first (:meshes scene))) => ["vertex" 3 "normal" 3])
 
 (set! *unchecked-math* false)

@@ -48,7 +48,7 @@
         mesh   (AIMesh/create ^long (.get buffer i))]
     {:indices    (decode-indices mesh)
      :vertices   (decode-vertices mesh)
-     :attributes [:vertex 3 :normal 3]}))
+     :attributes ["vertex" 3 "normal" 3]}))
 
 (defn read-gltf
   "Import a glTF model file"
