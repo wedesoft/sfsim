@@ -75,7 +75,7 @@ void main()
 (def program (make-program :vertex [vertex-shader] :fragment [fragment-shader shaders/ray-sphere]))
 (def indices [0 1 3 2])
 (def vertices [-1 -1 0, 1 -1 0, -1 1 0, 1  1 0])
-(def vao (make-vertex-array-object program indices vertices [:point 3]))
+(def vao (make-vertex-array-object program indices vertices ["point" 3]))
 
 (def alpha (atom 0))
 (def beta (atom 0))

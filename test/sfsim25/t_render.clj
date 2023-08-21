@@ -40,7 +40,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
@@ -72,7 +72,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-color] :fragment [fragment-color])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
@@ -85,7 +85,7 @@ void main()
           vertices [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0,
                     -0.5 -0.5 0.1 0.0 1.0, 1.0 -0.5 0.1 0.0 1.0, -0.5 1.0 0.1 0.0 1.0, 1.0 1.0 0.1 0.0 1.0]
           program  (make-program :vertex [vertex-color] :fragment [fragment-color])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
@@ -107,8 +107,8 @@ void main()
           vertices2 [-0.5 -0.5 0.2, 1.0 -0.5 0.2, -0.5 1.0 0.2, 1.0 1.0 0.2]
           program1  (make-program :vertex [vertex-passthrough] :fragment [fragment-red])
           program2  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
-          vao1      (make-vertex-array-object program1 indices vertices1 [:point 3])
-          vao2      (make-vertex-array-object program2 indices vertices2 [:point 3])]
+          vao1      (make-vertex-array-object program1 indices vertices1 ["point" 3])
+          vao2      (make-vertex-array-object program2 indices vertices2 ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program1)
       (render-quads vao1)
@@ -124,7 +124,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (raster-lines (render-quads vao))
@@ -147,7 +147,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-floats])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-float program "red" 1.0)
@@ -173,7 +173,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-ints])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-int program "red" 255)
@@ -197,7 +197,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-vector3])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-vector3 program "color" (vec3 1.0 0.5 0.0))
@@ -219,7 +219,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-transform3] :fragment [fragment-blue])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-matrix3 program "transform" (eye 3))
@@ -241,7 +241,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-transform4] :fragment [fragment-blue])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-matrix4 program "transform" (eye 4))
@@ -283,7 +283,7 @@ void main()
                       (let [indices  [0 1 3 2]
                             vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
                             program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-1d])
-                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                            vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                             tex      (make-float-texture-1d ?interpolation ?boundary (float-array [0.0 1.0]))]
                         (clear (vec3 0.0 0.0 0.0))
                         (use-program program)
@@ -322,7 +322,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex      (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -339,7 +339,7 @@ void main()
                       (let [indices  [0 1 3 2]
                             vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
                             program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
-                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                            vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                             img      {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])}
                             tex      (make-float-texture-2d ?interpolation ?boundary img)]
                         (clear (vec3 0.0 0.0 0.0))
@@ -362,7 +362,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex      (make-ubyte-texture-2d :linear :clamp {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -378,7 +378,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -422,7 +422,7 @@ void main(void)
                     (let [indices  [0 1 3 2]
                           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                           program  (make-program :vertex [vertex-interpolate] :fragment [fragment-sample-shadow])
-                          vao      (make-vertex-array-object program indices vertices [:point 3])
+                          vao      (make-vertex-array-object program indices vertices ["point" 3])
                           data     [0.4 0.4 0.4 0.4, 0.4 0.6 0.6 0.4, 0.4 0.6 0.6 0.4, 0.4 0.4 0.4 0.4]
                           depth    (make-depth-texture :linear :clamp {:width 4 :height 4 :data (float-array data)})]
                       (clear (vec3 1.0 0.0 0.0))
@@ -460,7 +460,7 @@ void main()
                       (let [indices  [0 1 3 2]
                             vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
                             program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-3d])
-                            vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                            vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                             data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
                             tex      (make-float-texture-3d ?interpolation ?boundary
                                                             {:width 2 :height 2 :depth 2 :data (float-array data)})]
@@ -498,7 +498,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :vertex [vertex-texture] :fragment [fragment-two-textures])
-          vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+          vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex1     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
           tex2     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
@@ -560,7 +560,7 @@ void main(void)
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           program  (make-program :vertex [vertex-passthrough] :tess-control [control-uniform] :tess-evaluation [evaluation-mix]
                                  :geometry [geometry-triangle] :fragment [fragment-blue])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (raster-lines (render-patches vao))
@@ -589,7 +589,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
           program  (make-program :vertex [vertex-passthrough] :fragment [fragment-part1 fragment-part2])
-          vao      (make-vertex-array-object program indices vertices [:point 3])]
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (render-quads vao)
@@ -626,7 +626,7 @@ void main()
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
-               vao      (make-vertex-array-object program indices vertices [:point 3])]
+               vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullback nil [tex1 tex2]
                                (use-program program)
                                (render-quads vao))
@@ -643,7 +643,7 @@ void main()
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
-               vao      (make-vertex-array-object program indices vertices [:point 3])]
+               vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullback nil [tex]
                                (use-program program)
                                (render-quads vao))
@@ -669,7 +669,7 @@ void main(void)
                indices  [2 3 1 0]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
-               vao      (make-vertex-array-object program indices vertices [:point 3])]
+               vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullfront depth []
                                (use-program program)
                                (clear)
@@ -697,7 +697,7 @@ void main()
              (let [indices  [0 1 3 2]
                    vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
                    program  (make-program :vertex [vertex-texture] :fragment [lod-texture-1d])
-                   vao      (make-vertex-array-object program indices vertices [:point 3 :uv 2])
+                   vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                    data     (flatten (repeat 8 [0 0 1 1]))
                    tex      (make-float-texture-1d :linear :clamp (float-array data))]
                (generate-mipmap tex)
@@ -730,7 +730,7 @@ void main()
              (let [indices  [0 1 3 2]
                    vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                    program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
-                   vao      (make-vertex-array-object program indices vertices [:point 3])
+                   vao      (make-vertex-array-object program indices vertices ["point" 3])
                    tex      (texture-render-color 1 1 true (use-program program) (render-quads vao))
                    img      (rgba-texture->vectors4 tex)]
                (destroy-texture tex)
@@ -752,7 +752,7 @@ void main()
            (let [indices  (reverse [0 1 3 2])
                  vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
                  program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
-                 vao      (make-vertex-array-object program indices vertices [:point 3])
+                 vao      (make-vertex-array-object program indices vertices ["point" 3])
                  tex      (texture-render-depth 10 10 (clear) (use-program program) (render-quads vao))]
              (get-float (depth-texture->floats tex) 5 5) => ?z
              (destroy-texture tex)
@@ -822,7 +822,7 @@ void main(void)
                                            :fragment [fragment-shadow])
               program-main   (make-program :vertex [vertex-scene]
                                            :fragment [fragment-scene s/shadow-lookup s/convert-shadow-index])
-              vao            (make-vertex-array-object program-main indices vertices [:point 3])
+              vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-map     (texture-render-depth
                                128 128
                                (clear)
@@ -877,7 +877,7 @@ void main(void)
               program-main   (make-program :vertex [vertex-scene]
                                            :fragment [fragment-scene-cascade (s/shadow-cascade-lookup num-steps "shadow_lookup")
                                                       s/shadow-lookup s/convert-shadow-index])
-              vao            (make-vertex-array-object program-main indices vertices [:point 3])
+              vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-maps    (shadow-cascade 128 shadow-mats program-shadow
                                              (fn [shadow-ndc-matrix]
                                                  (uniform-matrix4 program-shadow "transform" shadow-ndc-matrix)
@@ -937,7 +937,7 @@ void main()
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-attachment])
-               vao      (make-vertex-array-object program indices vertices [:point 3])]
+               vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullback nil [tex]
                                (use-program program)
                                (render-quads vao))

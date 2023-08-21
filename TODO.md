@@ -1,5 +1,4 @@
 # TODO
-* use strings for vertex attributes instead of keywords?
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
   * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361

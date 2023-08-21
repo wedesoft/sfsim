@@ -168,7 +168,7 @@ void main()
 (def t (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (- 1.0 (.y texcoord))])) (range 24)))
 (def verts (flatten (map concat p n t)))
 
-(def vao (make-vertex-array-object program indices verts [:point 3 :normal 3 :texcoord 2]))
+(def vao (make-vertex-array-object program indices verts ["point" 3 "normal" 3 "texcoord" 2]))
 
 (def projection (projection-matrix w h 0.1 10.0 (m/to-radians 60.0)))
 

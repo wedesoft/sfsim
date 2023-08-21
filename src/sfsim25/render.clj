@@ -147,7 +147,7 @@
             stride          (apply + sizes)
             offsets         (reductions + (cons 0 (butlast sizes)))]
         (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
-          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program (name attribute)) ^long size
+          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program ^String attribute) ^long size
                                       GL11/GL_FLOAT false ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
         {:vertex-array-object vertex-array-object

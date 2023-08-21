@@ -236,7 +236,7 @@ void main()
 
 (def opacity-indices [0 1 3 2])
 (def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
-(def opacity-vao (make-vertex-array-object program-opacity opacity-indices opacity-vertices [:point 2]))
+(def opacity-vao (make-vertex-array-object program-opacity opacity-indices opacity-vertices ["point" 2]))
 
 (def program-planet
   (make-program :vertex [vertex-planet]
@@ -352,7 +352,7 @@ void main()
   (make-program :vertex [vertex-cube]
                 :fragment [fragment-cube]))
 
-(def cube-vao (make-vertex-array-object program-cube cube-indices cube-vertices [:point 3]))
+(def cube-vao (make-vertex-array-object program-cube cube-indices cube-vertices ["point" 3]))
 
 (use-program program-opacity)
 (uniform-sampler program-opacity "worley" 0)
@@ -544,7 +544,7 @@ void main()
   [tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object program-planet indices vertices [:point 3 :surfacecoord 2 :colorcoord 2])
+        vao        (make-vertex-array-object program-planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
         day-tex    (make-rgb-texture :linear :clamp (:day tile))
         night-tex  (make-rgb-texture :linear :clamp (:night tile))
         surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
@@ -634,7 +634,7 @@ void main()
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
                    indices    [0 1 3 2]
                    vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-                   vao        (make-vertex-array-object program-atmosphere indices vertices [:point 3])
+                   vao        (make-vertex-array-object program-atmosphere indices vertices ["point" 3])
                    light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
