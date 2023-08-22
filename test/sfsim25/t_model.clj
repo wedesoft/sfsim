@@ -1,6 +1,6 @@
 (ns sfsim25.t-model
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-matrix)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector)]
               [fastmath.matrix :refer (eye)]
               [fastmath.vector :refer (vec3)]
               [sfsim25.matrix :refer :all]
@@ -44,5 +44,17 @@
 
 (fact "Vertex attributes of textureless cube"
       (:attributes (first (:meshes scene))) => ["vertex" 3 "normal" 3])
+
+(fact "Material index of cube"
+      (:material-index (first (:meshes scene))) => 0)
+
+(fact "Decode materials of cube scene"
+      (count (:materials scene)) => 2)
+
+(fact "Materials of cube are returned in a vector"
+      (:materials scene) => vector?)
+
+(fact "First material has a diffuse red color"
+      (:diffuse (first (:materials scene))) => (roughly-vector (vec3 0.8 0.0 0.0) 1e-6))
 
 (set! *unchecked-math* false)

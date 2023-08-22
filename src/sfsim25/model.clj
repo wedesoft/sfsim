@@ -1,7 +1,8 @@
 (ns sfsim25.model
     "Import glTF models into Clojure"
-    (:require [fastmath.matrix :refer (mat4x4)])
-    (:import [org.lwjgl.assimp Assimp AIMesh]))
+    (:require [fastmath.matrix :refer (mat4x4)]
+              [fastmath.vector :refer (vec3)])
+    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D]))
 
 (defn- decode-matrix
   "Convert AIMatrix4x4 to mat4x4"
@@ -41,18 +42,33 @@
         normals  (.mNormals mesh)]
     (vec (mapcat (fn [i] (concat (decode-vector (.get vertices i)) (decode-vector (.get normals i)))) (range (.mNumVertices mesh))))))
 
+(defn- decode-color
+  "Get RGB color of material"
+  [material property]
+  (let [color (AIColor4D/create)]
+    (Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_DIFFUSE Assimp/aiTextureType_NONE 0 color)
+    (vec3 (.r color) (.g color) (.b color))))
+
+(defn- decode-material
+  "Fetch material data for material with given index"
+  [scene i]
+  (let [material (AIMaterial/create ^long (.get (.mMaterials scene) i))]
+    {:diffuse (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)}))
+
 (defn- decode-mesh
   "Fetch vertex and index data for mesh with given index"
   [scene i]
   (let [buffer (.mMeshes scene)
         mesh   (AIMesh/create ^long (.get buffer i))]
-    {:indices    (decode-indices mesh)
-     :vertices   (decode-vertices mesh)
-     :attributes ["vertex" 3 "normal" 3]}))
+    {:indices        (decode-indices mesh)
+     :vertices       (decode-vertices mesh)
+     :attributes     ["vertex" 3 "normal" 3]
+     :material-index (.mMaterialIndex mesh)}))
 
 (defn read-gltf
   "Import a glTF model file"
   [filename]
   (let [scene (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)]
-    {:root (decode-node (.mRootNode scene))
-     :meshes (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))}))
+    {:root      (decode-node (.mRootNode scene))
+     :materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
+     :meshes    (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))}))
