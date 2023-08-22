@@ -57,4 +57,7 @@
 (fact "First material has a diffuse red color"
       (:diffuse (first (:materials scene))) => (roughly-vector (vec3 0.8 0.0 0.0) 1e-6))
 
+(fact "Second material has a diffuse white color"
+      (:diffuse (second (:materials scene))) => (roughly-vector (vec3 1.0 1.0 1.0) 1e-6))
+
 (set! *unchecked-math* false)
