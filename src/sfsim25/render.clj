@@ -214,6 +214,12 @@
   (setup-vertex-array-object vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
+(defn render-triangles
+  "Render one or more triangles"
+  [vertex-array-object]
+  (setup-vertex-array-object vertex-array-object)
+  (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+
 (defn render-patches
   "Render one or more tessellated quads"
   [vertex-array-object]

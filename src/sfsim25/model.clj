@@ -1,8 +1,12 @@
 (ns sfsim25.model
     "Import glTF models into Clojure"
     (:require [fastmath.matrix :refer (mat4x4)]
-              [fastmath.vector :refer (vec3)])
+              [fastmath.vector :refer (vec3)]
+              [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
+                                      destroy-vertex-array-object render-triangles)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D]))
+
+(set! *unchecked-math* true)
 
 (defn- decode-matrix
   "Convert AIMatrix4x4 to mat4x4"
@@ -16,7 +20,8 @@
   "Fetch data of a node"
   [node]
   {:name (.dataString (.mName node))
-   :transform (decode-matrix (.mTransformation node))})
+   :transform (decode-matrix (.mTransformation node))
+   :mesh-indices (mapv #(.get (.mMeshes node) %) (range (.mNumMeshes node)))})
 
 (defn- decode-face
   "Get indices from face"
@@ -72,3 +77,31 @@
     {:root      (decode-node (.mRootNode scene))
      :materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
      :meshes    (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))}))
+
+(defn- load-mesh-into-opengl
+  "Load index and vertex data into OpenGL buffer"
+  [program mesh]
+  (assoc mesh :vao (make-vertex-array-object program (:indices mesh) (:vertices mesh) ["vertex" 3 "normal" 3])))
+
+(defn load-scene-into-opengl
+  "Load indices and vertices into OpenGL buffers"
+  [program scene]
+  (update scene :meshes #(mapv (partial load-mesh-into-opengl program) %)))
+
+(defn unload-scene-from-opengl
+  "Destroy vertex array objects of scene"
+  [scene]
+  (doseq [mesh (:meshes scene)]
+         (destroy-vertex-array-object (:vao mesh))))
+
+(defn render-scene
+  "Render meshes of specified scene"
+  [program scene]
+  (use-program program)
+  (uniform-matrix4 program "transform" (:transform (:root scene)))
+  (doseq [mesh-index (:mesh-indices (:root scene))]
+         (let [mesh (nth (:meshes scene) mesh-index)]
+           (uniform-vector3 program "diffuse_color" (:diffuse (nth (:materials scene) (:material-index mesh))))
+           (render-triangles (:vao mesh)))))
+
+(set! *unchecked-math* false)
