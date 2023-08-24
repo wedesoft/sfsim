@@ -1,10 +1,10 @@
 (ns sfsim25.model
     "Import glTF models into Clojure"
-    (:require [fastmath.matrix :refer (mat4x4)]
+    (:require [fastmath.matrix :refer (mat4x4 mulm eye)]
               [fastmath.vector :refer (vec3)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles)])
-    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D]))
+    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode]))
 
 (set! *unchecked-math* true)
 
@@ -19,9 +19,10 @@
 (defn- decode-node
   "Fetch data of a node"
   [node]
-  {:name (.dataString (.mName node))
-   :transform (decode-matrix (.mTransformation node))
-   :mesh-indices (mapv #(.get (.mMeshes node) %) (range (.mNumMeshes node)))})
+  {:name         (.dataString (.mName node))
+   :transform    (decode-matrix (.mTransformation node))
+   :mesh-indices (mapv #(.get (.mMeshes node) %) (range (.mNumMeshes node)))
+   :children     (mapv #(decode-node (AINode/create ^long (.get (.mChildren node) %))) (range (.mNumChildren node)))})
 
 (defn- decode-face
   "Get indices from face"
@@ -73,10 +74,12 @@
 (defn read-gltf
   "Import a glTF model file"
   [filename]
-  (let [scene (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)]
-    {:root      (decode-node (.mRootNode scene))
-     :materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
-     :meshes    (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))}))
+  (let [scene  (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)
+        result {:root      (decode-node (.mRootNode scene))
+                :materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
+                :meshes    (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))}]
+    (Assimp/aiReleaseImport scene)
+    result))
 
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
@@ -96,12 +99,17 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  [program scene]
-  (use-program program)
-  (uniform-matrix4 program "transform" (:transform (:root scene)))
-  (doseq [mesh-index (:mesh-indices (:root scene))]
-         (let [mesh (nth (:meshes scene) mesh-index)]
-           (uniform-vector3 program "diffuse_color" (:diffuse (nth (:materials scene) (:material-index mesh))))
-           (render-triangles (:vao mesh)))))
+  ([program scene]
+   (use-program program)
+   (render-scene program scene (eye 4) (:root scene)))
+  ([program scene transform node]
+   (let [transform (mulm transform (:transform node))]
+     (uniform-matrix4 program "transform" transform)
+     (doseq [child-node (:children node)]
+            (render-scene program scene transform child-node))
+     (doseq [mesh-index (:mesh-indices node)]
+            (let [mesh (nth (:meshes scene) mesh-index)]
+              (uniform-vector3 program "diffuse_color" (:diffuse (nth (:materials scene) (:material-index mesh))))
+              (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)

@@ -27,7 +27,7 @@
 
 (all-methods Assimp)
 
-(def scene (Assimp/aiImportFile "test/sfsim25/fixtures/model/cube.gltf" Assimp/aiProcess_Triangulate))
+(def scene (Assimp/aiImportFile "etc/cube1.gltf" Assimp/aiProcess_Triangulate))
 (.dataString (.mName scene))
 (.mNumMeshes scene)
 
@@ -37,10 +37,10 @@
 (.dataString (.mName root))
 (.get (.mMeshes root) 0)
 (.mNumChildren root)
-;(def child (AINode/create ^long (.get (.mChildren root) 0)))
-;(def m2 (.mTransformation child))
-;(.dataString (.mName child))
-;(.get (.mMeshes child) 0)
+(def child (AINode/create ^long (.get (.mChildren root) 0)))
+(def m2 (.mTransformation child))
+(.dataString (.mName child))
+(.get (.mMeshes child) 0)
 
 (def buffer (.mMeshes scene))
 (.limit buffer)
