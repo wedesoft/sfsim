@@ -27,7 +27,7 @@
 
 (all-methods Assimp)
 
-(def scene (Assimp/aiImportFile "etc/cube1.gltf" Assimp/aiProcess_Triangulate))
+(def scene (Assimp/aiImportFile "test/sfsim25/fixtures/model/dice.gltf" Assimp/aiProcess_Triangulate))
 (.dataString (.mName scene))
 (.mNumMeshes scene)
 

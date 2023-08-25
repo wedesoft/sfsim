@@ -135,4 +135,19 @@ void main()
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/cubes.png" 0.0))
 
+(def dice (read-gltf "test/sfsim25/fixtures/model/dice.gltf"))
+
+(fact "Cube has no textures"
+      (count (:textures cube)) => 0)
+
+(fact "Dice has one texture"
+      (count (:textures dice)) => 1)
+
+(fact "Textures are returned in a vector"
+      (:textures dice) => vector?)
+
+(facts "Size of texture"
+       (:width  (first (:textures dice))) => 64
+       (:height (first (:textures dice))) => 64)
+
 (GLFW/glfwTerminate)

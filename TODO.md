@@ -1,4 +1,7 @@
 # TODO
+* test two textures
+* how to render with shadow and cloud textures
+* how to use multiple programs (color/texture/texture+normalmap, shadow program)
 * test for render-triangles
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/

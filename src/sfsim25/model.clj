@@ -4,7 +4,8 @@
               [fastmath.vector :refer (vec3)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles)])
-    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode]))
+    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture]
+             [org.lwjgl.stb STBImage]))
 
 (set! *unchecked-math* true)
 
@@ -71,13 +72,28 @@
      :attributes     ["vertex" 3 "normal" 3]
      :material-index (.mMaterialIndex mesh)}))
 
+(defn- decode-texture
+  "Read texture with specified index from memory"
+  [scene i]
+  (let [texture  (AITexture/create ^long (.get (.mTextures scene) i))
+        width    (int-array 1)
+        height   (int-array 1)
+        channels (int-array 1)
+        buffer   (STBImage/stbi_load_from_memory (.pcDataCompressed texture) width height channels 4)
+        data     (byte-array (.limit buffer))]
+    (.get buffer data)
+    (.flip buffer)
+    (STBImage/stbi_image_free buffer)
+    {:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
+
 (defn read-gltf
   "Import a glTF model file"
   [filename]
   (let [scene  (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)
         result {:root      (decode-node (.mRootNode scene))
                 :materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
-                :meshes    (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))}]
+                :meshes    (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))
+                :textures  (mapv #(decode-texture scene %) (range (.mNumTextures scene)))}]
     (Assimp/aiReleaseImport scene)
     result))
 
