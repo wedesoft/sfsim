@@ -4,7 +4,7 @@
               [fastmath.vector :refer (vec3)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles)])
-    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture]
+    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString]
              [org.lwjgl.stb STBImage]))
 
 (set! *unchecked-math* true)
@@ -56,11 +56,20 @@
     (Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_DIFFUSE Assimp/aiTextureType_NONE 0 color)
     (vec3 (.r color) (.g color) (.b color))))
 
+(defn- decode-texture-index
+  "Get texture index of material"
+  [material property]
+  (when (not (zero? (Assimp/aiGetMaterialTextureCount material property)))
+    (let [path (AIString/calloc)]
+      (Assimp/aiGetMaterialTexture material property 0 path nil nil nil nil nil nil)
+      (Integer/parseInt (subs (.dataString path) 1)))))
+
 (defn- decode-material
   "Fetch material data for material with given index"
   [scene i]
   (let [material (AIMaterial/create ^long (.get (.mMaterials scene) i))]
-    {:diffuse (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)}))
+    {:diffuse       (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
+     :texture-index (decode-texture-index material Assimp/aiTextureType_DIFFUSE)}))
 
 (defn- decode-mesh
   "Fetch vertex and index data for mesh with given index"

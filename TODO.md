@@ -1,4 +1,6 @@
 # TODO
+* decode texture indices if there is a texture
+* test texture rendering
 * test two textures
 * how to render with shadow and cloud textures
 * how to use multiple programs (color/texture/texture+normalmap, shadow program)

@@ -66,6 +66,12 @@
 (fact "Second material has a diffuse white color"
       (:diffuse (second (:materials cube))) => (roughly-vector (vec3 1.0 1.0 1.0) 1e-6))
 
+(fact "Cube has no textures"
+      (count (:textures cube)) => 0)
+
+(fact "Texture index is nil"
+      (:texture-index (first (:materials cube))) => nil)
+
 (def vertex-cube
 "#version 410 core
 uniform mat4 projection;
@@ -137,9 +143,6 @@ void main()
 
 (def dice (read-gltf "test/sfsim25/fixtures/model/dice.gltf"))
 
-(fact "Cube has no textures"
-      (count (:textures cube)) => 0)
-
 (fact "Dice has one texture"
       (count (:textures dice)) => 1)
 
@@ -149,5 +152,8 @@ void main()
 (facts "Size of texture"
        (:width  (first (:textures dice))) => 64
        (:height (first (:textures dice))) => 64)
+
+(fact "Texture index for dice material is zero"
+      (:texture-index (first (:materials dice))) => 0)
 
 (GLFW/glfwTerminate)
