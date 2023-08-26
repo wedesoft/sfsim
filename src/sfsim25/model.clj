@@ -3,7 +3,8 @@
     (:require [fastmath.matrix :refer (mat4x4 mulm eye)]
               [fastmath.vector :refer (vec3)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
-                                      destroy-vertex-array-object render-triangles)])
+                                      destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
+                                      use-textures)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer]
              [org.lwjgl.stb STBImage]))
 
@@ -128,13 +129,15 @@
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
   [program scene]
-  (update scene :meshes #(mapv (partial load-mesh-into-opengl program) %)))
+  (-> scene
+      (update :meshes #(mapv (partial load-mesh-into-opengl program) %))
+      (update :textures #(mapv (partial make-rgba-texture :linear :repeat) %))))
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
   [scene]
-  (doseq [mesh (:meshes scene)]
-         (destroy-vertex-array-object (:vao mesh))))
+  (doseq [mesh (:meshes scene)] (destroy-vertex-array-object (:vao mesh)))
+  (doseq [texture (:textures scene)] (destroy-texture texture)))
 
 (defn render-scene
   "Render meshes of specified scene"
@@ -147,8 +150,11 @@
      (doseq [child-node (:children node)]
             (render-scene program scene transform child-node))
      (doseq [mesh-index (:mesh-indices node)]
-            (let [mesh (nth (:meshes scene) mesh-index)]
-              (uniform-vector3 program "diffuse_color" (:diffuse (nth (:materials scene) (:material-index mesh))))
+            (let [mesh     (nth (:meshes scene) mesh-index)
+                  material (nth (:materials scene) (:material-index mesh))]
+              (uniform-vector3 program "diffuse_color" (:diffuse material))
+              (if (:texture-index material)
+                (use-textures (nth (:textures scene) (:texture-index material))))
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)

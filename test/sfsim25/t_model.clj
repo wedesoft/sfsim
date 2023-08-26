@@ -169,4 +169,53 @@ void main()
        1.0  1.0 -1.0 1.0  0.0 -0.0 0.625 0.5,
        1.0 -1.0 -1.0 0.0 -1.0 -0.0 0.375 0.5])
 
+(def vertex-dice
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+in vec3 vertex;
+in vec3 normal;
+in vec2 texcoord;
+out VS_OUT
+{
+  vec3 normal;
+  vec2 texcoord;
+} vs_out;
+void main()
+{
+  vs_out.normal = normal;
+  vs_out.texcoord = texcoord;
+  gl_Position = projection * transform * vec4(vertex, 1);
+}")
+
+(def fragment-dice
+"#version 410 core
+uniform vec3 light;
+uniform sampler2D tex;
+in VS_OUT
+{
+  vec3 normal;
+  vec2 texcoord;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  vec3 color = texture(tex, fs_in.texcoord).rgb;
+  fragColor = color * max(0, dot(light, fs_in.normal));
+}")
+
+(fact "Render textured cube"
+      (offscreen-render 160 120
+        (let [program      (make-program :vertex [vertex-dice] :fragment [fragment-dice])
+              opengl-scene (load-scene-into-opengl program dice)
+              transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
+              moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
+          (clear (vec3 0 0 0) 0)
+          (use-program program)
+          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+          (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
+          (render-scene program moved-scene)
+          (unload-scene-from-opengl opengl-scene)
+          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/dice.png" 0.0))
+
 (GLFW/glfwTerminate)
