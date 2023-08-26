@@ -41,7 +41,7 @@
 (fact "Vertex buffer should be a vector"
       (:vertices (first (:meshes cube))) => vector?)
 
-(fact "24 vertices with normals in vertex buffer"
+(fact "Find vertices with normals in vertex buffer"
       (take (* 4 6) (:vertices (first (:meshes cube)))) =>
       [1.0  1.0 -1.0 0.0  0.0 -1.0,
        1.0  1.0 -1.0 0.0  1.0  0.0,
@@ -155,5 +155,18 @@ void main()
 
 (fact "Texture index for dice material is zero"
       (:texture-index (first (:materials dice))) => 0)
+
+(fact "Size of vertex buffer with texture coordinates"
+      (count (:vertices (first (:meshes dice)))) => (* 24 8))
+
+(fact "Vertex attributes of textured cube"
+      (:attributes (first (:meshes dice))) => ["vertex" 3 "normal" 3 "texcoord" 2])
+
+(fact "Find vertices with normals and texture coordinates in vertex buffer"
+      (take (* 4 8) (:vertices (first (:meshes dice)))) =>
+      [1.0  1.0 -1.0 0.0  0.0 -1.0 0.625 0.5,
+       1.0  1.0 -1.0 0.0  1.0 -0.0 0.625 0.5,
+       1.0  1.0 -1.0 1.0  0.0 -0.0 0.625 0.5,
+       1.0 -1.0 -1.0 0.0 -1.0 -0.0 0.375 0.5])
 
 (GLFW/glfwTerminate)

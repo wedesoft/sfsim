@@ -4,7 +4,7 @@
               [fastmath.vector :refer (vec3)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles)])
-    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString]
+    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer]
              [org.lwjgl.stb STBImage]))
 
 (set! *unchecked-math* true)
@@ -37,17 +37,29 @@
   (let [faces (.mFaces mesh)]
     (vec (mapcat #(decode-face (.get faces %)) (range (.mNumFaces mesh))))))
 
-(defn- decode-vector
+(defn- decode-vector2
+  "Get x, y, and z from vector"
+  [v]
+  [(.x v) (- 1.0 (.y v))])
+
+(defn- decode-vector3
   "Get x, y, and z from vector"
   [v]
   [(.x v) (.y v) (.z v)])
 
 (defn- decode-vertices
   "Get vertex data from mesh"
-  [mesh]
-  (let [vertices (.mVertices mesh)
-        normals  (.mNormals mesh)]
-    (vec (mapcat (fn [i] (concat (decode-vector (.get vertices i)) (decode-vector (.get normals i)))) (range (.mNumVertices mesh))))))
+  [mesh texture-index]
+  (let [vertices  (.mVertices mesh)
+        normals   (.mNormals mesh)
+        texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) (.mNumVertices mesh))]
+    (vec
+      (mapcat
+        (fn [i] (concat
+                  (decode-vector3 (.get vertices i))
+                  (decode-vector3 (.get normals i))
+                  (if texture-index (decode-vector2 (.get texcoords i)) [])))
+        (range (.mNumVertices mesh))))))
 
 (defn- decode-color
   "Get RGB color of material"
@@ -73,13 +85,15 @@
 
 (defn- decode-mesh
   "Fetch vertex and index data for mesh with given index"
-  [scene i]
-  (let [buffer (.mMeshes scene)
-        mesh   (AIMesh/create ^long (.get buffer i))]
-    {:indices        (decode-indices mesh)
-     :vertices       (decode-vertices mesh)
-     :attributes     ["vertex" 3 "normal" 3]
-     :material-index (.mMaterialIndex mesh)}))
+  [scene materials i]
+  (let [buffer              (.mMeshes scene)
+        mesh                (AIMesh/create ^long (.get buffer i))
+        material-index      (.mMaterialIndex mesh)
+        texture-index       (:texture-index (nth materials material-index))]
+    {:indices             (decode-indices mesh)
+     :vertices            (decode-vertices mesh texture-index)
+     :attributes          (if texture-index ["vertex" 3 "normal" 3 "texcoord" 2] ["vertex" 3 "normal" 3])
+     :material-index      material-index}))
 
 (defn- decode-texture
   "Read texture with specified index from memory"
@@ -98,18 +112,18 @@
 (defn read-gltf
   "Import a glTF model file"
   [filename]
-  (let [scene  (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)
-        result {:root      (decode-node (.mRootNode scene))
-                :materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
-                :meshes    (mapv #(decode-mesh scene %) (range (.mNumMeshes scene)))
-                :textures  (mapv #(decode-texture scene %) (range (.mNumTextures scene)))}]
+  (let [scene     (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)
+        materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
+        textures  (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
+        meshes    (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
+        result {:root (decode-node (.mRootNode scene)) :materials materials :meshes meshes :textures textures}]
     (Assimp/aiReleaseImport scene)
     result))
 
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
   [program mesh]
-  (assoc mesh :vao (make-vertex-array-object program (:indices mesh) (:vertices mesh) ["vertex" 3 "normal" 3])))
+  (assoc mesh :vao (make-vertex-array-object program (:indices mesh) (:vertices mesh) (:attributes mesh))))
 
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
