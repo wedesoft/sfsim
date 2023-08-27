@@ -6,6 +6,7 @@
          '[clojure.math :as m]
          '[fastmath.vector :as v]
          '[sfsim25.render :refer :all]
+         '[sfsim25.util :refer :all]
          '[sfsim25.matrix :refer (projection-matrix transformation-matrix quaternion->matrix)]
          '[sfsim25.quaternion :as q])
 
@@ -70,8 +71,11 @@
 (def tangents (.mTangents mesh))
 (map (fn [i] (let [tangent (.get tangents i)] [(.x tangent) (.y tangent) (.z tangent)])) (range 24))
 
+(def bitangents (.mBitangents mesh))
+(map (fn [i] (let [bitangent (.get bitangents i)] [(.x bitangent) (.y bitangent) (.z bitangent)])) (range 24))
+
 (def texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) 24))
-(map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (.y texcoord) (.z texcoord)])) (range 24))
+(map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (.y texcoord)])) (range 24))
 
 (.mMaterialIndex mesh)
 
@@ -120,6 +124,7 @@
 (.flip buffer)
 (STBImage/stbi_image_free buffer)
 (def img {:data b :width width :height height :channels (aget channels 0)})
+;(spit-png "test.png" img)
 
 (GLFW/glfwInit)
 
@@ -135,43 +140,58 @@
 uniform mat4 projection;
 uniform mat4 rotation;
 in vec3 point;
+in vec3 tangent;
+in vec3 bitangent;
 in vec3 normal;
 in vec2 texcoord;
 out VS_OUT
 {
+  vec3 tangent;
+  vec3 bitangent;
   vec3 normal;
   vec2 texcoord;
 } vs_out;
 void main()
 {
   gl_Position = projection * (rotation * vec4(point, 1) + vec4(0, 0, -4, 0));
-  vs_out.normal = normal;
+  vs_out.tangent = mat3(rotation) * tangent;
+  vs_out.bitangent = mat3(rotation) * bitangent;
+  vs_out.normal = mat3(rotation) * normal;
   vs_out.texcoord = texcoord;
 }")
 
 (def fragment-shader
 "#version 410 core
+uniform vec3 light;
 uniform sampler2D tex;
+uniform mat4 rotation;
 in VS_OUT
 {
+  vec3 tangent;
+  vec3 bitangent;
   vec3 normal;
   vec2 texcoord;
 } fs_in;
 out vec4 fragColor;
 void main()
 {
-  fragColor = texture(tex, fs_in.texcoord);
+  mat3 o = mat3(fs_in.tangent, fs_in.bitangent, fs_in.normal);
+  vec3 n = 2.0 * texture(tex, fs_in.texcoord).xyz - 1.0;
+  float b = 0.2 + 0.8 * max(0, dot(light, o * n));
+  fragColor = vec4(b, b, b, 1);
 }")
 
 (def program (make-program :vertex [vertex-shader] :fragment [fragment-shader]))
 
 (def indices (flatten (map (fn [i] (let [face (.get faces i) indices (.mIndices face)] (map #(.get indices %) (range 3)))) (range 12))))
 (def p (map (fn [i] (let [vertex (.get vertices i)] [(.x vertex) (.y vertex) (.z vertex)])) (range 24)))
+(def t (map (fn [i] (let [tangent (.get tangents i)] [(.x tangent) (.y tangent) (.z tangent)])) (range 24)))
+(def bt (map (fn [i] (let [bitangent (.get bitangents i)] [(.x bitangent) (.y bitangent) (.z bitangent)])) (range 24)))
 (def n (map (fn [i] (let [normal (.get normals i)] [(.x normal) (.y normal) (.z normal)])) (range 24)))
-(def t (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (- 1.0 (.y texcoord))])) (range 24)))
-(def verts (flatten (map concat p n t)))
+(def tc (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (- 1.0 (.y texcoord))])) (range 24)))
+(def verts (flatten (map concat p t bt n tc)))
 
-(def vao (make-vertex-array-object program indices verts ["point" 3 "normal" 3 "texcoord" 2]))
+(def vao (make-vertex-array-object program indices verts ["point" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]))
 
 (def projection (projection-matrix w h 0.1 10.0 (m/to-radians 60.0)))
 
@@ -203,6 +223,7 @@ void main()
                           (uniform-sampler program "tex" 0)
                           (uniform-matrix4 program "projection" projection)
                           (uniform-matrix4 program "rotation" (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 0)))
+                          (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2)))
                           (use-textures tex)
                           (GL30/glBindVertexArray ^long (:vertex-array-object vao))
                           (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vao) GL11/GL_UNSIGNED_INT 0))
