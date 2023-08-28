@@ -103,16 +103,20 @@
 (Assimp/aiGetMaterialProperty material Assimp/AI_MATKEY_SPECULAR_FACTOR 0 0 p)
 
 (Assimp/aiGetMaterialTextureCount material Assimp/aiTextureType_DIFFUSE)
+(Assimp/aiGetMaterialTextureCount material Assimp/aiTextureType_NORMALS)
 
 (def path (AIString/calloc))
 (Assimp/aiGetMaterialTexture material Assimp/aiTextureType_DIFFUSE 0 path nil nil nil nil nil nil)
+(.dataString path)
+
+(def path (AIString/calloc))
+(Assimp/aiGetMaterialTexture material Assimp/aiTextureType_NORMALS 0 path nil nil nil nil nil nil)
 (.dataString path)
 
 (def texture (AITexture/create ^long (.get (.mTextures scene) 0)))
 (.mHeight texture)
 (.mWidth texture)
 (def data (.pcDataCompressed texture))
-
 (def width (int-array 1))
 (def height (int-array 1))
 (def channels (int-array 1))
@@ -126,6 +130,23 @@
 (def img {:data b :width width :height height :channels (aget channels 0)})
 ;(spit-png "test.png" img)
 
+(def texture (AITexture/create ^long (.get (.mTextures scene) 1)))
+(.mHeight texture)
+(.mWidth texture)
+(def data (.pcDataCompressed texture))
+(def width (int-array 1))
+(def height (int-array 1))
+(def channels (int-array 1))
+(def buffer (STBImage/stbi_load_from_memory data width height channels 4))
+(def width (aget width 0))
+(def height (aget height 0))
+(def b (byte-array (* width height 4)))
+(.get buffer b)
+(.flip buffer)
+(STBImage/stbi_image_free buffer)
+(def normal {:data b :width width :height height :channels (aget channels 0)})
+;(spit-png "test.png" img)
+
 (GLFW/glfwInit)
 
 (def w 640)
@@ -133,7 +154,8 @@
 (def window (make-window "cube" w h))
 (GLFW/glfwShowWindow window)
 
-(def tex (make-rgba-texture :linear :repeat img))
+(def colors-tex (make-rgba-texture :linear :repeat img))
+(def normals-tex (make-rgba-texture :linear :repeat normal))
 
 (def vertex-shader
 "#version 410 core
@@ -159,19 +181,20 @@ void main()
 (def fragment-shader
 "#version 410 core
 uniform vec3 light;
-uniform sampler2D tex;
+uniform sampler2D normals;
+uniform sampler2D colors;
 uniform mat4 rotation;
 in VS_OUT
 {
   mat3 surface;
   vec2 texcoord;
 } fs_in;
-out vec4 fragColor;
+out vec3 fragColor;
 void main()
 {
-  vec3 n = 2.0 * texture(tex, fs_in.texcoord).xyz - 1.0;
-  float b = 0.2 + 0.8 * max(0, dot(light, fs_in.surface * n));
-  fragColor = vec4(b, b, b, 1);
+  vec3 n = 2.0 * texture(normals, fs_in.texcoord).xyz - 1.0;
+  float brightness = 0.2 + 0.8 * max(0, dot(light, fs_in.surface * n));
+  fragColor = texture(colors, fs_in.texcoord).rgb * brightness;
 }")
 
 (def program (make-program :vertex [vertex-shader] :fragment [fragment-shader]))
@@ -213,11 +236,12 @@ void main()
          (onscreen-render window
                           (clear (v/vec3 0 1 0) 0)
                           (use-program program)
-                          (uniform-sampler program "tex" 0)
+                          (uniform-sampler program "colors" 0)
+                          (uniform-sampler program "normals" 1)
                           (uniform-matrix4 program "projection" projection)
                           (uniform-matrix4 program "rotation" (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 0)))
                           (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2)))
-                          (use-textures tex)
+                          (use-textures colors-tex normals-tex)
                           (GL30/glBindVertexArray ^long (:vertex-array-object vao))
                           (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vao) GL11/GL_UNSIGNED_INT 0))
          (GLFW/glfwPollEvents)
@@ -225,7 +249,8 @@ void main()
 
 (destroy-vertex-array-object vao)
 (destroy-program program)
-(destroy-texture tex)
+(destroy-texture colors-tex)
+(destroy-texture normals-tex)
 (destroy-window window)
 (GLFW/glfwTerminate)
 (Assimp/aiReleaseImport scene)
