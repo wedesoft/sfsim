@@ -4,7 +4,7 @@
               [fastmath.vector :refer (vec3)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
-                                      use-textures)])
+                                      use-textures uniform-sampler)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer]
              [org.lwjgl.stb STBImage]))
 
@@ -50,7 +50,7 @@
 
 (defn- decode-vertices
   "Get vertex data from mesh"
-  [mesh texture-index]
+  [mesh has-textures]
   (let [vertices  (.mVertices mesh)
         normals   (.mNormals mesh)
         texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) (.mNumVertices mesh))]
@@ -59,7 +59,7 @@
         (fn [i] (concat
                   (decode-vector3 (.get vertices i))
                   (decode-vector3 (.get normals i))
-                  (if texture-index (decode-vector2 (.get texcoords i)) [])))
+                  (if has-textures (decode-vector2 (.get texcoords i)) [])))
         (range (.mNumVertices mesh))))))
 
 (defn- decode-color
@@ -81,8 +81,8 @@
   "Fetch material data for material with given index"
   [scene i]
   (let [material (AIMaterial/create ^long (.get (.mMaterials scene) i))]
-    {:diffuse       (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
-     :texture-index (decode-texture-index material Assimp/aiTextureType_DIFFUSE)}))
+    {:diffuse             (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
+     :color-texture-index (decode-texture-index material Assimp/aiTextureType_DIFFUSE)}))
 
 (defn- decode-mesh
   "Fetch vertex and index data for mesh with given index"
@@ -90,10 +90,11 @@
   (let [buffer              (.mMeshes scene)
         mesh                (AIMesh/create ^long (.get buffer i))
         material-index      (.mMaterialIndex mesh)
-        texture-index       (:texture-index (nth materials material-index))]
+        material            (nth materials material-index)
+        has-textures        (:color-texture-index material)]
     {:indices             (decode-indices mesh)
-     :vertices            (decode-vertices mesh texture-index)
-     :attributes          (if texture-index ["vertex" 3 "normal" 3 "texcoord" 2] ["vertex" 3 "normal" 3])
+     :vertices            (decode-vertices mesh has-textures)
+     :attributes          (if has-textures ["vertex" 3 "normal" 3 "texcoord" 2] ["vertex" 3 "normal" 3])
      :material-index      material-index}))
 
 (defn- decode-texture
@@ -153,8 +154,9 @@
             (let [mesh     (nth (:meshes scene) mesh-index)
                   material (nth (:materials scene) (:material-index mesh))]
               (uniform-vector3 program "diffuse_color" (:diffuse material))
-              (if (:texture-index material)
-                (use-textures (nth (:textures scene) (:texture-index material))))
+              (when (:color-texture-index material)
+                (uniform-sampler program "colors" 0)
+                (use-textures (nth (:textures scene) (:color-texture-index material))))
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)

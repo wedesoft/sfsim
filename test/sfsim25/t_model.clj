@@ -70,7 +70,7 @@
       (count (:textures cube)) => 0)
 
 (fact "Texture index is nil"
-      (:texture-index (first (:materials cube))) => nil)
+      (:color-texture-index (first (:materials cube))) => nil)
 
 (def vertex-cube
 "#version 410 core
@@ -154,7 +154,7 @@ void main()
        (:height (first (:textures dice))) => 64)
 
 (fact "Texture index for dice material is zero"
-      (:texture-index (first (:materials dice))) => 0)
+      (:color-texture-index (first (:materials dice))) => 0)
 
 (fact "Size of vertex buffer with texture coordinates"
       (count (:vertices (first (:meshes dice)))) => (* 24 8))
@@ -191,7 +191,7 @@ void main()
 (def fragment-dice
 "#version 410 core
 uniform vec3 light;
-uniform sampler2D tex;
+uniform sampler2D colors;
 in VS_OUT
 {
   vec3 normal;
@@ -200,7 +200,7 @@ in VS_OUT
 out vec3 fragColor;
 void main()
 {
-  vec3 color = texture(tex, fs_in.texcoord).rgb;
+  vec3 color = texture(colors, fs_in.texcoord).rgb;
   fragColor = color * max(0, dot(light, fs_in.normal));
 }")
 
