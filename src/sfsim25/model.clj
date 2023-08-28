@@ -50,16 +50,20 @@
 
 (defn- decode-vertices
   "Get vertex data from mesh"
-  [mesh has-textures]
-  (let [vertices  (.mVertices mesh)
-        normals   (.mNormals mesh)
-        texcoords (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) (.mNumVertices mesh))]
+  [mesh has-color-texture has-normal-texture]
+  (let [vertices   (.mVertices mesh)
+        tangents   (.mTangents mesh)
+        bitangents (.mBitangents mesh)
+        normals    (.mNormals mesh)
+        texcoords  (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) (.mNumVertices mesh))]
     (vec
       (mapcat
         (fn [i] (concat
                   (decode-vector3 (.get vertices i))
+                  (if has-normal-texture (decode-vector3 (.get tangents i)) [])
+                  (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
                   (decode-vector3 (.get normals i))
-                  (if has-textures (decode-vector2 (.get texcoords i)) [])))
+                  (if has-color-texture (decode-vector2 (.get texcoords i)) [])))
         (range (.mNumVertices mesh))))))
 
 (defn- decode-color
@@ -81,8 +85,9 @@
   "Fetch material data for material with given index"
   [scene i]
   (let [material (AIMaterial/create ^long (.get (.mMaterials scene) i))]
-    {:diffuse             (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
-     :color-texture-index (decode-texture-index material Assimp/aiTextureType_DIFFUSE)}))
+    {:diffuse              (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
+     :color-texture-index  (decode-texture-index material Assimp/aiTextureType_DIFFUSE)
+     :normal-texture-index (decode-texture-index material Assimp/aiTextureType_NORMALS)}))
 
 (defn- decode-mesh
   "Fetch vertex and index data for mesh with given index"
@@ -91,10 +96,16 @@
         mesh                (AIMesh/create ^long (.get buffer i))
         material-index      (.mMaterialIndex mesh)
         material            (nth materials material-index)
-        has-textures        (:color-texture-index material)]
+        has-color-texture   (:color-texture-index material)
+        has-normal-texture  (:normal-texture-index material)
+        ]
     {:indices             (decode-indices mesh)
-     :vertices            (decode-vertices mesh has-textures)
-     :attributes          (if has-textures ["vertex" 3 "normal" 3 "texcoord" 2] ["vertex" 3 "normal" 3])
+     :vertices            (decode-vertices mesh has-color-texture has-normal-texture)
+     :attributes          (if has-color-texture
+                            (if has-normal-texture
+                              ["vertex" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]
+                              ["vertex" 3 "normal" 3 "texcoord" 2])
+                            ["vertex" 3 "normal" 3])
      :material-index      material-index}))
 
 (defn- decode-texture
@@ -114,7 +125,7 @@
 (defn read-gltf
   "Import a glTF model file"
   [filename]
-  (let [scene     (Assimp/aiImportFile filename Assimp/aiProcess_Triangulate)
+  (let [scene     (Assimp/aiImportFile filename (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace))
         materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
         textures  (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
         meshes    (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
@@ -156,7 +167,12 @@
               (uniform-vector3 program "diffuse_color" (:diffuse material))
               (when (:color-texture-index material)
                 (uniform-sampler program "colors" 0)
-                (use-textures (nth (:textures scene) (:color-texture-index material))))
+                (if (:normal-texture-index material)
+                  (do
+                    (uniform-sampler program "normals" 1)
+                    (use-textures (nth (:textures scene) (:color-texture-index material))
+                                  (nth (:textures scene) (:normal-texture-index material))))
+                  (use-textures (nth (:textures scene) (:color-texture-index material)))))
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)

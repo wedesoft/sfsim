@@ -69,8 +69,9 @@
 (fact "Cube has no textures"
       (count (:textures cube)) => 0)
 
-(fact "Texture index is nil"
-      (:color-texture-index (first (:materials cube))) => nil)
+(facts "Texture indices are nil"
+      (:color-texture-index (first (:materials cube))) => nil
+      (:normal-texture-index (first (:materials cube))) => nil)
 
 (def vertex-cube
 "#version 410 core
@@ -153,8 +154,11 @@ void main()
        (:width  (first (:textures dice))) => 64
        (:height (first (:textures dice))) => 64)
 
-(fact "Texture index for dice material is zero"
+(fact "Color texture index for dice material is zero"
       (:color-texture-index (first (:materials dice))) => 0)
+
+(fact "Normal texture index for dice material is nil"
+      (:normal-texture-index (first (:materials dice))) => nil)
 
 (fact "Size of vertex buffer with texture coordinates"
       (count (:vertices (first (:meshes dice)))) => (* 24 8))
@@ -217,5 +221,67 @@ void main()
           (render-scene program moved-scene)
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/dice.png" 0.0))
+
+(def bricks (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
+
+(fact "Color texture index for bricks material is zero"
+      (:color-texture-index (first (:materials bricks))) => 0)
+
+(fact "Normal texture index for bricks material is one"
+      (:normal-texture-index (first (:materials bricks))) => 1)
+
+(def vertex-bricks
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+in vec3 vertex;
+in vec3 tangent;
+in vec3 bitangent;
+in vec3 normal;
+in vec2 texcoord;
+out VS_OUT
+{
+  mat3 surface;
+  vec2 texcoord;
+} vs_out;
+void main()
+{
+  vs_out.surface = mat3(transform) * mat3(tangent, bitangent, normal);
+  vs_out.texcoord = texcoord;
+  gl_Position = projection * transform * vec4(vertex, 1);
+}")
+
+(def fragment-bricks
+"#version 410 core
+uniform vec3 light;
+uniform sampler2D colors;
+uniform sampler2D normals;
+in VS_OUT
+{
+  mat3 surface;
+  vec2 texcoord;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  vec3 normal = 2.0 * texture(normals, fs_in.texcoord).xyz - 1.0;
+  vec3 color = texture(colors, fs_in.texcoord).rgb;
+  float brightness = 0.2 + 0.8 * max(0, dot(light, fs_in.surface * normal));
+  fragColor = color * brightness;
+}")
+
+(fact "Render brick wall"
+      (offscreen-render 160 120
+        (let [program      (make-program :vertex [vertex-bricks] :fragment [fragment-bricks])
+              opengl-scene (load-scene-into-opengl program bricks)
+              transform    (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3))
+              moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
+          (clear (vec3 0 0 0) 0)
+          (use-program program)
+          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+          (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
+          (render-scene program moved-scene)
+          (unload-scene-from-opengl opengl-scene)
+          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/bricks.png" 0.0))
 
 (GLFW/glfwTerminate)
