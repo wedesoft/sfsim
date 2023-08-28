@@ -146,17 +146,13 @@ in vec3 normal;
 in vec2 texcoord;
 out VS_OUT
 {
-  vec3 tangent;
-  vec3 bitangent;
-  vec3 normal;
+  mat3 surface;
   vec2 texcoord;
 } vs_out;
 void main()
 {
   gl_Position = projection * (rotation * vec4(point, 1) + vec4(0, 0, -4, 0));
-  vs_out.tangent = mat3(rotation) * tangent;
-  vs_out.bitangent = mat3(rotation) * bitangent;
-  vs_out.normal = mat3(rotation) * normal;
+  vs_out.surface = mat3(rotation) * mat3(tangent, bitangent, normal);
   vs_out.texcoord = texcoord;
 }")
 
@@ -167,17 +163,14 @@ uniform sampler2D tex;
 uniform mat4 rotation;
 in VS_OUT
 {
-  vec3 tangent;
-  vec3 bitangent;
-  vec3 normal;
+  mat3 surface;
   vec2 texcoord;
 } fs_in;
 out vec4 fragColor;
 void main()
 {
-  mat3 o = mat3(fs_in.tangent, fs_in.bitangent, fs_in.normal);
   vec3 n = 2.0 * texture(tex, fs_in.texcoord).xyz - 1.0;
-  float b = 0.2 + 0.8 * max(0, dot(light, o * n));
+  float b = 0.2 + 0.8 * max(0, dot(light, fs_in.surface * n));
   fragColor = vec4(b, b, b, 1);
 }")
 
