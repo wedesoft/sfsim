@@ -234,7 +234,7 @@ void main()
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rb) (v/vec3 0 1 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
          (onscreen-render window
-                          (clear (v/vec3 0 1 0) 0)
+                          (clear (v/vec3 0.1 0.1 0.1) 0)
                           (use-program program)
                           (uniform-sampler program "colors" 0)
                           (uniform-sampler program "normals" 1)
