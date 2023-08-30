@@ -63,7 +63,7 @@
                   (if has-normal-texture (decode-vector3 (.get tangents i)) [])
                   (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
                   (decode-vector3 (.get normals i))
-                  (if has-color-texture (decode-vector2 (.get texcoords i)) [])))
+                  (if (or has-color-texture has-normal-texture) (decode-vector2 (.get texcoords i)) [])))
         (range (.mNumVertices mesh))))))
 
 (defn- decode-color
@@ -153,26 +153,18 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  ([program scene]
-   (use-program program)
-   (render-scene program scene (eye 4) (:root scene)))
-  ([program scene transform node]
+  ([scene callback]
+   (render-scene scene callback (eye 4) (:root scene)))
+  ([scene callback transform node]
    (let [transform (mulm transform (:transform node))]
-     (uniform-matrix4 program "transform" transform)
      (doseq [child-node (:children node)]
-            (render-scene program scene transform child-node))
+            (render-scene scene callback transform child-node))
      (doseq [mesh-index (:mesh-indices node)]
-            (let [mesh     (nth (:meshes scene) mesh-index)
-                  material (nth (:materials scene) (:material-index mesh))]
-              (uniform-vector3 program "diffuse_color" (:diffuse material))
-              (when (:color-texture-index material)
-                (uniform-sampler program "colors" 0)
-                (if (:normal-texture-index material)
-                  (do
-                    (uniform-sampler program "normals" 1)
-                    (use-textures (nth (:textures scene) (:color-texture-index material))
-                                  (nth (:textures scene) (:normal-texture-index material))))
-                  (use-textures (nth (:textures scene) (:color-texture-index material)))))
+            (let [mesh                (nth (:meshes scene) mesh-index)
+                  material            (nth (:materials scene) (:material-index mesh))
+                  colors              (some->> material :color-texture-index (nth (:textures scene)))
+                  normals             (some->> material :normal-texture-index (nth (:textures scene)))]
+              (callback {:transform transform :diffuse (:diffuse material) :colors colors :normals normals})
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)

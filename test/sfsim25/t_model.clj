@@ -113,7 +113,10 @@ void main()
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-          (render-scene program moved-scene)
+          (render-scene moved-scene
+                        (fn [{:keys [transform diffuse]}]
+                            (uniform-matrix4 program "transform" transform)
+                            (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/cube.png" 0.0))
 
@@ -138,7 +141,10 @@ void main()
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-          (render-scene program moved-scene)
+          (render-scene moved-scene
+                        (fn [{:keys [transform diffuse]}]
+                            (uniform-matrix4 program "transform" transform)
+                            (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/cubes.png" 0.0))
 
@@ -218,7 +224,11 @@ void main()
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-          (render-scene program moved-scene)
+          (uniform-sampler program "colors" 0)
+          (render-scene moved-scene
+                        (fn [{:keys [transform colors]}]
+                            (uniform-matrix4 program "transform" transform)
+                            (use-textures colors)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/dice.png" 0.0))
 
@@ -280,7 +290,12 @@ void main()
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
-          (render-scene program moved-scene)
+          (uniform-sampler program "colors" 0)
+          (uniform-sampler program "normals" 1)
+          (render-scene moved-scene
+                        (fn [{:keys [transform colors normals]}]
+                            (uniform-matrix4 program "transform" transform)
+                            (use-textures colors normals)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/bricks.png" 0.0))
 
