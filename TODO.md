@@ -1,5 +1,5 @@
 # TODO
-* test two textures
+* simplify dispatch and program selection?
 * how to render with shadow and cloud textures
 * how to use multiple programs (color/texture/texture+normalmap, shadow program)
 * test for render-triangles

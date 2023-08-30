@@ -106,14 +106,14 @@ void main()
 (fact "Render red cube"
       (offscreen-render 160 120
         (let [program      (make-program :vertex [vertex-cube] :fragment [fragment-cube])
-              opengl-scene (load-scene-into-opengl program cube)
+              opengl-scene (load-scene-into-opengl (constantly program) cube)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-          (render-scene moved-scene
+          (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform diffuse]}]
                             (uniform-matrix4 program "transform" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
@@ -134,14 +134,14 @@ void main()
 (fact "Render red and green cube"
       (offscreen-render 160 120
         (let [program      (make-program :vertex [vertex-cube] :fragment [fragment-cube])
-              opengl-scene (load-scene-into-opengl program cubes)
+              opengl-scene (load-scene-into-opengl (constantly program) cubes)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-          (render-scene moved-scene
+          (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform diffuse]}]
                             (uniform-matrix4 program "transform" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
@@ -217,7 +217,7 @@ void main()
 (fact "Render textured cube"
       (offscreen-render 160 120
         (let [program      (make-program :vertex [vertex-dice] :fragment [fragment-dice])
-              opengl-scene (load-scene-into-opengl program dice)
+              opengl-scene (load-scene-into-opengl (constantly program) dice)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
@@ -225,7 +225,7 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (uniform-sampler program "colors" 0)
-          (render-scene moved-scene
+          (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform colors]}]
                             (uniform-matrix4 program "transform" transform)
                             (use-textures colors)))
@@ -283,7 +283,7 @@ void main()
 (fact "Render brick wall"
       (offscreen-render 160 120
         (let [program      (make-program :vertex [vertex-bricks] :fragment [fragment-bricks])
-              opengl-scene (load-scene-into-opengl program bricks)
+              opengl-scene (load-scene-into-opengl (constantly program) bricks)
               transform    (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
@@ -292,11 +292,44 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
           (uniform-sampler program "colors" 0)
           (uniform-sampler program "normals" 1)
-          (render-scene moved-scene
+          (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform colors normals]}]
                             (uniform-matrix4 program "transform" transform)
                             (use-textures colors normals)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/bricks.png" 0.0))
+
+(defmulti render-model (fn [{:keys [colors]}] (nil? colors)))
+
+(defmethod render-model true [{:keys [program transform diffuse]}]
+  (use-program program)
+  (uniform-matrix4 program "transform" transform)
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+(defmethod render-model false [{:keys [program transform colors]}]
+  (use-program program)
+  (uniform-matrix4 program "transform" transform)
+  (use-textures colors))
+
+(def cube-and-dice (read-gltf "test/sfsim25/fixtures/model/cube-and-dice.gltf"))
+
+(fact "Render uniformly colored cube and textured cube"
+      (offscreen-render 160 120
+        (let [program-cube      (make-program :vertex [vertex-cube] :fragment [fragment-cube])
+              program-dice      (make-program :vertex [vertex-dice] :fragment [fragment-dice])
+              program-selection (fn [material] (if (:color-texture-index material) program-dice program-cube))
+              opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
+              transform         (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))
+              moved-scene       (assoc-in opengl-scene [:root :transform] transform)]
+          (clear (vec3 0 0 0) 0)
+          (doseq [program [program-cube program-dice]]
+                 (use-program program)
+                 (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+                 (uniform-vector3 program "light" (normalize (vec3 1 2 3))))
+          (uniform-sampler program-dice "colors" 0)
+          (render-scene program-selection moved-scene render-model)
+          (unload-scene-from-opengl opengl-scene)
+          (destroy-program program-dice)
+          (destroy-program program-cube))) => (is-image "test/sfsim25/fixtures/model/cube-and-dice.png" 0.0))
 
 (GLFW/glfwTerminate)

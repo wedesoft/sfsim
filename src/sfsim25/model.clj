@@ -135,15 +135,16 @@
 
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
-  [program mesh]
-  (assoc mesh :vao (make-vertex-array-object program (:indices mesh) (:vertices mesh) (:attributes mesh))))
+  [program-selection mesh material]
+  (assoc mesh :vao (make-vertex-array-object (program-selection material) (:indices mesh) (:vertices mesh) (:attributes mesh))))
 
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
-  [program scene]
-  (-> scene
-      (update :meshes #(mapv (partial load-mesh-into-opengl program) %))
-      (update :textures #(mapv (partial make-rgba-texture :linear :repeat) %))))
+  [program-selection scene]
+  (let [material (fn [mesh] (nth (:materials scene) (:material-index mesh)))]
+    (-> scene
+        (update :meshes #(mapv (fn [mesh] (load-mesh-into-opengl program-selection mesh (material mesh))) %))
+        (update :textures #(mapv (partial make-rgba-texture :linear :repeat) %)))))
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
@@ -153,18 +154,21 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  ([scene callback]
-   (render-scene scene callback (eye 4) (:root scene)))
-  ([scene callback transform node]
+  ([program-selection scene callback]
+   (render-scene program-selection scene callback (eye 4) (:root scene)))
+  ([program-selection scene callback transform node]
    (let [transform (mulm transform (:transform node))]
      (doseq [child-node (:children node)]
-            (render-scene scene callback transform child-node))
+            (render-scene program-selection scene callback transform child-node))
      (doseq [mesh-index (:mesh-indices node)]
             (let [mesh                (nth (:meshes scene) mesh-index)
+                  attributes          (:attributes mesh)
                   material            (nth (:materials scene) (:material-index mesh))
+                  program             (program-selection material)
+                  diffuse             (:diffuse material)
                   colors              (some->> material :color-texture-index (nth (:textures scene)))
                   normals             (some->> material :normal-texture-index (nth (:textures scene)))]
-              (callback {:transform transform :diffuse (:diffuse material) :colors colors :normals normals})
+              (callback {:program program :transform transform :diffuse diffuse :colors colors :normals normals :material material})
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)
