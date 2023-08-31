@@ -11,7 +11,7 @@
 
 (GLFW/glfwInit)
 
-(def model (read-gltf "test/sfsim25/fixtures/model/dice.gltf"))
+(def model (read-gltf "test/sfsim25/fixtures/model/cube-and-dice.gltf"))
 
 (def w 640)
 (def h 480)
