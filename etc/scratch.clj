@@ -11,7 +11,7 @@
 
 (GLFW/glfwInit)
 
-(def model (read-gltf "test/sfsim25/fixtures/model/cube-and-dice.gltf"))
+(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
 
 (def w 640)
 (def h 480)
@@ -89,23 +89,75 @@ void main()
 (use-program program-textured)
 (uniform-sampler program-textured "colors" 0)
 
-(defmulti program-selection (fn [material] (type (:color-texture-index material))))
+(def vertex-rough
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+in vec3 vertex;
+in vec3 tangent;
+in vec3 bitangent;
+in vec3 normal;
+in vec2 texcoord;
+out VS_OUT
+{
+  mat3 surface;
+  vec2 texcoord;
+} vs_out;
+void main()
+{
+  vs_out.surface = mat3(transform) * mat3(tangent, bitangent, normal);
+  vs_out.texcoord = texcoord;
+  gl_Position = projection * transform * vec4(vertex, 1);
+}")
 
-(defmethod program-selection nil [material] program-uniform)
+(def fragment-rough
+"#version 410 core
+uniform vec3 light;
+uniform sampler2D colors;
+uniform sampler2D normals;
+in VS_OUT
+{
+  mat3 surface;
+  vec2 texcoord;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  vec3 normal = 2.0 * texture(normals, fs_in.texcoord).xyz - 1.0;
+  vec3 color = texture(colors, fs_in.texcoord).rgb;
+  float brightness = 0.2 + 0.8 * max(0, dot(light, fs_in.surface * normal));
+  fragColor = color * brightness;
+}")
 
-(defmethod program-selection Number [material] program-textured)
+(def program-rough (make-program :vertex [vertex-rough] :fragment [fragment-rough]))
+(use-program program-rough)
+(uniform-sampler program-rough "colors" 0)
+(uniform-sampler program-rough "normals" 1)
 
-(defmulti render-model (fn [material] (type (:color-texture-index material))))
+(defmulti program-selection (fn [material] [(type (:color-texture-index material)) (type (:normal-texture-index material))]))
 
-(defmethod render-model nil [{:keys [program transform diffuse]}]
+(defmethod program-selection [nil nil] [material] program-uniform)
+
+(defmethod program-selection [Number nil] [material] program-textured)
+
+(defmethod program-selection [Number Number] [material] program-rough)
+
+(defmulti render-model (fn [material] [(type (:color-texture-index material)) (type (:normal-texture-index material))]))
+
+(defmethod render-model [nil nil] [{:keys [program transform diffuse]}]
   (use-program program)
   (uniform-matrix4 program "transform" transform)
   (uniform-vector3 program "diffuse_color" diffuse))
 
-(defmethod render-model Number [{:keys [program transform colors]}]
+(defmethod render-model [Number nil] [{:keys [program transform colors]}]
   (use-program program)
   (uniform-matrix4 program "transform" transform)
   (use-textures colors))
+
+(defmethod render-model [Number Number] [{:keys [program transform colors normals]}]
+  (use-program program)
+  (uniform-matrix4 program "transform" transform)
+  (use-textures colors normals))
 
 (def scene (load-scene-into-opengl program-selection model))
 
@@ -135,7 +187,7 @@ void main()
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
          (onscreen-render window
                           (clear (v/vec3 0.1 0.1 0.1) 0)
-                          (doseq [program [program-uniform program-textured]]
+                          (doseq [program [program-uniform program-textured program-rough]]
                                  (use-program program)
                                  (uniform-matrix4 program "projection" projection)
                                  (uniform-matrix4 program "transform"
@@ -148,6 +200,7 @@ void main()
          (swap! t0 + dt)))
 
 (unload-scene-from-opengl scene)
+(destroy-program program-rough)
 (destroy-program program-textured)
 (destroy-program program-uniform)
 (destroy-window window)
