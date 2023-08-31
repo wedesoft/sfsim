@@ -184,7 +184,6 @@
             (render-scene program-selection scene callback transform child-node))
      (doseq [mesh-index (:mesh-indices node)]
             (let [mesh                (nth (:meshes scene) mesh-index)
-                  attributes          (:attributes mesh)
                   material            (nth (:materials scene) (:material-index mesh))
                   program             (program-selection material)]
               (callback (merge material {:program program :transform transform}))
