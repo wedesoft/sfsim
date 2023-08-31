@@ -11,7 +11,7 @@
 
 (GLFW/glfwInit)
 
-(def model (read-gltf "test/sfsim25/fixtures/model/cube.gltf"))
+(def model (read-gltf "test/sfsim25/fixtures/model/dice.gltf"))
 
 (def w 640)
 (def h 480)
@@ -50,7 +50,64 @@ void main()
 
 (def program-uniform (make-program :vertex [vertex-uniform] :fragment [fragment-uniform]))
 
-(def scene (load-scene-into-opengl (constantly program-uniform) model))
+(def vertex-textured
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+in vec3 vertex;
+in vec3 normal;
+in vec2 texcoord;
+out VS_OUT
+{
+  vec3 normal;
+  vec2 texcoord;
+} vs_out;
+void main()
+{
+  vs_out.normal = mat3(transform) * normal;
+  vs_out.texcoord = texcoord;
+  gl_Position = projection * transform * vec4(vertex, 1);
+}")
+
+(def fragment-textured
+"#version 410 core
+uniform vec3 light;
+uniform sampler2D colors;
+in VS_OUT
+{
+  vec3 normal;
+  vec2 texcoord;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  vec3 color = texture(colors, fs_in.texcoord).rgb;
+  fragColor = color * max(0, dot(light, fs_in.normal));
+}")
+
+(def program-textured (make-program :vertex [vertex-textured] :fragment [fragment-textured]))
+(use-program program-textured)
+(uniform-sampler program-textured "colors" 0)
+
+(defmulti program-selection (fn [material] (type (:color-texture-index material))))
+
+(defmethod program-selection nil [material] program-uniform)
+
+(defmethod program-selection Number [material] program-textured)
+
+(defmulti render-model (fn [material] (type (:color-texture-index material))))
+
+(defmethod render-model nil [{:keys [program transform diffuse]}]
+  (use-program program)
+  (uniform-matrix4 program "transform" transform)
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+(defmethod render-model Number [{:keys [program transform colors]}]
+  (use-program program)
+  (uniform-matrix4 program "transform" transform)
+  (use-textures colors))
+
+(def scene (load-scene-into-opengl program-selection model))
 
 (def projection (projection-matrix w h 0.1 10.0 (to-radians 60.0)))
 
@@ -78,20 +135,20 @@ void main()
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
          (onscreen-render window
                           (clear (v/vec3 0.1 0.1 0.1) 0)
-                          (use-program program-uniform)
-                          (uniform-matrix4 program-uniform "projection" projection)
-                          (uniform-matrix4 program-uniform "transform"
-                                           (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -5)))
-                          (uniform-vector3 program-uniform "light" (v/normalize (v/vec3 0 5 2)))
-                          (render-scene (constantly program-uniform)
+                          (doseq [program [program-uniform program-textured]]
+                                 (use-program program)
+                                 (uniform-matrix4 program "projection" projection)
+                                 (uniform-matrix4 program "transform"
+                                                  (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -5)))
+                                 (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2))))
+                          (render-scene program-selection
                                         (assoc-in scene [:root :transform] (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -5)))
-                                        (fn [{:keys [transform diffuse]}]
-                                            (uniform-matrix4 program-uniform "transform" transform)
-                                            (uniform-vector3 program-uniform "diffuse_color" diffuse))))
+                                        render-model))
          (GLFW/glfwPollEvents)
          (swap! t0 + dt)))
 
 (unload-scene-from-opengl scene)
+(destroy-program program-textured)
 (destroy-program program-uniform)
 (destroy-window window)
 (GLFW/glfwTerminate)
