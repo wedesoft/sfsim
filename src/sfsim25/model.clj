@@ -143,8 +143,8 @@
   [program-selection scene]
   (let [material (fn [mesh] (nth (:materials scene) (:material-index mesh)))]
     (-> scene
-        (update :meshes #(mapv (fn [mesh] (load-mesh-into-opengl program-selection mesh (material mesh))) %))
-        (update :textures #(mapv (partial make-rgba-texture :linear :repeat) %)))))
+        (update :textures #(mapv (fn [image] (make-rgba-texture :linear :repeat image)) %))
+        (update :meshes #(mapv (fn [mesh] (load-mesh-into-opengl program-selection mesh (material mesh))) %)))))
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
@@ -165,13 +165,11 @@
                   attributes          (:attributes mesh)
                   material            (nth (:materials scene) (:material-index mesh))
                   program             (program-selection material)
-                  diffuse             (:diffuse material)
                   colors              (some->> material :color-texture-index (nth (:textures scene)))
                   normals             (some->> material :normal-texture-index (nth (:textures scene)))]
               (callback (merge material
                                {:program program
                                 :transform transform
-                                :diffuse diffuse
                                 :colors colors
                                 :normals normals}))
               (render-triangles (:vao mesh)))))))
