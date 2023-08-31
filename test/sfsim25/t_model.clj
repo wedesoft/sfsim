@@ -85,7 +85,7 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.normal = normal;
+  vs_out.normal = mat3(transform) * normal;
   gl_Position = projection * transform * vec4(vertex, 1);
 }")
 
@@ -193,7 +193,7 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.normal = normal;
+  vs_out.normal = mat3(transform) * normal;
   vs_out.texcoord = texcoord;
   gl_Position = projection * transform * vec4(vertex, 1);
 }")
