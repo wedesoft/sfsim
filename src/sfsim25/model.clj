@@ -160,13 +160,19 @@
   [scene]
   (update scene :materials (fn [materials] (mapv #(propagate-texture % (:textures scene)) materials))))
 
+(defn- propagate-materials
+  "Add material information to meshes"
+  [scene]
+  (update scene :meshes (fn [meshes] (mapv #(assoc % :material (nth (:materials scene) (:material-index %))) meshes))))
+
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
   [program-selection scene]
   (-> scene
       load-textures-into-opengl
       (load-meshes-into-opengl program-selection)
-      propagate-textures))
+      propagate-textures
+      propagate-materials))
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
@@ -184,7 +190,7 @@
             (render-scene program-selection scene callback transform child-node))
      (doseq [mesh-index (:mesh-indices node)]
             (let [mesh                (nth (:meshes scene) mesh-index)
-                  material            (nth (:materials scene) (:material-index mesh))
+                  material            (:material mesh)
                   program             (program-selection material)]
               (callback (merge material {:program program :transform transform}))
               (render-triangles (:vao mesh)))))))
