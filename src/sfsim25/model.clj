@@ -138,13 +138,35 @@
   [program-selection mesh material]
   (assoc mesh :vao (make-vertex-array-object (program-selection material) (:indices mesh) (:vertices mesh) (:attributes mesh))))
 
+(defn- load-meshes-into-opengl
+  "Load meshes into OpenGL buffers"
+  [scene program-selection]
+  (let [material (fn [mesh] (nth (:materials scene) (:material-index mesh)))]
+    (update scene :meshes (fn [meshes] (mapv #(load-mesh-into-opengl program-selection % (material %)) meshes)))))
+
+(defn- load-textures-into-opengl
+  "Load images into OpenGL textures"
+  [scene]
+  (update scene :textures (fn [textures] (mapv #(make-rgba-texture :linear :repeat %) textures))))
+
+(defn- propagate-texture
+  "Add color and normal textures to material"
+  [material textures]
+  (merge material {:colors  (some->> material :color-texture-index (nth textures))
+                   :normals (some->> material :normal-texture-index (nth textures))}))
+
+(defn- propagate-textures
+  "Add OpenGL textures to materials"
+  [scene]
+  (update scene :materials (fn [materials] (mapv #(propagate-texture % (:textures scene)) materials))))
+
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
   [program-selection scene]
-  (let [material (fn [mesh] (nth (:materials scene) (:material-index mesh)))]
-    (-> scene
-        (update :textures #(mapv (fn [image] (make-rgba-texture :linear :repeat image)) %))
-        (update :meshes #(mapv (fn [mesh] (load-mesh-into-opengl program-selection mesh (material mesh))) %)))))
+  (-> scene
+      load-textures-into-opengl
+      (load-meshes-into-opengl program-selection)
+      propagate-textures))
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
@@ -164,14 +186,8 @@
             (let [mesh                (nth (:meshes scene) mesh-index)
                   attributes          (:attributes mesh)
                   material            (nth (:materials scene) (:material-index mesh))
-                  program             (program-selection material)
-                  colors              (some->> material :color-texture-index (nth (:textures scene)))
-                  normals             (some->> material :normal-texture-index (nth (:textures scene)))]
-              (callback (merge material
-                               {:program program
-                                :transform transform
-                                :colors colors
-                                :normals normals}))
+                  program             (program-selection material)]
+              (callback (merge material {:program program :transform transform}))
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)
