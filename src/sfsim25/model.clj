@@ -168,7 +168,12 @@
                   diffuse             (:diffuse material)
                   colors              (some->> material :color-texture-index (nth (:textures scene)))
                   normals             (some->> material :normal-texture-index (nth (:textures scene)))]
-              (callback {:program program :transform transform :diffuse diffuse :colors colors :normals normals :material material})
+              (callback (merge material
+                               {:program program
+                                :transform transform
+                                :diffuse diffuse
+                                :colors colors
+                                :normals normals}))
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)

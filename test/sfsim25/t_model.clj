@@ -299,14 +299,14 @@ void main()
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/bricks.png" 0.0))
 
-(defmulti render-model (fn [{:keys [colors]}] (nil? colors)))
+(defmulti render-model (fn [{:keys [color-texture-index]}] (type color-texture-index)))
 
-(defmethod render-model true [{:keys [program transform diffuse]}]
+(defmethod render-model nil [{:keys [program transform diffuse]}]
   (use-program program)
   (uniform-matrix4 program "transform" transform)
   (uniform-vector3 program "diffuse_color" diffuse))
 
-(defmethod render-model false [{:keys [program transform colors]}]
+(defmethod render-model Number [{:keys [program transform colors]}]
   (use-program program)
   (uniform-matrix4 program "transform" transform)
   (use-textures colors))
