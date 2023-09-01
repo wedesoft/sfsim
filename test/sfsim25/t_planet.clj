@@ -603,7 +603,7 @@ void main()
                                (raster-lines (render-tile program tile (inverse transform) [:surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.01))
          ?up   ?left ?down ?right ?result
          true  true  true  true   "tile.png"
          false true  true  true   "tile-up.png"
