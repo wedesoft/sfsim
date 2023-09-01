@@ -1,7 +1,9 @@
 # TODO
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures
-* how to use multiple programs (color/texture/texture+normalmap, shadow program)
+* make spaceplane with Blender
+* make cockpit with Blender
+* spaceplane windows?
 * test for render-triangles
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
