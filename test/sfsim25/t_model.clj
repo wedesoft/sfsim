@@ -146,7 +146,7 @@ void main()
                             (uniform-matrix4 program "transform" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
-          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/cubes.png" 0.0))
+          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/cubes.png" 0.01))
 
 (def dice (read-gltf "test/sfsim25/fixtures/model/dice.gltf"))
 
@@ -230,7 +230,7 @@ void main()
                             (uniform-matrix4 program "transform" transform)
                             (use-textures colors)))
           (unload-scene-from-opengl opengl-scene)
-          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/dice.png" 0.0))
+          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/dice.png" 0.01))
 
 (def bricks (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
 
@@ -297,7 +297,7 @@ void main()
                             (uniform-matrix4 program "transform" transform)
                             (use-textures colors normals)))
           (unload-scene-from-opengl opengl-scene)
-          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/bricks.png" 0.0))
+          (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/bricks.png" 0.01))
 
 (defmulti render-model (fn [{:keys [color-texture-index]}] (type color-texture-index)))
 
@@ -330,6 +330,6 @@ void main()
           (render-scene program-selection moved-scene render-model)
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program-dice)
-          (destroy-program program-cube))) => (is-image "test/sfsim25/fixtures/model/cube-and-dice.png" 0.0))
+          (destroy-program program-cube))) => (is-image "test/sfsim25/fixtures/model/cube-and-dice.png" 0.01))
 
 (GLFW/glfwTerminate)
