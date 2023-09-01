@@ -11,7 +11,8 @@
 
 (GLFW/glfwInit)
 
-(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
+;(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
+(def model (read-gltf "etc/donut.gltf"))
 
 (def w 640)
 (def h 480)
@@ -27,10 +28,12 @@ in vec3 normal;
 out VS_OUT
 {
   vec3 normal;
+  vec3 direction;
 } vs_out;
 void main()
 {
   vs_out.normal = mat3(transform) * normal;
+  vs_out.direction = (transform * vec4(vertex, 1)).xyz;
   gl_Position = projection * transform * vec4(vertex, 1);
 }")
 
@@ -41,11 +44,14 @@ uniform vec3 diffuse_color;
 in VS_OUT
 {
   vec3 normal;
+  vec3 direction;
 } fs_in;
 out vec3 fragColor;
 void main()
 {
-  fragColor = diffuse_color * max(0, dot(light, fs_in.normal));
+  vec3 direction = normalize(fs_in.direction);
+  float specular = pow(max(dot(reflect(light, fs_in.normal), direction), 0), 100);
+  fragColor = diffuse_color * max(0, dot(light, fs_in.normal)) + specular;
 }")
 
 (def program-uniform (make-program :vertex [vertex-uniform] :fragment [fragment-uniform]))
@@ -161,7 +167,7 @@ void main()
 
 (def scene (load-scene-into-opengl program-selection model))
 
-(def projection (projection-matrix w h 0.1 10.0 (to-radians 60.0)))
+(def projection (projection-matrix w h 0.01 1.0 (to-radians 60.0)))
 
 (def keystates (atom {}))
 (def keyboard-callback
@@ -194,7 +200,7 @@ void main()
                                                   (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -5)))
                                  (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2))))
                           (render-scene program-selection
-                                        (assoc-in scene [:root :transform] (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -5)))
+                                        (assoc-in scene [:root :transform] (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -0.15)))
                                         render-model))
          (GLFW/glfwPollEvents)
          (swap! t0 + dt)))
