@@ -63,7 +63,7 @@
                   (if has-normal-texture (decode-vector3 (.get tangents i)) [])
                   (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
                   (decode-vector3 (.get normals i))
-                  (if has-color-texture (decode-vector2 (.get texcoords i)) [])))
+                  (if (or has-color-texture has-normal-texture) (decode-vector2 (.get texcoords i)) [])))
         (range (.mNumVertices mesh))))))
 
 (defn- decode-color
@@ -135,15 +135,44 @@
 
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
-  [program mesh]
-  (assoc mesh :vao (make-vertex-array-object program (:indices mesh) (:vertices mesh) (:attributes mesh))))
+  [program-selection mesh material]
+  (assoc mesh :vao (make-vertex-array-object (program-selection material) (:indices mesh) (:vertices mesh) (:attributes mesh))))
+
+(defn- load-meshes-into-opengl
+  "Load meshes into OpenGL buffers"
+  [scene program-selection]
+  (let [material (fn [mesh] (nth (:materials scene) (:material-index mesh)))]
+    (update scene :meshes (fn [meshes] (mapv #(load-mesh-into-opengl program-selection % (material %)) meshes)))))
+
+(defn- load-textures-into-opengl
+  "Load images into OpenGL textures"
+  [scene]
+  (update scene :textures (fn [textures] (mapv #(make-rgba-texture :linear :repeat %) textures))))
+
+(defn- propagate-texture
+  "Add color and normal textures to material"
+  [material textures]
+  (merge material {:colors  (some->> material :color-texture-index (nth textures))
+                   :normals (some->> material :normal-texture-index (nth textures))}))
+
+(defn- propagate-textures
+  "Add OpenGL textures to materials"
+  [scene]
+  (update scene :materials (fn [materials] (mapv #(propagate-texture % (:textures scene)) materials))))
+
+(defn- propagate-materials
+  "Add material information to meshes"
+  [scene]
+  (update scene :meshes (fn [meshes] (mapv #(assoc % :material (nth (:materials scene) (:material-index %))) meshes))))
 
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
-  [program scene]
+  [program-selection scene]
   (-> scene
-      (update :meshes #(mapv (partial load-mesh-into-opengl program) %))
-      (update :textures #(mapv (partial make-rgba-texture :linear :repeat) %))))
+      load-textures-into-opengl
+      (load-meshes-into-opengl program-selection)
+      propagate-textures
+      propagate-materials))
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
@@ -153,26 +182,17 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  ([program scene]
-   (use-program program)
-   (render-scene program scene (eye 4) (:root scene)))
-  ([program scene transform node]
+  ([program-selection scene callback]
+   (render-scene program-selection scene callback (eye 4) (:root scene)))
+  ([program-selection scene callback transform node]
    (let [transform (mulm transform (:transform node))]
-     (uniform-matrix4 program "transform" transform)
      (doseq [child-node (:children node)]
-            (render-scene program scene transform child-node))
+            (render-scene program-selection scene callback transform child-node))
      (doseq [mesh-index (:mesh-indices node)]
-            (let [mesh     (nth (:meshes scene) mesh-index)
-                  material (nth (:materials scene) (:material-index mesh))]
-              (uniform-vector3 program "diffuse_color" (:diffuse material))
-              (when (:color-texture-index material)
-                (uniform-sampler program "colors" 0)
-                (if (:normal-texture-index material)
-                  (do
-                    (uniform-sampler program "normals" 1)
-                    (use-textures (nth (:textures scene) (:color-texture-index material))
-                                  (nth (:textures scene) (:normal-texture-index material))))
-                  (use-textures (nth (:textures scene) (:color-texture-index material)))))
+            (let [mesh                (nth (:meshes scene) mesh-index)
+                  material            (:material mesh)
+                  program             (program-selection material)]
+              (callback (merge material {:program program :transform transform}))
               (render-triangles (:vao mesh)))))))
 
 (set! *unchecked-math* false)
