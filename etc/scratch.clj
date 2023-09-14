@@ -7,12 +7,13 @@
 (require '[sfsim25.matrix :refer :all])
 (require '[sfsim25.quaternion :as q])
 (require '[fastmath.vector :as v])
+(require '[fastmath.matrix :as m])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 
 (GLFW/glfwInit)
 
 ;(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
-(def model (read-gltf "etc/donut.gltf"))
+(def model (read-gltf "etc/gear.gltf"))
 
 (def w 640)
 (def h 480)
@@ -167,7 +168,7 @@ void main()
 
 (def scene (load-scene-into-opengl program-selection model))
 
-(def projection (projection-matrix w h 0.01 1.0 (to-radians 60.0)))
+(def projection (projection-matrix w h 0.01 10.0 (to-radians 60.0)))
 
 (def keystates (atom {}))
 (def keyboard-callback
@@ -180,27 +181,30 @@ void main()
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
 (def orientation (atom (q/rotation (to-radians 0) (v/vec3 0 0 1))))
+(def pos (atom (v/vec3 0.0 -0.48 -2.13)))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (GLFW/glfwWindowShouldClose window))
        (let [t1 (System/currentTimeMillis)
              dt (- t1 @t0)
+             dx (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
+             dy (if (@keystates GLFW/GLFW_KEY_W) 0.001 (if (@keystates GLFW/GLFW_KEY_S) -0.001 0))
+             dz (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0))
              ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
              rb (if (@keystates GLFW/GLFW_KEY_KP_6) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_4) -0.001 0))
              rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))]
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt ra) (v/vec3 1 0 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rb) (v/vec3 0 1 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
+         (swap! pos v/add (v/mult (v/vec3 dx dy dz) dt))
          (onscreen-render window
                           (clear (v/vec3 0.1 0.1 0.1) 0)
                           (doseq [program [program-uniform program-textured program-rough]]
                                  (use-program program)
                                  (uniform-matrix4 program "projection" projection)
-                                 (uniform-matrix4 program "transform"
-                                                  (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -5)))
                                  (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2))))
                           (render-scene program-selection
-                                        (assoc-in scene [:root :transform] (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 -0.15)))
+                                        (assoc-in scene [:root :transform] (transformation-matrix (quaternion->matrix @orientation) @pos))
                                         render-model))
          (GLFW/glfwPollEvents)
          (swap! t0 + dt)))
