@@ -13,7 +13,7 @@
 (GLFW/glfwInit)
 
 ;(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
-(def model (read-gltf "etc/gear.gltf"))
+(def model (read-gltf "etc/motion.gltf"))
 
 (def w 640)
 (def h 480)
@@ -228,7 +228,7 @@ void main()
          '[sfsim25.matrix :refer (projection-matrix transformation-matrix quaternion->matrix)]
          '[sfsim25.quaternion :as q])
 
-(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty AINode])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty AINode AIAnimation AINodeAnim])
 (import '[org.lwjgl PointerBuffer])
 (import '[org.lwjgl.stb STBImage])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -246,20 +246,18 @@ void main()
 
 (all-methods Assimp)
 
-(def scene (Assimp/aiImportFile "test/sfsim25/fixtures/model/bricks.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
+(def scene (Assimp/aiImportFile "etc/motion.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
 (.dataString (.mName scene))
 (.mNumMeshes scene)
 
 (def root (.mRootNode scene))
-(def m1 (.mTransformation root))
-(.mMeshes root)
-(.dataString (.mName root))
-(.get (.mMeshes root) 0)
 (.mNumChildren root)
-;(def child (AINode/create ^long (.get (.mChildren root) 0)))
-;(def m2 (.mTransformation child))
-;(.dataString (.mName child))
-;(.get (.mMeshes child) 0)
+(def child (AINode/create ^long (.get (.mChildren root) 0)))
+(def child (AINode/create ^long (.get (.mChildren child) 0)))
+(.dataString (.mName child))
+(def m (.mTransformation child))
+(.get (.mMeshes child) 0)
+(.mNumBones mesh)
 
 (def buffer (.mMeshes scene))
 (.limit buffer)
@@ -269,6 +267,34 @@ void main()
 (.mNumFaces mesh)
 (.mNumVertices mesh)
 (.mMaterialIndex mesh)
+
+
+(.mNumAnimations scene)
+(def animation (AIAnimation/create ^long (.get (.mAnimations scene) 0)))
+
+(/ (.mDuration animation) (.mTicksPerSecond animation))
+(/ 100.0 24.0)
+(.mNumChannels animation)
+(def na1 (AINodeAnim/create ^long (.get (.mChannels animation) 0)))
+(def na2 (AINodeAnim/create ^long (.get (.mChannels animation) 1)))
+(.dataString (.mNodeName na1))
+(.dataString (.mNodeName na2))
+
+(.mNumPositionKeys na1)
+(.mNumRotationKeys na1)
+(.mNumScalingKeys na1)
+
+(defn ai-vector [v] [(.x v) (.y v) (.z v)])
+(defn ai-quaternion [q] [(.w q) (.x q) (.y q) (.z q)])
+
+(all-methods (.get (.mPositionKeys na1) 0))
+(.mTime (.get (.mPositionKeys na1) 0))
+(.mTime (.get (.mPositionKeys na1) 1))
+(ai-quaternion (.mValue (.get (.mRotationKeys na1) 0)))
+(ai-vector (.mValue (.get (.mPositionKeys na1) 0)))
+(ai-vector (.mValue (.get (.mPositionKeys na1) 1)))
+(ai-vector (.mValue (.get (.mPositionKeys na1) 99)))
+
 
 (map #(.get (.mColors mesh) %) (range 8))
 
@@ -334,141 +360,5 @@ void main()
 (def texture (AITexture/create ^long (.get (.mTextures scene) 0)))
 (.mHeight texture)
 (.mWidth texture)
-(def data (.pcDataCompressed texture))
-(def width (int-array 1))
-(def height (int-array 1))
-(def channels (int-array 1))
-(def buffer (STBImage/stbi_load_from_memory data width height channels 4))
-(def width (aget width 0))
-(def height (aget height 0))
-(def b (byte-array (* width height 4)))
-(.get buffer b)
-(.flip buffer)
-(STBImage/stbi_image_free buffer)
-(def img {:data b :width width :height height :channels (aget channels 0)})
-;(spit-png "test.png" img)
 
-(def texture (AITexture/create ^long (.get (.mTextures scene) 1)))
-(.mHeight texture)
-(.mWidth texture)
-(def data (.pcDataCompressed texture))
-(def width (int-array 1))
-(def height (int-array 1))
-(def channels (int-array 1))
-(def buffer (STBImage/stbi_load_from_memory data width height channels 4))
-(def width (aget width 0))
-(def height (aget height 0))
-(def b (byte-array (* width height 4)))
-(.get buffer b)
-(.flip buffer)
-(STBImage/stbi_image_free buffer)
-(def normal {:data b :width width :height height :channels (aget channels 0)})
-;(spit-png "test.png" img)
-
-(GLFW/glfwInit)
-
-(def w 640)
-(def h 480)
-(def window (make-window "cube" w h))
-(GLFW/glfwShowWindow window)
-
-(def colors-tex (make-rgba-texture :linear :repeat img))
-(def normals-tex (make-rgba-texture :linear :repeat normal))
-
-(def vertex-shader
-"#version 410 core
-uniform mat4 projection;
-uniform mat4 rotation;
-in vec3 point;
-in vec3 tangent;
-in vec3 bitangent;
-in vec3 normal;
-in vec2 texcoord;
-out VS_OUT
-{
-  mat3 surface;
-  vec2 texcoord;
-} vs_out;
-void main()
-{
-  gl_Position = projection * (rotation * vec4(point, 1) + vec4(0, 0, -4, 0));
-  vs_out.surface = mat3(rotation) * mat3(tangent, bitangent, normal);
-  vs_out.texcoord = texcoord;
-}")
-
-(def fragment-shader
-"#version 410 core
-uniform vec3 light;
-uniform sampler2D normals;
-uniform sampler2D colors;
-uniform mat4 rotation;
-in VS_OUT
-{
-  mat3 surface;
-  vec2 texcoord;
-} fs_in;
-out vec3 fragColor;
-void main()
-{
-  vec3 n = 2.0 * texture(normals, fs_in.texcoord).xyz - 1.0;
-  float brightness = 0.2 + 0.8 * max(0, dot(light, fs_in.surface * n));
-  fragColor = texture(colors, fs_in.texcoord).rgb * brightness;
-}")
-
-(def program (make-program :vertex [vertex-shader] :fragment [fragment-shader]))
-
-(def indices (flatten (map (fn [i] (let [face (.get faces i) indices (.mIndices face)] (map #(.get indices %) (range 3)))) (range 12))))
-(def p (map (fn [i] (let [vertex (.get vertices i)] [(.x vertex) (.y vertex) (.z vertex)])) (range 24)))
-(def t (map (fn [i] (let [tangent (.get tangents i)] [(.x tangent) (.y tangent) (.z tangent)])) (range 24)))
-(def bt (map (fn [i] (let [bitangent (.get bitangents i)] [(.x bitangent) (.y bitangent) (.z bitangent)])) (range 24)))
-(def n (map (fn [i] (let [normal (.get normals i)] [(.x normal) (.y normal) (.z normal)])) (range 24)))
-(def tc (map (fn [i] (let [texcoord (.get texcoords i)] [(.x texcoord) (- 1.0 (.y texcoord))])) (range 24)))
-(def verts (flatten (map concat p t bt n tc)))
-
-(def vao (make-vertex-array-object program indices verts ["point" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]))
-
-(def projection (projection-matrix w h 0.1 10.0 (m/to-radians 60.0)))
-
-(def keystates (atom {}))
-(def keyboard-callback
-  (proxy [GLFWKeyCallback] []
-         (invoke [window k scancode action mods]
-           (when (= action GLFW/GLFW_PRESS)
-             (swap! keystates assoc k true))
-           (when (= action GLFW/GLFW_RELEASE)
-             (swap! keystates assoc k false)))))
-(GLFW/glfwSetKeyCallback window keyboard-callback)
-
-(def orientation (atom (q/rotation (m/to-radians 0) (v/vec3 0 0 1))))
-
-(def t0 (atom (System/currentTimeMillis)))
-(while (not (GLFW/glfwWindowShouldClose window))
-       (let [t1 (System/currentTimeMillis)
-             dt (- t1 @t0)
-             ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
-             rb (if (@keystates GLFW/GLFW_KEY_KP_6) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_4) -0.001 0))
-             rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))]
-         (swap! orientation #(q/* %2 %1) (q/rotation (* dt ra) (v/vec3 1 0 0)))
-         (swap! orientation #(q/* %2 %1) (q/rotation (* dt rb) (v/vec3 0 1 0)))
-         (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
-         (onscreen-render window
-                          (clear (v/vec3 0.1 0.1 0.1) 0)
-                          (use-program program)
-                          (uniform-sampler program "colors" 0)
-                          (uniform-sampler program "normals" 1)
-                          (uniform-matrix4 program "projection" projection)
-                          (uniform-matrix4 program "rotation" (transformation-matrix (quaternion->matrix @orientation) (v/vec3 0 0 0)))
-                          (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2)))
-                          (use-textures colors-tex normals-tex)
-                          (GL30/glBindVertexArray ^long (:vertex-array-object vao))
-                          (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vao) GL11/GL_UNSIGNED_INT 0))
-         (GLFW/glfwPollEvents)
-         (swap! t0 + dt)))
-
-(destroy-vertex-array-object vao)
-(destroy-program program)
-(destroy-texture colors-tex)
-(destroy-texture normals-tex)
-(destroy-window window)
-(GLFW/glfwTerminate)
 (Assimp/aiReleaseImport scene)
