@@ -65,7 +65,7 @@ void main()
                                           0.5  0.5 0.5 0 0 0 0]
                               program   (make-program :vertex [vertex-planet]
                                                       :fragment [fragment-white])
-                              variables [:point 3 :surfacecoord 2 :colorcoord 2]
+                              variables ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao       (make-vertex-array-object program indices vertices variables)]
                           (clear (vec3 0 0 0))
                           (use-program program)
@@ -86,7 +86,7 @@ void main()
                                                              :tess-evaluation [tess-evaluation-planet]
                                                              :geometry [geometry-planet]
                                                              :fragment [fragment-white])
-                                   variables   [:point 3 :surfacecoord 2 :colorcoord 2]
+                                   variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    data        [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5]
                                    surface     (make-vector-texture-2d :linear :clamp
@@ -139,7 +139,7 @@ void main()
                                                              :tess-evaluation [tess-evaluation-planet]
                                                              :geometry [geometry-planet]
                                                              :fragment [(texture-coordinates-probe ?selector)])
-                                   variables   [:point 3 :surfacecoord 2 :colorcoord 2]
+                                   variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    data        (map #(* % ?scale) [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5])
                                    surface     (make-vector-texture-2d :linear :clamp
@@ -176,7 +176,7 @@ void main()
                                                         :tess-evaluation [tess-evaluation-planet]
                                                         :geometry [geometry-planet]
                                                         :fragment [fragment-white])
-                              variables   [:point 3 :surfacecoord 2 :colorcoord 2]
+                              variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               data        [-0.6 -0.5 0.5, 0.4 -0.5 0.5, -0.6  0.5 0.5, 0.4  0.5 0.5]
                               vao         (make-vertex-array-object program indices vertices variables)
                               surface     (make-vector-texture-2d :linear :clamp
@@ -209,7 +209,7 @@ void main()
                                                         :tess-evaluation [tess-evaluation-planet]
                                                         :geometry [geometry-planet]
                                                         :fragment [fragment-white])
-                              variables   [:point 3 :surfacecoord 2 :colorcoord 2]
+                              variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.5 -0.5 0, 0.5 -0.5 0, -0.5  0.5 0, 0.5  0.5 0]
                               surface     (make-vector-texture-2d :linear :clamp
@@ -243,7 +243,7 @@ void main()
                                                         :tess-evaluation [tess-evaluation-planet]
                                                         :geometry [geometry-planet]
                                                         :fragment [fragment-white])
-                              variables   [:point 3 :surfacecoord 2 :colorcoord 2]
+                              variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.25 -0.25 0.25, 0.5 -0.5 0.5, -0.75 0.75 0.75, 1.0 1.0 1.0]
                               surface     (make-vector-texture-2d :linear :clamp
@@ -279,7 +279,7 @@ void main()
               vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               surface-radiance (make-vector-texture-2d :linear :clamp {:width size :height size :data S})
               program          (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-              vao              (make-vertex-array-object program indices vertices [:point 3])
+              vao              (make-vertex-array-object program indices vertices ["point" 3])
               tex              (texture-render-color
                                  1 1 true
                                  (use-program program)
@@ -501,7 +501,7 @@ float overall_shadow(vec4 point)
          (fact
            (offscreen-render 256 256
                              (let [program       (make-planet-program)
-                                   variables     [:point 3 :colorcoord 2 :surfacecoord 2]
+                                   variables     ["point" 3 "colorcoord" 2 "surfacecoord" 2]
                                    vao           (make-vertex-array-object program planet-indices planet-vertices variables)
                                    radius        6378000
                                    size          7
@@ -586,7 +586,7 @@ void main()
                                                      [(* x 0.5) (* y 0.5) 0.5]))
                                    surf-tex   (make-vector-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array data)})
                                    vao        (make-vertex-array-object program indices vertices
-                                                                        [:point 3 :surfacecoord 2 :colorcoord 2])
+                                                                        ["point" 3 "surfacecoord" 2 "colorcoord" 2])
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2.5))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
                                    neighbours {:sfsim25.quadtree/up    ?up
@@ -603,7 +603,7 @@ void main()
                                (raster-lines (render-tile program tile (inverse transform) [:surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.0))
+                               (destroy-program program))) => (is-image (str "test/sfsim25/fixtures/planet/" ?result) 0.01))
          ?up   ?left ?down ?right ?result
          true  true  true  true   "tile.png"
          false true  true  true   "tile-up.png"

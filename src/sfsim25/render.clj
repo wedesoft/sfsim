@@ -36,7 +36,7 @@
   "Method to create a window and make the context current and create the capabilities"
   [title width height]
   (GLFW/glfwDefaultWindowHints)
-  (let [window (GLFW/glfwCreateWindow width height "scratch" 0 0)]
+  (let [window (GLFW/glfwCreateWindow width height title 0 0)]
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
     (GL/createCapabilities)
@@ -147,7 +147,7 @@
             stride          (apply + sizes)
             offsets         (reductions + (cons 0 (butlast sizes)))]
         (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
-          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program (name attribute)) ^long size
+          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program ^String attribute) ^long size
                                       GL11/GL_FLOAT false ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
         {:vertex-array-object vertex-array-object
@@ -213,6 +213,12 @@
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+
+(defn render-triangles
+  "Render one or more triangles"
+  [vertex-array-object]
+  (setup-vertex-array-object vertex-array-object)
+  (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-patches
   "Render one or more tessellated quads"

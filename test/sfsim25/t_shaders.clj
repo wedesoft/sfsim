@@ -200,7 +200,7 @@ void main()
           shadows   (make-depth-texture :linear :clamp {:width 2 :height 2 :data (float-array data)})
           program   (make-program :vertex [vertex-passthrough]
                                   :fragment [(shadow-lookup-probe lookup-depth) shadow-lookup convert-shadow-index])
-          vao       (make-vertex-array-object program indices vertices [:point 3])
+          vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
                       (use-program program)
@@ -254,7 +254,7 @@ void main()
           program       (make-program :vertex [vertex-passthrough]
                                       :fragment [(shadow-cascade-lookup-probe z) (shadow-cascade-lookup n "shadow_lookup")
                                                  shadow-lookup-mock])
-          vao              (make-vertex-array-object program indices vertices [:point 3])
+          vao              (make-vertex-array-object program indices vertices ["point" 3])
           shadow-texs   (map #(make-depth-texture :linear :clamp {:width 1 :height 1 :data (float-array [%])}) shadows)
           tex           (texture-render-color 1 1 true
                                               (use-program program)
@@ -368,7 +368,7 @@ void main()
                                             {:width 2 :height 3 :data (float-array data-flat)})
           program   (make-program :vertex [vertex-passthrough]
                                   :fragment [(interpolate-2d-probe x y) interpolate-2d convert-2d-index])
-          vao       (make-vertex-array-object program indices vertices [:point 3])
+          vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
                       (use-program program)
@@ -410,7 +410,7 @@ void main()
                                            {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
           program   (make-program :vertex [vertex-passthrough]
                                   :fragment [(interpolate-3d-probe x y z) interpolate-3d convert-3d-index])
-          vao       (make-vertex-array-object program indices vertices [:point 3])
+          vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
                       (use-program program)
@@ -458,7 +458,7 @@ void main()
                                     :fragment [(interpolate-cubemap-probe method selector x y z)
                                                interpolate-float-cubemap interpolate-vector-cubemap
                                                convert-cubemap-index])
-          vao         (make-vertex-array-object program indices vertices [:point 3])
+          vao         (make-vertex-array-object program indices vertices ["point" 3])
           tex         (texture-render-color
                         1 1 true
                         (use-program program)
@@ -502,7 +502,7 @@ void main()
           program   (make-program :vertex [vertex-passthrough]
                                   :fragment [(interpolate-4d-probe x y z w) interpolate-4d
                                              make-2d-index-from-4d])
-          vao       (make-vertex-array-object program indices vertices [:point 3])
+          vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
                       (use-program program)
@@ -573,7 +573,7 @@ void main()
                                            {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
           program   (make-program :vertex [vertex-passthrough]
                                   :fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
-          vao       (make-vertex-array-object program indices vertices [:point 3])
+          vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
                       (use-program program)
@@ -617,7 +617,7 @@ void main()
           program   (make-program :vertex [vertex-passthrough]
                                   :fragment [(lookup-3d-lod-probe x y z lod)
                                              (lookup-3d-lod "lookup_3d_lod" "table")])
-          vao       (make-vertex-array-object program indices vertices [:point 3])
+          vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
                       (use-program program)
@@ -1009,7 +1009,7 @@ void main()
                    indices  [0 1 3 2]
                    vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                    program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-vectors cubemap-vectors])
-                   vao      (make-vertex-array-object program indices vertices [:point 3])]
+                   vao      (make-vertex-array-object program indices vertices ["point" 3])]
                (framebuffer-render 32 32 :cullback nil [cubemap]
                                    (use-program program)
                                    (render-quads vao))
@@ -1017,7 +1017,7 @@ void main()
                (destroy-program program)
                (let [program (make-program :vertex [vertex-passthrough]
                                            :fragment [(face-vector-probe ?x ?y ?z) convert-cubemap-index])
-                     vao     (make-vertex-array-object program indices vertices [:point 3])
+                     vao     (make-vertex-array-object program indices vertices ["point" 3])
                      tex     (texture-render-color 1 1 true
                                                    (use-program program)
                                                    (uniform-sampler program "cubemap" 0)

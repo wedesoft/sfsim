@@ -516,7 +516,7 @@
               vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
               program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-              vao           (make-vertex-array-object program indices vertices [:point 3])
+              vao           (make-vertex-array-object program indices vertices ["point" 3])
               tex           (texture-render-color
                               1 1 true
                               (use-program program)
@@ -600,7 +600,7 @@ void main()
               ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
               mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
               program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
-              vao           (make-vertex-array-object program indices vertices [:point 3])
+              vao           (make-vertex-array-object program indices vertices ["point" 3])
               tex           (texture-render-color
                               1 1 true
                               (use-program program)
@@ -680,7 +680,7 @@ void main()
                                                0.5  0.5 -1]
                                    program   (make-program :vertex [vertex-atmosphere]
                                                            :fragment [(vertex-atmosphere-probe ?selector)])
-                                   variables [:point 3]
+                                   variables ["point" 3]
                                    vao       (make-vertex-array-object program indices vertices variables)]
                                (clear (vec3 0 0 0))
                                (use-program program)
@@ -730,7 +730,7 @@ vec4 cloud_overlay()
                                                                           shaders/limit-quot shaders/sun-elevation-to-index
                                                                           shaders/sun-angle-to-index
                                                                           (cloud-overlay-mock ?cloud)])
-                                   variables     [:point 3]
+                                   variables     ["point" 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})
                                    ray-scatter   (make-vector-texture-2d :linear :clamp

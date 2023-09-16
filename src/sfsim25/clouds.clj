@@ -49,7 +49,7 @@
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         program (make-program :vertex [shaders/vertex-passthrough]
                               :fragment [identity-cubemap-fragment shaders/cubemap-vectors])
-        vao     (make-vertex-array-object program indices vertices [:point 3])]
+        vao     (make-vertex-array-object program indices vertices ["point" 3])]
     (framebuffer-render size size :cullback nil [result]
                         (use-program program)
                         (uniform-int program "size" size)
@@ -74,7 +74,7 @@
   [size scale program & body]
   `(let [indices#  [0 1 3 2]
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-         vao#      (make-vertex-array-object ~program indices# vertices# [:point 3])
+         vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
          result#   (make-empty-vector-cubemap :linear :clamp ~size)]
      (framebuffer-render ~size ~size :cullback nil [result#]
                          (use-program ~program)
@@ -102,7 +102,7 @@
   [size program & body]
   `(let [indices#  [0 1 3 2]
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-         vao#      (make-vertex-array-object ~program indices# vertices# [:point 3])
+         vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
          result#   (make-empty-float-cubemap :linear :clamp ~size)]
      (framebuffer-render ~size ~size :cullback nil [result#]
                          (use-program ~program)

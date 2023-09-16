@@ -102,7 +102,7 @@ void main()
                               bluenoise (make-float-texture-2d :nearest :repeat {:width 2 :height 2 :data (float-array data)})
                               program   (make-program :vertex [shaders/vertex-passthrough]
                                                       :fragment [fragment-noise sampling-offset])
-                              vao       (make-vertex-array-object program indices vertices [:point 3])]
+                              vao       (make-vertex-array-object program indices vertices ["point" 3])]
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "bluenoise" 0)

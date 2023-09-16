@@ -1,4 +1,11 @@
 # TODO
+* mechanical rigging: https://www.youtube.com/watch?v=J1He21vDIfQ
+* simplify dispatch and program selection?
+* how to render with shadow and cloud textures
+* make spaceplane with Blender
+* make cockpit with Blender
+* spaceplane windows?
+* test for render-triangles
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
   * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
