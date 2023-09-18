@@ -8,12 +8,45 @@
 (require '[sfsim25.quaternion :as q])
 (require '[fastmath.vector :as v])
 (require '[fastmath.matrix :as m])
+(require '[clojure.pprint :refer (pprint)])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty AINode AIAnimation AINodeAnim])
 
 (GLFW/glfwInit)
 
 ;(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
-(def model (read-gltf "etc/motion.gltf"))
+(def model (read-gltf "etc/gear.gltf"))
+
+(defn extract [child]
+  (if (:children child)
+    {:name (:name child) :children (mapv extract (:children child))}
+    {:name (:name child)}))
+
+(defn tree [model]
+  {:root (extract (:root model))})
+
+(pprint (tree model))
+
+(def scene (Assimp/aiImportFile "etc/gear.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
+
+(defn read-channel [ptr]
+  (let [channel (AINodeAnim/create ^long ptr)]
+    {:node (.dataString (.mNodeName channel))
+     :samples (max (.mNumPositionKeys channel) (.mNumRotationKeys channel))}))
+
+(defn read-anim [ptr]
+  (let [animation (AIAnimation/create ^long ptr)]
+    {:name (.dataString (.mName animation))
+     :channels (mapv #(read-channel (.get (.mChannels animation) %)) (range (.mNumChannels animation)))}))
+
+(def ptrs (map #(.get (.mAnimations scene) %) (range (.mNumAnimations scene))))
+
+(def animations (map read-anim ptrs))
+
+(pprint animations)
+
+
+(Assimp/aiReleaseImport scene)
 
 (def w 640)
 (def h 480)
@@ -253,8 +286,8 @@ void main()
 (def root (.mRootNode scene))
 (.dataString (.mName root))
 (.mNumChildren root)
-(map #(.dataString (.mName (AINode/create ^long (.get (.mChildren root) %)))) (range 6))
-(def child (AINode/create ^long (.get (.mChildren root) 3)))
+(map #(.dataString (.mName (AINode/create ^long (.get (.mChildren root) %)))) (range (.mNumChildren root)))
+(def child (AINode/create ^long (.get (.mChildren root) 0)))
 (.dataString (.mName child))
 (.mNumChildren child)
 (def child2 (AINode/create ^long (.get (.mChildren child) 0)))
@@ -278,8 +311,6 @@ void main()
 
 (.mNumAnimations scene)
 (map #(.dataString (.mName (AIAnimation/create ^long (.get (.mAnimations scene) %)))) (range (.mNumAnimations scene)))
-(def animation (AIAnimation/create ^long (.get (.mAnimations scene) 0)))
-(.dataString (.mName animation))
 (def animation (AIAnimation/create ^long (.get (.mAnimations scene) 1)))
 (.dataString (.mName animation))
 
@@ -293,6 +324,8 @@ void main()
 
 (.mNumPositionKeys na1)
 (.mNumRotationKeys na1)
+(.mNumPositionKeys na2)
+(.mNumRotationKeys na2)
 (.mNumScalingKeys na1)
 
 (defn ai-vector [v] [(.x v) (.y v) (.z v)])
@@ -302,6 +335,8 @@ void main()
 (.mTime (.get (.mPositionKeys na1) 0))
 (.mTime (.get (.mPositionKeys na1) 1))
 (ai-quaternion (.mValue (.get (.mRotationKeys na1) 0)))
+(ai-vector (.mValue (.get (.mRotationKeys na2) 0)))
+(ai-vector (.mValue (.get (.mRotationKeys na2) 1)))
 (ai-vector (.mValue (.get (.mPositionKeys na1) 0)))
 (ai-vector (.mValue (.get (.mPositionKeys na1) 1)))
 (ai-vector (.mValue (.get (.mPositionKeys na1) 99)))
