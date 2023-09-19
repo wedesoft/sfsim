@@ -18,9 +18,8 @@
 (def model (read-gltf "etc/gear.gltf"))
 
 (defn extract [child]
-  (if (:children child)
-    {:name (:name child) :children (mapv extract (:children child))}
-    {:name (:name child)}))
+  (merge {:name (:name child) :mesh-ids (:mesh-indices child)}
+         (if (:children child) {:children (mapv extract (:children child))})))
 
 (defn tree [model]
   {:root (extract (:root model))})
@@ -29,22 +28,46 @@
 
 (def scene (Assimp/aiImportFile "etc/gear.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
 
+(defn ai-vector [v] (v/vec3 (.x v) (.y v) (.z v)))
+(defn ai-quaternion [q] (q/->Quaternion (.w q) (.x q) (.y q) (.z q)))
+
+(defn first-frame [channel]
+  (let [translation (ai-vector (.mValue (.get (.mPositionKeys channel) 0)))
+        rotation    (ai-quaternion (.mValue (.get (.mRotationKeys channel) 0)))
+        scale       (ai-vector (.mValue (.get (.mScalingKeys channel) 0)))]
+    (transformation-matrix (m/mulm (m/diagonal scale) (quaternion->matrix rotation)) translation)))
+
 (defn read-channel [ptr]
   (let [channel (AINodeAnim/create ^long ptr)]
     {:node (.dataString (.mNodeName channel))
-     :samples (max (.mNumPositionKeys channel) (.mNumRotationKeys channel))}))
+     :samples (max (.mNumPositionKeys channel) (.mNumRotationKeys channel))
+     :transform (first-frame channel)}))
 
 (defn read-anim [ptr]
   (let [animation (AIAnimation/create ^long ptr)]
     {:name (.dataString (.mName animation))
      :channels (mapv #(read-channel (.get (.mChannels animation) %)) (range (.mNumChannels animation)))}))
 
-(def ptrs (map #(.get (.mAnimations scene) %) (range (.mNumAnimations scene))))
+(def ptrs (mapv #(.get (.mAnimations scene) %) (range (.mNumAnimations scene))))
 
-(def animations (map read-anim ptrs))
+(def animations (mapv read-anim ptrs))
 
 (pprint animations)
 
+(defn lookup [animations]
+  (apply hash-map (mapcat (fn [anim] (mapcat (fn [channel] [(:node channel) (:transform channel)]) (:channels anim))) animations)))
+
+(def h (lookup animations))
+
+(defn update-node [node h]
+  (assoc node
+         :transform (or (h (:name node)) (:transform node))
+         :children  (mapv #(update-node % h) (:children node))))
+
+(defn update-transforms [model h]
+  (assoc model :root (update-node (:root model) h)))
+
+(def model (update-transforms model h))
 
 (Assimp/aiReleaseImport scene)
 
@@ -328,8 +351,8 @@ void main()
 (.mNumRotationKeys na2)
 (.mNumScalingKeys na1)
 
-(defn ai-vector [v] [(.x v) (.y v) (.z v)])
-(defn ai-quaternion [q] [(.w q) (.x q) (.y q) (.z q)])
+(defn ai-vector [v] (v/vec3 (.x v) (.y v) (.z v)))
+(defn ai-quaternion [q] (q/->Quaternion (.w q) (.x q) (.y q) (.z q)))
 
 (all-methods (.get (.mPositionKeys na1) 0))
 (.mTime (.get (.mPositionKeys na1) 0))
