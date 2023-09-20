@@ -14,8 +14,7 @@
 
 (GLFW/glfwInit)
 
-;(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
-(def model (read-gltf "etc/gear.gltf"))
+(def model (read-gltf "test/sfsim25/fixtures/model/motion.gltf"))
 
 (defn extract [child]
   (merge {:name (:name child) :mesh-ids (:mesh-indices child)}
@@ -26,7 +25,7 @@
 
 (pprint (tree model))
 
-(def scene (Assimp/aiImportFile "etc/gear.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
+(def scene (Assimp/aiImportFile "test/sfsim25/fixtures/model/motion.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
 
 (defn ai-vector [v] (v/vec3 (.x v) (.y v) (.z v)))
 (defn ai-quaternion [q] (q/->Quaternion (.w q) (.x q) (.y q) (.z q)))
@@ -334,7 +333,7 @@ void main()
 
 (.mNumAnimations scene)
 (map #(.dataString (.mName (AIAnimation/create ^long (.get (.mAnimations scene) %)))) (range (.mNumAnimations scene)))
-(def animation (AIAnimation/create ^long (.get (.mAnimations scene) 1)))
+(def animation (AIAnimation/create ^long (.get (.mAnimations scene) 0)))
 (.dataString (.mName animation))
 
 (/ (.mDuration animation) (.mTicksPerSecond animation))
@@ -347,9 +346,9 @@ void main()
 
 (.mNumPositionKeys na1)
 (.mNumRotationKeys na1)
+(.mNumScalingKeys na1)
 (.mNumPositionKeys na2)
 (.mNumRotationKeys na2)
-(.mNumScalingKeys na1)
 
 (defn ai-vector [v] (v/vec3 (.x v) (.y v) (.z v)))
 (defn ai-quaternion [q] (q/->Quaternion (.w q) (.x q) (.y q) (.z q)))
@@ -357,12 +356,13 @@ void main()
 (all-methods (.get (.mPositionKeys na1) 0))
 (.mTime (.get (.mPositionKeys na1) 0))
 (.mTime (.get (.mPositionKeys na1) 1))
+(.mTime (.get (.mPositionKeys na1) 100))
 (ai-quaternion (.mValue (.get (.mRotationKeys na1) 0)))
 (ai-vector (.mValue (.get (.mRotationKeys na2) 0)))
 (ai-vector (.mValue (.get (.mRotationKeys na2) 1)))
 (ai-vector (.mValue (.get (.mPositionKeys na1) 0)))
 (ai-vector (.mValue (.get (.mPositionKeys na1) 1)))
-(ai-vector (.mValue (.get (.mPositionKeys na1) 99)))
+(ai-vector (.mValue (.get (.mPositionKeys na1) 100)))
 
 
 (map #(.get (.mColors mesh) %) (range 8))

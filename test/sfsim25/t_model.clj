@@ -1,12 +1,13 @@
 (ns sfsim25.t-model
     (:require [midje.sweet :refer :all]
               [clojure.math :refer (to-radians)]
-              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector roughly-quaternion record-image is-image)]
               [fastmath.matrix :refer (eye mulm)]
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim25.matrix :refer :all]
               [sfsim25.render :refer :all]
-              [sfsim25.model :refer :all])
+              [sfsim25.model :refer :all]
+              [sfsim25.quaternion :refer (->Quaternion)])
     (:import [org.lwjgl.glfw GLFW]))
 
 (GLFW/glfwInit)
@@ -331,5 +332,68 @@ void main()
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program-dice)
           (destroy-program program-cube))) => (is-image "test/sfsim25/fixtures/model/cube-and-dice.png" 0.01))
+
+(def translation (read-gltf "test/sfsim25/fixtures/model/translation.gltf"))
+
+(fact "Number of animations"
+      (count (:animations translation)) => 1)
+
+(def translation-animation (first (:animations translation)))
+
+(fact "Name of action for animation"
+      (:name translation-animation) => "CubeAction")
+
+(fact "Duration of animation in seconds"
+      (:duration translation-animation) => (roughly (/ 100.0 24.0) 1e-6))
+
+(fact "Number of channels of animation"
+      (count (:channels translation-animation)) => 1)
+
+(def translation-channel (first (:channels (first (:animations translation)))))
+
+(fact "Target object of animation channel"
+      (:node-name translation-channel) => "Cube")
+
+(facts "Number of key frames for position, rotation, and scale"
+       (count (:position-keys translation-channel)) => 101
+       (count (:rotation-keys translation-channel)) => 1
+       (count (:scaling-keys translation-channel)) => 1)
+
+(facts "Get time stamps from different position key frames"
+       (:time (first (:position-keys translation-channel))) => (roughly 0.0 1e-6)
+       (:time (second (:position-keys translation-channel))) => (roughly (/ 1.0 24.0) 1e-6)
+       (:time (last (:position-keys translation-channel))) => (roughly (/ 100.0 24.0) 1e-6))
+
+(facts "Get position from different position key frames"
+       (:position (first (:position-keys translation-channel))) => (roughly-vector (vec3 2 0 0) 1e-6)
+       (:position (last (:position-keys translation-channel))) => (roughly-vector (vec3 5 0 0) 1e-6))
+
+(def rotation (read-gltf "test/sfsim25/fixtures/model/rotation.gltf"))
+
+(def rotation-animation (first (:animations rotation)))
+(def rotation-channel (first (:channels (first (:animations rotation)))))
+
+(facts "Get time stamps from different rotation key frames"
+       (:time (first (:rotation-keys rotation-channel))) => (roughly 0.0 1e-6)
+       (:time (second (:rotation-keys rotation-channel))) => (roughly (/ 1.0 24.0) 1e-6)
+       (:time (last (:rotation-keys rotation-channel))) => (roughly (/ 100.0 24.0) 1e-6))
+
+(facts "Get rotation from different rotation key frames"
+       (:rotation (first (:rotation-keys rotation-channel))) => (roughly-quaternion (->Quaternion 1 0 0 0) 1e-6)
+       (:rotation (last (:rotation-keys rotation-channel))) => (roughly-quaternion (->Quaternion 0 0 -1 0) 1e-6))
+
+(def scaling (read-gltf "test/sfsim25/fixtures/model/scaling.gltf"))
+
+(def scaling-animation (first (:animations scaling)))
+(def scaling-channel (first (:channels (first (:animations scaling)))))
+
+(facts "Get time stamps from different scaling key frames"
+       (:time (first (:scaling-keys scaling-channel))) => (roughly 0.0 1e-6)
+       (:time (second (:scaling-keys scaling-channel))) => (roughly (/ 1.0 24.0) 1e-6)
+       (:time (last (:scaling-keys scaling-channel))) => (roughly (/ 100.0 24.0) 1e-6))
+
+(facts "Get scale from different scaling key frames"
+       (:scaling (first (:scaling-keys scaling-channel))) => (roughly-vector (vec3 2 1 1) 1e-6)
+       (:scaling (last (:scaling-keys scaling-channel))) => (roughly-vector (vec3 5 1 1) 1e-6))
 
 (GLFW/glfwTerminate)

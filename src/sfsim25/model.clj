@@ -4,8 +4,10 @@
               [fastmath.vector :refer (vec3)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
-                                      use-textures uniform-sampler)])
-    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer]
+                                      use-textures uniform-sampler)]
+              [sfsim25.quaternion :refer (->Quaternion)])
+    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
+              AINodeAnim]
              [org.lwjgl.stb STBImage]))
 
 (set! *unchecked-math* true)
@@ -122,14 +124,61 @@
     (STBImage/stbi_image_free buffer)
     {:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
 
+(defn- decode-position-key
+  "Read a position key from an animation channel"
+  [channel ticks-per-second i]
+  (let [position-key (.get (.mPositionKeys channel) i)
+        position     (.mValue position-key)]
+    {:time (/ (.mTime position-key) ticks-per-second)
+     :position (vec3 (.x position) (.y position) (.z position))}))
+
+(defn- decode-rotation-key
+  "Read a rotation key from an animation channel"
+  [channel ticks-per-second i]
+  (let [rotation-key (.get (.mRotationKeys channel) i)
+        rotation     (.mValue rotation-key)]
+    {:time (/ (.mTime rotation-key) ticks-per-second)
+     :rotation (->Quaternion (.w rotation) (.x rotation) (.y rotation) (.z rotation))}))
+
+(defn- decode-scaling-key
+  "Read a scaling key from an animation channel"
+  [channel ticks-per-second i]
+  (let [scaling-key (.get (.mScalingKeys channel) i)
+        scaling     (.mValue scaling-key)]
+    {:time (/ (.mTime scaling-key) ticks-per-second)
+     :scaling (vec3 (.x scaling) (.y scaling) (.z scaling))}))
+
+(defn- decode-channel
+  "Read channel of an animation"
+  [animation ticks-per-second i]
+  (let [channel (AINodeAnim/create ^long (.get (.mChannels animation) i))]
+    {:node-name (.dataString (.mNodeName channel))
+     :position-keys (mapv #(decode-position-key channel ticks-per-second %) (range (.mNumPositionKeys channel)))
+     :rotation-keys (mapv #(decode-rotation-key channel ticks-per-second %) (range (.mNumRotationKeys channel)))
+     :scaling-keys (mapv #(decode-scaling-key channel ticks-per-second %) (range (.mNumScalingKeys channel)))}))
+
+(defn- decode-animation
+  "Read animation data of scene"
+  [scene i]
+  (let [animation        (AIAnimation/create ^long (.get (.mAnimations scene) i))
+        ticks-per-second (.mTicksPerSecond animation)]
+    {:name (.dataString (.mName animation))
+     :duration (/ (.mDuration animation) ticks-per-second)
+     :channels (mapv #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation)))}))
+
 (defn read-gltf
   "Import a glTF model file"
   [filename]
-  (let [scene     (Assimp/aiImportFile filename (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace))
-        materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
-        textures  (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
-        meshes    (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
-        result {:root (decode-node (.mRootNode scene)) :materials materials :meshes meshes :textures textures}]
+  (let [scene      (Assimp/aiImportFile filename (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace))
+        materials  (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
+        meshes     (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
+        textures   (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
+        animations (mapv #(decode-animation scene %) (range (.mNumAnimations scene)))
+        result     {:root (decode-node (.mRootNode scene))
+                    :materials materials
+                    :meshes meshes
+                    :textures textures
+                    :animations animations}]
     (Assimp/aiReleaseImport scene)
     result))
 
