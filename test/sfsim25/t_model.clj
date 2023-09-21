@@ -396,4 +396,24 @@ void main()
        (:scaling (first (:scaling-keys scaling-channel))) => (roughly-vector (vec3 2 1 1) 1e-6)
        (:scaling (last (:scaling-keys scaling-channel))) => (roughly-vector (vec3 5 1 1) 1e-6))
 
+(facts "Interpolate between position frames assuming constant sampling interval"
+       (interpolate-position [{:time 0.0 :position (vec3 0 0 0)}] 0.0) => (roughly-vector (vec3 0 0 0) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 3 5)}] 0.0) => (roughly-vector (vec3 2 3 5) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 0 0)} {:time 1.0 :position (vec3 3 0 0)}] 0.0)
+       => (roughly-vector (vec3 2 0 0) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 0 0)} {:time 1.0 :position (vec3 3 0 0)}] 1.0)
+       => (roughly-vector (vec3 3 0 0) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 0 0)} {:time 1.0 :position (vec3 3 0 0)}] 0.5)
+       => (roughly-vector (vec3 2.5 0 0) 1e-6)
+       (interpolate-position [{:time 3.0 :position (vec3 2 0 0)} {:time 3.5 :position (vec3 3 0 0)}] 3.25)
+       => (roughly-vector (vec3 2.5 0 0) 1e-6)
+       (interpolate-position [{:time 1.0 :position (vec3 2 0 0)} {:time 2.0 :position (vec3 3 0 0)}] 1.25)
+       => (roughly-vector (vec3 2.25 0 0) 1e-6)
+       (interpolate-position [{:time 1.0 :position (vec3 2 0 0)} {:time 2.0 :position (vec3 3 0 0)}
+                              {:time 3.0 :position (vec3 4 0 0)}] 2.25)
+       => (roughly-vector (vec3 3.25 0 0) 1e-6)
+       (interpolate-position [{:time 1.0 :position (vec3 2 0 0)} {:time 2.0 :position (vec3 3 0 0)}
+                              {:time 3.0 :position (vec3 4 0 0)}] 1.25)
+       => (roughly-vector (vec3 2.25 0 0) 1e-6))
+
 (GLFW/glfwTerminate)

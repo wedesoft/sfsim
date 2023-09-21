@@ -1,7 +1,8 @@
 (ns sfsim25.model
     "Import glTF models into Clojure"
-    (:require [fastmath.matrix :refer (mat4x4 mulm eye)]
-              [fastmath.vector :refer (vec3)]
+    (:require [clojure.math :refer (floor)]
+              [fastmath.matrix :refer (mat4x4 mulm eye)]
+              [fastmath.vector :refer (vec3 mult add)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
                                       use-textures uniform-sampler)]
@@ -243,5 +244,21 @@
                   program             (program-selection material)]
               (callback (merge material {:program program :transform transform}))
               (render-triangles (:vao mesh)))))))
+
+(defn interpolate-position
+  "Interpolate between position frames"
+  [key-frames t]
+  (let [n       (count key-frames)
+        t0      (:time (first key-frames))
+        t1      (:time (last key-frames))
+        delta-t (if (<= n 1) 1.0 (/ (- t1 t0) (dec n)))
+        index   (int (floor (/ (- t t0) delta-t)))]
+    (cond (<  index 0)       (:position (first key-frames))
+          (>= index (dec n)) (:position (last key-frames))
+          :else              (let [frame-a  (nth key-frames index)
+                                   frame-b  (nth key-frames (inc index))
+                                   weight   (/ (- (:time frame-b) t) delta-t)]
+                               (add (mult (:position frame-a) weight)
+                                    (mult (:position frame-b) (- 1 weight)))))))
 
 (set! *unchecked-math* false)
