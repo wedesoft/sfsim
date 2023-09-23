@@ -14,7 +14,7 @@
 
 (GLFW/glfwInit)
 
-(def model (read-gltf "etc/gear.gltf"))
+(def model (atom (read-gltf "etc/gear.gltf")))
 
 (defn extract [child]
   (merge {:name (:name child)}
@@ -23,9 +23,11 @@
 (defn tree [model]
   {:root (extract (:root model))})
 
-(pprint (tree model))
+(pprint (tree @model))
 
-(def h (into {} (mapcat (fn [[k v]] (map (fn [[k v]] [k (interpolate-transformation v 0)]) (:channels v))) (:animations model))))
+(def duration (get-in @model [:animations "Root" :duration]))
+
+(def h (into {} (mapcat (fn [[k v]] (map (fn [[k v]] [k (interpolate-transformation v 0)]) (:channels v))) (:animations @model))))
 
 (defn update-node [node h]
   (assoc node
@@ -35,7 +37,7 @@
 (defn update-transforms [model h]
   (assoc model :root (update-node (:root model) h)))
 
-(def model (update-transforms model h))
+(swap! model update-transforms h)
 
 (def w 640)
 (def h 480)
@@ -188,7 +190,7 @@ void main()
   (uniform-matrix4 program "transform" transform)
   (use-textures colors normals))
 
-(def scene (load-scene-into-opengl program-selection model))
+(def scene (atom (load-scene-into-opengl program-selection @model)))
 
 (def projection (projection-matrix w h 0.01 10.0 (to-radians 60.0)))
 
@@ -205,6 +207,8 @@ void main()
 (def orientation (atom (q/rotation (to-radians 0) (v/vec3 0 0 1))))
 (def pos (atom (v/vec3 0.0 -0.48 -2.13)))
 
+(def t (atom 0.0))
+
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (GLFW/glfwWindowShouldClose window))
        (let [t1 (System/currentTimeMillis)
@@ -214,11 +218,14 @@ void main()
              dz (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0))
              ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
              rb (if (@keystates GLFW/GLFW_KEY_KP_6) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_4) -0.001 0))
-             rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))]
+             rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
+             h  (into {} (mapcat (fn [[k v]] (map (fn [[k v]] [k (interpolate-transformation v (mod @t duration))]) (:channels v))) (:animations @model)))]
+         (swap! t + (/ dt 1000.0))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt ra) (v/vec3 1 0 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rb) (v/vec3 0 1 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
          (swap! pos v/add (v/mult (v/vec3 dx dy dz) dt))
+         (swap! scene update-transforms h)
          (onscreen-render window
                           (clear (v/vec3 0.1 0.1 0.1) 0)
                           (doseq [program [program-uniform program-textured program-rough]]
@@ -226,7 +233,9 @@ void main()
                                  (uniform-matrix4 program "projection" projection)
                                  (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2))))
                           (render-scene program-selection
-                                        (assoc-in scene [:root :transform] (transformation-matrix (quaternion->matrix @orientation) @pos))
+                                        (assoc-in @scene
+                                                  [:root :transform]
+                                                  (transformation-matrix (quaternion->matrix @orientation) @pos))
                                         render-model))
          (GLFW/glfwPollEvents)
          (swap! t0 + dt)))
