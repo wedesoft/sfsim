@@ -16,8 +16,6 @@
 
 (def model (read-gltf "etc/gear.gltf"))
 
-(pprint (map (fn [a] [(:name a) ((comp #(map :node-name %) :channels) a)]) (:animations model)))
-
 (defn extract [child]
   (merge {:name (:name child)}
          (if (:children child) {:children (mapv extract (:children child))})))

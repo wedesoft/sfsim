@@ -164,9 +164,9 @@
   [scene i]
   (let [animation        (AIAnimation/create ^long (.get (.mAnimations scene) i))
         ticks-per-second (.mTicksPerSecond animation)]
-    {:name (.dataString (.mName animation))
-     :duration (/ (.mDuration animation) ticks-per-second)
-     :channels (mapv #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation)))}))
+    [(.dataString (.mName animation))
+     {:duration (/ (.mDuration animation) ticks-per-second)
+      :channels (mapv #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation)))}]))
 
 (defn read-gltf
   "Import a glTF model file"
@@ -175,7 +175,7 @@
         materials  (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
         meshes     (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
         textures   (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
-        animations (mapv #(decode-animation scene %) (range (.mNumAnimations scene)))
+        animations (apply hash-map (mapcat #(decode-animation scene %) (range (.mNumAnimations scene))))
         result     {:root (decode-node (.mRootNode scene))
                     :materials materials
                     :meshes meshes
