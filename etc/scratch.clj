@@ -39,7 +39,9 @@
 
 (swap! model update-transforms h)
 
-(def w 640)
+(swap! model assoc :animations {"Cylinder" ((:animations @model) "Cylinder")})
+
+(def w 854)
 (def h 480)
 (def window (make-window "model" w h))
 (GLFW/glfwShowWindow window)

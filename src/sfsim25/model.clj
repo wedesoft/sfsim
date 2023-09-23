@@ -246,9 +246,9 @@
               (callback (merge material {:program program :transform transform}))
               (render-triangles (:vao mesh)))))))
 
-(defn interpolate-frame
+(defn- interpolate-frame
   "Interpolate between pose frames"
-  [key-frames t k add mult]
+  [key-frames t k lerp]
   (let [n       (count key-frames)
         t0      (:time (first key-frames))
         t1      (:time (last key-frames))
@@ -259,23 +259,22 @@
           :else              (let [frame-a  (nth key-frames index)
                                    frame-b  (nth key-frames (inc index))
                                    weight   (/ (- (:time frame-b) t) delta-t)]
-                               (add (mult (k frame-a) weight)
-                                    (mult (k frame-b) (- 1 weight)))))))
+                               (lerp (k frame-a) (k frame-b) weight)))))
 
 (defn interpolate-position
   "Interpolate between scaling frames"
   [key-frames t]
-  (interpolate-frame key-frames t :position add mult))
+  (interpolate-frame key-frames t :position (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-rotation
   "Interpolate between rotation frames"
   [key-frames t]
-  (interpolate-frame key-frames t :rotation q/+ q/scale))
+  (interpolate-frame key-frames t :rotation (fn [a b weight] (q/+ (q/scale a weight) (q/scale b (- 1.0 weight))))))
 
 (defn interpolate-scaling
   "Interpolate between scaling frames"
   [key-frames t]
-  (interpolate-frame key-frames t :scaling add mult))
+  (interpolate-frame key-frames t :scaling (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-transformation
   "Determine transformation matrix for a given channel and time"
