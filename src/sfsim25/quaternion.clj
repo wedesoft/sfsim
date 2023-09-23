@@ -32,6 +32,11 @@
     (c/+ (c/- (c/* (:a p) (:c q)) (c/* (:b p) (:d q))) (c/* (:c p) (:a q)) (c/* (:d p) (:b q)))
     (c/+ (c/- (c/+ (c/* (:a p) (:d q)) (c/* (:b p) (:c q))) (c/* (:c p) (:b q))) (c/* (:d p) (:a q)))))
 
+(defn scale
+  "Multiply quaternion with real number"
+  ^Quaternion [^Quaternion q ^double s]
+  (->Quaternion (c/* (:a q) s) (c/* (:b q) s) (c/* (:c q) s) (c/* (:d q) s)))
+
 (defn norm2
   "Compute square of norm of quaternion"
   ^double [^Quaternion q]

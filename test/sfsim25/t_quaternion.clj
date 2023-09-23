@@ -48,6 +48,9 @@
   k  j -i
   k  k -o)
 
+(fact "Scale quaternion by real number"
+      (scale (->Quaternion 2 3 5 7) 2) => (->Quaternion 4 6 10 14))
+
 (fact "Norm of quaternion"
   (norm (->Quaternion 0.216 0.288 0.48 0.8)) => 1.0)
 

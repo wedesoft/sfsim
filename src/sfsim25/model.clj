@@ -6,7 +6,7 @@
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
                                       use-textures uniform-sampler)]
-              [sfsim25.quaternion :refer (->Quaternion)])
+              [sfsim25.quaternion :refer (->Quaternion) :as q])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
               AINodeAnim]
              [org.lwjgl.stb STBImage]))
@@ -247,7 +247,7 @@
 
 (defn interpolate-frame
   "Interpolate between pose frames"
-  [key-frames t k]
+  [key-frames t k add mult]
   (let [n       (count key-frames)
         t0      (:time (first key-frames))
         t1      (:time (last key-frames))
@@ -264,11 +264,16 @@
 (defn interpolate-position
   "Interpolate between scaling frames"
   [key-frames t]
-  (interpolate-frame key-frames t :position))
+  (interpolate-frame key-frames t :position add mult))
+
+(defn interpolate-rotation
+  "Interpolate between rotation frames"
+  [key-frames t]
+  (interpolate-frame key-frames t :rotation q/+ q/scale))
 
 (defn interpolate-scaling
   "Interpolate between scaling frames"
   [key-frames t]
-  (interpolate-frame key-frames t :scaling))
+  (interpolate-frame key-frames t :scaling add mult))
 
 (set! *unchecked-math* false)
