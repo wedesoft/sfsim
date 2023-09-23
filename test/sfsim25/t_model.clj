@@ -416,4 +416,8 @@ void main()
                               {:time 3.0 :position (vec3 4 0 0)}] 1.25)
        => (roughly-vector (vec3 2.25 0 0) 1e-6))
 
+(fact "Interpolate between scaling frames assuming constant sampling interval"
+      (interpolate-scaling [{:time 0.0 :scaling (vec3 2 0 0)} {:time 1.0 :scaling (vec3 3 0 0)}] 0.5)
+      => (roughly-vector (vec3 2.5 0 0) 1e-6))
+
 (GLFW/glfwTerminate)

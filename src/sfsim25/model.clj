@@ -245,20 +245,30 @@
               (callback (merge material {:program program :transform transform}))
               (render-triangles (:vao mesh)))))))
 
-(defn interpolate-position
-  "Interpolate between position frames"
-  [key-frames t]
+(defn interpolate-frame
+  "Interpolate between pose frames"
+  [key-frames t k]
   (let [n       (count key-frames)
         t0      (:time (first key-frames))
         t1      (:time (last key-frames))
         delta-t (if (<= n 1) 1.0 (/ (- t1 t0) (dec n)))
         index   (int (floor (/ (- t t0) delta-t)))]
-    (cond (<  index 0)       (:position (first key-frames))
-          (>= index (dec n)) (:position (last key-frames))
+    (cond (<  index 0)       (k (first key-frames))
+          (>= index (dec n)) (k (last key-frames))
           :else              (let [frame-a  (nth key-frames index)
                                    frame-b  (nth key-frames (inc index))
                                    weight   (/ (- (:time frame-b) t) delta-t)]
-                               (add (mult (:position frame-a) weight)
-                                    (mult (:position frame-b) (- 1 weight)))))))
+                               (add (mult (k frame-a) weight)
+                                    (mult (k frame-b) (- 1 weight)))))))
+
+(defn interpolate-position
+  "Interpolate between scaling frames"
+  [key-frames t]
+  (interpolate-frame key-frames t :position))
+
+(defn interpolate-scaling
+  "Interpolate between scaling frames"
+  [key-frames t]
+  (interpolate-frame key-frames t :scaling))
 
 (set! *unchecked-math* false)
