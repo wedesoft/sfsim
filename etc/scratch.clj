@@ -25,38 +25,7 @@
 
 (pprint (tree model))
 
-(def scene (Assimp/aiImportFile "test/sfsim25/fixtures/model/motion.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
-
-(defn ai-vector [v] (v/vec3 (.x v) (.y v) (.z v)))
-(defn ai-quaternion [q] (q/->Quaternion (.w q) (.x q) (.y q) (.z q)))
-
-(defn first-frame [channel]
-  (let [translation (ai-vector (.mValue (.get (.mPositionKeys channel) 0)))
-        rotation    (ai-quaternion (.mValue (.get (.mRotationKeys channel) 0)))
-        scale       (ai-vector (.mValue (.get (.mScalingKeys channel) 0)))]
-    (transformation-matrix (m/mulm (m/diagonal scale) (quaternion->matrix rotation)) translation)))
-
-(defn read-channel [ptr]
-  (let [channel (AINodeAnim/create ^long ptr)]
-    {:node (.dataString (.mNodeName channel))
-     :samples (max (.mNumPositionKeys channel) (.mNumRotationKeys channel))
-     :transform (first-frame channel)}))
-
-(defn read-anim [ptr]
-  (let [animation (AIAnimation/create ^long ptr)]
-    {:name (.dataString (.mName animation))
-     :channels (mapv #(read-channel (.get (.mChannels animation) %)) (range (.mNumChannels animation)))}))
-
-(def ptrs (mapv #(.get (.mAnimations scene) %) (range (.mNumAnimations scene))))
-
-(def animations (mapv read-anim ptrs))
-
-(pprint animations)
-
-(defn lookup [animations]
-  (apply hash-map (mapcat (fn [anim] (mapcat (fn [channel] [(:node channel) (:transform channel)]) (:channels anim))) animations)))
-
-(def h (lookup animations))
+(def h (into {} (mapcat (fn [[k v]] (map (fn [[k v]] [k (interpolate-transformation v 0)]) (:channels v))) (:animations model))))
 
 (defn update-node [node h]
   (assoc node
@@ -67,8 +36,6 @@
   (assoc model :root (update-node (:root model) h)))
 
 (def model (update-transforms model h))
-
-(Assimp/aiReleaseImport scene)
 
 (def w 640)
 (def h 480)
