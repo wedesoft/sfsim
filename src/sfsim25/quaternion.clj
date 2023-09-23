@@ -19,9 +19,11 @@
   (->Quaternion (c/+ (:a p) (:a q)) (c/+ (:b p) (:b q)) (c/+ (:c p) (:c q)) (c/+ (:d p) (:d q))))
 
 (defn -
-  "Subtract two quaternions"
-  ^Quaternion [^Quaternion p ^Quaternion q]
-  (->Quaternion (c/- (:a p) (:a q)) (c/- (:b p) (:b q)) (c/- (:c p) (:c q)) (c/- (:d p) (:d q))))
+  "Negate quaternion or subtract two quaternions"
+  (^Quaternion [^Quaternion p]
+               (->Quaternion (c/- (:a p)) (c/- (:b p)) (c/- (:c p)) (c/- (:d p))))
+  (^Quaternion [^Quaternion p ^Quaternion q]
+               (->Quaternion (c/- (:a p) (:a q)) (c/- (:b p) (:b q)) (c/- (:c p) (:c q)) (c/- (:d p) (:d q)))))
 
 (defn *
   "Multiply two quaternions"

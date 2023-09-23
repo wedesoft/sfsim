@@ -261,20 +261,30 @@
                                    weight   (/ (- (:time frame-b) t) delta-t)]
                                (lerp (k frame-a) (k frame-b) weight)))))
 
+(defn- nearest-quaternion
+  "Return nearest rotation quaternion to q with same rotation as p"
+  [p q]
+  (let [positive-p-dist (q/norm2 (q/- q p))
+        negative-p-dist (q/norm2 (q/+ q p))]
+    (if (< positive-p-dist negative-p-dist) p (q/- p))))
+
 (defn interpolate-position
   "Interpolate between scaling frames"
   [key-frames t]
-  (interpolate-frame key-frames t :position (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+  (interpolate-frame key-frames t :position
+                     (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-rotation
   "Interpolate between rotation frames"
   [key-frames t]
-  (interpolate-frame key-frames t :rotation (fn [a b weight] (q/+ (q/scale a weight) (q/scale b (- 1.0 weight))))))
+  (interpolate-frame key-frames t :rotation
+                     (fn [a b weight] (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 weight))))))
 
 (defn interpolate-scaling
   "Interpolate between scaling frames"
   [key-frames t]
-  (interpolate-frame key-frames t :scaling (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+  (interpolate-frame key-frames t :scaling
+                     (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-transformation
   "Determine transformation matrix for a given channel and time"

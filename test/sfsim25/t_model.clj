@@ -418,6 +418,10 @@ void main()
       (interpolate-rotation [{:time 0.0 :rotation (->Quaternion 2 0 0 0)} {:time 1.0 :rotation (->Quaternion 3 0 0 0)}] 0.25)
       => (roughly-quaternion (->Quaternion 2.25 0 0 0) 1e-6))
 
+(fact "Handle negative quaternion with same rotation"
+      (interpolate-rotation [{:time 0.0 :rotation (->Quaternion 1 0 0 0)} {:time 1.0 :rotation (->Quaternion -1 0 0 0)}] 0.5)
+      => (roughly-quaternion (->Quaternion 1 0 0 0) 1e-6))
+
 (facts "Create key frame for given channel"
        (interpolate-transformation {:position-keys [{:time 0.0 :position (vec3 2 3 5)}]
                                     :rotation-keys [{:time 0.0 :rotation (->Quaternion 1 0 0 0)}]
