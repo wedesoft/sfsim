@@ -1,8 +1,8 @@
 (ns sfsim25.t-model
     (:require [midje.sweet :refer :all]
-              [clojure.math :refer (to-radians)]
+              [clojure.math :refer (to-radians sqrt PI)]
               [sfsim25.conftest :refer (roughly-matrix roughly-vector roughly-quaternion record-image is-image)]
-              [fastmath.matrix :refer (eye mulm)]
+              [fastmath.matrix :refer (eye mulm mat4x4)]
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim25.matrix :refer :all]
               [sfsim25.render :refer :all]
@@ -423,5 +423,19 @@ void main()
 (fact "Interpolate between rotation frames assuming constant sampling interval"
       (interpolate-rotation [{:time 0.0 :rotation (->Quaternion 2 0 0 0)} {:time 1.0 :rotation (->Quaternion 3 0 0 0)}] 0.25)
       => (roughly-quaternion (->Quaternion 2.25 0 0 0) 1e-6))
+
+(facts "Create key frame for given channel"
+       (interpolate-transformation {:position-keys [{:time 0.0 :position (vec3 2 3 5)}]
+                                    :rotation-keys [{:time 0.0 :rotation (->Quaternion 1 0 0 0)}]
+                                    :scaling-keys [{:time 0.0 :scaling (vec3 1 1 1)}]} 0.0)
+       => (roughly-matrix (transformation-matrix (eye 3) (vec3 2 3 5)) 1e-6)
+       (interpolate-transformation {:position-keys [{:time 0.0 :position (vec3 0 0 0)}]
+                                    :rotation-keys [{:time 0.0 :rotation (->Quaternion 0 1 0 0)}]
+                                    :scaling-keys [{:time 0.0 :scaling (vec3 1 1 1)}]} 0.0)
+       => (roughly-matrix (transformation-matrix (rotation-x PI) (vec3 0 0 0)) 1e-6)
+       (interpolate-transformation {:position-keys [{:time 0.0 :position (vec3 0 0 0)}]
+                                    :rotation-keys [{:time 0.0 :rotation (->Quaternion (sqrt 0.5) (sqrt 0.5) 0 0)}]
+                                    :scaling-keys [{:time 0.0 :scaling (vec3 2 3 5)}]} 0.0)
+       => (roughly-matrix (mat4x4 2 0 0 0, 0 0 -5 0, 0 3 0 0, 0 0 0 1) 1e-6))
 
 (GLFW/glfwTerminate)

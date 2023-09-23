@@ -1,4 +1,5 @@
 # TODO
+* scale, rotate, translate
 * mechanical rigging: https://www.youtube.com/watch?v=J1He21vDIfQ
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures

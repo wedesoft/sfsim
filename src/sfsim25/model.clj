@@ -1,11 +1,12 @@
 (ns sfsim25.model
     "Import glTF models into Clojure"
     (:require [clojure.math :refer (floor)]
-              [fastmath.matrix :refer (mat4x4 mulm eye)]
+              [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
               [fastmath.vector :refer (vec3 mult add)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
                                       use-textures uniform-sampler)]
+              [sfsim25.matrix :refer (transformation-matrix quaternion->matrix)]
               [sfsim25.quaternion :refer (->Quaternion) :as q])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
               AINodeAnim]
@@ -275,5 +276,13 @@
   "Interpolate between scaling frames"
   [key-frames t]
   (interpolate-frame key-frames t :scaling add mult))
+
+(defn interpolate-transformation
+  "Determine transformation matrix for a given channel and time"
+  [channel t]
+  (let [position (interpolate-position (:position-keys channel) t)
+        rotation (interpolate-rotation (:rotation-keys channel) t)
+        scaling (interpolate-scaling (:scaling-keys channel) t)]
+    (transformation-matrix (mulm (quaternion->matrix rotation) (diagonal scaling)) position)))
 
 (set! *unchecked-math* false)
