@@ -154,10 +154,10 @@
   "Read channel of an animation"
   [animation ticks-per-second i]
   (let [channel (AINodeAnim/create ^long (.get (.mChannels animation) i))]
-    {:node-name (.dataString (.mNodeName channel))
-     :position-keys (mapv #(decode-position-key channel ticks-per-second %) (range (.mNumPositionKeys channel)))
-     :rotation-keys (mapv #(decode-rotation-key channel ticks-per-second %) (range (.mNumRotationKeys channel)))
-     :scaling-keys (mapv #(decode-scaling-key channel ticks-per-second %) (range (.mNumScalingKeys channel)))}))
+    [(.dataString (.mNodeName channel))
+     {:position-keys (mapv #(decode-position-key channel ticks-per-second %) (range (.mNumPositionKeys channel)))
+      :rotation-keys (mapv #(decode-rotation-key channel ticks-per-second %) (range (.mNumRotationKeys channel)))
+      :scaling-keys (mapv #(decode-scaling-key channel ticks-per-second %) (range (.mNumScalingKeys channel)))}]))
 
 (defn- decode-animation
   "Read animation data of scene"
@@ -166,7 +166,7 @@
         ticks-per-second (.mTicksPerSecond animation)]
     [(.dataString (.mName animation))
      {:duration (/ (.mDuration animation) ticks-per-second)
-      :channels (mapv #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation)))}]))
+      :channels (into {} (map #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation))))}]))
 
 (defn read-gltf
   "Import a glTF model file"
@@ -175,7 +175,7 @@
         materials  (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
         meshes     (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
         textures   (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
-        animations (apply hash-map (mapcat #(decode-animation scene %) (range (.mNumAnimations scene))))
+        animations (into {} (map #(decode-animation scene %) (range (.mNumAnimations scene))))
         result     {:root (decode-node (.mRootNode scene))
                     :materials materials
                     :meshes meshes

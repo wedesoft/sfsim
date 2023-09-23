@@ -346,10 +346,7 @@ void main()
 (fact "Number of channels of animation"
       (count (:channels translation-animation)) => 1)
 
-(def translation-channel (first (:channels translation-animation)))
-
-(fact "Target object of animation channel"
-      (:node-name translation-channel) => "Cube")
+(def translation-channel ((:channels translation-animation) "Cube"))
 
 (facts "Number of key frames for position, rotation, and scale"
        (count (:position-keys translation-channel)) => 101
@@ -368,7 +365,7 @@ void main()
 (def rotation (read-gltf "test/sfsim25/fixtures/model/rotation.gltf"))
 
 (def rotation-animation ((:animations rotation) "CubeAction"))
-(def rotation-channel (first (:channels rotation-animation)))
+(def rotation-channel ((:channels rotation-animation) "Cube"))
 
 (facts "Get time stamps from different rotation key frames"
        (:time (first (:rotation-keys rotation-channel))) => (roughly 0.0 1e-6)
@@ -382,7 +379,7 @@ void main()
 (def scaling (read-gltf "test/sfsim25/fixtures/model/scaling.gltf"))
 
 (def scaling-animation ((:animations scaling) "CubeAction"))
-(def scaling-channel (first (:channels scaling-animation)))
+(def scaling-channel ((:channels scaling-animation) "Cube"))
 
 (facts "Get time stamps from different scaling key frames"
        (:time (first (:scaling-keys scaling-channel))) => (roughly 0.0 1e-6)
