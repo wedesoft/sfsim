@@ -300,9 +300,8 @@
   (let [animations (:animations model)]
     (or (apply merge
                (for [[animation-name animation-time] animation-times]
-                    (let [animation (animations animation-name)
-                          channels  (:channels animation)]
-                      (into {} (for [[object-name channel] channels]
+                    (let [animation (animations animation-name)]
+                      (into {} (for [[object-name channel] (:channels animation)]
                                     [object-name (interpolate-transformation channel animation-time)])))))
         {})))
 
