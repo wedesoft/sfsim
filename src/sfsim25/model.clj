@@ -295,7 +295,7 @@
     (transformation-matrix (mulm (quaternion->matrix rotation) (diagonal scaling)) position)))
 
 (defn animations-frame
-  "Create hash map with transforms for model and hash map of animation times"
+  "Create hash map with transforms for objects of model given a hash map of animation times"
   [model animation-times]
   (let [animations (:animations model)]
     (or (apply merge
