@@ -6,7 +6,7 @@
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim25.matrix :refer :all]
               [sfsim25.render :refer :all]
-              [sfsim25.model :refer :all]
+              [sfsim25.model :refer :all :as model]
               [sfsim25.quaternion :refer (->Quaternion)])
     (:import [org.lwjgl.glfw GLFW]))
 
@@ -435,5 +435,12 @@ void main()
                                     :rotation-keys [{:time 0.0 :rotation (->Quaternion (sqrt 0.5) (sqrt 0.5) 0 0)}]
                                     :scaling-keys [{:time 0.0 :scaling (vec3 2 3 5)}]} 0.0)
        => (roughly-matrix (mat4x4 2 0 0 0, 0 0 -5 0, 0 3 0 0, 0 0 0 1) 1e-6))
+
+(facts "Determine updates for model"
+       (animations-frame {:animations {}} {}) => {}
+       (with-redefs [model/interpolate-transformation
+                     (fn [channel t] (facts channel => :mock-channel-data t => 1.0) :mock-transform)]
+         (animations-frame {:animations {"Animation" {:channels {"Object" :mock-channel-data}}}} {"Animation" 1.0}))
+       => {"Object" :mock-transform})
 
 (GLFW/glfwTerminate)

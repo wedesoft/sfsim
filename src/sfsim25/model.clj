@@ -294,4 +294,15 @@
         scaling (interpolate-scaling (:scaling-keys channel) t)]
     (transformation-matrix (mulm (quaternion->matrix rotation) (diagonal scaling)) position)))
 
+(defn animations-frame
+  "Create hash map with transforms for model and hash map of animation times"
+  [model animation-times]
+  (or (apply merge
+             (for [[animation-name animation-time] animation-times]
+                  (let [animation ((:animations model) animation-name)
+                        channels  (:channels animation)]
+                    (into {} (for [[object-name channel] channels]
+                                  [object-name (interpolate-transformation channel animation-time)])))))
+      {}))
+
 (set! *unchecked-math* false)
