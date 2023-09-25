@@ -1,5 +1,5 @@
 # TODO
-* scale, rotate, translate
+* {action -> timestamp} -> {node -> transform} -> update model
 * mechanical rigging: https://www.youtube.com/watch?v=J1He21vDIfQ
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures
