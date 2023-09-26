@@ -29,15 +29,7 @@
 
 (def h (into {} (mapcat (fn [[k v]] (map (fn [[k v]] [k (interpolate-transformation v 0)]) (:channels v))) (:animations @model))))
 
-(defn update-node [node h]
-  (assoc node
-         :transform (or (h (:name node)) (:transform node))
-         :children  (mapv #(update-node % h) (:children node))))
-
-(defn update-transforms [model h]
-  (assoc model :root (update-node (:root model) h)))
-
-(swap! model update-transforms h)
+(swap! model apply-transforms h)
 
 (def w 854)
 (def h 480)
@@ -216,16 +208,16 @@ void main()
              dx (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
              dy (if (@keystates GLFW/GLFW_KEY_W) 0.001 (if (@keystates GLFW/GLFW_KEY_S) -0.001 0))
              dz (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0))
+             dd (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
              ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
              rb (if (@keystates GLFW/GLFW_KEY_KP_6) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_4) -0.001 0))
-             rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
-             h  (into {} (mapcat (fn [[k v]] (map (fn [[k v]] [k (interpolate-transformation v (mod @t duration))]) (:channels v))) (:animations @model)))]
-         (swap! t + (/ dt 1000.0))
+             rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))]
+         (swap! t + dd)
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt ra) (v/vec3 1 0 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rb) (v/vec3 0 1 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
          (swap! pos v/add (v/mult (v/vec3 dx dy dz) dt))
-         (swap! scene update-transforms h)
+         (swap! scene apply-transforms (animations-frame @scene {"DeployAction" @t}))
          (onscreen-render window
                           (clear (v/vec3 0.1 0.1 0.1) 0)
                           (doseq [program [program-uniform program-textured program-rough]]
