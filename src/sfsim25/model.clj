@@ -305,4 +305,16 @@
                                     [object-name (interpolate-transformation channel animation-time)])))))
         {})))
 
+(defn- apply-transforms-node
+  "Apply hash map of transforms to node and children"
+  [node transforms]
+  (assoc node
+         :transform (or (transforms (:name node)) (:transform node))
+         :children (mapv #(apply-transforms-node % transforms) (:children node))))
+
+(defn apply-transforms
+  "Apply hash map of transforms to model in order to animate it"
+  [model transforms]
+  (assoc model :root (apply-transforms-node (:root model) transforms)))
+
 (set! *unchecked-math* false)

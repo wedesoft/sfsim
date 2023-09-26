@@ -443,4 +443,13 @@ void main()
          (animations-frame {:animations {"Animation" {:channels {"Object" :mock-channel-data}}}} {"Animation" 1.0}))
        => {"Object" :mock-transform})
 
+(facts "Apply transformation updates to model"
+       (apply-transforms {:root {:name "Cube" :transform :mock :children []}} {})
+       => {:root {:name "Cube" :transform :mock :children []}}
+       (apply-transforms {:root {:name "Cube" :transform :mock :children []}} {"Cube" :mock-changed})
+       => {:root {:name "Cube" :transform :mock-changed :children []}}
+       (apply-transforms {:root {:name "ROOT" :transform :mock :children [{:name "Cube" :transform :mock :children []}]}}
+                         {"Cube" :mock-changed})
+       => {:root {:name "ROOT" :transform :mock :children [{:name "Cube" :transform :mock-changed :children []}]}})
+
 (GLFW/glfwTerminate)
