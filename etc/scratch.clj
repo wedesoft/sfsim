@@ -197,7 +197,7 @@ void main()
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
 (def orientation (atom (q/rotation (to-radians 0) (v/vec3 0 0 1))))
-(def pos (atom (v/vec3 0.0 -0.48 -2.5)))
+(def pos (atom (v/vec3 0.0 -0.3 -2.5)))
 
 (def gear (atom 0.0))
 (def nose (atom 0.0))
