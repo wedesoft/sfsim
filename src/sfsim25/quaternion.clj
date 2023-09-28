@@ -19,9 +19,11 @@
   (->Quaternion (c/+ (:a p) (:a q)) (c/+ (:b p) (:b q)) (c/+ (:c p) (:c q)) (c/+ (:d p) (:d q))))
 
 (defn -
-  "Subtract two quaternions"
-  ^Quaternion [^Quaternion p ^Quaternion q]
-  (->Quaternion (c/- (:a p) (:a q)) (c/- (:b p) (:b q)) (c/- (:c p) (:c q)) (c/- (:d p) (:d q))))
+  "Negate quaternion or subtract two quaternions"
+  (^Quaternion [^Quaternion p]
+               (->Quaternion (c/- (:a p)) (c/- (:b p)) (c/- (:c p)) (c/- (:d p))))
+  (^Quaternion [^Quaternion p ^Quaternion q]
+               (->Quaternion (c/- (:a p) (:a q)) (c/- (:b p) (:b q)) (c/- (:c p) (:c q)) (c/- (:d p) (:d q)))))
 
 (defn *
   "Multiply two quaternions"
@@ -31,6 +33,11 @@
     (c/- (c/+ (c/* (:a p) (:b q)) (c/* (:b p) (:a q)) (c/* (:c p) (:d q))) (c/* (:d p) (:c q)))
     (c/+ (c/- (c/* (:a p) (:c q)) (c/* (:b p) (:d q))) (c/* (:c p) (:a q)) (c/* (:d p) (:b q)))
     (c/+ (c/- (c/+ (c/* (:a p) (:d q)) (c/* (:b p) (:c q))) (c/* (:c p) (:b q))) (c/* (:d p) (:a q)))))
+
+(defn scale
+  "Multiply quaternion with real number"
+  ^Quaternion [^Quaternion q ^double s]
+  (->Quaternion (c/* (:a q) s) (c/* (:b q) s) (c/* (:c q) s) (c/* (:d q) s)))
 
 (defn norm2
   "Compute square of norm of quaternion"

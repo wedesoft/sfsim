@@ -8,14 +8,30 @@
 (require '[sfsim25.quaternion :as q])
 (require '[fastmath.vector :as v])
 (require '[fastmath.matrix :as m])
+(require '[clojure.pprint :refer (pprint)])
 (import '[org.lwjgl.glfw GLFW GLFWKeyCallback])
+(import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty AINode AIAnimation AINodeAnim])
 
 (GLFW/glfwInit)
 
-;(def model (read-gltf "test/sfsim25/fixtures/model/bricks.gltf"))
-(def model (read-gltf "etc/motion.gltf"))
+(def model (atom (read-gltf "etc/gear.gltf")))
 
-(def w 640)
+(defn extract [child]
+  (merge {:name (:name child)}
+         (if (:children child) {:children (mapv extract (:children child))})))
+
+(defn tree [model]
+  {:root (extract (:root model))})
+
+(pprint (tree @model))
+
+(def duration (get-in @model [:animations "Root" :duration]))
+
+(def h (into {} (mapcat (fn [[k v]] (map (fn [[k v]] [k (interpolate-transformation v 0)]) (:channels v))) (:animations @model))))
+
+(swap! model apply-transforms h)
+
+(def w 854)
 (def h 480)
 (def window (make-window "model" w h))
 (GLFW/glfwShowWindow window)
@@ -166,7 +182,7 @@ void main()
   (uniform-matrix4 program "transform" transform)
   (use-textures colors normals))
 
-(def scene (load-scene-into-opengl program-selection model))
+(def scene (atom (load-scene-into-opengl program-selection @model)))
 
 (def projection (projection-matrix w h 0.01 10.0 (to-radians 60.0)))
 
@@ -181,7 +197,10 @@ void main()
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
 (def orientation (atom (q/rotation (to-radians 0) (v/vec3 0 0 1))))
-(def pos (atom (v/vec3 0.0 -0.48 -2.13)))
+(def pos (atom (v/vec3 0.0 -0.3 -2.5)))
+
+(def gear (atom 0.0))
+(def nose (atom 0.0))
 
 (def t0 (atom (System/currentTimeMillis)))
 (while (not (GLFW/glfwWindowShouldClose window))
@@ -190,13 +209,18 @@ void main()
              dx (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
              dy (if (@keystates GLFW/GLFW_KEY_W) 0.001 (if (@keystates GLFW/GLFW_KEY_S) -0.001 0))
              dz (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0))
+             dg (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
+             dn (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))
              ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
              rb (if (@keystates GLFW/GLFW_KEY_KP_6) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_4) -0.001 0))
              rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))]
+         (swap! gear + dg)
+         (swap! nose + dn)
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt ra) (v/vec3 1 0 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rb) (v/vec3 0 1 0)))
          (swap! orientation #(q/* %2 %1) (q/rotation (* dt rc) (v/vec3 0 0 1)))
          (swap! pos v/add (v/mult (v/vec3 dx dy dz) dt))
+         (swap! scene apply-transforms (animations-frame @scene {"NoseGear" @nose "DeployAction" @gear}))
          (onscreen-render window
                           (clear (v/vec3 0.1 0.1 0.1) 0)
                           (doseq [program [program-uniform program-textured program-rough]]
@@ -204,7 +228,9 @@ void main()
                                  (uniform-matrix4 program "projection" projection)
                                  (uniform-vector3 program "light" (v/normalize (v/vec3 0 5 2))))
                           (render-scene program-selection
-                                        (assoc-in scene [:root :transform] (transformation-matrix (quaternion->matrix @orientation) @pos))
+                                        (assoc-in @scene
+                                                  [:root :transform]
+                                                  (transformation-matrix (quaternion->matrix @orientation) @pos))
                                         render-model))
          (GLFW/glfwPollEvents)
          (swap! t0 + dt)))
@@ -246,15 +272,22 @@ void main()
 
 (all-methods Assimp)
 
-(def scene (Assimp/aiImportFile "etc/motion.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
+(def scene (Assimp/aiImportFile "etc/gear.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
 (.dataString (.mName scene))
 (.mNumMeshes scene)
 
 (def root (.mRootNode scene))
+(.dataString (.mName root))
 (.mNumChildren root)
+(map #(.dataString (.mName (AINode/create ^long (.get (.mChildren root) %)))) (range (.mNumChildren root)))
 (def child (AINode/create ^long (.get (.mChildren root) 0)))
-(def child (AINode/create ^long (.get (.mChildren child) 0)))
 (.dataString (.mName child))
+(.mNumChildren child)
+(def child2 (AINode/create ^long (.get (.mChildren child) 0)))
+(.dataString (.mName child2))
+(.mNumChildren child2)
+(def child3 (AINode/create ^long (.get (.mChildren child2) 0)))
+(.dataString (.mName child3))
 (def m (.mTransformation child))
 (.get (.mMeshes child) 0)
 (.mNumBones mesh)
@@ -270,7 +303,9 @@ void main()
 
 
 (.mNumAnimations scene)
+(map #(.dataString (.mName (AIAnimation/create ^long (.get (.mAnimations scene) %)))) (range (.mNumAnimations scene)))
 (def animation (AIAnimation/create ^long (.get (.mAnimations scene) 0)))
+(.dataString (.mName animation))
 
 (/ (.mDuration animation) (.mTicksPerSecond animation))
 (/ 100.0 24.0)
@@ -283,17 +318,22 @@ void main()
 (.mNumPositionKeys na1)
 (.mNumRotationKeys na1)
 (.mNumScalingKeys na1)
+(.mNumPositionKeys na2)
+(.mNumRotationKeys na2)
 
-(defn ai-vector [v] [(.x v) (.y v) (.z v)])
-(defn ai-quaternion [q] [(.w q) (.x q) (.y q) (.z q)])
+(defn ai-vector [v] (v/vec3 (.x v) (.y v) (.z v)))
+(defn ai-quaternion [q] (q/->Quaternion (.w q) (.x q) (.y q) (.z q)))
 
 (all-methods (.get (.mPositionKeys na1) 0))
 (.mTime (.get (.mPositionKeys na1) 0))
 (.mTime (.get (.mPositionKeys na1) 1))
+(.mTime (.get (.mPositionKeys na1) 100))
 (ai-quaternion (.mValue (.get (.mRotationKeys na1) 0)))
+(ai-vector (.mValue (.get (.mRotationKeys na2) 0)))
+(ai-vector (.mValue (.get (.mRotationKeys na2) 1)))
 (ai-vector (.mValue (.get (.mPositionKeys na1) 0)))
 (ai-vector (.mValue (.get (.mPositionKeys na1) 1)))
-(ai-vector (.mValue (.get (.mPositionKeys na1) 99)))
+(ai-vector (.mValue (.get (.mPositionKeys na1) 100)))
 
 
 (map #(.get (.mColors mesh) %) (range 8))

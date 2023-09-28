@@ -1,11 +1,15 @@
 (ns sfsim25.model
     "Import glTF models into Clojure"
-    (:require [fastmath.matrix :refer (mat4x4 mulm eye)]
-              [fastmath.vector :refer (vec3)]
+    (:require [clojure.math :refer (floor)]
+              [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
+              [fastmath.vector :refer (vec3 mult add)]
               [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
                                       destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
-                                      use-textures uniform-sampler)])
-    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer]
+                                      use-textures uniform-sampler)]
+              [sfsim25.matrix :refer (transformation-matrix quaternion->matrix)]
+              [sfsim25.quaternion :refer (->Quaternion) :as q])
+    (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
+              AINodeAnim]
              [org.lwjgl.stb STBImage]))
 
 (set! *unchecked-math* true)
@@ -122,14 +126,61 @@
     (STBImage/stbi_image_free buffer)
     {:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
 
+(defn- decode-position-key
+  "Read a position key from an animation channel"
+  [channel ticks-per-second i]
+  (let [position-key (.get (.mPositionKeys channel) i)
+        position     (.mValue position-key)]
+    {:time (/ (.mTime position-key) ticks-per-second)
+     :position (vec3 (.x position) (.y position) (.z position))}))
+
+(defn- decode-rotation-key
+  "Read a rotation key from an animation channel"
+  [channel ticks-per-second i]
+  (let [rotation-key (.get (.mRotationKeys channel) i)
+        rotation     (.mValue rotation-key)]
+    {:time (/ (.mTime rotation-key) ticks-per-second)
+     :rotation (->Quaternion (.w rotation) (.x rotation) (.y rotation) (.z rotation))}))
+
+(defn- decode-scaling-key
+  "Read a scaling key from an animation channel"
+  [channel ticks-per-second i]
+  (let [scaling-key (.get (.mScalingKeys channel) i)
+        scaling     (.mValue scaling-key)]
+    {:time (/ (.mTime scaling-key) ticks-per-second)
+     :scaling (vec3 (.x scaling) (.y scaling) (.z scaling))}))
+
+(defn- decode-channel
+  "Read channel of an animation"
+  [animation ticks-per-second i]
+  (let [channel (AINodeAnim/create ^long (.get (.mChannels animation) i))]
+    [(.dataString (.mNodeName channel))
+     {:position-keys (mapv #(decode-position-key channel ticks-per-second %) (range (.mNumPositionKeys channel)))
+      :rotation-keys (mapv #(decode-rotation-key channel ticks-per-second %) (range (.mNumRotationKeys channel)))
+      :scaling-keys (mapv #(decode-scaling-key channel ticks-per-second %) (range (.mNumScalingKeys channel)))}]))
+
+(defn- decode-animation
+  "Read animation data of scene"
+  [scene i]
+  (let [animation        (AIAnimation/create ^long (.get (.mAnimations scene) i))
+        ticks-per-second (.mTicksPerSecond animation)]
+    [(.dataString (.mName animation))
+     {:duration (/ (.mDuration animation) ticks-per-second)
+      :channels (into {} (map #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation))))}]))
+
 (defn read-gltf
   "Import a glTF model file"
   [filename]
-  (let [scene     (Assimp/aiImportFile filename (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace))
-        materials (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
-        textures  (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
-        meshes    (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
-        result {:root (decode-node (.mRootNode scene)) :materials materials :meshes meshes :textures textures}]
+  (let [scene      (Assimp/aiImportFile filename (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace))
+        materials  (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
+        meshes     (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
+        textures   (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
+        animations (into {} (map #(decode-animation scene %) (range (.mNumAnimations scene))))
+        result     {:root (decode-node (.mRootNode scene))
+                    :materials materials
+                    :meshes meshes
+                    :textures textures
+                    :animations animations}]
     (Assimp/aiReleaseImport scene)
     result))
 
@@ -194,5 +245,76 @@
                   program             (program-selection material)]
               (callback (merge material {:program program :transform transform}))
               (render-triangles (:vao mesh)))))))
+
+(defn- interpolate-frame
+  "Interpolate between pose frames"
+  [key-frames t k lerp]
+  (let [n       (count key-frames)
+        t0      (:time (first key-frames))
+        t1      (:time (last key-frames))
+        delta-t (if (<= n 1) 1.0 (/ (- t1 t0) (dec n)))
+        index   (int (floor (/ (- t t0) delta-t)))]
+    (cond (<  index 0)       (k (first key-frames))
+          (>= index (dec n)) (k (last key-frames))
+          :else              (let [frame-a  (nth key-frames index)
+                                   frame-b  (nth key-frames (inc index))
+                                   weight   (/ (- (:time frame-b) t) delta-t)]
+                               (lerp (k frame-a) (k frame-b) weight)))))
+
+(defn- nearest-quaternion
+  "Return nearest rotation quaternion to q with same rotation as p"
+  [p q]
+  (let [positive-p-dist (q/norm2 (q/- q p))
+        negative-p-dist (q/norm2 (q/+ q p))]
+    (if (< positive-p-dist negative-p-dist) p (q/- p))))
+
+(defn interpolate-position
+  "Interpolate between scaling frames"
+  [key-frames t]
+  (interpolate-frame key-frames t :position
+                     (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+
+(defn interpolate-rotation
+  "Interpolate between rotation frames"
+  [key-frames t]
+  (interpolate-frame key-frames t :rotation
+                     (fn [a b weight] (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 weight))))))
+
+(defn interpolate-scaling
+  "Interpolate between scaling frames"
+  [key-frames t]
+  (interpolate-frame key-frames t :scaling
+                     (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+
+(defn interpolate-transformation
+  "Determine transformation matrix for a given channel and time"
+  [channel t]
+  (let [position (interpolate-position (:position-keys channel) t)
+        rotation (interpolate-rotation (:rotation-keys channel) t)
+        scaling (interpolate-scaling (:scaling-keys channel) t)]
+    (transformation-matrix (mulm (quaternion->matrix rotation) (diagonal scaling)) position)))
+
+(defn animations-frame
+  "Create hash map with transforms for objects of model given a hash map of animation times"
+  [model animation-times]
+  (let [animations (:animations model)]
+    (or (apply merge
+               (for [[animation-name animation-time] animation-times]
+                    (let [animation (animations animation-name)]
+                      (into {} (for [[object-name channel] (:channels animation)]
+                                    [object-name (interpolate-transformation channel animation-time)])))))
+        {})))
+
+(defn- apply-transforms-node
+  "Apply hash map of transforms to node and children"
+  [node transforms]
+  (assoc node
+         :transform (or (transforms (:name node)) (:transform node))
+         :children (mapv #(apply-transforms-node % transforms) (:children node))))
+
+(defn apply-transforms
+  "Apply hash map of transforms to model in order to animate it"
+  [model transforms]
+  (assoc model :root (apply-transforms-node (:root model) transforms)))
 
 (set! *unchecked-math* false)

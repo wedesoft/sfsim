@@ -28,6 +28,9 @@
 (fact "Subtract two quaternions"
   (- (->Quaternion 6 8 10 12) (->Quaternion 5 6 7 8)) => (->Quaternion 1 2 3 4))
 
+(fact "Negate quaternions"
+  (- (->Quaternion 2 3 5 7)) => (->Quaternion -2 -3 -5 -7))
+
 (tabular "Multiply two quaternions"
   (fact (* ?a ?b) => ?c)
   ?a ?b ?c
@@ -47,6 +50,9 @@
   k  i  j
   k  j -i
   k  k -o)
+
+(fact "Scale quaternion by real number"
+      (scale (->Quaternion 2 3 5 7) 2) => (->Quaternion 4 6 10 14))
 
 (fact "Norm of quaternion"
   (norm (->Quaternion 0.216 0.288 0.48 0.8)) => 1.0)

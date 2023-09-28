@@ -8,7 +8,7 @@
               [sfsim25.util :refer (get-vector3 slurp-image spit-png)]))
 
 (defn roughly-matrix
-  "Compare matrix with expected value."
+  "compare matrix with expected value."
   [expected error]
   (fn [actual]
       (let [difference (fm/sub expected actual)]
@@ -20,6 +20,12 @@
   (fn [actual]
       (and (== (count expected) (count actual))
            (<= (sqrt (apply + (map (comp #(* % %) -) actual expected))) error))))
+
+(defn roughly-quaternion
+  "Compare quaternion with expected value."
+  [expected error]
+  (fn [actual]
+      (and (<= (sqrt (apply + (map (comp #(* % %) #(- (% actual) (% expected))) [:a :b :c :d]))) error))))
 
 (defn rgba-dist [c1 c2]
   (apply max (map #(abs (- %1 %2)) c1 c2)))

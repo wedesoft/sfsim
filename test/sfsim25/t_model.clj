@@ -1,12 +1,13 @@
 (ns sfsim25.t-model
     (:require [midje.sweet :refer :all]
-              [clojure.math :refer (to-radians)]
-              [sfsim25.conftest :refer (roughly-matrix roughly-vector record-image is-image)]
-              [fastmath.matrix :refer (eye mulm)]
+              [clojure.math :refer (to-radians sqrt PI)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector roughly-quaternion record-image is-image)]
+              [fastmath.matrix :refer (eye mulm mat4x4)]
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim25.matrix :refer :all]
               [sfsim25.render :refer :all]
-              [sfsim25.model :refer :all])
+              [sfsim25.model :refer :all :as model]
+              [sfsim25.quaternion :refer (->Quaternion)])
     (:import [org.lwjgl.glfw GLFW]))
 
 (GLFW/glfwInit)
@@ -331,5 +332,124 @@ void main()
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program-dice)
           (destroy-program program-cube))) => (is-image "test/sfsim25/fixtures/model/cube-and-dice.png" 0.01))
+
+(def translation (read-gltf "test/sfsim25/fixtures/model/translation.gltf"))
+
+(fact "Number of animations"
+      (count (:animations translation)) => 1)
+
+(def translation-animation ((:animations translation) "CubeAction"))
+
+(fact "Duration of animation in seconds"
+      (:duration translation-animation) => (roughly (/ 100.0 24.0) 1e-6))
+
+(fact "Number of channels of animation"
+      (count (:channels translation-animation)) => 1)
+
+(def translation-channel ((:channels translation-animation) "Cube"))
+
+(facts "Number of key frames for position, rotation, and scale"
+       (count (:position-keys translation-channel)) => 101
+       (count (:rotation-keys translation-channel)) => 1
+       (count (:scaling-keys translation-channel)) => 1)
+
+(facts "Get time stamps from different position key frames"
+       (:time (first (:position-keys translation-channel))) => (roughly 0.0 1e-6)
+       (:time (second (:position-keys translation-channel))) => (roughly (/ 1.0 24.0) 1e-6)
+       (:time (last (:position-keys translation-channel))) => (roughly (/ 100.0 24.0) 1e-6))
+
+(facts "Get position from different position key frames"
+       (:position (first (:position-keys translation-channel))) => (roughly-vector (vec3 2 0 0) 1e-6)
+       (:position (last (:position-keys translation-channel))) => (roughly-vector (vec3 5 0 0) 1e-6))
+
+(def rotation (read-gltf "test/sfsim25/fixtures/model/rotation.gltf"))
+
+(def rotation-animation ((:animations rotation) "CubeAction"))
+(def rotation-channel ((:channels rotation-animation) "Cube"))
+
+(facts "Get time stamps from different rotation key frames"
+       (:time (first (:rotation-keys rotation-channel))) => (roughly 0.0 1e-6)
+       (:time (second (:rotation-keys rotation-channel))) => (roughly (/ 1.0 24.0) 1e-6)
+       (:time (last (:rotation-keys rotation-channel))) => (roughly (/ 100.0 24.0) 1e-6))
+
+(facts "Get rotation from different rotation key frames"
+       (:rotation (first (:rotation-keys rotation-channel))) => (roughly-quaternion (->Quaternion 1 0 0 0) 1e-6)
+       (:rotation (last (:rotation-keys rotation-channel))) => (roughly-quaternion (->Quaternion 0 0 -1 0) 1e-6))
+
+(def scaling (read-gltf "test/sfsim25/fixtures/model/scaling.gltf"))
+
+(def scaling-animation ((:animations scaling) "CubeAction"))
+(def scaling-channel ((:channels scaling-animation) "Cube"))
+
+(facts "Get time stamps from different scaling key frames"
+       (:time (first (:scaling-keys scaling-channel))) => (roughly 0.0 1e-6)
+       (:time (second (:scaling-keys scaling-channel))) => (roughly (/ 1.0 24.0) 1e-6)
+       (:time (last (:scaling-keys scaling-channel))) => (roughly (/ 100.0 24.0) 1e-6))
+
+(facts "Get scale from different scaling key frames"
+       (:scaling (first (:scaling-keys scaling-channel))) => (roughly-vector (vec3 2 1 1) 1e-6)
+       (:scaling (last (:scaling-keys scaling-channel))) => (roughly-vector (vec3 5 1 1) 1e-6))
+
+(facts "Interpolate between position frames assuming constant sampling interval"
+       (interpolate-position [{:time 0.0 :position (vec3 0 0 0)}] 0.0) => (roughly-vector (vec3 0 0 0) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 3 5)}] 0.0) => (roughly-vector (vec3 2 3 5) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 0 0)} {:time 1.0 :position (vec3 3 0 0)}] 0.0)
+       => (roughly-vector (vec3 2 0 0) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 0 0)} {:time 1.0 :position (vec3 3 0 0)}] 1.0)
+       => (roughly-vector (vec3 3 0 0) 1e-6)
+       (interpolate-position [{:time 0.0 :position (vec3 2 0 0)} {:time 1.0 :position (vec3 3 0 0)}] 0.5)
+       => (roughly-vector (vec3 2.5 0 0) 1e-6)
+       (interpolate-position [{:time 3.0 :position (vec3 2 0 0)} {:time 3.5 :position (vec3 3 0 0)}] 3.25)
+       => (roughly-vector (vec3 2.5 0 0) 1e-6)
+       (interpolate-position [{:time 1.0 :position (vec3 2 0 0)} {:time 2.0 :position (vec3 3 0 0)}] 1.25)
+       => (roughly-vector (vec3 2.25 0 0) 1e-6)
+       (interpolate-position [{:time 1.0 :position (vec3 2 0 0)} {:time 2.0 :position (vec3 3 0 0)}
+                              {:time 3.0 :position (vec3 4 0 0)}] 2.25)
+       => (roughly-vector (vec3 3.25 0 0) 1e-6)
+       (interpolate-position [{:time 1.0 :position (vec3 2 0 0)} {:time 2.0 :position (vec3 3 0 0)}
+                              {:time 3.0 :position (vec3 4 0 0)}] 1.25)
+       => (roughly-vector (vec3 2.25 0 0) 1e-6))
+
+(fact "Interpolate between scaling frames assuming constant sampling interval"
+      (interpolate-scaling [{:time 0.0 :scaling (vec3 2 0 0)} {:time 1.0 :scaling (vec3 3 0 0)}] 0.25)
+      => (roughly-vector (vec3 2.25 0 0) 1e-6))
+
+(fact "Interpolate between rotation frames assuming constant sampling interval"
+      (interpolate-rotation [{:time 0.0 :rotation (->Quaternion 2 0 0 0)} {:time 1.0 :rotation (->Quaternion 3 0 0 0)}] 0.25)
+      => (roughly-quaternion (->Quaternion 2.25 0 0 0) 1e-6))
+
+(fact "Handle negative quaternion with same rotation"
+      (interpolate-rotation [{:time 0.0 :rotation (->Quaternion 1 0 0 0)} {:time 1.0 :rotation (->Quaternion -1 0 0 0)}] 0.5)
+      => (roughly-quaternion (->Quaternion 1 0 0 0) 1e-6))
+
+(facts "Create key frame for given channel"
+       (interpolate-transformation {:position-keys [{:time 0.0 :position (vec3 2 3 5)}]
+                                    :rotation-keys [{:time 0.0 :rotation (->Quaternion 1 0 0 0)}]
+                                    :scaling-keys [{:time 0.0 :scaling (vec3 1 1 1)}]} 0.0)
+       => (roughly-matrix (transformation-matrix (eye 3) (vec3 2 3 5)) 1e-6)
+       (interpolate-transformation {:position-keys [{:time 0.0 :position (vec3 0 0 0)}]
+                                    :rotation-keys [{:time 0.0 :rotation (->Quaternion 0 1 0 0)}]
+                                    :scaling-keys [{:time 0.0 :scaling (vec3 1 1 1)}]} 0.0)
+       => (roughly-matrix (transformation-matrix (rotation-x PI) (vec3 0 0 0)) 1e-6)
+       (interpolate-transformation {:position-keys [{:time 0.0 :position (vec3 0 0 0)}]
+                                    :rotation-keys [{:time 0.0 :rotation (->Quaternion (sqrt 0.5) (sqrt 0.5) 0 0)}]
+                                    :scaling-keys [{:time 0.0 :scaling (vec3 2 3 5)}]} 0.0)
+       => (roughly-matrix (mat4x4 2 0 0 0, 0 0 -5 0, 0 3 0 0, 0 0 0 1) 1e-6))
+
+(facts "Determine updates for model"
+       (animations-frame {:animations {}} {}) => {}
+       (with-redefs [model/interpolate-transformation
+                     (fn [channel t] (facts channel => :mock-channel-data t => 1.0) :mock-transform)]
+         (animations-frame {:animations {"Animation" {:channels {"Object" :mock-channel-data}}}} {"Animation" 1.0}))
+       => {"Object" :mock-transform})
+
+(facts "Apply transformation updates to model"
+       (apply-transforms {:root {:name "Cube" :transform :mock :children []}} {})
+       => {:root {:name "Cube" :transform :mock :children []}}
+       (apply-transforms {:root {:name "Cube" :transform :mock :children []}} {"Cube" :mock-changed})
+       => {:root {:name "Cube" :transform :mock-changed :children []}}
+       (apply-transforms {:root {:name "ROOT" :transform :mock :children [{:name "Cube" :transform :mock :children []}]}}
+                         {"Cube" :mock-changed})
+       => {:root {:name "ROOT" :transform :mock :children [{:name "Cube" :transform :mock-changed :children []}]}})
 
 (GLFW/glfwTerminate)
