@@ -1,5 +1,5 @@
 # TODO
-* mechanical rigging: https://www.youtube.com/watch?v=J1He21vDIfQ
+* make model with rigged gear
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures
 * make spaceplane with Blender
