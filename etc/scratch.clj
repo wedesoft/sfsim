@@ -184,7 +184,7 @@ void main()
 
 (def scene (atom (load-scene-into-opengl program-selection @model)))
 
-(def projection (projection-matrix w h 0.01 10.0 (to-radians 60.0)))
+(def projection (projection-matrix w h 0.01 15.0 (to-radians 60.0)))
 
 (def keystates (atom {}))
 (def keyboard-callback
@@ -272,7 +272,7 @@ void main()
 
 (all-methods Assimp)
 
-(def scene (Assimp/aiImportFile "etc/gear.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
+(def scene (Assimp/aiImportFile "etc/test.gltf" (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace)))
 (.dataString (.mName scene))
 (.mNumMeshes scene)
 
@@ -304,12 +304,14 @@ void main()
 
 (.mNumAnimations scene)
 (map #(.dataString (.mName (AIAnimation/create ^long (.get (.mAnimations scene) %)))) (range (.mNumAnimations scene)))
-(def animation (AIAnimation/create ^long (.get (.mAnimations scene) 0)))
+(def animation (AIAnimation/create ^long (.get (.mAnimations scene) 1)))
 (.dataString (.mName animation))
 
 (/ (.mDuration animation) (.mTicksPerSecond animation))
 (/ 100.0 24.0)
 (.mNumChannels animation)
+(map #(.dataString (.mNodeName (AINodeAnim/create ^long (.get (.mChannels animation) %)))) (range (.mNumChannels animation)))
+
 (def na1 (AINodeAnim/create ^long (.get (.mChannels animation) 0)))
 (def na2 (AINodeAnim/create ^long (.get (.mChannels animation) 1)))
 (.dataString (.mNodeName na1))
