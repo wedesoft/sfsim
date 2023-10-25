@@ -22,7 +22,7 @@
                    :exec-fn all
                    :jvm-opts ["-Xms2g" "-Xmx4g"]}
            :test {:extra-deps {midje/midje {:mvn/version "1.10.9"}
-                               midje-runner/midje-runner {:git/url "git@github.com:wedesoft/midje-runner"
+                               midje-runner/midje-runner {:git/url "https://github.com/wedesoft/midje-runner.git"
                                                           :git/sha "e6e5008998576fa06739f0a49ab1d95503a59406"}}
                   :extra-paths ["test"]
                   :main-opts ["-m" "midje-runner.runner"]}
