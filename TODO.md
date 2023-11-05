@@ -1,4 +1,6 @@
 # TODO
+* https://blog.kuula.co/virtual-tour-space-shuttle
+* cockpit and scene rendering with projection center in upper half of screen
 * make model with rigged gear
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures

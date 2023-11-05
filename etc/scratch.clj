@@ -14,7 +14,9 @@
 
 (GLFW/glfwInit)
 
-(def model (atom (read-gltf "etc/gear.gltf")))
+; (def model (atom (read-gltf "etc/gear.gltf")))
+; (def model (atom (read-gltf "etc/cone.gltf")))
+(def model (atom (read-gltf "etc/diff.gltf")))
 
 (defn extract [child]
   (merge {:name (:name child)}
