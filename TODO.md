@@ -1,6 +1,29 @@
 # TODO
+* cockpit
+  * top buttons:
+    inner door, outer door, chamber pressure (airlock), bay door switch (open, close, stop)
+    air brake, radiator, hover doors
+    angular velocity and acceleration indicators (yaw, bank, pitch)
+    engine temperature
+    light switch: nav, beacon, strobe
+    status display
+  * main
+    kill rotation, autopilot airspeed hold, prograde, retrograde, orbit normal +/-, attitude hold, descend hold
+    elevator trim, autopilot
+    rcs mode (off, rotation, translation)
+    apu on/off
+    yaw, pitch, roll space mouse? (joystick controlled), left-right, up-down, forward-backward
+    main engine, hover engine levers
+    fuel display (main, rcs, apu)
+    engine thrust display (main, hover)
+    gear up/down
+    aircraft flight control surfaces: off/pitch/on
+    air pressure, dynamic pressure
+    acceleration x/y/z
+    hull temperature
+
 * https://blog.kuula.co/virtual-tour-space-shuttle
-* cockpit and scene rendering with projection center in upper half of screen
+* cockpit and scene rendering looking downward so that horizon is in upper half of screen
 * make model with rigged gear
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures
