@@ -14,14 +14,27 @@
     apu on/off
     yaw, pitch, roll space mouse? (joystick controlled), left-right, up-down, forward-backward
     main engine, hover engine levers
-    fuel display (main, rcs, apu)
+    fuel display (main, rcs, apu), oxygen display
     engine thrust display (main, hover)
     gear up/down
+    life support
     aircraft flight control surfaces: off/pitch/on
     air pressure, dynamic pressure
     acceleration x/y/z
-    hull temperature
-
+    hull temperature, gear status, hover status, bay door, radiator
+    coolant temperature
+  * mfd
+    horizon hsi, height, heading, variometer, speed, ils (use for docking and vtol)
+    nav frequencies
+    map of earth/moon
+    align orbit plane
+    orbit
+    transfer: encounter, translunar orbit, insertion
+    ascent profile
+    reentry profile
+    camera
+  * bottom
+    fuel lines open/close (lox, main)
 * https://blog.kuula.co/virtual-tour-space-shuttle
 * cockpit and scene rendering looking downward so that horizon is in upper half of screen
 * make model with rigged gear
@@ -138,7 +151,6 @@
 * music player, mp3 player
 * video communication with screen in 3D cockpit
 * autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
-* on board displays, cameras, MFDs (horizon with height/vario and scrolling scales)
 * no need to adjust MFDs during critical parts of the mission
 * https://github.com/HappyEnte/DreamChaser
 * HDR bloom (separable convolution)
@@ -151,8 +163,6 @@
 * multiple rigid or flexible objects
 * thrusters
 * proper lift/drag ratio for high Reynolds numbers
-* draw points, lines, triangle strips, mfd for reentry and orbital mechanics
-* detailed onboard systems (e.g. airlock, life support, auxiliary power units)
 * threads for rendering, simulation, and loading of data
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
