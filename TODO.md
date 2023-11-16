@@ -1,40 +1,43 @@
 # TODO
 * cockpit
-  * top buttons:
-    inner door, outer door, chamber pressure (airlock), bay door switch (open, close, stop)
-    air brake, radiator, hover doors
-    angular velocity and acceleration indicators (yaw, bank, pitch)
-    engine temperature
+  * top:
+    warnings (status display)
+    airlock doors (three state), chamber pressure, bay door (open, close, stop)
     light switch: nav, beacon, strobe
-    status display
-  * main
-    kill rotation, autopilot airspeed hold, prograde, retrograde, orbit normal +/-, attitude hold, descend hold
-    elevator trim, autopilot
+    autopilot on/off, autothrottle, autopilot speed, heading, altitude, nav localizer (loc), approach (apr)
+    autopilot kill rotation, prograde, retrograde, orbit normal +/-
+  * main:
+    2 mfds
+    engine, thrust (main/hover), rcs
     rcs mode (off, rotation, translation)
-    apu on/off
-    yaw, pitch, roll space mouse? (joystick controlled), left-right, up-down, forward-backward
-    main engine, hover engine levers
-    fuel display (main, rcs, apu), oxygen display
-    engine thrust display (main, hover)
-    gear up/down
-    life support
     aircraft flight control surfaces: off/pitch/on
-    air pressure, dynamic pressure
-    acceleration x/y/z
-    hull temperature, gear status, hover status, bay door, radiator
+    apu on/off
+    fuel display (main, rcs, apu), oxygen display
+    hover doors switch + status
+    gear up/down switch + status
+    spoilers
+    radiator deploy + status
     coolant temperature
-  * mfd
-    horizon hsi, height, heading, variometer, speed, ils (use for docking and vtol)
-    nav frequencies
+    flaps
+  * mfd:
+    yaw, bank, pitch acceleration and velocity indicators
+    horizon hsi, height, heading, variometer, speed, ils height, nominal speed
+    vor (use heading)
+    nav frequencies, dock, vtol freq
+    dock (angles, offset to path, distance, approach speed, x/y speed)
+    camera
     map of earth/moon
+    hull temperature
     align orbit plane
     orbit
     transfer: encounter, translunar orbit, insertion
     ascent profile
     reentry profile
-    camera
+  * engine thrust lever (main, hover)
   * bottom
+    flightstick (yaw/pitch/roll), trim wheel
     fuel lines open/close (lox, main)
+    life support
 * https://blog.kuula.co/virtual-tour-space-shuttle
 * cockpit and scene rendering looking downward so that horizon is in upper half of screen
 * make model with rigged gear
