@@ -2,16 +2,16 @@
 * cockpit
   * top:
     warnings (status display)
-    airlock doors (three state), chamber pressure, bay door (open, close, stop)
-    light switch: nav, beacon, strobe
     autopilot on/off, autothrottle, autopilot speed, heading, altitude, nav localizer (loc), approach (apr)
     autopilot kill rotation, prograde, retrograde, orbit normal +/-
-  * main:
-    2 mfds
-    engine, thrust (main/hover), rcs
     rcs mode (off, rotation, translation)
     aircraft flight control surfaces: off/pitch/on
+  * main:
+    2 mfds
     apu on/off
+    airlock doors (three state), chamber pressure, bay door (open, close, stop)
+    light switch: nav, beacon, strobe
+    engine, thrust (main/hover), rcs
     fuel display (main, rcs, apu), oxygen display
     hover doors switch + status
     gear up/down switch + status
