@@ -1,24 +1,27 @@
 # TODO
+* render cockpit and stencil/mask, then render planet
 * cockpit
   * top:
     warnings (status display)
-    autopilot on/off, autothrottle, autopilot speed, heading, altitude, nav localizer (loc), approach (apr)
-    autopilot kill rotation, prograde, retrograde, orbit normal +/-
+    autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
+    autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
     rcs mode (off, rotation, translation)
     aircraft flight control surfaces: off/pitch/on
   * main:
+    cabin light, panel light
     2 mfds
     apu on/off
     airlock doors (three state), chamber pressure, bay door (open, close, stop)
     light switch: nav, beacon, strobe
     engine, thrust (main/hover), rcs
+    undock
     fuel display (main, rcs, apu), oxygen display
     hover doors switch + status
     gear up/down switch + status
     spoilers
     radiator deploy + status
     coolant temperature
-    flaps
+    no flaps
   * mfd:
     yaw, bank, pitch acceleration and velocity indicators
     horizon hsi, height, heading, variometer, speed, ils height, nominal speed
@@ -34,9 +37,10 @@
     ascent profile
     reentry profile
   * engine thrust lever (main, hover)
+    hover door
   * bottom
     flightstick (yaw/pitch/roll), trim wheel
-    fuel lines open/close (lox, main)
+    fuel lines open/close (lox, main), external pressure online
     life support
 * https://blog.kuula.co/virtual-tour-space-shuttle
 * cockpit and scene rendering looking downward so that horizon is in upper half of screen

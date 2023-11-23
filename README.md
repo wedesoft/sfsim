@@ -43,6 +43,7 @@ Requires OpenGL 4.5.
 # Run
 
 * Run tests: `clj -M:test`
+* Run test specifc module (rendering for example): `clj -M:test sfsim25.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program displaying black window: `clj -M -m sfsim25.core`
 
