@@ -36,23 +36,6 @@
 (def width 1280)
 (def height 720)
 
-(def vertex-shadow-planet
-"#version 410 core
-in vec3 point;
-in vec2 surfacecoord;
-in vec2 colorcoord;
-out VS_OUT
-{
-  vec2 surfacecoord;
-  vec2 colorcoord;
-} vs_out;
-void main()
-{
-  gl_Position = vec4(point, 1);
-  vs_out.surfacecoord = surfacecoord;
-  vs_out.colorcoord = colorcoord;
-}")
-
 (def tess-evaluation-shadow-planet
 "#version 410 core
 layout(quads, equal_spacing, ccw) in;
@@ -258,7 +241,7 @@ void main()
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 (def program-shadow-planet
-  (make-program :vertex [vertex-shadow-planet]
+  (make-program :vertex [vertex-planet]
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-shadow-planet shaders/shrink-shadow-index]
                 :geometry [geometry-planet]
