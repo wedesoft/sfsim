@@ -1,4 +1,6 @@
 # TODO
+* make modules out of core.clj
+* shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet
 * cockpit
   * top:

@@ -596,7 +596,7 @@
       {:width width :height height :data data})))
 
 (defmacro offscreen-render
-  "Macro to render to a texture and convert it to an image"
+  "Macro to render to a texture using depth and stencil buffer and convert it to an image"
   [width height & body]
   `(with-invisible-window
      (let [depth# (make-empty-depth-stencil-texture-2d :linear :clamp ~width ~height)
