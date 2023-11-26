@@ -55,7 +55,7 @@ out TES_OUT
   vec3 point;
 } tes_out;
 
-vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
+vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 
 // Use surface pointcloud to determine coordinates of tessellated points.
 void main()
@@ -69,7 +69,7 @@ void main()
   vec3 vector = texture(surface, surfacecoord).xyz;
   tes_out.point = tile_center + vector;
   vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
-  gl_Position = grow_shadow_index(transformed_point, shadow_size, shadow_size);
+  gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
 }" )
 
 (def fragment-shadow-planet
@@ -239,7 +239,7 @@ void main()
 (def program-shadow-planet
   (make-program :vertex [vertex-planet]
                 :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-shadow-planet shaders/grow-shadow-index]
+                :tess-evaluation [tess-evaluation-shadow-planet shaders/shrink-shadow-index]
                 :geometry [geometry-planet]
                 :fragment [fragment-shadow-planet]))
 
