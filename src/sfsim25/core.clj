@@ -188,6 +188,7 @@ void main()
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
+; Program to render atmosphere with cloud overlay (last rendering step)
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere shaders/convert-1d-index shaders/ray-sphere
@@ -201,6 +202,7 @@ void main()
                            shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
                            ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer]))
 
+; Program to render cascade of deep opacity maps
 (def program-opacity
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) cloud-density shaders/remap
@@ -217,6 +219,7 @@ void main()
 (def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
 (def opacity-vao (make-vertex-array-object program-opacity opacity-indices opacity-vertices ["point" 2]))
 
+; Program to render planet with cloud overlay (before rendering atmosphere)
 (def program-planet
   (make-program :vertex [vertex-planet]
                 :tess-control [tess-control-planet]
@@ -236,6 +239,8 @@ void main()
                            (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
+
+; Program to render shadow map of planet
 (def program-shadow-planet
   (make-program :vertex [vertex-planet]
                 :tess-control [tess-control-planet]
@@ -243,6 +248,7 @@ void main()
                 :geometry [geometry-planet]
                 :fragment [fragment-shadow-planet]))
 
+; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def program-cloud-planet
   (make-program :vertex [vertex-planet]
                 :tess-control [tess-control-planet]
@@ -267,6 +273,7 @@ void main()
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
+; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere-clouds cloud-atmosphere shaders/ray-sphere shaders/ray-shell
@@ -642,7 +649,7 @@ void main()
                    clouds     (texture-render-color-depth
                                 w2 h2 true
                                 (clear (vec3 0 0 0) 0)
-                                ; Render clouds under the horizon
+                                ; Render clouds in front of planet
                                 (use-program program-cloud-planet)
                                 (uniform-float program-cloud-planet "cloud_step" @step)
                                 (uniform-float program-cloud-planet "cloud_multiplier" cloud-multiplier)
