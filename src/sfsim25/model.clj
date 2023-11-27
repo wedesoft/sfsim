@@ -71,9 +71,9 @@
 
 (defn- decode-color
   "Get RGB color of material"
-  [material _]
+  [material property]
   (let [color (AIColor4D/create)]
-    (Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_DIFFUSE Assimp/aiTextureType_NONE 0 color)
+    (Assimp/aiGetMaterialColor material property Assimp/aiTextureType_NONE 0 color)
     (vec3 (.r color) (.g color) (.b color))))
 
 (defn- decode-texture-index
