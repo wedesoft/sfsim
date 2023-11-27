@@ -17,9 +17,8 @@
                                     vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
-                                    cloud-profile cloud-transfer linear-sampling opacity-cascade
-                                    opacity-cascade-lookup opacity-fragment opacity-lookup opacity-vertex
-                                    sample-cloud sphere-noise cloud-overlay overall-shadow)]
+                                    cloud-profile cloud-transfer linear-sampling opacity-cascade opacity-cascade-lookup
+                                    opacity-lookup sample-cloud sphere-noise cloud-overlay overall-shadow)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
@@ -128,7 +127,7 @@ void main()
 (def cloud-scale 100000)
 (def series (take 4 (iterate #(* % 0.7) 1.0)))
 (def sum-series (apply + series))
-(def octaves (mapv #(/ % sum-series) series))
+(def cloud-octaves (mapv #(/ % sum-series) series))
 (def perlin-series (take 4 (iterate #(* % 0.7) 1.0)))
 (def perlin-sum-series (apply + perlin-series))
 (def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
@@ -204,7 +203,7 @@ void main()
                            ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer]))
 
 ; Program to render cascade of deep opacity maps
-(def program-opacity (opacity/make-opacity-renderer num-opacity-layers octaves perlin-octaves))
+(def program-opacity (opacity/make-opacity-renderer num-opacity-layers cloud-octaves perlin-octaves))
 
 (def opacity-indices [0 1 3 2])
 (def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
@@ -249,7 +248,7 @@ void main()
                            shaders/clip-shell-intersections sample-cloud linear-sampling bluenoise/sampling-offset
                            phase-function cloud-density cloud-base cloud-transfer cloud-cover cloud-noise
                            shaders/interpolate-float-cubemap shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-profile
                            (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps "average_opacity")
@@ -271,7 +270,7 @@ void main()
                            sample-cloud linear-sampling bluenoise/sampling-offset phase-function cloud-density cloud-base
                            cloud-transfer cloud-cover cloud-noise shaders/interpolate-float-cubemap
                            shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
                            cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")

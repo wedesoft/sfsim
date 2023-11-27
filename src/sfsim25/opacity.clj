@@ -8,11 +8,11 @@
 
 (defn make-opacity-renderer
   "Initialise an opacity program"
-  [num-opacity-layers octaves perlin-octaves]
+  [num-opacity-layers cloud-octaves perlin-octaves]
   (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                 :fragment [(opacity-fragment num-opacity-layers) cloud-density shaders/remap
                            cloud-base cloud-cover cloud-noise
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
+                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
                            (shaders/lookup-3d-lod "lookup_3d" "worley")
                            (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
                            (sphere-noise "perlin_octaves")
