@@ -136,6 +136,7 @@ void main()
 (def step (atom 300.0))
 (def worley-size 64)
 (def shadow-size 512)
+(def cover-size 512)
 (def noise-size 64)
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
@@ -203,7 +204,10 @@ void main()
                            ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer]))
 
 ; Program to render cascade of deep opacity maps
-(def opacity-renderer (opacity/make-opacity-renderer num-opacity-layers cloud-octaves perlin-octaves))
+(def opacity-renderer
+  (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
+                                 :cloud-octaves cloud-octaves
+                                 :perlin-octaves perlin-octaves))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def program-planet
@@ -331,7 +335,7 @@ void main()
 (uniform-sampler (:program opacity-renderer) "perlin" 1)
 (uniform-sampler (:program opacity-renderer) "bluenoise" 2)
 (uniform-sampler (:program opacity-renderer) "cover" 3)
-(uniform-int (:program opacity-renderer) "cover_size" 512)
+(uniform-int (:program opacity-renderer) "cover_size" cover-size)
 (uniform-int (:program opacity-renderer) "shadow_size" shadow-size)
 (uniform-int (:program opacity-renderer) "noise_size" noise-size)
 (uniform-float (:program opacity-renderer) "radius" radius)

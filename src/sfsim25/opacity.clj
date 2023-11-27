@@ -8,7 +8,7 @@
 
 (defn make-opacity-renderer
   "Initialise an opacity program"
-  [num-opacity-layers cloud-octaves perlin-octaves]
+  [& {:keys [num-opacity-layers cloud-octaves perlin-octaves]}]
   (let [program
         (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                       :fragment [(opacity-fragment num-opacity-layers) cloud-density shaders/remap
