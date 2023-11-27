@@ -1,7 +1,8 @@
 # TODO
 * make modules out of core.clj
+* integration-test modules
 * shadow and opacity map with different resolution for spaceship
-* render cockpit and stencil/mask, then render planet
+* render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
 * cockpit
   * top:
     warnings (status display)

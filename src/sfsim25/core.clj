@@ -25,7 +25,8 @@
                                     transformation-matrix)]
             [sfsim25.quaternion :as q]
             [sfsim25.util :refer (slurp-floats sqr)]
-            [sfsim25.shaders :as shaders])
+            [sfsim25.shaders :as shaders]
+            [sfsim25.opacity :as opacity])
   (:import [org.lwjgl.opengl GL11]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
   (:gen-class))
@@ -203,17 +204,7 @@ void main()
                            ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer]))
 
 ; Program to render cascade of deep opacity maps
-(def program-opacity
-  (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                :fragment [(opacity-fragment num-opacity-layers) cloud-density shaders/remap
-                           cloud-base cloud-cover cloud-noise
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley")
-                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (sphere-noise "perlin_octaves")
-                           (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile shaders/convert-1d-index
-                           shaders/ray-shell shaders/ray-sphere bluenoise/sampling-offset linear-sampling
-                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index]))
+(def program-opacity (opacity/make-opacity-renderer num-opacity-layers octaves perlin-octaves))
 
 (def opacity-indices [0 1 3 2])
 (def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
