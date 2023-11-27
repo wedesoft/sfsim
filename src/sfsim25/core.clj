@@ -205,10 +205,6 @@ void main()
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer (opacity/make-opacity-renderer num-opacity-layers cloud-octaves perlin-octaves))
 
-(def opacity-indices [0 1 3 2])
-(def opacity-vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0])
-(def opacity-vao (make-vertex-array-object (:program opacity-renderer) opacity-indices opacity-vertices ["point" 2]))
-
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def program-planet
   (make-program :vertex [vertex-planet]
@@ -630,7 +626,7 @@ void main()
                                                (uniform-float (:program opacity-renderer) "scatter_amount" scatter-am)
                                                (uniform-float (:program opacity-renderer) "opacity_step" opac-step)
                                                (uniform-float (:program opacity-renderer) "cloud_max_step" (* 0.5 opac-step))
-                                               (render-quads opacity-vao))
+                                               (render-quads (:vao opacity-renderer)))
                    shadows    (shadow-cascade shadow-size matrix-cas program-shadow-planet
                                               (fn [transform]
                                                   (render-tree program-shadow-planet @tree transform [:surf-tex])))
@@ -747,7 +743,6 @@ void main()
   (destroy-texture B)
   (destroy-texture W)
   (destroy-vertex-array-object cube-vao)
-  (destroy-vertex-array-object opacity-vao)
   (destroy-program program-cube)
   (destroy-program program-cloud-atmosphere)
   (destroy-program program-cloud-planet)
