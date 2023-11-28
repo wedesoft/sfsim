@@ -14,7 +14,7 @@ Requires OpenGL 4.5.
 
 # Installation
 
-* Only tested on Debian 12 and Windows 11
+* Tested on Debian 12 and Windows 11
 * Install Java: `sudo apt-get install openjdk-17-jre`
 * [Install Clojure 1.11](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
