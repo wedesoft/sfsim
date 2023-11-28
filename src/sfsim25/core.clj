@@ -178,16 +178,16 @@ void main()
 (def cloud-cover-tex (make-float-cubemap :linear :clamp cover))
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def T (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
+(def transmittance-tex (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def S (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
+(def scatter-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
 
 (def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def M (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data mie-data}))
+(def mie-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data mie-data}))
 
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def E (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
+(def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def program-atmosphere
@@ -654,7 +654,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures nil T S M worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex (concat shadows opacities))
+                                (apply use-textures nil transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex (concat shadows opacities))
                                 (render-tree program-cloud-planet @tree (inverse extrinsics) [:surf-tex])
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
@@ -676,7 +676,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-cloud-atmosphere (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-cloud-atmosphere (str "depth" idx) (:depth item)))
-                                (apply use-textures T S M worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex (concat shadows opacities))
+                                (apply use-textures transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex (concat shadows opacities))
                                 (render-quads vao))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0)
@@ -701,7 +701,7 @@ void main()
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
                                        (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
                                        (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures nil nil nil nil nil T S M E clouds (concat shadows opacities))
+                                (apply use-textures nil nil nil nil nil transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds (concat shadows opacities))
                                 (render-tree program-planet @tree (inverse extrinsics)
                                              [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
@@ -719,7 +719,7 @@ void main()
                                 (uniform-int program-atmosphere "window_width" (aget w 0))
                                 (uniform-int program-atmosphere "window_height" (aget h 0))
                                 (uniform-vector3 program-atmosphere "light_direction" light-dir)
-                                (apply use-textures T S M E clouds opacities)
+                                (apply use-textures transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds opacities)
                                 (render-quads vao))
                (destroy-texture clouds)
                (doseq [layer opacities]
@@ -735,10 +735,10 @@ void main()
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
-  (destroy-texture E)
-  (destroy-texture M)
-  (destroy-texture S)
-  (destroy-texture T)
+  (destroy-texture surface-radiance-tex)
+  (destroy-texture mie-tex)
+  (destroy-texture scatter-tex)
+  (destroy-texture transmittance-tex)
   (destroy-texture cloud-cover-tex)
   (destroy-texture bluenoise-tex)
   (destroy-texture perlin-worley-tex)
