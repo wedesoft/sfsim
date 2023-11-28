@@ -1,6 +1,7 @@
 (ns sfsim25.opacity
     "Rendering of deep opacity maps"
-    (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object)]
+    (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
+                                      use-program uniform-sampler uniform-int uniform-float)]
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment cloud-density cloud-base cloud-cover cloud-noise
                                       cloud-profile linear-sampling sphere-noise)]
               [sfsim25.shaders :as shaders]
@@ -8,7 +9,8 @@
 
 (defn make-opacity-renderer
   "Initialise an opacity program"
-  [& {:keys [num-opacity-layers cloud-octaves perlin-octaves]}]
+  [& {:keys [num-opacity-layers cloud-octaves perlin-octaves cover-size shadow-size noise-size radius
+             cloud-bottom cloud-top detail-scale cloud-scale]}]
   (let [program
         (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                       :fragment [(opacity-fragment num-opacity-layers) cloud-density shaders/remap
@@ -23,6 +25,19 @@
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao              (make-vertex-array-object program indices vertices ["point" 2])]
+    (use-program program)
+    (uniform-sampler program "worley" 0)
+    (uniform-sampler program "perlin" 1)
+    (uniform-sampler program "bluenoise" 2)
+    (uniform-sampler program "cover" 3)
+    (uniform-int program "cover_size" cover-size)
+    (uniform-int program "shadow_size" shadow-size)
+    (uniform-int program "noise_size" noise-size)
+    (uniform-float program "radius" radius)
+    (uniform-float program "cloud_bottom" cloud-bottom)
+    (uniform-float program "cloud_top" cloud-top)
+    (uniform-float program "detail_scale" detail-scale)
+    (uniform-float program "cloud_scale" cloud-scale)
     {:program program :vao vao}))
 
 (defn destroy
