@@ -215,7 +215,11 @@ void main()
                                  :cloud-bottom cloud-bottom
                                  :cloud-top cloud-top
                                  :detail-scale detail-scale
-                                 :cloud-scale cloud-scale))
+                                 :cloud-scale cloud-scale
+                                 :worley-tex worley-tex
+                                 :perlin-worley-tex perlin-worley-tex
+                                 :bluenoise-tex bluenoise-tex
+                                 :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def program-planet
@@ -337,9 +341,6 @@ void main()
                 :fragment [fragment-cube]))
 
 (def cube-vao (make-vertex-array-object program-cube cube-indices cube-vertices ["point" 3]))
-
-(use-program (:program opacity-renderer))
-(use-textures worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex)
 
 (use-program program-shadow-planet)
 (uniform-sampler program-shadow-planet "surface" 0)
