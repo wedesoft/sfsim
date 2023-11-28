@@ -1,5 +1,53 @@
 # TODO
-* mechanical rigging: https://www.youtube.com/watch?v=J1He21vDIfQ
+* make modules out of core.clj
+* integration-test modules
+* shadow and opacity map with different resolution for spaceship
+* render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
+* cockpit
+  * top:
+    warnings (status display)
+    autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
+    autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
+    rcs mode (off, rotation, translation)
+    aircraft flight control surfaces: off/pitch/on
+  * main:
+    cabin light, panel light
+    2 mfds
+    apu on/off
+    airlock doors (three state), chamber pressure, bay door (open, close, stop)
+    light switch: nav, beacon, strobe
+    engine, thrust (main/hover), rcs
+    undock
+    fuel display (main, rcs, apu), oxygen display
+    hover doors switch + status
+    gear up/down switch + status
+    spoilers
+    radiator deploy + status
+    coolant temperature
+    no flaps
+  * mfd:
+    yaw, bank, pitch acceleration and velocity indicators
+    horizon hsi, height, heading, variometer, speed, ils height, nominal speed
+    vor (use heading)
+    nav frequencies, dock, vtol freq
+    dock (angles, offset to path, distance, approach speed, x/y speed)
+    camera
+    map of earth/moon
+    hull temperature
+    align orbit plane
+    orbit
+    transfer: encounter, translunar orbit, insertion
+    ascent profile
+    reentry profile
+  * engine thrust lever (main, hover)
+    hover door
+  * bottom
+    flightstick (yaw/pitch/roll), trim wheel
+    fuel lines open/close (lox, main), external pressure online
+    life support
+* https://blog.kuula.co/virtual-tour-space-shuttle
+* cockpit and scene rendering looking downward so that horizon is in upper half of screen
+* make model with rigged gear
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures
 * make spaceplane with Blender
@@ -113,7 +161,6 @@
 * music player, mp3 player
 * video communication with screen in 3D cockpit
 * autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
-* on board displays, cameras, MFDs (horizon with height/vario and scrolling scales)
 * no need to adjust MFDs during critical parts of the mission
 * https://github.com/HappyEnte/DreamChaser
 * HDR bloom (separable convolution)
@@ -126,8 +173,6 @@
 * multiple rigid or flexible objects
 * thrusters
 * proper lift/drag ratio for high Reynolds numbers
-* draw points, lines, triangle strips, mfd for reentry and orbital mechanics
-* detailed onboard systems (e.g. airlock, life support, auxiliary power units)
 * threads for rendering, simulation, and loading of data
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores

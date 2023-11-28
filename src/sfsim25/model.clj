@@ -3,9 +3,8 @@
     (:require [clojure.math :refer (floor)]
               [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
               [fastmath.vector :refer (vec3 mult add)]
-              [sfsim25.render :refer (use-program uniform-matrix4 uniform-vector3 make-vertex-array-object
-                                      destroy-vertex-array-object render-triangles make-rgba-texture destroy-texture
-                                      use-textures uniform-sampler)]
+              [sfsim25.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles make-rgba-texture
+                                      destroy-texture)]
               [sfsim25.matrix :refer (transformation-matrix quaternion->matrix)]
               [sfsim25.quaternion :refer (->Quaternion) :as q])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
@@ -74,7 +73,7 @@
   "Get RGB color of material"
   [material property]
   (let [color (AIColor4D/create)]
-    (Assimp/aiGetMaterialColor material Assimp/AI_MATKEY_COLOR_DIFFUSE Assimp/aiTextureType_NONE 0 color)
+    (Assimp/aiGetMaterialColor material property Assimp/aiTextureType_NONE 0 color)
     (vec3 (.r color) (.g color) (.b color))))
 
 (defn- decode-texture-index

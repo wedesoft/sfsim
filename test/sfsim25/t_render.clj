@@ -957,4 +957,31 @@ void main()
                  (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
           (destroy-texture cubemap))))
 
+(fact "Render two quads with depth testing"
+  (offscreen-render 160 120
+    (let [indices1  [0 1 3 2]
+          vertices1 [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0]
+          indices2  [0 1 3 2]
+          vertices2 [-0.5 -0.5 0.3 0.0 1.0, 1.0 -0.5 0.3 0.0 1.0, -0.5 1.0 0.3 0.0 1.0, 1.0 1.0 0.3 0.0 1.0]
+          program   (make-program :vertex [vertex-color] :fragment [fragment-color])
+          vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
+          vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
+      (with-stencils
+        (let [stb (GL30/glGenFramebuffers)]
+          (clear (vec3 0.0 0.0 0.0) 1.0 0)
+          (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
+          (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+          (GL11/glStencilMask 0xff)
+          (use-program program)
+          (render-quads vao1)
+          (clear)
+          (GL11/glStencilFunc GL11/GL_EQUAL 0 0xff)
+          (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+          (GL11/glStencilMask 0)
+          (render-quads vao2)
+          (destroy-vertex-array-object vao2)
+          (destroy-vertex-array-object vao1)
+          (destroy-program program)
+          (GL30/glDeleteFramebuffers stb))))) => (is-image "test/sfsim25/fixtures/render/stencil.png" 0.0))
+
 (GLFW/glfwTerminate)

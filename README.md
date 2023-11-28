@@ -4,7 +4,9 @@ This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
 
-[![Rendering of volumetric clouds](https://i1.ytimg.com/vi/XTRftiO9tEQ/hqdefault.jpg)](https://www.youtube.com/watch?v=XTRftiO9tEQ)
+[![Planet rendering with volumetric clouds and night time textures](https://i.ytimg.com/vi/2v3VOJMnPBI/hqdefault.jpg)](https://www.youtube.com/watch?v=2v3VOJMnPBI)
+
+[![Rendering of volumetric clouds](https://i.ytimg.com/vi/XTRftiO9tEQ/hqdefault.jpg)](https://www.youtube.com/watch?v=XTRftiO9tEQ)
 
 [![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
 
@@ -12,8 +14,8 @@ Requires OpenGL 4.5.
 
 # Installation
 
-* Only tested on Debian 12 and Windows 11
-* Install Java, LWJGL2, and ImageJ: `sudo apt-get install openjdk-17-jre liblwjgl-java libij-java`
+* Tested on Debian 12 and Windows 11
+* Install Java: `sudo apt-get install openjdk-17-jre`
 * [Install Clojure 1.11](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
@@ -41,6 +43,7 @@ Requires OpenGL 4.5.
 # Run
 
 * Run tests: `clj -M:test`
+* Run test specifc module (rendering for example): `clj -M:test sfsim25.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program displaying black window: `clj -M -m sfsim25.core`
 

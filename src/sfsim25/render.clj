@@ -19,6 +19,15 @@
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
+(defmacro with-stencils
+  "Enable stencil buffer for the specified body of code"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_STENCIL_TEST)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_STENCIL_TEST)
+       result#)))
+
 (defmacro with-invisible-window
   "Macro to create temporary invisible window to provide context"
   [& body]
@@ -67,7 +76,12 @@
   ([color alpha]
    (GL11/glClearColor (color 0) (color 1) (color 2) alpha)
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
-   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))))
+   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
+  ([color alpha stencil]
+   (GL11/glClearColor (color 0) (color 1) (color 2) alpha)
+   (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
+   (GL11/glClearStencil stencil)
+   (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT GL11/GL_STENCIL_BUFFER_BIT))))
 
 (defn make-shader
   "Compile a GLSL shader"
@@ -369,9 +383,10 @@
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
   [interpolation boundary image]
-  (create-depth-texture interpolation boundary (:width image) (:height image)
-                        (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F (:width image) (:height image) 0
-                                           GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (make-float-buffer (:data image)))))
+  (assoc (create-depth-texture interpolation boundary (:width image) (:height image)
+                               (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F (:width image) (:height image) 0
+                                                  GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (make-float-buffer (:data image))))
+         :stencil false))
 
 (defn make-empty-texture-2d
   "Create 2D texture with specified format and allocate storage"
@@ -387,8 +402,16 @@
 (defn make-empty-depth-texture-2d
   "Create 2D depth texture and allocate storage"
   [interpolation boundary width height]
-  (create-depth-texture interpolation boundary width height
-                        (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F width height)))
+  (assoc (create-depth-texture interpolation boundary width height
+                               (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F width height))
+         :stencil false))
+
+(defn make-empty-depth-stencil-texture-2d
+  "Create 2D depth texture and allocate storage"
+  [interpolation boundary width height]
+  (assoc (create-depth-texture interpolation boundary width height
+                               (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH32F_STENCIL8 width height))
+         :stencil true))
 
 (defn make-float-texture-2d
   "Load floating-point 2D data into red channel of an OpenGL texture"
@@ -467,7 +490,8 @@
      (try
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
        (when ~depth-texture
-         (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER GL30/GL_DEPTH_ATTACHMENT (:texture ~depth-texture) 0))
+         (let [attachment-type# (if (:stencil ~depth-texture) GL30/GL_DEPTH_STENCIL_ATTACHMENT GL30/GL_DEPTH_ATTACHMENT)]
+           (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:texture ~depth-texture) 0)))
        (setup-color-attachments ~color-textures)
        (setup-rendering ~width ~height ~culling)
        ~@body
@@ -572,10 +596,10 @@
       {:width width :height height :data data})))
 
 (defmacro offscreen-render
-  "Macro to render to a texture and convert it to an image"
+  "Macro to render to a texture using depth and stencil buffer and convert it to an image"
   [width height & body]
   `(with-invisible-window
-     (let [depth# (make-empty-depth-texture-2d :linear :clamp ~width ~height)
+     (let [depth# (make-empty-depth-stencil-texture-2d :linear :clamp ~width ~height)
            tex#   (make-empty-texture-2d :linear :clamp GL11/GL_RGB8 ~width ~height)]
        (framebuffer-render ~width ~height :cullback depth# [tex#] ~@body)
        (let [img# (texture->image tex#)]
