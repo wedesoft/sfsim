@@ -675,11 +675,11 @@ void main()
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0)
                                 ; Render cube
-                                (use-program program-cube)
-                                (uniform-float program-cube "shift_y" @shift-y)
-                                (uniform-float program-cube "shift_z" @shift-z)
-                                (uniform-matrix4 program-cube "projection" projection)
-                                (render-quads cube-vao)
+                                ;(use-program program-cube)
+                                ;(uniform-float program-cube "shift_y" @shift-y)
+                                ;(uniform-float program-cube "shift_z" @shift-z)
+                                ;(uniform-matrix4 program-cube "projection" projection)
+                                ;(render-quads cube-vao)
                                 ; Render planet with cloud overlay
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
@@ -716,8 +716,7 @@ void main()
                                 (apply use-textures transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds opacities)
                                 (render-quads vao))
                (destroy-texture clouds)
-               (doseq [layer opacities]
-                      (destroy-texture layer))
+               (opacity/destroy-cascade opacities)
                (doseq [shadow shadows]
                       (destroy-texture shadow))
                (destroy-vertex-array-object vao))

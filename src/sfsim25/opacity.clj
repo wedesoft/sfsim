@@ -2,7 +2,7 @@
     "Rendering of deep opacity maps for cloud shadows"
     (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
-                                      render-quads)]
+                                      render-quads destroy-texture)]
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment cloud-density cloud-base cloud-cover cloud-noise
                                       cloud-profile linear-sampling sphere-noise opacity-cascade)]
               [sfsim25.shaders :as shaders]
@@ -62,6 +62,12 @@
                    (uniform-float program "opacity_step" opacity-step)
                    (uniform-float program "cloud_max_step" (* 0.5 opacity-step))
                    (render-quads vao)))
+
+(defn destroy-cascade
+  "Destroy cascade of opacity maps"
+  [opacities]
+  (doseq [layer opacities]
+         (destroy-texture layer)))
 
 (defn destroy
   "Delete opacity renderer objects"
