@@ -122,7 +122,7 @@ void main()
 (def cloud-top 5000)
 (def cloud-multiplier 10.0)
 (def cover-multiplier 26.0)
-(def cap (atom 0.005))
+(def cap 0.005)
 (def detail-scale 4000)
 (def cloud-scale 100000)
 (def series (take 4 (iterate #(* % 0.7) 1.0)))
@@ -174,7 +174,7 @@ void main()
 (def noise-data (slurp-floats "data/bluenoise.raw"))
 (def bluenoise-tex (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
 
-(def cover (map (fn [i] {:width 512 :height 512 :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
+(def cover (map (fn [i] {:width cover-size :height cover-size :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
 (def cloud-cover-tex (make-float-cubemap :linear :clamp cover))
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
@@ -211,9 +211,13 @@ void main()
                                  :cover-size cover-size
                                  :shadow-size shadow-size
                                  :noise-size noise-size
+                                 :worley-size worley-size
                                  :radius radius
                                  :cloud-bottom cloud-bottom
                                  :cloud-top cloud-top
+                                 :cloud-multiplier cloud-multiplier
+                                 :cover-multiplier cover-multiplier
+                                 :cap cap
                                  :detail-scale detail-scale
                                  :cloud-scale cloud-scale
                                  :worley-tex worley-tex
@@ -584,7 +588,6 @@ void main()
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
                  ta (if (@keystates GLFW/GLFW_KEY_E) 0.0001 (if (@keystates GLFW/GLFW_KEY_D) -0.0001 0))
                  tm (if (@keystates GLFW/GLFW_KEY_R) 0.001 (if (@keystates GLFW/GLFW_KEY_F) -0.001 0))
-                 tc (if (@keystates GLFW/GLFW_KEY_T) 0.00001 (if (@keystates GLFW/GLFW_KEY_G) -0.00001 0))
                  ts (if (@keystates GLFW/GLFW_KEY_Y) 0.05 (if (@keystates GLFW/GLFW_KEY_H) -0.05 0))
                  tg (if (@keystates GLFW/GLFW_KEY_U) 0.001 (if (@keystates GLFW/GLFW_KEY_J) -0.001 0))]
              (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
@@ -597,7 +600,6 @@ void main()
              (swap! anisotropic + (* dt ta))
              (swap! shift-y + (* 0.5 dt tm))
              (swap! shift-z + (* 0.5 dt tg))
-             (swap! cap + (* dt tc))
              (swap! step + (* dt ts))
              (GL11/glFinish)
              (let [norm-pos   (mag @position)
@@ -618,16 +620,7 @@ void main()
                    cos-light  (/ (dot light-dir @position) (mag @position))
                    sin-light  (sqrt (- 1 (sqr cos-light)))
                    opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
-                   opacities  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale worley-size) (:program opacity-renderer)
-                                               (uniform-vector3 (:program opacity-renderer) "light_direction" light-dir)
-                                               (uniform-float (:program opacity-renderer) "cloud_multiplier" cloud-multiplier)
-                                               (uniform-float (:program opacity-renderer) "cover_multiplier" cover-multiplier)
-                                               (uniform-float (:program opacity-renderer) "cap" @cap)
-                                               (uniform-float (:program opacity-renderer) "cloud_threshold" @threshold)
-                                               (uniform-float (:program opacity-renderer) "scatter_amount" scatter-am)
-                                               (uniform-float (:program opacity-renderer) "opacity_step" opac-step)
-                                               (uniform-float (:program opacity-renderer) "cloud_max_step" (* 0.5 opac-step))
-                                               (render-quads (:vao opacity-renderer)))
+                   opacities  (opacity/render-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am opac-step)
                    shadows    (shadow-cascade shadow-size matrix-cas program-shadow-planet
                                               (fn [transform]
                                                   (render-tree program-shadow-planet @tree transform [:surf-tex])))
@@ -641,7 +634,7 @@ void main()
                                 (uniform-float program-cloud-planet "cloud_step" @step)
                                 (uniform-float program-cloud-planet "cloud_multiplier" cloud-multiplier)
                                 (uniform-float program-cloud-planet "cover_multiplier" cover-multiplier)
-                                (uniform-float program-cloud-planet "cap" @cap)
+                                (uniform-float program-cloud-planet "cap" cap)
                                 (uniform-float program-cloud-planet "cloud_threshold" @threshold)
                                 (uniform-float program-cloud-planet "lod_offset" lod-offset)
                                 (uniform-float program-cloud-planet "anisotropic" @anisotropic)
@@ -662,7 +655,7 @@ void main()
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
                                 (uniform-float program-cloud-atmosphere "cloud_multiplier" cloud-multiplier)
                                 (uniform-float program-cloud-atmosphere "cover_multiplier" cover-multiplier)
-                                (uniform-float program-cloud-atmosphere "cap" @cap)
+                                (uniform-float program-cloud-atmosphere "cap" cap)
                                 (uniform-float program-cloud-atmosphere "cloud_threshold" @threshold)
                                 (uniform-float program-cloud-atmosphere "lod_offset" lod-offset)
                                 (uniform-float program-cloud-atmosphere "anisotropic" @anisotropic)
@@ -731,8 +724,8 @@ void main()
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, dy (r/f) %.1f, dz (u/j) %.1f, cap (t/g) %.3f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @anisotropic @shift-y @shift-z @cap @step (* dt 0.001)))
+               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, dy (r/f) %.1f, dz (u/j) %.1f, step (y/h) %.0f, dt %.3f"
+                              @threshold @opacity-step @anisotropic @shift-y @shift-z @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
