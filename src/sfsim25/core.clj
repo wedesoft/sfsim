@@ -192,7 +192,7 @@ void main()
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere shaders/convert-1d-index shaders/ray-sphere
+                :fragment [fragment-atmosphere shaders/ray-sphere
                            (opacity-cascade-lookup num-steps "average_opacity")
                            (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
@@ -238,7 +238,7 @@ void main()
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
                            shaders/surface-radiance-forward transmittance-outer surface-radiance-function
-                           shaders/convert-1d-index (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
+                           (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
                            (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            shaders/convert-3d-index overall-shadow shaders/shadow-lookup shaders/convert-shadow-index

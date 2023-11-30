@@ -15,8 +15,7 @@
   (let [program
         (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                       :fragment [(opacity-fragment num-opacity-layers) (cloud-density-shaders cloud-octaves perlin-octaves)
-                                 shaders/convert-1d-index shaders/ray-shell shaders/ray-sphere bluenoise/sampling-offset
-                                 linear-sampling])
+                                 shaders/ray-shell shaders/ray-sphere bluenoise/sampling-offset linear-sampling])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao              (make-vertex-array-object program indices vertices ["point" 2])]
