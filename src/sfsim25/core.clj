@@ -305,47 +305,6 @@ void main()
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
 
-(def vertex-cube
-"#version 410 core
-uniform float shift_y;
-uniform float shift_z;
-uniform mat4 projection;
-in vec3 point;
-void main()
-{
-  gl_Position = projection * (vec4(point, 1) + vec4(0, shift_y, shift_z - 10, 0));
-}")
-
-(def fragment-cube
-"#version 410 core
-out vec3 fragColor;
-void main()
-{
-  fragColor = vec3(1, 1, 1);
-}")
-
-(def cube-indices [0 1 2 3
-                   1 5 6 2
-                   5 4 7 6
-                   4 0 3 7
-                   3 2 6 7
-                   4 5 1 0])
-
-(def cube-vertices [-0.5 -0.5  0.5
-                     0.5 -0.5  0.5
-                     0.5  0.5  0.5
-                    -0.5  0.5  0.5
-                    -0.5 -0.5 -0.5
-                     0.5 -0.5 -0.5
-                     0.5  0.5 -0.5
-                    -0.5  0.5 -0.5])
-
-(def program-cube
-  (make-program :vertex [vertex-cube]
-                :fragment [fragment-cube]))
-
-(def cube-vao (make-vertex-array-object program-cube cube-indices cube-vertices ["point" 3]))
-
 (use-program program-shadow-planet)
 (uniform-sampler program-shadow-planet "surface" 0)
 (uniform-int program-shadow-planet "high_detail" (dec tilesize))
@@ -560,9 +519,6 @@ void main()
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
 
-(def shift-y (atom 0.0))
-(def shift-z (atom 0.0))
-
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -587,9 +543,7 @@ void main()
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
                  ta (if (@keystates GLFW/GLFW_KEY_E) 0.0001 (if (@keystates GLFW/GLFW_KEY_D) -0.0001 0))
-                 tm (if (@keystates GLFW/GLFW_KEY_R) 0.001 (if (@keystates GLFW/GLFW_KEY_F) -0.001 0))
-                 ts (if (@keystates GLFW/GLFW_KEY_Y) 0.05 (if (@keystates GLFW/GLFW_KEY_H) -0.05 0))
-                 tg (if (@keystates GLFW/GLFW_KEY_U) 0.001 (if (@keystates GLFW/GLFW_KEY_J) -0.001 0))]
+                 ts (if (@keystates GLFW/GLFW_KEY_Y) 0.05 (if (@keystates GLFW/GLFW_KEY_H) -0.05 0))]
              (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
              (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
              (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
@@ -598,8 +552,6 @@ void main()
              (swap! threshold + (* dt tr))
              (swap! opacity-step + (* dt to))
              (swap! anisotropic + (* dt ta))
-             (swap! shift-y + (* 0.5 dt tm))
-             (swap! shift-z + (* 0.5 dt tg))
              (swap! step + (* dt ts))
              (GL11/glFinish)
              (let [norm-pos   (mag @position)
@@ -674,12 +626,6 @@ void main()
                                 (render-quads vao))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0)
-                                ; Render cube
-                                ;(use-program program-cube)
-                                ;(uniform-float program-cube "shift_y" @shift-y)
-                                ;(uniform-float program-cube "shift_z" @shift-z)
-                                ;(uniform-matrix4 program-cube "projection" projection)
-                                ;(render-quads cube-vao)
                                 ; Render planet with cloud overlay
                                 (use-program program-planet)
                                 (uniform-matrix4 program-planet "projection" projection)
@@ -723,8 +669,8 @@ void main()
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, dy (r/f) %.1f, dz (u/j) %.1f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @anisotropic @shift-y @shift-z @step (* dt 0.001)))
+               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, step (y/h) %.0f, dt %.3f"
+                              @threshold @opacity-step @anisotropic @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
@@ -736,8 +682,6 @@ void main()
   (destroy-texture bluenoise-tex)
   (destroy-texture perlin-worley-tex)
   (destroy-texture worley-tex)
-  (destroy-vertex-array-object cube-vao)
-  (destroy-program program-cube)
   (destroy-program program-cloud-atmosphere)
   (destroy-program program-cloud-planet)
   (destroy-program program-shadow-planet)
