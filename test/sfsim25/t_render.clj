@@ -47,6 +47,18 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
+(fact "Group shaders in lists"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [[vertex-passthrough]] :fragment [[fragment-blue]])
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
+
 (def vertex-color
 "#version 410 core
 in vec3 point;
