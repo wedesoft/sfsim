@@ -222,7 +222,6 @@ void main()
                                  :cloud-scale cloud-scale
                                  :worley-tex worley-tex
                                  :perlin-worley-tex perlin-worley-tex
-                                 :bluenoise-tex bluenoise-tex
                                  :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)

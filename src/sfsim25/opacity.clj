@@ -10,20 +10,19 @@
 (defn make-opacity-renderer
   "Initialise an opacity program"
   [& {:keys [num-opacity-layers cloud-octaves perlin-octaves cover-size shadow-size noise-size worley-size radius cloud-bottom
-             cloud-top detail-scale cloud-scale worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex cloud-multiplier
+             cloud-top detail-scale cloud-scale worley-tex perlin-worley-tex cloud-cover-tex cloud-multiplier
              cover-multiplier cap]}]
   (let [program
         (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                       :fragment [(opacity-fragment num-opacity-layers) (cloud-density-shaders cloud-octaves perlin-octaves)
-                                 shaders/ray-shell shaders/ray-sphere bluenoise/sampling-offset linear-sampling])
+                                 shaders/ray-shell shaders/ray-sphere linear-sampling])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao              (make-vertex-array-object program indices vertices ["point" 2])]
     (use-program program)
     (uniform-sampler program "worley" 0)
     (uniform-sampler program "perlin" 1)
-    (uniform-sampler program "bluenoise" 2)
-    (uniform-sampler program "cover" 3)
+    (uniform-sampler program "cover" 2)
     (uniform-int program "cover_size" cover-size)
     (uniform-int program "shadow_size" shadow-size)
     (uniform-int program "noise_size" noise-size)
@@ -35,7 +34,7 @@
     (uniform-float program "cloud_multiplier" cloud-multiplier)
     (uniform-float program "cover_multiplier" cover-multiplier)
     (uniform-float program "cap" cap)
-    (use-textures worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex)
+    (use-textures worley-tex perlin-worley-tex cloud-cover-tex)
     {:program program
      :vao vao
      :shadow-size shadow-size
