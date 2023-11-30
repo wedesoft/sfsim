@@ -3,8 +3,8 @@
     (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture)]
-              [sfsim25.clouds :refer (opacity-vertex opacity-fragment cloud-density cloud-base cloud-cover cloud-noise
-                                      cloud-profile linear-sampling sphere-noise opacity-cascade)]
+              [sfsim25.clouds :refer (opacity-vertex opacity-fragment cloud-base cloud-noise linear-sampling opacity-cascade
+                                      cloud-density-shaders)]
               [sfsim25.shaders :as shaders]
               [sfsim25.bluenoise :as bluenoise]))
 
@@ -15,15 +15,9 @@
              cover-multiplier cap]}]
   (let [program
         (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                      :fragment [(opacity-fragment num-opacity-layers) cloud-density shaders/remap
-                                 cloud-base cloud-cover cloud-noise
-                                 (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
-                                 (shaders/lookup-3d-lod "lookup_3d" "worley")
-                                 (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                                 (sphere-noise "perlin_octaves")
-                                 (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile shaders/convert-1d-index
-                                 shaders/ray-shell shaders/ray-sphere bluenoise/sampling-offset linear-sampling
-                                 shaders/interpolate-float-cubemap shaders/convert-cubemap-index])
+                      :fragment [(opacity-fragment num-opacity-layers) (cloud-density-shaders cloud-octaves perlin-octaves)
+                                 shaders/convert-1d-index shaders/ray-shell shaders/ray-sphere bluenoise/sampling-offset
+                                 linear-sampling])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao              (make-vertex-array-object program indices vertices ["point" 2])]

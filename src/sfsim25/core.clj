@@ -16,9 +16,9 @@
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
-            [sfsim25.clouds :refer (cloud-atmosphere cloud-base cloud-cover cloud-density cloud-noise cloud-planet
-                                    cloud-profile cloud-transfer linear-sampling opacity-cascade opacity-cascade-lookup
-                                    opacity-lookup sample-cloud sphere-noise cloud-overlay overall-shadow)]
+            [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet
+                                    cloud-transfer linear-sampling opacity-cascade opacity-cascade-lookup
+                                    opacity-lookup sample-cloud cloud-overlay overall-shadow)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
@@ -262,12 +262,8 @@ void main()
                 :geometry [geometry-planet]
                 :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
                            shaders/clip-shell-intersections sample-cloud linear-sampling bluenoise/sampling-offset
-                           phase-function cloud-density cloud-base cloud-transfer cloud-cover cloud-noise
-                           shaders/interpolate-float-cubemap shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
-                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap cloud-profile
-                           (shaders/lookup-3d "lookup_perlin" "perlin") (opacity-cascade-lookup num-steps "average_opacity")
+                           phase-function (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
+                           (opacity-cascade-lookup num-steps "average_opacity")
                            (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
                            opacity-lookup shaders/convert-2d-index transmittance-outer shaders/convert-3d-index
@@ -283,13 +279,8 @@ void main()
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere-clouds cloud-atmosphere shaders/ray-sphere shaders/ray-shell
-                           sample-cloud linear-sampling bluenoise/sampling-offset phase-function cloud-density cloud-base
-                           cloud-transfer cloud-cover cloud-noise shaders/interpolate-float-cubemap
-                           shaders/convert-cubemap-index (sphere-noise "perlin_octaves")
-                           (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
-                           (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-                           (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap
-                           cloud-profile (shaders/lookup-3d "lookup_perlin" "perlin")
+                           sample-cloud linear-sampling bluenoise/sampling-offset phase-function
+                           (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
                            (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
                            (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])

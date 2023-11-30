@@ -217,3 +217,11 @@
 (def overall-shadow
   "Multiply shadows to get overall shadow"
   (slurp "resources/shaders/clouds/overall-shadow.glsl"))
+
+(defn cloud-density-shaders
+  "List of cloud shaders to sample density values"
+  [cloud-octaves perlin-octaves]
+  [cloud-density cloud-base cloud-noise (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
+   (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap shaders/interpolate-float-cubemap shaders/convert-cubemap-index
+   cloud-cover (sphere-noise "perlin_octaves") (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
+   (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile])
