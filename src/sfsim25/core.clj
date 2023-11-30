@@ -17,7 +17,7 @@
                                     vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet
-                                    cloud-transfer linear-sampling opacity-cascade opacity-cascade-lookup
+                                    cloud-transfer linear-sampling opacity-cascade-lookup
                                     opacity-lookup sample-cloud cloud-overlay overall-shadow)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed

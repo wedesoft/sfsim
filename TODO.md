@@ -2,7 +2,7 @@
 * make modules out of core.clj
   * group cloud textures, sizes, and parameters
   * group atmospheric lookup tables and parameters
-  * group shaders in lists
+  * group shaders in lists (e.g. atmosphere)
 * integration-test modules
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
