@@ -16,9 +16,8 @@
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
-            [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet
-                                    cloud-transfer linear-sampling opacity-cascade-lookup
-                                    opacity-lookup sample-cloud cloud-overlay overall-shadow)]
+            [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet cloud-transfer linear-sampling
+                                    opacity-lookup-shaders sample-cloud cloud-overlay overall-shadow)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
@@ -193,10 +192,8 @@ void main()
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere shaders/ray-sphere
-                           (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
-                                                                [["sampler3D" "layers"] ["float" "depth"]])
-                           shaders/convert-2d-index transmittance-track phase-function cloud-overlay
+                           (opacity-lookup-shaders num-steps)
+                           transmittance-track phase-function cloud-overlay
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
@@ -237,10 +234,8 @@ void main()
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
                            shaders/surface-radiance-forward transmittance-outer surface-radiance-function
-                           (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
-                                                                [["sampler3D" "layers"] ["float" "depth"]])
-                           shaders/convert-3d-index overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
+                           (opacity-lookup-shaders num-steps)
+                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
                            (shaders/shadow-cascade-lookup num-steps "average_shadow")
                            (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
                                                                 [["sampler2DShadow" "shadow_map"]])]))
@@ -262,10 +257,8 @@ void main()
                 :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
                            shaders/clip-shell-intersections sample-cloud linear-sampling bluenoise/sampling-offset
                            phase-function (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
-                           (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
-                                                                [["sampler3D" "layers"] ["float" "depth"]])
-                           shaders/convert-2d-index transmittance-outer shaders/convert-3d-index
+                           (opacity-lookup-shaders num-steps)
+                           transmittance-outer shaders/convert-3d-index
                            shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
                            shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
@@ -280,11 +273,8 @@ void main()
                 :fragment [fragment-atmosphere-clouds cloud-atmosphere shaders/ray-sphere shaders/ray-shell
                            sample-cloud linear-sampling bluenoise/sampling-offset phase-function
                            (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
-                           (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-                           (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
-                                                                [["sampler3D" "layers"] ["float" "depth"]])
-                           shaders/convert-2d-index transmittance-outer
-                           shaders/convert-3d-index shaders/transmittance-forward
+                           (opacity-lookup-shaders num-steps)
+                           transmittance-outer shaders/transmittance-forward
                            transmittance-track shaders/height-to-index shaders/interpolate-2d
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
                            shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot

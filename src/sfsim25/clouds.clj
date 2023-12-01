@@ -225,3 +225,10 @@
    (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap shaders/interpolate-float-cubemap shaders/convert-cubemap-index
    cloud-cover (sphere-noise "perlin_octaves") (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
    (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile])
+
+(defn opacity-lookup-shaders
+  "List of opacity lookup shaders"
+  [num-steps]
+  [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
+   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
+   shaders/convert-2d-index shaders/convert-3d-index])
