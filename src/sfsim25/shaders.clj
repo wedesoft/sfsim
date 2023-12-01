@@ -178,3 +178,9 @@
 (def remap
   "Shader for mapping linear range to a new linear range"
   (slurp "resources/shaders/core/remap.glsl"))
+
+(defn shadow-lookup-shaders
+  "Shaders for performing lookups in the cascaded shadow map"
+  [num-steps]
+  [(shadow-cascade-lookup num-steps "average_shadow") shadow-lookup convert-shadow-index
+   (percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])])

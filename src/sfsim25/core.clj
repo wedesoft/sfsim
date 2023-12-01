@@ -234,11 +234,7 @@ void main()
                            ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
                            shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
                            shaders/surface-radiance-forward transmittance-outer surface-radiance-function
-                           (opacity-lookup-shaders num-steps)
-                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
-                           (shaders/shadow-cascade-lookup num-steps "average_shadow")
-                           (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
-                                                                [["sampler2DShadow" "shadow_map"]])]))
+                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow]))
 
 ; Program to render shadow map of planet
 (def program-shadow-planet
@@ -257,15 +253,12 @@ void main()
                 :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
                            shaders/clip-shell-intersections sample-cloud linear-sampling bluenoise/sampling-offset
                            phase-function (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
-                           (opacity-lookup-shaders num-steps)
+                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow
                            transmittance-outer shaders/convert-3d-index
                            shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
                            shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d overall-shadow shaders/shadow-lookup
-                           shaders/convert-shadow-index (shaders/shadow-cascade-lookup num-steps "average_shadow")
-                           (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
-                                                                [["sampler2DShadow" "shadow_map"]])]))
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def program-cloud-atmosphere
@@ -273,17 +266,13 @@ void main()
                 :fragment [fragment-atmosphere-clouds cloud-atmosphere shaders/ray-sphere shaders/ray-shell
                            sample-cloud linear-sampling bluenoise/sampling-offset phase-function
                            (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
-                           (opacity-lookup-shaders num-steps)
+                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow
                            transmittance-outer shaders/transmittance-forward
                            transmittance-track shaders/height-to-index shaders/interpolate-2d
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
                            shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
                            shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d
-                           overall-shadow shaders/shadow-lookup shaders/convert-shadow-index
-                           (shaders/shadow-cascade-lookup num-steps "average_shadow")
-                           (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup"
-                                                                [["sampler2DShadow" "shadow_map"]])]))
+                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
 
 (use-program program-shadow-planet)
 (uniform-sampler program-shadow-planet "surface" 0)
