@@ -193,10 +193,10 @@ void main()
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere shaders/ray-sphere
-                           (opacity-cascade-lookup num-steps "average_opacity")
+                           (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
                            (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
-                           opacity-lookup shaders/convert-2d-index transmittance-track phase-function cloud-overlay
+                           shaders/convert-2d-index transmittance-track phase-function cloud-overlay
                            shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
                            shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
                            ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
@@ -262,10 +262,10 @@ void main()
                 :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
                            shaders/clip-shell-intersections sample-cloud linear-sampling bluenoise/sampling-offset
                            phase-function (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
-                           (opacity-cascade-lookup num-steps "average_opacity")
+                           (opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
                            (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup"
                                                                 [["sampler3D" "layers"] ["float" "depth"]])
-                           opacity-lookup shaders/convert-2d-index transmittance-outer shaders/convert-3d-index
+                           shaders/convert-2d-index transmittance-outer shaders/convert-3d-index
                            shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
                            shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
