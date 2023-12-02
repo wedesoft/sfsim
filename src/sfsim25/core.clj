@@ -10,10 +10,11 @@
                                     uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
                                     use-textures shadow-cascade)]
             [sfsim25.atmosphere :refer (attenuation-track phase phase-function ray-scatter-track transmittance-outer
-                                        transmittance-track vertex-atmosphere fragment-atmosphere atmosphere-shaders)]
+                                        transmittance-track vertex-atmosphere fragment-atmosphere atmosphere-outer-shaders
+                                        atmosphere-inner-shaders)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tree fragment-planet)]
+                                    vertex-planet render-tree fragment-planet ground-shaders)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet cloud-transfer linear-sampling
                                     opacity-lookup-shaders sample-cloud cloud-overlay overall-shadow)]
@@ -190,7 +191,7 @@ void main()
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere shaders/ray-sphere (opacity-lookup-shaders num-steps) atmosphere-shaders
+                :fragment [fragment-atmosphere shaders/ray-sphere (opacity-lookup-shaders num-steps) atmosphere-outer-shaders
                            cloud-overlay]))
 
 ; Program to render cascade of deep opacity maps
@@ -220,13 +221,7 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet attenuation-track shaders/ray-sphere ground-radiance
-                           shaders/transmittance-forward phase-function cloud-overlay shaders/remap
-                           transmittance-track shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index
-                           shaders/limit-quot shaders/sun-angle-to-index shaders/interpolate-2d shaders/interpolate-4d
-                           ray-scatter-track shaders/elevation-to-index shaders/convert-2d-index shaders/ray-scatter-forward
-                           shaders/make-2d-index-from-4d shaders/is-above-horizon shaders/clip-shell-intersections
-                           shaders/surface-radiance-forward transmittance-outer surface-radiance-function
+                :fragment [fragment-planet atmosphere-inner-shaders shaders/ray-sphere ground-shaders cloud-overlay
                            (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow]))
 
 ; Program to render shadow map of planet

@@ -4,7 +4,9 @@
               [sfsim25.matrix :refer (transformation-matrix)]
               [sfsim25.cubemap :refer (cube-map-corners)]
               [sfsim25.quadtree :refer (is-leaf?)]
-              [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches)])
+              [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches)]
+              [sfsim25.atmosphere :refer (transmittance-outer)]
+              [sfsim25.shaders :as shaders])
     (:import [fastmath.matrix Mat4x4]))
 
 (defn make-cube-map-tile-vertices
@@ -70,3 +72,10 @@
               (render-tile program node transform texture-keys)
               (doseq [selector [:0 :1 :2 :3 :4 :5]]
                      (render-tree program (selector node) transform texture-keys)))))
+
+(def ground-shaders
+  "Shaders for determining ground radiance"
+  [ground-radiance shaders/is-above-horizon transmittance-outer shaders/remap surface-radiance-function
+   shaders/transmittance-forward shaders/interpolate-2d shaders/surface-radiance-forward shaders/height-to-index
+   shaders/elevation-to-index shaders/convert-2d-index shaders/sun-elevation-to-index shaders/horizon-distance
+   shaders/limit-quot])
