@@ -4,6 +4,7 @@
               [clojure.math :refer (exp pow PI sqrt log)]
               [sfsim25.ray :refer (integral-ray)]
               [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
+              [sfsim25.shaders :as shaders]
               [sfsim25.util :refer (third fourth limit-quot sqr)])
     (:import [fastmath.vector Vec3]))
 
@@ -338,5 +339,12 @@
 (def phase-function
   "Shader function for scattering phase function"
   (slurp "resources/shaders/atmosphere/phase-function.glsl"))
+
+(def atmosphere-shaders
+  "Group of shader functions for determining attenuation above horizon"
+  [attenuation-outer transmittance-outer ray-scatter-outer shaders/transmittance-forward shaders/interpolate-2d
+   shaders/ray-scatter-forward shaders/interpolate-4d phase-function shaders/height-to-index shaders/convert-2d-index
+   shaders/elevation-to-index shaders/sun-elevation-to-index shaders/sun-angle-to-index shaders/make-2d-index-from-4d
+   shaders/horizon-distance shaders/limit-quot])
 
 (set! *unchecked-math* false)

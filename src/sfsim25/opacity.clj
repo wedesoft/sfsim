@@ -4,8 +4,7 @@
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture)]
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment linear-sampling opacity-cascade cloud-density-shaders)]
-              [sfsim25.shaders :as shaders]
-              [sfsim25.bluenoise :as bluenoise]))
+              [sfsim25.shaders :as shaders]))
 
 (defn make-opacity-renderer
   "Initialise an opacity program"

@@ -9,9 +9,8 @@
                                     make-vertex-array-object onscreen-render render-quads texture-render-color-depth
                                     uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
                                     use-textures shadow-cascade)]
-            [sfsim25.atmosphere :refer (attenuation-outer attenuation-track phase phase-function ray-scatter-outer
-                                        ray-scatter-track transmittance-outer transmittance-track
-                                        vertex-atmosphere fragment-atmosphere)]
+            [sfsim25.atmosphere :refer (attenuation-track phase phase-function ray-scatter-track transmittance-outer
+                                        transmittance-track vertex-atmosphere fragment-atmosphere atmosphere-shaders)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet)]
@@ -191,14 +190,8 @@ void main()
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere shaders/ray-sphere
-                           (opacity-lookup-shaders num-steps)
-                           transmittance-track phase-function cloud-overlay
-                           shaders/is-above-horizon shaders/transmittance-forward shaders/height-to-index
-                           shaders/interpolate-2d shaders/horizon-distance shaders/elevation-to-index shaders/limit-quot
-                           ray-scatter-track shaders/ray-scatter-forward shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d transmittance-outer ray-scatter-outer
-                           ground-radiance shaders/surface-radiance-forward surface-radiance-function attenuation-outer]))
+                :fragment [fragment-atmosphere shaders/ray-sphere (opacity-lookup-shaders num-steps) atmosphere-shaders
+                           cloud-overlay]))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
