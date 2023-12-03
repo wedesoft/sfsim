@@ -44,7 +44,8 @@
 
 (def ground-radiance
   "Shader function to compute light emitted from ground"
-  (slurp "resources/shaders/planet/ground-radiance.glsl"))
+  [shaders/is-above-horizon transmittance-outer surface-radiance-function shaders/remap
+   (slurp "resources/shaders/planet/ground-radiance.glsl")])
 
 (def fragment-planet
   "Fragment shader to render planetary surface"

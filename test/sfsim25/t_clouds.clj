@@ -1,6 +1,6 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image replace-shaders)]
+              [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (exp log sin cos asin to-radians)]
               [fastmath.vector :refer (vec3)]

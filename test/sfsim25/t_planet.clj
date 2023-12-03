@@ -1,6 +1,6 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image replace-shaders)]
+              [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (PI exp pow)]
               [fastmath.vector :refer (vec3 mult dot mag)]
@@ -361,7 +361,7 @@ void main()
         (uniform-float program "amplification" amplification)
         (uniform-float program "dawn_start" dawn-start)
         (uniform-float program "dawn_end" dawn-end))
-    ground-radiance-probe ground-radiance shaders/elevation-to-index shaders/interpolate-2d
+    ground-radiance-probe (last ground-radiance) shaders/elevation-to-index shaders/interpolate-2d
     shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/sun-elevation-to-index shaders/remap))
 
 (tabular "Shader function to compute light emitted from ground"
@@ -446,20 +446,9 @@ float overall_shadow(vec4 point)
 
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
-                :fragment (replace-shaders
-                            {clouds/opacity-lookup opacity-lookup-mock
-                             bluenoise/sampling-offset sampling-offset-mock
-                             clouds/cloud-overlay cloud-overlay-mock
-                             clouds/overall-shadow overall-shadow-mock
-                             (last atmosphere/transmittance-track) fake-transmittance
-                             (last atmosphere/ray-scatter-track) fake-ray-scatter}
-                            [fragment-planet shaders/interpolate-2d shaders/convert-2d-index
-                             shaders/transmittance-forward shaders/elevation-to-index shaders/ray-sphere shaders/is-above-horizon
-                             atmosphere/attenuation-track atmosphere/transmittance-outer ground-radiance
-                             shaders/ray-shell atmosphere/phase-function shaders/clip-shell-intersections
-                             shaders/ray-scatter-forward shaders/height-to-index shaders/surface-radiance-forward
-                             shaders/sun-elevation-to-index surface-radiance-function shaders/remap clouds/overall-shadow
-                             clouds/cloud-overlay])))
+                :fragment [fragment-planet opacity-lookup-mock sampling-offset-mock cloud-overlay-mock overall-shadow-mock
+                           fake-transmittance fake-ray-scatter ground-radiance shaders/ray-shell
+                           (last atmosphere/attenuation-track)]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
