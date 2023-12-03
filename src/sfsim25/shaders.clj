@@ -53,15 +53,18 @@
 
 (def interpolate-2d
   "Perform 2D color interpolation"
-  (slurp "resources/shaders/core/interpolate-2d.glsl"))
+  [convert-2d-index (slurp "resources/shaders/core/interpolate-2d.glsl")])
 
 (def interpolate-3d
   "Perform 3D float interpolation"
-  (slurp "resources/shaders/core/interpolate-3d.glsl"))
+  [convert-3d-index (slurp "resources/shaders/core/interpolate-3d.glsl")])
 
-(def interpolate-cubemap
+(defn interpolate-cubemap
   "Perform interpolation on cubemap avoiding seams"
-  (template/fn [result-type method-name selector] (slurp "resources/shaders/core/interpolate-cubemap.glsl")))
+  [result-type method-name selector]
+  [convert-cubemap-index
+   (template/eval (slurp "resources/shaders/core/interpolate-cubemap.glsl")
+                  {:result-type result-type :method-name method-name :selector selector})])
 
 (def interpolate-float-cubemap
   "Perform floating-point interpolation on cubemap avoiding seams"
@@ -73,7 +76,7 @@
 
 (def interpolate-4d
   "Perform 4D float interpolation"
-  (slurp "resources/shaders/core/interpolate-4d.glsl"))
+  [make-2d-index-from-4d (slurp "resources/shaders/core/interpolate-4d.glsl")])
 
 (def is-above-horizon
   "Check whether a ray hits the ground or stays in the sky"
@@ -105,7 +108,7 @@
 
 (def height-to-index
   "Shader for converting height to index"
-  (slurp "resources/shaders/core/height-to-index.glsl"))
+  [horizon-distance (slurp "resources/shaders/core/height-to-index.glsl")])
 
 (def sun-elevation-to-index
   "Shader for converting sun elevation to index"
@@ -121,8 +124,7 @@
 
 (def elevation-to-index
   "Shader function to convert elevation angle to an index for texture lookup"
-  [limit-quot horizon-distance
-   (slurp "resources/shaders/core/elevation-to-index.glsl")])
+  [limit-quot horizon-distance (slurp "resources/shaders/core/elevation-to-index.glsl")])
 
 (def transmittance-forward
   "Convert point and direction to 2D lookup index in transmittance table"
