@@ -11,7 +11,8 @@
               [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object make-program
                                       make-vector-texture-2d make-vertex-array-object offscreen-render render-quads
                                       rgb-texture->vectors3 texture-render-color uniform-float uniform-int uniform-matrix4
-                                      uniform-sampler uniform-vector3 use-program use-textures with-invisible-window)]
+                                      uniform-sampler uniform-vector3 use-program use-textures with-invisible-window
+                                      make-rgba-texture)]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer (convert-4d-to-2d get-vector3 third)]
               [sfsim25.atmosphere :refer (atmosphere-intersection attenuation-outer attenuation-track elevation-to-index
@@ -19,7 +20,7 @@
                                           index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
                                           phase phase-function point-scatter point-scatter-base point-scatter-component
                                           point-scatter-space ray-extremity ray-scatter ray-scatter-outer ray-scatter-space
-                                          ray-scatter-track scattering strength-component sun-angle-to-index
+                                          ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
                                           sun-elevation-to-index surface-intersection surface-point? surface-radiance
                                           surface-radiance-base surface-radiance-space transmittance transmittance-outer
                                           transmittance-space transmittance-track vertex-atmosphere extinction) :as atmosphere])
@@ -786,5 +787,35 @@ void main()
          0  -1   (/ 6 (* 16 PI))
          0.5 0   (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5)))
          0.5 1   (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))
+
+(def fragment-overlay-lookup
+"#version 410 core
+out vec3 fragColor;
+vec4 cloud_overlay();
+void main()
+{
+  vec4 clouds = cloud_overlay();
+  fragColor = 0.5 * (1 - clouds.a) + clouds.rgb;
+}")
+
+(fact "Test pixel lookup in cloud overlay"
+      (offscreen-render 60 40
+        (let [indices  [0 1 3 2]
+              vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
+              img      {:width 2 :height 2 :data (byte-array data)}
+              clouds   (make-rgba-texture :linear :clamp img)
+              program  (make-program :vertex [shaders/vertex-passthrough] :fragment [fragment-overlay-lookup cloud-overlay])
+              vao      (make-vertex-array-object program indices vertices ["point" 3])]
+          (use-program program)
+          (uniform-sampler program "clouds" 0)
+          (uniform-int program "window_width" 64)
+          (uniform-int program "window_height" 40)
+          (use-textures clouds)
+          (clear (vec3 0 0 0))
+          (render-quads vao)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (destroy-texture clouds))) => (is-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
 
 (GLFW/glfwTerminate)

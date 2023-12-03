@@ -11,13 +11,13 @@
                                     use-textures shadow-cascade)]
             [sfsim25.atmosphere :refer (attenuation-track phase phase-function ray-scatter-track transmittance-outer
                                         transmittance-track vertex-atmosphere fragment-atmosphere atmosphere-outer-shaders
-                                        atmosphere-inner-shaders)]
+                                        atmosphere-inner-shaders cloud-overlay)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet ground-shaders)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet cloud-transfer linear-sampling
-                                    opacity-lookup-shaders sample-cloud cloud-overlay overall-shadow)]
+                                    opacity-lookup-shaders sample-cloud overall-shadow)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]

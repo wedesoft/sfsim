@@ -5,7 +5,6 @@
               [sfsim25.ray :refer (integral-ray)]
               [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.clouds :as clouds]
               [sfsim25.util :refer (third fourth limit-quot sqr)])
     (:import [fastmath.vector Vec3]))
 
@@ -340,9 +339,13 @@
   "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
   (slurp "resources/shaders/atmosphere/vertex.glsl"))
 
+(def cloud-overlay
+  "Shader function to lookup cloud overlay values in lower resolution texture"
+  (slurp "resources/shaders/atmosphere/cloud-overlay.glsl"))
+
 (def fragment-atmosphere
   "Fragment shader for rendering atmosphere and sun"
-  [shaders/ray-sphere attenuation-outer clouds/cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
+  [shaders/ray-sphere attenuation-outer cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
 
 (def atmosphere-outer-shaders
   "Group of shader functions for determining attenuation and transmittance above horizon"

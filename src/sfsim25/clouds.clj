@@ -7,7 +7,8 @@
                                       make-empty-float-cubemap make-empty-vector-cubemap make-program make-vertex-array-object
                                       render-quads uniform-float uniform-int uniform-sampler uniform-matrix4 use-program
                                       use-textures make-empty-float-texture-3d)]
-              [sfsim25.shaders :as shaders]))
+              [sfsim25.shaders :as shaders]
+              [sfsim25.atmosphere :as atmosphere]))
 
 (defn cloud-noise
   "Shader for sampling 3D cloud noise"
@@ -185,9 +186,14 @@
   [perlin-octaves cloud-octaves]
   [(cloud-base perlin-octaves) (cloud-noise cloud-octaves) shaders/remap (slurp "resources/shaders/clouds/cloud-density.glsl")])
 
+(def overall-shadow
+  "Multiply shadows to get overall shadow"
+  (slurp "resources/shaders/clouds/overall-shadow.glsl"))
+
 (def cloud-transfer
   "Single cloud scattering update step"
-  (slurp "resources/shaders/clouds/cloud-transfer.glsl"))
+  [overall-shadow atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
+   (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 (def sample-cloud
   "Shader to sample the cloud layer and apply cloud scattering update steps"
@@ -201,10 +207,6 @@
 (def cloud-atmosphere
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
   [shaders/ray-sphere shaders/ray-shell sample-cloud (slurp "resources/shaders/clouds/cloud-atmosphere.glsl")])
-
-(def cloud-overlay
-  "Shader function to lookup cloud overlay values in lower resolution texture"
-  (slurp "resources/shaders/clouds/cloud-overlay.glsl"))
 
 (defmacro opacity-cascade
   "Render cascade of deep opacity maps"
@@ -222,10 +224,6 @@
                                ~@body)
            opacity-layers#))
      ~matrix-cascade))
-
-(def overall-shadow
-  "Multiply shadows to get overall shadow"
-  (slurp "resources/shaders/clouds/overall-shadow.glsl"))
 
 (defn cloud-density-shaders
   "List of cloud shaders to sample density values"

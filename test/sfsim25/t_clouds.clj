@@ -883,7 +883,7 @@ void main()
         (uniform-float program "amplification" amplification)
         (uniform-vector3 program "light_direction" (vec3 1 0 0)))
     cloud-transfer-probe
-    cloud-transfer))
+    (last cloud-transfer)))
 
 (tabular "Shader function to increment scattering caused by clouds"
          (fact ((cloud-transfer-test [?shadow ?transmit ?atmos ?inscatter ?amp]
@@ -1209,36 +1209,6 @@ void main()
       (destroy-program planet)
       (destroy-texture surface)
       img)) => (is-image "test/sfsim25/fixtures/clouds/overlay.png" 0.0))
-
-(def fragment-overlay-lookup
-"#version 410 core
-out vec3 fragColor;
-vec4 cloud_overlay();
-void main()
-{
-  vec4 clouds = cloud_overlay();
-  fragColor = 0.5 * (1 - clouds.a) + clouds.rgb;
-}")
-
-(fact "Test pixel lookup in cloud overlay"
-      (offscreen-render 60 40
-        (let [indices  [0 1 3 2]
-              vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
-              img      {:width 2 :height 2 :data (byte-array data)}
-              clouds   (make-rgba-texture :linear :clamp img)
-              program  (make-program :vertex [shaders/vertex-passthrough] :fragment [fragment-overlay-lookup cloud-overlay])
-              vao      (make-vertex-array-object program indices vertices ["point" 3])]
-          (use-program program)
-          (uniform-sampler program "clouds" 0)
-          (uniform-int program "window_width" 64)
-          (uniform-int program "window_height" 40)
-          (use-textures clouds)
-          (clear (vec3 0 0 0))
-          (render-quads vao)
-          (destroy-vertex-array-object vao)
-          (destroy-program program)
-          (destroy-texture clouds))) => (is-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
 
 (def opacity-cascade-mocks
 "#version 410 core
