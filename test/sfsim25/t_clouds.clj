@@ -744,7 +744,7 @@ void main()
         (uniform-float program "cloud_multiplier" clouds)
         (uniform-float program "cloud_threshold" threshold))
     cloud-base-probe
-    cloud-base))
+    (last (cloud-base []))))
 
 (tabular "Shader for determining cloud density at specified point"
          (fact ((cloud-base-test [?cover ?clouds ?threshold] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
@@ -828,7 +828,7 @@ void main()
     (fn [program cap]
         (uniform-float program "cap" cap))
     cloud-density-probe
-    (last cloud-density)
+    (last (cloud-density []))
     shaders/remap))
 
 (tabular "Compute cloud density at given point"

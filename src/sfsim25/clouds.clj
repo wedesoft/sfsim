@@ -13,10 +13,6 @@
   "Shader for sampling 3D cloud noise"
   (slurp "resources/shaders/clouds/cloud-noise.glsl"))
 
-(def cloud-base
-  "Shader for determining cloud density at specified point"
-  (slurp "resources/shaders/clouds/cloud-base.glsl"))
-
 (def linear-sampling
   "Shader functions for defining linear sampling"
   (slurp "resources/shaders/clouds/linear-sampling.glsl"))
@@ -173,9 +169,16 @@
   "Perform cloud cover lookup in cube map"
   [shaders/interpolate-float-cubemap (slurp "resources/shaders/clouds/cloud-cover.glsl")])
 
-(def cloud-density
+(defn cloud-base
+  "Shader for determining cloud density at specified point"
+  [perlin-octaves]
+  [cloud-cover cloud-profile (sphere-noise "perlin_octaves") (shaders/lookup-3d "lookup_perlin" "perlin")
+   (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves) (slurp "resources/shaders/clouds/cloud-base.glsl")])
+
+(defn cloud-density
   "Compute cloud density at given point"
-  [cloud-base cloud-noise (slurp "resources/shaders/clouds/cloud-density.glsl")])
+  [perlin-octaves]
+  [(cloud-base perlin-octaves) cloud-noise shaders/remap (slurp "resources/shaders/clouds/cloud-density.glsl")])
 
 (def cloud-transfer
   "Single cloud scattering update step"
@@ -222,10 +225,9 @@
 (defn cloud-density-shaders
   "List of cloud shaders to sample density values"
   [cloud-octaves perlin-octaves]
-  [cloud-density cloud-base cloud-noise (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
+  [(cloud-density perlin-octaves) cloud-noise (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
    (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap shaders/interpolate-float-cubemap shaders/convert-cubemap-index
-   cloud-cover (sphere-noise "perlin_octaves") (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves)
-   (shaders/lookup-3d "lookup_perlin" "perlin") cloud-profile])
+   cloud-cover])
 
 (defn opacity-lookup-shaders
   "List of opacity lookup shaders"
