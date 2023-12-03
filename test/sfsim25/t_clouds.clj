@@ -1077,7 +1077,7 @@ void main()
         (uniform-float program "cloud_top" 2)
         (uniform-vector3 program "origin" (vec3 0 0 z)))
     cloud-atmosphere-probe
-    cloud-atmosphere))
+    (last cloud-atmosphere)))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
          (fact ((cloud-atmosphere-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
@@ -1172,7 +1172,7 @@ void main()
           vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile        (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
           atmosphere  (make-program :vertex [vertex-atmosphere]
-                                    :fragment [fragment-atmosphere-clouds cloud-atmosphere])
+                                    :fragment [fragment-atmosphere-clouds (last cloud-atmosphere)])
           indices     [0 1 3 2]
           vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao         (make-vertex-array-object atmosphere indices vertices ["point" 3])
