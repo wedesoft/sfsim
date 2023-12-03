@@ -5,7 +5,8 @@
               [sfsim25.cubemap :refer (cube-map-corners)]
               [sfsim25.quadtree :refer (is-leaf?)]
               [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches)]
-              [sfsim25.atmosphere :refer (transmittance-outer)]
+              [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
+              [sfsim25.clouds :refer (overall-shadow)]
               [sfsim25.shaders :as shaders])
     (:import [fastmath.matrix Mat4x4]))
 
@@ -49,7 +50,8 @@
 
 (def fragment-planet
   "Fragment shader to render planetary surface"
-  (slurp "resources/shaders/planet/fragment.glsl"))
+  [shaders/ray-sphere ground-radiance attenuation-track cloud-overlay overall-shadow
+   (slurp "resources/shaders/planet/fragment.glsl")])
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
