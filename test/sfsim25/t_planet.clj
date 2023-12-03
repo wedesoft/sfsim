@@ -446,8 +446,8 @@ float overall_shadow(vec4 point)
 
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
-                :fragment [(last fragment-planet) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock overall-shadow-mock
-                           fake-transmittance fake-ray-scatter ground-radiance shaders/ray-shell
+                :fragment [(last (fragment-planet 3)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
+                           overall-shadow-mock fake-transmittance fake-ray-scatter ground-radiance shaders/ray-shell
                            (last atmosphere/attenuation-track)]))
 
 (defn setup-static-uniforms [program]

@@ -189,31 +189,37 @@
   [shaders/ray-shell (cloud-density perlin-octaves cloud-octaves) linear-sampling
    (template/eval (slurp "resources/shaders/clouds/opacity-fragment.glsl") {:num-layers num-layers})])
 
-(def overall-shadow
+(defn overall-shadow
   "Multiply shadows to get overall shadow"
-  (slurp "resources/shaders/clouds/overall-shadow.glsl"))
+  [num-steps]
+  [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
+   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
+   (shaders/shadow-cascade-lookup num-steps "average_shadow") shaders/shadow-lookup
+   (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])
+   (slurp "resources/shaders/clouds/overall-shadow.glsl")])
 
-(def cloud-transfer
+(defn cloud-transfer
   "Single cloud scattering update step"
-  [overall-shadow atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
+  [num-steps]
+  [(overall-shadow num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
    (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 (defn sample-cloud
   "Shader to sample the cloud layer and apply cloud scattering update steps"
-  [perlin-octaves cloud-octaves]
-  [linear-sampling bluenoise/sampling-offset atmosphere/phase-function (cloud-density perlin-octaves cloud-octaves) cloud-transfer
-   (slurp "resources/shaders/clouds/sample-cloud.glsl")])
+  [num-steps perlin-octaves cloud-octaves]
+  [linear-sampling bluenoise/sampling-offset atmosphere/phase-function (cloud-density perlin-octaves cloud-octaves)
+   (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
 (defn cloud-planet
   "Shader to compute pixel of cloud foreground overlay for planet"
-  [perlin-octaves cloud-octaves]
-  [shaders/ray-sphere shaders/ray-shell (sample-cloud perlin-octaves cloud-octaves) shaders/clip-shell-intersections
+  [num-steps perlin-octaves cloud-octaves]
+  [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
    (slurp "resources/shaders/clouds/cloud-planet.glsl")])
 
 (defn cloud-atmosphere
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
-  [perlin-octaves cloud-octaves]
-  [shaders/ray-sphere shaders/ray-shell (sample-cloud perlin-octaves cloud-octaves)
+  [num-steps perlin-octaves cloud-octaves]
+  [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves)
    (slurp "resources/shaders/clouds/cloud-atmosphere.glsl")])
 
 (defmacro opacity-cascade

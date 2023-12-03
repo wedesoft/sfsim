@@ -48,9 +48,10 @@
   [shaders/is-above-horizon transmittance-outer surface-radiance-function shaders/remap
    (slurp "resources/shaders/planet/ground-radiance.glsl")])
 
-(def fragment-planet
+(defn fragment-planet
   "Fragment shader to render planetary surface"
-  [shaders/ray-sphere ground-radiance attenuation-track cloud-overlay overall-shadow
+  [num-steps]
+  [shaders/ray-sphere ground-radiance attenuation-track cloud-overlay (overall-shadow num-steps)
    (slurp "resources/shaders/planet/fragment.glsl")])
 
 (defn render-tile

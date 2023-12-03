@@ -16,7 +16,7 @@
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet ground-shaders)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
-            [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet cloud-transfer linear-sampling
+            [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet linear-sampling
                                     opacity-lookup-shaders sample-cloud overall-shadow)]
             [sfsim25.bluenoise :as bluenoise]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
@@ -221,8 +221,9 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet atmosphere-inner-shaders shaders/ray-sphere ground-shaders cloud-overlay
-                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow]))
+                :fragment [(fragment-planet num-steps) atmosphere-inner-shaders shaders/ray-sphere ground-shaders cloud-overlay
+                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps)
+                           (overall-shadow num-steps)]))
 
 ; Program to render shadow map of planet
 (def program-shadow-planet
@@ -238,10 +239,11 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet-clouds (cloud-planet perlin-octaves cloud-octaves) shaders/ray-sphere shaders/ray-shell
-                           shaders/clip-shell-intersections (sample-cloud perlin-octaves cloud-octaves)
+                :fragment [fragment-planet-clouds (cloud-planet num-steps perlin-octaves cloud-octaves)
+                           shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections
+                           (sample-cloud num-steps perlin-octaves cloud-octaves)
                            (cloud-density-shaders cloud-octaves perlin-octaves)
-                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow
+                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) (overall-shadow num-steps)
                            transmittance-outer shaders/convert-3d-index
                            shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
@@ -251,9 +253,10 @@ void main()
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere-clouds (cloud-atmosphere perlin-octaves cloud-octaves)
-                           (sample-cloud perlin-octaves cloud-octaves) (cloud-density-shaders cloud-octaves perlin-octaves)
-                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow
+                :fragment [fragment-atmosphere-clouds (cloud-atmosphere num-steps perlin-octaves cloud-octaves)
+                           (sample-cloud num-steps perlin-octaves cloud-octaves)
+                           (cloud-density-shaders cloud-octaves perlin-octaves)
+                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) (overall-shadow num-steps)
                            transmittance-outer shaders/transmittance-forward
                            transmittance-track shaders/height-to-index shaders/interpolate-2d
                            shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
