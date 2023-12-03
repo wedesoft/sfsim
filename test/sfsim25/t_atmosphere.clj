@@ -15,7 +15,7 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer (convert-4d-to-2d get-vector3 third)]
               [sfsim25.atmosphere :refer (atmosphere-intersection attenuation-outer attenuation-track elevation-to-index
-                                          extinction fragment-atmosphere height-to-index horizon-distance index-to-elevation
+                                          extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
                                           index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
                                           phase phase-function point-scatter point-scatter-base point-scatter-component
                                           point-scatter-space ray-extremity ray-scatter ray-scatter-outer ray-scatter-space
@@ -551,7 +551,7 @@ void main()
         (uniform-float program "max_height" max-height))
     transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function))
+    phase-function))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact ((transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
@@ -581,7 +581,7 @@ void main()
         (uniform-float program "max_height" max-height))
     transmittance-outer-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
     shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function))
+    phase-function))
 
 (tabular "Shader function to compute transmittance between point in the atmosphere and space"
          (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
@@ -643,8 +643,8 @@ void main()
         (uniform-float program "max_height" max-height))
     ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
     shaders/make-2d-index-from-4d transmittance-track shaders/transmittance-forward shaders/interpolate-2d
-    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/sun-elevation-to-index shaders/sun-angle-to-index phase-function))
+    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/sun-elevation-to-index
+    shaders/sun-angle-to-index phase-function))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact ((ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)
@@ -726,8 +726,7 @@ vec4 cloud_overlay()
                                                                           shaders/is-above-horizon shaders/ray-shell
                                                                           attenuation-track transmittance-track
                                                                           ray-scatter-track phase-function
-                                                                          shaders/height-to-index shaders/horizon-distance
-                                                                          shaders/limit-quot shaders/sun-elevation-to-index
+                                                                          shaders/height-to-index shaders/sun-elevation-to-index
                                                                           shaders/sun-angle-to-index
                                                                           (cloud-overlay-mock ?cloud)])
                                    variables     ["point" 3]

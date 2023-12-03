@@ -121,7 +121,8 @@
 
 (def elevation-to-index
   "Shader function to convert elevation angle to an index for texture lookup"
-  (slurp "resources/shaders/core/elevation-to-index.glsl"))
+  [limit-quot horizon-distance
+   (slurp "resources/shaders/core/elevation-to-index.glsl")])
 
 (def transmittance-forward
   "Convert point and direction to 2D lookup index in transmittance table"

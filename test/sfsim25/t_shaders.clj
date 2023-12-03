@@ -792,7 +792,7 @@ void main()
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    elevation-to-index-probe elevation-to-index horizon-distance limit-quot))
+    elevation-to-index-probe elevation-to-index))
 
 (tabular "Shader for converting view direction elevation to index"
          (fact ((elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
