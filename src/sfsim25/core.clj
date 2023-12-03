@@ -238,9 +238,9 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet-clouds cloud-planet shaders/ray-sphere shaders/ray-shell
-                           shaders/clip-shell-intersections sample-cloud linear-sampling bluenoise/sampling-offset
-                           phase-function (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
+                :fragment [fragment-planet-clouds (cloud-planet perlin-octaves cloud-octaves) shaders/ray-sphere shaders/ray-shell
+                           shaders/clip-shell-intersections (sample-cloud perlin-octaves cloud-octaves)
+                           (cloud-density-shaders cloud-octaves perlin-octaves)
                            (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow
                            transmittance-outer shaders/convert-3d-index
                            shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
@@ -251,9 +251,8 @@ void main()
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere-clouds cloud-atmosphere shaders/ray-sphere shaders/ray-shell
-                           sample-cloud linear-sampling bluenoise/sampling-offset phase-function
-                           (cloud-density-shaders cloud-octaves perlin-octaves) cloud-transfer
+                :fragment [fragment-atmosphere-clouds (cloud-atmosphere perlin-octaves cloud-octaves)
+                           (sample-cloud perlin-octaves cloud-octaves) (cloud-density-shaders cloud-octaves perlin-octaves)
                            (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) overall-shadow
                            transmittance-outer shaders/transmittance-forward
                            transmittance-track shaders/height-to-index shaders/interpolate-2d

@@ -948,7 +948,7 @@ void main()
         (uniform-vector3 program "light_direction" (vec3 0 1 0))
         (uniform-float program "opacity_cutoff" opacity-cutoff))
     sample-cloud-probe
-    sample-cloud
+    (last (sample-cloud [] []))
     linear-sampling))
 
 (tabular "Shader to sample the cloud layer and apply cloud scattering update steps"
@@ -1009,7 +1009,7 @@ void main()
         (uniform-float program "depth" depth)
         (uniform-vector3 program "origin" (vec3 0 0 origin)))
     cloud-planet-probe
-    (last cloud-planet)))
+    (last (cloud-planet [] []))))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
          (fact ((cloud-planet-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
@@ -1074,7 +1074,7 @@ void main()
         (uniform-float program "cloud_top" 2)
         (uniform-vector3 program "origin" (vec3 0 0 z)))
     cloud-atmosphere-probe
-    (last cloud-atmosphere)))
+    (last (cloud-atmosphere [] []))))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
          (fact ((cloud-atmosphere-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
@@ -1164,12 +1164,12 @@ void main()
                                     :tess-control [tess-control-planet]
                                     :tess-evaluation [tess-evaluation-planet]
                                     :geometry [geometry-planet]
-                                    :fragment [fragment-planet-clouds (last cloud-planet)])
+                                    :fragment [fragment-planet-clouds (last (cloud-planet [] []))])
           indices     [0 1 3 2]
           vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile        (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
           atmosphere  (make-program :vertex [vertex-atmosphere]
-                                    :fragment [fragment-atmosphere-clouds (last cloud-atmosphere)])
+                                    :fragment [fragment-atmosphere-clouds (last (cloud-atmosphere [] []))])
           indices     [0 1 3 2]
           vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao         (make-vertex-array-object atmosphere indices vertices ["point" 3])

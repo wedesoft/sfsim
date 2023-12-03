@@ -8,6 +8,7 @@
                                       render-quads uniform-float uniform-int uniform-sampler uniform-matrix4 use-program
                                       use-textures make-empty-float-texture-3d)]
               [sfsim25.shaders :as shaders]
+              [sfsim25.bluenoise :as bluenoise]
               [sfsim25.atmosphere :as atmosphere]))
 
 (defn cloud-noise
@@ -197,18 +198,23 @@
   [overall-shadow atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
    (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
-(def sample-cloud
+(defn sample-cloud
   "Shader to sample the cloud layer and apply cloud scattering update steps"
-  (slurp "resources/shaders/clouds/sample-cloud.glsl"))
+  [perlin-octaves cloud-octaves]
+  [linear-sampling bluenoise/sampling-offset atmosphere/phase-function (cloud-density perlin-octaves cloud-octaves) cloud-transfer
+   (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
-(def cloud-planet
+(defn cloud-planet
   "Shader to compute pixel of cloud foreground overlay for planet"
-  [shaders/ray-sphere shaders/ray-shell sample-cloud shaders/clip-shell-intersections
+  [perlin-octaves cloud-octaves]
+  [shaders/ray-sphere shaders/ray-shell (sample-cloud perlin-octaves cloud-octaves) shaders/clip-shell-intersections
    (slurp "resources/shaders/clouds/cloud-planet.glsl")])
 
-(def cloud-atmosphere
+(defn cloud-atmosphere
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
-  [shaders/ray-sphere shaders/ray-shell sample-cloud (slurp "resources/shaders/clouds/cloud-atmosphere.glsl")])
+  [perlin-octaves cloud-octaves]
+  [shaders/ray-sphere shaders/ray-shell (sample-cloud perlin-octaves cloud-octaves)
+   (slurp "resources/shaders/clouds/cloud-atmosphere.glsl")])
 
 (defmacro opacity-cascade
   "Render cascade of deep opacity maps"
