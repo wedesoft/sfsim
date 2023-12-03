@@ -310,11 +310,12 @@
 
 (def transmittance-outer
   "Shader function to compute transmittance between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/transmittance-outer.glsl"))
+  [shaders/transmittance-forward shaders/interpolate-2d (slurp "resources/shaders/atmosphere/transmittance-outer.glsl")])
 
 (def transmittance-track
   "Shader function to compute transmittance between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/transmittance-track.glsl"))
+  [shaders/transmittance-forward shaders/interpolate-2d shaders/is-above-horizon
+   (slurp "resources/shaders/atmosphere/transmittance-track.glsl")])
 
 (def ray-scatter-outer
   "Shader function to determine in-scattered light between point in the atmosphere and space"

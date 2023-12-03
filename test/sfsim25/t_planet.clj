@@ -451,8 +451,8 @@ float overall_shadow(vec4 point)
                              bluenoise/sampling-offset sampling-offset-mock
                              clouds/cloud-overlay cloud-overlay-mock
                              clouds/overall-shadow overall-shadow-mock
-                             atmosphere/transmittance-track fake-transmittance
-                             atmosphere/ray-scatter-track fake-ray-scatter}
+                             (last atmosphere/transmittance-track) fake-transmittance
+                             (last atmosphere/ray-scatter-track) fake-ray-scatter}
                             [fragment-planet shaders/interpolate-2d shaders/convert-2d-index
                              shaders/transmittance-forward shaders/elevation-to-index shaders/ray-sphere shaders/is-above-horizon
                              atmosphere/attenuation-track atmosphere/transmittance-outer ground-radiance
