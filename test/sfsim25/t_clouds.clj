@@ -545,7 +545,7 @@ void main()
         (uniform-float program "prevailing" prevailing)
         (uniform-float program "whirl" whirl))
     flow-field-probe
-    flow-field))
+    (last (flow-field []))))
 
 (tabular "Shader to create potential field for generating curl noise for global cloud cover"
          (fact ((flow-field-test [?curl-scale ?prevailing ?whirl] [?north ?south ?x ?y ?z]) 0) => (roughly ?result 1e-5))

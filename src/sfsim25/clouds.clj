@@ -114,9 +114,12 @@
   [shaders/rotate-vector shaders/project-vector
    (template/eval (slurp "resources/shaders/clouds/curl-vector.glsl") {:method-name method-name :gradient-name gradient-name})])
 
-(def flow-field
+(defn flow-field
   "Shader to create potential field for generating curl noise for global cloud cover"
-  (slurp "resources/shaders/clouds/flow-field.glsl"))
+  [flow-octaves]
+  [(shaders/noise-octaves "octaves_north" "lookup_north" flow-octaves) (shaders/lookup-3d "lookup_north" "worley_north")
+   (shaders/noise-octaves "octaves_south" "lookup_south" flow-octaves) (shaders/lookup-3d "lookup_south" "worley_south")
+   (slurp "resources/shaders/clouds/flow-field.glsl")])
 
 (defn cloud-cover-cubemap
   "Program to generate planetary cloud cover using curl noise"
@@ -126,10 +129,7 @@
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
                       [(curl-vector "curl" "gradient") (shaders/gradient-3d "gradient" "flow_field" "epsilon")
-                       (shaders/noise-octaves "octaves_north" "lookup_north" flow-octaves)
-                       (shaders/noise-octaves "octaves_south" "lookup_south" flow-octaves)
-                       (shaders/lookup-3d "lookup_north" "worley_north") (shaders/lookup-3d "lookup_south" "worley_south")
-                       flow-field])
+                       (flow-field flow-octaves)])
         lookup      (make-cubemap-warp-program
                       "current" "cover"
                       [(shaders/noise-octaves "clouds" "noise" cloud-octaves)
