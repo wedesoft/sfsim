@@ -81,17 +81,18 @@
      (destroy-vertex-array-object vao#)
      result#))
 
-(def cubemap-warp-fragment
+(defn cubemap-warp-fragment
   "Fragment shader for looking up values using a cubemap warp vector field"
-  (template/fn [current-name lookup-name] (slurp "resources/shaders/clouds/cubemap-warp-fragment.glsl")))
+  [current-name lookup-name]
+  [shaders/cubemap-vectors shaders/interpolate-vector-cubemap
+   (template/eval (slurp "resources/shaders/clouds/cubemap-warp-fragment.glsl")
+                  {:current-name current-name :lookup-name lookup-name})])
 
 (defn make-cubemap-warp-program
   "Create program to look up values using a given cubemap warp vector field"
   [current-name lookup-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
-                :fragment (into shaders [(cubemap-warp-fragment current-name lookup-name)
-                                         shaders/cubemap-vectors shaders/interpolate-vector-cubemap
-                                         shaders/convert-cubemap-index])))
+                :fragment (into shaders [(cubemap-warp-fragment current-name lookup-name)])))
 
 (defmacro cubemap-warp
   "Macro to run program to look up values using cubemap warp vector field"
