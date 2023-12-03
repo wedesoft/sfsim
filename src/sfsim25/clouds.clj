@@ -55,17 +55,18 @@
     (destroy-program program)
     result))
 
-(def iterate-cubemap-warp-fragment
+(defn iterate-cubemap-warp-fragment
   "Fragment shader for iterating cubemap warp"
-  (template/fn [current-name field-method-name] (slurp "resources/shaders/clouds/iterate-cubemap-warp-fragment.glsl")))
+  [current-name field-method-name]
+  [shaders/cubemap-vectors shaders/interpolate-vector-cubemap
+   (template/eval (slurp "resources/shaders/clouds/iterate-cubemap-warp-fragment.glsl")
+                  {:current-name current-name :field-method-name field-method-name})])
 
 (defn make-iterate-cubemap-warp-program
   "Create program to iteratively update cubemap warp vector field"
   [current-name field-method-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
-                :fragment (into shaders [(iterate-cubemap-warp-fragment current-name field-method-name)
-                                         shaders/cubemap-vectors shaders/interpolate-vector-cubemap
-                                         shaders/convert-cubemap-index])))
+                :fragment (into shaders [(iterate-cubemap-warp-fragment current-name field-method-name)])))
 
 (defmacro iterate-cubemap
   "Macro to run program to update cubemap"
