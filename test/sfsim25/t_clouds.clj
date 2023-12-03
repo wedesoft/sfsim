@@ -507,11 +507,7 @@ void main()
         (uniform-float program "dz" dz))
     curl-probe
     (curl-vector "curl" "gradient")
-    shaders/rotate-vector
-    shaders/oriented-matrix
-    shaders/orthogonal-vector
     (shaders/gradient-3d "gradient" "noise_mock" "epsilon")
-    shaders/project-vector
     noise-mock))
 
 (tabular "Shader for computing curl vectors from noise function"

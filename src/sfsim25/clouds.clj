@@ -108,9 +108,11 @@
      (destroy-vertex-array-object vao#)
      result#))
 
-(def curl-vector
+(defn curl-vector
   "Shader for computing curl vectors from a noise function"
-  (template/fn [method-name gradient-name] (slurp "resources/shaders/clouds/curl-vector.glsl")))
+  [method-name gradient-name]
+  [shaders/rotate-vector shaders/project-vector
+   (template/eval (slurp "resources/shaders/clouds/curl-vector.glsl") {:method-name method-name :gradient-name gradient-name})])
 
 (def flow-field
   "Shader to create potential field for generating curl noise for global cloud cover"
@@ -127,7 +129,6 @@
                        (shaders/noise-octaves "octaves_north" "lookup_north" flow-octaves)
                        (shaders/noise-octaves "octaves_south" "lookup_south" flow-octaves)
                        (shaders/lookup-3d "lookup_north" "worley_north") (shaders/lookup-3d "lookup_south" "worley_south")
-                       shaders/rotate-vector shaders/oriented-matrix shaders/orthogonal-vector shaders/project-vector
                        flow-field])
         lookup      (make-cubemap-warp-program
                       "current" "cover"
