@@ -1,6 +1,5 @@
 # TODO
 * make modules out of core.clj
-  * group parametrized shaders
   * simplify shader lists in all make-program calls
   * group cloud textures, sizes, and parameters
   * group atmospheric lookup tables and parameters
