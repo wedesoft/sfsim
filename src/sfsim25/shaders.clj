@@ -96,7 +96,7 @@
 
 (def ray-shell
   "Shader function for computing intersections of ray with a shell"
-  (slurp "resources/shaders/core/ray-shell.glsl"))
+  [ray-sphere (slurp "resources/shaders/core/ray-shell.glsl")])
 
 (def clip-shell-intersections
   "Clip the intersection information of ray and shell using given limit"
@@ -160,7 +160,7 @@
 
 (def oriented-matrix
   "Shader for creating isometry with given normal vector as first row"
-  (slurp "resources/shaders/core/oriented-matrix.glsl"))
+  [orthogonal-vector (slurp "resources/shaders/core/oriented-matrix.glsl")])
 
 (def project-vector
   "Shader to project vector x onto vector n"
@@ -168,7 +168,7 @@
 
 (def rotate-vector
   "Shader for rotating vector around specified axis"
-  (slurp "resources/shaders/core/rotate-vector.glsl"))
+  [oriented-matrix (slurp "resources/shaders/core/rotate-vector.glsl")])
 
 (def vertex-passthrough
   "Vertex shader to simply pass vertex through"
