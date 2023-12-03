@@ -828,7 +828,7 @@ void main()
     (fn [program cap]
         (uniform-float program "cap" cap))
     cloud-density-probe
-    cloud-density
+    (last cloud-density)
     shaders/remap))
 
 (tabular "Compute cloud density at given point"

@@ -39,7 +39,7 @@
 
 (def identity-cubemap-fragment
   "Fragment shader to render identity cubemap"
-  (slurp "resources/shaders/clouds/identity-cubemap-fragment.glsl"))
+  [shaders/cubemap-vectors (slurp "resources/shaders/clouds/identity-cubemap-fragment.glsl")])
 
 (defn identity-cubemap
   "Create identity cubemap"
@@ -48,7 +48,7 @@
         indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         program (make-program :vertex [shaders/vertex-passthrough]
-                              :fragment [identity-cubemap-fragment shaders/cubemap-vectors])
+                              :fragment [identity-cubemap-fragment])
         vao     (make-vertex-array-object program indices vertices ["point" 3])]
     (framebuffer-render size size :cullback nil [result]
                         (use-program program)
@@ -175,7 +175,7 @@
 
 (def cloud-density
   "Compute cloud density at given point"
-  (slurp "resources/shaders/clouds/cloud-density.glsl"))
+  [cloud-base cloud-noise (slurp "resources/shaders/clouds/cloud-density.glsl")])
 
 (def cloud-transfer
   "Single cloud scattering update step"
