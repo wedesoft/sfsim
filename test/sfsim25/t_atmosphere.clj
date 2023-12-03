@@ -717,18 +717,8 @@ vec4 cloud_overlay()
                                    origin        (vec3 ?x ?y ?z)
                                    extrinsics    (transformation-matrix (rotation-x ?rotation) origin)
                                    program       (make-program :vertex [vertex-atmosphere]
-                                                               :fragment [fragment-atmosphere transmittance-outer
-                                                                          ray-scatter-outer attenuation-outer shaders/ray-sphere
-                                                                          shaders/transmittance-forward
-                                                                          shaders/elevation-to-index shaders/ray-scatter-forward
-                                                                          shaders/interpolate-2d shaders/convert-2d-index
-                                                                          shaders/interpolate-4d shaders/make-2d-index-from-4d
-                                                                          shaders/is-above-horizon shaders/ray-shell
-                                                                          attenuation-track transmittance-track
-                                                                          ray-scatter-track phase-function
-                                                                          shaders/height-to-index shaders/sun-elevation-to-index
-                                                                          shaders/sun-angle-to-index
-                                                                          (cloud-overlay-mock ?cloud)])
+                                                               :fragment [(last fragment-atmosphere) shaders/ray-sphere
+                                                                          attenuation-outer (cloud-overlay-mock ?cloud)])
                                    variables     ["point" 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})
