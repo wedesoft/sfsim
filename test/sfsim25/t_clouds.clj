@@ -1,6 +1,6 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image)]
+              [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image replace-shaders)]
               [comb.template :as template]
               [clojure.math :refer (exp log sin cos asin to-radians)]
               [fastmath.vector :refer (vec3)]
@@ -1012,7 +1012,7 @@ void main()
         (uniform-float program "depth" depth)
         (uniform-vector3 program "origin" (vec3 0 0 origin)))
     cloud-planet-probe
-    cloud-planet))
+    (last cloud-planet)))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
          (fact ((cloud-planet-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
@@ -1167,7 +1167,7 @@ void main()
                                     :tess-control [tess-control-planet]
                                     :tess-evaluation [tess-evaluation-planet]
                                     :geometry [geometry-planet]
-                                    :fragment [fragment-planet-clouds cloud-planet])
+                                    :fragment [fragment-planet-clouds (last cloud-planet)])
           indices     [0 1 3 2]
           vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile        (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])

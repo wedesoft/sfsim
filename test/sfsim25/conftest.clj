@@ -71,4 +71,4 @@
           (get-vector3 img 0 0)))))
 
 (defn replace-shaders [replacements coll]
-  (replace replacements (distinct (flatten coll))))
+  (remove empty? (replace replacements (distinct (flatten coll)))))
