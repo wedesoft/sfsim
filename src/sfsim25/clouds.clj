@@ -22,7 +22,7 @@
 
 (def opacity-vertex
   "Vertex shader for rendering deep opacity map"
-  (slurp "resources/shaders/clouds/opacity-vertex.glsl"))
+  [shaders/grow-shadow-index (slurp "resources/shaders/clouds/opacity-vertex.glsl")])
 
 (def opacity-fragment
   "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
@@ -188,7 +188,7 @@
 
 (def overall-shadow
   "Multiply shadows to get overall shadow"
-  (slurp "resources/shaders/clouds/overall-shadow.glsl"))
+  [ (slurp "resources/shaders/clouds/overall-shadow.glsl")])
 
 (def cloud-transfer
   "Single cloud scattering update step"
