@@ -20,14 +20,6 @@
   "Shader functions for defining linear sampling"
   (slurp "resources/shaders/clouds/linear-sampling.glsl"))
 
-(def opacity-vertex
-  "Vertex shader for rendering deep opacity map"
-  [shaders/grow-shadow-index (slurp "resources/shaders/clouds/opacity-vertex.glsl")])
-
-(def opacity-fragment
-  "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
-  (template/fn [num-layers] (slurp "resources/shaders/clouds/opacity-fragment.glsl")))
-
 (def opacity-lookup
   "Shader function for looking up transmittance value from deep opacity map"
   [shaders/convert-2d-index shaders/convert-3d-index (slurp "resources/shaders/clouds/opacity-lookup.glsl")])
@@ -185,6 +177,16 @@
   "Compute cloud density at given point"
   [perlin-octaves cloud-octaves]
   [(cloud-base perlin-octaves) (cloud-noise cloud-octaves) shaders/remap (slurp "resources/shaders/clouds/cloud-density.glsl")])
+
+(def opacity-vertex
+  "Vertex shader for rendering deep opacity map"
+  [shaders/grow-shadow-index (slurp "resources/shaders/clouds/opacity-vertex.glsl")])
+
+(defn opacity-fragment
+  "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
+  [num-layers perlin-octaves cloud-octaves]
+  [shaders/ray-shell (cloud-density perlin-octaves cloud-octaves) linear-sampling
+   (template/eval (slurp "resources/shaders/clouds/opacity-fragment.glsl") {:num-layers num-layers})])
 
 (def overall-shadow
   "Multiply shadows to get overall shadow"

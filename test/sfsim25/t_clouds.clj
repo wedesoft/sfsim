@@ -157,7 +157,7 @@ float cloud_density(vec3 point, float lod)
             light-direction (vec3 0 0 1)
             program         (make-program :vertex [opacity-vertex
                                                    shaders/grow-shadow-index]
-                                          :fragment [(opacity-fragment 7)
+                                          :fragment [(last (opacity-fragment 7 [] []))
                                                      ray-shell-mock
                                                      cloud-density-mock
                                                      linear-sampling])
@@ -1258,7 +1258,7 @@ void main()
               light        (vec3 0 0 1)
               shadow-mats  (shadow-matrix-cascade projection extrinsics light 5 0.5 z-near z-far num-steps)
               program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                                         :fragment [(opacity-fragment num-layers) shaders/ray-shell shaders/ray-sphere
+                                         :fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell shaders/ray-sphere
                                                     linear-sampling opacity-cascade-mocks])
               vao          (make-vertex-array-object program-opac indices vertices ["point" 2])
               opacity-maps (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
