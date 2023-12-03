@@ -30,7 +30,7 @@
 
 (def opacity-lookup
   "Shader function for looking up transmittance value from deep opacity map"
-  (slurp "resources/shaders/clouds/opacity-lookup.glsl"))
+  [shaders/convert-2d-index shaders/convert-3d-index (slurp "resources/shaders/clouds/opacity-lookup.glsl")])
 
 (def opacity-cascade-lookup
   "Perform opacity (transparency) lookup in cascade of deep opacity maps"
@@ -188,7 +188,7 @@
 
 (def overall-shadow
   "Multiply shadows to get overall shadow"
-  [ (slurp "resources/shaders/clouds/overall-shadow.glsl")])
+  (slurp "resources/shaders/clouds/overall-shadow.glsl"))
 
 (def cloud-transfer
   "Single cloud scattering update step"
