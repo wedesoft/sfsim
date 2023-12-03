@@ -171,7 +171,7 @@
 
 (def cloud-cover
   "Perform cloud cover lookup in cube map"
-  (slurp "resources/shaders/clouds/cloud-cover.glsl"))
+  [shaders/interpolate-float-cubemap (slurp "resources/shaders/clouds/cloud-cover.glsl")])
 
 (def cloud-density
   "Compute cloud density at given point"
