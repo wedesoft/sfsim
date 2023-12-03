@@ -9,9 +9,11 @@
                                       use-textures make-empty-float-texture-3d)]
               [sfsim25.shaders :as shaders]))
 
-(def cloud-noise
+(defn cloud-noise
   "Shader for sampling 3D cloud noise"
-  (slurp "resources/shaders/clouds/cloud-noise.glsl"))
+  [cloud-octaves]
+  [(shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves) (shaders/lookup-3d-lod "lookup_3d" "worley")
+   (slurp "resources/shaders/clouds/cloud-noise.glsl")])
 
 (def linear-sampling
   "Shader functions for defining linear sampling"
@@ -179,8 +181,8 @@
 
 (defn cloud-density
   "Compute cloud density at given point"
-  [perlin-octaves]
-  [(cloud-base perlin-octaves) cloud-noise shaders/remap (slurp "resources/shaders/clouds/cloud-density.glsl")])
+  [perlin-octaves cloud-octaves]
+  [(cloud-base perlin-octaves) (cloud-noise cloud-octaves) shaders/remap (slurp "resources/shaders/clouds/cloud-density.glsl")])
 
 (def cloud-transfer
   "Single cloud scattering update step"
@@ -227,9 +229,7 @@
 (defn cloud-density-shaders
   "List of cloud shaders to sample density values"
   [cloud-octaves perlin-octaves]
-  [(cloud-density perlin-octaves) cloud-noise (shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves)
-   (shaders/lookup-3d-lod "lookup_3d" "worley") shaders/remap shaders/interpolate-float-cubemap shaders/convert-cubemap-index
-   cloud-cover])
+  [(cloud-density perlin-octaves cloud-octaves) shaders/interpolate-float-cubemap shaders/convert-cubemap-index cloud-cover])
 
 (defn opacity-lookup-shaders
   "List of opacity lookup shaders"

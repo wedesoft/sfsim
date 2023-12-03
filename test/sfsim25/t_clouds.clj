@@ -39,7 +39,8 @@ void main()
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
           worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
-          program  (make-program :vertex [shaders/vertex-passthrough] :fragment [(cloud-noise-probe x y z) cloud-noise])
+          program  (make-program :vertex [shaders/vertex-passthrough]
+                                 :fragment [(cloud-noise-probe x y z) (last (cloud-noise []))])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           tex      (texture-render-color 1 1 true
                                          (use-program program)
@@ -824,7 +825,7 @@ void main()
     (fn [program cap]
         (uniform-float program "cap" cap))
     cloud-density-probe
-    (last (cloud-density []))
+    (last (cloud-density [] []))
     shaders/remap))
 
 (tabular "Compute cloud density at given point"
