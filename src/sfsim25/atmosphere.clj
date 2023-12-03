@@ -304,6 +304,10 @@
 
 (def point-scatter-space ray-scatter-space)
 
+(def phase-function
+  "Shader function for scattering phase function"
+  (slurp "resources/shaders/atmosphere/phase-function.glsl"))
+
 (def transmittance-outer
   "Shader function to compute transmittance between point in the atmosphere and space"
   (slurp "resources/shaders/atmosphere/transmittance-outer.glsl"))
@@ -314,11 +318,13 @@
 
 (def ray-scatter-outer
   "Shader function to determine in-scattered light between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/ray-scatter-outer.glsl"))
+  [shaders/ray-scatter-forward shaders/interpolate-4d phase-function
+   (slurp "resources/shaders/atmosphere/ray-scatter-outer.glsl")])
 
 (def ray-scatter-track
   "Shader function to determine in-scattered light between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/ray-scatter-track.glsl"))
+  [shaders/ray-scatter-forward shaders/interpolate-4d transmittance-track shaders/is-above-horizon phase-function
+   (slurp "resources/shaders/atmosphere/ray-scatter-track.glsl")])
 
 (def attenuation-outer
   "Shader function combining transmittance and in-scattered light between point in the atmosphere and space"
@@ -335,10 +341,6 @@
 (def fragment-atmosphere
   "Fragment shader for rendering atmosphere and sun"
   (slurp "resources/shaders/atmosphere/fragment.glsl"))
-
-(def phase-function
-  "Shader function for scattering phase function"
-  (slurp "resources/shaders/atmosphere/phase-function.glsl"))
 
 (def atmosphere-outer-shaders
   "Group of shader functions for determining attenuation and transmittance above horizon"
