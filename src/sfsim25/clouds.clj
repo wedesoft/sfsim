@@ -187,7 +187,8 @@
 
 (def cloud-planet
   "Shader to compute pixel of cloud foreground overlay for planet"
-  (slurp "resources/shaders/clouds/cloud-planet.glsl"))
+  [shaders/ray-sphere shaders/ray-shell sample-cloud shaders/clip-shell-intersections
+   (slurp "resources/shaders/clouds/cloud-planet.glsl")])
 
 (def cloud-atmosphere
   "Shader to compute pixel of cloud foreground overlay for atmosphere"

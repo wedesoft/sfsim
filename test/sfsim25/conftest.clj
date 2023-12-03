@@ -69,3 +69,6 @@
           (destroy-vertex-array-object vao)
           (destroy-program program)
           (get-vector3 img 0 0)))))
+
+(defn replace-shaders [replacements coll]
+  (replace replacements (distinct (flatten coll))))

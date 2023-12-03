@@ -1,6 +1,6 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
-              [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image)]
+              [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image replace-shaders)]
               [comb.template :as template]
               [clojure.math :refer (PI exp pow)]
               [fastmath.vector :refer (vec3 mult dot mag)]
@@ -12,7 +12,9 @@
               [sfsim25.matrix :refer :all]
               [sfsim25.interpolate :refer :all]
               [sfsim25.util :refer :all]
-              [sfsim25.planet :refer :all])
+              [sfsim25.planet :refer :all]
+              [sfsim25.bluenoise :as bluenoise]
+              [sfsim25.clouds :as clouds])
     (:import [org.lwjgl.glfw GLFW]
              [fastmath.matrix Mat4x4]))
 
@@ -444,13 +446,20 @@ float overall_shadow(vec4 point)
 
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
-                :fragment [fragment-planet fake-transmittance shaders/interpolate-2d shaders/convert-2d-index
-                           shaders/transmittance-forward shaders/elevation-to-index shaders/ray-sphere shaders/is-above-horizon
-                           fake-ray-scatter atmosphere/attenuation-track atmosphere/transmittance-outer ground-radiance
-                           shaders/ray-shell atmosphere/phase-function shaders/clip-shell-intersections
-                           shaders/ray-scatter-forward shaders/height-to-index shaders/surface-radiance-forward
-                           shaders/sun-elevation-to-index opacity-lookup-mock sampling-offset-mock surface-radiance-function
-                           cloud-overlay-mock overall-shadow-mock shaders/remap]))
+                :fragment (replace-shaders
+                            {clouds/opacity-lookup opacity-lookup-mock
+                             bluenoise/sampling-offset sampling-offset-mock
+                             clouds/cloud-overlay cloud-overlay-mock
+                             clouds/overall-shadow overall-shadow-mock
+                             atmosphere/transmittance-track fake-transmittance
+                             atmosphere/ray-scatter-track fake-ray-scatter}
+                            [fragment-planet shaders/interpolate-2d shaders/convert-2d-index
+                             shaders/transmittance-forward shaders/elevation-to-index shaders/ray-sphere shaders/is-above-horizon
+                             atmosphere/attenuation-track atmosphere/transmittance-outer ground-radiance
+                             shaders/ray-shell atmosphere/phase-function shaders/clip-shell-intersections
+                             shaders/ray-scatter-forward shaders/height-to-index shaders/surface-radiance-forward
+                             shaders/sun-elevation-to-index surface-radiance-function shaders/remap clouds/overall-shadow
+                             clouds/cloud-overlay])))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large

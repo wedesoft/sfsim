@@ -322,11 +322,11 @@
 
 (def attenuation-outer
   "Shader function combining transmittance and in-scattered light between point in the atmosphere and space"
-  (slurp "resources/shaders/atmosphere/attenuation-outer.glsl"))
+  [transmittance-outer ray-scatter-outer (slurp "resources/shaders/atmosphere/attenuation-outer.glsl")])
 
 (def attenuation-track
   "Shader function combining transmittance and in-scattered light between two points in the atmosphere"
-  (slurp "resources/shaders/atmosphere/attenuation-track.glsl"))
+  [transmittance-track ray-scatter-track (slurp "resources/shaders/atmosphere/attenuation-track.glsl")])
 
 (def vertex-atmosphere
   "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"

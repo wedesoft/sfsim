@@ -40,7 +40,7 @@
 
 (def surface-radiance-function
   "Shader function to determine ambient light scattered by the atmosphere"
-  (slurp "resources/shaders/planet/surface-radiance.glsl"))
+  [shaders/surface-radiance-forward shaders/interpolate-2d (slurp "resources/shaders/planet/surface-radiance.glsl")])
 
 (def ground-radiance
   "Shader function to compute light emitted from ground"

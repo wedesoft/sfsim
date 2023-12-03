@@ -36,7 +36,7 @@
 
 (def shadow-lookup
   "Perform lookup in a shadow map including moving shadow index out of clamping region"
-  (slurp "resources/shaders/core/shadow-lookup.glsl"))
+  [convert-shadow-index (slurp "resources/shaders/core/shadow-lookup.glsl")])
 
 (def shadow-cascade-lookup
   "Perform shadow lookup in cascade of shadow maps"
@@ -128,15 +128,16 @@
 
 (def transmittance-forward
   "Convert point and direction to 2D lookup index in transmittance table"
-  (slurp "resources/shaders/core/transmittance-forward.glsl"))
+  [height-to-index elevation-to-index (slurp "resources/shaders/core/transmittance-forward.glsl")])
 
 (def surface-radiance-forward
   "Convert point and direction to 2D lookup index in surface radiance table"
-  (slurp "resources/shaders/core/surface-radiance-forward.glsl"))
+  [height-to-index sun-elevation-to-index (slurp "resources/shaders/core/surface-radiance-forward.glsl")])
 
 (def ray-scatter-forward
   "Get 4D lookup index for ray scattering"
-  (slurp "resources/shaders/core/ray-scatter-forward.glsl"))
+  [height-to-index elevation-to-index sun-elevation-to-index sun-angle-to-index
+   (slurp "resources/shaders/core/ray-scatter-forward.glsl")])
 
 (def noise-octaves
   "Shader function to sum octaves of noise"
