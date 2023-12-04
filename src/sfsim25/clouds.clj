@@ -60,7 +60,7 @@
   "Create program to iteratively update cubemap warp vector field"
   [current-name field-method-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
-                :fragment (into shaders [(iterate-cubemap-warp-fragment current-name field-method-name)])))
+                :fragment (conj shaders (iterate-cubemap-warp-fragment current-name field-method-name))))
 
 (defmacro iterate-cubemap
   "Macro to run program to update cubemap"
@@ -89,7 +89,7 @@
   "Create program to look up values using a given cubemap warp vector field"
   [current-name lookup-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
-                :fragment (into shaders [(cubemap-warp-fragment current-name lookup-name)])))
+                :fragment (conj shaders (cubemap-warp-fragment current-name lookup-name))))
 
 (defmacro cubemap-warp
   "Macro to run program to look up values using cubemap warp vector field"

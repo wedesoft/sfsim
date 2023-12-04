@@ -550,9 +550,7 @@ void main()
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
-    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    phase-function))
+    transmittance-track-probe transmittance-track))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact ((transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
@@ -642,10 +640,7 @@ void main()
         (uniform-int program "heading_size" heading-size)
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
-    shaders/make-2d-index-from-4d transmittance-track shaders/transmittance-forward shaders/interpolate-2d
-    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/sun-elevation-to-index
-    shaders/sun-angle-to-index phase-function))
+    ray-scatter-track-probe ray-scatter-track))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact ((ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)

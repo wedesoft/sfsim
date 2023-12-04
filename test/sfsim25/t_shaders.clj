@@ -199,7 +199,7 @@ void main()
           data      (repeat 4 shadow-depth)
           shadows   (make-depth-texture :linear :clamp {:width 2 :height 2 :data (float-array data)})
           program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(shadow-lookup-probe lookup-depth) shadow-lookup convert-shadow-index])
+                                  :fragment [(shadow-lookup-probe lookup-depth) shadow-lookup])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -367,7 +367,7 @@ void main()
           table     (make-vector-texture-2d :linear :clamp
                                             {:width 2 :height 3 :data (float-array data-flat)})
           program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(interpolate-2d-probe x y) interpolate-2d convert-2d-index])
+                                  :fragment [(interpolate-2d-probe x y) interpolate-2d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -409,7 +409,7 @@ void main()
           table     (make-float-texture-3d :linear :clamp
                                            {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
           program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(interpolate-3d-probe x y z) interpolate-3d convert-3d-index])
+                                  :fragment [(interpolate-3d-probe x y z) interpolate-3d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -456,8 +456,7 @@ void main()
           cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
           program     (make-program :vertex [vertex-passthrough]
                                     :fragment [(interpolate-cubemap-probe method selector x y z)
-                                               interpolate-float-cubemap interpolate-vector-cubemap
-                                               convert-cubemap-index])
+                                               interpolate-float-cubemap interpolate-vector-cubemap])
           vao         (make-vertex-array-object program indices vertices ["point" 3])
           tex         (texture-render-color
                         1 1 true
@@ -500,8 +499,7 @@ void main()
           data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
           table     (make-vector-texture-2d :linear :clamp {:width 4 :height 4 :data (float-array data-flat)})
           program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(interpolate-4d-probe x y z w) interpolate-4d
-                                             make-2d-index-from-4d])
+                                  :fragment [(interpolate-4d-probe x y z w) interpolate-4d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true

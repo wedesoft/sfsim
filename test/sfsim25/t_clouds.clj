@@ -155,11 +155,8 @@ float cloud_density(vec3 point, float lod)
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
             ndc-to-shadow   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
             light-direction (vec3 0 0 1)
-            program         (make-program :vertex [opacity-vertex
-                                                   shaders/grow-shadow-index]
-                                          :fragment [(last (opacity-fragment 7 [] []))
-                                                     ray-shell-mock
-                                                     cloud-density-mock
+            program         (make-program :vertex [opacity-vertex]
+                                          :fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock cloud-density-mock
                                                      linear-sampling])
             vao             (make-vertex-array-object program indices vertices ["point" 2])
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 8)
@@ -216,8 +213,7 @@ void main()
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           program         (make-program :vertex [shaders/vertex-passthrough]
-                                        :fragment [(opacity-lookup-probe x y z depth) opacity-lookup shaders/convert-2d-index
-                                                   shaders/convert-3d-index])
+                                        :fragment [(opacity-lookup-probe x y z depth) opacity-lookup])
           vao             (make-vertex-array-object program indices vertices ["point" 3])
           zeropad         (fn [x] [0 x 0 0])
           offset-data     (zeropad offset)
@@ -775,9 +771,7 @@ void main()
           data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
           cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
           program     (make-program :vertex [shaders/vertex-passthrough]
-                                    :fragment [(cloud-cover-probe x y z) cloud-cover
-                                               shaders/interpolate-float-cubemap
-                                               shaders/convert-cubemap-index])
+                                    :fragment [(cloud-cover-probe x y z) cloud-cover])
           vao         (make-vertex-array-object program indices vertices ["point" 3])
           tex         (texture-render-color
                         1 1 true
@@ -1258,8 +1252,8 @@ void main()
               light        (vec3 0 0 1)
               shadow-mats  (shadow-matrix-cascade projection extrinsics light 5 0.5 z-near z-far num-steps)
               program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                                         :fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell shaders/ray-sphere
-                                                    linear-sampling opacity-cascade-mocks])
+                                         :fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
+                                                    shaders/ray-sphere linear-sampling opacity-cascade-mocks])
               vao          (make-vertex-array-object program-opac indices vertices ["point" 2])
               opacity-maps (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
                                             (uniform-vector3 program-opac "light_direction" light)
@@ -1276,8 +1270,7 @@ void main()
                                    program   (make-program :vertex [vertex-render-opacity]
                                                            :fragment [fragment-render-opacity
                                                                       (opacity-cascade-lookup num-steps "opacity_lookup")
-                                                                      opacity-lookup shaders/convert-2d-index
-                                                                      shaders/convert-3d-index])
+                                                                      opacity-lookup])
                                    vao       (make-vertex-array-object program indices vertices ["point" 3])]
                                (clear (vec3 0 0 0) 0)
                                (use-program program)

@@ -12,7 +12,7 @@
              cloud-top detail-scale cloud-scale worley-tex perlin-worley-tex cloud-cover-tex cloud-multiplier
              cover-multiplier cap]}]
   (let [program
-        (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
+        (make-program :vertex [opacity-vertex]
                       :fragment [(opacity-fragment num-opacity-layers perlin-octaves cloud-octaves)])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]

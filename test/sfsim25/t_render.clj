@@ -833,7 +833,7 @@ void main(void)
               program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
                                            :fragment [fragment-shadow])
               program-main   (make-program :vertex [vertex-scene]
-                                           :fragment [fragment-scene s/shadow-lookup s/convert-shadow-index])
+                                           :fragment [fragment-scene s/shadow-lookup])
               vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-map     (texture-render-depth
                                128 128
@@ -888,7 +888,7 @@ void main(void)
                                            :fragment [fragment-shadow])
               program-main   (make-program :vertex [vertex-scene]
                                            :fragment [fragment-scene-cascade (s/shadow-cascade-lookup num-steps "shadow_lookup")
-                                                      s/shadow-lookup s/convert-shadow-index])
+                                                      s/shadow-lookup])
               vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-maps    (shadow-cascade 128 shadow-mats program-shadow
                                              (fn [shadow-ndc-matrix]
