@@ -347,17 +347,4 @@
   "Fragment shader for rendering atmosphere and sun"
   [shaders/ray-sphere attenuation-outer cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
 
-(def atmosphere-outer-shaders
-  "Group of shader functions for determining attenuation and transmittance above horizon"
-  [attenuation-outer transmittance-outer ray-scatter-outer shaders/transmittance-forward shaders/interpolate-2d
-   shaders/ray-scatter-forward shaders/interpolate-4d phase-function shaders/height-to-index shaders/convert-2d-index
-   shaders/elevation-to-index shaders/sun-elevation-to-index shaders/sun-angle-to-index shaders/make-2d-index-from-4d])
-
-(def atmosphere-inner-shaders
-  "Group of shader functions for determining attenuation and transmittance below horizon"
-  [attenuation-track transmittance-track ray-scatter-track shaders/transmittance-forward shaders/interpolate-2d
-   shaders/is-above-horizon shaders/ray-scatter-forward shaders/interpolate-4d phase-function shaders/height-to-index
-   shaders/elevation-to-index shaders/convert-2d-index shaders/sun-elevation-to-index shaders/sun-angle-to-index
-   shaders/make-2d-index-from-4d])
-
 (set! *unchecked-math* false)

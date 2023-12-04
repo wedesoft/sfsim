@@ -76,10 +76,3 @@
               (render-tile program node transform texture-keys)
               (doseq [selector [:0 :1 :2 :3 :4 :5]]
                      (render-tree program (selector node) transform texture-keys)))))
-
-(def ground-shaders
-  "Shaders for determining ground radiance"
-  [ground-radiance shaders/is-above-horizon transmittance-outer shaders/remap surface-radiance-function
-   shaders/transmittance-forward shaders/interpolate-2d shaders/surface-radiance-forward shaders/height-to-index
-   shaders/elevation-to-index shaders/convert-2d-index shaders/sun-elevation-to-index shaders/horizon-distance
-   shaders/limit-quot])

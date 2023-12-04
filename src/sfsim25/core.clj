@@ -10,11 +10,10 @@
                                     uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
                                     use-textures shadow-cascade)]
             [sfsim25.atmosphere :refer (attenuation-track phase phase-function ray-scatter-track transmittance-outer
-                                        transmittance-track vertex-atmosphere fragment-atmosphere atmosphere-outer-shaders
-                                        atmosphere-inner-shaders cloud-overlay)]
+                                        transmittance-track vertex-atmosphere fragment-atmosphere cloud-overlay)]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tree fragment-planet ground-shaders)]
+                                    vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet linear-sampling
                                     opacity-lookup-shaders sample-cloud overall-shadow)]
@@ -69,7 +68,7 @@ void main()
   tes_out.point = tile_center + vector;
   vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
   gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
-}" )
+}")
 
 (def fragment-shadow-planet
 "#version 410 core
@@ -191,8 +190,7 @@ void main()
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere shaders/ray-sphere (opacity-lookup-shaders num-steps) atmosphere-outer-shaders
-                           cloud-overlay]))
+                :fragment [fragment-atmosphere]))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -221,9 +219,7 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [(fragment-planet num-steps) atmosphere-inner-shaders shaders/ray-sphere ground-shaders cloud-overlay
-                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps)
-                           (overall-shadow num-steps)]))
+                :fragment [(fragment-planet num-steps)]))
 
 ; Program to render shadow map of planet
 (def program-shadow-planet
@@ -239,30 +235,12 @@ void main()
                 :tess-control [tess-control-planet]
                 :tess-evaluation [tess-evaluation-planet]
                 :geometry [geometry-planet]
-                :fragment [fragment-planet-clouds (cloud-planet num-steps perlin-octaves cloud-octaves)
-                           shaders/ray-sphere shaders/ray-shell shaders/clip-shell-intersections
-                           (sample-cloud num-steps perlin-octaves cloud-octaves)
-                           (cloud-density-shaders cloud-octaves perlin-octaves)
-                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) (overall-shadow num-steps)
-                           transmittance-outer shaders/convert-3d-index
-                           shaders/transmittance-forward transmittance-track shaders/height-to-index shaders/interpolate-2d
-                           shaders/is-above-horizon ray-scatter-track shaders/horizon-distance shaders/elevation-to-index
-                           shaders/ray-scatter-forward shaders/limit-quot shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
+                :fragment [fragment-planet-clouds (cloud-planet num-steps perlin-octaves cloud-octaves)]))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def program-cloud-atmosphere
   (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere-clouds (cloud-atmosphere num-steps perlin-octaves cloud-octaves)
-                           (sample-cloud num-steps perlin-octaves cloud-octaves)
-                           (cloud-density-shaders cloud-octaves perlin-octaves)
-                           (opacity-lookup-shaders num-steps) (shaders/shadow-lookup-shaders num-steps) (overall-shadow num-steps)
-                           transmittance-outer shaders/transmittance-forward
-                           transmittance-track shaders/height-to-index shaders/interpolate-2d
-                           shaders/is-above-horizon ray-scatter-track shaders/horizon-distance
-                           shaders/elevation-to-index shaders/ray-scatter-forward shaders/limit-quot
-                           shaders/sun-elevation-to-index shaders/interpolate-4d
-                           shaders/sun-angle-to-index shaders/make-2d-index-from-4d]))
+                :fragment [fragment-atmosphere-clouds (cloud-atmosphere num-steps perlin-octaves cloud-octaves)]))
 
 (use-program program-shadow-planet)
 (uniform-sampler program-shadow-planet "surface" 0)

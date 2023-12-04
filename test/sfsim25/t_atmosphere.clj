@@ -578,9 +578,7 @@ void main()
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    transmittance-outer-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
-    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    phase-function))
+    transmittance-outer-probe transmittance-outer))
 
 (tabular "Shader function to compute transmittance between point in the atmosphere and space"
          (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)

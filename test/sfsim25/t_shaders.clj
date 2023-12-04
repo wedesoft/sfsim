@@ -654,7 +654,7 @@ void main()
   fragColor.b = 0;
 }"))
 
-(def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell ray-sphere))
+(def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell))
 
 (tabular "Shader for computing intersections of ray with a shell"
          (fact (ray-shell-test [] [?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector])
@@ -711,7 +711,7 @@ void main()
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    height-to-index-probe height-to-index horizon-distance))
+    height-to-index-probe height-to-index))
 
 (tabular "Shader for converting height to index"
          (fact ((height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
@@ -825,7 +825,7 @@ void main()
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    transmittance-forward-probe transmittance-forward height-to-index horizon-distance elevation-to-index limit-quot))
+    transmittance-forward-probe transmittance-forward))
 
 (tabular "Convert point and direction to 2D lookup index in transmittance table"
          (fact (transmittance-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
@@ -853,7 +853,7 @@ void main()
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    surface-radiance-forward-probe surface-radiance-forward height-to-index horizon-distance sun-elevation-to-index))
+    surface-radiance-forward-probe surface-radiance-forward))
 
 (tabular "Convert point and direction to 2D lookup index in surface radiance table"
          (fact (surface-radiance-forward-test [6378000.0 100000.0] [?x ?y ?z ?lx ?ly ?lz])
@@ -886,8 +886,7 @@ void main()
     (fn [program radius max-height]
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    ray-scatter-forward-probe ray-scatter-forward height-to-index elevation-to-index horizon-distance limit-quot
-    sun-elevation-to-index sun-angle-to-index))
+    ray-scatter-forward-probe ray-scatter-forward))
 
 (tabular "Get 4D lookup index for ray scattering"
          (fact ((ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
@@ -1102,7 +1101,7 @@ void main()
   fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
 }"))
 
-(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix orthogonal-vector))
+(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix))
 
 (facts "Shader for creating isometry with given normal vector as first row"
        (let [n  (vec3 0.36 0.48 0.8)
@@ -1147,7 +1146,7 @@ void main()
   fragColor = rotate_vector(axis, v, cos_angle, sin_angle);
 }"))
 
-(def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector oriented-matrix orthogonal-vector))
+(def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector))
 
 (tabular "Shader for rotating vector around specified axis"
          (fact (rotate-vector-test [] [?ax ?ay ?az ?x ?y ?z ?angle]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
