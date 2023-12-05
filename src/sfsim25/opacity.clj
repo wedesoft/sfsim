@@ -3,8 +3,7 @@
     (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture)]
-              [sfsim25.clouds :refer (opacity-vertex opacity-fragment linear-sampling opacity-cascade cloud-density-shaders)]
-              [sfsim25.shaders :as shaders]))
+              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]))
 
 (defn make-opacity-renderer
   "Initialise an opacity program"

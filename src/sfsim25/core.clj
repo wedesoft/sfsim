@@ -9,16 +9,12 @@
                                     make-vertex-array-object onscreen-render render-quads texture-render-color-depth
                                     uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
                                     use-textures shadow-cascade)]
-            [sfsim25.atmosphere :refer (attenuation-track phase phase-function ray-scatter-track transmittance-outer
-                                        transmittance-track vertex-atmosphere fragment-atmosphere cloud-overlay)
+            [sfsim25.atmosphere :refer (phase vertex-atmosphere fragment-atmosphere)
                                 :as atmosphere]
-            [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
-                                    surface-radiance-function tess-control-planet tess-evaluation-planet
+            [sfsim25.planet :refer (geometry-planet make-cube-map-tile-vertices tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet)]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
-            [sfsim25.clouds :refer (cloud-atmosphere cloud-density-shaders cloud-planet linear-sampling
-                                    opacity-lookup-shaders sample-cloud overall-shadow)]
-            [sfsim25.bluenoise :as bluenoise]
+            [sfsim25.clouds :refer (cloud-atmosphere cloud-planet)]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
             [sfsim25.quaternion :as q]
