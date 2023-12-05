@@ -11,9 +11,8 @@
   [& {:keys [num-opacity-layers cloud-octaves perlin-octaves cover-size shadow-size noise-size worley-size radius cloud-bottom
              cloud-top detail-scale cloud-scale worley-tex perlin-worley-tex cloud-cover-tex cloud-multiplier
              cover-multiplier cap]}]
-  (let [program
-        (make-program :vertex [opacity-vertex]
-                      :fragment [(opacity-fragment num-opacity-layers perlin-octaves cloud-octaves)])
+  (let [program  (make-program :vertex [opacity-vertex]
+                               :fragment [(opacity-fragment num-opacity-layers perlin-octaves cloud-octaves)])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao              (make-vertex-array-object program indices vertices ["point" 2])]

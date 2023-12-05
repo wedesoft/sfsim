@@ -4,6 +4,7 @@
               [clojure.math :refer (exp pow PI sqrt log)]
               [sfsim25.ray :refer (integral-ray)]
               [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
+              [sfsim25.render :refer (make-program use-program uniform-sampler uniform-int uniform-float)]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer (third fourth limit-quot sqr)])
     (:import [fastmath.vector Vec3]))
@@ -346,5 +347,41 @@
 (def fragment-atmosphere
   "Fragment shader for rendering atmosphere and sun"
   [shaders/ray-sphere attenuation-outer cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
+
+(defn make-atmosphere-renderer
+  "Initialise atmosphere rendering program"
+  [& {:keys [cover-size num-steps noise-size height-size elevation-size light-elevation-size heading-size
+             transmittance-elevation-size transmittance-height-size surface-sun-elevation-size surface-height-size
+             albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification]}]
+  (let [program (make-program :vertex [vertex-atmosphere]
+                              :fragment [fragment-atmosphere])]
+    (use-program program)
+    (uniform-sampler program "transmittance" 0)
+    (uniform-sampler program "ray_scatter" 1)
+    (uniform-sampler program "mie_strength" 2)
+    (uniform-sampler program "surface_radiance" 3)
+    (uniform-sampler program "clouds" 4)
+    (doseq [i (range num-steps)]
+           (uniform-sampler program (str "opacity" i) (+ i 5)))
+    (uniform-int program "cover_size" cover-size)
+    (uniform-int program "noise_size" noise-size)
+    (uniform-int program "height_size" height-size)
+    (uniform-int program "elevation_size" elevation-size)
+    (uniform-int program "light_elevation_size" light-elevation-size)
+    (uniform-int program "heading_size" heading-size)
+    (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+    (uniform-int program "transmittance_height_size" transmittance-height-size)
+    (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
+    (uniform-int program "surface_height_size" surface-height-size)
+    (uniform-float program "albedo" albedo)
+    (uniform-float program "reflectivity" reflectivity)
+    (uniform-float program "opacity_cutoff" opacity-cutoff)
+    (uniform-int program "num_opacity_layers" num-opacity-layers)
+    (uniform-int program "shadow_size" shadow-size)
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    (uniform-float program "specular" specular)
+    (uniform-float program "amplification" amplification)
+    {:program program}))
 
 (set! *unchecked-math* false)

@@ -10,7 +10,8 @@
                                     uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
                                     use-textures shadow-cascade)]
             [sfsim25.atmosphere :refer (attenuation-track phase phase-function ray-scatter-track transmittance-outer
-                                        transmittance-track vertex-atmosphere fragment-atmosphere cloud-overlay)]
+                                        transmittance-track vertex-atmosphere fragment-atmosphere cloud-overlay)
+                                :as atmosphere]
             [sfsim25.planet :refer (geometry-planet ground-radiance make-cube-map-tile-vertices
                                     surface-radiance-function tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet)]
@@ -191,6 +192,28 @@ void main()
 (def program-atmosphere
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere]))
+
+(def atmosphere-renderer
+  (atmosphere/make-atmosphere-renderer :cover-size cover-size
+                                       :num-steps num-steps
+                                       :noise-size noise-size
+                                       :height-size height-size
+                                       :elevation-size elevation-size
+                                       :light-elevation-size light-elevation-size
+                                       :heading-size heading-size
+                                       :transmittance-elevation-size transmittance-elevation-size
+                                       :transmittance-height-size transmittance-height-size
+                                       :surface-sun-elevation-size surface-sun-elevation-size
+                                       :surface-height-size surface-height-size
+                                       :albedo 0.9
+                                       :reflectivity 0.1
+                                       :opacity-cutoff 0.05
+                                       :num-opacity-layers num-opacity-layers
+                                       :shadow-size shadow-size
+                                       :radius radius
+                                       :max-height max-height
+                                       :specular 1000
+                                       :amplification 6))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -378,34 +401,6 @@ void main()
 (uniform-float program-planet "radius" radius)
 (uniform-float program-planet "max_height" max-height)
 
-(use-program program-atmosphere)
-(uniform-sampler program-atmosphere "transmittance" 0)
-(uniform-sampler program-atmosphere "ray_scatter" 1)
-(uniform-sampler program-atmosphere "mie_strength" 2)
-(uniform-sampler program-atmosphere "surface_radiance" 3)
-(uniform-sampler program-atmosphere "clouds" 4)
-(doseq [i (range num-steps)]
-       (uniform-sampler program-atmosphere (str "opacity" i) (+ i 5)))
-(uniform-int program-atmosphere "cover_size" 512)
-(uniform-int program-atmosphere "noise_size" noise-size)
-(uniform-int program-atmosphere "height_size" height-size)
-(uniform-int program-atmosphere "elevation_size" elevation-size)
-(uniform-int program-atmosphere "light_elevation_size" light-elevation-size)
-(uniform-int program-atmosphere "heading_size" heading-size)
-(uniform-int program-atmosphere "transmittance_elevation_size" transmittance-elevation-size)
-(uniform-int program-atmosphere "transmittance_height_size" transmittance-height-size)
-(uniform-int program-atmosphere "surface_sun_elevation_size" surface-sun-elevation-size)
-(uniform-int program-atmosphere "surface_height_size" surface-height-size)
-(uniform-float program-atmosphere "albedo" 0.9)
-(uniform-float program-atmosphere "reflectivity" 0.1)
-(uniform-float program-atmosphere "opacity_cutoff" 0.05)
-(uniform-int program-atmosphere "num_opacity_layers" num-opacity-layers)
-(uniform-int program-atmosphere "shadow_size" shadow-size)
-(uniform-float program-atmosphere "radius" radius)
-(uniform-float program-atmosphere "max_height" max-height)
-(uniform-float program-atmosphere "specular" 1000)
-(uniform-float program-atmosphere "amplification" 6)
-
 (def tree (atom []))
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
@@ -455,7 +450,6 @@ void main()
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
-
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -498,7 +492,7 @@ void main()
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
                    indices    [0 1 3 2]
                    vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-                   vao        (make-vertex-array-object program-atmosphere indices vertices ["point" 3])
+                   vao        (make-vertex-array-object (:program atmosphere-renderer) indices vertices ["point" 3])
                    light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
@@ -582,20 +576,20 @@ void main()
                                 (render-tree program-planet @tree (inverse extrinsics)
                                              [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
-                                (use-program program-atmosphere)
+                                (use-program (:program atmosphere-renderer))
                                 (doseq [[idx item] (map-indexed vector splits)]
-                                       (uniform-float program-atmosphere (str "split" idx) item))
+                                       (uniform-float (:program atmosphere-renderer) (str "split" idx) item))
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                       (uniform-matrix4 program-atmosphere (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                       (uniform-float program-atmosphere (str "depth" idx) (:depth item)))
-                                (uniform-matrix4 program-atmosphere "projection" projection)
-                                (uniform-matrix4 program-atmosphere "extrinsics" extrinsics)
-                                (uniform-vector3 program-atmosphere "origin" @position)
-                                (uniform-matrix4 program-atmosphere "transform" (inverse extrinsics))
-                                (uniform-float program-atmosphere "opacity_step" opac-step)
-                                (uniform-int program-atmosphere "window_width" (aget w 0))
-                                (uniform-int program-atmosphere "window_height" (aget h 0))
-                                (uniform-vector3 program-atmosphere "light_direction" light-dir)
+                                       (uniform-matrix4 (:program atmosphere-renderer) (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+                                       (uniform-float (:program atmosphere-renderer) (str "depth" idx) (:depth item)))
+                                (uniform-matrix4 (:program atmosphere-renderer) "projection" projection)
+                                (uniform-matrix4 (:program atmosphere-renderer) "extrinsics" extrinsics)
+                                (uniform-vector3 (:program atmosphere-renderer) "origin" @position)
+                                (uniform-matrix4 (:program atmosphere-renderer) "transform" (inverse extrinsics))
+                                (uniform-float (:program atmosphere-renderer) "opacity_step" opac-step)
+                                (uniform-int (:program atmosphere-renderer) "window_width" (aget w 0))
+                                (uniform-int (:program atmosphere-renderer) "window_height" (aget h 0))
+                                (uniform-vector3 (:program atmosphere-renderer) "light_direction" light-dir)
                                 (apply use-textures transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds opacities)
                                 (render-quads vao))
                (destroy-texture clouds)
@@ -624,7 +618,7 @@ void main()
   (destroy-program program-shadow-planet)
   (destroy-program program-planet)
   (opacity/destroy opacity-renderer)
-  (destroy-program program-atmosphere)
+  (destroy-program (:program atmosphere-renderer))
   (destroy-window window)
   (GLFW/glfwTerminate)
   (System/exit 0))
