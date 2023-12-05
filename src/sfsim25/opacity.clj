@@ -56,7 +56,7 @@
   (doseq [layer opacities]
          (destroy-texture layer)))
 
-(defn destroy
+(defn destroy-opacity-renderer
   "Delete opacity renderer objects"
   [{:keys [vao program]}]
   (destroy-vertex-array-object vao)

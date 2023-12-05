@@ -4,7 +4,7 @@
               [clojure.math :refer (exp pow PI sqrt log)]
               [sfsim25.ray :refer (integral-ray)]
               [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
-              [sfsim25.render :refer (make-program use-program uniform-sampler uniform-int uniform-float)]
+              [sfsim25.render :refer (make-program use-program uniform-sampler uniform-int uniform-float destroy-program)]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer (third fourth limit-quot sqr)])
     (:import [fastmath.vector Vec3]))
@@ -383,5 +383,10 @@
     (uniform-float program "specular" specular)
     (uniform-float program "amplification" amplification)
     {:program program}))
+
+(defn destroy-atmosphere-renderer
+  "Destroy atmosphere renderer"
+  [{:keys [program]}]
+  (destroy-program program))
 
 (set! *unchecked-math* false)
