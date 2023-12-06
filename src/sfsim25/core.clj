@@ -151,6 +151,7 @@ void main()
 (def light (atom 0.0))
 (def num-steps 3)
 (def num-opacity-layers 7)
+(def opacity-cutoff 0.01)
 
 (GLFW/glfwInit)
 
@@ -185,10 +186,6 @@ void main()
 (def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
-(def program-atmosphere
-  (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere]))
-
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :cover-size cover-size
                                        :num-steps num-steps
@@ -203,13 +200,17 @@ void main()
                                        :surface-height-size surface-height-size
                                        :albedo 0.9
                                        :reflectivity 0.1
-                                       :opacity-cutoff 0.05
+                                       :opacity-cutoff opacity-cutoff
                                        :num-opacity-layers num-opacity-layers
                                        :shadow-size shadow-size
                                        :radius radius
                                        :max-height max-height
                                        :specular 1000
-                                       :amplification 6))
+                                       :amplification 6
+                                       :transmittance-tex transmittance-tex
+                                       :scatter-tex scatter-tex
+                                       :mie-tex mie-tex
+                                       :surface-radiance-tex surface-radiance-tex))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -307,7 +308,7 @@ void main()
 (uniform-float program-cloud-planet "max_height" max-height)
 (uniform-vector3 program-cloud-planet "water_color" (vec3 0.09 0.11 0.34))
 (uniform-float program-cloud-planet "amplification" 6)
-(uniform-float program-cloud-planet "opacity_cutoff" 0.05)
+(uniform-float program-cloud-planet "opacity_cutoff" opacity-cutoff)
 (uniform-int program-cloud-planet "num_opacity_layers" num-opacity-layers)
 (uniform-int program-cloud-planet "shadow_size" shadow-size)
 
@@ -350,7 +351,7 @@ void main()
 (uniform-float program-cloud-atmosphere "max_height" max-height)
 (uniform-vector3 program-cloud-atmosphere "water_color" (vec3 0.09 0.11 0.34))
 (uniform-float program-cloud-atmosphere "amplification" 6)
-(uniform-float program-cloud-atmosphere "opacity_cutoff" 0.05)
+(uniform-float program-cloud-atmosphere "opacity_cutoff" opacity-cutoff)
 (uniform-int program-cloud-atmosphere "num_opacity_layers" num-opacity-layers)
 (uniform-int program-cloud-atmosphere "shadow_size" shadow-size)
 
@@ -391,7 +392,7 @@ void main()
 (uniform-float program-planet "max_height" max-height)
 (uniform-vector3 program-planet "water_color" (vec3 0.09 0.11 0.34))
 (uniform-float program-planet "amplification" 6)
-(uniform-float program-planet "opacity_cutoff" 0.05)
+(uniform-float program-planet "opacity_cutoff" opacity-cutoff)
 (uniform-int program-planet "num_opacity_layers" num-opacity-layers)
 (uniform-int program-planet "shadow_size" shadow-size)
 (uniform-float program-planet "radius" radius)
@@ -572,22 +573,19 @@ void main()
                                 (render-tree program-planet @tree (inverse extrinsics)
                                              [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
-                                (use-program (:program atmosphere-renderer))
-                                (doseq [[idx item] (map-indexed vector splits)]
-                                       (uniform-float (:program atmosphere-renderer) (str "split" idx) item))
-                                (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                       (uniform-matrix4 (:program atmosphere-renderer) (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                       (uniform-float (:program atmosphere-renderer) (str "depth" idx) (:depth item)))
-                                (uniform-matrix4 (:program atmosphere-renderer) "projection" projection)
-                                (uniform-matrix4 (:program atmosphere-renderer) "extrinsics" extrinsics)
-                                (uniform-vector3 (:program atmosphere-renderer) "origin" @position)
-                                (uniform-matrix4 (:program atmosphere-renderer) "transform" (inverse extrinsics))
-                                (uniform-float (:program atmosphere-renderer) "opacity_step" opac-step)
-                                (uniform-int (:program atmosphere-renderer) "window_width" (aget w 0))
-                                (uniform-int (:program atmosphere-renderer) "window_height" (aget h 0))
-                                (uniform-vector3 (:program atmosphere-renderer) "light_direction" light-dir)
-                                (apply use-textures transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds opacities)
-                                (render-quads vao))
+                                (atmosphere/render-atmosphere atmosphere-renderer
+                                                              :splits splits
+                                                              :matrix-cascade matrix-cas
+                                                              :projection projection
+                                                              :extrinsics extrinsics
+                                                              :origin @position
+                                                              :opacity-step opac-step
+                                                              :window-width (aget w 0)
+                                                              :window-height (aget h 0)
+                                                              :light-direction light-dir
+                                                              :z-far z-far
+                                                              :clouds clouds
+                                                              :opacities opacities))
                (destroy-texture clouds)
                (opacity/destroy-cascade opacities)
                (doseq [shadow shadows]

@@ -39,7 +39,7 @@
      :detail-scale detail-scale}))
 
 (defn render-cascade
-  "Render a cascade of opacity maps"
+  "Render a cascade of opacity maps and return it as a list of 3D textures"
   [{:keys [program vao detail-scale shadow-size worley-size num-opacity-layers]}
    matrix-cas light-direction cloud-threshold scatter-amount opacity-step]
   (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale worley-size) program

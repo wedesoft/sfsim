@@ -1,10 +1,13 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
     (:require [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
+              [fastmath.matrix :refer (inverse)]
               [clojure.math :refer (exp pow PI sqrt log)]
               [sfsim25.ray :refer (integral-ray)]
               [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
-              [sfsim25.render :refer (make-program use-program uniform-sampler uniform-int uniform-float destroy-program)]
+              [sfsim25.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
+                                      uniform-vector3 use-textures destroy-program make-vertex-array-object
+                                      destroy-vertex-array-object render-quads)]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer (third fourth limit-quot sqr)])
     (:import [fastmath.vector Vec3]))
@@ -352,7 +355,8 @@
   "Initialise atmosphere rendering program"
   [& {:keys [cover-size num-steps noise-size height-size elevation-size light-elevation-size heading-size
              transmittance-elevation-size transmittance-height-size surface-sun-elevation-size surface-height-size
-             albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification]}]
+             albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification
+             transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
@@ -382,7 +386,37 @@
     (uniform-float program "max_height" max-height)
     (uniform-float program "specular" specular)
     (uniform-float program "amplification" amplification)
-    {:program program}))
+    {:program program
+     :transmittance-tex transmittance-tex
+     :scatter-tex scatter-tex
+     :mie-tex mie-tex
+     :surface-radiance-tex surface-radiance-tex}))
+
+(defn render-atmosphere
+  "Render atmosphere with cloud overlay"
+  [{:keys [program transmittance-tex scatter-tex mie-tex surface-radiance-tex]}
+   & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height
+             light-direction clouds opacities z-far]}]
+  (let [indices    [0 1 3 2]
+        vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vao        (make-vertex-array-object program indices vertices ["point" 3])]
+    (use-program program)
+    (doseq [[idx item] (map-indexed vector splits)]
+           (uniform-float program (str "split" idx) item))
+    (doseq [[idx item] (map-indexed vector matrix-cascade)]
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:depth item)))
+    (uniform-matrix4 program "projection" projection)
+    (uniform-matrix4 program "extrinsics" extrinsics)
+    (uniform-vector3 program "origin" origin)
+    (uniform-matrix4 program "transform" (inverse extrinsics))
+    (uniform-float program "opacity_step" opacity-step)
+    (uniform-int program "window_width" window-width)
+    (uniform-int program "window_height" window-height)
+    (uniform-vector3 program "light_direction" light-direction)
+    (apply use-textures transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds opacities)
+    (render-quads vao)
+    (destroy-vertex-array-object vao)))
 
 (defn destroy-atmosphere-renderer
   "Destroy atmosphere renderer"
