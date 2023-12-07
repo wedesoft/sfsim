@@ -4,7 +4,8 @@
               [sfsim25.matrix :refer (transformation-matrix)]
               [sfsim25.cubemap :refer (cube-map-corners)]
               [sfsim25.quadtree :refer (is-leaf?)]
-              [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches)]
+              [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
+                                      use-program uniform-sampler destroy-program)]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.clouds :refer (overall-shadow)]
               [sfsim25.shaders :as shaders])
@@ -32,8 +33,12 @@
   (slurp "resources/shaders/planet/tess-control.glsl"))
 
 (def tess-evaluation-planet
-  "Tessellation evaluation shader to generate output points of tessellated quad"
+  "Tessellation evaluation shader to generate output points of tessellated quads"
   (slurp "resources/shaders/planet/tess-evaluation.glsl"))
+
+(def tess-evaluation-planet-shadow
+  "Tessellation evaluation shader to output shadow map points of tessellated quads"
+  [shaders/shrink-shadow-index (slurp "resources/shaders/planet/tess-evaluation-shadow.glsl")])
 
 (def geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
@@ -53,6 +58,10 @@
   [num-steps]
   [shaders/ray-sphere ground-radiance attenuation-track cloud-overlay (overall-shadow num-steps)
    (slurp "resources/shaders/planet/fragment.glsl")])
+
+(def fragment-planet-shadow
+  "Fragment shader to render planetary shadow map"
+  (slurp "resources/shaders/planet/fragment-shadow.glsl"))
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
@@ -76,3 +85,23 @@
               (render-tile program node transform texture-keys)
               (doseq [selector [:0 :1 :2 :3 :4 :5]]
                      (render-tree program (selector node) transform texture-keys)))))
+
+(defn make-planet-shadow-renderer
+  "Create program for rendering cascaded shadow maps of planet"
+  [& {:keys [tilesize shadow-size]}]
+  (let [program (make-program :vertex [vertex-planet]
+                              :tess-control [tess-control-planet]
+                              :tess-evaluation [tess-evaluation-planet-shadow]
+                              :geometry [geometry-planet]
+                              :fragment [fragment-planet-shadow])]
+    (use-program program)
+    (uniform-sampler program "surface" 0)
+    (uniform-int program "high_detail" (dec tilesize))
+    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (uniform-int program "shadow_size" shadow-size)
+    {:program program}))
+
+(defn destroy-planet-shadow-renderer
+  "Destroy renderer for planet shadow"
+  [{:keys [program]}]
+  (destroy-program program))

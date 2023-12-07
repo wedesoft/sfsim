@@ -12,7 +12,8 @@
             [sfsim25.atmosphere :refer (phase vertex-atmosphere fragment-atmosphere)
                                 :as atmosphere]
             [sfsim25.planet :refer (geometry-planet make-cube-map-tile-vertices tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tree fragment-planet)]
+                                    vertex-planet render-tree fragment-planet)
+                            :as planet]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
             [sfsim25.clouds :refer (cloud-atmosphere cloud-planet)]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
@@ -30,53 +31,6 @@
 
 (def width 1280)
 (def height 720)
-
-(def tess-evaluation-shadow-planet
-"#version 410 core
-layout(quads, equal_spacing, ccw) in;
-uniform sampler2D surface;
-uniform vec3 tile_center;
-uniform mat4 recenter_and_transform;
-uniform int shadow_size;
-in TCS_OUT
-{
-  vec2 surfacecoord;
-  vec2 colorcoord;
-} tes_in[];
-
-out TES_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-} tes_out;
-
-vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
-
-// Use surface pointcloud to determine coordinates of tessellated points.
-void main()
-{
-  vec2 colorcoord_a = mix(tes_in[0].colorcoord, tes_in[1].colorcoord, gl_TessCoord.x);
-  vec2 colorcoord_b = mix(tes_in[3].colorcoord, tes_in[2].colorcoord, gl_TessCoord.x);
-  tes_out.colorcoord = mix(colorcoord_a, colorcoord_b, gl_TessCoord.y);
-  vec2 surfacecoord_a = mix(tes_in[0].surfacecoord, tes_in[1].surfacecoord, gl_TessCoord.x);
-  vec2 surfacecoord_b = mix(tes_in[3].surfacecoord, tes_in[2].surfacecoord, gl_TessCoord.x);
-  vec2 surfacecoord = mix(surfacecoord_a, surfacecoord_b, gl_TessCoord.y);
-  vec3 vector = texture(surface, surfacecoord).xyz;
-  tes_out.point = tile_center + vector;
-  vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
-  gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
-}")
-
-(def fragment-shadow-planet
-"#version 410 core
-in GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-} fs_in;
-void main()
-{
-}")
 
 (def fragment-planet-clouds
 "#version 410 core
@@ -207,12 +161,9 @@ void main()
                                  :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render shadow map of planet
-(def program-shadow-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-shadow-planet shaders/shrink-shadow-index]
-                :geometry [geometry-planet]
-                :fragment [fragment-shadow-planet]))
+(def planet-shadow-renderer
+  (planet/make-planet-shadow-renderer :tilesize tilesize
+                                      :shadow-size shadow-size))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def program-cloud-planet
@@ -261,12 +212,6 @@ void main()
                                        :scatter-tex scatter-tex
                                        :mie-tex mie-tex
                                        :surface-radiance-tex surface-radiance-tex))
-
-(use-program program-shadow-planet)
-(uniform-sampler program-shadow-planet "surface" 0)
-(uniform-int program-shadow-planet "high_detail" (dec tilesize))
-(uniform-int program-shadow-planet "low_detail" (quot (dec tilesize) 2))
-(uniform-int program-shadow-planet "shadow_size" shadow-size)
 
 (use-program program-cloud-planet)
 (uniform-sampler program-cloud-planet "surface"          0)
@@ -489,7 +434,7 @@ void main()
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
                    indices    [0 1 3 2]
                    vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-                   vao        (make-vertex-array-object (:program atmosphere-renderer) indices vertices ["point" 3])
+                   vao        (make-vertex-array-object program-cloud-atmosphere indices vertices ["point" 3])
                    light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
@@ -501,9 +446,9 @@ void main()
                    sin-light  (sqrt (- 1 (sqr cos-light)))
                    opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
                    opacities  (opacity/render-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am opac-step)
-                   shadows    (shadow-cascade shadow-size matrix-cas program-shadow-planet
+                   shadows    (shadow-cascade shadow-size matrix-cas (:program planet-shadow-renderer)
                                               (fn [transform]
-                                                  (render-tree program-shadow-planet @tree transform [:surf-tex])))
+                                                  (render-tree (:program planet-shadow-renderer) @tree transform [:surf-tex])))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
@@ -609,7 +554,7 @@ void main()
   (destroy-texture worley-tex)
   (destroy-program program-cloud-atmosphere)
   (destroy-program program-cloud-planet)
-  (destroy-program program-shadow-planet)
+  (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (destroy-program program-planet)
   (opacity/destroy-opacity-renderer opacity-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
