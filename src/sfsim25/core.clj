@@ -8,9 +8,8 @@
                                     make-program make-rgb-texture make-ubyte-texture-2d make-vector-texture-2d
                                     make-vertex-array-object onscreen-render render-quads texture-render-color-depth
                                     uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
-                                    use-textures shadow-cascade)]
-            [sfsim25.atmosphere :refer (phase vertex-atmosphere fragment-atmosphere)
-                                :as atmosphere]
+                                    use-textures)]
+            [sfsim25.atmosphere :refer (phase vertex-atmosphere) :as atmosphere]
             [sfsim25.planet :refer (geometry-planet make-cube-map-tile-vertices tess-control-planet tess-evaluation-planet
                                     vertex-planet render-tree fragment-planet)
                             :as planet]
@@ -20,7 +19,6 @@
                                     transformation-matrix)]
             [sfsim25.quaternion :as q]
             [sfsim25.util :refer (slurp-floats sqr)]
-            [sfsim25.shaders :as shaders]
             [sfsim25.opacity :as opacity])
   (:import [org.lwjgl.opengl GL11]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -445,10 +443,9 @@ void main()
                    cos-light  (/ (dot light-dir @position) (mag @position))
                    sin-light  (sqrt (- 1 (sqr cos-light)))
                    opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
-                   opacities  (opacity/render-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am opac-step)
-                   shadows    (shadow-cascade shadow-size matrix-cas (:program planet-shadow-renderer)
-                                              (fn [transform]
-                                                  (render-tree (:program planet-shadow-renderer) @tree transform [:surf-tex])))
+                   opacities  (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am
+                                                              opac-step)
+                   shadows    (planet/render-shadow-cascade planet-shadow-renderer :matrix-cascade matrix-cas :tree @tree)
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
@@ -532,9 +529,8 @@ void main()
                                                               :clouds clouds
                                                               :opacities opacities))
                (destroy-texture clouds)
-               (opacity/destroy-cascade opacities)
-               (doseq [shadow shadows]
-                      (destroy-texture shadow))
+               (opacity/destroy-opacity-cascade opacities)
+               (planet/destroy-shadow-cascade shadows)
                (destroy-vertex-array-object vao))
              (GLFW/glfwPollEvents)
              (swap! n inc)

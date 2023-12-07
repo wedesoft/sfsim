@@ -5,7 +5,7 @@
               [sfsim25.cubemap :refer (cube-map-corners)]
               [sfsim25.quadtree :refer (is-leaf?)]
               [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
-                                      use-program uniform-sampler destroy-program)]
+                                      use-program uniform-sampler destroy-program shadow-cascade destroy-texture)]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.clouds :refer (overall-shadow)]
               [sfsim25.shaders :as shaders])
@@ -99,7 +99,19 @@
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "shadow_size" shadow-size)
-    {:program program}))
+    {:program program
+     :shadow-size shadow-size}))
+
+(defn render-shadow-cascade
+  "Render planetary shadow cascade"
+  [{:keys [program shadow-size]} & {:keys [matrix-cascade tree]}]
+  (shadow-cascade shadow-size matrix-cascade program (fn [transform] (render-tree program tree transform [:surf-tex]))))
+
+(defn destroy-shadow-cascade
+  "Destroy cascade of shadow maps"
+  [shadows]
+  (doseq [shadow shadows]
+         (destroy-texture shadow)))
 
 (defn destroy-planet-shadow-renderer
   "Destroy renderer for planet shadow"

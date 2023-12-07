@@ -38,7 +38,7 @@
      :num-opacity-layers num-opacity-layers
      :detail-scale detail-scale}))
 
-(defn render-cascade
+(defn render-opacity-cascade
   "Render a cascade of opacity maps and return it as a list of 3D textures"
   [{:keys [program vao detail-scale shadow-size worley-size num-opacity-layers]}
    matrix-cas light-direction cloud-threshold scatter-amount opacity-step]
@@ -50,7 +50,7 @@
                    (uniform-float program "cloud_max_step" (* 0.5 opacity-step))
                    (render-quads vao)))
 
-(defn destroy-cascade
+(defn destroy-opacity-cascade
   "Destroy cascade of opacity maps"
   [opacities]
   (doseq [layer opacities]
