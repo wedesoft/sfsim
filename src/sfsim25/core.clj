@@ -185,6 +185,56 @@ void main()
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
+; Program to render cascade of deep opacity maps
+(def opacity-renderer
+  (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
+                                 :cloud-octaves cloud-octaves
+                                 :perlin-octaves perlin-octaves
+                                 :cover-size cover-size
+                                 :shadow-size shadow-size
+                                 :noise-size noise-size
+                                 :worley-size worley-size
+                                 :radius radius
+                                 :cloud-bottom cloud-bottom
+                                 :cloud-top cloud-top
+                                 :cloud-multiplier cloud-multiplier
+                                 :cover-multiplier cover-multiplier
+                                 :cap cap
+                                 :detail-scale detail-scale
+                                 :cloud-scale cloud-scale
+                                 :worley-tex worley-tex
+                                 :perlin-worley-tex perlin-worley-tex
+                                 :cloud-cover-tex cloud-cover-tex))
+
+; Program to render shadow map of planet
+(def program-shadow-planet
+  (make-program :vertex [vertex-planet]
+                :tess-control [tess-control-planet]
+                :tess-evaluation [tess-evaluation-shadow-planet shaders/shrink-shadow-index]
+                :geometry [geometry-planet]
+                :fragment [fragment-shadow-planet]))
+
+; Program to render clouds in front of planet (before rendering clouds above horizon)
+(def program-cloud-planet
+  (make-program :vertex [vertex-planet]
+                :tess-control [tess-control-planet]
+                :tess-evaluation [tess-evaluation-planet]
+                :geometry [geometry-planet]
+                :fragment [fragment-planet-clouds (cloud-planet num-steps perlin-octaves cloud-octaves)]))
+
+; Program to render clouds above the horizon (after rendering clouds in front of planet)
+(def program-cloud-atmosphere
+  (make-program :vertex [vertex-atmosphere]
+                :fragment [fragment-atmosphere-clouds (cloud-atmosphere num-steps perlin-octaves cloud-octaves)]))
+
+; Program to render planet with cloud overlay (before rendering atmosphere)
+(def program-planet
+  (make-program :vertex [vertex-planet]
+                :tess-control [tess-control-planet]
+                :tess-evaluation [tess-evaluation-planet]
+                :geometry [geometry-planet]
+                :fragment [(fragment-planet num-steps)]))
+
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :cover-size cover-size
@@ -211,56 +261,6 @@ void main()
                                        :scatter-tex scatter-tex
                                        :mie-tex mie-tex
                                        :surface-radiance-tex surface-radiance-tex))
-
-; Program to render cascade of deep opacity maps
-(def opacity-renderer
-  (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
-                                 :cloud-octaves cloud-octaves
-                                 :perlin-octaves perlin-octaves
-                                 :cover-size cover-size
-                                 :shadow-size shadow-size
-                                 :noise-size noise-size
-                                 :worley-size worley-size
-                                 :radius radius
-                                 :cloud-bottom cloud-bottom
-                                 :cloud-top cloud-top
-                                 :cloud-multiplier cloud-multiplier
-                                 :cover-multiplier cover-multiplier
-                                 :cap cap
-                                 :detail-scale detail-scale
-                                 :cloud-scale cloud-scale
-                                 :worley-tex worley-tex
-                                 :perlin-worley-tex perlin-worley-tex
-                                 :cloud-cover-tex cloud-cover-tex))
-
-; Program to render planet with cloud overlay (before rendering atmosphere)
-(def program-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-planet]
-                :geometry [geometry-planet]
-                :fragment [(fragment-planet num-steps)]))
-
-; Program to render shadow map of planet
-(def program-shadow-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-shadow-planet shaders/shrink-shadow-index]
-                :geometry [geometry-planet]
-                :fragment [fragment-shadow-planet]))
-
-; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def program-cloud-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-planet]
-                :geometry [geometry-planet]
-                :fragment [fragment-planet-clouds (cloud-planet num-steps perlin-octaves cloud-octaves)]))
-
-; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def program-cloud-atmosphere
-  (make-program :vertex [vertex-atmosphere]
-                :fragment [fragment-atmosphere-clouds (cloud-atmosphere num-steps perlin-octaves cloud-octaves)]))
 
 (use-program program-shadow-planet)
 (uniform-sampler program-shadow-planet "surface" 0)
