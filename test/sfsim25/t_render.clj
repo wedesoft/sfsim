@@ -47,6 +47,18 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
 
+(fact "Group shaders in lists"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
+          program  (make-program :vertex [[vertex-passthrough]] :fragment [[fragment-blue]])
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (render-quads vao)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim25/fixtures/render/quad.png" 0.0))
+
 (def vertex-color
 "#version 410 core
 in vec3 point;
@@ -821,7 +833,7 @@ void main(void)
               program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
                                            :fragment [fragment-shadow])
               program-main   (make-program :vertex [vertex-scene]
-                                           :fragment [fragment-scene s/shadow-lookup s/convert-shadow-index])
+                                           :fragment [fragment-scene s/shadow-lookup])
               vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-map     (texture-render-depth
                                128 128
@@ -876,7 +888,7 @@ void main(void)
                                            :fragment [fragment-shadow])
               program-main   (make-program :vertex [vertex-scene]
                                            :fragment [fragment-scene-cascade (s/shadow-cascade-lookup num-steps "shadow_lookup")
-                                                      s/shadow-lookup s/convert-shadow-index])
+                                                      s/shadow-lookup])
               vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-maps    (shadow-cascade 128 shadow-mats program-shadow
                                              (fn [shadow-ndc-matrix]

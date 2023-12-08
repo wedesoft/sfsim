@@ -12,7 +12,9 @@
               [sfsim25.matrix :refer :all]
               [sfsim25.interpolate :refer :all]
               [sfsim25.util :refer :all]
-              [sfsim25.planet :refer :all])
+              [sfsim25.planet :refer :all]
+              [sfsim25.bluenoise :as bluenoise]
+              [sfsim25.clouds :as clouds])
     (:import [org.lwjgl.glfw GLFW]
              [fastmath.matrix Mat4x4]))
 
@@ -359,9 +361,8 @@ void main()
         (uniform-float program "amplification" amplification)
         (uniform-float program "dawn_start" dawn-start)
         (uniform-float program "dawn_end" dawn-end))
-    ground-radiance-probe ground-radiance shaders/elevation-to-index shaders/interpolate-2d
-    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/sun-elevation-to-index shaders/remap))
+    ground-radiance-probe (last ground-radiance) shaders/elevation-to-index shaders/interpolate-2d
+    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/sun-elevation-to-index shaders/remap))
 
 (tabular "Shader function to compute light emitted from ground"
          (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl -0.05 0.05]
@@ -445,13 +446,9 @@ float overall_shadow(vec4 point)
 
 (defn make-planet-program []
   (make-program :vertex [vertex-planet-probe]
-                :fragment [fragment-planet fake-transmittance shaders/interpolate-2d shaders/convert-2d-index
-                           shaders/transmittance-forward shaders/elevation-to-index shaders/ray-sphere shaders/is-above-horizon
-                           fake-ray-scatter atmosphere/attenuation-track atmosphere/transmittance-outer ground-radiance
-                           shaders/ray-shell atmosphere/phase-function shaders/clip-shell-intersections
-                           shaders/ray-scatter-forward shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-                           shaders/surface-radiance-forward shaders/sun-elevation-to-index opacity-lookup-mock
-                           sampling-offset-mock surface-radiance-function cloud-overlay-mock overall-shadow-mock shaders/remap]))
+                :fragment [(last (fragment-planet 3)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
+                           overall-shadow-mock fake-transmittance fake-ray-scatter ground-radiance shaders/ray-shell
+                           (last atmosphere/attenuation-track)]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large

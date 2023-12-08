@@ -39,7 +39,8 @@ void main()
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
           worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
-          program  (make-program :vertex [shaders/vertex-passthrough] :fragment [(cloud-noise-probe x y z) cloud-noise])
+          program  (make-program :vertex [shaders/vertex-passthrough]
+                                 :fragment [(cloud-noise-probe x y z) (last (cloud-noise []))])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           tex      (texture-render-color 1 1 true
                                          (use-program program)
@@ -154,11 +155,8 @@ float cloud_density(vec3 point, float lod)
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
             ndc-to-shadow   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
             light-direction (vec3 0 0 1)
-            program         (make-program :vertex [opacity-vertex
-                                                   shaders/grow-shadow-index]
-                                          :fragment [(opacity-fragment 7)
-                                                     ray-shell-mock
-                                                     cloud-density-mock
+            program         (make-program :vertex [opacity-vertex]
+                                          :fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock cloud-density-mock
                                                      linear-sampling])
             vao             (make-vertex-array-object program indices vertices ["point" 2])
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 8)
@@ -215,8 +213,7 @@ void main()
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           program         (make-program :vertex [shaders/vertex-passthrough]
-                                        :fragment [(opacity-lookup-probe x y z depth) opacity-lookup shaders/convert-2d-index
-                                                   shaders/convert-3d-index])
+                                        :fragment [(opacity-lookup-probe x y z depth) opacity-lookup])
           vao             (make-vertex-array-object program indices vertices ["point" 3])
           zeropad         (fn [x] [0 x 0 0])
           offset-data     (zeropad offset)
@@ -507,11 +504,7 @@ void main()
         (uniform-float program "dz" dz))
     curl-probe
     (curl-vector "curl" "gradient")
-    shaders/rotate-vector
-    shaders/oriented-matrix
-    shaders/orthogonal-vector
     (shaders/gradient-3d "gradient" "noise_mock" "epsilon")
-    shaders/project-vector
     noise-mock))
 
 (tabular "Shader for computing curl vectors from noise function"
@@ -549,7 +542,7 @@ void main()
         (uniform-float program "prevailing" prevailing)
         (uniform-float program "whirl" whirl))
     flow-field-probe
-    flow-field))
+    (last (flow-field []))))
 
 (tabular "Shader to create potential field for generating curl noise for global cloud cover"
          (fact ((flow-field-test [?curl-scale ?prevailing ?whirl] [?north ?south ?x ?y ?z]) 0) => (roughly ?result 1e-5))
@@ -744,7 +737,7 @@ void main()
         (uniform-float program "cloud_multiplier" clouds)
         (uniform-float program "cloud_threshold" threshold))
     cloud-base-probe
-    cloud-base))
+    (last (cloud-base []))))
 
 (tabular "Shader for determining cloud density at specified point"
          (fact ((cloud-base-test [?cover ?clouds ?threshold] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
@@ -778,9 +771,7 @@ void main()
           data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
           cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
           program     (make-program :vertex [shaders/vertex-passthrough]
-                                    :fragment [(cloud-cover-probe x y z) cloud-cover
-                                               shaders/interpolate-float-cubemap
-                                               shaders/convert-cubemap-index])
+                                    :fragment [(cloud-cover-probe x y z) cloud-cover])
           vao         (make-vertex-array-object program indices vertices ["point" 3])
           tex         (texture-render-color
                         1 1 true
@@ -828,7 +819,7 @@ void main()
     (fn [program cap]
         (uniform-float program "cap" cap))
     cloud-density-probe
-    cloud-density
+    (last (cloud-density [] []))
     shaders/remap))
 
 (tabular "Compute cloud density at given point"
@@ -886,7 +877,7 @@ void main()
         (uniform-float program "amplification" amplification)
         (uniform-vector3 program "light_direction" (vec3 1 0 0)))
     cloud-transfer-probe
-    cloud-transfer))
+    (last (cloud-transfer 3))))
 
 (tabular "Shader function to increment scattering caused by clouds"
          (fact ((cloud-transfer-test [?shadow ?transmit ?atmos ?inscatter ?amp]
@@ -951,7 +942,7 @@ void main()
         (uniform-vector3 program "light_direction" (vec3 0 1 0))
         (uniform-float program "opacity_cutoff" opacity-cutoff))
     sample-cloud-probe
-    sample-cloud
+    (last (sample-cloud 3 [] []))
     linear-sampling))
 
 (tabular "Shader to sample the cloud layer and apply cloud scattering update steps"
@@ -1012,7 +1003,7 @@ void main()
         (uniform-float program "depth" depth)
         (uniform-vector3 program "origin" (vec3 0 0 origin)))
     cloud-planet-probe
-    cloud-planet))
+    (last (cloud-planet 3 [] []))))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
          (fact ((cloud-planet-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
@@ -1077,7 +1068,7 @@ void main()
         (uniform-float program "cloud_top" 2)
         (uniform-vector3 program "origin" (vec3 0 0 z)))
     cloud-atmosphere-probe
-    cloud-atmosphere))
+    (last (cloud-atmosphere 3 [] []))))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
          (fact ((cloud-atmosphere-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
@@ -1167,12 +1158,12 @@ void main()
                                     :tess-control [tess-control-planet]
                                     :tess-evaluation [tess-evaluation-planet]
                                     :geometry [geometry-planet]
-                                    :fragment [fragment-planet-clouds cloud-planet])
+                                    :fragment [fragment-planet-clouds (last (cloud-planet 3 [] []))])
           indices     [0 1 3 2]
           vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile        (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
           atmosphere  (make-program :vertex [vertex-atmosphere]
-                                    :fragment [fragment-atmosphere-clouds cloud-atmosphere])
+                                    :fragment [fragment-atmosphere-clouds (last (cloud-atmosphere 3 [] []))])
           indices     [0 1 3 2]
           vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao         (make-vertex-array-object atmosphere indices vertices ["point" 3])
@@ -1212,36 +1203,6 @@ void main()
       (destroy-program planet)
       (destroy-texture surface)
       img)) => (is-image "test/sfsim25/fixtures/clouds/overlay.png" 0.0))
-
-(def fragment-overlay-lookup
-"#version 410 core
-out vec3 fragColor;
-vec4 cloud_overlay();
-void main()
-{
-  vec4 clouds = cloud_overlay();
-  fragColor = 0.5 * (1 - clouds.a) + clouds.rgb;
-}")
-
-(fact "Test pixel lookup in cloud overlay"
-      (offscreen-render 60 40
-        (let [indices  [0 1 3 2]
-              vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
-              img      {:width 2 :height 2 :data (byte-array data)}
-              clouds   (make-rgba-texture :linear :clamp img)
-              program  (make-program :vertex [shaders/vertex-passthrough] :fragment [fragment-overlay-lookup cloud-overlay])
-              vao      (make-vertex-array-object program indices vertices ["point" 3])]
-          (use-program program)
-          (uniform-sampler program "clouds" 0)
-          (uniform-int program "window_width" 64)
-          (uniform-int program "window_height" 40)
-          (use-textures clouds)
-          (clear (vec3 0 0 0))
-          (render-quads vao)
-          (destroy-vertex-array-object vao)
-          (destroy-program program)
-          (destroy-texture clouds))) => (is-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
 
 (def opacity-cascade-mocks
 "#version 410 core
@@ -1291,8 +1252,8 @@ void main()
               light        (vec3 0 0 1)
               shadow-mats  (shadow-matrix-cascade projection extrinsics light 5 0.5 z-near z-far num-steps)
               program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                                         :fragment [(opacity-fragment num-layers) shaders/ray-shell shaders/ray-sphere
-                                                    linear-sampling opacity-cascade-mocks])
+                                         :fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
+                                                    shaders/ray-sphere linear-sampling opacity-cascade-mocks])
               vao          (make-vertex-array-object program-opac indices vertices ["point" 2])
               opacity-maps (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
                                             (uniform-vector3 program-opac "light_direction" light)
@@ -1309,8 +1270,7 @@ void main()
                                    program   (make-program :vertex [vertex-render-opacity]
                                                            :fragment [fragment-render-opacity
                                                                       (opacity-cascade-lookup num-steps "opacity_lookup")
-                                                                      opacity-lookup shaders/convert-2d-index
-                                                                      shaders/convert-3d-index])
+                                                                      opacity-lookup])
                                    vao       (make-vertex-array-object program indices vertices ["point" 3])]
                                (clear (vec3 0 0 0) 0)
                                (use-program program)
@@ -1362,7 +1322,7 @@ void main()
         (uniform-float program "opacity" opacity)
         (uniform-float program "shadow" shadow))
     overall-shadow-probe
-    overall-shadow))
+    (last (overall-shadow 3))))
 
 (fact "Multiply shadows to get overall shadow"
       ((overall-shadow-test [2.0 3.0] []) 0) => 6.0)

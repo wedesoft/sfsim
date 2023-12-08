@@ -11,15 +11,16 @@
               [sfsim25.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object make-program
                                       make-vector-texture-2d make-vertex-array-object offscreen-render render-quads
                                       rgb-texture->vectors3 texture-render-color uniform-float uniform-int uniform-matrix4
-                                      uniform-sampler uniform-vector3 use-program use-textures with-invisible-window)]
+                                      uniform-sampler uniform-vector3 use-program use-textures with-invisible-window
+                                      make-rgba-texture)]
               [sfsim25.shaders :as shaders]
               [sfsim25.util :refer (convert-4d-to-2d get-vector3 third)]
               [sfsim25.atmosphere :refer (atmosphere-intersection attenuation-outer attenuation-track elevation-to-index
-                                          extinction fragment-atmosphere height-to-index horizon-distance index-to-elevation
+                                          extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
                                           index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
                                           phase phase-function point-scatter point-scatter-base point-scatter-component
                                           point-scatter-space ray-extremity ray-scatter ray-scatter-outer ray-scatter-space
-                                          ray-scatter-track scattering strength-component sun-angle-to-index
+                                          ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
                                           sun-elevation-to-index surface-intersection surface-point? surface-radiance
                                           surface-radiance-base surface-radiance-space transmittance transmittance-outer
                                           transmittance-space transmittance-track vertex-atmosphere extinction) :as atmosphere])
@@ -549,9 +550,7 @@ void main()
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    transmittance-track-probe transmittance-track shaders/transmittance-forward shaders/height-to-index
-    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function))
+    transmittance-track-probe transmittance-track))
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact ((transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
@@ -579,9 +578,7 @@ void main()
         (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    transmittance-outer-probe transmittance-outer shaders/transmittance-forward shaders/height-to-index
-    shaders/elevation-to-index shaders/interpolate-2d shaders/convert-2d-index shaders/is-above-horizon
-    shaders/horizon-distance shaders/limit-quot phase-function))
+    transmittance-outer-probe transmittance-outer))
 
 (tabular "Shader function to compute transmittance between point in the atmosphere and space"
          (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
@@ -641,10 +638,7 @@ void main()
         (uniform-int program "heading_size" heading-size)
         (uniform-float program "radius" radius)
         (uniform-float program "max_height" max-height))
-    ray-scatter-track-probe ray-scatter-track shaders/ray-scatter-forward shaders/elevation-to-index shaders/interpolate-4d
-    shaders/make-2d-index-from-4d transmittance-track shaders/transmittance-forward shaders/interpolate-2d
-    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/horizon-distance shaders/limit-quot
-    shaders/sun-elevation-to-index shaders/sun-angle-to-index phase-function))
+    ray-scatter-track-probe ray-scatter-track))
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact ((ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)
@@ -717,19 +711,8 @@ vec4 cloud_overlay()
                                    origin        (vec3 ?x ?y ?z)
                                    extrinsics    (transformation-matrix (rotation-x ?rotation) origin)
                                    program       (make-program :vertex [vertex-atmosphere]
-                                                               :fragment [fragment-atmosphere transmittance-outer
-                                                                          ray-scatter-outer attenuation-outer shaders/ray-sphere
-                                                                          shaders/transmittance-forward
-                                                                          shaders/elevation-to-index shaders/ray-scatter-forward
-                                                                          shaders/interpolate-2d shaders/convert-2d-index
-                                                                          shaders/interpolate-4d shaders/make-2d-index-from-4d
-                                                                          shaders/is-above-horizon shaders/ray-shell
-                                                                          attenuation-track transmittance-track
-                                                                          ray-scatter-track phase-function
-                                                                          shaders/height-to-index shaders/horizon-distance
-                                                                          shaders/limit-quot shaders/sun-elevation-to-index
-                                                                          shaders/sun-angle-to-index
-                                                                          (cloud-overlay-mock ?cloud)])
+                                                               :fragment [(last fragment-atmosphere) shaders/ray-sphere
+                                                                          attenuation-outer (cloud-overlay-mock ?cloud)])
                                    variables     ["point" 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})
@@ -797,5 +780,35 @@ void main()
          0  -1   (/ 6 (* 16 PI))
          0.5 0   (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5)))
          0.5 1   (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))
+
+(def fragment-overlay-lookup
+"#version 410 core
+out vec3 fragColor;
+vec4 cloud_overlay();
+void main()
+{
+  vec4 clouds = cloud_overlay();
+  fragColor = 0.5 * (1 - clouds.a) + clouds.rgb;
+}")
+
+(fact "Test pixel lookup in cloud overlay"
+      (offscreen-render 60 40
+        (let [indices  [0 1 3 2]
+              vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
+              img      {:width 2 :height 2 :data (byte-array data)}
+              clouds   (make-rgba-texture :linear :clamp img)
+              program  (make-program :vertex [shaders/vertex-passthrough] :fragment [fragment-overlay-lookup cloud-overlay])
+              vao      (make-vertex-array-object program indices vertices ["point" 3])]
+          (use-program program)
+          (uniform-sampler program "clouds" 0)
+          (uniform-int program "window_width" 64)
+          (uniform-int program "window_height" 40)
+          (use-textures clouds)
+          (clear (vec3 0 0 0))
+          (render-quads vao)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (destroy-texture clouds))) => (is-image "test/sfsim25/fixtures/clouds/lookup.png" 0.0))
 
 (GLFW/glfwTerminate)

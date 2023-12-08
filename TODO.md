@@ -1,5 +1,8 @@
 # TODO
 * make modules out of core.clj
+  * simplify shader lists in all make-program calls
+  * group cloud textures, sizes, and parameters
+  * group atmospheric lookup tables and parameters
 * integration-test modules
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils

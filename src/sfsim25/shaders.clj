@@ -36,7 +36,7 @@
 
 (def shadow-lookup
   "Perform lookup in a shadow map including moving shadow index out of clamping region"
-  (slurp "resources/shaders/core/shadow-lookup.glsl"))
+  [convert-shadow-index (slurp "resources/shaders/core/shadow-lookup.glsl")])
 
 (def shadow-cascade-lookup
   "Perform shadow lookup in cascade of shadow maps"
@@ -53,15 +53,18 @@
 
 (def interpolate-2d
   "Perform 2D color interpolation"
-  (slurp "resources/shaders/core/interpolate-2d.glsl"))
+  [convert-2d-index (slurp "resources/shaders/core/interpolate-2d.glsl")])
 
 (def interpolate-3d
   "Perform 3D float interpolation"
-  (slurp "resources/shaders/core/interpolate-3d.glsl"))
+  [convert-3d-index (slurp "resources/shaders/core/interpolate-3d.glsl")])
 
-(def interpolate-cubemap
+(defn interpolate-cubemap
   "Perform interpolation on cubemap avoiding seams"
-  (template/fn [result-type method-name selector] (slurp "resources/shaders/core/interpolate-cubemap.glsl")))
+  [result-type method-name selector]
+  [convert-cubemap-index
+   (template/eval (slurp "resources/shaders/core/interpolate-cubemap.glsl")
+                  {:result-type result-type :method-name method-name :selector selector})])
 
 (def interpolate-float-cubemap
   "Perform floating-point interpolation on cubemap avoiding seams"
@@ -73,7 +76,7 @@
 
 (def interpolate-4d
   "Perform 4D float interpolation"
-  (slurp "resources/shaders/core/interpolate-4d.glsl"))
+  [make-2d-index-from-4d (slurp "resources/shaders/core/interpolate-4d.glsl")])
 
 (def is-above-horizon
   "Check whether a ray hits the ground or stays in the sky"
@@ -93,7 +96,7 @@
 
 (def ray-shell
   "Shader function for computing intersections of ray with a shell"
-  (slurp "resources/shaders/core/ray-shell.glsl"))
+  [ray-sphere (slurp "resources/shaders/core/ray-shell.glsl")])
 
 (def clip-shell-intersections
   "Clip the intersection information of ray and shell using given limit"
@@ -105,7 +108,7 @@
 
 (def height-to-index
   "Shader for converting height to index"
-  (slurp "resources/shaders/core/height-to-index.glsl"))
+  [horizon-distance (slurp "resources/shaders/core/height-to-index.glsl")])
 
 (def sun-elevation-to-index
   "Shader for converting sun elevation to index"
@@ -121,19 +124,20 @@
 
 (def elevation-to-index
   "Shader function to convert elevation angle to an index for texture lookup"
-  (slurp "resources/shaders/core/elevation-to-index.glsl"))
+  [limit-quot horizon-distance (slurp "resources/shaders/core/elevation-to-index.glsl")])
 
 (def transmittance-forward
   "Convert point and direction to 2D lookup index in transmittance table"
-  (slurp "resources/shaders/core/transmittance-forward.glsl"))
+  [height-to-index elevation-to-index (slurp "resources/shaders/core/transmittance-forward.glsl")])
 
 (def surface-radiance-forward
   "Convert point and direction to 2D lookup index in surface radiance table"
-  (slurp "resources/shaders/core/surface-radiance-forward.glsl"))
+  [height-to-index sun-elevation-to-index (slurp "resources/shaders/core/surface-radiance-forward.glsl")])
 
 (def ray-scatter-forward
   "Get 4D lookup index for ray scattering"
-  (slurp "resources/shaders/core/ray-scatter-forward.glsl"))
+  [height-to-index elevation-to-index sun-elevation-to-index sun-angle-to-index
+   (slurp "resources/shaders/core/ray-scatter-forward.glsl")])
 
 (def noise-octaves
   "Shader function to sum octaves of noise"
@@ -157,7 +161,7 @@
 
 (def oriented-matrix
   "Shader for creating isometry with given normal vector as first row"
-  (slurp "resources/shaders/core/oriented-matrix.glsl"))
+  [orthogonal-vector (slurp "resources/shaders/core/oriented-matrix.glsl")])
 
 (def project-vector
   "Shader to project vector x onto vector n"
@@ -165,7 +169,7 @@
 
 (def rotate-vector
   "Shader for rotating vector around specified axis"
-  (slurp "resources/shaders/core/rotate-vector.glsl"))
+  [oriented-matrix (slurp "resources/shaders/core/rotate-vector.glsl")])
 
 (def vertex-passthrough
   "Vertex shader to simply pass vertex through"
@@ -178,3 +182,9 @@
 (def remap
   "Shader for mapping linear range to a new linear range"
   (slurp "resources/shaders/core/remap.glsl"))
+
+(defn shadow-lookup-shaders
+  "Shaders for performing lookups in the cascaded shadow map"
+  [num-steps]
+  [(shadow-cascade-lookup num-steps "average_shadow") shadow-lookup convert-shadow-index
+   (percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])])
