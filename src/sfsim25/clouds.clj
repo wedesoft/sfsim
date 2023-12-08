@@ -9,7 +9,7 @@
                                       use-textures make-empty-float-texture-3d)]
               [sfsim25.shaders :as shaders]
               [sfsim25.bluenoise :as bluenoise]
-              [sfsim25.atmosphere :as atmosphere]))
+              [sfsim25.atmosphere :refer (vertex-atmosphere) :as atmosphere]))
 
 (defn cloud-noise
   "Shader for sampling 3D cloud noise"
@@ -250,3 +250,15 @@
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
    (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
    shaders/convert-2d-index shaders/convert-3d-index])
+
+(defn fragment-atmosphere-clouds
+  "Shader for rendering clouds above horizon"
+  [num-steps perlin-octaves cloud-octaves]
+  [(cloud-atmosphere num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
+
+(defn make-cloud-atmosphere-renderer
+  "Make renderer to render clouds above horizon"
+  [& {:keys [num-steps perlin-octaves cloud-octaves]}]
+  (let [program (make-program :vertex [vertex-atmosphere]
+                              :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
+    {:program program}))
