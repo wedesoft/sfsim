@@ -204,41 +204,6 @@ void main()
   (make-program :vertex [vertex-atmosphere]
                 :fragment [fragment-atmosphere-clouds (cloud-atmosphere num-steps perlin-octaves cloud-octaves)]))
 
-; Program to render planet with cloud overlay (before rendering atmosphere)
-(def program-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-planet]
-                :geometry [geometry-planet]
-                :fragment [(fragment-planet num-steps)]))
-
-; Program to render atmosphere with cloud overlay (last rendering step)
-(def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :cover-size cover-size
-                                       :num-steps num-steps
-                                       :noise-size noise-size
-                                       :height-size height-size
-                                       :elevation-size elevation-size
-                                       :light-elevation-size light-elevation-size
-                                       :heading-size heading-size
-                                       :transmittance-elevation-size transmittance-elevation-size
-                                       :transmittance-height-size transmittance-height-size
-                                       :surface-sun-elevation-size surface-sun-elevation-size
-                                       :surface-height-size surface-height-size
-                                       :albedo albedo
-                                       :reflectivity 0.1
-                                       :opacity-cutoff opacity-cutoff
-                                       :num-opacity-layers num-opacity-layers
-                                       :shadow-size shadow-size
-                                       :radius radius
-                                       :max-height max-height
-                                       :specular specular
-                                       :amplification amplification
-                                       :transmittance-tex transmittance-tex
-                                       :scatter-tex scatter-tex
-                                       :mie-tex mie-tex
-                                       :surface-radiance-tex surface-radiance-tex))
-
 (use-program program-cloud-atmosphere)
 (uniform-sampler program-cloud-atmosphere "transmittance"    0)
 (uniform-sampler program-cloud-atmosphere "ray_scatter"      1)
@@ -273,6 +238,10 @@ void main()
 (uniform-float program-cloud-atmosphere "albedo" albedo)
 (uniform-float program-cloud-atmosphere "reflectivity" reflectivity)
 (uniform-float program-cloud-atmosphere "specular" specular)
+(uniform-float program-cloud-atmosphere "cloud_multiplier" cloud-multiplier)
+(uniform-float program-cloud-atmosphere "cover_multiplier" cover-multiplier)
+(uniform-float program-cloud-atmosphere "cap" cap)
+(uniform-float program-cloud-atmosphere "anisotropic" anisotropic)
 (uniform-float program-cloud-atmosphere "radius" radius)
 (uniform-float program-cloud-atmosphere "max_height" max-height)
 (uniform-vector3 program-cloud-atmosphere "water_color" water-color)
@@ -280,6 +249,41 @@ void main()
 (uniform-float program-cloud-atmosphere "opacity_cutoff" opacity-cutoff)
 (uniform-int program-cloud-atmosphere "num_opacity_layers" num-opacity-layers)
 (uniform-int program-cloud-atmosphere "shadow_size" shadow-size)
+
+; Program to render planet with cloud overlay (before rendering atmosphere)
+(def program-planet
+  (make-program :vertex [vertex-planet]
+                :tess-control [tess-control-planet]
+                :tess-evaluation [tess-evaluation-planet]
+                :geometry [geometry-planet]
+                :fragment [(fragment-planet num-steps)]))
+
+; Program to render atmosphere with cloud overlay (last rendering step)
+(def atmosphere-renderer
+  (atmosphere/make-atmosphere-renderer :cover-size cover-size
+                                       :num-steps num-steps
+                                       :noise-size noise-size
+                                       :height-size height-size
+                                       :elevation-size elevation-size
+                                       :light-elevation-size light-elevation-size
+                                       :heading-size heading-size
+                                       :transmittance-elevation-size transmittance-elevation-size
+                                       :transmittance-height-size transmittance-height-size
+                                       :surface-sun-elevation-size surface-sun-elevation-size
+                                       :surface-height-size surface-height-size
+                                       :albedo albedo
+                                       :reflectivity 0.1
+                                       :opacity-cutoff opacity-cutoff
+                                       :num-opacity-layers num-opacity-layers
+                                       :shadow-size shadow-size
+                                       :radius radius
+                                       :max-height max-height
+                                       :specular specular
+                                       :amplification amplification
+                                       :transmittance-tex transmittance-tex
+                                       :scatter-tex scatter-tex
+                                       :mie-tex mie-tex
+                                       :surface-radiance-tex surface-radiance-tex))
 
 (use-program program-planet)
 (uniform-sampler program-planet "surface"          0)
@@ -450,12 +454,8 @@ void main()
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
-                                (uniform-float program-cloud-atmosphere "cloud_multiplier" cloud-multiplier)
-                                (uniform-float program-cloud-atmosphere "cover_multiplier" cover-multiplier)
-                                (uniform-float program-cloud-atmosphere "cap" cap)
                                 (uniform-float program-cloud-atmosphere "cloud_threshold" @threshold)
                                 (uniform-float program-cloud-atmosphere "lod_offset" lod-offset)
-                                (uniform-float program-cloud-atmosphere "anisotropic" anisotropic)
                                 (uniform-matrix4 program-cloud-atmosphere "projection" projection)
                                 (uniform-vector3 program-cloud-atmosphere "origin" @position)
                                 (uniform-matrix4 program-cloud-atmosphere "extrinsics" extrinsics)
