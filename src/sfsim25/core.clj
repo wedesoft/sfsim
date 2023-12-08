@@ -14,7 +14,7 @@
                                     vertex-planet render-tree fragment-planet)
                             :as planet]
             [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
-            [sfsim25.clouds :refer (cloud-atmosphere cloud-planet)]
+            [sfsim25.clouds :refer (cloud-atmosphere cloud-planet) :as clouds]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
             [sfsim25.quaternion :as q]
@@ -29,20 +29,6 @@
 
 (def width 1280)
 (def height 720)
-
-(def fragment-planet-clouds
-"#version 410 core
-in GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-} fs_in;
-out vec4 fragColor;
-vec4 cloud_planet(vec3 point);
-void main()
-{
-  fragColor = cloud_planet(fs_in.point);
-}")
 
 (def fragment-atmosphere-clouds
 "#version 410 core
@@ -63,7 +49,7 @@ void main()
 (def color-tilesize 129)
 (def max-height 35000.0)
 (def threshold (atom 18.2))
-(def anisotropic (atom 0.25))
+(def anisotropic 0.25)
 (def shadow-bias (exp -6.0))
 (def cloud-bottom 2000)
 (def cloud-top 5000)
@@ -104,6 +90,11 @@ void main()
 (def num-steps 3)
 (def num-opacity-layers 7)
 (def opacity-cutoff 0.01)
+(def albedo 0.9)
+(def specular 1000)
+(def reflectivity 0.1)
+(def water-color (vec3 0.09 0.11 0.34))
+(def amplification 6)
 
 (GLFW/glfwInit)
 
@@ -164,12 +155,49 @@ void main()
                                       :shadow-size shadow-size))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def program-cloud-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-planet]
-                :geometry [geometry-planet]
-                :fragment [fragment-planet-clouds (cloud-planet num-steps perlin-octaves cloud-octaves)]))
+(def cloud-planet-renderer
+  (planet/make-cloud-planet-renderer :num-steps num-steps
+                                     :perlin-octaves perlin-octaves
+                                     :cloud-octaves cloud-octaves
+                                     :radius radius
+                                     :max-height max-height
+                                     :cloud-bottom cloud-bottom
+                                     :cloud-top cloud-top
+                                     :cloud-scale cloud-scale
+                                     :detail-scale detail-scale
+                                     :depth depth
+                                     :cover-size cover-size
+                                     :noise-size noise-size
+                                     :tilesize tilesize
+                                     :height-size height-size
+                                     :elevation-size elevation-size
+                                     :light-elevation-size light-elevation-size
+                                     :heading-size heading-size
+                                     :transmittance-height-size transmittance-height-size
+                                     :transmittance-elevation-size transmittance-elevation-size
+                                     :surface-height-size surface-height-size
+                                     :surface-sun-elevation-size surface-sun-elevation-size
+                                     :albedo albedo
+                                     :reflectivity reflectivity
+                                     :specular specular
+                                     :cloud-multiplier cloud-multiplier
+                                     :cover-multiplier cover-multiplier
+                                     :cap cap
+                                     :anisotropic anisotropic
+                                     :radius radius
+                                     :max-height max-height
+                                     :water-color water-color
+                                     :amplification amplification
+                                     :opacity-cutoff opacity-cutoff
+                                     :num-opacity-layers num-opacity-layers
+                                     :shadow-size shadow-size
+                                     :transmittance-tex transmittance-tex
+                                     :scatter-tex scatter-tex
+                                     :mie-tex mie-tex
+                                     :worley-tex worley-tex
+                                     :perlin-worley-tex perlin-worley-tex
+                                     :bluenoise-tex bluenoise-tex
+                                     :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def program-cloud-atmosphere
@@ -197,63 +225,19 @@ void main()
                                        :transmittance-height-size transmittance-height-size
                                        :surface-sun-elevation-size surface-sun-elevation-size
                                        :surface-height-size surface-height-size
-                                       :albedo 0.9
+                                       :albedo albedo
                                        :reflectivity 0.1
                                        :opacity-cutoff opacity-cutoff
                                        :num-opacity-layers num-opacity-layers
                                        :shadow-size shadow-size
                                        :radius radius
                                        :max-height max-height
-                                       :specular 1000
-                                       :amplification 6
+                                       :specular specular
+                                       :amplification amplification
                                        :transmittance-tex transmittance-tex
                                        :scatter-tex scatter-tex
                                        :mie-tex mie-tex
                                        :surface-radiance-tex surface-radiance-tex))
-
-(use-program program-cloud-planet)
-(uniform-sampler program-cloud-planet "surface"          0)
-(uniform-sampler program-cloud-planet "transmittance"    1)
-(uniform-sampler program-cloud-planet "ray_scatter"      2)
-(uniform-sampler program-cloud-planet "mie_strength"     3)
-(uniform-sampler program-cloud-planet "worley"           4)
-(uniform-sampler program-cloud-planet "perlin"           5)
-(uniform-sampler program-cloud-planet "bluenoise"        6)
-(uniform-sampler program-cloud-planet "cover"            7)
-(uniform-sampler program-cloud-planet "shadow_map0"      8)
-(uniform-sampler program-cloud-planet "shadow_map1"      9)
-(uniform-sampler program-cloud-planet "shadow_map2"     10)
-(doseq [i (range num-steps)]
-       (uniform-sampler program-cloud-planet (str "opacity" i) (+ i 11)))
-(uniform-float program-cloud-planet "radius" radius)
-(uniform-float program-cloud-planet "max_height" max-height)
-(uniform-float program-cloud-planet "cloud_bottom" cloud-bottom)
-(uniform-float program-cloud-planet "cloud_top" cloud-top)
-(uniform-float program-cloud-planet "cloud_scale" cloud-scale)
-(uniform-float program-cloud-planet "detail_scale" detail-scale)
-(uniform-float program-cloud-planet "depth" depth)
-(uniform-int program-cloud-planet "cover_size" 512)
-(uniform-int program-cloud-planet "noise_size" noise-size)
-(uniform-int program-cloud-planet "high_detail" (dec tilesize))
-(uniform-int program-cloud-planet "low_detail" (quot (dec tilesize) 2))
-(uniform-int program-cloud-planet "height_size" height-size)
-(uniform-int program-cloud-planet "elevation_size" elevation-size)
-(uniform-int program-cloud-planet "light_elevation_size" light-elevation-size)
-(uniform-int program-cloud-planet "heading_size" heading-size)
-(uniform-int program-cloud-planet "transmittance_height_size" transmittance-height-size)
-(uniform-int program-cloud-planet "transmittance_elevation_size" transmittance-elevation-size)
-(uniform-int program-cloud-planet "surface_height_size" surface-height-size)
-(uniform-int program-cloud-planet "surface_sun_elevation_size" surface-sun-elevation-size)
-(uniform-float program-cloud-planet "albedo" 0.9)
-(uniform-float program-cloud-planet "reflectivity" 0.1)
-(uniform-float program-cloud-planet "specular" 1000)
-(uniform-float program-cloud-planet "radius" radius)
-(uniform-float program-cloud-planet "max_height" max-height)
-(uniform-vector3 program-cloud-planet "water_color" (vec3 0.09 0.11 0.34))
-(uniform-float program-cloud-planet "amplification" 6)
-(uniform-float program-cloud-planet "opacity_cutoff" opacity-cutoff)
-(uniform-int program-cloud-planet "num_opacity_layers" num-opacity-layers)
-(uniform-int program-cloud-planet "shadow_size" shadow-size)
 
 (use-program program-cloud-atmosphere)
 (uniform-sampler program-cloud-atmosphere "transmittance"    0)
@@ -263,11 +247,10 @@ void main()
 (uniform-sampler program-cloud-atmosphere "perlin"           4)
 (uniform-sampler program-cloud-atmosphere "bluenoise"        5)
 (uniform-sampler program-cloud-atmosphere "cover"            6)
-(uniform-sampler program-cloud-atmosphere "shadow_map0"      7)
-(uniform-sampler program-cloud-atmosphere "shadow_map1"      8)
-(uniform-sampler program-cloud-atmosphere "shadow_map2"      9)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-cloud-atmosphere (str "opacity" i) (+ i 10)))
+       (uniform-sampler program-cloud-atmosphere (str "shadow_map" i) (+ i 7)))
+(doseq [i (range num-steps)]
+       (uniform-sampler program-cloud-atmosphere (str "opacity" i) (+ i 7 num-steps)))
 (uniform-float program-cloud-atmosphere "radius" radius)
 (uniform-float program-cloud-atmosphere "max_height" max-height)
 (uniform-float program-cloud-atmosphere "cloud_bottom" cloud-bottom)
@@ -275,7 +258,7 @@ void main()
 (uniform-float program-cloud-atmosphere "cloud_scale" cloud-scale)
 (uniform-float program-cloud-atmosphere "detail_scale" detail-scale)
 (uniform-float program-cloud-atmosphere "depth" depth)
-(uniform-int program-cloud-atmosphere "cover_size" 512)
+(uniform-int program-cloud-atmosphere "cover_size" cover-size)
 (uniform-int program-cloud-atmosphere "noise_size" noise-size)
 (uniform-int program-cloud-atmosphere "high_detail" (dec tilesize))
 (uniform-int program-cloud-atmosphere "low_detail" (quot (dec tilesize) 2))
@@ -287,13 +270,13 @@ void main()
 (uniform-int program-cloud-atmosphere "transmittance_elevation_size" transmittance-elevation-size)
 (uniform-int program-cloud-atmosphere "surface_height_size" surface-height-size)
 (uniform-int program-cloud-atmosphere "surface_sun_elevation_size" surface-sun-elevation-size)
-(uniform-float program-cloud-atmosphere "albedo" 0.9)
-(uniform-float program-cloud-atmosphere "reflectivity" 0.1)
-(uniform-float program-cloud-atmosphere "specular" 1000)
+(uniform-float program-cloud-atmosphere "albedo" albedo)
+(uniform-float program-cloud-atmosphere "reflectivity" reflectivity)
+(uniform-float program-cloud-atmosphere "specular" specular)
 (uniform-float program-cloud-atmosphere "radius" radius)
 (uniform-float program-cloud-atmosphere "max_height" max-height)
-(uniform-vector3 program-cloud-atmosphere "water_color" (vec3 0.09 0.11 0.34))
-(uniform-float program-cloud-atmosphere "amplification" 6)
+(uniform-vector3 program-cloud-atmosphere "water_color" water-color)
+(uniform-float program-cloud-atmosphere "amplification" amplification)
 (uniform-float program-cloud-atmosphere "opacity_cutoff" opacity-cutoff)
 (uniform-int program-cloud-atmosphere "num_opacity_layers" num-opacity-layers)
 (uniform-int program-cloud-atmosphere "shadow_size" shadow-size)
@@ -309,12 +292,11 @@ void main()
 (uniform-sampler program-planet "mie_strength"     7)
 (uniform-sampler program-planet "surface_radiance" 8)
 (uniform-sampler program-planet "clouds"           9)
-(uniform-sampler program-planet "shadow_map0"     10)
-(uniform-sampler program-planet "shadow_map1"     11)
-(uniform-sampler program-planet "shadow_map2"     12)
 (doseq [i (range num-steps)]
-       (uniform-sampler program-planet (str "opacity" i) (+ i 13)))
-(uniform-int program-planet "cover_size" 512)
+       (uniform-sampler program-planet (str "shadow_map" i) (+ i 10)))
+(doseq [i (range num-steps)]
+       (uniform-sampler program-planet (str "opacity" i) (+ i 10 num-steps)))
+(uniform-int program-planet "cover_size" cover-size)
 (uniform-int program-planet "noise_size" noise-size)
 (uniform-int program-planet "high_detail" (dec tilesize))
 (uniform-int program-planet "low_detail" (quot (dec tilesize) 2))
@@ -326,15 +308,15 @@ void main()
 (uniform-int program-planet "transmittance_elevation_size" transmittance-elevation-size)
 (uniform-int program-planet "surface_height_size" surface-height-size)
 (uniform-int program-planet "surface_sun_elevation_size" surface-sun-elevation-size)
-(uniform-float program-planet "albedo" 0.9)
+(uniform-float program-planet "albedo" albedo)
 (uniform-float program-planet "dawn_start" -0.2)
 (uniform-float program-planet "dawn_end" 0.0)
-(uniform-float program-planet "reflectivity" 0.1)
-(uniform-float program-planet "specular" 1000)
+(uniform-float program-planet "reflectivity" reflectivity)
+(uniform-float program-planet "specular" specular)
 (uniform-float program-planet "radius" radius)
 (uniform-float program-planet "max_height" max-height)
-(uniform-vector3 program-planet "water_color" (vec3 0.09 0.11 0.34))
-(uniform-float program-planet "amplification" 6)
+(uniform-vector3 program-planet "water_color" water-color)
+(uniform-float program-planet "amplification" amplification)
 (uniform-float program-planet "opacity_cutoff" opacity-cutoff)
 (uniform-int program-planet "num_opacity_layers" num-opacity-layers)
 (uniform-int program-planet "shadow_size" shadow-size)
@@ -422,7 +404,6 @@ void main()
              (swap! light + (* l 0.1 dt))
              (swap! threshold + (* dt tr))
              (swap! opacity-step + (* dt to))
-             (swap! anisotropic + (* dt ta))
              (swap! step + (* dt ts))
              (GL11/glFinish)
              (let [norm-pos   (mag @position)
@@ -439,7 +420,7 @@ void main()
                    extrinsics (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
                    splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
-                   scatter-am (+ (* @anisotropic (phase 0.76 -1)) (- 1 @anisotropic))
+                   scatter-am (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic))
                    cos-light  (/ (dot light-dir @position) (mag @position))
                    sin-light  (sqrt (- 1 (sqr cos-light)))
                    opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
@@ -452,26 +433,20 @@ void main()
                                 w2 h2 true
                                 (clear (vec3 0 0 0) 0)
                                 ; Render clouds in front of planet
-                                (use-program program-cloud-planet)
-                                (uniform-float program-cloud-planet "cloud_step" @step)
-                                (uniform-float program-cloud-planet "cloud_multiplier" cloud-multiplier)
-                                (uniform-float program-cloud-planet "cover_multiplier" cover-multiplier)
-                                (uniform-float program-cloud-planet "cap" cap)
-                                (uniform-float program-cloud-planet "cloud_threshold" @threshold)
-                                (uniform-float program-cloud-planet "lod_offset" lod-offset)
-                                (uniform-float program-cloud-planet "anisotropic" @anisotropic)
-                                (uniform-matrix4 program-cloud-planet "projection" projection)
-                                (uniform-vector3 program-cloud-planet "origin" @position)
-                                (uniform-matrix4 program-cloud-planet "transform" (inverse extrinsics))
-                                (uniform-vector3 program-cloud-planet "light_direction" light-dir)
-                                (uniform-float program-cloud-planet "opacity_step" opac-step)
-                                (doseq [[idx item] (map-indexed vector splits)]
-                                       (uniform-float program-cloud-planet (str "split" idx) item))
-                                (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                       (uniform-matrix4 program-cloud-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                       (uniform-float program-cloud-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures nil transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex (concat shadows opacities))
-                                (render-tree program-cloud-planet @tree (inverse extrinsics) [:surf-tex])
+                                (planet/render-cloud-planet cloud-planet-renderer
+                                                            :cloud-step @step
+                                                            :cloud-threshold @threshold
+                                                            :lod-offset lod-offset
+                                                            :projection projection
+                                                            :origin @position
+                                                            :transform (inverse extrinsics)
+                                                            :light-direction light-dir
+                                                            :opacity-step opac-step
+                                                            :splits splits
+                                                            :matrix-cascade matrix-cas
+                                                            :shadows shadows
+                                                            :opacities opacities
+                                                            :tree @tree)
                                 ; Render clouds above the horizon
                                 (use-program program-cloud-atmosphere)
                                 (uniform-float program-cloud-atmosphere "cloud_step" @step)
@@ -480,7 +455,7 @@ void main()
                                 (uniform-float program-cloud-atmosphere "cap" cap)
                                 (uniform-float program-cloud-atmosphere "cloud_threshold" @threshold)
                                 (uniform-float program-cloud-atmosphere "lod_offset" lod-offset)
-                                (uniform-float program-cloud-atmosphere "anisotropic" @anisotropic)
+                                (uniform-float program-cloud-atmosphere "anisotropic" anisotropic)
                                 (uniform-matrix4 program-cloud-atmosphere "projection" projection)
                                 (uniform-vector3 program-cloud-atmosphere "origin" @position)
                                 (uniform-matrix4 program-cloud-atmosphere "extrinsics" extrinsics)
@@ -535,8 +510,8 @@ void main()
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, aniso (e/d) %.3f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @anisotropic @step (* dt 0.001)))
+               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, step (y/h) %.0f, dt %.3f"
+                              @threshold @opacity-step @step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
@@ -549,7 +524,7 @@ void main()
   (destroy-texture perlin-worley-tex)
   (destroy-texture worley-tex)
   (destroy-program program-cloud-atmosphere)
-  (destroy-program program-cloud-planet)
+  (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (destroy-program program-planet)
   (opacity/destroy-opacity-renderer opacity-renderer)
