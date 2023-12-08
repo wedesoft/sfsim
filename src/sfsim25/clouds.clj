@@ -6,7 +6,7 @@
               [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
                                       make-empty-float-cubemap make-empty-vector-cubemap make-program make-vertex-array-object
                                       render-quads uniform-float uniform-int uniform-sampler uniform-matrix4 use-program
-                                      use-textures make-empty-float-texture-3d)]
+                                      use-textures make-empty-float-texture-3d uniform-vector3)]
               [sfsim25.shaders :as shaders]
               [sfsim25.bluenoise :as bluenoise]
               [sfsim25.atmosphere :refer (vertex-atmosphere) :as atmosphere]))
@@ -258,7 +258,56 @@
 
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon"
-  [& {:keys [num-steps perlin-octaves cloud-octaves]}]
+  [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
+             cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
+             transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
+             reflectivity specular cloud-multiplier cover-multiplier cap anisotropic radius max-height water-color amplification
+             opacity-cutoff num-opacity-layers shadow-size]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
+    (use-program program)
+    (uniform-sampler program "transmittance"    0)
+    (uniform-sampler program "ray_scatter"      1)
+    (uniform-sampler program "mie_strength"     2)
+    (uniform-sampler program "worley"           3)
+    (uniform-sampler program "perlin"           4)
+    (uniform-sampler program "bluenoise"        5)
+    (uniform-sampler program "cover"            6)
+    (doseq [i (range num-steps)]
+           (uniform-sampler program (str "shadow_map" i) (+ i 7)))
+    (doseq [i (range num-steps)]
+           (uniform-sampler program (str "opacity" i) (+ i 7 num-steps)))
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    (uniform-float program "cloud_bottom" cloud-bottom)
+    (uniform-float program "cloud_top" cloud-top)
+    (uniform-float program "cloud_scale" cloud-scale)
+    (uniform-float program "detail_scale" detail-scale)
+    (uniform-float program "depth" depth)
+    (uniform-int program "cover_size" cover-size)
+    (uniform-int program "noise_size" noise-size)
+    (uniform-int program "high_detail" (dec tilesize))
+    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (uniform-int program "height_size" height-size)
+    (uniform-int program "elevation_size" elevation-size)
+    (uniform-int program "light_elevation_size" light-elevation-size)
+    (uniform-int program "heading_size" heading-size)
+    (uniform-int program "transmittance_height_size" transmittance-height-size)
+    (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+    (uniform-int program "surface_height_size" surface-height-size)
+    (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
+    (uniform-float program "albedo" albedo)
+    (uniform-float program "reflectivity" reflectivity)
+    (uniform-float program "specular" specular)
+    (uniform-float program "cloud_multiplier" cloud-multiplier)
+    (uniform-float program "cover_multiplier" cover-multiplier)
+    (uniform-float program "cap" cap)
+    (uniform-float program "anisotropic" anisotropic)
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    (uniform-vector3 program "water_color" water-color)
+    (uniform-float program "amplification" amplification)
+    (uniform-float program "opacity_cutoff" opacity-cutoff)
+    (uniform-int program "num_opacity_layers" num-opacity-layers)
+    (uniform-int program "shadow_size" shadow-size)
     {:program program}))

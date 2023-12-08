@@ -190,53 +190,42 @@
 (def cloud-atmosphere-renderer
   (clouds/make-cloud-atmosphere-renderer :num-steps num-steps
                                          :perlin-octaves perlin-octaves
-                                         :cloud-octaves cloud-octaves))
-
-(use-program (:program cloud-atmosphere-renderer))
-(uniform-sampler (:program cloud-atmosphere-renderer) "transmittance"    0)
-(uniform-sampler (:program cloud-atmosphere-renderer) "ray_scatter"      1)
-(uniform-sampler (:program cloud-atmosphere-renderer) "mie_strength"     2)
-(uniform-sampler (:program cloud-atmosphere-renderer) "worley"           3)
-(uniform-sampler (:program cloud-atmosphere-renderer) "perlin"           4)
-(uniform-sampler (:program cloud-atmosphere-renderer) "bluenoise"        5)
-(uniform-sampler (:program cloud-atmosphere-renderer) "cover"            6)
-(doseq [i (range num-steps)]
-       (uniform-sampler (:program cloud-atmosphere-renderer) (str "shadow_map" i) (+ i 7)))
-(doseq [i (range num-steps)]
-       (uniform-sampler (:program cloud-atmosphere-renderer) (str "opacity" i) (+ i 7 num-steps)))
-(uniform-float (:program cloud-atmosphere-renderer) "radius" radius)
-(uniform-float (:program cloud-atmosphere-renderer) "max_height" max-height)
-(uniform-float (:program cloud-atmosphere-renderer) "cloud_bottom" cloud-bottom)
-(uniform-float (:program cloud-atmosphere-renderer) "cloud_top" cloud-top)
-(uniform-float (:program cloud-atmosphere-renderer) "cloud_scale" cloud-scale)
-(uniform-float (:program cloud-atmosphere-renderer) "detail_scale" detail-scale)
-(uniform-float (:program cloud-atmosphere-renderer) "depth" depth)
-(uniform-int (:program cloud-atmosphere-renderer) "cover_size" cover-size)
-(uniform-int (:program cloud-atmosphere-renderer) "noise_size" noise-size)
-(uniform-int (:program cloud-atmosphere-renderer) "high_detail" (dec tilesize))
-(uniform-int (:program cloud-atmosphere-renderer) "low_detail" (quot (dec tilesize) 2))
-(uniform-int (:program cloud-atmosphere-renderer) "height_size" height-size)
-(uniform-int (:program cloud-atmosphere-renderer) "elevation_size" elevation-size)
-(uniform-int (:program cloud-atmosphere-renderer) "light_elevation_size" light-elevation-size)
-(uniform-int (:program cloud-atmosphere-renderer) "heading_size" heading-size)
-(uniform-int (:program cloud-atmosphere-renderer) "transmittance_height_size" transmittance-height-size)
-(uniform-int (:program cloud-atmosphere-renderer) "transmittance_elevation_size" transmittance-elevation-size)
-(uniform-int (:program cloud-atmosphere-renderer) "surface_height_size" surface-height-size)
-(uniform-int (:program cloud-atmosphere-renderer) "surface_sun_elevation_size" surface-sun-elevation-size)
-(uniform-float (:program cloud-atmosphere-renderer) "albedo" albedo)
-(uniform-float (:program cloud-atmosphere-renderer) "reflectivity" reflectivity)
-(uniform-float (:program cloud-atmosphere-renderer) "specular" specular)
-(uniform-float (:program cloud-atmosphere-renderer) "cloud_multiplier" cloud-multiplier)
-(uniform-float (:program cloud-atmosphere-renderer) "cover_multiplier" cover-multiplier)
-(uniform-float (:program cloud-atmosphere-renderer) "cap" cap)
-(uniform-float (:program cloud-atmosphere-renderer) "anisotropic" anisotropic)
-(uniform-float (:program cloud-atmosphere-renderer) "radius" radius)
-(uniform-float (:program cloud-atmosphere-renderer) "max_height" max-height)
-(uniform-vector3 (:program cloud-atmosphere-renderer) "water_color" water-color)
-(uniform-float (:program cloud-atmosphere-renderer) "amplification" amplification)
-(uniform-float (:program cloud-atmosphere-renderer) "opacity_cutoff" opacity-cutoff)
-(uniform-int (:program cloud-atmosphere-renderer) "num_opacity_layers" num-opacity-layers)
-(uniform-int (:program cloud-atmosphere-renderer) "shadow_size" shadow-size)
+                                         :cloud-octaves cloud-octaves
+                                         :num-steps num-steps
+                                         :perlin-octaves perlin-octaves
+                                         :cloud-octaves cloud-octaves
+                                         :radius radius
+                                         :max-height max-height
+                                         :cloud-bottom cloud-bottom
+                                         :cloud-top cloud-top
+                                         :cloud-scale cloud-scale
+                                         :detail-scale detail-scale
+                                         :depth depth
+                                         :cover-size cover-size
+                                         :noise-size noise-size
+                                         :tilesize tilesize
+                                         :height-size height-size
+                                         :elevation-size elevation-size
+                                         :light-elevation-size light-elevation-size
+                                         :heading-size heading-size
+                                         :transmittance-height-size transmittance-height-size
+                                         :transmittance-elevation-size transmittance-elevation-size
+                                         :surface-height-size surface-height-size
+                                         :surface-sun-elevation-size surface-sun-elevation-size
+                                         :albedo albedo
+                                         :reflectivity reflectivity
+                                         :specular specular
+                                         :cloud-multiplier cloud-multiplier
+                                         :cover-multiplier cover-multiplier
+                                         :cap cap
+                                         :anisotropic anisotropic
+                                         :radius radius
+                                         :max-height max-height
+                                         :water-color water-color
+                                         :amplification amplification
+                                         :opacity-cutoff opacity-cutoff
+                                         :num-opacity-layers num-opacity-layers
+                                         :shadow-size shadow-size))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def program-planet
