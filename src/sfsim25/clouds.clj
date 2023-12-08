@@ -262,7 +262,8 @@
              cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic radius max-height water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size]}]
+             opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex
+             bluenoise-tex cloud-cover-tex]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
     (use-program program)
@@ -310,4 +311,43 @@
     (uniform-float program "opacity_cutoff" opacity-cutoff)
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
-    {:program program}))
+    {:program program
+     :transmittance-tex transmittance-tex
+     :scatter-tex scatter-tex
+     :mie-tex mie-tex
+     :worley-tex worley-tex
+     :perlin-worley-tex perlin-worley-tex
+     :bluenoise-tex bluenoise-tex
+     :cloud-cover-tex cloud-cover-tex}))
+
+(defn render-cloud-atmosphere
+  "Render clouds above horizon"
+  [{:keys [program transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex]}
+   & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
+             matrix-cascade shadows opacities]}]
+  (let [indices  [0 1 3 2]
+        vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vao      (make-vertex-array-object program indices vertices ["point" 3])]
+    (use-program program)
+    (uniform-float program "cloud_step" cloud-step)
+    (uniform-float program "cloud_threshold" cloud-threshold)
+    (uniform-float program "lod_offset" lod-offset)
+    (uniform-matrix4 program "projection" projection)
+    (uniform-vector3 program "origin" origin)
+    (uniform-matrix4 program "extrinsics" (inverse transform))
+    (uniform-matrix4 program "transform" transform)
+    (uniform-vector3 program "light_direction" light-direction)
+    (uniform-float program "opacity_step" opacity-step)
+    (doseq [[idx item] (map-indexed vector splits)]
+           (uniform-float program (str "split" idx) item))
+    (doseq [[idx item] (map-indexed vector matrix-cascade)]
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:depth item)))
+    (apply use-textures transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex
+           (concat shadows opacities))
+    (render-quads vao)
+    (destroy-vertex-array-object vao)))
+
+(defn destroy-cloud-atmosphere-renderer
+  [{:keys [program]}]
+  (destroy-program program))

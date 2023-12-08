@@ -225,7 +225,14 @@
                                          :amplification amplification
                                          :opacity-cutoff opacity-cutoff
                                          :num-opacity-layers num-opacity-layers
-                                         :shadow-size shadow-size))
+                                         :shadow-size shadow-size
+                                         :transmittance-tex transmittance-tex
+                                         :scatter-tex scatter-tex
+                                         :mie-tex mie-tex
+                                         :worley-tex worley-tex
+                                         :perlin-worley-tex perlin-worley-tex
+                                         :bluenoise-tex bluenoise-tex
+                                         :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def program-planet
@@ -392,9 +399,6 @@
                    z-near     (max 1.0 (* 0.4 dist))
                    z-far      (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
-                   indices    [0 1 3 2]
-                   vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-                   vao        (make-vertex-array-object (:program cloud-atmosphere-renderer) indices vertices ["point" 3])
                    light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
@@ -429,23 +433,20 @@
                                                             :opacities opacities
                                                             :tree @tree)
                                 ; Render clouds above the horizon
-                                (use-program (:program cloud-atmosphere-renderer))
-                                (uniform-float (:program cloud-atmosphere-renderer) "cloud_step" @step)
-                                (uniform-float (:program cloud-atmosphere-renderer) "cloud_threshold" @threshold)
-                                (uniform-float (:program cloud-atmosphere-renderer) "lod_offset" lod-offset)
-                                (uniform-matrix4 (:program cloud-atmosphere-renderer) "projection" projection)
-                                (uniform-vector3 (:program cloud-atmosphere-renderer) "origin" @position)
-                                (uniform-matrix4 (:program cloud-atmosphere-renderer) "extrinsics" extrinsics)
-                                (uniform-matrix4 (:program cloud-atmosphere-renderer) "transform" (inverse extrinsics))
-                                (uniform-vector3 (:program cloud-atmosphere-renderer) "light_direction" light-dir)
-                                (uniform-float (:program cloud-atmosphere-renderer) "opacity_step" opac-step)
-                                (doseq [[idx item] (map-indexed vector splits)]
-                                       (uniform-float (:program cloud-atmosphere-renderer) (str "split" idx) item))
-                                (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                       (uniform-matrix4 (:program cloud-atmosphere-renderer) (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                       (uniform-float (:program cloud-atmosphere-renderer) (str "depth" idx) (:depth item)))
-                                (apply use-textures transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex (concat shadows opacities))
-                                (render-quads vao))]
+                                (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
+                                                                :cloud-step @step
+                                                                :cloud-threshold @threshold
+                                                                :lod-offset lod-offset
+                                                                :projection projection
+                                                                :origin @position
+                                                                :transform (inverse extrinsics)
+                                                                :light-direction light-dir
+                                                                :z-far z-far
+                                                                :opacity-step opac-step
+                                                                :splits splits
+                                                                :matrix-cascade matrix-cas
+                                                                :shadows shadows
+                                                                :opacities opacities))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0)
                                 ; Render planet with cloud overlay
@@ -482,8 +483,7 @@
                                                               :opacities opacities))
                (destroy-texture clouds)
                (opacity/destroy-opacity-cascade opacities)
-               (planet/destroy-shadow-cascade shadows)
-               (destroy-vertex-array-object vao))
+               (planet/destroy-shadow-cascade shadows))
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
@@ -500,7 +500,7 @@
   (destroy-texture bluenoise-tex)
   (destroy-texture perlin-worley-tex)
   (destroy-texture worley-tex)
-  (destroy-program (:program cloud-atmosphere-renderer))
+  (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (destroy-program program-planet)
