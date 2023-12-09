@@ -218,3 +218,57 @@
   "Destroy program for rendering clouds below horizon"
   [{:keys [program]}]
   (destroy-program program))
+
+(defn make-planet-renderer
+  "Program to render planet with cloud overlay"
+  [& {:keys [num-steps cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
+             transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
+             dawn-start dawn-end reflectivity specular radius max-height water-color amplification opacity-cutoff
+             num-opacity-layers shadow-size radius max-height]}]
+  (let [program (make-program :vertex [vertex-planet]
+                              :tess-control [tess-control-planet]
+                              :tess-evaluation [tess-evaluation-planet]
+                              :geometry [geometry-planet]
+                              :fragment [(fragment-planet num-steps)])]
+    (use-program program)
+    (uniform-sampler program "surface"          0)
+    (uniform-sampler program "day"              1)
+    (uniform-sampler program "night"            2)
+    (uniform-sampler program "normals"          3)
+    (uniform-sampler program "water"            4)
+    (uniform-sampler program "transmittance"    5)
+    (uniform-sampler program "ray_scatter"      6)
+    (uniform-sampler program "mie_strength"     7)
+    (uniform-sampler program "surface_radiance" 8)
+    (uniform-sampler program "clouds"           9)
+    (doseq [i (range num-steps)]
+           (uniform-sampler program (str "shadow_map" i) (+ i 10)))
+    (doseq [i (range num-steps)]
+           (uniform-sampler program (str "opacity" i) (+ i 10 num-steps)))
+    (uniform-int program "cover_size" cover-size)
+    (uniform-int program "noise_size" noise-size)
+    (uniform-int program "high_detail" (dec tilesize))
+    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (uniform-int program "height_size" height-size)
+    (uniform-int program "elevation_size" elevation-size)
+    (uniform-int program "light_elevation_size" light-elevation-size)
+    (uniform-int program "heading_size" heading-size)
+    (uniform-int program "transmittance_height_size" transmittance-height-size)
+    (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+    (uniform-int program "surface_height_size" surface-height-size)
+    (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
+    (uniform-float program "albedo" albedo)
+    (uniform-float program "dawn_start" dawn-start)
+    (uniform-float program "dawn_end" dawn-end)
+    (uniform-float program "reflectivity" reflectivity)
+    (uniform-float program "specular" specular)
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    (uniform-vector3 program "water_color" water-color)
+    (uniform-float program "amplification" amplification)
+    (uniform-float program "opacity_cutoff" opacity-cutoff)
+    (uniform-int program "num_opacity_layers" num-opacity-layers)
+    (uniform-int program "shadow_size" shadow-size)
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    {:program program}))

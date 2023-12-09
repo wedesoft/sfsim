@@ -80,6 +80,8 @@
 (def albedo 0.9)
 (def specular 1000)
 (def reflectivity 0.1)
+(def dawn-start -0.2)
+(def dawn-end 0.0)
 (def water-color (vec3 0.09 0.11 0.34))
 (def amplification 6)
 
@@ -235,12 +237,33 @@
                                          :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
-(def program-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-planet]
-                :geometry [geometry-planet]
-                :fragment [(fragment-planet num-steps)]))
+(def planet-renderer
+  (planet/make-planet-renderer :num-steps num-steps
+                               :cover-size cover-size
+                               :noise-size noise-size
+                               :tilesize tilesize
+                               :height-size height-size
+                               :elevation-size elevation-size
+                               :light-elevation-size light-elevation-size
+                               :heading-size heading-size
+                               :transmittance-height-size transmittance-height-size
+                               :transmittance-elevation-size transmittance-elevation-size
+                               :surface-height-size surface-height-size
+                               :surface-sun-elevation-size surface-sun-elevation-size
+                               :albedo albedo
+                               :dawn-start dawn-start
+                               :dawn-end dawn-end
+                               :reflectivity reflectivity
+                               :specular specular
+                               :radius radius
+                               :max-height max-height
+                               :water-color water-color
+                               :amplification amplification
+                               :opacity-cutoff opacity-cutoff
+                               :num-opacity-layers num-opacity-layers
+                               :shadow-size shadow-size
+                               :radius radius
+                               :max-height max-height))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
@@ -269,48 +292,6 @@
                                        :mie-tex mie-tex
                                        :surface-radiance-tex surface-radiance-tex))
 
-(use-program program-planet)
-(uniform-sampler program-planet "surface"          0)
-(uniform-sampler program-planet "day"              1)
-(uniform-sampler program-planet "night"            2)
-(uniform-sampler program-planet "normals"          3)
-(uniform-sampler program-planet "water"            4)
-(uniform-sampler program-planet "transmittance"    5)
-(uniform-sampler program-planet "ray_scatter"      6)
-(uniform-sampler program-planet "mie_strength"     7)
-(uniform-sampler program-planet "surface_radiance" 8)
-(uniform-sampler program-planet "clouds"           9)
-(doseq [i (range num-steps)]
-       (uniform-sampler program-planet (str "shadow_map" i) (+ i 10)))
-(doseq [i (range num-steps)]
-       (uniform-sampler program-planet (str "opacity" i) (+ i 10 num-steps)))
-(uniform-int program-planet "cover_size" cover-size)
-(uniform-int program-planet "noise_size" noise-size)
-(uniform-int program-planet "high_detail" (dec tilesize))
-(uniform-int program-planet "low_detail" (quot (dec tilesize) 2))
-(uniform-int program-planet "height_size" height-size)
-(uniform-int program-planet "elevation_size" elevation-size)
-(uniform-int program-planet "light_elevation_size" light-elevation-size)
-(uniform-int program-planet "heading_size" heading-size)
-(uniform-int program-planet "transmittance_height_size" transmittance-height-size)
-(uniform-int program-planet "transmittance_elevation_size" transmittance-elevation-size)
-(uniform-int program-planet "surface_height_size" surface-height-size)
-(uniform-int program-planet "surface_sun_elevation_size" surface-sun-elevation-size)
-(uniform-float program-planet "albedo" albedo)
-(uniform-float program-planet "dawn_start" -0.2)
-(uniform-float program-planet "dawn_end" 0.0)
-(uniform-float program-planet "reflectivity" reflectivity)
-(uniform-float program-planet "specular" specular)
-(uniform-float program-planet "radius" radius)
-(uniform-float program-planet "max_height" max-height)
-(uniform-vector3 program-planet "water_color" water-color)
-(uniform-float program-planet "amplification" amplification)
-(uniform-float program-planet "opacity_cutoff" opacity-cutoff)
-(uniform-int program-planet "num_opacity_layers" num-opacity-layers)
-(uniform-int program-planet "shadow_size" shadow-size)
-(uniform-float program-planet "radius" radius)
-(uniform-float program-planet "max_height" max-height)
-
 (def tree (atom []))
 (def changes (atom (future {:tree {} :drop [] :load []})))
 
@@ -322,7 +303,7 @@
   [tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object program-planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+        vao        (make-vertex-array-object (:program planet-renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
         day-tex    (make-rgb-texture :linear :clamp (:day tile))
         night-tex  (make-rgb-texture :linear :clamp (:night tile))
         surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
@@ -450,22 +431,22 @@
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0)
                                 ; Render planet with cloud overlay
-                                (use-program program-planet)
-                                (uniform-matrix4 program-planet "projection" projection)
-                                (uniform-vector3 program-planet "origin" @position)
-                                (uniform-matrix4 program-planet "transform" (inverse extrinsics))
-                                (uniform-vector3 program-planet "light_direction" light-dir)
-                                (uniform-float program-planet "opacity_step" opac-step)
-                                (uniform-int program-planet "window_width" (aget w 0))
-                                (uniform-int program-planet "window_height" (aget h 0))
-                                (uniform-float program-planet "shadow_bias" shadow-bias)
+                                (use-program (:program planet-renderer))
+                                (uniform-matrix4 (:program planet-renderer) "projection" projection)
+                                (uniform-vector3 (:program planet-renderer) "origin" @position)
+                                (uniform-matrix4 (:program planet-renderer) "transform" (inverse extrinsics))
+                                (uniform-vector3 (:program planet-renderer) "light_direction" light-dir)
+                                (uniform-float (:program planet-renderer) "opacity_step" opac-step)
+                                (uniform-int (:program planet-renderer) "window_width" (aget w 0))
+                                (uniform-int (:program planet-renderer) "window_height" (aget h 0))
+                                (uniform-float (:program planet-renderer) "shadow_bias" shadow-bias)
                                 (doseq [[idx item] (map-indexed vector splits)]
-                                       (uniform-float program-planet (str "split" idx) item))
+                                       (uniform-float (:program planet-renderer) (str "split" idx) item))
                                 (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                       (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                       (uniform-float program-planet (str "depth" idx) (:depth item)))
+                                       (uniform-matrix4 (:program planet-renderer) (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+                                       (uniform-float (:program planet-renderer) (str "depth" idx) (:depth item)))
                                 (apply use-textures nil nil nil nil nil transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds (concat shadows opacities))
-                                (render-tree program-planet @tree (inverse extrinsics)
+                                (render-tree (:program planet-renderer) @tree (inverse extrinsics)
                                              [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer
@@ -503,7 +484,7 @@
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
-  (destroy-program program-planet)
+  (destroy-program (:program planet-renderer))
   (opacity/destroy-opacity-renderer opacity-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (destroy-window window)
