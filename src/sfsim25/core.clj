@@ -304,10 +304,10 @@
     (update-level-of-detail tree radius increase? true)))
 
 (defn load-tile-into-opengl
-  [tile]
+  [{:keys [program]} tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object (:program planet-renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+        vao        (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
         day-tex    (make-rgb-texture :linear :clamp (:day tile))
         night-tex  (make-rgb-texture :linear :clamp (:night tile))
         surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
@@ -317,8 +317,8 @@
            :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
 
 (defn load-tiles-into-opengl
-  [tree paths]
-  (quadtree-update tree paths load-tile-into-opengl))
+  [planet-renderer tree paths]
+  (quadtree-update tree paths (partial load-tile-into-opengl planet-renderer)))
 
 (defn unload-tile-from-opengl
   [tile]
@@ -357,7 +357,7 @@
            (when (realized? @changes)
              (let [data @@changes]
                (unload-tiles-from-opengl (:drop data))
-               (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))
+               (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
                (reset! changes (future (background-tree-update @tree)))))
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
@@ -486,7 +486,7 @@
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
-  (destroy-program (:program planet-renderer))
+  (planet/destroy-planet-renderer planet-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (destroy-window window)

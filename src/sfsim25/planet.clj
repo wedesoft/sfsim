@@ -299,3 +299,8 @@
   (apply use-textures nil nil nil nil nil transmittance-tex scatter-tex mie-tex surface-radiance-tex
          clouds (concat shadows opacities))
   (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
+
+(defn destroy-planet-renderer
+  "Destroy planet rendering program"
+  [{:keys [program]}]
+  (destroy-program program))
