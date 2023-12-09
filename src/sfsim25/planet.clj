@@ -224,7 +224,7 @@
   [& {:keys [num-steps cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
              dawn-start dawn-end reflectivity specular radius max-height water-color amplification opacity-cutoff
-             num-opacity-layers shadow-size radius max-height]}]
+             num-opacity-layers shadow-size radius max-height transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -271,4 +271,31 @@
     (uniform-int program "shadow_size" shadow-size)
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
-    {:program program}))
+    {:program program
+     :transmittance-tex transmittance-tex
+     :scatter-tex scatter-tex
+     :mie-tex mie-tex
+     :surface-radiance-tex surface-radiance-tex}))
+
+(defn render-planet
+  "Render planet"
+  [{:keys [program transmittance-tex scatter-tex mie-tex surface-radiance-tex]}
+   & {:keys [projection origin transform light-direction opacity-step window-width window-height shadow-bias splits
+             matrix-cascade clouds shadows opacities tree]}]
+  (use-program program)
+  (uniform-matrix4 program "projection" projection)
+  (uniform-vector3 program "origin" origin)
+  (uniform-matrix4 program "transform" transform)
+  (uniform-vector3 program "light_direction" light-direction)
+  (uniform-float program "opacity_step" opacity-step)
+  (uniform-int program "window_width" window-width)
+  (uniform-int program "window_height" window-height)
+  (uniform-float program "shadow_bias" shadow-bias)
+  (doseq [[idx item] (map-indexed vector splits)]
+         (uniform-float program (str "split" idx) item))
+  (doseq [[idx item] (map-indexed vector matrix-cascade)]
+         (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+         (uniform-float program (str "depth" idx) (:depth item)))
+  (apply use-textures nil nil nil nil nil transmittance-tex scatter-tex mie-tex surface-radiance-tex
+         clouds (concat shadows opacities))
+  (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))

@@ -263,7 +263,11 @@
                                :num-opacity-layers num-opacity-layers
                                :shadow-size shadow-size
                                :radius radius
-                               :max-height max-height))
+                               :max-height max-height
+                               :transmittance-tex transmittance-tex
+                               :scatter-tex scatter-tex
+                               :mie-tex mie-tex
+                               :surface-radiance-tex surface-radiance-tex))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
@@ -431,23 +435,21 @@
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0)
                                 ; Render planet with cloud overlay
-                                (use-program (:program planet-renderer))
-                                (uniform-matrix4 (:program planet-renderer) "projection" projection)
-                                (uniform-vector3 (:program planet-renderer) "origin" @position)
-                                (uniform-matrix4 (:program planet-renderer) "transform" (inverse extrinsics))
-                                (uniform-vector3 (:program planet-renderer) "light_direction" light-dir)
-                                (uniform-float (:program planet-renderer) "opacity_step" opac-step)
-                                (uniform-int (:program planet-renderer) "window_width" (aget w 0))
-                                (uniform-int (:program planet-renderer) "window_height" (aget h 0))
-                                (uniform-float (:program planet-renderer) "shadow_bias" shadow-bias)
-                                (doseq [[idx item] (map-indexed vector splits)]
-                                       (uniform-float (:program planet-renderer) (str "split" idx) item))
-                                (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                       (uniform-matrix4 (:program planet-renderer) (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                       (uniform-float (:program planet-renderer) (str "depth" idx) (:depth item)))
-                                (apply use-textures nil nil nil nil nil transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds (concat shadows opacities))
-                                (render-tree (:program planet-renderer) @tree (inverse extrinsics)
-                                             [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
+                                (planet/render-planet planet-renderer
+                                                      :projection projection
+                                                      :origin @position
+                                                      :transform (inverse extrinsics)
+                                                      :light-direction light-dir
+                                                      :opacity-step opac-step
+                                                      :window-width (aget w 0)
+                                                      :window-height (aget h 0)
+                                                      :shadow-bias shadow-bias
+                                                      :splits splits
+                                                      :matrix-cascade matrix-cas
+                                                      :clouds clouds
+                                                      :shadows shadows
+                                                      :opacities opacities
+                                                      :tree @tree)
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer
                                                               :splits splits
