@@ -3,7 +3,7 @@
     (:require [fastmath.matrix :refer (mulm eye)]
               [sfsim25.matrix :refer (transformation-matrix)]
               [sfsim25.cubemap :refer (cube-map-corners)]
-              [sfsim25.quadtree :refer (is-leaf? quadtree-update)]
+              [sfsim25.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail)]
               [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
                                       use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float
                                       make-vertex-array-object make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d
@@ -223,7 +223,7 @@
 
 (defn make-planet-renderer
   "Program to render planet with cloud overlay"
-  [& {:keys [num-steps cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
+  [& {:keys [width height num-steps cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size color-tilesize
              albedo dawn-start dawn-end reflectivity specular radius max-height water-color amplification opacity-cutoff
              num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
@@ -273,7 +273,10 @@
     (uniform-int program "shadow_size" shadow-size)
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
-    {:program program
+    {:width width
+     :height height
+     :program program
+     :radius radius
      :tilesize tilesize
      :color-tilesize color-tilesize
      :transmittance-tex transmittance-tex
@@ -338,3 +341,23 @@
 (defn unload-tiles-from-opengl
   [tiles]
   (doseq [tile tiles] (unload-tile-from-opengl tile)))
+
+(defn background-tree-update
+  [{:keys [tilesize radius width]} tree position]
+  (let [increase? (partial increase-level? tilesize radius width 60 10 6 position)]
+    (update-level-of-detail tree radius increase? true)))
+
+(defn make-tile-tree
+  "Create empty tile tree and empty change object"
+  []
+  {:tree    (atom [])
+   :changes (atom (future {:tree {} :drop [] :load []}))})
+
+(defn update-tile-tree
+  "Schedule background tile tree updates"
+  [planet-renderer {:keys [tree changes]} position]
+  (when (realized? @changes)
+    (let [data @@changes]
+      (unload-tiles-from-opengl (:drop data))
+      (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
+      (reset! changes (future (background-tree-update planet-renderer @tree position))))))

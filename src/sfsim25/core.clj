@@ -8,7 +8,6 @@
                                     texture-render-color-depth)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :refer (load-tiles-into-opengl unload-tiles-from-opengl) :as planet]
-            [sfsim25.quadtree :refer (increase-level? update-level-of-detail)]
             [sfsim25.clouds :as clouds]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
@@ -233,7 +232,9 @@
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
-  (planet/make-planet-renderer :num-steps num-steps
+  (planet/make-planet-renderer :width width
+                               :height height
+                               :num-steps num-steps
                                :cover-size cover-size
                                :noise-size noise-size
                                :tilesize tilesize
@@ -292,12 +293,7 @@
                                        :mie-tex mie-tex
                                        :surface-radiance-tex surface-radiance-tex))
 
-(def tree (atom []))
-(def changes (atom (future {:tree {} :drop [] :load []})))
-
-(defn background-tree-update [tree]
-  (let [increase? (partial increase-level? tilesize radius width 60 10 6 @position)]
-    (update-level-of-detail tree radius increase? true)))
+(def tile-tree (planet/make-tile-tree))
 
 (def keystates (atom {}))
 
@@ -320,11 +316,7 @@
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-           (when (realized? @changes)
-             (let [data @@changes]
-               (unload-tiles-from-opengl (:drop data))
-               (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
-               (reset! changes (future (background-tree-update @tree)))))
+           (planet/update-tile-tree planet-renderer tile-tree @position)
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
@@ -361,7 +353,9 @@
                    opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
                    opacities  (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am
                                                               opac-step)
-                   shadows    (planet/render-shadow-cascade planet-shadow-renderer :matrix-cascade matrix-cas :tree @tree)
+                   shadows    (planet/render-shadow-cascade planet-shadow-renderer
+                                                            :matrix-cascade matrix-cas
+                                                            :tree @(:tree tile-tree))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
@@ -381,7 +375,7 @@
                                                             :matrix-cascade matrix-cas
                                                             :shadows shadows
                                                             :opacities opacities
-                                                            :tree @tree)
+                                                            :tree @(:tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
                                                                 :cloud-step @step
@@ -414,7 +408,7 @@
                                                       :clouds clouds
                                                       :shadows shadows
                                                       :opacities opacities
-                                                      :tree @tree)
+                                                      :tree @(:tree tile-tree))
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer
                                                               :splits splits
