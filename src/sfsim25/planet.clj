@@ -3,9 +3,11 @@
     (:require [fastmath.matrix :refer (mulm eye)]
               [sfsim25.matrix :refer (transformation-matrix)]
               [sfsim25.cubemap :refer (cube-map-corners)]
-              [sfsim25.quadtree :refer (is-leaf?)]
+              [sfsim25.quadtree :refer (is-leaf? quadtree-update)]
               [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
-                                      use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float)]
+                                      use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float
+                                      make-vertex-array-object make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d
+                                      destroy-vertex-array-object)]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.clouds :refer (overall-shadow cloud-planet)]
               [sfsim25.shaders :as shaders])
@@ -128,7 +130,7 @@
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
              cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
-             reflectivity specular cloud-multiplier cover-multiplier cap anisotropic radius max-height water-color amplification
+             reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
              opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex
              bluenoise-tex cloud-cover-tex]}]
   (let [program (make-program :vertex [vertex-planet]
@@ -178,7 +180,7 @@
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
     (uniform-vector3 program "water_color" water-color)
-    (uniform-float program "amplification" 6)
+    (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" opacity-cutoff)
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
@@ -222,9 +224,9 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay"
   [& {:keys [num-steps cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
-             transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
-             dawn-start dawn-end reflectivity specular radius max-height water-color amplification opacity-cutoff
-             num-opacity-layers shadow-size radius max-height transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
+             transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size color-tilesize
+             albedo dawn-start dawn-end reflectivity specular radius max-height water-color amplification opacity-cutoff
+             num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -272,6 +274,8 @@
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
     {:program program
+     :tilesize tilesize
+     :color-tilesize color-tilesize
      :transmittance-tex transmittance-tex
      :scatter-tex scatter-tex
      :mie-tex mie-tex
@@ -304,3 +308,33 @@
   "Destroy planet rendering program"
   [{:keys [program]}]
   (destroy-program program))
+
+(defn load-tile-into-opengl
+  [{:keys [program tilesize color-tilesize]} tile]
+  (let [indices    [0 2 3 1]
+        vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
+        vao        (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+        day-tex    (make-rgb-texture :linear :clamp (:day tile))
+        night-tex  (make-rgb-texture :linear :clamp (:night tile))
+        surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
+        normal-tex (make-vector-texture-2d :linear :clamp (:normals tile))
+        water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
+    (assoc (dissoc tile :day :night :surface :normals :water)
+           :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
+
+(defn load-tiles-into-opengl
+  [planet-renderer tree paths]
+  (quadtree-update tree paths (partial load-tile-into-opengl planet-renderer)))
+
+(defn unload-tile-from-opengl
+  [tile]
+  (destroy-texture (:day-tex tile))
+  (destroy-texture (:night-tex tile))
+  (destroy-texture (:surf-tex tile))
+  (destroy-texture (:normal-tex tile))
+  (destroy-texture (:water-tex tile))
+  (destroy-vertex-array-object (:vao tile)))
+
+(defn unload-tiles-from-opengl
+  [tiles]
+  (doseq [tile tiles] (unload-tile-from-opengl tile)))

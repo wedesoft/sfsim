@@ -3,18 +3,13 @@
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
             [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (make-window destroy-window clear destroy-program destroy-texture destroy-vertex-array-object
-                                    generate-mipmap make-float-cubemap make-float-texture-2d make-float-texture-3d
-                                    make-program make-rgb-texture make-ubyte-texture-2d make-vector-texture-2d
-                                    make-vertex-array-object onscreen-render render-quads texture-render-color-depth
-                                    uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
-                                    use-textures)]
-            [sfsim25.atmosphere :refer (phase vertex-atmosphere) :as atmosphere]
-            [sfsim25.planet :refer (geometry-planet make-cube-map-tile-vertices tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tree fragment-planet)
-                            :as planet]
-            [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
-            [sfsim25.clouds :refer (cloud-atmosphere cloud-planet) :as clouds]
+            [sfsim25.render :refer (make-window destroy-window clear destroy-texture generate-mipmap make-float-cubemap
+                                    make-float-texture-2d make-float-texture-3d make-vector-texture-2d onscreen-render
+                                    texture-render-color-depth)]
+            [sfsim25.atmosphere :refer (phase) :as atmosphere]
+            [sfsim25.planet :refer (load-tiles-into-opengl unload-tiles-from-opengl) :as planet]
+            [sfsim25.quadtree :refer (increase-level? update-level-of-detail)]
+            [sfsim25.clouds :as clouds]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
             [sfsim25.quaternion :as q]
@@ -242,6 +237,7 @@
                                :cover-size cover-size
                                :noise-size noise-size
                                :tilesize tilesize
+                               :color-tilesize color-tilesize
                                :height-size height-size
                                :elevation-size elevation-size
                                :light-elevation-size light-elevation-size
@@ -303,36 +299,6 @@
   (let [increase? (partial increase-level? tilesize radius width 60 10 6 @position)]
     (update-level-of-detail tree radius increase? true)))
 
-(defn load-tile-into-opengl
-  [{:keys [program]} tile]
-  (let [indices    [0 2 3 1]
-        vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-        day-tex    (make-rgb-texture :linear :clamp (:day tile))
-        night-tex  (make-rgb-texture :linear :clamp (:night tile))
-        surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
-        normal-tex (make-vector-texture-2d :linear :clamp (:normals tile))
-        water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
-    (assoc (dissoc tile :day :night :surface :normals :water)
-           :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
-
-(defn load-tiles-into-opengl
-  [planet-renderer tree paths]
-  (quadtree-update tree paths (partial load-tile-into-opengl planet-renderer)))
-
-(defn unload-tile-from-opengl
-  [tile]
-  (destroy-texture (:day-tex tile))
-  (destroy-texture (:night-tex tile))
-  (destroy-texture (:surf-tex tile))
-  (destroy-texture (:normal-tex tile))
-  (destroy-texture (:water-tex tile))
-  (destroy-vertex-array-object (:vao tile)))
-
-(defn unload-tiles-from-opengl
-  [tiles]
-  (doseq [tile tiles] (unload-tile-from-opengl tile)))
-
 (def keystates (atom {}))
 
 (def keyboard-callback
@@ -368,7 +334,6 @@
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
-                 ta (if (@keystates GLFW/GLFW_KEY_E) 0.0001 (if (@keystates GLFW/GLFW_KEY_D) -0.0001 0))
                  ts (if (@keystates GLFW/GLFW_KEY_Y) 0.05 (if (@keystates GLFW/GLFW_KEY_H) -0.05 0))]
              (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
              (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))

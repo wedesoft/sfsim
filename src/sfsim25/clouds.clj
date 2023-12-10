@@ -261,7 +261,7 @@
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
              cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
-             reflectivity specular cloud-multiplier cover-multiplier cap anisotropic radius max-height water-color amplification
+             reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
              opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex
              bluenoise-tex cloud-cover-tex]}]
   (let [program (make-program :vertex [vertex-atmosphere]
