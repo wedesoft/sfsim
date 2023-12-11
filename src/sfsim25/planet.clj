@@ -361,3 +361,8 @@
       (unload-tiles-from-opengl (:drop data))
       (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
       (reset! changes (future (background-tree-update planet-renderer @tree position))))))
+
+(defn get-current-tree
+  "Get current state of tile tree"
+  [{:keys [tree]}]
+  @tree)

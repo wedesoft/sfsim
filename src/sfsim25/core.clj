@@ -355,7 +355,7 @@
                                                               opac-step)
                    shadows    (planet/render-shadow-cascade planet-shadow-renderer
                                                             :matrix-cascade matrix-cas
-                                                            :tree @(:tree tile-tree))
+                                                            :tree (planet/get-current-tree tile-tree))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
@@ -375,7 +375,7 @@
                                                             :matrix-cascade matrix-cas
                                                             :shadows shadows
                                                             :opacities opacities
-                                                            :tree @(:tree tile-tree))
+                                                            :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
                                                                 :cloud-step @step
@@ -408,7 +408,7 @@
                                                       :clouds clouds
                                                       :shadows shadows
                                                       :opacities opacities
-                                                      :tree @(:tree tile-tree))
+                                                      :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer
                                                               :splits splits
