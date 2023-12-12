@@ -1,6 +1,7 @@
 # TODO
 * make modules out of core.clj
-  * simplify shader lists in all make-program calls
+  * use textures with hashmap
+  * group textures with dimension data
   * group cloud textures, sizes, and parameters
   * group atmospheric lookup tables and parameters
 * integration-test modules

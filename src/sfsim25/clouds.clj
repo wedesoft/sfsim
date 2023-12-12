@@ -143,14 +143,14 @@
     (uniform-float update-warp "prevailing" prevailing)
     (uniform-float update-warp "curl_scale" curl-scale)
     (dotimes [_iteration num-iterations]
-      (let [updated (iterate-cubemap size flow-scale update-warp (use-textures @warp worley-north worley-south))]
+      (let [updated (iterate-cubemap size flow-scale update-warp (use-textures {0 @warp 1 worley-north 2 worley-south}))]
         (destroy-texture @warp)
         (reset! warp updated)))
     (let [result (cubemap-warp size lookup
                                (uniform-sampler lookup "current" 0)
                                (uniform-sampler lookup "worley" 1)
                                (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
-                               (use-textures @warp worley-cover))]
+                               (use-textures {0 @warp 1 worley-cover}))]
       (destroy-program lookup)
       (destroy-program update-warp)
       (destroy-texture @warp)
@@ -343,8 +343,9 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (apply use-textures transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex
-           (concat shadows opacities))
+    (use-textures {0 transmittance-tex 1 scatter-tex 2 mie-tex 3 worley-tex 4 perlin-worley-tex 5 bluenoise-tex
+                   6 cloud-cover-tex})
+    (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 

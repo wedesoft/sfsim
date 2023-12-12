@@ -207,7 +207,7 @@ void main()
                       (uniform-sampler program "shadows" 0)
                       (uniform-int program "shadow_size" 2)
                       (uniform-float program "shadow_bias" bias)
-                      (use-textures shadows)
+                      (use-textures {0 shadows})
                       (render-quads vao))
           img       (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -268,7 +268,7 @@ void main()
                                               (doseq [idx (range (inc n))]
                                                      (uniform-float program (str "split" idx)
                                                                     (+ 10.0 (/ (* 30.0 idx) n))))
-                                              (apply use-textures shadow-texs)
+                                              (use-textures (zipmap (range) shadow-texs))
                                               (render-quads vao))
           img           (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -373,7 +373,7 @@ void main()
                       1 1 true
                       (use-program program)
                       (uniform-sampler program "table" 0)
-                      (use-textures table)
+                      (use-textures {0 table})
                       (render-quads vao))
           img       (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -415,7 +415,7 @@ void main()
                       1 1 true
                       (use-program program)
                       (uniform-sampler program "table" 0)
-                      (use-textures table)
+                      (use-textures {0 table})
                       (render-quads vao))
           img       (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -462,7 +462,7 @@ void main()
                         1 1 true
                         (use-program program)
                         (uniform-sampler program "cube" 0)
-                        (use-textures cube)
+                        (use-textures {0 cube})
                         (render-quads vao))
           img         (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -505,7 +505,7 @@ void main()
                       1 1 true
                       (use-program program)
                       (uniform-sampler program "table" 0)
-                      (use-textures table)
+                      (use-textures {0 table})
                       (render-quads vao))
           img       (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -576,7 +576,7 @@ void main()
                       1 1 true
                       (use-program program)
                       (uniform-sampler program "table" 0)
-                      (use-textures table)
+                      (use-textures {0 table})
                       (render-quads vao))
           img       (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -621,7 +621,7 @@ void main()
                       (use-program program)
                       (uniform-sampler program "table" 0)
                       (generate-mipmap table)
-                      (use-textures table)
+                      (use-textures {0 table})
                       (render-quads vao))
           img       (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
@@ -1018,7 +1018,7 @@ void main()
                      tex     (texture-render-color 1 1 true
                                                    (use-program program)
                                                    (uniform-sampler program "cubemap" 0)
-                                                   (use-textures cubemap)
+                                                   (use-textures {0 cubemap})
                                                    (render-quads vao))
                      img     (rgb-texture->vectors3 tex)]
                  (destroy-texture tex)

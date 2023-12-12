@@ -81,7 +81,7 @@
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
     (uniform-matrix4 program "recenter_and_transform" (mulm transform (transformation-matrix (eye 3) tile-center)))
-    (apply use-textures (map tile texture-keys))
+    (use-textures (zipmap (range) (map tile texture-keys)))
     (render-patches (:vao tile))))
 
 (defn render-tree
@@ -212,8 +212,8 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (apply use-textures nil transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex
-         (concat shadows opacities))
+  (use-textures {1 transmittance-tex 2 scatter-tex 3 mie-tex 4 worley-tex 5 perlin-worley-tex 6 bluenoise-tex 7 cloud-cover-tex})
+  (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
 (defn destroy-cloud-planet-renderer
@@ -303,8 +303,8 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (apply use-textures nil nil nil nil nil transmittance-tex scatter-tex mie-tex surface-radiance-tex
-         clouds (concat shadows opacities))
+  (use-textures {5 transmittance-tex 6 scatter-tex 7 mie-tex 8 surface-radiance-tex 9 clouds})
+  (use-textures (zipmap (drop 10 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
 
 (defn destroy-planet-renderer

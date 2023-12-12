@@ -30,7 +30,7 @@
     (uniform-float program "cloud_multiplier" cloud-multiplier)
     (uniform-float program "cover_multiplier" cover-multiplier)
     (uniform-float program "cap" cap)
-    (use-textures worley-tex perlin-worley-tex cloud-cover-tex)
+    (use-textures {0 worley-tex 1 perlin-worley-tex 2 cloud-cover-tex})
     {:program program
      :vao vao
      :shadow-size shadow-size

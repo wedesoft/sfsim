@@ -414,7 +414,8 @@
     (uniform-int program "window_width" window-width)
     (uniform-int program "window_height" window-height)
     (uniform-vector3 program "light_direction" light-direction)
-    (apply use-textures transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds opacities)
+    (use-textures {0 transmittance-tex 1 scatter-tex 2 mie-tex 3 surface-radiance-tex 4 clouds})
+    (use-textures (zipmap (drop 5 (range)) opacities))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
