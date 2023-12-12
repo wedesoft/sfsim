@@ -459,7 +459,6 @@
 (defn use-textures
   "Specify textures to be used in the next rendering operation"
   [textures]
-  (println "textures =" textures)
   (doseq [[index texture] textures] (use-texture index texture)))
 
 (defn- list-texture-layers

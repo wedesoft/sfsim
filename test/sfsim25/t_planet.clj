@@ -452,6 +452,7 @@ float overall_shadow(vec4 point)
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
+  (use-program program)
   (uniform-sampler program "day" 0)
   (uniform-sampler program "night" 1)
   (uniform-sampler program "normals" 2)
@@ -467,6 +468,7 @@ float overall_shadow(vec4 point)
 
 (defn setup-uniforms [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
   ; Moved this code out of the test below, otherwise method is too large
+  (use-program program)
   (uniform-int program "height_size" size)
   (uniform-int program "elevation_size" size)
   (uniform-int program "light_elevation_size" size)
@@ -526,7 +528,6 @@ float overall_shadow(vec4 point)
                                    worley        (make-float-texture-3d :linear :repeat
                                                                         {:width 2 :height 2 :depth 2 :data worley-data})]
                                (clear (vec3 0 0 0))
-                               (use-program program)
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
                                (use-textures {0 day 1 night 2 normals 3 transmittance 4 ray-scatter 5 mie-strength 6 radiance
