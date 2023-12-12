@@ -1113,7 +1113,7 @@ void main()
   fragColor = cloud_planet(fs_in.point);
 }")
 
-(def fragment-atmosphere-clouds
+(def fragment-atmosphere-clouds-mock
 "#version 410 core
 in VS_OUT
 {
@@ -1163,7 +1163,7 @@ void main()
           vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile        (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
           atmosphere  (make-program :vertex [vertex-atmosphere]
-                                    :fragment [fragment-atmosphere-clouds (last (cloud-atmosphere 3 [] []))])
+                                    :fragment [fragment-atmosphere-clouds-mock (last (cloud-atmosphere 3 [] []))])
           indices     [0 1 3 2]
           vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao         (make-vertex-array-object atmosphere indices vertices ["point" 3])
