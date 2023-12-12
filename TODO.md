@@ -1,6 +1,6 @@
 # TODO
+* problem with shadow map when near ground
 * make modules out of core.clj
-  * use textures with hashmap
   * group textures with dimension data
   * group cloud textures, sizes, and parameters
   * group atmospheric lookup tables and parameters
