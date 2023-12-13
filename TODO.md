@@ -1,5 +1,6 @@
 # TODO
 * problem with shadow map when near ground
+* integration test using computed data set, use seed for random data?
 * make modules out of core.clj
   * group textures with dimension data
   * group cloud textures, sizes, and parameters

@@ -262,7 +262,7 @@
              cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex
+             opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley perlin-worley-tex
              bluenoise-tex cloud-cover-tex]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
@@ -315,14 +315,14 @@
      :transmittance-tex transmittance-tex
      :scatter-tex scatter-tex
      :mie-tex mie-tex
-     :worley-tex worley-tex
+     :worley worley
      :perlin-worley-tex perlin-worley-tex
      :bluenoise-tex bluenoise-tex
      :cloud-cover-tex cloud-cover-tex}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon"
-  [{:keys [program transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex]}
+  [{:keys [program transmittance-tex scatter-tex mie-tex worley perlin-worley-tex bluenoise-tex cloud-cover-tex]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
@@ -343,7 +343,7 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 transmittance-tex 1 scatter-tex 2 mie-tex 3 worley-tex 4 perlin-worley-tex 5 bluenoise-tex
+    (use-textures {0 transmittance-tex 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 perlin-worley-tex 5 bluenoise-tex
                    6 cloud-cover-tex})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)

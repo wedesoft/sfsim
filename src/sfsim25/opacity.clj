@@ -6,9 +6,9 @@
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]))
 
 (defn make-opacity-renderer
-  "Initialise an opacity program"
-  [& {:keys [num-opacity-layers cloud-octaves perlin-octaves cover-size shadow-size noise-size worley-size radius cloud-bottom
-             cloud-top detail-scale cloud-scale worley-tex perlin-worley-tex cloud-cover-tex cloud-multiplier
+  "Initialise an opacity program (untested)"
+  [& {:keys [num-opacity-layers cloud-octaves perlin-octaves cover-size shadow-size noise-size radius cloud-bottom
+             cloud-top detail-scale cloud-scale worley perlin-worley-tex cloud-cover-tex cloud-multiplier
              cover-multiplier cap]}]
   (let [program  (make-program :vertex [opacity-vertex]
                                :fragment [(opacity-fragment num-opacity-layers perlin-octaves cloud-octaves)])
@@ -30,19 +30,19 @@
     (uniform-float program "cloud_multiplier" cloud-multiplier)
     (uniform-float program "cover_multiplier" cover-multiplier)
     (uniform-float program "cap" cap)
-    (use-textures {0 worley-tex 1 perlin-worley-tex 2 cloud-cover-tex})
+    (use-textures {0 (:texture worley) 1 perlin-worley-tex 2 cloud-cover-tex})
     {:program program
      :vao vao
      :shadow-size shadow-size
-     :worley-size worley-size
+     :worley worley
      :num-opacity-layers num-opacity-layers
      :detail-scale detail-scale}))
 
 (defn render-opacity-cascade
-  "Render a cascade of opacity maps and return it as a list of 3D textures"
-  [{:keys [program vao detail-scale shadow-size worley-size num-opacity-layers]}
+  "Render a cascade of opacity maps and return it as a list of 3D textures (untested)"
+  [{:keys [program vao detail-scale shadow-size worley num-opacity-layers]}
    matrix-cas light-direction cloud-threshold scatter-amount opacity-step]
-  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale worley-size) program
+  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ detail-scale (:width worley)) program
                    (uniform-vector3 program "light_direction" light-direction)
                    (uniform-float program "cloud_threshold" cloud-threshold)
                    (uniform-float program "scatter_amount" scatter-amount)
@@ -51,13 +51,13 @@
                    (render-quads vao)))
 
 (defn destroy-opacity-cascade
-  "Destroy cascade of opacity maps"
+  "Destroy cascade of opacity maps (untested)"
   [opacities]
   (doseq [layer opacities]
          (destroy-texture layer)))
 
 (defn destroy-opacity-renderer
-  "Delete opacity renderer objects"
+  "Delete opacity renderer objects (untested)"
   [{:keys [vao program]}]
   (destroy-vertex-array-object vao)
   (destroy-program program))

@@ -9,6 +9,7 @@
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
+            [sfsim25.worley :refer (worley-size)]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
             [sfsim25.quaternion :as q]
@@ -48,7 +49,6 @@
 (def mix 0.8)
 (def opacity-step (atom 250.0))
 (def step (atom 300.0))
-(def worley-size 64)
 (def shadow-size 512)
 (def cover-size 512)
 (def noise-size 64)
@@ -87,6 +87,7 @@
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap worley-tex)
+(def worley {:width worley-size :height worley-size :depth worley-size :texture worley-tex})
 
 (def worley-data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
                                    (slurp-floats "data/clouds/perlin.raw")
@@ -119,7 +120,6 @@
                                  :cover-size cover-size
                                  :shadow-size shadow-size
                                  :noise-size noise-size
-                                 :worley-size worley-size
                                  :radius radius
                                  :cloud-bottom cloud-bottom
                                  :cloud-top cloud-top
@@ -128,7 +128,7 @@
                                  :cap cap
                                  :detail-scale detail-scale
                                  :cloud-scale cloud-scale
-                                 :worley-tex worley-tex
+                                 :worley worley
                                  :perlin-worley-tex perlin-worley-tex
                                  :cloud-cover-tex cloud-cover-tex))
 
@@ -177,7 +177,7 @@
                                      :transmittance-tex transmittance-tex
                                      :scatter-tex scatter-tex
                                      :mie-tex mie-tex
-                                     :worley-tex worley-tex
+                                     :worley worley
                                      :perlin-worley-tex perlin-worley-tex
                                      :bluenoise-tex bluenoise-tex
                                      :cloud-cover-tex cloud-cover-tex))
@@ -225,7 +225,7 @@
                                          :transmittance-tex transmittance-tex
                                          :scatter-tex scatter-tex
                                          :mie-tex mie-tex
-                                         :worley-tex worley-tex
+                                         :worley worley
                                          :perlin-worley-tex perlin-worley-tex
                                          :bluenoise-tex bluenoise-tex
                                          :cloud-cover-tex cloud-cover-tex))
@@ -343,7 +343,7 @@
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
                    light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
-                   lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
+                   lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale (:width worley)))) (log 2))
                    extrinsics (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
                    splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
@@ -441,7 +441,7 @@
   (destroy-texture cloud-cover-tex)
   (destroy-texture bluenoise-tex)
   (destroy-texture perlin-worley-tex)
-  (destroy-texture worley-tex)
+  (destroy-texture (:texture worley))
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)

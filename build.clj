@@ -38,15 +38,15 @@
 
 (defn cloud-cover
   "Generate cloud cover cubemap"
-  [& {:keys [size] :or {size 64}}]
+  [& {:keys [worley-size] :or {worley-size w/worley-size}}]
   (GLFW/glfwInit)
   (rn/with-invisible-window
-    (let [load-floats  (fn [filename] {:width size :height size :depth size :data (u/slurp-floats filename)})
+    (let [load-floats  (fn [filename] {:width worley-size :height worley-size :depth worley-size :data (u/slurp-floats filename)})
           worley-north (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
           worley-south (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
           worley-cover (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-cover.raw"))
           cubemap      (cl/cloud-cover-cubemap :size 512
-                                               :worley-size size
+                                               :worley-size worley-size
                                                :worley-south worley-south
                                                :worley-north worley-north
                                                :worley-cover worley-cover

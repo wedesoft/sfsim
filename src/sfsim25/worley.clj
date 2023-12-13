@@ -6,6 +6,8 @@
 
 (set! *unchecked-math* true)
 
+(def worley-size 64)
+
 (defn random-point-grid
   "Create a 3D grid with a random point in each cell"
   ([divisions size]
