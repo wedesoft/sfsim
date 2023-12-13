@@ -94,7 +94,7 @@
                      (render-tree program (selector node) transform texture-keys)))))
 
 (defn make-planet-shadow-renderer
-  "Create program for rendering cascaded shadow maps of planet"
+  "Create program for rendering cascaded shadow maps of planet (untested)"
   [& {:keys [tilesize shadow-size]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
@@ -110,23 +110,23 @@
      :shadow-size shadow-size}))
 
 (defn render-shadow-cascade
-  "Render planetary shadow cascade"
+  "Render planetary shadow cascade (untested)"
   [{:keys [program shadow-size]} & {:keys [matrix-cascade tree]}]
   (shadow-cascade shadow-size matrix-cascade program (fn [transform] (render-tree program tree transform [:surf-tex]))))
 
 (defn destroy-shadow-cascade
-  "Destroy cascade of shadow maps"
+  "Destroy cascade of shadow maps (untested)"
   [shadows]
   (doseq [shadow shadows]
          (destroy-texture shadow)))
 
 (defn destroy-planet-shadow-renderer
-  "Destroy renderer for planet shadow"
+  "Destroy renderer for planet shadow (untested)"
   [{:keys [program]}]
   (destroy-program program))
 
 (defn make-cloud-planet-renderer
-  "Make a renderer to render clouds below horizon"
+  "Make a renderer to render clouds below horizon (untested)"
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
              cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
@@ -194,7 +194,7 @@
      :cloud-cover-tex cloud-cover-tex}))
 
 (defn render-cloud-planet
-  "Render clouds below horizon"
+  "Render clouds below horizon (untested)"
   [{:keys [program transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits
              matrix-cascade shadows opacities tree]}]
@@ -217,12 +217,12 @@
   (render-tree program tree transform [:surf-tex]))
 
 (defn destroy-cloud-planet-renderer
-  "Destroy program for rendering clouds below horizon"
+  "Destroy program for rendering clouds below horizon (untested)"
   [{:keys [program]}]
   (destroy-program program))
 
 (defn make-planet-renderer
-  "Program to render planet with cloud overlay"
+  "Program to render planet with cloud overlay (untested)"
   [& {:keys [width height num-steps cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size color-tilesize
              albedo dawn-start dawn-end reflectivity specular radius max-height water-color amplification opacity-cutoff
@@ -285,7 +285,7 @@
      :surface-radiance-tex surface-radiance-tex}))
 
 (defn render-planet
-  "Render planet"
+  "Render planet (untested)"
   [{:keys [program transmittance-tex scatter-tex mie-tex surface-radiance-tex]}
    & {:keys [projection origin transform light-direction opacity-step window-width window-height shadow-bias splits
              matrix-cascade clouds shadows opacities tree]}]
@@ -308,11 +308,12 @@
   (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
 
 (defn destroy-planet-renderer
-  "Destroy planet rendering program"
+  "Destroy planet rendering program (untested)"
   [{:keys [program]}]
   (destroy-program program))
 
 (defn load-tile-into-opengl
+  "Load textures of single tile into OpenGL (untested)"
   [{:keys [program tilesize color-tilesize]} tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
@@ -326,10 +327,12 @@
            :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
 
 (defn load-tiles-into-opengl
+  "Load tiles into OpenGL (untested)"
   [planet-renderer tree paths]
   (quadtree-update tree paths (partial load-tile-into-opengl planet-renderer)))
 
 (defn unload-tile-from-opengl
+  "Remove textures of single tile from OpenGL (untested)"
   [tile]
   (destroy-texture (:day-tex tile))
   (destroy-texture (:night-tex tile))
@@ -339,22 +342,24 @@
   (destroy-vertex-array-object (:vao tile)))
 
 (defn unload-tiles-from-opengl
+  "Remove tile textures from OpenGL (untested)"
   [tiles]
   (doseq [tile tiles] (unload-tile-from-opengl tile)))
 
 (defn background-tree-update
+  "Method to call in a backround thread for loading tiles (untested)"
   [{:keys [tilesize radius width]} tree position]
   (let [increase? (partial increase-level? tilesize radius width 60 10 6 position)]
     (update-level-of-detail tree radius increase? true)))
 
 (defn make-tile-tree
-  "Create empty tile tree and empty change object"
+  "Create empty tile tree and empty change object (untested)"
   []
   {:tree    (atom [])
    :changes (atom (future {:tree {} :drop [] :load []}))})
 
 (defn update-tile-tree
-  "Schedule background tile tree updates"
+  "Schedule background tile tree updates (untested)"
   [planet-renderer {:keys [tree changes]} position]
   (when (realized? @changes)
     (let [data @@changes]
@@ -363,6 +368,6 @@
       (reset! changes (future (background-tree-update planet-renderer @tree position))))))
 
 (defn get-current-tree
-  "Get current state of tile tree"
+  "Get current state of tile tree (untested)"
   [{:keys [tree]}]
   @tree)

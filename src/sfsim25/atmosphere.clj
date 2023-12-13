@@ -352,7 +352,7 @@
   [shaders/ray-sphere attenuation-outer cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
 
 (defn make-atmosphere-renderer
-  "Initialise atmosphere rendering program"
+  "Initialise atmosphere rendering program (untested)"
   [& {:keys [cover-size num-steps noise-size height-size elevation-size light-elevation-size heading-size
              transmittance-elevation-size transmittance-height-size surface-sun-elevation-size surface-height-size
              albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification
@@ -393,7 +393,7 @@
      :surface-radiance-tex surface-radiance-tex}))
 
 (defn render-atmosphere
-  "Render atmosphere with cloud overlay"
+  "Render atmosphere with cloud overlay (untested)"
   [{:keys [program transmittance-tex scatter-tex mie-tex surface-radiance-tex]}
    & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height
              light-direction clouds opacities z-far]}]
@@ -420,7 +420,7 @@
     (destroy-vertex-array-object vao)))
 
 (defn destroy-atmosphere-renderer
-  "Destroy atmosphere renderer"
+  "Destroy atmosphere renderer (untested)"
   [{:keys [program]}]
   (destroy-program program))
 
