@@ -259,11 +259,11 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon"
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
-             cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
+             cover-size tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
              opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley perlin-worley-tex
-             bluenoise-tex cloud-cover-tex]}]
+             bluenoise cloud-cover-tex]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
     (use-program program)
@@ -286,7 +286,7 @@
     (uniform-float program "detail_scale" detail-scale)
     (uniform-float program "depth" depth)
     (uniform-int program "cover_size" cover-size)
-    (uniform-int program "noise_size" noise-size)
+    (uniform-int program "noise_size" (:width bluenoise))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "height_size" height-size)
@@ -317,12 +317,12 @@
      :mie-tex mie-tex
      :worley worley
      :perlin-worley-tex perlin-worley-tex
-     :bluenoise-tex bluenoise-tex
+     :bluenoise bluenoise
      :cloud-cover-tex cloud-cover-tex}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon"
-  [{:keys [program transmittance-tex scatter-tex mie-tex worley perlin-worley-tex bluenoise-tex cloud-cover-tex]}
+  [{:keys [program transmittance-tex scatter-tex mie-tex worley perlin-worley-tex bluenoise cloud-cover-tex]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
@@ -343,7 +343,7 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 transmittance-tex 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 perlin-worley-tex 5 bluenoise-tex
+    (use-textures {0 transmittance-tex 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 perlin-worley-tex 5 (:texture bluenoise)
                    6 cloud-cover-tex})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)

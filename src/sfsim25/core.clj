@@ -89,13 +89,14 @@
 (generate-mipmap worley-tex)
 (def worley {:width worley-size :height worley-size :depth worley-size :texture worley-tex})
 
-(def worley-data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
-                                   (slurp-floats "data/clouds/perlin.raw")
-                                   (slurp-floats "data/clouds/worley-cover.raw"))))
-(def perlin-worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data worley-data}))
+(def perlin-worley-data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
+                                          (slurp-floats "data/clouds/perlin.raw")
+                                          (slurp-floats "data/clouds/worley-cover.raw"))))
+(def perlin-worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data perlin-worley-data}))
 
 (def noise-data (slurp-floats "data/bluenoise.raw"))
 (def bluenoise-tex (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
+(def bluenoise {:width noise-size :height noise-size :texture bluenoise-tex})
 
 (def cover (map (fn [i] {:width cover-size :height cover-size :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
 (def cloud-cover-tex (make-float-cubemap :linear :clamp cover))
@@ -119,7 +120,6 @@
                                  :perlin-octaves perlin-octaves
                                  :cover-size cover-size
                                  :shadow-size shadow-size
-                                 :noise-size noise-size
                                  :radius radius
                                  :cloud-bottom cloud-bottom
                                  :cloud-top cloud-top
@@ -150,7 +150,6 @@
                                      :detail-scale detail-scale
                                      :depth depth
                                      :cover-size cover-size
-                                     :noise-size noise-size
                                      :tilesize tilesize
                                      :height-size height-size
                                      :elevation-size elevation-size
@@ -179,7 +178,7 @@
                                      :mie-tex mie-tex
                                      :worley worley
                                      :perlin-worley-tex perlin-worley-tex
-                                     :bluenoise-tex bluenoise-tex
+                                     :bluenoise bluenoise
                                      :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
@@ -198,7 +197,6 @@
                                          :detail-scale detail-scale
                                          :depth depth
                                          :cover-size cover-size
-                                         :noise-size noise-size
                                          :tilesize tilesize
                                          :height-size height-size
                                          :elevation-size elevation-size
@@ -227,7 +225,7 @@
                                          :mie-tex mie-tex
                                          :worley worley
                                          :perlin-worley-tex perlin-worley-tex
-                                         :bluenoise-tex bluenoise-tex
+                                         :bluenoise bluenoise
                                          :cloud-cover-tex cloud-cover-tex))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
@@ -236,7 +234,6 @@
                                :height height
                                :num-steps num-steps
                                :cover-size cover-size
-                               :noise-size noise-size
                                :tilesize tilesize
                                :color-tilesize color-tilesize
                                :height-size height-size
@@ -270,7 +267,6 @@
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :cover-size cover-size
                                        :num-steps num-steps
-                                       :noise-size noise-size
                                        :height-size height-size
                                        :elevation-size elevation-size
                                        :light-elevation-size light-elevation-size
@@ -439,7 +435,7 @@
   (destroy-texture scatter-tex)
   (destroy-texture transmittance-tex)
   (destroy-texture cloud-cover-tex)
-  (destroy-texture bluenoise-tex)
+  (destroy-texture (:texture bluenoise))
   (destroy-texture perlin-worley-tex)
   (destroy-texture (:texture worley))
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)

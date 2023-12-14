@@ -7,7 +7,7 @@
 
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
-  [& {:keys [num-opacity-layers cloud-octaves perlin-octaves cover-size shadow-size noise-size radius cloud-bottom
+  [& {:keys [num-opacity-layers cloud-octaves perlin-octaves cover-size shadow-size radius cloud-bottom
              cloud-top detail-scale cloud-scale worley perlin-worley-tex cloud-cover-tex cloud-multiplier
              cover-multiplier cap]}]
   (let [program  (make-program :vertex [opacity-vertex]
@@ -21,7 +21,6 @@
     (uniform-sampler program "cover" 2)
     (uniform-int program "cover_size" cover-size)
     (uniform-int program "shadow_size" shadow-size)
-    (uniform-int program "noise_size" noise-size)
     (uniform-float program "radius" radius)
     (uniform-float program "cloud_bottom" cloud-bottom)
     (uniform-float program "cloud_top" cloud-top)
