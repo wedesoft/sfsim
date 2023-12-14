@@ -128,11 +128,11 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
-             cover-size tilesize height-size elevation-size light-elevation-size heading-size
+             tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
              opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley perlin-worley-tex
-             bluenoise cloud-cover-tex]}]
+             bluenoise cloud-cover]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -158,7 +158,7 @@
     (uniform-float program "cloud_scale" cloud-scale)
     (uniform-float program "detail_scale" detail-scale)
     (uniform-float program "depth" depth)
-    (uniform-int program "cover_size" cover-size)
+    (uniform-int program "cover_size" (:width cloud-cover))
     (uniform-int program "noise_size" (:width bluenoise))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
@@ -191,11 +191,11 @@
      :worley worley
      :perlin-worley-tex perlin-worley-tex
      :bluenoise bluenoise
-     :cloud-cover-tex cloud-cover-tex}))
+     :cloud-cover cloud-cover}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
-  [{:keys [program transmittance-tex scatter-tex mie-tex worley perlin-worley-tex bluenoise cloud-cover-tex]}
+  [{:keys [program transmittance-tex scatter-tex mie-tex worley perlin-worley-tex bluenoise cloud-cover]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits
              matrix-cascade shadows opacities tree]}]
   (use-program program)
@@ -213,7 +213,7 @@
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
   (use-textures {1 transmittance-tex 2 scatter-tex 3 mie-tex 4 (:texture worley) 5 perlin-worley-tex 6 (:texture bluenoise)
-                 7 cloud-cover-tex})
+                 7 (:texture cloud-cover)})
   (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
@@ -224,7 +224,7 @@
 
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
-  [& {:keys [width height num-steps cover-size tilesize height-size elevation-size light-elevation-size heading-size
+  [& {:keys [width height num-steps tilesize height-size elevation-size light-elevation-size heading-size
              transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size color-tilesize
              albedo dawn-start dawn-end reflectivity specular radius max-height water-color amplification opacity-cutoff
              num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
@@ -248,7 +248,6 @@
            (uniform-sampler program (str "shadow_map" i) (+ i 10)))
     (doseq [i (range num-steps)]
            (uniform-sampler program (str "opacity" i) (+ i 10 num-steps)))
-    (uniform-int program "cover_size" cover-size)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "height_size" height-size)

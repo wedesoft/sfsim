@@ -353,7 +353,7 @@
 
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
-  [& {:keys [cover-size num-steps height-size elevation-size light-elevation-size heading-size
+  [& {:keys [num-steps height-size elevation-size light-elevation-size heading-size
              transmittance-elevation-size transmittance-height-size surface-sun-elevation-size surface-height-size
              albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification
              transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
@@ -367,7 +367,6 @@
     (uniform-sampler program "clouds" 4)
     (doseq [i (range num-steps)]
            (uniform-sampler program (str "opacity" i) (+ i 5)))
-    (uniform-int program "cover_size" cover-size)
     (uniform-int program "height_size" height-size)
     (uniform-int program "elevation_size" elevation-size)
     (uniform-int program "light_elevation_size" light-elevation-size)

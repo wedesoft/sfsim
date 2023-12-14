@@ -98,8 +98,9 @@
 (def bluenoise-tex (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
 (def bluenoise {:width noise-size :height noise-size :texture bluenoise-tex})
 
-(def cover (map (fn [i] {:width cover-size :height cover-size :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
-(def cloud-cover-tex (make-float-cubemap :linear :clamp cover))
+(def cover-data (map (fn [i] {:width cover-size :height cover-size :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
+(def cloud-cover-tex (make-float-cubemap :linear :clamp cover-data))
+(def cloud-cover {:width cover-size :height cover-size :texture cloud-cover-tex})
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def transmittance-tex (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
@@ -118,7 +119,6 @@
   (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
                                  :cloud-octaves cloud-octaves
                                  :perlin-octaves perlin-octaves
-                                 :cover-size cover-size
                                  :shadow-size shadow-size
                                  :radius radius
                                  :cloud-bottom cloud-bottom
@@ -130,7 +130,7 @@
                                  :cloud-scale cloud-scale
                                  :worley worley
                                  :perlin-worley-tex perlin-worley-tex
-                                 :cloud-cover-tex cloud-cover-tex))
+                                 :cloud-cover cloud-cover))
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
@@ -149,7 +149,6 @@
                                      :cloud-scale cloud-scale
                                      :detail-scale detail-scale
                                      :depth depth
-                                     :cover-size cover-size
                                      :tilesize tilesize
                                      :height-size height-size
                                      :elevation-size elevation-size
@@ -179,7 +178,7 @@
                                      :worley worley
                                      :perlin-worley-tex perlin-worley-tex
                                      :bluenoise bluenoise
-                                     :cloud-cover-tex cloud-cover-tex))
+                                     :cloud-cover cloud-cover))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
@@ -196,7 +195,6 @@
                                          :cloud-scale cloud-scale
                                          :detail-scale detail-scale
                                          :depth depth
-                                         :cover-size cover-size
                                          :tilesize tilesize
                                          :height-size height-size
                                          :elevation-size elevation-size
@@ -226,14 +224,13 @@
                                          :worley worley
                                          :perlin-worley-tex perlin-worley-tex
                                          :bluenoise bluenoise
-                                         :cloud-cover-tex cloud-cover-tex))
+                                         :cloud-cover cloud-cover))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
   (planet/make-planet-renderer :width width
                                :height height
                                :num-steps num-steps
-                               :cover-size cover-size
                                :tilesize tilesize
                                :color-tilesize color-tilesize
                                :height-size height-size
@@ -265,8 +262,7 @@
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :cover-size cover-size
-                                       :num-steps num-steps
+  (atmosphere/make-atmosphere-renderer :num-steps num-steps
                                        :height-size height-size
                                        :elevation-size elevation-size
                                        :light-elevation-size light-elevation-size
