@@ -104,6 +104,7 @@
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def transmittance-tex (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
+(def transmittance {:width transmittance-elevation-size :height transmittance-height-size :texture transmittance-tex})
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def scatter-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
@@ -154,8 +155,6 @@
                                      :elevation-size elevation-size
                                      :light-elevation-size light-elevation-size
                                      :heading-size heading-size
-                                     :transmittance-height-size transmittance-height-size
-                                     :transmittance-elevation-size transmittance-elevation-size
                                      :surface-height-size surface-height-size
                                      :surface-sun-elevation-size surface-sun-elevation-size
                                      :albedo albedo
@@ -172,7 +171,7 @@
                                      :opacity-cutoff opacity-cutoff
                                      :num-opacity-layers num-opacity-layers
                                      :shadow-size shadow-size
-                                     :transmittance-tex transmittance-tex
+                                     :transmittance transmittance
                                      :scatter-tex scatter-tex
                                      :mie-tex mie-tex
                                      :worley worley
@@ -200,8 +199,6 @@
                                          :elevation-size elevation-size
                                          :light-elevation-size light-elevation-size
                                          :heading-size heading-size
-                                         :transmittance-height-size transmittance-height-size
-                                         :transmittance-elevation-size transmittance-elevation-size
                                          :surface-height-size surface-height-size
                                          :surface-sun-elevation-size surface-sun-elevation-size
                                          :albedo albedo
@@ -218,7 +215,7 @@
                                          :opacity-cutoff opacity-cutoff
                                          :num-opacity-layers num-opacity-layers
                                          :shadow-size shadow-size
-                                         :transmittance-tex transmittance-tex
+                                         :transmittance transmittance
                                          :scatter-tex scatter-tex
                                          :mie-tex mie-tex
                                          :worley worley
@@ -237,8 +234,6 @@
                                :elevation-size elevation-size
                                :light-elevation-size light-elevation-size
                                :heading-size heading-size
-                               :transmittance-height-size transmittance-height-size
-                               :transmittance-elevation-size transmittance-elevation-size
                                :surface-height-size surface-height-size
                                :surface-sun-elevation-size surface-sun-elevation-size
                                :albedo albedo
@@ -255,7 +250,7 @@
                                :shadow-size shadow-size
                                :radius radius
                                :max-height max-height
-                               :transmittance-tex transmittance-tex
+                               :transmittance transmittance
                                :scatter-tex scatter-tex
                                :mie-tex mie-tex
                                :surface-radiance-tex surface-radiance-tex))
@@ -267,8 +262,6 @@
                                        :elevation-size elevation-size
                                        :light-elevation-size light-elevation-size
                                        :heading-size heading-size
-                                       :transmittance-elevation-size transmittance-elevation-size
-                                       :transmittance-height-size transmittance-height-size
                                        :surface-sun-elevation-size surface-sun-elevation-size
                                        :surface-height-size surface-height-size
                                        :albedo albedo
@@ -280,7 +273,7 @@
                                        :max-height max-height
                                        :specular specular
                                        :amplification amplification
-                                       :transmittance-tex transmittance-tex
+                                       :transmittance transmittance
                                        :scatter-tex scatter-tex
                                        :mie-tex mie-tex
                                        :surface-radiance-tex surface-radiance-tex))
@@ -429,7 +422,7 @@
   (destroy-texture surface-radiance-tex)
   (destroy-texture mie-tex)
   (destroy-texture scatter-tex)
-  (destroy-texture transmittance-tex)
+  (destroy-texture (:texture transmittance))
   (destroy-texture cloud-cover-tex)
   (destroy-texture (:texture bluenoise))
   (destroy-texture perlin-worley-tex)

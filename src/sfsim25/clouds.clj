@@ -260,9 +260,9 @@
   "Make renderer to render clouds above horizon"
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
              tilesize height-size elevation-size light-elevation-size heading-size
-             transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
+             surface-height-size surface-sun-elevation-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley perlin-worley-tex
+             opacity-cutoff num-opacity-layers shadow-size transmittance scatter-tex mie-tex worley perlin-worley-tex
              bluenoise cloud-cover]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
@@ -293,8 +293,8 @@
     (uniform-int program "elevation_size" elevation-size)
     (uniform-int program "light_elevation_size" light-elevation-size)
     (uniform-int program "heading_size" heading-size)
-    (uniform-int program "transmittance_height_size" transmittance-height-size)
-    (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
+    (uniform-int program "transmittance_height_size" (:height transmittance))
+    (uniform-int program "transmittance_elevation_size" (:width transmittance))
     (uniform-int program "surface_height_size" surface-height-size)
     (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
     (uniform-float program "albedo" albedo)
@@ -312,7 +312,7 @@
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     {:program program
-     :transmittance-tex transmittance-tex
+     :transmittance transmittance
      :scatter-tex scatter-tex
      :mie-tex mie-tex
      :worley worley
@@ -322,7 +322,7 @@
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon"
-  [{:keys [program transmittance-tex scatter-tex mie-tex worley perlin-worley-tex bluenoise cloud-cover]}
+  [{:keys [program transmittance scatter-tex mie-tex worley perlin-worley-tex bluenoise cloud-cover]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
@@ -343,7 +343,7 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 transmittance-tex 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 perlin-worley-tex 5 (:texture bluenoise)
+    (use-textures {0 (:texture transmittance) 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 perlin-worley-tex 5 (:texture bluenoise)
                    6 (:texture cloud-cover)})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)
