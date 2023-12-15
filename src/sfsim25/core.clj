@@ -109,12 +109,11 @@
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def scatter-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
-(def scatter {:width elevation-size :height heading-size })
-; TODO
+(def scatter {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture scatter-tex})
 
 (def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
 (def mie-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data mie-data}))
-; TODO
+(def mie {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture mie-tex})
 
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
@@ -156,11 +155,6 @@
                                      :detail-scale detail-scale
                                      :depth depth
                                      :tilesize tilesize
-                                     :height-size height-size
-                                     :elevation-size elevation-size
-                                     :light-elevation-size light-elevation-size
-                                     :heading-size heading-size
-                                     :surface-height-size surface-height-size
                                      :albedo albedo
                                      :reflectivity reflectivity
                                      :specular specular
@@ -176,8 +170,8 @@
                                      :num-opacity-layers num-opacity-layers
                                      :shadow-size shadow-size
                                      :transmittance transmittance
-                                     :scatter-tex scatter-tex
-                                     :mie-tex mie-tex
+                                     :scatter scatter
+                                     :mie mie
                                      :worley worley
                                      :perlin-worley perlin-worley
                                      :bluenoise bluenoise
@@ -199,11 +193,6 @@
                                          :detail-scale detail-scale
                                          :depth depth
                                          :tilesize tilesize
-                                         :height-size height-size
-                                         :elevation-size elevation-size
-                                         :light-elevation-size light-elevation-size
-                                         :heading-size heading-size
-                                         :surface-height-size surface-height-size
                                          :albedo albedo
                                          :reflectivity reflectivity
                                          :specular specular
@@ -219,8 +208,8 @@
                                          :num-opacity-layers num-opacity-layers
                                          :shadow-size shadow-size
                                          :transmittance transmittance
-                                         :scatter-tex scatter-tex
-                                         :mie-tex mie-tex
+                                         :scatter scatter
+                                         :mie mie
                                          :worley worley
                                          :perlin-worley perlin-worley
                                          :bluenoise bluenoise
@@ -233,11 +222,6 @@
                                :num-steps num-steps
                                :tilesize tilesize
                                :color-tilesize color-tilesize
-                               :height-size height-size
-                               :elevation-size elevation-size
-                               :light-elevation-size light-elevation-size
-                               :heading-size heading-size
-                               :surface-height-size surface-height-size
                                :albedo albedo
                                :dawn-start dawn-start
                                :dawn-end dawn-end
@@ -253,18 +237,13 @@
                                :radius radius
                                :max-height max-height
                                :transmittance transmittance
-                               :scatter-tex scatter-tex
-                               :mie-tex mie-tex
+                               :scatter scatter
+                               :mie mie
                                :surface-radiance surface-radiance))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :num-steps num-steps
-                                       :height-size height-size
-                                       :elevation-size elevation-size
-                                       :light-elevation-size light-elevation-size
-                                       :heading-size heading-size
-                                       :surface-height-size surface-height-size
                                        :albedo albedo
                                        :reflectivity 0.1
                                        :opacity-cutoff opacity-cutoff
@@ -275,8 +254,8 @@
                                        :specular specular
                                        :amplification amplification
                                        :transmittance transmittance
-                                       :scatter-tex scatter-tex
-                                       :mie-tex mie-tex
+                                       :scatter scatter
+                                       :mie mie
                                        :surface-radiance surface-radiance))
 
 (def tile-tree (planet/make-tile-tree))
@@ -421,10 +400,10 @@
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
   (destroy-texture (:texture surface-radiance))
-  (destroy-texture mie-tex)
-  (destroy-texture scatter-tex)
+  (destroy-texture (:texture mie))
+  (destroy-texture (:texture scatter))
   (destroy-texture (:texture transmittance))
-  (destroy-texture cloud-cover-tex)
+  (destroy-texture (:texture cloud-cover))
   (destroy-texture (:texture bluenoise))
   (destroy-texture (:texture perlin-worley))
   (destroy-texture (:texture worley))

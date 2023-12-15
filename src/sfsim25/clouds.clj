@@ -121,8 +121,8 @@
 
 (defn cloud-cover-cubemap
   "Program to generate planetary cloud cover using curl noise"
-  [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves
-             whirl prevailing curl-scale cover-scale num-iterations flow-scale]}]
+  [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
+             cover-scale num-iterations flow-scale]}]
   (let [warp        (atom (identity-cubemap size))
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
@@ -259,11 +259,8 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon"
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
-             tilesize height-size elevation-size light-elevation-size heading-size
-             surface-height-size albedo
-             reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter-tex mie-tex worley perlin-worley
-             bluenoise cloud-cover]}]
+             tilesize albedo reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
+             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie worley perlin-worley bluenoise cloud-cover]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
     (use-program program)
@@ -289,13 +286,12 @@
     (uniform-int program "noise_size" (:width bluenoise))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" height-size)
-    (uniform-int program "elevation_size" elevation-size)
-    (uniform-int program "light_elevation_size" light-elevation-size)
-    (uniform-int program "heading_size" heading-size)
+    (uniform-int program "height_size" (:hyperdepth scatter))
+    (uniform-int program "elevation_size" (:depth scatter))
+    (uniform-int program "light_elevation_size" (:height scatter))
+    (uniform-int program "heading_size" (:width scatter))
     (uniform-int program "transmittance_height_size" (:height transmittance))
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
-    (uniform-int program "surface_height_size" surface-height-size)
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
@@ -312,8 +308,8 @@
     (uniform-int program "shadow_size" shadow-size)
     {:program program
      :transmittance transmittance
-     :scatter-tex scatter-tex
-     :mie-tex mie-tex
+     :scatter scatter
+     :mie mie
      :worley worley
      :perlin-worley perlin-worley
      :bluenoise bluenoise
@@ -321,7 +317,7 @@
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon"
-  [{:keys [program transmittance scatter-tex mie-tex worley perlin-worley bluenoise cloud-cover]}
+  [{:keys [program transmittance scatter mie worley perlin-worley bluenoise cloud-cover]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
@@ -342,7 +338,7 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 (:texture transmittance) 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 (:texture perlin-worley)
+    (use-textures {0 (:texture transmittance) 1 (:texture scatter) 2 (:texture mie) 3 (:texture worley) 4 (:texture perlin-worley)
                    5 (:texture bluenoise) 6 (:texture cloud-cover)})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)
