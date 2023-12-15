@@ -260,7 +260,7 @@
   "Make renderer to render clouds above horizon"
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
              tilesize height-size elevation-size light-elevation-size heading-size
-             surface-height-size surface-sun-elevation-size albedo
+             surface-height-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
              opacity-cutoff num-opacity-layers shadow-size transmittance scatter-tex mie-tex worley perlin-worley
              bluenoise cloud-cover]}]
@@ -296,7 +296,6 @@
     (uniform-int program "transmittance_height_size" (:height transmittance))
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
     (uniform-int program "surface_height_size" surface-height-size)
-    (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)

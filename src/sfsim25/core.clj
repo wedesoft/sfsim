@@ -109,6 +109,7 @@
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def scatter-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
+(def scatter {:width elevation-size :height heading-size })
 ; TODO
 
 (def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
@@ -117,7 +118,7 @@
 
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
-; TODO
+(def surface-radiance {:width surface-sun-elevation-size :height surface-height-size :texture surface-radiance-tex})
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -160,7 +161,6 @@
                                      :light-elevation-size light-elevation-size
                                      :heading-size heading-size
                                      :surface-height-size surface-height-size
-                                     :surface-sun-elevation-size surface-sun-elevation-size
                                      :albedo albedo
                                      :reflectivity reflectivity
                                      :specular specular
@@ -204,7 +204,6 @@
                                          :light-elevation-size light-elevation-size
                                          :heading-size heading-size
                                          :surface-height-size surface-height-size
-                                         :surface-sun-elevation-size surface-sun-elevation-size
                                          :albedo albedo
                                          :reflectivity reflectivity
                                          :specular specular
@@ -239,7 +238,6 @@
                                :light-elevation-size light-elevation-size
                                :heading-size heading-size
                                :surface-height-size surface-height-size
-                               :surface-sun-elevation-size surface-sun-elevation-size
                                :albedo albedo
                                :dawn-start dawn-start
                                :dawn-end dawn-end
@@ -257,7 +255,7 @@
                                :transmittance transmittance
                                :scatter-tex scatter-tex
                                :mie-tex mie-tex
-                               :surface-radiance-tex surface-radiance-tex))
+                               :surface-radiance surface-radiance))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
@@ -266,7 +264,6 @@
                                        :elevation-size elevation-size
                                        :light-elevation-size light-elevation-size
                                        :heading-size heading-size
-                                       :surface-sun-elevation-size surface-sun-elevation-size
                                        :surface-height-size surface-height-size
                                        :albedo albedo
                                        :reflectivity 0.1
@@ -280,7 +277,7 @@
                                        :transmittance transmittance
                                        :scatter-tex scatter-tex
                                        :mie-tex mie-tex
-                                       :surface-radiance-tex surface-radiance-tex))
+                                       :surface-radiance surface-radiance))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -423,7 +420,7 @@
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
-  (destroy-texture surface-radiance-tex)
+  (destroy-texture (:texture surface-radiance))
   (destroy-texture mie-tex)
   (destroy-texture scatter-tex)
   (destroy-texture (:texture transmittance))

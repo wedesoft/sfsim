@@ -354,9 +354,9 @@
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   [& {:keys [num-steps height-size elevation-size light-elevation-size heading-size
-             surface-sun-elevation-size surface-height-size
+             surface-height-size
              albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification
-             transmittance scatter-tex mie-tex surface-radiance-tex]}]
+             transmittance scatter-tex mie-tex surface-radiance]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
@@ -373,7 +373,7 @@
     (uniform-int program "heading_size" heading-size)
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
     (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
+    (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
     (uniform-int program "surface_height_size" surface-height-size)
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
@@ -388,11 +388,11 @@
      :transmittance transmittance
      :scatter-tex scatter-tex
      :mie-tex mie-tex
-     :surface-radiance-tex surface-radiance-tex}))
+     :surface-radiance surface-radiance}))
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
-  [{:keys [program transmittance scatter-tex mie-tex surface-radiance-tex]}
+  [{:keys [program transmittance scatter-tex mie-tex surface-radiance]}
    & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height
              light-direction clouds opacities z-far]}]
   (let [indices    [0 1 3 2]
@@ -412,7 +412,7 @@
     (uniform-int program "window_width" window-width)
     (uniform-int program "window_height" window-height)
     (uniform-vector3 program "light_direction" light-direction)
-    (use-textures {0 (:texture transmittance) 1 scatter-tex 2 mie-tex 3 surface-radiance-tex 4 clouds})
+    (use-textures {0 (:texture transmittance) 1 scatter-tex 2 mie-tex 3 (:texture surface-radiance) 4 clouds})
     (use-textures (zipmap (drop 5 (range)) opacities))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
