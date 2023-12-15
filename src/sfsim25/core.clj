@@ -93,6 +93,7 @@
                                           (slurp-floats "data/clouds/perlin.raw")
                                           (slurp-floats "data/clouds/worley-cover.raw"))))
 (def perlin-worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data perlin-worley-data}))
+(def perlin-worley {:width worley-size :height worley-size :texture perlin-worley-tex})
 
 (def noise-data (slurp-floats "data/bluenoise.raw"))
 (def bluenoise-tex (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
@@ -108,12 +109,15 @@
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def scatter-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
+; TODO
 
 (def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
 (def mie-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data mie-data}))
+; TODO
 
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
+; TODO
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -130,7 +134,7 @@
                                  :detail-scale detail-scale
                                  :cloud-scale cloud-scale
                                  :worley worley
-                                 :perlin-worley-tex perlin-worley-tex
+                                 :perlin-worley perlin-worley
                                  :cloud-cover cloud-cover))
 
 ; Program to render shadow map of planet
@@ -175,7 +179,7 @@
                                      :scatter-tex scatter-tex
                                      :mie-tex mie-tex
                                      :worley worley
-                                     :perlin-worley-tex perlin-worley-tex
+                                     :perlin-worley perlin-worley
                                      :bluenoise bluenoise
                                      :cloud-cover cloud-cover))
 
@@ -219,7 +223,7 @@
                                          :scatter-tex scatter-tex
                                          :mie-tex mie-tex
                                          :worley worley
-                                         :perlin-worley-tex perlin-worley-tex
+                                         :perlin-worley perlin-worley
                                          :bluenoise bluenoise
                                          :cloud-cover cloud-cover))
 
@@ -425,7 +429,7 @@
   (destroy-texture (:texture transmittance))
   (destroy-texture cloud-cover-tex)
   (destroy-texture (:texture bluenoise))
-  (destroy-texture perlin-worley-tex)
+  (destroy-texture (:texture perlin-worley))
   (destroy-texture (:texture worley))
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)

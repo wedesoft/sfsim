@@ -8,7 +8,7 @@
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
   [& {:keys [num-opacity-layers cloud-octaves perlin-octaves shadow-size radius cloud-bottom
-             cloud-top detail-scale cloud-scale worley perlin-worley-tex cloud-cover cloud-multiplier
+             cloud-top detail-scale cloud-scale worley perlin-worley cloud-cover cloud-multiplier
              cover-multiplier cap]}]
   (let [program  (make-program :vertex [opacity-vertex]
                                :fragment [(opacity-fragment num-opacity-layers perlin-octaves cloud-octaves)])
@@ -29,7 +29,7 @@
     (uniform-float program "cloud_multiplier" cloud-multiplier)
     (uniform-float program "cover_multiplier" cover-multiplier)
     (uniform-float program "cap" cap)
-    (use-textures {0 (:texture worley) 1 perlin-worley-tex 2 (:texture cloud-cover)})
+    (use-textures {0 (:texture worley) 1 (:texture perlin-worley) 2 (:texture cloud-cover)})
     {:program program
      :vao vao
      :shadow-size shadow-size

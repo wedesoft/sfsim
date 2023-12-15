@@ -262,7 +262,7 @@
              tilesize height-size elevation-size light-elevation-size heading-size
              surface-height-size surface-sun-elevation-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter-tex mie-tex worley perlin-worley-tex
+             opacity-cutoff num-opacity-layers shadow-size transmittance scatter-tex mie-tex worley perlin-worley
              bluenoise cloud-cover]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
@@ -316,13 +316,13 @@
      :scatter-tex scatter-tex
      :mie-tex mie-tex
      :worley worley
-     :perlin-worley-tex perlin-worley-tex
+     :perlin-worley perlin-worley
      :bluenoise bluenoise
      :cloud-cover cloud-cover}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon"
-  [{:keys [program transmittance scatter-tex mie-tex worley perlin-worley-tex bluenoise cloud-cover]}
+  [{:keys [program transmittance scatter-tex mie-tex worley perlin-worley bluenoise cloud-cover]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
@@ -343,8 +343,8 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 (:texture transmittance) 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 perlin-worley-tex 5 (:texture bluenoise)
-                   6 (:texture cloud-cover)})
+    (use-textures {0 (:texture transmittance) 1 scatter-tex 2 mie-tex 3 (:texture worley) 4 (:texture perlin-worley)
+                   5 (:texture bluenoise) 6 (:texture cloud-cover)})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)
     (destroy-vertex-array-object vao)))

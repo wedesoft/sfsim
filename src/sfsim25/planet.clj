@@ -131,7 +131,7 @@
              tilesize height-size elevation-size light-elevation-size heading-size
              surface-height-size surface-sun-elevation-size albedo
              reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter-tex mie-tex worley perlin-worley-tex
+             opacity-cutoff num-opacity-layers shadow-size transmittance scatter-tex mie-tex worley perlin-worley
              bluenoise cloud-cover]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
@@ -189,13 +189,13 @@
      :scatter-tex scatter-tex
      :mie-tex mie-tex
      :worley worley
-     :perlin-worley-tex perlin-worley-tex
+     :perlin-worley perlin-worley
      :bluenoise bluenoise
      :cloud-cover cloud-cover}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
-  [{:keys [program transmittance scatter-tex mie-tex worley perlin-worley-tex bluenoise cloud-cover]}
+  [{:keys [program transmittance scatter-tex mie-tex worley perlin-worley bluenoise cloud-cover]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits
              matrix-cascade shadows opacities tree]}]
   (use-program program)
@@ -212,8 +212,8 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {1 (:texture transmittance) 2 scatter-tex 3 mie-tex 4 (:texture worley) 5 perlin-worley-tex 6 (:texture bluenoise)
-                 7 (:texture cloud-cover)})
+  (use-textures {1 (:texture transmittance) 2 scatter-tex 3 mie-tex 4 (:texture worley) 5 (:texture perlin-worley)
+                 6 (:texture bluenoise) 7 (:texture cloud-cover)})
   (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
