@@ -207,8 +207,7 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {1 (:texture transmittance) 2 (:texture scatter) 3 (:texture mie) 4 (:texture worley) 5 (:texture perlin-worley)
-                 6 (:texture bluenoise) 7 (:texture cloud-cover)})
+  (use-textures {1 transmittance 2 scatter 3 mie 4 worley 5 perlin-worley 6 bluenoise 7 cloud-cover})
   (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
@@ -295,7 +294,7 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {5 (:texture transmittance) 6 (:texture scatter) 7 (:texture mie) 8 (:texture surface-radiance) 9 clouds})
+  (use-textures {5 transmittance 6 scatter 7 mie 8 surface-radiance 9 clouds})
   (use-textures (zipmap (drop 10 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
 

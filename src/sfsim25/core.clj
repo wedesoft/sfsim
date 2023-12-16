@@ -85,40 +85,31 @@
 (GLFW/glfwShowWindow window)
 
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
-(def worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
-(generate-mipmap worley-tex)
-(def worley {:width worley-size :height worley-size :depth worley-size :texture worley-tex})
+(def worley (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(generate-mipmap worley)
 
 (def perlin-worley-data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
                                           (slurp-floats "data/clouds/perlin.raw")
                                           (slurp-floats "data/clouds/worley-cover.raw"))))
-(def perlin-worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data perlin-worley-data}))
-(def perlin-worley {:width worley-size :height worley-size :texture perlin-worley-tex})
-(println "perlin-worley =" perlin-worley)
+(def perlin-worley (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data perlin-worley-data}))
 
 (def noise-data (slurp-floats "data/bluenoise.raw"))
-(def bluenoise-tex (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
-(def bluenoise {:width noise-size :height noise-size :texture bluenoise-tex})
+(def bluenoise (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
 
 (def cover-data (map (fn [i] {:width cover-size :height cover-size :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
-(def cloud-cover-tex (make-float-cubemap :linear :clamp cover-data))
-(def cloud-cover {:width cover-size :height cover-size :texture cloud-cover-tex})
+(def cloud-cover (make-float-cubemap :linear :clamp cover-data))
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def transmittance-tex (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
-(def transmittance {:width transmittance-elevation-size :height transmittance-height-size :texture transmittance-tex})
+(def transmittance (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def scatter-tex (make-vector-texture-4d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data scatter-data}))
-(def scatter {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture scatter-tex})
+(def scatter (make-vector-texture-4d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data scatter-data}))
 
 (def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def mie-tex (make-vector-texture-2d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data mie-data}))
-(def mie {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture mie-tex})
+(def mie (make-vector-texture-2d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data mie-data}))
 
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
-(def surface-radiance {:width surface-sun-elevation-size :height surface-height-size :texture surface-radiance-tex})
+(def surface-radiance (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer

@@ -923,6 +923,8 @@ void main(void)
                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
           (doseq [i (range 6)]
                  (get-float (float-cubemap->floats cubemap i) 0 0) => (float (inc i)))
+          (:width cubemap) => 1
+          (:height cubemap) => 1
           (destroy-texture cubemap))))
 
 (def fragment-cubemap-attachment

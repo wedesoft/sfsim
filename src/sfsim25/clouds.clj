@@ -338,8 +338,7 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 (:texture transmittance) 1 (:texture scatter) 2 (:texture mie) 3 (:texture worley) 4 (:texture perlin-worley)
-                   5 (:texture bluenoise) 6 (:texture cloud-cover)})
+    (use-textures {0 transmittance 1 scatter 2 mie 3 worley 4 perlin-worley 5 bluenoise 6 cloud-cover})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)
     (destroy-vertex-array-object vao)))

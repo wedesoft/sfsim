@@ -410,7 +410,7 @@
     (uniform-int program "window_width" window-width)
     (uniform-int program "window_height" window-height)
     (uniform-vector3 program "light_direction" light-direction)
-    (use-textures {0 (:texture transmittance) 1 (:texture scatter) 2 (:texture mie) 3 (:texture surface-radiance) 4 clouds})
+    (use-textures {0 transmittance 1 scatter 2 mie 3 surface-radiance 4 clouds})
     (use-textures (zipmap (drop 5 (range)) opacities))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
