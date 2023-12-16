@@ -3,18 +3,13 @@
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
             [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (make-window destroy-window clear destroy-program destroy-texture destroy-vertex-array-object
-                                    generate-mipmap make-float-cubemap make-float-texture-2d make-float-texture-3d
-                                    make-program make-rgb-texture make-ubyte-texture-2d make-vector-texture-2d
-                                    make-vertex-array-object onscreen-render render-quads texture-render-color-depth
-                                    uniform-float uniform-int uniform-matrix4 uniform-sampler uniform-vector3 use-program
-                                    use-textures)]
-            [sfsim25.atmosphere :refer (phase vertex-atmosphere) :as atmosphere]
-            [sfsim25.planet :refer (geometry-planet make-cube-map-tile-vertices tess-control-planet tess-evaluation-planet
-                                    vertex-planet render-tree fragment-planet)
-                            :as planet]
-            [sfsim25.quadtree :refer (increase-level? quadtree-update update-level-of-detail)]
-            [sfsim25.clouds :refer (cloud-atmosphere cloud-planet) :as clouds]
+            [sfsim25.render :refer (make-window destroy-window clear destroy-texture generate-mipmap make-float-cubemap
+                                    make-float-texture-2d make-float-texture-3d make-vector-texture-2d onscreen-render
+                                    texture-render-color-depth)]
+            [sfsim25.atmosphere :refer (phase) :as atmosphere]
+            [sfsim25.planet :as planet]
+            [sfsim25.clouds :as clouds]
+            [sfsim25.worley :refer (worley-size)]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
                                     transformation-matrix)]
             [sfsim25.quaternion :as q]
@@ -54,7 +49,6 @@
 (def mix 0.8)
 (def opacity-step (atom 250.0))
 (def step (atom 300.0))
-(def worley-size 64)
 (def shadow-size 512)
 (def cover-size 512)
 (def noise-size 64)
@@ -80,6 +74,8 @@
 (def albedo 0.9)
 (def specular 1000)
 (def reflectivity 0.1)
+(def dawn-start -0.2)
+(def dawn-end 0.0)
 (def water-color (vec3 0.09 0.11 0.34))
 (def amplification 6)
 
@@ -91,39 +87,44 @@
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
 (def worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (generate-mipmap worley-tex)
+(def worley {:width worley-size :height worley-size :depth worley-size :texture worley-tex})
 
-(def worley-data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
-                                   (slurp-floats "data/clouds/perlin.raw")
-                                   (slurp-floats "data/clouds/worley-cover.raw"))))
-(def perlin-worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data worley-data}))
+(def perlin-worley-data (float-array (map #(+ (* 0.3 %1) (* 0.7 %2))
+                                          (slurp-floats "data/clouds/perlin.raw")
+                                          (slurp-floats "data/clouds/worley-cover.raw"))))
+(def perlin-worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data perlin-worley-data}))
+(def perlin-worley {:width worley-size :height worley-size :texture perlin-worley-tex})
 
 (def noise-data (slurp-floats "data/bluenoise.raw"))
 (def bluenoise-tex (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
+(def bluenoise {:width noise-size :height noise-size :texture bluenoise-tex})
 
-(def cover (map (fn [i] {:width cover-size :height cover-size :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
-(def cloud-cover-tex (make-float-cubemap :linear :clamp cover))
+(def cover-data (map (fn [i] {:width cover-size :height cover-size :data (slurp-floats (str "data/clouds/cover" i ".raw"))}) (range 6)))
+(def cloud-cover-tex (make-float-cubemap :linear :clamp cover-data))
+(def cloud-cover {:width cover-size :height cover-size :texture cloud-cover-tex})
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def transmittance-tex (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
+(def transmittance {:width transmittance-elevation-size :height transmittance-height-size :texture transmittance-tex})
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
 (def scatter-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
+(def scatter {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture scatter-tex})
 
 (def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
 (def mie-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data mie-data}))
+(def mie {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture mie-tex})
 
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
 (def surface-radiance-tex (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
+(def surface-radiance {:width surface-sun-elevation-size :height surface-height-size :texture surface-radiance-tex})
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
   (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
                                  :cloud-octaves cloud-octaves
                                  :perlin-octaves perlin-octaves
-                                 :cover-size cover-size
                                  :shadow-size shadow-size
-                                 :noise-size noise-size
-                                 :worley-size worley-size
                                  :radius radius
                                  :cloud-bottom cloud-bottom
                                  :cloud-top cloud-top
@@ -132,9 +133,9 @@
                                  :cap cap
                                  :detail-scale detail-scale
                                  :cloud-scale cloud-scale
-                                 :worley-tex worley-tex
-                                 :perlin-worley-tex perlin-worley-tex
-                                 :cloud-cover-tex cloud-cover-tex))
+                                 :worley worley
+                                 :perlin-worley perlin-worley
+                                 :cloud-cover cloud-cover))
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
@@ -153,17 +154,7 @@
                                      :cloud-scale cloud-scale
                                      :detail-scale detail-scale
                                      :depth depth
-                                     :cover-size cover-size
-                                     :noise-size noise-size
                                      :tilesize tilesize
-                                     :height-size height-size
-                                     :elevation-size elevation-size
-                                     :light-elevation-size light-elevation-size
-                                     :heading-size heading-size
-                                     :transmittance-height-size transmittance-height-size
-                                     :transmittance-elevation-size transmittance-elevation-size
-                                     :surface-height-size surface-height-size
-                                     :surface-sun-elevation-size surface-sun-elevation-size
                                      :albedo albedo
                                      :reflectivity reflectivity
                                      :specular specular
@@ -178,13 +169,13 @@
                                      :opacity-cutoff opacity-cutoff
                                      :num-opacity-layers num-opacity-layers
                                      :shadow-size shadow-size
-                                     :transmittance-tex transmittance-tex
-                                     :scatter-tex scatter-tex
-                                     :mie-tex mie-tex
-                                     :worley-tex worley-tex
-                                     :perlin-worley-tex perlin-worley-tex
-                                     :bluenoise-tex bluenoise-tex
-                                     :cloud-cover-tex cloud-cover-tex))
+                                     :transmittance transmittance
+                                     :scatter scatter
+                                     :mie mie
+                                     :worley worley
+                                     :perlin-worley perlin-worley
+                                     :bluenoise bluenoise
+                                     :cloud-cover cloud-cover))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
@@ -201,17 +192,7 @@
                                          :cloud-scale cloud-scale
                                          :detail-scale detail-scale
                                          :depth depth
-                                         :cover-size cover-size
-                                         :noise-size noise-size
                                          :tilesize tilesize
-                                         :height-size height-size
-                                         :elevation-size elevation-size
-                                         :light-elevation-size light-elevation-size
-                                         :heading-size heading-size
-                                         :transmittance-height-size transmittance-height-size
-                                         :transmittance-elevation-size transmittance-elevation-size
-                                         :surface-height-size surface-height-size
-                                         :surface-sun-elevation-size surface-sun-elevation-size
                                          :albedo albedo
                                          :reflectivity reflectivity
                                          :specular specular
@@ -226,35 +207,43 @@
                                          :opacity-cutoff opacity-cutoff
                                          :num-opacity-layers num-opacity-layers
                                          :shadow-size shadow-size
-                                         :transmittance-tex transmittance-tex
-                                         :scatter-tex scatter-tex
-                                         :mie-tex mie-tex
-                                         :worley-tex worley-tex
-                                         :perlin-worley-tex perlin-worley-tex
-                                         :bluenoise-tex bluenoise-tex
-                                         :cloud-cover-tex cloud-cover-tex))
+                                         :transmittance transmittance
+                                         :scatter scatter
+                                         :mie mie
+                                         :worley worley
+                                         :perlin-worley perlin-worley
+                                         :bluenoise bluenoise
+                                         :cloud-cover cloud-cover))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
-(def program-planet
-  (make-program :vertex [vertex-planet]
-                :tess-control [tess-control-planet]
-                :tess-evaluation [tess-evaluation-planet]
-                :geometry [geometry-planet]
-                :fragment [(fragment-planet num-steps)]))
+(def planet-renderer
+  (planet/make-planet-renderer :width width
+                               :height height
+                               :num-steps num-steps
+                               :tilesize tilesize
+                               :color-tilesize color-tilesize
+                               :albedo albedo
+                               :dawn-start dawn-start
+                               :dawn-end dawn-end
+                               :reflectivity reflectivity
+                               :specular specular
+                               :radius radius
+                               :max-height max-height
+                               :water-color water-color
+                               :amplification amplification
+                               :opacity-cutoff opacity-cutoff
+                               :num-opacity-layers num-opacity-layers
+                               :shadow-size shadow-size
+                               :radius radius
+                               :max-height max-height
+                               :transmittance transmittance
+                               :scatter scatter
+                               :mie mie
+                               :surface-radiance surface-radiance))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :cover-size cover-size
-                                       :num-steps num-steps
-                                       :noise-size noise-size
-                                       :height-size height-size
-                                       :elevation-size elevation-size
-                                       :light-elevation-size light-elevation-size
-                                       :heading-size heading-size
-                                       :transmittance-elevation-size transmittance-elevation-size
-                                       :transmittance-height-size transmittance-height-size
-                                       :surface-sun-elevation-size surface-sun-elevation-size
-                                       :surface-height-size surface-height-size
+  (atmosphere/make-atmosphere-renderer :num-steps num-steps
                                        :albedo albedo
                                        :reflectivity 0.1
                                        :opacity-cutoff opacity-cutoff
@@ -264,89 +253,12 @@
                                        :max-height max-height
                                        :specular specular
                                        :amplification amplification
-                                       :transmittance-tex transmittance-tex
-                                       :scatter-tex scatter-tex
-                                       :mie-tex mie-tex
-                                       :surface-radiance-tex surface-radiance-tex))
+                                       :transmittance transmittance
+                                       :scatter scatter
+                                       :mie mie
+                                       :surface-radiance surface-radiance))
 
-(use-program program-planet)
-(uniform-sampler program-planet "surface"          0)
-(uniform-sampler program-planet "day"              1)
-(uniform-sampler program-planet "night"            2)
-(uniform-sampler program-planet "normals"          3)
-(uniform-sampler program-planet "water"            4)
-(uniform-sampler program-planet "transmittance"    5)
-(uniform-sampler program-planet "ray_scatter"      6)
-(uniform-sampler program-planet "mie_strength"     7)
-(uniform-sampler program-planet "surface_radiance" 8)
-(uniform-sampler program-planet "clouds"           9)
-(doseq [i (range num-steps)]
-       (uniform-sampler program-planet (str "shadow_map" i) (+ i 10)))
-(doseq [i (range num-steps)]
-       (uniform-sampler program-planet (str "opacity" i) (+ i 10 num-steps)))
-(uniform-int program-planet "cover_size" cover-size)
-(uniform-int program-planet "noise_size" noise-size)
-(uniform-int program-planet "high_detail" (dec tilesize))
-(uniform-int program-planet "low_detail" (quot (dec tilesize) 2))
-(uniform-int program-planet "height_size" height-size)
-(uniform-int program-planet "elevation_size" elevation-size)
-(uniform-int program-planet "light_elevation_size" light-elevation-size)
-(uniform-int program-planet "heading_size" heading-size)
-(uniform-int program-planet "transmittance_height_size" transmittance-height-size)
-(uniform-int program-planet "transmittance_elevation_size" transmittance-elevation-size)
-(uniform-int program-planet "surface_height_size" surface-height-size)
-(uniform-int program-planet "surface_sun_elevation_size" surface-sun-elevation-size)
-(uniform-float program-planet "albedo" albedo)
-(uniform-float program-planet "dawn_start" -0.2)
-(uniform-float program-planet "dawn_end" 0.0)
-(uniform-float program-planet "reflectivity" reflectivity)
-(uniform-float program-planet "specular" specular)
-(uniform-float program-planet "radius" radius)
-(uniform-float program-planet "max_height" max-height)
-(uniform-vector3 program-planet "water_color" water-color)
-(uniform-float program-planet "amplification" amplification)
-(uniform-float program-planet "opacity_cutoff" opacity-cutoff)
-(uniform-int program-planet "num_opacity_layers" num-opacity-layers)
-(uniform-int program-planet "shadow_size" shadow-size)
-(uniform-float program-planet "radius" radius)
-(uniform-float program-planet "max_height" max-height)
-
-(def tree (atom []))
-(def changes (atom (future {:tree {} :drop [] :load []})))
-
-(defn background-tree-update [tree]
-  (let [increase? (partial increase-level? tilesize radius width 60 10 6 @position)]
-    (update-level-of-detail tree radius increase? true)))
-
-(defn load-tile-into-opengl
-  [tile]
-  (let [indices    [0 2 3 1]
-        vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object program-planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-        day-tex    (make-rgb-texture :linear :clamp (:day tile))
-        night-tex  (make-rgb-texture :linear :clamp (:night tile))
-        surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
-        normal-tex (make-vector-texture-2d :linear :clamp (:normals tile))
-        water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
-    (assoc (dissoc tile :day :night :surface :normals :water)
-           :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
-
-(defn load-tiles-into-opengl
-  [tree paths]
-  (quadtree-update tree paths load-tile-into-opengl))
-
-(defn unload-tile-from-opengl
-  [tile]
-  (destroy-texture (:day-tex tile))
-  (destroy-texture (:night-tex tile))
-  (destroy-texture (:surf-tex tile))
-  (destroy-texture (:normal-tex tile))
-  (destroy-texture (:water-tex tile))
-  (destroy-vertex-array-object (:vao tile)))
-
-(defn unload-tiles-from-opengl
-  [tiles]
-  (doseq [tile tiles] (unload-tile-from-opengl tile)))
+(def tile-tree (planet/make-tile-tree))
 
 (def keystates (atom {}))
 
@@ -369,21 +281,16 @@
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-           (when (realized? @changes)
-             (let [data @@changes]
-               (unload-tiles-from-opengl (:drop data))
-               (reset! tree (load-tiles-into-opengl (:tree data) (:load data)))
-               (reset! changes (future (background-tree-update @tree)))))
+           (planet/update-tile-tree planet-renderer tile-tree @position)
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
                  rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
-                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 8 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -8 0))
+                 v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 50 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -50 0))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
-                 ta (if (@keystates GLFW/GLFW_KEY_E) 0.0001 (if (@keystates GLFW/GLFW_KEY_D) -0.0001 0))
                  ts (if (@keystates GLFW/GLFW_KEY_Y) 0.05 (if (@keystates GLFW/GLFW_KEY_H) -0.05 0))]
              (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
              (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
@@ -401,7 +308,7 @@
                                  (sqrt (- (sqr norm-pos) (sqr radius))))
                    light-dir  (vec3 (cos @light) (sin @light) 0)
                    projection (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
-                   lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
+                   lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale (:width worley)))) (log 2))
                    extrinsics (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
                    splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
@@ -411,7 +318,9 @@
                    opac-step  (* (+ cos-light (* 10 sin-light)) @opacity-step)
                    opacities  (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am
                                                               opac-step)
-                   shadows    (planet/render-shadow-cascade planet-shadow-renderer :matrix-cascade matrix-cas :tree @tree)
+                   shadows    (planet/render-shadow-cascade planet-shadow-renderer
+                                                            :matrix-cascade matrix-cas
+                                                            :tree (planet/get-current-tree tile-tree))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
@@ -431,7 +340,7 @@
                                                             :matrix-cascade matrix-cas
                                                             :shadows shadows
                                                             :opacities opacities
-                                                            :tree @tree)
+                                                            :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
                                                                 :cloud-step @step
@@ -450,23 +359,21 @@
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0)
                                 ; Render planet with cloud overlay
-                                (use-program program-planet)
-                                (uniform-matrix4 program-planet "projection" projection)
-                                (uniform-vector3 program-planet "origin" @position)
-                                (uniform-matrix4 program-planet "transform" (inverse extrinsics))
-                                (uniform-vector3 program-planet "light_direction" light-dir)
-                                (uniform-float program-planet "opacity_step" opac-step)
-                                (uniform-int program-planet "window_width" (aget w 0))
-                                (uniform-int program-planet "window_height" (aget h 0))
-                                (uniform-float program-planet "shadow_bias" shadow-bias)
-                                (doseq [[idx item] (map-indexed vector splits)]
-                                       (uniform-float program-planet (str "split" idx) item))
-                                (doseq [[idx item] (map-indexed vector matrix-cas)]
-                                       (uniform-matrix4 program-planet (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-                                       (uniform-float program-planet (str "depth" idx) (:depth item)))
-                                (apply use-textures nil nil nil nil nil transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds (concat shadows opacities))
-                                (render-tree program-planet @tree (inverse extrinsics)
-                                             [:surf-tex :day-tex :night-tex :normal-tex :water-tex])
+                                (planet/render-planet planet-renderer
+                                                      :projection projection
+                                                      :origin @position
+                                                      :transform (inverse extrinsics)
+                                                      :light-direction light-dir
+                                                      :opacity-step opac-step
+                                                      :window-width (aget w 0)
+                                                      :window-height (aget h 0)
+                                                      :shadow-bias shadow-bias
+                                                      :splits splits
+                                                      :matrix-cascade matrix-cas
+                                                      :clouds clouds
+                                                      :shadows shadows
+                                                      :opacities opacities
+                                                      :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer
                                                               :splits splits
@@ -492,18 +399,18 @@
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
-  (destroy-texture surface-radiance-tex)
-  (destroy-texture mie-tex)
-  (destroy-texture scatter-tex)
-  (destroy-texture transmittance-tex)
-  (destroy-texture cloud-cover-tex)
-  (destroy-texture bluenoise-tex)
-  (destroy-texture perlin-worley-tex)
-  (destroy-texture worley-tex)
+  (destroy-texture (:texture surface-radiance))
+  (destroy-texture (:texture mie))
+  (destroy-texture (:texture scatter))
+  (destroy-texture (:texture transmittance))
+  (destroy-texture (:texture cloud-cover))
+  (destroy-texture (:texture bluenoise))
+  (destroy-texture (:texture perlin-worley))
+  (destroy-texture (:texture worley))
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
-  (destroy-program program-planet)
+  (planet/destroy-planet-renderer planet-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (destroy-window window)

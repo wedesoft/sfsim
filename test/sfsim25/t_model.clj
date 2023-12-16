@@ -229,7 +229,7 @@ void main()
           (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform colors]}]
                             (uniform-matrix4 program "transform" transform)
-                            (use-textures colors)))
+                            (use-textures {0 colors})))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/dice.png" 0.01))
 
@@ -296,7 +296,7 @@ void main()
           (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform colors normals]}]
                             (uniform-matrix4 program "transform" transform)
-                            (use-textures colors normals)))
+                            (use-textures {0 colors 1 normals})))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim25/fixtures/model/bricks.png" 0.01))
 
@@ -310,7 +310,7 @@ void main()
 (defmethod render-model Number [{:keys [program transform colors]}]
   (use-program program)
   (uniform-matrix4 program "transform" transform)
-  (use-textures colors))
+  (use-textures {0 colors}))
 
 (def cube-and-dice (read-gltf "test/sfsim25/fixtures/model/cube-and-dice.gltf"))
 

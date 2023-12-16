@@ -3,9 +3,11 @@
     (:require [fastmath.matrix :refer (mulm eye)]
               [sfsim25.matrix :refer (transformation-matrix)]
               [sfsim25.cubemap :refer (cube-map-corners)]
-              [sfsim25.quadtree :refer (is-leaf?)]
+              [sfsim25.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail)]
               [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
-                                      use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float)]
+                                      use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float
+                                      make-vertex-array-object make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d
+                                      destroy-vertex-array-object)]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.clouds :refer (overall-shadow cloud-planet)]
               [sfsim25.shaders :as shaders])
@@ -79,7 +81,7 @@
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
     (uniform-matrix4 program "recenter_and_transform" (mulm transform (transformation-matrix (eye 3) tile-center)))
-    (apply use-textures (map tile texture-keys))
+    (use-textures (zipmap (range) (map tile texture-keys)))
     (render-patches (:vao tile))))
 
 (defn render-tree
@@ -92,7 +94,7 @@
                      (render-tree program (selector node) transform texture-keys)))))
 
 (defn make-planet-shadow-renderer
-  "Create program for rendering cascaded shadow maps of planet"
+  "Create program for rendering cascaded shadow maps of planet (untested)"
   [& {:keys [tilesize shadow-size]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
@@ -108,29 +110,26 @@
      :shadow-size shadow-size}))
 
 (defn render-shadow-cascade
-  "Render planetary shadow cascade"
+  "Render planetary shadow cascade (untested)"
   [{:keys [program shadow-size]} & {:keys [matrix-cascade tree]}]
   (shadow-cascade shadow-size matrix-cascade program (fn [transform] (render-tree program tree transform [:surf-tex]))))
 
 (defn destroy-shadow-cascade
-  "Destroy cascade of shadow maps"
+  "Destroy cascade of shadow maps (untested)"
   [shadows]
   (doseq [shadow shadows]
          (destroy-texture shadow)))
 
 (defn destroy-planet-shadow-renderer
-  "Destroy renderer for planet shadow"
+  "Destroy renderer for planet shadow (untested)"
   [{:keys [program]}]
   (destroy-program program))
 
 (defn make-cloud-planet-renderer
-  "Make a renderer to render clouds below horizon"
+  "Make a renderer to render clouds below horizon (untested)"
   [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
-             cover-size noise-size tilesize height-size elevation-size light-elevation-size heading-size
-             transmittance-height-size transmittance-elevation-size surface-height-size surface-sun-elevation-size albedo
-             reflectivity specular cloud-multiplier cover-multiplier cap anisotropic radius max-height water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex
-             bluenoise-tex cloud-cover-tex]}]
+             tilesize albedo reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
+             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie worley perlin-worley bluenoise cloud-cover]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -156,18 +155,16 @@
     (uniform-float program "cloud_scale" cloud-scale)
     (uniform-float program "detail_scale" detail-scale)
     (uniform-float program "depth" depth)
-    (uniform-int program "cover_size" cover-size)
-    (uniform-int program "noise_size" noise-size)
+    (uniform-int program "cover_size" (:width cloud-cover))
+    (uniform-int program "noise_size" (:width bluenoise))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" height-size)
-    (uniform-int program "elevation_size" elevation-size)
-    (uniform-int program "light_elevation_size" light-elevation-size)
-    (uniform-int program "heading_size" heading-size)
-    (uniform-int program "transmittance_height_size" transmittance-height-size)
-    (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
-    (uniform-int program "surface_height_size" surface-height-size)
-    (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
+    (uniform-int program "height_size" (:hyperdepth scatter))
+    (uniform-int program "elevation_size" (:depth scatter))
+    (uniform-int program "light_elevation_size" (:height scatter))
+    (uniform-int program "heading_size" (:width scatter))
+    (uniform-int program "transmittance_height_size" (:height transmittance))
+    (uniform-int program "transmittance_elevation_size" (:width transmittance))
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
@@ -178,24 +175,24 @@
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
     (uniform-vector3 program "water_color" water-color)
-    (uniform-float program "amplification" 6)
+    (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" opacity-cutoff)
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     {:program program
-     :transmittance-tex transmittance-tex
-     :scatter-tex scatter-tex
-     :mie-tex mie-tex
-     :worley-tex worley-tex
-     :perlin-worley-tex perlin-worley-tex
-     :bluenoise-tex bluenoise-tex
-     :cloud-cover-tex cloud-cover-tex}))
+     :transmittance transmittance
+     :scatter scatter
+     :mie mie
+     :worley worley
+     :perlin-worley perlin-worley
+     :bluenoise bluenoise
+     :cloud-cover cloud-cover}))
 
 (defn render-cloud-planet
-  "Render clouds below horizon"
-  [{:keys [program transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex]}
-   & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits
-             matrix-cascade shadows opacities tree]}]
+  "Render clouds below horizon (untested)"
+  [{:keys [program transmittance scatter mie worley perlin-worley bluenoise cloud-cover]}
+   & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade
+             shadows opacities tree]}]
   (use-program program)
   (uniform-float program "cloud_step" cloud-step)
   (uniform-float program "cloud_threshold" cloud-threshold)
@@ -210,11 +207,159 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (apply use-textures nil transmittance-tex scatter-tex mie-tex worley-tex perlin-worley-tex bluenoise-tex cloud-cover-tex
-         (concat shadows opacities))
+  (use-textures {1 (:texture transmittance) 2 (:texture scatter) 3 (:texture mie) 4 (:texture worley) 5 (:texture perlin-worley)
+                 6 (:texture bluenoise) 7 (:texture cloud-cover)})
+  (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
 (defn destroy-cloud-planet-renderer
-  "Destroy program for rendering clouds below horizon"
+  "Destroy program for rendering clouds below horizon (untested)"
   [{:keys [program]}]
   (destroy-program program))
+
+(defn make-planet-renderer
+  "Program to render planet with cloud overlay (untested)"
+  [& {:keys [width height num-steps tilesize color-tilesize albedo dawn-start dawn-end reflectivity specular radius max-height
+             water-color amplification opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie surface-radiance]}]
+  (let [program (make-program :vertex [vertex-planet]
+                              :tess-control [tess-control-planet]
+                              :tess-evaluation [tess-evaluation-planet]
+                              :geometry [geometry-planet]
+                              :fragment [(fragment-planet num-steps)])]
+    (use-program program)
+    (uniform-sampler program "surface"          0)
+    (uniform-sampler program "day"              1)
+    (uniform-sampler program "night"            2)
+    (uniform-sampler program "normals"          3)
+    (uniform-sampler program "water"            4)
+    (uniform-sampler program "transmittance"    5)
+    (uniform-sampler program "ray_scatter"      6)
+    (uniform-sampler program "mie_strength"     7)
+    (uniform-sampler program "surface_radiance" 8)
+    (uniform-sampler program "clouds"           9)
+    (doseq [i (range num-steps)]
+           (uniform-sampler program (str "shadow_map" i) (+ i 10)))
+    (doseq [i (range num-steps)]
+           (uniform-sampler program (str "opacity" i) (+ i 10 num-steps)))
+    (uniform-int program "high_detail" (dec tilesize))
+    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (uniform-int program "height_size" (:hyperdepth scatter))
+    (uniform-int program "elevation_size" (:depth scatter))
+    (uniform-int program "light_elevation_size" (:height scatter))
+    (uniform-int program "heading_size" (:width scatter))
+    (uniform-int program "transmittance_height_size" (:height transmittance))
+    (uniform-int program "transmittance_elevation_size" (:width transmittance))
+    (uniform-int program "surface_height_size" (:height surface-radiance))
+    (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
+    (uniform-float program "albedo" albedo)
+    (uniform-float program "dawn_start" dawn-start)
+    (uniform-float program "dawn_end" dawn-end)
+    (uniform-float program "reflectivity" reflectivity)
+    (uniform-float program "specular" specular)
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    (uniform-vector3 program "water_color" water-color)
+    (uniform-float program "amplification" amplification)
+    (uniform-float program "opacity_cutoff" opacity-cutoff)
+    (uniform-int program "num_opacity_layers" num-opacity-layers)
+    (uniform-int program "shadow_size" shadow-size)
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    {:width width
+     :height height
+     :program program
+     :radius radius
+     :tilesize tilesize
+     :color-tilesize color-tilesize
+     :transmittance transmittance
+     :scatter scatter
+     :mie mie
+     :surface-radiance surface-radiance}))
+
+(defn render-planet
+  "Render planet (untested)"
+  [{:keys [program transmittance scatter mie surface-radiance]}
+   & {:keys [projection origin transform light-direction opacity-step window-width window-height shadow-bias splits
+             matrix-cascade clouds shadows opacities tree]}]
+  (use-program program)
+  (uniform-matrix4 program "projection" projection)
+  (uniform-vector3 program "origin" origin)
+  (uniform-matrix4 program "transform" transform)
+  (uniform-vector3 program "light_direction" light-direction)
+  (uniform-float program "opacity_step" opacity-step)
+  (uniform-int program "window_width" window-width)
+  (uniform-int program "window_height" window-height)
+  (uniform-float program "shadow_bias" shadow-bias)
+  (doseq [[idx item] (map-indexed vector splits)]
+         (uniform-float program (str "split" idx) item))
+  (doseq [[idx item] (map-indexed vector matrix-cascade)]
+         (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+         (uniform-float program (str "depth" idx) (:depth item)))
+  (use-textures {5 (:texture transmittance) 6 (:texture scatter) 7 (:texture mie) 8 (:texture surface-radiance) 9 clouds})
+  (use-textures (zipmap (drop 10 (range)) (concat shadows opacities)))
+  (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
+
+(defn destroy-planet-renderer
+  "Destroy planet rendering program (untested)"
+  [{:keys [program]}]
+  (destroy-program program))
+
+(defn load-tile-into-opengl
+  "Load textures of single tile into OpenGL (untested)"
+  [{:keys [program tilesize color-tilesize]} tile]
+  (let [indices    [0 2 3 1]
+        vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
+        vao        (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+        day-tex    (make-rgb-texture :linear :clamp (:day tile))
+        night-tex  (make-rgb-texture :linear :clamp (:night tile))
+        surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
+        normal-tex (make-vector-texture-2d :linear :clamp (:normals tile))
+        water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
+    (assoc (dissoc tile :day :night :surface :normals :water)
+           :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
+
+(defn load-tiles-into-opengl
+  "Load tiles into OpenGL (untested)"
+  [planet-renderer tree paths]
+  (quadtree-update tree paths (partial load-tile-into-opengl planet-renderer)))
+
+(defn unload-tile-from-opengl
+  "Remove textures of single tile from OpenGL (untested)"
+  [tile]
+  (destroy-texture (:day-tex tile))
+  (destroy-texture (:night-tex tile))
+  (destroy-texture (:surf-tex tile))
+  (destroy-texture (:normal-tex tile))
+  (destroy-texture (:water-tex tile))
+  (destroy-vertex-array-object (:vao tile)))
+
+(defn unload-tiles-from-opengl
+  "Remove tile textures from OpenGL (untested)"
+  [tiles]
+  (doseq [tile tiles] (unload-tile-from-opengl tile)))
+
+(defn background-tree-update
+  "Method to call in a backround thread for loading tiles (untested)"
+  [{:keys [tilesize radius width]} tree position]
+  (let [increase? (partial increase-level? tilesize radius width 60 10 6 position)]
+    (update-level-of-detail tree radius increase? true)))
+
+(defn make-tile-tree
+  "Create empty tile tree and empty change object (untested)"
+  []
+  {:tree    (atom [])
+   :changes (atom (future {:tree {} :drop [] :load []}))})
+
+(defn update-tile-tree
+  "Schedule background tile tree updates (untested)"
+  [planet-renderer {:keys [tree changes]} position]
+  (when (realized? @changes)
+    (let [data @@changes]
+      (unload-tiles-from-opengl (:drop data))
+      (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
+      (reset! changes (future (background-tree-update planet-renderer @tree position))))))
+
+(defn get-current-tree
+  "Get current state of tile tree (untested)"
+  [{:keys [tree]}]
+  @tree)

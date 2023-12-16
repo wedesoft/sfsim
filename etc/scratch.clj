@@ -177,12 +177,12 @@ void main()
 (defmethod render-model [Number nil] [{:keys [program transform colors]}]
   (use-program program)
   (uniform-matrix4 program "transform" transform)
-  (use-textures colors))
+  (use-textures {0 colors}))
 
 (defmethod render-model [Number Number] [{:keys [program transform colors normals]}]
   (use-program program)
   (uniform-matrix4 program "transform" transform)
-  (use-textures colors normals))
+  (use-textures {0 colors 1 normals}))
 
 (def scene (atom (load-scene-into-opengl program-selection @model)))
 

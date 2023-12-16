@@ -458,9 +458,8 @@
 
 (defn use-textures
   "Specify textures to be used in the next rendering operation"
-  [& textures]
-  (doseq [[index texture] (map-indexed vector textures)]
-         (when texture (use-texture index texture))))
+  [textures]
+  (doseq [[index texture] textures] (use-texture index texture)))
 
 (defn- list-texture-layers
   "Return 2D textures and each layer of 3D textures"

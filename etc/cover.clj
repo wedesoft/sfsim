@@ -143,7 +143,7 @@ void main()
                             (uniform-matrix3 program "rotation" mat)
                             (uniform-float program "threshold" @threshold)
                             (uniform-float program "multiplier" @multiplier)
-                            (use-textures @cloud-cover-tex)
+                            (use-textures {0 @cloud-cover-tex})
                             (render-quads vao)))
          (GLFW/glfwPollEvents)
          (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f"

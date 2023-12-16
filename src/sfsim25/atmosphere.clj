@@ -352,11 +352,9 @@
   [shaders/ray-sphere attenuation-outer cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
 
 (defn make-atmosphere-renderer
-  "Initialise atmosphere rendering program"
-  [& {:keys [cover-size num-steps noise-size height-size elevation-size light-elevation-size heading-size
-             transmittance-elevation-size transmittance-height-size surface-sun-elevation-size surface-height-size
-             albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification
-             transmittance-tex scatter-tex mie-tex surface-radiance-tex]}]
+  "Initialise atmosphere rendering program (untested)"
+  [& {:keys [num-steps albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification
+             transmittance scatter mie surface-radiance]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
@@ -367,16 +365,14 @@
     (uniform-sampler program "clouds" 4)
     (doseq [i (range num-steps)]
            (uniform-sampler program (str "opacity" i) (+ i 5)))
-    (uniform-int program "cover_size" cover-size)
-    (uniform-int program "noise_size" noise-size)
-    (uniform-int program "height_size" height-size)
-    (uniform-int program "elevation_size" elevation-size)
-    (uniform-int program "light_elevation_size" light-elevation-size)
-    (uniform-int program "heading_size" heading-size)
-    (uniform-int program "transmittance_elevation_size" transmittance-elevation-size)
-    (uniform-int program "transmittance_height_size" transmittance-height-size)
-    (uniform-int program "surface_sun_elevation_size" surface-sun-elevation-size)
-    (uniform-int program "surface_height_size" surface-height-size)
+    (uniform-int program "height_size" (:hyperdepth scatter))
+    (uniform-int program "elevation_size" (:depth scatter))
+    (uniform-int program "light_elevation_size" (:height scatter))
+    (uniform-int program "heading_size" (:width scatter))
+    (uniform-int program "transmittance_elevation_size" (:width transmittance))
+    (uniform-int program "transmittance_height_size" (:height transmittance))
+    (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
+    (uniform-int program "surface_height_size" (:height surface-radiance))
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "opacity_cutoff" opacity-cutoff)
@@ -387,16 +383,16 @@
     (uniform-float program "specular" specular)
     (uniform-float program "amplification" amplification)
     {:program program
-     :transmittance-tex transmittance-tex
-     :scatter-tex scatter-tex
-     :mie-tex mie-tex
-     :surface-radiance-tex surface-radiance-tex}))
+     :transmittance transmittance
+     :scatter scatter
+     :mie mie
+     :surface-radiance surface-radiance}))
 
 (defn render-atmosphere
-  "Render atmosphere with cloud overlay"
-  [{:keys [program transmittance-tex scatter-tex mie-tex surface-radiance-tex]}
-   & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height
-             light-direction clouds opacities z-far]}]
+  "Render atmosphere with cloud overlay (untested)"
+  [{:keys [program transmittance scatter mie surface-radiance]}
+   & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height light-direction clouds
+             opacities z-far]}]
   (let [indices    [0 1 3 2]
         vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
@@ -414,12 +410,13 @@
     (uniform-int program "window_width" window-width)
     (uniform-int program "window_height" window-height)
     (uniform-vector3 program "light_direction" light-direction)
-    (apply use-textures transmittance-tex scatter-tex mie-tex surface-radiance-tex clouds opacities)
+    (use-textures {0 (:texture transmittance) 1 (:texture scatter) 2 (:texture mie) 3 (:texture surface-radiance) 4 clouds})
+    (use-textures (zipmap (drop 5 (range)) opacities))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
 (defn destroy-atmosphere-renderer
-  "Destroy atmosphere renderer"
+  "Destroy atmosphere renderer (untested)"
   [{:keys [program]}]
   (destroy-program program))
 
