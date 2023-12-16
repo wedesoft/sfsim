@@ -4,8 +4,8 @@
             [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
             [sfsim25.render :refer (make-window destroy-window clear destroy-texture generate-mipmap make-float-cubemap
-                                    make-float-texture-2d make-float-texture-3d make-vector-texture-2d onscreen-render
-                                    texture-render-color-depth)]
+                                    make-float-texture-2d make-float-texture-3d make-vector-texture-2d make-vector-texture-4d
+                                    onscreen-render texture-render-color-depth)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
@@ -94,6 +94,7 @@
                                           (slurp-floats "data/clouds/worley-cover.raw"))))
 (def perlin-worley-tex (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data perlin-worley-data}))
 (def perlin-worley {:width worley-size :height worley-size :texture perlin-worley-tex})
+(println "perlin-worley =" perlin-worley)
 
 (def noise-data (slurp-floats "data/bluenoise.raw"))
 (def bluenoise-tex (make-float-texture-2d :nearest :repeat {:width noise-size :height noise-size :data noise-data}))
@@ -108,11 +109,11 @@
 (def transmittance {:width transmittance-elevation-size :height transmittance-height-size :texture transmittance-tex})
 
 (def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def scatter-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data scatter-data}))
+(def scatter-tex (make-vector-texture-4d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data scatter-data}))
 (def scatter {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture scatter-tex})
 
 (def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def mie-tex (make-vector-texture-2d :linear :clamp {:width (* elevation-size heading-size) :height (* height-size light-elevation-size) :data mie-data}))
+(def mie-tex (make-vector-texture-2d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data mie-data}))
 (def mie {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :texture mie-tex})
 
 (def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
