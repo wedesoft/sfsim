@@ -7,6 +7,8 @@
 
 (set! *unchecked-math* true)
 
+(def noise-size 64)
+
 (defn indices-2d
   "Create range of indices with M x M elements"
   [m] (range (* m m)))
