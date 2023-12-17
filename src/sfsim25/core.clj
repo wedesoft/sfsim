@@ -10,8 +10,7 @@
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
             [sfsim25.worley :refer (worley-size)]
-            [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-mixed
-                                    transformation-matrix)]
+            [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-list transformation-matrix)]
             [sfsim25.quaternion :as q]
             [sfsim25.util :refer (slurp-floats sqr)]
             [sfsim25.opacity :as opacity])
@@ -48,7 +47,7 @@
 (def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
 (def mix 0.8)
 (def opacity-step (atom 250.0))
-(def step (atom 300.0))
+(def cloud-step 400.0)
 (def shadow-size 512)
 (def cover-size 512)
 (def noise-size 64)
@@ -282,8 +281,7 @@
                  v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 50 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -50 0))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
-                 to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))
-                 ts (if (@keystates GLFW/GLFW_KEY_Y) 0.05 (if (@keystates GLFW/GLFW_KEY_H) -0.05 0))]
+                 to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))]
              (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
              (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
              (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
@@ -291,7 +289,6 @@
              (swap! light + (* l 0.1 dt))
              (swap! threshold + (* dt tr))
              (swap! opacity-step + (* dt to))
-             (swap! step + (* dt ts))
              (GL11/glFinish)
              (let [norm-pos   (mag @position)
                    dist       (- norm-pos radius cloud-top)
@@ -303,7 +300,7 @@
                    lod-offset (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale (:width worley)))) (log 2))
                    extrinsics (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
-                   splits     (map #(split-mixed mix z-near z-far num-steps %) (range (inc num-steps)))
+                   splits     (split-list mix z-near z-far num-steps)
                    scatter-am (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic))
                    cos-light  (/ (dot light-dir @position) (mag @position))
                    sin-light  (sqrt (- 1 (sqr cos-light)))
@@ -320,7 +317,7 @@
                                 (clear (vec3 0 0 0) 0)
                                 ; Render clouds in front of planet
                                 (planet/render-cloud-planet cloud-planet-renderer
-                                                            :cloud-step @step
+                                                            :cloud-step cloud-step
                                                             :cloud-threshold @threshold
                                                             :lod-offset lod-offset
                                                             :projection projection
@@ -335,7 +332,7 @@
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                :cloud-step @step
+                                                                :cloud-step cloud-step
                                                                 :cloud-threshold @threshold
                                                                 :lod-offset lod-offset
                                                                 :projection projection
@@ -386,8 +383,8 @@
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, step (y/h) %.0f, dt %.3f"
-                              @threshold @opacity-step @step (* dt 0.001)))
+               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, dt %.3f"
+                              @threshold @opacity-step (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)

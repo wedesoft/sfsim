@@ -166,7 +166,8 @@
 
 (facts "Mixed linear and exponential split"
        (split-mixed 0 10 40 2 1) => 25.0
-       (split-mixed 1 10 40 2 1) => 20.0)
+       (split-mixed 1 10 40 2 1) => 20.0
+       (split-list 0 10 40 2) => [10.0 25.0 40.0])
 
 (facts "Cascade of shadow matrices"
        (let [near            10

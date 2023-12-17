@@ -196,6 +196,11 @@
   [mix near far num-steps step]
   (+ (* (- 1 mix) (split-linear near far num-steps step)) (* mix (split-exponential near far num-steps step))))
 
+(defn split-list
+  "Get list of splits including z-far"
+  [mix near far num-steps]
+  (mapv (fn [step] (split-mixed mix near far num-steps step)) (range (inc num-steps))))
+
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices"
   [projection-matrix extrinsics light-vector longest-shadow mix near far num-steps]
