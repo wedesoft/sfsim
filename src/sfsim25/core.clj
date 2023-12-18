@@ -127,7 +127,6 @@
                                      :reflectivity reflectivity
                                      :specular specular
                                      :radius radius
-                                     :max-height max-height
                                      :water-color water-color
                                      :amplification amplification
                                      :opacity-cutoff opacity-cutoff
@@ -149,7 +148,6 @@
                                          :reflectivity reflectivity
                                          :specular specular
                                          :radius radius
-                                         :max-height max-height
                                          :water-color water-color
                                          :amplification amplification
                                          :opacity-cutoff opacity-cutoff
@@ -179,8 +177,6 @@
                                :opacity-cutoff opacity-cutoff
                                :num-opacity-layers num-opacity-layers
                                :shadow-size shadow-size
-                               :radius radius
-                               :max-height max-height
                                :transmittance transmittance
                                :scatter scatter
                                :mie mie
