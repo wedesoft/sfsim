@@ -127,7 +127,6 @@
                                      :albedo albedo
                                      :reflectivity reflectivity
                                      :specular specular
-                                     :radius radius
                                      :water-color water-color
                                      :amplification amplification
                                      :num-opacity-layers num-opacity-layers
@@ -147,7 +146,6 @@
                                          :albedo albedo
                                          :reflectivity reflectivity
                                          :specular specular
-                                         :radius radius
                                          :water-color water-color
                                          :amplification amplification
                                          :num-opacity-layers num-opacity-layers
