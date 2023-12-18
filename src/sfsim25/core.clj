@@ -81,8 +81,16 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
-(def cloud-textures (clouds/load-cloud-textures))
-
+(def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
+                                        :perlin-octaves perlin-octaves
+                                        :cloud-bottom cloud-bottom
+                                        :cloud-top cloud-top
+                                        :detail-scale detail-scale
+                                        :cloud-scale cloud-scale
+                                        :cloud-multiplier cloud-multiplier
+                                        :cover-multiplier cover-multiplier
+                                        :cap cap
+                                        :anisotropic anisotropic))
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def transmittance (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
@@ -99,18 +107,9 @@
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
   (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
-                                 :cloud-octaves cloud-octaves
-                                 :perlin-octaves perlin-octaves
                                  :shadow-size shadow-size
                                  :radius radius
-                                 :cloud-bottom cloud-bottom
-                                 :cloud-top cloud-top
-                                 :cloud-multiplier cloud-multiplier
-                                 :cover-multiplier cover-multiplier
-                                 :cap cap
-                                 :detail-scale detail-scale
-                                 :cloud-scale cloud-scale
-                                 :cloud-textures cloud-textures))
+                                 :cloud-data cloud-data))
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
@@ -120,23 +119,13 @@
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
   (planet/make-cloud-planet-renderer :num-steps num-steps
-                                     :perlin-octaves perlin-octaves
-                                     :cloud-octaves cloud-octaves
                                      :radius radius
                                      :max-height max-height
-                                     :cloud-bottom cloud-bottom
-                                     :cloud-top cloud-top
-                                     :cloud-scale cloud-scale
-                                     :detail-scale detail-scale
                                      :depth depth
                                      :tilesize tilesize
                                      :albedo albedo
                                      :reflectivity reflectivity
                                      :specular specular
-                                     :cloud-multiplier cloud-multiplier
-                                     :cover-multiplier cover-multiplier
-                                     :cap cap
-                                     :anisotropic anisotropic
                                      :radius radius
                                      :max-height max-height
                                      :water-color water-color
@@ -147,31 +136,18 @@
                                      :transmittance transmittance
                                      :scatter scatter
                                      :mie mie
-                                     :cloud-textures cloud-textures))
+                                     :cloud-data cloud-data))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
   (clouds/make-cloud-atmosphere-renderer :num-steps num-steps
-                                         :perlin-octaves perlin-octaves
-                                         :cloud-octaves cloud-octaves
-                                         :num-steps num-steps
-                                         :perlin-octaves perlin-octaves
-                                         :cloud-octaves cloud-octaves
                                          :radius radius
                                          :max-height max-height
-                                         :cloud-bottom cloud-bottom
-                                         :cloud-top cloud-top
-                                         :cloud-scale cloud-scale
-                                         :detail-scale detail-scale
                                          :depth depth
                                          :tilesize tilesize
                                          :albedo albedo
                                          :reflectivity reflectivity
                                          :specular specular
-                                         :cloud-multiplier cloud-multiplier
-                                         :cover-multiplier cover-multiplier
-                                         :cap cap
-                                         :anisotropic anisotropic
                                          :radius radius
                                          :max-height max-height
                                          :water-color water-color
@@ -182,7 +158,7 @@
                                          :transmittance transmittance
                                          :scatter scatter
                                          :mie mie
-                                         :cloud-textures cloud-textures))
+                                         :cloud-data cloud-data))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
@@ -370,7 +346,7 @@
   (destroy-texture mie)
   (destroy-texture scatter)
   (destroy-texture transmittance)
-  (clouds/destroy-cloud-textures cloud-textures)
+  (clouds/destroy-cloud-data cloud-data)
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)

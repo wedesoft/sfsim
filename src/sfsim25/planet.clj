@@ -127,14 +127,15 @@
 
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
-  [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
-             tilesize albedo reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie cloud-textures]}]
+  [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
+             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
                               :geometry [geometry-planet]
-                              :fragment [(fragment-planet-clouds num-steps perlin-octaves cloud-octaves)])]
+                              :fragment [(fragment-planet-clouds num-steps
+                                                                 (:perlin-octaves cloud-data)
+                                                                 (:cloud-octaves cloud-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (uniform-sampler program "transmittance"    1)
@@ -150,13 +151,13 @@
            (uniform-sampler program (str "opacity" i) (+ i 8 num-steps)))
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
-    (uniform-float program "cloud_bottom" cloud-bottom)
-    (uniform-float program "cloud_top" cloud-top)
-    (uniform-float program "cloud_scale" cloud-scale)
-    (uniform-float program "detail_scale" detail-scale)
+    (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
+    (uniform-float program "cloud_top" (:cloud-top cloud-data))
+    (uniform-float program "cloud_scale" (:cloud-scale cloud-data))
+    (uniform-float program "detail_scale" (:detail-scale cloud-data))
     (uniform-float program "depth" depth)
-    (uniform-int program "cover_size" (:width (:cloud-cover cloud-textures)))
-    (uniform-int program "noise_size" (:width (:bluenoise cloud-textures)))
+    (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
+    (uniform-int program "noise_size" (:width (:bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "height_size" (:hyperdepth scatter))
@@ -168,10 +169,10 @@
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
-    (uniform-float program "cloud_multiplier" cloud-multiplier)
-    (uniform-float program "cover_multiplier" cover-multiplier)
-    (uniform-float program "cap" cap)
-    (uniform-float program "anisotropic" anisotropic)
+    (uniform-float program "cloud_multiplier" (:cloud-multiplier cloud-data))
+    (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
+    (uniform-float program "cap" (:cap cloud-data))
+    (uniform-float program "anisotropic" (:anisotropic cloud-data))
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
     (uniform-vector3 program "water_color" water-color)
@@ -183,11 +184,11 @@
      :transmittance transmittance
      :scatter scatter
      :mie mie
-     :cloud-textures cloud-textures}))
+     :cloud-data cloud-data}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
-  [{:keys [program transmittance scatter mie cloud-textures]}
+  [{:keys [program transmittance scatter mie cloud-data]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade
              shadows opacities tree]}]
   (use-program program)
@@ -204,8 +205,8 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {1 transmittance 2 scatter 3 mie 4 (:worley cloud-textures) 5 (:perlin-worley cloud-textures)
-                 6 (:bluenoise cloud-textures) 7 (:cloud-cover cloud-textures)})
+  (use-textures {1 transmittance 2 scatter 3 mie 4 (:worley cloud-data) 5 (:perlin-worley cloud-data) 6 (:bluenoise cloud-data)
+                 7 (:cloud-cover cloud-data)})
   (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
