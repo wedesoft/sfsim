@@ -177,7 +177,7 @@
     (uniform-float program "max_height" max-height)
     (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
-    (uniform-float program "opacity_cutoff" opacity-cutoff)
+    (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     {:program program
@@ -218,7 +218,7 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   [& {:keys [width height num-steps tilesize color-tilesize albedo dawn-start dawn-end reflectivity specular radius max-height
-             water-color amplification opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie surface-radiance]}]
+             water-color amplification num-opacity-layers shadow-size transmittance scatter mie surface-radiance]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -258,7 +258,6 @@
     (uniform-float program "max_height" max-height)
     (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
-    (uniform-float program "opacity_cutoff" opacity-cutoff)
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     (uniform-float program "radius" radius)

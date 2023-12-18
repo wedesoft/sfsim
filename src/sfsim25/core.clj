@@ -90,7 +90,8 @@
                                         :cloud-multiplier cloud-multiplier
                                         :cover-multiplier cover-multiplier
                                         :cap cap
-                                        :anisotropic anisotropic))
+                                        :anisotropic anisotropic
+                                        :opacity-cutoff opacity-cutoff))
 
 (def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
 (def transmittance (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
@@ -129,7 +130,6 @@
                                      :radius radius
                                      :water-color water-color
                                      :amplification amplification
-                                     :opacity-cutoff opacity-cutoff
                                      :num-opacity-layers num-opacity-layers
                                      :shadow-size shadow-size
                                      :transmittance transmittance
@@ -150,7 +150,6 @@
                                          :radius radius
                                          :water-color water-color
                                          :amplification amplification
-                                         :opacity-cutoff opacity-cutoff
                                          :num-opacity-layers num-opacity-layers
                                          :shadow-size shadow-size
                                          :transmittance transmittance
@@ -174,7 +173,6 @@
                                :max-height max-height
                                :water-color water-color
                                :amplification amplification
-                               :opacity-cutoff opacity-cutoff
                                :num-opacity-layers num-opacity-layers
                                :shadow-size shadow-size
                                :transmittance transmittance
@@ -187,7 +185,6 @@
   (atmosphere/make-atmosphere-renderer :num-steps num-steps
                                        :albedo albedo
                                        :reflectivity 0.1
-                                       :opacity-cutoff opacity-cutoff
                                        :num-opacity-layers num-opacity-layers
                                        :shadow-size shadow-size
                                        :radius radius

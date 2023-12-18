@@ -264,7 +264,7 @@
 (defn make-cloud-data
   "Method to load cloud textures and collect cloud data (not tested)"
   [& {:keys [cloud-octaves perlin-octaves cloud-bottom cloud-top cloud-multiplier cover-multiplier cap detail-scale cloud-scale
-             anisotropic]}]
+             anisotropic opacity-cutoff]}]
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
         worley-data          {:width worley-size :height worley-size :depth worley-size :data worley-floats}
@@ -287,6 +287,7 @@
      :cover-multiplier cover-multiplier
      :cap cap
      :anisotropic anisotropic
+     :opacity-cutoff opacity-cutoff
      :detail-scale detail-scale
      :cloud-scale cloud-scale
      :worley worley
@@ -350,7 +351,7 @@
     (uniform-float program "max_height" max-height)
     (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
-    (uniform-float program "opacity_cutoff" opacity-cutoff)
+    (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     {:program program
