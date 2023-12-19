@@ -2,6 +2,7 @@
   "Various utility functions."
   (:require [clojure.java.io :as io]
             [clojure.math :refer (sin round)]
+            [malli.core :as m]
             [fastmath.vector :refer (vec3 vec4)]
             [progrock.core :as p])
   (:import [java.io ByteArrayOutputStream]
@@ -15,16 +16,22 @@
 (defn third
   "Get third element of a list"
   [lst]
+  {:pre [(m/validate [:sequential {:min 3} :some] lst)]}
   (nth lst 2))
 
 (defn fourth
   "Get fourth element of a list"
   [lst]
+  {:pre [(m/validate [:sequential {:min 4} :some] lst)]}
   (nth lst 3))
+
+(def non-empty-string (m/schema [:string {:min 1}]))
 
 (defn slurp-bytes
   "Read bytes from a file"
   ^bytes [^String file-name]
+  {:pre [(m/validate non-empty-string file-name)]
+   :post [bytes?]}
   (with-open [in  (io/input-stream file-name)
               out (ByteArrayOutputStream.)]
     (io/copy in out)
@@ -33,6 +40,7 @@
 (defn spit-bytes
   "Write bytes to a file"
   [^String file-name ^bytes byte-data]
+  {:pre [(m/validate non-empty-string file-name) (bytes? byte-data)]}
   (with-open [out (io/output-stream file-name)]
     (.write out byte-data)))
 
