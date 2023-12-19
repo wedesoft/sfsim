@@ -31,7 +31,7 @@
   "Read bytes from a file"
   ^bytes [^String file-name]
   {:pre [(m/validate non-empty-string file-name)]
-   :post [bytes?]}
+   :post [(m/validate bytes? %)]}
   (with-open [in  (io/input-stream file-name)
               out (ByteArrayOutputStream.)]
     (io/copy in out)
@@ -40,7 +40,7 @@
 (defn spit-bytes
   "Write bytes to a file"
   [^String file-name ^bytes byte-data]
-  {:pre [(m/validate non-empty-string file-name) (bytes? byte-data)]}
+  {:pre [(m/validate non-empty-string file-name) (m/validate bytes? byte-data)]}
   (with-open [out (io/output-stream file-name)]
     (.write out byte-data)))
 
