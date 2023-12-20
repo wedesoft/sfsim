@@ -38,13 +38,14 @@
 
 (defn spit-bytes
   "Write bytes to a file"
-  {:malli/schema [:=> [:cat non-empty-string bytes?] bytes?]}
+  {:malli/schema [:=> [:cat non-empty-string bytes?] :nil]}
   [^String file-name ^bytes byte-data]
   (with-open [out (io/output-stream file-name)]
     (.write out byte-data)))
 
 (defn slurp-shorts
   "Read short integers from a file"
+  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
   ^shorts [^String file-name]
   (let [byte-data    (slurp-bytes file-name)
         n            (.count (seq byte-data))
@@ -55,6 +56,7 @@
 
 (defn spit-shorts
   "Write short integers to a file"
+  {:malli/schema [:=> [:cat non-empty-string seqable?] :nil]}
   [^String file-name ^shorts short-data]
   (let [n           (count short-data)
         byte-buffer (.order (ByteBuffer/allocate (* n 2)) ByteOrder/LITTLE_ENDIAN)]
@@ -63,6 +65,7 @@
 
 (defn slurp-floats
   "Read floating point numbers from a file"
+  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
   ^floats [^String file-name]
   (let [byte-data    (slurp-bytes file-name)
         n            (.count (seq byte-data))
@@ -73,6 +76,7 @@
 
 (defn spit-floats
   "Write floating point numbers to a file"
+  {:malli/schema [:=> [:cat non-empty-string seqable?] :nil]}
   [^String file-name ^floats float-data]
   (let [n           (count float-data)
         byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
