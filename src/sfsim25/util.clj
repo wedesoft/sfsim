@@ -15,13 +15,13 @@
 
 (defn third
   "Get third element of a list"
-  {:malli/schema [:=> [:cat [:sequential {:min 3} :some]] :some]}
+  {:malli/schema [:=> [:cat [:sequential {:min 3} any?]] any?]}
   [lst]
   (nth lst 2))
 
 (defn fourth
   "Get fourth element of a list"
-  {:malli/schema [:=> [:cat [:sequential {:min 4} :some]] :some]}
+  {:malli/schema [:=> [:cat [:sequential {:min 4} any?]] any?]}
   [lst]
   (nth lst 3))
 
