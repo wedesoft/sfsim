@@ -85,32 +85,38 @@
 
 (defn tile-path
   "Determine file path of map tile"
-  ^String [prefix level y x suffix]
+  {:malli/schema [:=> [:cat :string :int :int :int :string] :string]}
+  [prefix level y x suffix]
   (str prefix \/ level \/ x \/ y suffix))
 
 (defn tile-dir
   "Determine directory name of map tile"
-  ^String [^String prefix ^long level ^long x]
+  {:malli/schema [:=> [:cat :string :int :int] :string]}
+  [prefix level x]
   (str prefix \/ level \/ x))
 
 (defn cube-path
   "Determine file path of cube tile"
-  ^String [prefix face level y x suffix]
+  {:malli/schema [:=> [:cat :string :int :int :int :int :string] :string]}
+  [prefix face level y x suffix]
   (str prefix \/ face \/ level \/ x \/ y suffix))
 
 (defn cube-dir
   "Determine directory name of cube tile"
-  ^String [^String prefix ^long face ^long level ^long x]
+  {:malli/schema [:=> [:cat :string :int :int :int] :string]}
+  [prefix face level x]
   (str prefix \/ face \/ level \/ x))
 
 (defn sinc
   "sin(x) / x function"
-  ^double [^double x]
+  {:malli/schema [:=> [:cat :double] :double]}
+  [x]
   (if (zero? x) 1.0 (/ (sin x) x)))
 
 (defn sqr
   "Square of x"
-  ^double [^double x]
+  {:malli/schema [:=> [:cat number?] number?]}
+  [x]
   (* x x))
 
 (defn slurp-image

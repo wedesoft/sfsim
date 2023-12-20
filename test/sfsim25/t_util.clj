@@ -55,8 +55,8 @@
   0.0      1.0)
 
 (facts "Square values"
-  (sqr 2) => 4.0
-  (sqr 3) => 9.0)
+  (sqr 2) => 4
+  (sqr 3) => 9)
 
 (facts "Saving and loading of PNG image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
