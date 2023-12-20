@@ -212,9 +212,9 @@
   "Set color value of a pixel in an image"
   [{:keys [width data]} ^long y ^long x ^Vec3 c]
   (let [offset (* 4 (+ (* width y) x))]
-    (aset-byte data offset (ubyte->byte (int (c 0))))
-    (aset-byte data (inc offset) (ubyte->byte (int (c 1))))
-    (aset-byte data (inc (inc offset)) (ubyte->byte (int (c 2))))
+    (aset-byte data offset (ubyte->byte (long (c 0))))
+    (aset-byte data (inc offset) (ubyte->byte (long (c 1))))
+    (aset-byte data (inc (inc offset)) (ubyte->byte (long (c 2))))
     (aset-byte data (inc (inc (inc offset))) -1)))
 
 (defn get-short
