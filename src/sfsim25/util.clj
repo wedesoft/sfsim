@@ -119,8 +119,11 @@
   [x]
   (* x x))
 
+(def image (m/schema [:map [:width :int] [:height :int] [:channels :int] [:data bytes?]]))
+
 (defn slurp-image
   "Load an RGB image"
+  {:malli/schema [:=> [:cat non-empty-string] image]}
   [path]
   (let [width (int-array 1)
         height (int-array 1)
@@ -136,22 +139,27 @@
 
 (defn spit-png
   "Save RGB image as PNG file"
+  {:malli/schema [:=> [:cat non-empty-string image] image]}
   [path {:keys [width height data] :as img}]
-  (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
+  (let [buffer (BufferUtils/createByteBuffer (count data))]
     (-> buffer (.put data) (.flip))
     (STBImageWrite/stbi_write_png path width height 4 buffer (* 4 width))
     img))
 
 (defn spit-jpg
   "Save RGB image as JPEG file"
+  {:malli/schema [:=> [:cat non-empty-string image] image]}
   [path {:keys [width height data] :as img}]
-  (let [buffer (BufferUtils/createByteBuffer (* 4 (count data)))]
+  (let [buffer (BufferUtils/createByteBuffer (count data))]
     (-> buffer (.put data) (.flip))
     (STBImageWrite/stbi_write_jpg path width height 4 buffer (* 4 width))
     img))
 
+(def normals (m/schema [:map [:width :int] [:height :int] [:data seqable?]]))
+
 (defn spit-normals
   "Compress normals to PNG and save"
+  {:malli/schema [:=> [:cat non-empty-string normals] normals]}
   [path {:keys [width height data] :as img}]
   (let [buffer    (BufferUtils/createByteBuffer (count data))
         byte-data (byte-array (count data))]
@@ -163,6 +171,7 @@
 
 (defn slurp-normals
   "Convert PNG to normal vectors"
+  {:malli/schema [:=> [:cat non-empty-string] normals]}
   [path]
   (let [width     (int-array 1)
         height    (int-array 1)
@@ -181,12 +190,14 @@
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
-  ^long [^long b]
+  {:malli/schema [:=> [:cat :int] :int]}
+  [b]
   (if (>= b 0) b (+ b 256)))
 
 (defn ubyte->byte
   "Convert unsigned byte to byte"
-  ^long [^long u]
+  {:malli/schema [:=> [:cat :int] :int]}
+  [u]
   (if (<= u 127) u (- u 256)))
 
 (defn get-pixel
@@ -201,9 +212,9 @@
   "Set color value of a pixel in an image"
   [{:keys [width data]} ^long y ^long x ^Vec3 c]
   (let [offset (* 4 (+ (* width y) x))]
-    (aset-byte data offset (ubyte->byte (c 0)))
-    (aset-byte data (inc offset) (ubyte->byte (c 1)))
-    (aset-byte data (inc (inc offset)) (ubyte->byte (c 2)))
+    (aset-byte data offset (ubyte->byte (int (c 0))))
+    (aset-byte data (inc offset) (ubyte->byte (int (c 1))))
+    (aset-byte data (inc (inc offset)) (ubyte->byte (int (c 2))))
     (aset-byte data (inc (inc (inc offset))) -1)))
 
 (defn get-short
