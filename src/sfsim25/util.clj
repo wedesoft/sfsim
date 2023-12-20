@@ -15,14 +15,14 @@
 
 (defn third
   "Get third element of a list"
-  {:malli/schema [:=> [:cat [:sequentual {:min 3} :some]]]}
+  {:malli/schema [:=> [:cat [:sequential {:min 3} :some]] :some]}
   [lst]
   (nth lst 2))
 
 (defn fourth
   "Get fourth element of a list"
+  {:malli/schema [:=> [:cat [:sequential {:min 4} :some]] :some]}
   [lst]
-  {:malli/schema [:=> [:cat [:sequentual {:min 4} :some]]]}
   (nth lst 3))
 
 (def non-empty-string (m/schema [:string {:min 1}]))
