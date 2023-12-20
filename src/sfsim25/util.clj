@@ -15,23 +15,22 @@
 
 (defn third
   "Get third element of a list"
+  {:malli/schema [:=> [:cat [:sequentual {:min 3} :some]]]}
   [lst]
-  {:pre [(m/validate [:sequential {:min 3} :some] lst)]}
   (nth lst 2))
 
 (defn fourth
   "Get fourth element of a list"
   [lst]
-  {:pre [(m/validate [:sequential {:min 4} :some] lst)]}
+  {:malli/schema [:=> [:cat [:sequentual {:min 4} :some]]]}
   (nth lst 3))
 
 (def non-empty-string (m/schema [:string {:min 1}]))
 
 (defn slurp-bytes
   "Read bytes from a file"
+  {:malli/schema [:=> [:cat non-empty-string] bytes?]}
   ^bytes [^String file-name]
-  {:pre [(m/validate non-empty-string file-name)]
-   :post [(m/validate bytes? %)]}
   (with-open [in  (io/input-stream file-name)
               out (ByteArrayOutputStream.)]
     (io/copy in out)
@@ -39,8 +38,8 @@
 
 (defn spit-bytes
   "Write bytes to a file"
+  {:malli/schema [:=> [:cat non-empty-string bytes?] bytes?]}
   [^String file-name ^bytes byte-data]
-  {:pre [(m/validate non-empty-string file-name) (m/validate bytes? byte-data)]}
   (with-open [out (io/output-stream file-name)]
     (.write out byte-data)))
 
