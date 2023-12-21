@@ -6,12 +6,13 @@
             [fastmath.vector :refer (vec3 vec4)]
             [progrock.core :as p])
   (:import [java.io ByteArrayOutputStream]
-           [java.nio ByteBuffer ByteOrder]
+           [java.nio DirectByteBuffer ByteBuffer ByteOrder]
            [org.lwjgl BufferUtils]
            [org.lwjgl.stb STBImage STBImageWrite]
            [fastmath.vector Vec3 Vec4]))
 
 (set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 (defn third
   "Get third element of a list"
@@ -128,13 +129,13 @@
   (let [width (int-array 1)
         height (int-array 1)
         channels (int-array 1)
-        buffer (STBImage/stbi_load path width height channels 4)
+        buffer (STBImage/stbi_load ^String path width height channels 4)
         width  (aget width 0)
         height (aget height 0)
         data   (byte-array (* width height 4))]
-    (.get buffer data)
-    (.flip buffer)
-    (STBImage/stbi_image_free buffer)
+    (.get ^DirectByteBuffer buffer ^bytes data)
+    (.flip ^DirectByteBuffer buffer)
+    (STBImage/stbi_image_free ^DirectByteBuffer buffer)
     {:data data :width width :height height :channels (aget channels 0)}))
 
 (defn spit-png
@@ -142,8 +143,9 @@
   {:malli/schema [:=> [:cat non-empty-string image] image]}
   [path {:keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
-    (-> buffer (.put data) (.flip))
-    (STBImageWrite/stbi_write_png path width height 4 buffer (* 4 width))
+    (.put ^DirectByteBuffer buffer ^bytes data)
+    (.flip buffer)
+    (STBImageWrite/stbi_write_png ^String path ^long width ^long height 4 ^DirectByteBuffer buffer ^long (* 4 width))
     img))
 
 (defn spit-jpg
@@ -151,8 +153,9 @@
   {:malli/schema [:=> [:cat non-empty-string image] image]}
   [path {:keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
-    (-> buffer (.put data) (.flip))
-    (STBImageWrite/stbi_write_jpg path width height 4 buffer (* 4 width))
+    (.put ^DirectByteBuffer buffer ^bytes data)
+    (.flip buffer)
+    (STBImageWrite/stbi_write_jpg ^String path ^long width ^long height 4 ^DirectByteBuffer buffer ^long (* 4 width))
     img))
 
 (def normals (m/schema [:map [:width :int] [:height :int] [:data seqable?]]))
@@ -166,7 +169,7 @@
     (doseq [i (range (count data))]
            (aset-byte ^bytes byte-data ^long i ^byte (round (- (* (aget ^floats data ^long i) 127.5) 0.5))))
     (-> buffer (.put byte-data) (.flip))
-    (STBImageWrite/stbi_write_png path width height 3 buffer (* 3 width))
+    (STBImageWrite/stbi_write_png ^String path ^long width ^long height 3 ^DirectByteBuffer buffer ^long (* 3 width))
     img))
 
 (defn slurp-normals
@@ -176,14 +179,14 @@
   (let [width     (int-array 1)
         height    (int-array 1)
         channels  (int-array 1)
-        buffer    (STBImage/stbi_load path width height channels 3)
+        buffer    (STBImage/stbi_load ^String path width height channels 3)
         width     (aget width 0)
         height    (aget height 0)
         byte-data (byte-array (* width height 3))
         data      (float-array (* width height 3))]
-    (.get buffer byte-data)
-    (.flip buffer)
-    (STBImage/stbi_image_free buffer)
+    (.get ^DirectByteBuffer buffer ^bytes byte-data)
+    (.flip ^DirectByteBuffer buffer)
+    (STBImage/stbi_image_free ^DirectByteBuffer buffer)
     (doseq [i (range (count data))]
            (aset-float ^floats data ^long i ^float (/ (+ (aget ^bytes byte-data ^long i) 0.5) 127.5)))
     {:width width :height height :data data}))
@@ -204,9 +207,9 @@
   "Read color value from a pixel of an image"
   ^Vec3 [{:keys [width data]} ^long y ^long x]
   (let [offset (* 4 (+ (* width y) x))]
-    (vec3 (byte->ubyte (aget data offset))
-          (byte->ubyte (aget data (inc offset)))
-          (byte->ubyte (aget data (inc (inc offset)))))))
+    (vec3 (byte->ubyte (aget ^bytes data ^long offset))
+          (byte->ubyte (aget ^bytes data ^long (inc offset)))
+          (byte->ubyte (aget ^bytes data ^long (inc (inc offset)))))))
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
@@ -220,7 +223,7 @@
 (defn get-short
   "Read value from a short integer tile"
   [{:keys [width data]} ^long y ^long x]
-  (aget data (+ (* width y) x)))
+  (aget ^shorts data ^long (+ (* width y) x)))
 
 (defn set-short!
   "Write value to a short integer tile"
@@ -230,7 +233,7 @@
 (defn get-float
   "Read value from a floating-point tile"
   ^double [{:keys [width data]} ^long y ^long x]
-  (aget data (+ (* width y) x)))
+  (aget ^floats data ^long (+ (* width y) x)))
 
 (defn set-float!
   "Write value to a floating-point tile"
@@ -240,7 +243,7 @@
 (defn get-float-3d
   "Read floating-point value from a 3D cube"
   ^double [{:keys [width height data]} ^long z ^long y ^long x]
-  (aget data (+ (* width (+ (* height z) y)) x)))
+  (aget ^floats data ^long (+ (* width (+ (* height z) y)) x)))
 
 (defn set-float-3d!
   "Write floating-point value to a 3D cube"
@@ -250,7 +253,7 @@
 (defn get-byte
   "Read byte value from a tile"
   ^long [{:keys [width data]} ^long y ^long x]
-  (byte->ubyte (aget data (+ (* width y) x))))
+  (byte->ubyte (aget ^bytes data ^long (+ (* width y) x))))
 
 (defn set-byte!
   "Write byte value to a tile"
@@ -261,7 +264,9 @@
   "Read RGB vector from a vectors tile"
   ^Vec3 [{:keys [width data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
-    (vec3 (aget data (+ offset 0)) (aget data (+ offset 1)) (aget data (+ offset 2)))))
+    (vec3 (aget ^floats data ^long (+ offset 0))
+          (aget ^floats data ^long (+ offset 1))
+          (aget ^floats data ^long (+ offset 2)))))
 
 (defn set-vector3!
   "Write RGB vector value to vectors tile"
@@ -275,7 +280,10 @@
   "read RGBA vector from a vectors tile"
   ^Vec4 [{:keys [width data]} ^long y ^long x]
   (let [offset (* 4 (+ (* width y) x))]
-    (vec4 (aget data (+ offset 0)) (aget data (+ offset 1)) (aget data (+ offset 2)) (aget data (+ offset 3)))))
+    (vec4 (aget ^floats data ^long (+ offset 0))
+          (aget ^floats data ^long (+ offset 1))
+          (aget ^floats data ^long (+ offset 2))
+          (aget ^floats data ^long (+ offset 3)))))
 
 (defn set-vector4!
   "Write RGBA vector value to vectors tile"
@@ -384,4 +392,5 @@
   [array dimension]
   (count (nth (iterate first array) dimension)))
 
+(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
