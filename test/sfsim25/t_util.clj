@@ -101,11 +101,11 @@
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/red.png") 0 0) => (vec3 255 0 0)
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/green.png") 0 0) => (vec3 0 255 0)
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/blue.png") 0 0) => (vec3 0 0 255)
-  (let [img {:width 4 :height 2 :data (byte-array (flatten (concat (repeat 7 [0 0 0 -1]) [[1 2 3 -1]])))}]
+  (let [img {:width 4 :height 2 :channels 4 :data (byte-array (flatten (concat (repeat 7 [0 0 0 -1]) [[1 2 3 -1]])))}]
     (get-pixel img 1 3) => (vec3 1 2 3))
-  (let [img {:width 1 :height 1 :data (byte-array [1 2 3 -1])}]
+  (let [img {:width 1 :height 1 :channels 4 :data (byte-array [1 2 3 -1])}]
     (get-pixel img 0 0) => (vec3 1 2 3))
-  (let [img {:width 4 :height 2 :data (byte-array (repeat 32 0))}]
+  (let [img {:width 4 :height 2 :channels 4 :data (byte-array (repeat 32 0))}]
     (set-pixel! img 1 2 (vec3 253 254 255)) => anything
     (get-pixel img 1 2) => (vec3 253 254 255)))
 
