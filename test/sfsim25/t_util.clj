@@ -1,9 +1,13 @@
 (ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
             [clojure.math :refer (PI)]
             [fastmath.vector :refer (vec3 vec4)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
+
+(mi/collect! {:ns ['sfsim25.util]})
+(mi/instrument!)
 
 (facts "Get elements of a small list"
        (first  '(2 3 5 7)) => 2
