@@ -61,7 +61,7 @@
   [window & body]
   `(let [width#  (int-array 1)
          height# (int-array 1)]
-     (GLFW/glfwGetWindowSize ~window width# height#)
+     (GLFW/glfwGetWindowSize ~(vary-meta window assoc :tag 'long) width# height#)
      (setup-rendering (aget width# 0) (aget height# 0) :cullback)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))

@@ -49,7 +49,7 @@ Requires OpenGL 4.5.
 
 # REPL with Schema validation
 
-Here is an example on how to test triggering a Malli schema error in the REPL:
+Here is an example on how to use Malli schemas in the REPL:
 
 ```Clojure
 (require '[malli.dev :as dev])
