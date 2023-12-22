@@ -8,6 +8,7 @@
 ; http://cv.ulichney.com/papers/1993-void-cluster.pdf
 
 (set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 (def noise-size 64)
 
@@ -162,4 +163,5 @@
   "Shader for sampling blue noise texture"
   (slurp "resources/shaders/bluenoise/sampling-offset.glsl"))
 
+(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
