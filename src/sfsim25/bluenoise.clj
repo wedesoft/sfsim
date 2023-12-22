@@ -12,9 +12,11 @@
 
 (def noise-size 64)
 
+(def indices (m/schema [:vector N0]))
+
 (defn indices-2d
   "Create range of indices with M x M elements"
-  {:malli/schema [:=> [:cat N] [:vector N0]]}
+  {:malli/schema [:=> [:cat N] indices]}
   [m] (vec (range (* m m))))
 
 (defn pick-n
@@ -23,9 +25,11 @@
   ([arr n] (pick-n arr n shuffle))
   ([arr n order] (vec (take n (order arr)))))
 
+(def mask (m/schema [:vector :boolean]))
+
 (defn scatter-mask
   "Create mask of size M x M filled with specified indices set to true"
-  {:malli/schema [:=> [:cat [:vector N0] N] [:vector :boolean]]}
+  {:malli/schema [:=> [:cat indices N] mask]}
   [arr m]
   (reduce #(assoc %1 %2 true) (vec (repeat (* m m) false)) arr))
 
@@ -58,7 +62,7 @@
 
 (defn density-sample
   "Compute sample of convolution of MASK with F"
-  {:malli/schema [:=> [:cat [:vector :boolean] N F :int :int] :double]}
+  {:malli/schema [:=> [:cat mask N F :int :int] :double]}
   [mask m f cx cy]
   (reduce +
     (for [y (range m) x (range m)]
@@ -69,7 +73,7 @@
 
 (defn density-array
   "Convolve MASK of size M x M with F"
-  {:malli/schema [:=> [:cat [:vector :boolean] N F] [:vector :double]]}
+  {:malli/schema [:=> [:cat mask N F] [:vector :double]]}
   [mask m f]
   (vec (pfor (+ 2 (ncpus)) [cy (range m) cx (range m)] (density-sample mask m f cx cy))))
 
@@ -87,8 +91,8 @@
 (defn seed-pattern
   "Create initial seed pattern by distributing the values in MASK evenly"
   {:malli/schema [:function
-                  [:=> [:cat [:vector :boolean] N F] [:vector :boolean]]
-                  [:=> [:cat [:vector :boolean] N F [:vector :double]] [:vector :boolean]]]}
+                  [:=> [:cat mask N F] mask]
+                  [:=> [:cat mask N F [:vector :double]] mask]]}
   ([mask m f] (seed-pattern mask m f (density-array mask m f)))
   ([mask m f density]
    (let [cluster (argmax-with-mask density mask)
@@ -103,9 +107,9 @@
 (defn dither-phase1
   "First phase of blue noise dithering removing true values from MASK"
   {:malli/schema [:function
-                  [:=> [:cat [:vector :boolean] N N0 F] [:vector N0]]
-                  [:=> [:cat [:vector :boolean] N N0 F [:vector :double]] [:vector N0]]
-                  [:=> [:cat [:vector :boolean] N N0 F [:vector :double] [:vector N0]] [:vector N0]]]}
+                  [:=> [:cat mask N N0 F] indices]
+                  [:=> [:cat mask N N0 F [:vector :double]] indices]
+                  [:=> [:cat mask N N0 F [:vector :double] indices] indices]]}
   ([mask m n f] (dither-phase1 mask m n f (density-array mask m f)))
   ([mask m n f density] (dither-phase1 mask m n f density (vec (repeat (* m m) 0))))
   ([mask m n f density dither]
@@ -119,8 +123,8 @@
 (defn dither-phase2
   "Second phase of blue noise dithering filling MASK until it is 50% set to true"
   {:malli/schema [:function
-                  [:=> [:cat [:vector :boolean] N N0 [:vector N0] F] [:vector [:vector :some]]]
-                  [:=> [:cat [:vector :boolean] N N0 [:vector N0] F [:vector :double]] [:vector [:vector :some]]]]}
+                  [:=> [:cat mask N N0 indices F] [:vector [:vector :some]]]
+                  [:=> [:cat mask N N0 indices F [:vector :double]] [:vector [:vector :some]]]]}
   ([mask m n dither f] (dither-phase2 mask m n dither f (density-array mask m f)))
   ([mask m n dither f density]
    (if (>= n (quot (* m m) 2))
@@ -133,8 +137,8 @@
 (defn dither-phase3
   "Third phase of blue noise dithering negating MASK and then removing true values"
   {:malli/schema [:function
-                  [:=> [:cat [:vector :boolean] N N0 [:vector N0] F] [:vector N0]]
-                  [:=> [:cat [:vector :boolean] N N0 [:vector N0] F [:vector :double]] [:vector N0]]]}
+                  [:=> [:cat mask N N0 indices F] indices]
+                  [:=> [:cat mask N N0 indices F [:vector :double]] indices]]}
   ([mask m n dither f]
    (let [mask-not (mapv not mask)]
      (dither-phase3 mask-not m n dither f (density-array mask-not m f))))
@@ -148,7 +152,7 @@
 
 (defn blue-noise
   "Greate blue noise dithering array of size M x M starting with seed pattern of N samples"
-  {:malli/schema [:=> [:cat N N0 :double] [:vector N0]]}
+  {:malli/schema [:=> [:cat N N0 :double] indices]}
   [m n sigma]
   (let [mask          (scatter-mask (pick-n (indices-2d m) n) m)
         f             (density-function sigma)
