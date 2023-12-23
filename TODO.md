@@ -1,5 +1,5 @@
 # TODO
-* Malli: provider/generator, dev, pretty-throw, schemas, multiple arity function
+* Malli: provider/generator, dev, pretty-throw, schemas, multiple arity function, infer, keyword arguments
 * enable warn on reflection in more places
 * problem with shadow map when near ground
 * look at https://github.com/metosin/malli
