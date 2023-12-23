@@ -1,9 +1,13 @@
 (ns sfsim25.t-scale-image
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
               [sfsim25.conftest :refer (is-image)]
               [sfsim25.util :refer (slurp-image)]
               [sfsim25.scale-image :refer :all])
     (:import [java.io File]))
+
+(mi/collect! {:ns ['sfsim25.scale-image]})
+(mi/instrument!)
 
 (fact "Scale image to 50% size"
       (let [file-name (.getPath (File/createTempFile "scaled" ".png"))]

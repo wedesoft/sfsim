@@ -1,5 +1,6 @@
 # TODO
 * Malli: provider/generator, dev, pretty-throw, schemas, multiple arity function, infer, keyword arguments
+* test for scale-elevation
 * enable warn on reflection in more places
 * problem with shadow map when near ground
 * look at https://github.com/metosin/malli
