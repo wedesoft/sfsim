@@ -2,6 +2,7 @@
     (:require [clojure.math :refer (exp)]
               [midje.sweet :refer :all]
               [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [fastmath.vector :refer (vec3)]
               [sfsim25.conftest :refer (record-image is-image)]
               [sfsim25.bluenoise :refer :all]
@@ -10,7 +11,7 @@
     (:import [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim25.bluenoise]})
-(mi/instrument!)
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
