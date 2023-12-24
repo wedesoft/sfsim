@@ -21,7 +21,7 @@
 
 (defn pick-n
   "Randomly pick N different values from ARR"
-  {:malli/schema [:function [:=> [:cat [:vector :some] N0] [:vector :some]] [:=> [:cat [:vector :some] N0 fn?] [:vector :some]]]}
+  {:malli/schema [:=> [:cat [:vector :some] N0 [:? fn?]] [:vector :some]]}
   ([arr n] (pick-n arr n shuffle))
   ([arr n order] (vec (take n (order arr)))))
 
@@ -90,9 +90,7 @@
 
 (defn seed-pattern
   "Create initial seed pattern by distributing the values in MASK evenly"
-  {:malli/schema [:function
-                  [:=> [:cat mask N F] mask]
-                  [:=> [:cat mask N F [:vector :double]] mask]]}
+  {:malli/schema [:=> [:cat mask N F [:? [:vector :double]]] mask]}
   ([mask m f] (seed-pattern mask m f (density-array mask m f)))
   ([mask m f density]
    (let [cluster (argmax-with-mask density mask)
@@ -122,9 +120,7 @@
 
 (defn dither-phase2
   "Second phase of blue noise dithering filling MASK until it is 50% set to true"
-  {:malli/schema [:function
-                  [:=> [:cat mask N N0 indices F] [:vector [:vector :some]]]
-                  [:=> [:cat mask N N0 indices F [:vector :double]] [:vector [:vector :some]]]]}
+  {:malli/schema [:=> [:cat mask N N0 indices F [:? [:vector :double]]] [:vector [:vector :some]]]}
   ([mask m n dither f] (dither-phase2 mask m n dither f (density-array mask m f)))
   ([mask m n dither f density]
    (if (>= n (quot (* m m) 2))
@@ -136,9 +132,7 @@
 
 (defn dither-phase3
   "Third phase of blue noise dithering negating MASK and then removing true values"
-  {:malli/schema [:function
-                  [:=> [:cat mask N N0 indices F] indices]
-                  [:=> [:cat mask N N0 indices F [:vector :double]] indices]]}
+  {:malli/schema [:=> [:cat mask N N0 indices F [:? [:vector :double]]] indices]}
   ([mask m n dither f]
    (let [mask-not (mapv not mask)]
      (dither-phase3 mask-not m n dither f (density-array mask-not m f))))

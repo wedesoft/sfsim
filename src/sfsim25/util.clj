@@ -389,7 +389,7 @@
 
 (defn limit-quot
   "Compute quotient and limit it"
-  {:malli/schema [:function [:=> [:cat number? number? number?] number?] [:=> [:cat number? number? number? number?] number?]]}
+  {:malli/schema [:function [:=> [:cat number? number? number? [:? number?]] number?]]}
   ([a b limit]
    (limit-quot a b (- limit) limit))
   ([a b limit-lower limit-upper]
