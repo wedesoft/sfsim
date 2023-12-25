@@ -73,8 +73,8 @@
 
 (facts "Saving and loading of JPEG image"
   (let [file-name (.getPath (File/createTempFile "spit" ".jpg"))
-        value     [1 2 3 -1]]
-      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value))) :channels 4})
+        value     [0 35 63 -1]]
+      (spit-jpg file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value))) :channels 4})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
       (take 4 (:data (slurp-image file-name))) => value))

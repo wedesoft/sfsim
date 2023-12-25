@@ -144,7 +144,7 @@
 
 (defn spit-png
   "Save RGB image as PNG file"
-  {:malli/schema [:=> [:cat non-empty-string image] image]}
+  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [:channels [:= 4]]]]] image]}
   [path {:keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
     (.put ^DirectByteBuffer buffer ^bytes data)
@@ -154,7 +154,7 @@
 
 (defn spit-jpg
   "Save RGB image as JPEG file"
-  {:malli/schema [:=> [:cat non-empty-string image] image]}
+  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [:channels [:= 4]]]]] image]}
   [path {:keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
     (.put ^DirectByteBuffer buffer ^bytes data)
