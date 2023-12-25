@@ -15,8 +15,8 @@
 
 (def mat3 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 3))]]))
 (def mat4 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 4))]]))
-(def vec3 (m/schema [:vector {:min 3 :max 3} [:double]]))
-(def vec4 (m/schema [:vector {:min 4 :max 4} [:double]]))
+(def vec3 (m/schema [:tuple :double :double :double]))
+(def vec4 (m/schema [:tuple :double :double :double :double]))
 
 (defn rotation-x
   "Rotation matrix around x-axis"

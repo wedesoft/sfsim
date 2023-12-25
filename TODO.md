@@ -1,5 +1,4 @@
 # TODO
-* Malli: provider/generator, dev, pretty-throw, schemas, multiple arity function vs optional part, infer, keyword arguments, mat4x4 using predicate, equality check
 * test for scale-elevation
 * enable warn on reflection in more places
 * problem with shadow map when near ground
