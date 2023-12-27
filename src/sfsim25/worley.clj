@@ -45,7 +45,7 @@
   (let [[i-clip x-offset] (clipped-index-and-offset grid size 2 i)
         [j-clip y-offset] (clipped-index-and-offset grid size 1 j)
         [k-clip z-offset] (clipped-index-and-offset grid size 0 k)]
-    (add (reduce nth grid [k-clip j-clip i-clip]) (vec3 x-offset y-offset z-offset))))
+    (add (get-in grid [k-clip j-clip i-clip]) (vec3 x-offset y-offset z-offset))))
 
 (defn closest-distance-to-point-in-grid
   "Return distance to closest point in 3D grid"
