@@ -3,6 +3,7 @@
   (:refer-clojure :exclude [+ - *])
   (:require [clojure.core :as c]
             [clojure.math :refer (cos sqrt) :as m]
+            [malli.core :as mc]
             [fastmath.vector :refer (vec3 mag mult)]
             [sfsim25.util :refer (sinc sqr)])
   (:import [fastmath.vector Vec3]))
@@ -10,6 +11,8 @@
 (set! *unchecked-math* true)
 
 (defrecord Quaternion [^double a ^double b ^double c ^double d])
+
+(def quaternion (mc/schema [:map [:a :double] [:b :double] [:c :double] [:d :double]]))
 
 (set! *warn-on-reflection* true)
 

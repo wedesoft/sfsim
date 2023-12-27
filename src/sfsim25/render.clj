@@ -61,7 +61,7 @@
   [window & body]
   `(let [width#  (int-array 1)
          height# (int-array 1)]
-     (GLFW/glfwGetWindowSize ~window width# height#)
+     (GLFW/glfwGetWindowSize ~(vary-meta window assoc :tag 'long) width# height#)
      (setup-rendering (aget width# 0) (aget height# 0) :cullback)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))
@@ -444,6 +444,26 @@
   [interpolation boundary width height depth]
   (create-texture-3d interpolation boundary width height depth
                      (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F width height depth)))
+
+(defn- make-texture-4d
+  "Initialise a 2D texture"
+  [image make-buffer interpolation boundary internalformat format_ type_]
+  (let [buffer     (make-buffer (:data image))
+        width      (:width image)
+        height     (:height image)
+        depth      (:depth image)
+        hyperdepth (:hyperdepth image)]
+    (assoc (create-texture-2d interpolation boundary (* width depth) (* height hyperdepth)
+             (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (* width depth) (* height hyperdepth) 0 format_ type_ buffer))
+           :width width
+           :height height
+           :depth depth
+           :hyperdepth hyperdepth)))
+
+(defn make-vector-texture-4d
+  "Load floating point 2D array of 3D vectors into OpenGL texture"
+  [interpolation boundary image]
+  (make-texture-4d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn destroy-texture
   "Delete an OpenGL texture"

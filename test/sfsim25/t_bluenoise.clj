@@ -1,12 +1,17 @@
 (ns sfsim25.t-bluenoise
     (:require [clojure.math :refer (exp)]
               [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [fastmath.vector :refer (vec3)]
               [sfsim25.conftest :refer (record-image is-image)]
               [sfsim25.bluenoise :refer :all]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders])
     (:import [org.lwjgl.glfw GLFW]))
+
+(mi/collect! {:ns ['sfsim25.bluenoise]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
@@ -23,12 +28,12 @@
        (scatter-mask [2] 2) => [false false true false])
 
 (facts "Weighting function to determine clusters and voids"
-       ((density-function 1) 0 0) => (roughly 1.0 1e-6)
-       ((density-function 1) 1 0) => (roughly (exp -0.5))
-       ((density-function 1) 0 1) => (roughly (exp -0.5))
-       ((density-function 1) -1 0) => (roughly (exp -0.5))
-       ((density-function 1) 0 -1) => (roughly (exp -0.5))
-       ((density-function 2) 2 0) => (roughly (exp -0.5)))
+       ((density-function 1.0) 0 0) => (roughly 1.0 1e-6)
+       ((density-function 1.0) 1 0) => (roughly (exp -0.5))
+       ((density-function 1.0) 0 1) => (roughly (exp -0.5))
+       ((density-function 1.0) -1 0) => (roughly (exp -0.5))
+       ((density-function 1.0) 0 -1) => (roughly (exp -0.5))
+       ((density-function 2.0) 2 0) => (roughly (exp -0.5)))
 
 (facts "Index of largest element"
        (argmax-with-mask [5 3 2] (repeat 3 true)) => 0
@@ -48,24 +53,24 @@
        (wrap 2 4) => -2)
 
 (facts "Compute sample of correlation of binary image with density function"
-       (density-sample (repeat 4 false) 2 (fn [dx dy] 1) 0 0) => 0
-       (density-sample [true false false false] 2 (fn [dx dy] 1) 0 0) => 1
-       (density-sample [true false false false] 2 (fn [dx dy] 2) 0 0) => 2
-       (density-sample (repeat 4 true) 2 (fn [dx dy] 1) 0 0) => 4
-       (density-sample (repeat 9 true) 3 (fn [dx dy] dx) 1 1) => 0
-       (density-sample (repeat 9 true) 3 (fn [dx dy] dy) 1 1) => 0
-       (density-sample [false false true false] 2 (fn [dx dy] dx) 1 1) => -1
-       (density-sample [false true false false] 2 (fn [dx dy] dy) 1 1) => -1
-       (density-sample (repeat 9 true) 3 (fn [dx dy] dx) 2 2) => 0
-       (density-sample (repeat 9 true) 3 (fn [dx dy] dy) 2 2) => 0)
+       (density-sample (vec (repeat 4 false)) 2 (fn [dx dy] 1.0) 0 0) => 0.0
+       (density-sample [true false false false] 2 (fn [dx dy] 1.0) 0 0) => 1.0
+       (density-sample [true false false false] 2 (fn [dx dy] 2.0) 0 0) => 2.0
+       (density-sample (vec (repeat 4 true)) 2 (fn [dx dy] 1.0) 0 0) => 4.0
+       (density-sample (vec (repeat 9 true)) 3 (fn [dx dy] (double dx)) 1 1) => 0.0
+       (density-sample (vec (repeat 9 true)) 3 (fn [dx dy] (double dy)) 1 1) => 0.0
+       (density-sample [false false true false] 2 (fn [dx dy] (double dx)) 1 1) => -1.0
+       (density-sample [false true false false] 2 (fn [dx dy] (double dy)) 1 1) => -1.0
+       (density-sample (vec (repeat 9 true)) 3 (fn [dx dy] (double dx)) 2 2) => 0.0
+       (density-sample (vec (repeat 9 true)) 3 (fn [dx dy] (double dy)) 2 2) => 0.0)
 
 (facts "Compute dither array for given boolean mask"
-       (density-array [true false false false] 2 (fn [dx dy] dx)) => [0 -1 0 -1]
-       (density-array [true false false false] 2 (fn [dx dy] dx)) => vector?)
+       (density-array [true false false false] 2 (fn [dx dy] (double dx))) => [0.0 -1.0 0.0 -1.0]
+       (density-array [true false false false] 2 (fn [dx dy] (double dx))) => vector?)
 
 (facts "Add/subtract sample from dither array"
-       (density-change [0 -1 0 -1] 2 + (fn [dx dy] dx) 0) => [0 -2 0 -2]
-       (density-change [0 -1 0 -1] 2 - (fn [dx dy] dx) 0) => [0 0 0 0])
+       (density-change [0.0 -1.0 0.0 -1.0] 2 + (fn [dx dy] (double dx)) 0) => [0.0 -2.0 0.0 -2.0]
+       (density-change [0.0 -1.0 0.0 -1.0] 2 - (fn [dx dy] (double dx)) 0) => [0.0  0.0 0.0  0.0])
 
 (facts "Initial binary pattern generator"
        (seed-pattern [true false false false] 2 (density-function 1.9)) => [false false false true]

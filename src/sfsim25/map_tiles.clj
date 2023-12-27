@@ -1,12 +1,14 @@
 (ns sfsim25.map-tiles
   "Split up part of Mercator map into map tiles of specified size and save them in computed file names."
   (:require [sfsim25.util :refer (tile-dir tile-path)]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [sfsim25.util :refer (non-empty-string N N0)])
   (:import [javax.imageio ImageIO]
            [java.io File]))
 
 (defn make-map-tiles
   "Program to generate map tiles"
+  {:malli/schema [:=> [:cat non-empty-string N N0 :string N0 N0] :nil]}
   [input-path tilesize level prefix y-offset x-offset]
   (let [dy          (bit-shift-left y-offset level)
         dx          (bit-shift-left x-offset level)

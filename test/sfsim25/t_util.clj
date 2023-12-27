@@ -1,9 +1,14 @@
 (ns sfsim25.t-util
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
+            [malli.dev.pretty :as pretty]
             [clojure.math :refer (PI)]
             [fastmath.vector :refer (vec3 vec4)]
             [sfsim25.util :refer :all])
   (:import [java.io File]))
+
+(mi/collect! {:ns ['sfsim25.util]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (facts "Get elements of a small list"
        (first  '(2 3 5 7)) => 2
@@ -55,21 +60,21 @@
   0.0      1.0)
 
 (facts "Square values"
-  (sqr 2) => 4.0
-  (sqr 3) => 9.0)
+  (sqr 2) => 4
+  (sqr 3) => 9)
 
 (facts "Saving and loading of PNG image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))
         value     [1 2 3 -1]]
-      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
+      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value))) :channels 4})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
       (take 4 (:data (slurp-image file-name))) => value))
 
 (facts "Saving and loading of JPEG image"
   (let [file-name (.getPath (File/createTempFile "spit" ".jpg"))
-        value     [1 2 3 -1]]
-      (spit-png file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value)))})
+        value     [0 35 63 -1]]
+      (spit-jpg file-name {:width 4 :height 2 :data (byte-array (flatten (repeat 8 value))) :channels 4})
       (:width  (slurp-image file-name)) => 4
       (:height (slurp-image file-name)) => 2
       (take 4 (:data (slurp-image file-name))) => value))
@@ -101,11 +106,11 @@
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/red.png") 0 0) => (vec3 255 0 0)
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/green.png") 0 0) => (vec3 0 255 0)
   (get-pixel (slurp-image "test/sfsim25/fixtures/util/blue.png") 0 0) => (vec3 0 0 255)
-  (let [img {:width 4 :height 2 :data (byte-array (flatten (concat (repeat 7 [0 0 0 -1]) [[1 2 3 -1]])))}]
+  (let [img {:width 4 :height 2 :channels 4 :data (byte-array (flatten (concat (repeat 7 [0 0 0 -1]) [[1 2 3 -1]])))}]
     (get-pixel img 1 3) => (vec3 1 2 3))
-  (let [img {:width 1 :height 1 :data (byte-array [1 2 3 -1])}]
+  (let [img {:width 1 :height 1 :channels 4 :data (byte-array [1 2 3 -1])}]
     (get-pixel img 0 0) => (vec3 1 2 3))
-  (let [img {:width 4 :height 2 :data (byte-array (repeat 32 0))}]
+  (let [img {:width 4 :height 2 :channels 4 :data (byte-array (repeat 32 0))}]
     (set-pixel! img 1 2 (vec3 253 254 255)) => anything
     (get-pixel img 1 2) => (vec3 253 254 255)))
 

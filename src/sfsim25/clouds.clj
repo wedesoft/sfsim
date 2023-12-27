@@ -4,12 +4,17 @@
               [clojure.math :refer (pow log)]
               [fastmath.matrix :refer (inverse)]
               [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
-                                      make-empty-float-cubemap make-empty-vector-cubemap make-program make-vertex-array-object
-                                      render-quads uniform-float uniform-int uniform-sampler uniform-matrix4 use-program
-                                      use-textures make-empty-float-texture-3d uniform-vector3)]
+                                      make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d generate-mipmap
+                                      make-float-texture-3d make-program make-vertex-array-object render-quads uniform-float
+                                      uniform-int uniform-sampler uniform-matrix4 use-program use-textures
+                                      make-empty-float-texture-3d uniform-vector3 make-float-cubemap)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.bluenoise :as bluenoise]
-              [sfsim25.atmosphere :refer (vertex-atmosphere) :as atmosphere]))
+              [sfsim25.worley :refer (worley-size)]
+              [sfsim25.bluenoise :refer (noise-size) :as bluenoise]
+              [sfsim25.atmosphere :refer (vertex-atmosphere) :as atmosphere]
+              [sfsim25.util :refer (slurp-floats)]))
+
+(def cover-size 512)
 
 (defn cloud-noise
   "Shader for sampling 3D cloud noise"
@@ -256,13 +261,56 @@
   [num-steps perlin-octaves cloud-octaves]
   [(cloud-atmosphere num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
 
+(defn make-cloud-data
+  "Method to load cloud textures and collect cloud data (not tested)"
+  [& {:keys [cloud-octaves perlin-octaves cloud-bottom cloud-top cloud-multiplier cover-multiplier cap detail-scale cloud-scale
+             anisotropic opacity-cutoff]}]
+  (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
+        perlin-floats        (slurp-floats "data/clouds/perlin.raw")
+        worley-data          {:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley               (make-float-texture-3d :linear :repeat worley-data)
+        perlin-worley-floats (float-array (map #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
+        perlin-worley-data   {:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
+        perlin-worley        (make-float-texture-3d :linear :repeat perlin-worley-data)
+        cover-floats-list    (map (fn [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
+        cover-data           (map (fn [cover-floats] {:width cover-size :height cover-size :data cover-floats}) cover-floats-list)
+        cloud-cover          (make-float-cubemap :linear :clamp cover-data)
+        bluenoise-floats     (slurp-floats "data/bluenoise.raw")
+        bluenoise-data       {:width noise-size :height noise-size :data bluenoise-floats}
+        bluenoise            (make-float-texture-2d :nearest :repeat bluenoise-data)]
+    (generate-mipmap worley)
+    {:cloud-octaves cloud-octaves
+     :perlin-octaves perlin-octaves
+     :cloud-bottom cloud-bottom
+     :cloud-top cloud-top
+     :cloud-multiplier cloud-multiplier
+     :cover-multiplier cover-multiplier
+     :cap cap
+     :anisotropic anisotropic
+     :opacity-cutoff opacity-cutoff
+     :detail-scale detail-scale
+     :cloud-scale cloud-scale
+     :worley worley
+     :perlin-worley perlin-worley
+     :cloud-cover cloud-cover
+     :bluenoise bluenoise}))
+
+(defn destroy-cloud-data
+  "Method to destroy cloud textures (not tested)"
+  [{:keys [worley perlin-worley cloud-cover bluenoise]}]
+  (destroy-texture worley)
+  (destroy-texture perlin-worley)
+  (destroy-texture cloud-cover)
+  (destroy-texture bluenoise))
+
 (defn make-cloud-atmosphere-renderer
-  "Make renderer to render clouds above horizon"
-  [& {:keys [num-steps perlin-octaves cloud-octaves radius max-height cloud-bottom cloud-top cloud-scale detail-scale depth
-             tilesize albedo reflectivity specular cloud-multiplier cover-multiplier cap anisotropic water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie worley perlin-worley bluenoise cloud-cover]}]
+  "Make renderer to render clouds above horizon (not tested)"
+  [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
+             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
-                              :fragment [(fragment-atmosphere-clouds num-steps perlin-octaves cloud-octaves)])]
+                              :fragment [(fragment-atmosphere-clouds num-steps
+                                                                     (:perlin-octaves cloud-data)
+                                                                     (:cloud-octaves cloud-data))])]
     (use-program program)
     (uniform-sampler program "transmittance"    0)
     (uniform-sampler program "ray_scatter"      1)
@@ -277,13 +325,13 @@
            (uniform-sampler program (str "opacity" i) (+ i 7 num-steps)))
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
-    (uniform-float program "cloud_bottom" cloud-bottom)
-    (uniform-float program "cloud_top" cloud-top)
-    (uniform-float program "cloud_scale" cloud-scale)
-    (uniform-float program "detail_scale" detail-scale)
+    (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
+    (uniform-float program "cloud_top" (:cloud-top cloud-data))
+    (uniform-float program "cloud_scale" (:cloud-scale cloud-data))
+    (uniform-float program "detail_scale" (:detail-scale cloud-data))
     (uniform-float program "depth" depth)
-    (uniform-int program "cover_size" (:width cloud-cover))
-    (uniform-int program "noise_size" (:width bluenoise))
+    (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
+    (uniform-int program "noise_size" (:width (:bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "height_size" (:hyperdepth scatter))
@@ -295,29 +343,26 @@
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
-    (uniform-float program "cloud_multiplier" cloud-multiplier)
-    (uniform-float program "cover_multiplier" cover-multiplier)
-    (uniform-float program "cap" cap)
-    (uniform-float program "anisotropic" anisotropic)
+    (uniform-float program "cloud_multiplier" (:cloud-multiplier cloud-data))
+    (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
+    (uniform-float program "cap" (:cap cloud-data))
+    (uniform-float program "anisotropic" (:anisotropic cloud-data))
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
     (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
-    (uniform-float program "opacity_cutoff" opacity-cutoff)
+    (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     {:program program
      :transmittance transmittance
      :scatter scatter
      :mie mie
-     :worley worley
-     :perlin-worley perlin-worley
-     :bluenoise bluenoise
-     :cloud-cover cloud-cover}))
+     :cloud-data cloud-data}))
 
 (defn render-cloud-atmosphere
-  "Render clouds above horizon"
-  [{:keys [program transmittance scatter mie worley perlin-worley bluenoise cloud-cover]}
+  "Render clouds above horizon (not tested)"
+  [{:keys [program transmittance scatter mie cloud-data]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
@@ -338,12 +383,13 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 (:texture transmittance) 1 (:texture scatter) 2 (:texture mie) 3 (:texture worley) 4 (:texture perlin-worley)
-                   5 (:texture bluenoise) 6 (:texture cloud-cover)})
+    (use-textures {0 transmittance 1 scatter 2 mie 3 (:worley cloud-data) 4 (:perlin-worley cloud-data) 5 (:bluenoise cloud-data)
+                   6 (:cloud-cover cloud-data)})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
 (defn destroy-cloud-atmosphere-renderer
+  "Destroy cloud rendering OpenGL program (not tested)"
   [{:keys [program]}]
   (destroy-program program))

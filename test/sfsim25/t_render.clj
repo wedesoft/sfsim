@@ -923,6 +923,8 @@ void main(void)
                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
           (doseq [i (range 6)]
                  (get-float (float-cubemap->floats cubemap i) 0 0) => (float (inc i)))
+          (:width cubemap) => 1
+          (:height cubemap) => 1
           (destroy-texture cubemap))))
 
 (def fragment-cubemap-attachment
@@ -995,5 +997,17 @@ void main()
           (destroy-vertex-array-object vao1)
           (destroy-program program)
           (GL30/glDeleteFramebuffers stb))))) => (is-image "test/sfsim25/fixtures/render/stencil.png" 0.0))
+
+(fact "Size of 4D texture (represented using 2D texture)"
+      (with-invisible-window
+        (let [data (float-array (repeat (* 4 3 2 1 4) 0))
+              tex  (make-vector-texture-4d :linear :clamp
+                                           {:width 4 :height 3 :depth 2 :hyperdepth 1 :data data})]
+          (:width tex) => 4
+          (:height tex) => 3
+          (:depth tex) => 2
+          (:hyperdepth tex) => 1
+          (destroy-texture tex))))
+
 
 (GLFW/glfwTerminate)

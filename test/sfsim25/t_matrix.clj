@@ -1,11 +1,16 @@
 (ns sfsim25.t-matrix
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
+            [malli.dev.pretty :as pretty]
             [sfsim25.conftest :refer (roughly-matrix roughly-vector)]
             [fastmath.matrix :as fm]
             [fastmath.vector :as fv]
             [clojure.math :refer (sqrt PI)]
             [sfsim25.matrix :refer :all]
             [sfsim25.quaternion :refer (->Quaternion rotation)]))
+
+(mi/collect! {:ns ['sfsim25.matrix]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (def ca (/ (sqrt 3) 2))
 (def sa 0.5)
@@ -41,9 +46,9 @@
       (seq (pack-matrices [[(fv/vec3 1 2 3)] [(fv/vec3 4 5 6)]])) => [1.0 2.0 3.0 4.0 5.0 6.0])
 
 (facts "Convert z-coordinate to normalized device coordinate"
-       (z-to-ndc 10 40 40) => (roughly 0.0 1e-6)
-       (z-to-ndc 10 40 10) => (roughly 1.0 1e-6)
-       (z-to-ndc 10 40 20) => (roughly (/ 1 3) 1e-6))
+       (z-to-ndc 10.0 40.0 40.0) => (roughly 0.0 1e-6)
+       (z-to-ndc 10.0 40.0 10.0) => (roughly 1.0 1e-6)
+       (z-to-ndc 10.0 40.0 20.0) => (roughly (/ 1 3) 1e-6))
 
 (facts "Corners of OpenGL frustum"
        (let [m       (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
@@ -78,8 +83,8 @@
 
 (facts "Expand near portion of bounding box"
        (let [bbox {:bottomleftnear (fv/vec3 2 3 -5) :toprightfar (fv/vec3 7 11 -13)}]
-         (expand-bounding-box-near bbox 0) => bbox
-         (expand-bounding-box-near bbox 1) => {:bottomleftnear (fv/vec3 2 3 -4) :toprightfar (fv/vec3 7 11 -13)}))
+         (expand-bounding-box-near bbox 0.0) => bbox
+         (expand-bounding-box-near bbox 1.0) => {:bottomleftnear (fv/vec3 2 3 -4) :toprightfar (fv/vec3 7 11 -13)}))
 
 (facts "Scale and translate light box coordinates to normalized device coordinates"
        (let [m (shadow-box-to-ndc {:bottomleftnear (fv/vec3 2 3 -5) :toprightfar (fv/vec3 7 11 -13)})]
@@ -125,68 +130,69 @@
              extrinsics1     (fm/eye 4)
              extrinsics2     (transformation-matrix (rotation-x (/ PI 2)) (fv/vec3 0 0 0))
              light-direction (fv/vec3 0 1 0)]
-         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0)) (fv/vec4 0 750 -1000 1))
+         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0)) (fv/vec4 0 750 -1000 1))
          => (roughly-vector (fv/vec4 1 0 1 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0)) (fv/vec4 0 -750 -1000 1))
+         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0)) (fv/vec4 0 -750 -1000 1))
          => (roughly-vector (fv/vec4 1 0 0 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics2 light-direction 0)) (fv/vec4 0 1000 0 1))
+         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics2 light-direction 0.0)) (fv/vec4 0 1000 0 1))
          => (roughly-vector (fv/vec4 0 0 1 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics2 light-direction 0)) (fv/vec4 0 5 0 1))
+         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics2 light-direction 0.0)) (fv/vec4 0 5 0 1))
          => (roughly-vector (fv/vec4 0 0 0 1) 1e-6)
-         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics1 light-direction 0)) (fv/vec4 0 -750 -1000 1))
+         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics1 light-direction 0.0)) (fv/vec4 0 -750 -1000 1))
          => (roughly-vector (fv/vec4 1 0.5 0 1) 1e-6)
-         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics1 light-direction 0)) (fv/vec4 0 750 -1000 1))
+         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics1 light-direction 0.0)) (fv/vec4 0 750 -1000 1))
          => (roughly-vector (fv/vec4 1 0.5 1 1) 1e-6)
-         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics2 light-direction 0)) (fv/vec4 0 1000 0 1))
+         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics2 light-direction 0.0)) (fv/vec4 0 1000 0 1))
          => (roughly-vector (fv/vec4 0.5 0.5 1 1) 1e-6)
-         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics2 light-direction 500)) (fv/vec4 0 1500 0 1))
+         (fm/mulv (:shadow-map-matrix (shadow-matrices projection extrinsics2 light-direction 500.0)) (fv/vec4 0 1500 0 1))
          => (roughly-vector (fv/vec4 0.5 0.5 1 1) 1e-6)
-         (:depth (shadow-matrices projection extrinsics1 light-direction 0))
+         (:depth (shadow-matrices projection extrinsics1 light-direction 0.0))
          => (roughly 1500 1e-6)
-         (:depth (shadow-matrices projection extrinsics1 light-direction 1000))
+         (:depth (shadow-matrices projection extrinsics1 light-direction 1000.0))
          => (roughly 2500 1e-6)
-         (:scale (shadow-matrices projection extrinsics1 light-direction 0))
+         (:scale (shadow-matrices projection extrinsics1 light-direction 0.0))
          => (roughly 1497.5 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0 (/ 99 199) (/ 9 199)))
+         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0 (/ 99.0 199) (/ 9.0 199)))
                   (fv/vec4 0 0 -10 1))
          => (roughly-vector (fv/vec4 -1 0 0.5 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0 (/ 99 199) (/ 9 199)))
+         (fm/mulv (:shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0 (/ 99.0 199) (/ 9.0 199)))
                   (fv/vec4 0 0 -100 1))
          => (roughly-vector (fv/vec4 1 0 0.5 1) 1e-6)))
 
 (facts "Linear frustum split"
-       (split-linear 10 40 2 0) => 10.0
-       (split-linear 10 40 2 2) => 40.0
-       (split-linear 10 40 2 1) => 25.0)
+       (split-linear 10.0 40.0 2 0) => 10.0
+       (split-linear 10.0 40.0 2 2) => 40.0
+       (split-linear 10.0 40.0 2 1) => 25.0)
 
 (facts "Exponential frustum split"
-       (split-exponential 10 40 2 0) => 10.0
-       (split-exponential 10 40 2 2) => 40.0
-       (split-exponential 10 40 2 1) => 20.0)
+       (split-exponential 10.0 40.0 2 0) => 10.0
+       (split-exponential 10.0 40.0 2 2) => 40.0
+       (split-exponential 10.0 40.0 2 1) => 20.0)
 
 (facts "Mixed linear and exponential split"
-       (split-mixed 0 10 40 2 1) => 25.0
-       (split-mixed 1 10 40 2 1) => 20.0)
+       (split-mixed 0.0 10.0 40.0 2 1) => 25.0
+       (split-mixed 1.0 10.0 40.0 2 1) => 20.0
+       (split-list 0.0 10.0 40.0 2) => [10.0 25.0 40.0])
 
 (facts "Cascade of shadow matrices"
-       (let [near            10
-             far             40
+       (let [near            10.0
+             far             40.0
              projection      (projection-matrix 640 480 near far (* 0.5 PI))
              extrinsics      (fm/eye 4)
              light-direction (fv/vec3 0 1 0)]
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0 0 near far 2) 0))
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 0))
                   (fv/vec4 0 0 -10 1))
          => (roughly-vector (fv/vec4 -1 0 0.5 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0 0 near far 2) 0))
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 0))
                   (fv/vec4 0 0 -25 1))
          => (roughly-vector (fv/vec4 1 0 0.5 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0 1 near far 2) 0))
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 1.0 near far 2) 0))
                   (fv/vec4 0 0 -20 1))
          => (roughly-vector (fv/vec4 1 0 0.5 1) 1e-6)
-         (:depth (nth (shadow-matrix-cascade projection extrinsics light-direction 0 0 near far 2) 0))
+         (:depth (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 0))
          => (roughly 37.5 1e-6)
-         (:depth (nth (shadow-matrix-cascade projection extrinsics light-direction 10 0 near far 2) 0))
+         (:depth (nth (shadow-matrix-cascade projection extrinsics light-direction 10.0 0.0 near far 2) 0))
          => (roughly 47.5 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0 0 near far 2) 1))
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 1))
                   (fv/vec4 0 0 -25 1))
          => (roughly-vector (fv/vec4 -1 0 0.5 1) 1e-6)))

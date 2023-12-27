@@ -353,7 +353,7 @@
 
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
-  [& {:keys [num-steps albedo reflectivity opacity-cutoff num-opacity-layers shadow-size radius max-height specular amplification
+  [& {:keys [num-steps albedo reflectivity num-opacity-layers shadow-size radius max-height specular amplification
              transmittance scatter mie surface-radiance]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
@@ -375,7 +375,6 @@
     (uniform-int program "surface_height_size" (:height surface-radiance))
     (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
-    (uniform-float program "opacity_cutoff" opacity-cutoff)
     (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     (uniform-float program "radius" radius)
@@ -410,7 +409,7 @@
     (uniform-int program "window_width" window-width)
     (uniform-int program "window_height" window-height)
     (uniform-vector3 program "light_direction" light-direction)
-    (use-textures {0 (:texture transmittance) 1 (:texture scatter) 2 (:texture mie) 3 (:texture surface-radiance) 4 clouds})
+    (use-textures {0 transmittance 1 scatter 2 mie 3 surface-radiance 4 clouds})
     (use-textures (zipmap (drop 5 (range)) opacities))
     (render-quads vao)
     (destroy-vertex-array-object vao)))

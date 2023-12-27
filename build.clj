@@ -30,7 +30,7 @@
 
 (defn bluenoise
   "Generate 2D blue noise texture"
-  [& {:keys [size] :or {size 64}}]
+  [& {:keys [size] :or {size bn/noise-size}}]
   (let [n      (quot (* size size) 10)
         sigma  1.5
         dither (bn/blue-noise size n sigma)]
@@ -45,7 +45,7 @@
           worley-north (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
           worley-south (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
           worley-cover (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-cover.raw"))
-          cubemap      (cl/cloud-cover-cubemap :size 512
+          cubemap      (cl/cloud-cover-cubemap :size cl/cover-size
                                                :worley-size worley-size
                                                :worley-south worley-south
                                                :worley-north worley-north
