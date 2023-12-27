@@ -1,8 +1,13 @@
 (ns sfsim25.t-worley
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [fastmath.vector :refer (vec3)]
               [sfsim25.util :refer (dimension-count)]
               [sfsim25.worley :refer :all :as worley]))
+
+(mi/collect! {:ns ['sfsim25.worley]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (facts "Create a 3D grid with a random point in each cell"
        (map #(dimension-count (random-point-grid 1 1) %) (range 4)) => [1 1 1 3]
