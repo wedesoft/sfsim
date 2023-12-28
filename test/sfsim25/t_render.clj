@@ -822,10 +822,10 @@ void main(void)
 
 (fact "Shadow mapping integration test"
       (with-invisible-window
-        (let [projection     (projection-matrix 320 240 2 5 (to-radians 90))
+        (let [projection     (projection-matrix 320 240 2.0 5.0 (to-radians 90))
               transform      (eye 4)
               light-vector   (normalize (vec3 1 1 2))
-              shadow-mat     (shadow-matrices projection transform light-vector 1)
+              shadow-mat     (shadow-matrices projection transform light-vector 1.0)
               indices        [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices       [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
                               -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
@@ -875,11 +875,11 @@ void main(void)
 
 (fact "Shadow cascade integration test"
       (with-invisible-window
-        (let [projection     (projection-matrix 320 240 2 5 (to-radians 90))
+        (let [projection     (projection-matrix 320 240 2.0 5.0 (to-radians 90))
               transform      (eye 4)
               num-steps      1
               light-vector   (normalize (vec3 1 1 2))
-              shadow-mats    (shadow-matrix-cascade projection transform light-vector 1 0.5 2 5 num-steps)
+              shadow-mats    (shadow-matrix-cascade projection transform light-vector 1.0 0.5 2.0 5.0 num-steps)
               indices        [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices       [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
                               -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
