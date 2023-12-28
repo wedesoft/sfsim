@@ -4,7 +4,7 @@
             [fastmath.matrix :refer (transpose mulv)]
             [fastmath.vector :refer (vec3 add sub mag dot mult)]
             [malli.core :as m]
-            [sfsim25.matrix :as matrix]
+            [sfsim25.matrix :refer (oriented-matrix fvec3)]
             [sfsim25.ray :refer (ray)]
             [sfsim25.util :refer (sqr N)])
   (:import [fastmath.vector Vec3]))
@@ -12,17 +12,17 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def sphere (m/schema [:map [::centre matrix/vec3] [::radius :double]]))
+(def sphere (m/schema [:map [::centre fvec3] [::radius :double]]))
 
 (defn height
   "Determine height above surface of sphere"
-  {:malli/schema [:=> [:cat sphere matrix/vec3] :double]}
+  {:malli/schema [:=> [:cat sphere fvec3] :double]}
   [{:sfsim25.sphere/keys [centre radius]} point]
   (- (mag (sub point centre)) radius))
 
 (defn- ray-sphere-determinant
   "Get determinant for intersection of ray with sphere"
-  {:malli/schema [:=> [:cat matrix/vec3 :double matrix/vec3 matrix/vec3] :double]}
+  {:malli/schema [:=> [:cat fvec3 :double fvec3 fvec3] :double]}
   [centre radius origin direction]
   (let [offset        (sub origin centre)
         direction-sqr (dot direction direction)]
@@ -71,7 +71,7 @@
   [theta-steps phi-steps theta-range normal fun]
   (let [samples (map #(* theta-range (/ (+ 0.5 %) theta-steps)) (range theta-steps))
         delta2  (/ theta-range theta-steps 2)
-        mat     (transpose (matrix/oriented-matrix normal))]
+        mat     (transpose (oriented-matrix normal))]
     (reduce add
       (map (fn [theta]
         (let [factor    (- (cos (- theta delta2)) (cos (+ theta delta2)))
@@ -90,13 +90,13 @@
 
 (defn integral-half-sphere
   "Integrate over half unit sphere oriented along normal"
-  {:malli/schema [:=> [:cat N matrix/vec3 [:=> [:cat matrix/vec3] [:vector :double]]] [:vector :double]]}
+  {:malli/schema [:=> [:cat N fvec3 [:=> [:cat fvec3] [:vector :double]]] [:vector :double]]}
   [steps normal fun]
   (spherical-integral (bit-shift-right steps 2) steps (/ PI 2) normal fun))
 
 (defn integral-sphere
   "Integrate over a full unit sphere"
-  {:malli/schema [:=> [:cat N matrix/vec3 [:=> [:cat matrix/vec3] [:vector :double]]] [:vector :double]]}
+  {:malli/schema [:=> [:cat N fvec3 [:=> [:cat fvec3] [:vector :double]]] [:vector :double]]}
   [steps normal fun]
   (spherical-integral (bit-shift-right steps 1) steps PI normal fun))
 

@@ -3,7 +3,7 @@
     (:require [malli.core :as m]
               [fastmath.vector :refer (vec3 add sub mag)]
               [sfsim25.util :refer (make-progress-bar tick-and-print dimension-count N N0)]
-              [sfsim25.matrix :as matrix]
+              [sfsim25.matrix :refer (fvec3)]
               [com.climate.claypoole :refer (pfor ncpus)]))
 
 (set! *unchecked-math* true)
@@ -11,7 +11,7 @@
 
 (def worley-size 64)
 
-(def grid (m/schema [:vector [:vector [:vector matrix/vec3]]]))
+(def grid (m/schema [:vector [:vector [:vector fvec3]]]))
 
 (defn random-point-grid
   "Create a 3D grid with a random point in each cell"
@@ -40,7 +40,7 @@
 
 (defn extract-point-from-grid
   "Extract the random point from the given grid cell"
-  {:malli/schema [:=> [:cat grid N :int :int :int] matrix/vec3]}
+  {:malli/schema [:=> [:cat grid N :int :int :int] fvec3]}
   [grid size k j i]
   (let [[i-clip x-offset] (clipped-index-and-offset grid size 2 i)
         [j-clip y-offset] (clipped-index-and-offset grid size 1 j)
@@ -49,7 +49,7 @@
 
 (defn closest-distance-to-point-in-grid
   "Return distance to closest point in 3D grid"
-  {:malli/schema [:=> [:cat grid N N matrix/vec3] :double]}
+  {:malli/schema [:=> [:cat grid N N fvec3] :double]}
   [grid divisions size point]
   (let [cellsize (/ size divisions)
         [x y z]  point

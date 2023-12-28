@@ -13,35 +13,35 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def mat3 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 3))]]))
-(def mat4 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 4))]]))
-(def vec3 (m/schema [:tuple :double :double :double]))
-(def vec4 (m/schema [:tuple :double :double :double :double]))
+(def fmat3 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 3))]]))
+(def fmat4 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 4))]]))
+(def fvec3 (m/schema [:tuple :double :double :double]))
+(def fvec4 (m/schema [:tuple :double :double :double :double]))
 
 (defn rotation-x
   "Rotation matrix around x-axis"
-  {:malli/schema [:=> [:cat :double] mat3]}
+  {:malli/schema [:=> [:cat :double] fmat3]}
   [angle]
   (let [ca (cos angle) sa (sin angle)]
     (fm/mat3x3 1 0 0, 0 ca (- sa), 0 sa ca)))
 
 (defn rotation-y
   "Rotation matrix around y-axis"
-  {:malli/schema [:=> [:cat :double] mat3]}
+  {:malli/schema [:=> [:cat :double] fmat3]}
   [angle]
   (let [ca (cos angle) sa (sin angle)]
     (fm/mat3x3 ca 0 sa, 0 1 0, (- sa) 0 ca)))
 
 (defn rotation-z
   "Rotation matrix around z-axis"
-  {:malli/schema [:=> [:cat :double] mat3]}
+  {:malli/schema [:=> [:cat :double] fmat3]}
   [angle]
   (let [ca (cos angle) sa (sin angle)]
     (fm/mat3x3 ca (- sa) 0, sa ca 0, 0 0 1)))
 
 (defn quaternion->matrix
   "Convert rotation quaternion to rotation matrix"
-  {:malli/schema [:=> [:cat quaternion] mat3]}
+  {:malli/schema [:=> [:cat quaternion] fmat3]}
   [q]
   (let [a (rotate-vector q (fv/vec3 1 0 0))
         b (rotate-vector q (fv/vec3 0 1 0))
@@ -52,13 +52,13 @@
 
 (defn project
   "Project homogeneous coordinate to cartesian"
-  {:malli/schema [:=> [:cat vec4] vec3]}
+  {:malli/schema [:=> [:cat fvec4] fvec3]}
   [v]
   (fv/div (fv/vec3 (v 0) (v 1) (v 2)) (v 3)))
 
 (defn transformation-matrix
   "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
-  {:malli/schema [:=> [:cat mat3 vec3] mat4]}
+  {:malli/schema [:=> [:cat fmat3 fvec3] fmat4]}
   [m v]
   (fm/mat4x4 (m 0 0) (m 0 1) (m 0 2) (v 0)
              (m 1 0) (m 1 1) (m 1 2) (v 1)
@@ -67,7 +67,7 @@
 
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"
-  {:malli/schema [:=> [:cat :int :int :double :double :double] mat4]}
+  {:malli/schema [:=> [:cat :int :int :double :double :double] fmat4]}
   [width height near far field-of-view]
   (let [dx (/ 1.0 (tan (* 0.5 field-of-view)))
         dy (-> dx (* width) (/ height))
@@ -94,7 +94,7 @@
 
 (defn frustum-corners
   "Determine corners of OpenGL frustum (or part of frustum)"
-  {:malli/schema [:=> [:cat mat4 [:? [:cat :double :double]]] [:vector vec4]]}
+  {:malli/schema [:=> [:cat fmat4 [:? [:cat :double :double]]] [:vector fvec4]]}
   ([projection-matrix]
    (frustum-corners projection-matrix 1.0 0.0))
   ([projection-matrix ndc1 ndc2]
@@ -111,7 +111,7 @@
 
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
-  {:malli/schema [:=> [:cat [:sequential vec4]] [:map [:bottomleftnear vec3] [:toprightfar vec3]]]}
+  {:malli/schema [:=> [:cat [:sequential fvec4]] [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]]}
   [points]
   (let [x (map #(/ (% 0) (% 3)) points)
         y (map #(/ (% 1) (% 3)) points)
@@ -121,14 +121,14 @@
 
 (defn expand-bounding-box-near
   "Enlarge bounding box towards positive z (near)"
-  {:malli/schema [:=> [:cat [:map [:bottomleftnear vec3] [:toprightfar vec3]] :double]
-                      [:map [:bottomleftnear vec3] [:toprightfar vec3]]]}
+  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]] :double]
+                      [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]]}
   [bbox z-expand]
   (update bbox :bottomleftnear fv/add (fv/vec3 0 0 z-expand)))
 
 (defn shadow-box-to-ndc
   "Scale and translate light box coordinates to normalized device coordinates"
-  {:malli/schema [:=> [:cat [:map [:bottomleftnear vec3] [:toprightfar vec3]]] mat4]}
+  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fmat4]}
   [{:keys [bottomleftnear toprightfar]}]
   (let [left   (bottomleftnear 0)
         right  (toprightfar 0)
@@ -180,18 +180,18 @@
 
 (defn- bounding-box-for-rotated-frustum
   "Determine bounding box for rotated frustum"
-  {:malli/schema [:=> [:cat mat4 mat4 mat4 :double :double :double]]}
+  {:malli/schema [:=> [:cat fmat4 fmat4 fmat4 :double :double :double]]}
   [extrinsics light-matrix projection-matrix longest-shadow ndc1 ndc2]
   (let [corners         (frustum-corners projection-matrix ndc1 ndc2)
         rotated-corners (transform-point-list extrinsics corners)
         light-corners   (transform-point-list light-matrix rotated-corners)]
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
-(def shadow-box (m/schema [:map [:shadow-ndc-matrix mat4] [:shadow-map-matrix mat4] [:scale :double] [:depth :double]]))
+(def shadow-box (m/schema [:map [:shadow-ndc-matrix fmat4] [:shadow-map-matrix fmat4] [:scale :double] [:depth :double]]))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
-  {:malli/schema [:=> [:cat mat4 mat4 vec3 :double [:? [:cat :double :double]]] shadow-box]}
+  {:malli/schema [:=> [:cat fmat4 fmat4 fvec3 :double [:? [:cat :double :double]]] shadow-box]}
   ([projection-matrix extrinsics light-vector longest-shadow]
    (shadow-matrices projection-matrix extrinsics light-vector longest-shadow 1.0 0.0))
   ([projection-matrix extrinsics light-vector longest-shadow ndc1 ndc2]
@@ -233,7 +233,7 @@
 
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices"
-  {:malli/schema [:=> [:cat mat4 mat4 vec3 :double :double :double :double N] [:vector shadow-box]]}
+  {:malli/schema [:=> [:cat fmat4 fmat4 fvec3 :double :double :double :double N] [:vector shadow-box]]}
   [projection-matrix extrinsics light-vector longest-shadow mix near far num-steps]
   (mapv (fn [idx]
             (let [ndc1 (z-to-ndc near far (split-mixed mix near far num-steps idx))

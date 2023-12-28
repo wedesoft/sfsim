@@ -112,7 +112,7 @@ void main()
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
           (use-program program)
-          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform diffuse]}]
@@ -140,7 +140,7 @@ void main()
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
           (use-program program)
-          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
                         (fn [{:keys [transform diffuse]}]
@@ -223,7 +223,7 @@ void main()
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
           (use-program program)
-          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (uniform-sampler program "colors" 0)
           (render-scene (constantly program) moved-scene
@@ -289,7 +289,7 @@ void main()
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
           (clear (vec3 0 0 0) 0)
           (use-program program)
-          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
           (uniform-sampler program "colors" 0)
           (uniform-sampler program "normals" 1)
@@ -325,7 +325,7 @@ void main()
           (clear (vec3 0 0 0) 0)
           (doseq [program [program-cube program-dice]]
                  (use-program program)
-                 (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10 (to-radians 60)))
+                 (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                  (uniform-vector3 program "light" (normalize (vec3 1 2 3))))
           (uniform-sampler program-dice "colors" 0)
           (render-scene program-selection moved-scene render-model)

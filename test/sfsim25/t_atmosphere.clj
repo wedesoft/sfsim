@@ -751,14 +751,14 @@ vec4 cloud_overlay()
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/atmosphere/" ?result) 0.01))
          ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?cloud ?result
-         0  0               (- 0 radius max-height 1) 0           0   0         -1            0.0    "sun.png"
-         0  0               (- 0 radius max-height 1) 0           0   0          1            0.0    "space.png"
-         0  0               (* 2.5 radius)            0           0   1          0            0.0    "haze.png"
-         0  radius          (* 0.5 radius)            0           0   0         -1            0.0    "sunset.png"
-         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) 0.0    "sunset2.png"
-         0  0               (- 0 radius 2)            0           0   0         -1            0.0    "inside.png"
+         0  0               (- 0 radius max-height 1) 0.0         0   0         -1            0.0    "sun.png"
+         0  0               (- 0 radius max-height 1) 0.0         0   0          1            0.0    "space.png"
+         0  0               (* 2.5 radius)            0.0         0   1          0            0.0    "haze.png"
+         0  radius          (* 0.5 radius)            0.0         0   0         -1            0.0    "sunset.png"
+         0  (+ radius 1000) 0                         0.0         0   (sin 0.1) (- (cos 0.1)) 0.0    "sunset2.png"
+         0  0               (- 0 radius 2)            0.0         0   0         -1            0.0    "inside.png"
          0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            0.0    "yview.png"
-         0  (+ radius 1000) 0                         0           0   (sin 0.1) (- (cos 0.1)) 0.5    "cloudy.png")
+         0  (+ radius 1000) 0                         0.0         0   (sin 0.1) (- (cos 0.1)) 0.5    "cloudy.png")
 
 (def phase-probe
   (template/fn [g mu] "#version 410 core
