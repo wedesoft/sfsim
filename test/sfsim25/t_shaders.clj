@@ -1,5 +1,7 @@
 (ns sfsim25.t-shaders
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
+            [malli.dev.pretty :as pretty]
             [sfsim25.conftest :refer (roughly-vector shader-test)]
             [comb.template :as template]
             [clojure.math :refer (cos sin PI sqrt)]
@@ -10,6 +12,9 @@
             [sfsim25.matrix :refer (orthogonal transformation-matrix)]
             [sfsim25.util :refer (get-float get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl.glfw GLFW]))
+
+(mi/collect! {:ns ['sfsim25.shaders]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 

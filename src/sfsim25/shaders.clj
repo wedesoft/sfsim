@@ -61,6 +61,7 @@
 
 (defn interpolate-cubemap
   "Perform interpolation on cubemap avoiding seams"
+  {:malli/schema [:=> [:cat :string :string :string] [:vector :string]]}
   [result-type method-name selector]
   [convert-cubemap-index
    (template/eval (slurp "resources/shaders/core/interpolate-cubemap.glsl")
@@ -185,6 +186,7 @@
 
 (defn shadow-lookup-shaders
   "Shaders for performing lookups in the cascaded shadow map"
+  {:malli/schema [:=> [:cat :int] [:vector :string]]}
   [num-steps]
   [(shadow-cascade-lookup num-steps "average_shadow") shadow-lookup convert-shadow-index
    (percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])])

@@ -246,7 +246,7 @@
                    extrinsics   (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
                    splits       (split-list mix z-near z-far num-steps)
-                   scatter-am   (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic))
+                   scatter-am   (+ (* anisotropic (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0)) (- 1 anisotropic))
                    cos-light    (/ (dot light-dir @position) (mag @position))
                    sin-light    (sqrt (- 1 (sqr cos-light)))
                    opacity-step (* (+ cos-light (* 10 sin-light)) @opacity-base)

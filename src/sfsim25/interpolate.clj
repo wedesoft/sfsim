@@ -1,12 +1,14 @@
 (ns sfsim25.interpolate
     "N-dimensional interpolation"
     (:require [fastmath.vector :refer (add mult)]
+              [malli.core :as m]
               [clojure.math :refer (floor)]
-              [sfsim25.util :refer (comp*)])
-    (:import [fastmath.protocols VectorProto])
-    )
+              [sfsim25.util :refer (comp* N)])
+    (:import [fastmath.protocols VectorProto]))
 
 (set! *unchecked-math* true)
+
+(def interpolation-space (m/schema [:map [::shape [:vector N]] [::forward fn?] [::backward fn?]]))
 
 (defn- linear-forward
   "Linear mapping onto interpolation table of given shape"
@@ -33,7 +35,7 @@
 (defn make-lookup-table
   "Create n-dimensional lookup table using given function to sample and inverse mapping"
   ^clojure.lang.PersistentVector [fun space]
-  (sample-function (fn [args] (apply fun (apply (::backward space) args))) (::shape space) [] pmap))
+  (sample-function (fn [args] (apply fun (apply (::backward space) (map double args)))) (::shape space) [] pmap))
 
 (defn clip
   "Clip a value to [0, size - 1]"

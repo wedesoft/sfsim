@@ -2,39 +2,56 @@
     "Functions for computing the atmosphere"
     (:require [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
               [fastmath.matrix :refer (inverse)]
+              [malli.core :as m]
               [clojure.math :refer (exp pow PI sqrt log)]
-              [sfsim25.ray :refer (integral-ray)]
-              [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection)]
+              [sfsim25.matrix :refer (fvec3)]
+              [sfsim25.ray :refer (integral-ray ray)]
+              [sfsim25.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
+              [sfsim25.interpolate :refer (interpolation-space)]
               [sfsim25.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                       uniform-vector3 use-textures destroy-program make-vertex-array-object
                                       destroy-vertex-array-object render-quads)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer (third fourth limit-quot sqr)])
+              [sfsim25.util :refer (third fourth limit-quot sqr N)])
     (:import [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
 
+(def scatter (m/schema [:map [:sfsim25.atmosphere/scatter-base fvec3]
+                             [:sfsim25.atmosphere/scatter-scale :double]
+                             [:sfsim25.atmosphere/scatter-quotient {:optional true} :double]
+                             [:sfsim25.atmosphere/scatter-g {:optional true} :double]]))
+
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
-  (^Vec3 [^clojure.lang.IPersistentMap {:sfsim25.atmosphere/keys [scatter-base scatter-scale]} ^double height]
-         (mult scatter-base (-> height (/ scatter-scale) - exp)))
-  (^Vec3 [^clojure.lang.IPersistentMap planet ^clojure.lang.IPersistentMap component ^Vec3 x]
-         (scattering component (height planet x))))
+  {:malli/schema [:function [:=> [:cat scatter :double] fvec3]
+                            [:=> [:cat sphere scatter fvec3] fvec3]]}
+  ([{:sfsim25.atmosphere/keys [scatter-base scatter-scale]} height]
+   (mult scatter-base (-> height (/ scatter-scale) - exp)))
+  ([planet component x]
+   (scattering component (height planet x))))
 
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
-  ^Vec3 [^clojure.lang.IPersistentMap scattering-type ^double height]
-  (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1)))
+  {:malli/schema [:=> [:cat scatter :double] fvec3]}
+  [scattering-type height]
+  (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1.0)))
 
 (defn phase
   "Mie scattering phase function by Henyey-Greenstein depending on assymetry g and mu = cos(theta)"
+  {:malli/schema [:=> [:cat [:map [:sfsim25.atmosphere/scatter-g {:optional true} :double]] :double] :double]}
   [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
   (let [scatter-g-sqr (sqr scatter-g)]
     (/ (* 3 (- 1 scatter-g-sqr) (+ 1 (sqr mu)))
        (* 8 PI (+ 2 scatter-g-sqr) (pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
 
+(def atmosphere (m/schema [:map [:sfsim25.sphere/centre fvec3]
+                                [:sfsim25.sphere/radius :double]
+                                [:sfsim25.atmosphere/height :double]]))
+
 (defn atmosphere-intersection
   "Get intersection of ray with artificial limit of atmosphere"
+  {:malli/schema [:=> [:cat atmosphere ray] fvec3]}
   [{:sfsim25.sphere/keys [centre radius] :as planet} ray]
   (let [height                    (:sfsim25.atmosphere/height planet)
         atmosphere                #:sfsim25.sphere{:centre centre :radius (+ radius height)}
@@ -43,17 +60,20 @@
 
 (defn surface-intersection
   "Get intersection of ray with surface of planet or nearest point if there is no intersection"
+  {:malli/schema [:=> [:cat sphere ray] fvec3]}
   [planet ray]
   (let [{:sfsim25.intersection/keys [distance]} (ray-sphere-intersection planet ray)]
     (add (:sfsim25.ray/origin ray) (mult (:sfsim25.ray/direction ray) distance))))
 
 (defn surface-point?
   "Check whether a point is near the surface or near the edge of the atmosphere"
+  {:malli/schema [:=> [:cat atmosphere fvec3] :boolean]}
   [planet point]
   (< (* 2 (height planet point)) (:sfsim25.atmosphere/height planet)))
 
 (defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
+  {:malli/schema [:=> [:cat sphere fvec3 fvec3] :boolean]}
   [planet point direction]
   (let [norm-point           (mag point)
         sin-elevation-radius (dot direction point)
@@ -62,6 +82,7 @@
 
 (defn ray-extremity
   "Get intersection with surface of planet or artificial limit of atmosphere assuming that ray starts inside atmosphere"
+  {:malli/schema [:=> [:cat atmosphere ray] fvec3]}
   [planet ray]
   (if (is-above-horizon? planet (:sfsim25.ray/origin ray) (:sfsim25.ray/direction ray))
     (atmosphere-intersection planet ray)
@@ -69,6 +90,8 @@
 
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
+  {:malli/schema [:function [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3] fvec3]
+                            [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 :boolean] fvec3]]}
   ([planet scatter steps x x0]
    (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
      (-> (integral-ray #:sfsim25.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub fv/exp)))
@@ -78,6 +101,7 @@
 
 (defn surface-radiance-base
   "Compute scatter-free radiation emitted from surface of planet (E0) depending on position of sun"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 fvec3] fvec3]}
   [planet scatter steps intensity x light-direction]
   (let [normal (normalize (sub x (:sfsim25.sphere/centre planet)))]
     (mult (emult (transmittance planet scatter steps x light-direction true) intensity)
@@ -85,16 +109,19 @@
 
 (defn- in-scattering-component
   "Determine amount of scattering for a scattering component, view direction, and light direction"
+  {:malli/schema [:=> [:cat sphere scatter fvec3 fvec3 fvec3] fvec3]}
   [planet component x view-direction light-direction]
   (mult (scattering planet component x) (phase component (dot view-direction light-direction))))
 
 (defn- overall-in-scattering
   "Determine overall amount of in-scattering for multiple scattering components"
+  {:malli/schema [:=> [:cat sphere [:vector scatter] fvec3 fvec3 fvec3] fvec3]}
   [planet scatter x view-direction light-direction]
   (apply add (map #(in-scattering-component planet % x view-direction light-direction) scatter)))
 
 (defn- filtered-sun-light
   "Determine amount of incoming direct sun light"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 fvec3] fvec3]}
   [planet scatter steps x light-direction intensity]
   (if (is-above-horizon? planet x light-direction)
     (emult intensity (transmittance planet scatter steps x light-direction true))
@@ -102,28 +129,33 @@
 
 (defn- overall-point-scatter
   "Compute single-scatter components of light at a point and given direction in atmosphere"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] [:vector scatter] N fvec3 fvec3 fvec3 fvec3] fvec3]}
   [planet scatter components steps intensity x view-direction light-direction]
   (emult (overall-in-scattering planet components x view-direction light-direction)
          (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-component
   "Compute single-scatter component of light at a point and given direction in atmosphere"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] scatter N fvec3 fvec3 fvec3 fvec3 :boolean] fvec3]}
   [planet scatter component steps intensity x view-direction light-direction _above-horizon]
   (overall-point-scatter planet scatter [component] steps intensity x view-direction light-direction))
 
 (defn strength-component
   "Compute scatter strength of component of light at a point and given direction in atmosphere"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] scatter N fvec3 fvec3 fvec3 fvec3 :boolean] fvec3]}
   [planet scatter component steps intensity x _view-direction light-direction _above-horizon]
   (emult (scattering planet component x)
          (filtered-sun-light planet scatter steps x light-direction intensity)))
 
 (defn point-scatter-base
   "Compute total single-scatter in-scattering of light at a point and given direction in atmosphere (J0)"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 fvec3 fvec3 :boolean] fvec3]}
   [planet scatter steps intensity x view-direction light-direction _above-horizon]
   (overall-point-scatter planet scatter scatter steps intensity x view-direction light-direction))
 
 (defn ray-scatter
   "Compute in-scattering of light from a given direction (S) using point scatter function (J)"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] N fn? fvec3 fvec3 fvec3 :boolean] fvec3]}
   [planet scatter steps point-scatter x view-direction light-direction above-horizon]
   (let [intersection (if above-horizon atmosphere-intersection surface-intersection)
         point        (intersection planet #:sfsim25.ray{:origin x :direction view-direction})
@@ -133,6 +165,7 @@
 
 (defn point-scatter
   "Compute in-scattering of light at a point and given direction in atmosphere (J) plus light received from surface (E)"
+  {:malli/schema [:=> [:cat atmosphere [:vector scatter] fn? fn? fvec3 N N fvec3 fvec3 fvec3 :boolean] fvec3]}
   [planet scatter ray-scatter surface-radiance _intensity sphere-steps ray-steps x view-direction light-direction _above-horizon]
   (let [normal        (normalize (sub x (:sfsim25.sphere/centre planet)))]
     (integral-sphere sphere-steps
@@ -152,17 +185,20 @@
 
 (defn surface-radiance
   "Integrate over half sphere to get surface radiance E(S) depending on ray scatter"
+  {:malli/schema [:=> [:cat atmosphere fn? N fvec3 fvec3] fvec3]}
   [planet ray-scatter steps x light-direction]
   (let [normal (normalize (sub x (:sfsim25.sphere/centre planet)))]
     (integral-half-sphere steps normal #(mult (ray-scatter x % light-direction true) (dot % normal)))))
 
 (defn horizon-distance
   "Distance from point with specified radius to horizon of planet"
+  {:malli/schema [:=> [:cat sphere :double] :double]}
   [planet radius]
   (sqrt (max 0.0 (- (sqr radius) (sqr (:sfsim25.sphere/radius planet))))))
 
 (defn elevation-to-index
   "Convert elevation to index depending on height"
+  {:malli/schema [:=> [:cat atmosphere N fvec3 fvec3 :boolean] :double]}
   [planet size point direction above-horizon]
   (let [radius        (mag point)
         ground-radius (:sfsim25.sphere/radius planet)
@@ -178,6 +214,7 @@
 
 (defn index-to-elevation
   "Convert index and radius to elevation"
+  {:malli/schema [:=> [:cat atmosphere N :double :double] [:tuple fvec3 :boolean]]}
   [planet size radius index]
   (let [ground-radius (:sfsim25.sphere/radius planet)
         top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
@@ -194,6 +231,7 @@
 
 (defn height-to-index
   "Convert height of point to index"
+  {:malli/schema [:=> [:cat atmosphere N fvec3] :double]}
   [planet size point]
   (let [radius     (:sfsim25.sphere/radius planet)
         max-height (:sfsim25.atmosphere/height planet)]
@@ -201,6 +239,7 @@
 
 (defn index-to-height
   "Convert index to point with corresponding height"
+  {:malli/schema [:=> [:cat atmosphere N :double] fvec3]}
   [planet size index]
   (let [radius       (:sfsim25.sphere/radius planet)
         max-height   (:sfsim25.atmosphere/height planet)
@@ -210,6 +249,7 @@
 
 (defn- transmittance-forward
   "Forward transformation for interpolating transmittance function"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat fvec3 fvec3 :boolean] [:tuple :double :double]]]}
   [planet shape]
   (fn [point direction above-horizon]
       (let [height-index    (height-to-index planet (first shape) point)
@@ -218,6 +258,7 @@
 
 (defn- transmittance-backward
   "Backward transformation for looking up transmittance values"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat :double :double] [:tuple fvec3 fvec3 :boolean]]]}
   [planet shape]
   (fn [height-index elevation-index]
       (let [point                     (index-to-height planet (first shape) height-index)
@@ -226,6 +267,7 @@
 
 (defn transmittance-space
   "Create transformations for interpolating transmittance function"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N]] interpolation-space]}
   [planet shape]
   #:sfsim25.interpolate{:shape shape
                         :forward (transmittance-forward planet shape)
@@ -233,17 +275,20 @@
 
 (defn sun-elevation-to-index
   "Convert sun elevation to index"
+  {:malli/schema [:=> [:cat N fvec3 fvec3] :double]}
   [size point light-direction]
   (let [sin-elevation (/ (dot point light-direction) (mag point))]
     (* (dec size) (max 0.0 (/ (- 1 (exp (- 0 (* 3 sin-elevation) 0.6))) (- 1 (exp -3.6)))))))
 
 (defn index-to-sin-sun-elevation
   "Convert index to sinus of sun elevation"
+  {:malli/schema [:=> [:cat N :double] :double]}
   [size index]
   (/ (+ (log (- 1 (* (/ index (dec size)) (- 1 (exp -3.6))))) 0.6) -3))
 
 (defn- surface-radiance-forward
   "Forward transformation for interpolating surface-radiance function"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat fvec3 fvec3] [:tuple :double :double]]]}
   [planet shape]
   (fn [point direction]
       (let [height-index        (height-to-index planet (first shape) point)
@@ -252,6 +297,7 @@
 
 (defn- surface-radiance-backward
   "Backward transformation for looking up surface-radiance values"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat :double :double] [:tuple fvec3 fvec3]]]}
   [planet shape]
   (fn [height-index sun-elevation-index]
       (let [point             (index-to-height planet (first shape) height-index)
@@ -262,6 +308,7 @@
 
 (defn surface-radiance-space
   "Create transformations for interpolating surface-radiance function"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N]] interpolation-space]}
   [planet shape]
   #:sfsim25.interpolate{:shape shape
                         :forward (surface-radiance-forward planet shape)
@@ -269,11 +316,13 @@
 
 (defn sun-angle-to-index
   "Convert sun and viewing direction angle to index"
+  {:malli/schema [:=> [:cat N fvec3 fvec3] :double]}
   [size direction light-direction]
   (* (dec size) (/ (+ 1 (dot direction light-direction)) 2)))
 
 (defn index-to-sun-direction
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
+  {:malli/schema [:=> [:cat N fvec3 :double :double] fvec3]}
   [size direction sin-sun-elevation index]
   (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
         max-sun-1    (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
@@ -283,6 +332,8 @@
 
 (defn- ray-scatter-forward
   "Forward transformation for interpolating ray scatter function"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N N N]]
+                      [:=> [:cat fvec3 fvec3 fvec3 :boolean] [:tuple :double :double :double :double]]]}
   [planet shape]
   (fn [point direction light-direction above-horizon]
       (let [height-index        (height-to-index planet (first shape) point)
@@ -293,6 +344,8 @@
 
 (defn- ray-scatter-backward
   "Backward transformation for interpolating ray scatter function"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N N N]]
+                      [:=> [:cat :double :double :double :double] [:tuple fvec3 fvec3 fvec3 :boolean]]]}
   [planet shape]
   (fn [height-index elevation-index sun-elevation-index sun-angle-index]
       (let [point                     (index-to-height planet (first shape) height-index)
@@ -303,6 +356,7 @@
 
 (defn ray-scatter-space
   "Create transformation for interpolating ray scatter function"
+  {:malli/schema [:=> [:cat atmosphere [:tuple N N N N]] interpolation-space]}
   [planet shape]
   #:sfsim25.interpolate {:shape shape :forward (ray-scatter-forward planet shape) :backward (ray-scatter-backward planet shape)})
 
@@ -353,6 +407,7 @@
 
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
+  {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [num-steps albedo reflectivity num-opacity-layers shadow-size radius max-height specular amplification
              transmittance scatter mie surface-radiance]}]
   (let [program (make-program :vertex [vertex-atmosphere]
@@ -389,6 +444,7 @@
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
+  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program transmittance scatter mie surface-radiance]}
    & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height light-direction clouds
              opacities z-far]}]
@@ -416,6 +472,7 @@
 
 (defn destroy-atmosphere-renderer
   "Destroy atmosphere renderer (untested)"
+  {:malli/schema [:=> [:cat :map] :nil]}
   [{:keys [program]}]
   (destroy-program program))
 
