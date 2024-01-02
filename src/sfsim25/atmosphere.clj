@@ -16,6 +16,7 @@
     (:import [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 (def scatter (m/schema [:map [:sfsim25.atmosphere/scatter-base fvec3]
                              [:sfsim25.atmosphere/scatter-scale :double]
@@ -476,4 +477,5 @@
   [{:keys [program]}]
   (destroy-program program))
 
+(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
