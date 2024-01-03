@@ -30,14 +30,14 @@
             normals    {:width color-tilesize :height color-tilesize :data (float-array (* 3 (sqr color-tilesize)))}
             center     (tile-center k out-level b a radius)]
         (doseq [v (range surface-tilesize) u (range surface-tilesize)]
-          (let [j                 (cube-coordinate out-level surface-tilesize b v)
-                i                 (cube-coordinate out-level surface-tilesize a u)
+          (let [j                 (cube-coordinate out-level surface-tilesize b (double v))
+                i                 (cube-coordinate out-level surface-tilesize a (double u))
                 p                 (cube-map k j i)
                 point             (project-onto-globe p (min 4 in-level) width radius)]
             (set-vector3! surface v u (sub point center))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
-          (let [j                 (cube-coordinate out-level color-tilesize b v)
-                i                 (cube-coordinate out-level color-tilesize a u)
+          (let [j                 (cube-coordinate out-level color-tilesize b (double v))
+                i                 (cube-coordinate out-level color-tilesize a (double u))
                 p                 (cube-map k j i)
                 point             (project-onto-globe p (min 4 in-level) width radius)
                 [lon lat _height] (cartesian->geodetic point radius)
