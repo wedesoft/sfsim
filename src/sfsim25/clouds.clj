@@ -329,7 +329,7 @@
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
+             num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps
                                                                      (:perlin-octaves cloud-data)

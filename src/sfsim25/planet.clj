@@ -128,7 +128,7 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
+             num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]

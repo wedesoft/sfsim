@@ -3,8 +3,7 @@
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
             [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (make-window destroy-window clear destroy-texture generate-mipmap make-float-cubemap
-                                    make-float-texture-2d make-float-texture-3d make-vector-texture-2d make-vector-texture-4d
+            [sfsim25.render :refer (make-window destroy-window clear destroy-texture make-vector-texture-2d make-vector-texture-4d
                                     onscreen-render texture-render-color-depth)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]

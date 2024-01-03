@@ -8,8 +8,7 @@
   (:import [java.io ByteArrayOutputStream]
            [java.nio DirectByteBuffer ByteBuffer ByteOrder]
            [org.lwjgl BufferUtils]
-           [org.lwjgl.stb STBImage STBImageWrite]
-           [fastmath.vector Vec3 Vec4]))
+           [org.lwjgl.stb STBImage STBImageWrite]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
