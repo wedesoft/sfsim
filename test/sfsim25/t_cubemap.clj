@@ -1,5 +1,7 @@
 (ns sfsim25.t-cubemap
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
+            [malli.dev.pretty :as pretty]
             [sfsim25.conftest :refer (roughly-vector)]
             [fastmath.vector :refer (vec3 add mult)]
             [clojure.math :refer (sqrt PI)]
@@ -7,65 +9,68 @@
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [fastmath.vector Vec3]))
 
+(mi/collect! {:ns ['sfsim25.cubemap]})
+(mi/instrument! {:report (pretty/thrower)})
+
 (tabular "First face of cube"
   (fact (?c 0 ?j ?i) => ?result)
-  ?c         ?j ?i ?result
-  cube-map-z 0  0   1.0
-  cube-map-x 0  0  -1.0
-  cube-map-x 0  1   1.0
-  cube-map-y 0  0   1.0
-  cube-map-y 1  0  -1.0)
+  ?c         ?j  ?i  ?result
+  cube-map-z 0.0 0.0  1.0
+  cube-map-x 0.0 0.0 -1.0
+  cube-map-x 0.0 1.0  1.0
+  cube-map-y 0.0 0.0  1.0
+  cube-map-y 1.0 0.0 -1.0)
 
 (tabular "Second face of cube"
   (fact (?c 1 ?j ?i) => ?result)
-  ?c         ?j ?i ?result
-  cube-map-y 0  0  -1.0
-  cube-map-x 0  0  -1.0
-  cube-map-x 0  1   1.0
-  cube-map-z 0  0   1.0
-  cube-map-z 1  0  -1.0)
+  ?c         ?j  ?i  ?result
+  cube-map-y 0.0 0.0 -1.0
+  cube-map-x 0.0 0.0 -1.0
+  cube-map-x 0.0 1.0  1.0
+  cube-map-z 0.0 0.0  1.0
+  cube-map-z 1.0 0.0 -1.0)
 
 (tabular "Third face of cube"
   (fact (?c 2 ?j ?i) => ?result)
-  ?c         ?j ?i ?result
-  cube-map-x 0  0   1.0
-  cube-map-z 0  0   1.0
-  cube-map-z 1  0  -1.0
-  cube-map-y 0  0  -1.0
-  cube-map-y 0  1   1.0)
+  ?c         ?j  ?i  ?result
+  cube-map-x 0.0 0.0  1.0
+  cube-map-z 0.0 0.0  1.0
+  cube-map-z 1.0 0.0 -1.0
+  cube-map-y 0.0 0.0 -1.0
+  cube-map-y 0.0 1.0  1.0)
 
 (tabular "Fourth face of cube"
   (fact (?c 3 ?j ?i) => ?result)
-  ?c         ?j ?i ?result
-  cube-map-y 0  0   1.0
-  cube-map-x 0  0   1.0
-  cube-map-x 0  1  -1.0
-  cube-map-z 0  0   1.0
-  cube-map-z 1  0  -1.0)
+  ?c         ?j  ?i  ?result
+  cube-map-y 0.0 0.0  1.0
+  cube-map-x 0.0 0.0  1.0
+  cube-map-x 0.0 1.0 -1.0
+  cube-map-z 0.0 0.0  1.0
+  cube-map-z 1.0 0.0 -1.0)
 
 (tabular "Fifth face of cube"
   (fact (?c 4 ?j ?i) => ?result)
-  ?c         ?j ?i ?result
-  cube-map-x 0  0  -1.0
-  cube-map-z 0  0   1.0
-  cube-map-z 1  0  -1.0
-  cube-map-y 0  0   1.0
-  cube-map-y 0  1  -1.0)
+  ?c         ?j ?i   ?result
+  cube-map-x 0.0 0.0 -1.0
+  cube-map-z 0.0 0.0  1.0
+  cube-map-z 1.0 0.0 -1.0
+  cube-map-y 0.0 0.0  1.0
+  cube-map-y 0.0 1.0 -1.0)
 
 (tabular "Sixth face of cube"
   (fact (?c 5 ?j ?i) => ?result)
-  ?c         ?j ?i ?result
-  cube-map-z 0  0  -1.0
-  cube-map-x 0  0  -1.0
-  cube-map-x 0  1   1.0
-  cube-map-y 0  0  -1.0
-  cube-map-y 1  0   1.0)
+  ?c         ?j  ?i  ?result
+  cube-map-z 0.0 0.0 -1.0
+  cube-map-x 0.0 0.0 -1.0
+  cube-map-x 0.0 1.0  1.0
+  cube-map-y 0.0 0.0 -1.0
+  cube-map-y 1.0 0.0  1.0)
 
 (fact "Get vector to cube face"
-  (cube-map 5 0 0.5) => (vec3 0.0 -1.0 -1.0))
+  (cube-map 5 0.0 0.5) => (vec3 0.0 -1.0 -1.0))
 
 (facts "Test cube coordinates"
-  (cube-coordinate 0 256 0     0) => 0.0
+  (cube-coordinate 0 256 0   0.0) => 0.0
   (cube-coordinate 0 256 0 127.5) => 0.5
   (cube-coordinate 1 256 1 127.5) => 0.75)
 
@@ -93,12 +98,12 @@
 (tabular "Conversion from geodetic to cartesian coordinates"
   (fact
     (geodetic->cartesian ?lon ?lat ?h 6378000.0) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
-      ?lon     ?lat   ?h        ?x        ?y        ?z
-         0        0    0 6378000.0       0.0       0.0
-  (/ PI 2)        0    0       0.0 6378000.0       0.0
-         0 (/ PI 2)    0       0.0       0.0 6378000.0
-         0        0 1000 6379000.0       0.0       0.0
-  (/ PI 2)        0 1000       0.0 6379000.0       0.0)
+      ?lon     ?lat    ?h        ?x        ?y        ?z
+       0.0      0.0    0.0 6378000.0       0.0       0.0
+  (/ PI 2)      0.0    0.0       0.0 6378000.0       0.0
+       0.0 (/ PI 2)    0.0       0.0       0.0 6378000.0
+       0.0      0.0 1000.0 6379000.0       0.0       0.0
+  (/ PI 2)      0.0 1000.0       0.0 6379000.0       0.0)
 
 (tabular "Conversion from cartesian (surface) coordinates to latitude and longitude"
   (fact
@@ -125,19 +130,19 @@
 
 (facts "x-coordinate on raster map"
   (map-x (- PI) 675 3) => 0.0
-  (map-x 0 675 3) => (* 675 2.0 8))
+  (map-x    0.0 675 3) => (* 675 2.0 8))
 
 (facts "y-coordinate on raster map"
   (map-y (/ PI 2) 675 3) => 0.0
-  (map-y 0 675 3) => (* 675 8.0))
+  (map-y      0.0 675 3) => (* 675 8.0))
 
 (facts "determine x-coordinates and fractions for interpolation"
-  (map-pixels-x 0                       675 3) => [(* 675 2 8)     (inc (* 675 2 8)) 1.0 0.0]
+  (map-pixels-x 0.0                     675 3) => [(* 675 2 8)     (inc (* 675 2 8)) 1.0 0.0]
   (map-pixels-x (- PI)                  675 3) => [0               1                 1.0 0.0]
   (map-pixels-x (- PI (/ PI (* 256 4))) 256 0) => [(dec (* 256 4)) 0                 0.5 0.5])
 
 (facts "determine y-coordinates and fractions for interpolation"
-  (map-pixels-y 0                675 3) => [(* 675 8)         (inc (* 675 8))   1.0 0.0]
+  (map-pixels-y 0.0              675 3) => [(* 675 8)         (inc (* 675 8))   1.0 0.0]
   (map-pixels-y (- (/ PI 2))     675 3) => [(dec (* 675 2 8)) (dec (* 675 2 8)) 1.0 0.0]
   (map-pixels-y (/ PI (* 4 256)) 256 0) => [(dec 256)         256               0.5 0.5])
 
@@ -232,11 +237,11 @@
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
                                              (fact [in-level width lon lat] => [4 675 0.0 (/ (- PI) 2)])
                                              2777.0)]
-    (project-onto-globe (vec3 0 0 -1) 4 675 6378000) => (roughly-vector (vec3 0 0 -6380777.0) 1e-6)))
+    (project-onto-globe (vec3 0 0 -1) 4 675 6378000.0) => (roughly-vector (vec3 0 0 -6380777.0) 1e-6)))
 
 (fact "Clip negative height (water) to zero"
   (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
-    (project-onto-globe (vec3 1 0 0) 4 675 6378000) => (roughly-vector (vec3 6378000 0 0) 1e-6)))
+    (project-onto-globe (vec3 1 0 0) 4 675 6378000.0) => (roughly-vector (vec3 6378000 0 0) 1e-6)))
 
 (facts "Determine surrounding points for a location on the globe"
   (let [ps (atom [])]
@@ -258,16 +263,16 @@
 
 (fact "Get normal vector for point on flat part of elevation map"
   (with-redefs [cubemap/surrounding-points (fn [& args]
-                                             (fact args => [(vec3 1 0 0) 5 7 675 33 6378000])
+                                             (fact args => [(vec3 1 0 0) 5 7 675 33 6378000.0])
                                              (for [j [-1 0 1] i [-1 0 1]] (vec3 6378000 j (- i))))]
-    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000) => (vec3 1 0 0)))
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000.0) => (vec3 1 0 0)))
 
 (fact "Get normal vector for point on elevation map sloped in longitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (vec3 (+ 6378000 i) j (- i))))]
-    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000) =>
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000.0) =>
     (roughly-vector (vec3 (sqrt 0.5) 0 (sqrt 0.5)) 1e-6)))
 
 (fact "Get normal vector for point on elevation map sloped in latitudinal direction"
   (with-redefs [cubemap/surrounding-points (fn [& args] (for [j [-1 0 1] i [-1 0 1]] (vec3 (+ 6378000 j) j (- i))))]
-    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000) =>
+    (normal-for-point (vec3 1 0 0) 5 7 675 33 6378000.0) =>
     (roughly-vector (vec3 (sqrt 0.5) (- (sqrt 0.5)) 0) 1e-6)))
