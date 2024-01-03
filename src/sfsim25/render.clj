@@ -1,6 +1,8 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
-  (:require [fastmath.matrix :refer (mat->float-array)])
+  (:require [fastmath.matrix :refer (mat->float-array)]
+            [malli.core :as m]
+            [sfsim25.util :refer (N)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [org.lwjgl.glfw GLFW]
@@ -8,6 +10,10 @@
            [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
+
+; Malli schema for recursive vector of strings
+(def shaders (m/schema [:schema {:registry {::node [:vector [:or :string [:ref ::node]]]}}
+                        [:ref ::node]]))
 
 (defn setup-rendering
   "Common code for setting up rendering"
@@ -629,6 +635,8 @@
          (destroy-texture tex#)
          (destroy-texture depth#)
          img#))))
+
+(def texture-3d (m/schema [:map [:width N] [:height N] [:depth N] [:target :int] [:texture :int]]))
 
 (defmacro create-cubemap
   "Macro to initialise cubemap"

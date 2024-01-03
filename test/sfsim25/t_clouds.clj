@@ -1,5 +1,7 @@
 (ns sfsim25.t-clouds
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (exp log sin cos asin to-radians)]
@@ -13,6 +15,9 @@
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
               [sfsim25.clouds :refer :all])
     (:import [org.lwjgl.glfw GLFW]))
+
+(mi/collect! {:ns ['sfsim25.clouds]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 

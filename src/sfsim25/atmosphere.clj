@@ -12,8 +12,7 @@
                                       uniform-vector3 use-textures destroy-program make-vertex-array-object
                                       destroy-vertex-array-object render-quads)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer (third fourth limit-quot sqr N)])
-    (:import [fastmath.vector Vec3]))
+              [sfsim25.util :refer (third fourth limit-quot sqr N)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

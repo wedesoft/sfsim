@@ -15,11 +15,11 @@
                             :sfsim25.atmosphere/height height
                             :sfsim25.atmosphere/brightness (vec3 0.3 0.3 0.3)})
 (def mie #:sfsim25.atmosphere{:scatter-base (vec3 5e-6 5e-6 5e-6)
-                              :scatter-scale 2000
+                              :scatter-scale 2000.0
                               :scatter-g 0.76
                               :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 13.5e-6 33.1e-6)
-                                   :scatter-scale 8000})
+                                   :scatter-scale 8000.0})
 
 (defn generate-atmosphere-luts
   "Program to generate lookup tables for atmospheric scattering"
