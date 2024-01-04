@@ -7,35 +7,44 @@
     (:import [fastmath.protocols VectorProto]))
 
 (set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 (def interpolation-space (m/schema [:map [::shape [:vector N]] [::forward fn?] [::backward fn?]]))
 
 (defn- linear-forward
   "Linear mapping onto interpolation table of given shape"
-  [^clojure.lang.ISeq minima ^clojure.lang.ISeq maxima ^clojure.lang.ISeq shape]
-  (fn [& point] (map (fn [^double x ^double a ^double b ^long n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
+  {:malli/schema [:=> [:cat [:vector :double] [:vector :double] [:vector N]] [:=> [:cat [:* :double]] [:vector :double]]]}
+  [minima maxima shape]
+  (fn [& point] (map (fn [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
 
 (defn- linear-backward
   "Inverse linear mapping to get sample values for lookup table"
+  {:malli/schema [:=> [:cat [:vector :double] [:vector :double] [:vector N]] [:=> [:cat [:* :double]] [:vector :double]]]}
   [minima maxima shape]
-  (fn [& indices] (map (fn [^long i ^double a ^double b ^long n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
+  (fn [& indices] (map (fn [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
 
 (defn linear-space
   "Create forward and backward mapping for linear sampling"
+  {:malli/schema [:=> [:cat [:vector :double] [:vector :double] [:vector N]] interpolation-space]}
   [^clojure.lang.ISeq minima ^clojure.lang.ISeq maxima ^clojure.lang.ISeq shape]
   {::forward (linear-forward minima maxima shape) ::backward (linear-backward minima maxima shape) ::shape shape})
 
 (defn- sample-function
   "Recursively take samples from a function"
+  {:malli/schema [:=> [:cat fn? [:vector N] [:vector :double] fn?]]}
   [sample-fun shape args map-fun]
   (if (seq shape)
-    (vec (map-fun #(sample-function sample-fun (rest shape) (conj args %) map) (range (first shape))))
+    (vec (map-fun #(sample-function sample-fun (rest shape) (conj args (double %)) map) (range (first shape))))
     (sample-fun args)))
+
+(def table (m/schema [:schema {:registry {::slice [:vector [:or :double [:ref ::slice]]]}}
+                      [:ref ::slice]]))
 
 (defn make-lookup-table
   "Create n-dimensional lookup table using given function to sample and inverse mapping"
-  ^clojure.lang.PersistentVector [fun space]
-  (sample-function (fn [args] (apply fun (apply (::backward space) (map double args)))) (::shape space) [] pmap))
+  {:malli/schema [:=> [:cat fn? interpolation-space] table]}
+  [fun space]
+  (sample-function (fn [args] (apply fun (apply (::backward space) args))) (::shape space) [] pmap))
 
 (defn clip
   "Clip a value to [0, size - 1]"
@@ -77,4 +86,5 @@
    ::forward (comp* (::forward f) (::forward g))
    ::backward (comp* (::backward g) (::backward f))})
 
+(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

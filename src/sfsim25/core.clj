@@ -20,6 +20,10 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+(require '[malli.dev :as dev])
+(require '[malli.dev.pretty :as pretty])
+(dev/start! {:report (pretty/thrower)})
+
 (def width 1280)
 (def height 720)
 

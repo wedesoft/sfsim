@@ -12,7 +12,7 @@
                                       uniform-vector3 use-textures destroy-program make-vertex-array-object
                                       destroy-vertex-array-object render-quads)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer (third fourth limit-quot sqr N)]))
+              [sfsim25.util :refer (third fourth limit-quot sqr N N0)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
