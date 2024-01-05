@@ -2,6 +2,7 @@
   "Functions for doing OpenGL rendering"
   (:require [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
+            [sfsim25.matrix :refer (fvec3)]
             [sfsim25.util :refer (N)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
@@ -10,6 +11,7 @@
            [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 ; Malli schema for recursive vector of strings
 (def shaders (m/schema [:schema {:registry {::node [:vector [:or :string [:ref ::node]]]}}
@@ -17,6 +19,7 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
+  {:malli/schema [:=> [:cat N N [:or [:= :cullfront] [:= :cullback]]] :nil]}
   [width height culling]
   (GL11/glViewport 0 0 width height)
   (GL11/glEnable GL11/GL_DEPTH_TEST)
@@ -49,9 +52,10 @@
 
 (defn make-window
   "Method to create a window and make the context current and create the capabilities"
+  {:malli/schema [:=> [:cat :string N N] :int]}
   [title width height]
   (GLFW/glfwDefaultWindowHints)
-  (let [window (GLFW/glfwCreateWindow width height title 0 0)]
+  (let [window (GLFW/glfwCreateWindow ^long width ^long height ^String title 0 0)]
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
     (GL/createCapabilities)
@@ -59,6 +63,7 @@
 
 (defn destroy-window
   "Destroy the window"
+  {:malli/schema [:=> [:cat :int] :nil]}
   [window]
   (GLFW/glfwDestroyWindow window))
 
@@ -74,6 +79,7 @@
 
 (defn clear
   "Set clear color and clear color buffer as well as depth buffer"
+  {:malli/schema [:=> [:cat [:? [:cat fvec3 [:? [:cat :double [:? :int]]]]]] :nil]}
   ([]
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
    (GL11/glClear GL11/GL_DEPTH_BUFFER_BIT))
@@ -91,9 +97,10 @@
 
 (defn make-shader
   "Compile a GLSL shader"
-  [^String context ^long shader-type ^String source]
+  {:malli/schema [:=> [:cat :string :int :string] :int]}
+  [context shader-type source]
   (let [shader (GL20/glCreateShader shader-type)]
-    (GL20/glShaderSource shader source)
+    (GL20/glShaderSource shader ^String source)
     (GL20/glCompileShader shader)
     (when (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
       (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024)))))
@@ -101,11 +108,19 @@
 
 (defn destroy-shader
   "Delete a shader"
+  {:malli/schema [:=> [:cat :int] :nil]}
   [shader]
   (GL20/glDeleteShader shader))
 
 (defn make-program
   "Compile and link a shader program"
+  {:malli/schema [:=> [:cat
+                       [:cat [:= :vertex] shaders]
+                       [:? [:cat [:= :tess-control] shaders]]
+                       [:? [:cat [:= :tess-evaluation] shaders]]
+                       [:? [:cat [:= :geometry] shaders]]
+                       [:cat [:= :fragment] shaders]]
+                  :int]}
   [& {:keys [vertex tess-control tess-evaluation geometry fragment]
       :or {vertex [] tess-control [] tess-evaluation [] geometry [] fragment []}}]
   (let [shaders (concat (map (partial make-shader "vertex" GL20/GL_VERTEX_SHADER)
@@ -128,44 +143,51 @@
 
 (defn destroy-program
   "Delete a program and associated shaders"
-  [^long program]
+  {:malli/schema [:=> [:cat :int] :nil]}
+  [program]
   (GL20/glDeleteProgram program))
 
 (defn make-float-buffer
   "Create a floating-point buffer object"
-  ^java.nio.DirectFloatBufferU [^floats data]
+  {:malli/schema [:=> [:cat seqable?] :some]}
+  [data]
   (doto (BufferUtils/createFloatBuffer (count data))
-    (.put data)
+    (.put ^floats data)
     (.flip)))
 
 (defn make-int-buffer
   "Create a integer buffer object"
-  ^java.nio.DirectIntBufferU [^ints data]
+  {:malli/schema [:=> [:cat seqable?] :some]}
+  [data]
   (doto (BufferUtils/createIntBuffer (count data))
-    (.put data)
+    (.put ^ints data)
     (.flip)))
 
 (defn make-byte-buffer
   "Create a byte buffer object"
-  ^java.nio.DirectByteBuffer [^bytes data]
+  {:malli/schema [:=> [:cat bytes?] :some]}
+  [data]
   (doto (BufferUtils/createByteBuffer (count data))
-    (.put data)
+    (.put ^bytes data)
     (.flip)))
+
+(def vertex-array-object
+  (m/schema [:map [:vertex-array-object :int] [:array-buffer :int] [:index-buffer :int] [:nrows N] [:ncols N]]))
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
-  [^long program
-   ^clojure.lang.PersistentVector indices
-   ^clojure.lang.PersistentVector vertices
-   ^clojure.lang.PersistentVector attributes]
+  {:malli/schema [:=> [:cat :int [:vector :int] [:vector :double] [:vector [:or :string N]]] vertex-array-object]}
+  [program indices vertices attributes]
   (let [vertex-array-object (GL30/glGenVertexArrays)]
     (GL30/glBindVertexArray vertex-array-object)
     (let [array-buffer (GL15/glGenBuffers)
           index-buffer (GL15/glGenBuffers)]
       (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-      (GL15/glBufferData GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)) GL15/GL_STATIC_DRAW)
+      (GL15/glBufferData GL15/GL_ARRAY_BUFFER ^java.nio.DirectFloatBufferU (make-float-buffer (float-array vertices))
+                         GL15/GL_STATIC_DRAW)
       (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)) GL15/GL_STATIC_DRAW)
+      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER ^java.nio.DirectIntBufferU (make-int-buffer (int-array indices))
+                         GL15/GL_STATIC_DRAW)
       (let [attribute-pairs (partition 2 attributes)
             sizes           (map second attribute-pairs)
             stride          (apply + sizes)
@@ -182,19 +204,21 @@
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
-  [{:keys [^long vertex-array-object ^long array-buffer ^long index-buffer ^long ncols]}]
+  {:malli/schema [:=> [:cat vertex-array-object] :nil]}
+  [{:keys [vertex-array-object array-buffer index-buffer ncols]}]
   (GL30/glBindVertexArray vertex-array-object)
   (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
-  (GL15/glDeleteBuffers index-buffer)
+  (GL15/glDeleteBuffers ^long index-buffer)
   (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
-  (GL15/glDeleteBuffers array-buffer)
+  (GL15/glDeleteBuffers ^long array-buffer)
   (GL30/glBindVertexArray 0)
-  (GL30/glDeleteVertexArrays vertex-array-object))
+  (GL30/glDeleteVertexArrays ^long vertex-array-object))
 
 (defn use-program
   "Use specified shader program"
-  [^long program]
+  {:malli/schema [:=> [:cat :int] :nil]}
+  [program]
   (GL20/glUseProgram ^long program))
 
 (defn uniform-float
@@ -215,12 +239,14 @@
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
   [^long program ^String k ^Mat3x3 value]
-  (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^long program ^String k) true (make-float-buffer (mat->float-array value))))
+  (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^long program ^String k) true
+                           ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
   [^long program ^String k ^Mat4x4 value]
-  (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^long program ^String k) true (make-float-buffer (mat->float-array value))))
+  (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^long program ^String k) true
+                           ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
@@ -371,31 +397,44 @@
   (let [buffer (make-float-buffer data)
         width  (count data) ]
     (create-texture-1d interpolation boundary width
-      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
+      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT
+                         ^java.nio.DirectFloatBufferU buffer))))
 
-(defn- make-texture-2d
-  "Initialise a 2D texture"
-  [image make-buffer interpolation boundary internalformat format_ type_]
-  (let [buffer (make-buffer (:data image))]
+(defn- make-byte-texture-2d-base
+  "Initialise a 2D byte texture"
+  [image interpolation boundary internalformat format_ type_]
+  (let [buffer (make-byte-buffer (:data image))]
     (create-texture-2d interpolation boundary (:width image) (:height image)
-      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (:width image) (:height image) 0 format_ type_ buffer))))
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (:width image) ^long (:height image) 0
+                         ^long format_ ^long type_ ^java.nio.DirectByteBuffer buffer))))
+
+(defn- make-float-texture-2d-base
+  "Initialise a 2D texture"
+  [image interpolation boundary internalformat format_ type_]
+  (let [buffer (make-float-buffer (:data image))]
+    (create-texture-2d interpolation boundary (:width image) (:height image)
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (:width image) ^long (:height image) 0
+                         ^long format_ ^long type_ ^java.nio.DirectFloatBufferU buffer))))
+
 
 (defn make-rgb-texture
   "Load image into an RGB OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
+  (make-byte-texture-2d-base image interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-rgba-texture
   "Load image into an RGBA OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RGBA GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
+  (make-byte-texture-2d-base image interpolation boundary GL11/GL_RGBA GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
   [interpolation boundary image]
   (assoc (create-depth-texture interpolation boundary (:width image) (:height image)
-                               (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F (:width image) (:height image) 0
-                                                  GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (make-float-buffer (:data image))))
+                               (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F
+                                                  ^long (:width image) ^long (:height image) 0
+                                                  GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT
+                                                  ^java.nio.DirectFloatBufferU (make-float-buffer (:data image))))
          :stencil false))
 
 (defn make-empty-texture-2d
@@ -426,24 +465,25 @@
 (defn make-float-texture-2d
   "Load floating-point 2D data into red channel of an OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
+  (make-float-texture-2d-base image interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
 
 (defn make-ubyte-texture-2d
   "Load unsigned-byte 2D data into red channel of an OpenGL texture (data needs to be 32-bit aligned!)"
   [interpolation boundary image]
-  (make-texture-2d image make-byte-buffer interpolation boundary GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
+  (make-byte-texture-2d-base image interpolation boundary GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
 
 (defn make-vector-texture-2d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   [interpolation boundary image]
-  (make-texture-2d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
+  (make-float-texture-2d-base image interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn make-float-texture-3d
   "Load floating-point 3D data into red channel of an OpenGL texture"
   [interpolation boundary image]
   (let [buffer (make-float-buffer (:data image))]
     (create-texture-3d interpolation boundary (:width image) (:height image) (:depth image)
-      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F (:width image) (:height image) (:depth image) 0 GL11/GL_RED GL11/GL_FLOAT buffer))))
+      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F ^long (:width image) ^long (:height image) ^long (:depth image) 0
+                         GL11/GL_RED GL11/GL_FLOAT ^java.nio.DirectFloatBufferU buffer))))
 
 (defn make-empty-float-texture-3d
   "Create empty 3D floating-point texture"
@@ -451,16 +491,17 @@
   (create-texture-3d interpolation boundary width height depth
                      (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F width height depth)))
 
-(defn- make-texture-4d
+(defn- make-float-texture-4d
   "Initialise a 2D texture"
-  [image make-buffer interpolation boundary internalformat format_ type_]
-  (let [buffer     (make-buffer (:data image))
-        width      (:width image)
-        height     (:height image)
-        depth      (:depth image)
-        hyperdepth (:hyperdepth image)]
+  [image interpolation boundary internalformat format_ type_]
+  (let [buffer     (make-float-buffer (:data image))
+        width      ^long (:width image)
+        height     ^long (:height image)
+        depth      ^long (:depth image)
+        hyperdepth ^long (:hyperdepth image)]
     (assoc (create-texture-2d interpolation boundary (* width depth) (* height hyperdepth)
-             (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 internalformat (* width depth) (* height hyperdepth) 0 format_ type_ buffer))
+             (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (* width depth) ^long (* height hyperdepth) 0
+                                ^long format_ ^long type_ ^java.nio.DirectFloatBufferU buffer))
            :width width
            :height height
            :depth depth
@@ -469,7 +510,7 @@
 (defn make-vector-texture-4d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   [interpolation boundary image]
-  (make-texture-4d image make-float-buffer interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
+  (make-float-texture-4d image interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn destroy-texture
   "Delete an OpenGL texture"
@@ -501,6 +542,7 @@
   "Setup color attachments with 2D and 3D textures"
   [textures]
   (GL20/glDrawBuffers
+    ^java.nio.DirectIntBufferU
     (make-int-buffer
       (int-array
         (map-indexed
@@ -654,8 +696,9 @@
   (let [size (:width (first images))]
     (create-cubemap interpolation boundary size
       (doseq [[face image] (map-indexed vector images)]
-             (GL11/glTexImage2D (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 internalformat size size 0 format_
-                                type_ (make-float-buffer (:data image)))))))
+             (GL11/glTexImage2D ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 ^long internalformat ^long size ^long size
+                                0 ^long format_ ^long type_ ^java.nio.DirectFloatBufferU (make-float-buffer (:data image)))))))
+
 (defn make-float-cubemap
   "Load floating-point 2D textures into red channel of an OpenGL cubemap"
   [interpolation boundary images]
@@ -673,7 +716,7 @@
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
           data (float-array (* width height))]
-      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 
@@ -694,8 +737,9 @@
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
-      (GL11/glGetTexImage (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
+      (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
 
+(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -20,10 +20,6 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(require '[malli.dev :as dev])
-(require '[malli.dev.pretty :as pretty])
-(dev/start! {:report (pretty/thrower)})
-
 (def width 1280)
 (def height 720)
 
@@ -262,7 +258,7 @@
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
                                 w2 h2 true
-                                (clear (vec3 0 0 0) 0)
+                                (clear (vec3 0 0 0) 0.0)
                                 ; Render clouds in front of planet
                                 (planet/render-cloud-planet cloud-planet-renderer
                                                             :cloud-step cloud-step
@@ -294,7 +290,7 @@
                                                                 :shadows shadows
                                                                 :opacities opacities))]
                (onscreen-render window
-                                (clear (vec3 0 1 0) 0)
+                                (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
                                 (planet/render-planet planet-renderer
                                                       :projection projection
