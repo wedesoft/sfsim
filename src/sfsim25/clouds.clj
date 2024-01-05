@@ -390,7 +390,7 @@
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
-        vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vertices (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
     (uniform-float program "cloud_step" cloud-step)

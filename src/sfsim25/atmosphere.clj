@@ -449,7 +449,7 @@
    & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height light-direction clouds
              opacities z-far]}]
   (let [indices    [0 1 3 2]
-        vertices   (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vertices   (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
     (doseq [[idx item] (map-indexed vector splits)]
