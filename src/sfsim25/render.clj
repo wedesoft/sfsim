@@ -176,7 +176,7 @@
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
-  {:malli/schema [:=> [:cat :int [:vector :int] [:vector :double] [:vector [:or :string N]]] vertex-array-object]}
+  {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:vector [:or :string N]]] vertex-array-object]}
   [program indices vertices attributes]
   (let [vertex-array-object (GL30/glGenVertexArrays)]
     (GL30/glBindVertexArray vertex-array-object)
