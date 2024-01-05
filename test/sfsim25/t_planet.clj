@@ -61,10 +61,10 @@ void main()
 (fact "Use vertex data to draw a quad"
       (offscreen-render 256 256
                         (let [indices   [0 1 3 2]
-                              vertices  [-0.5 -0.5 0.5 0 0 0 0
-                                          0.5 -0.5 0.5 0 0 0 0
-                                         -0.5  0.5 0.5 0 0 0 0
-                                          0.5  0.5 0.5 0 0 0 0]
+                              vertices  [-0.5 -0.5 0.5 0.0 0.0 0.0 0.0
+                                          0.5 -0.5 0.5 0.0 0.0 0.0 0.0
+                                         -0.5  0.5 0.5 0.0 0.0 0.0 0.0
+                                          0.5  0.5 0.5 0.0 0.0 0.0 0.0]
                               program   (make-program :vertex [vertex-planet]
                                                       :fragment [fragment-white])
                               variables ["point" 3 "surfacecoord" 2 "colorcoord" 2]
@@ -79,10 +79,10 @@ void main()
          (fact
            (offscreen-render 256 256
                              (let [indices     [0 1 3 2]
-                                   vertices    [-0.5 -0.5 0.5 0.25 0.25 0 0,
-                                                 0.5 -0.5 0.5 0.75 0.25 0 0,
-                                                -0.5  0.5 0.5 0.25 0.75 0 0,
-                                                 0.5  0.5 0.5 0.75 0.75 0 0]
+                                   vertices    [-0.5 -0.5 0.5 0.25 0.25 0.0 0.0,
+                                                 0.5 -0.5 0.5 0.75 0.25 0.0 0.0,
+                                                -0.5  0.5 0.5 0.25 0.75 0.0 0.0,
+                                                 0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                                    program     (make-program :vertex [vertex-planet]
                                                              :tess-control [tess-control-planet]
                                                              :tess-evaluation [tess-evaluation-planet]
@@ -169,10 +169,10 @@ void main()
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.6 -0.5 0.5 0.25 0.25 0 0
-                                            0.4 -0.5 0.5 0.75 0.25 0 0
-                                           -0.6  0.5 0.5 0.25 0.75 0 0
-                                            0.4  0.5 0.5 0.75 0.75 0 0]
+                              vertices    [-0.6 -0.5 0.5 0.25 0.25 0.0 0.0
+                                            0.4 -0.5 0.5 0.75 0.25 0.0 0.0
+                                           -0.6  0.5 0.5 0.25 0.75 0.0 0.0
+                                            0.4  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]
@@ -202,10 +202,10 @@ void main()
 (fact "Apply projection matrix to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.5 -0.5 0 0.25 0.25 0 0
-                                            0.5 -0.5 0 0.75 0.25 0 0
-                                           -0.5  0.5 0 0.25 0.75 0 0
-                                            0.5  0.5 0 0.75 0.75 0 0]
+                              vertices    [-0.5 -0.5 0.0 0.25 0.25 0.0 0.0
+                                            0.5 -0.5 0.0 0.75 0.25 0.0 0.0
+                                           -0.5  0.5 0.0 0.25 0.75 0.0 0.0
+                                            0.5  0.5 0.0 0.75 0.75 0.0 0.0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]
@@ -213,7 +213,7 @@ void main()
                                                         :fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              data        [-0.5 -0.5 0, 0.5 -0.5 0, -0.5  0.5 0, 0.5  0.5 0]
+                              data        [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5  0.5 0.0, 0.5  0.5 0.0]
                               surface     (make-vector-texture-2d :linear :clamp
                                                                   {:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
@@ -236,10 +236,10 @@ void main()
 (fact "Scale vertex coordinates using given height field"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.5 -0.5 0.5 0.25 0.25 0 0
-                                            0.5 -0.5 0.5 0.75 0.25 0 0
-                                           -0.5  0.5 0.5 0.25 0.75 0 0
-                                            0.5  0.5 0.5 0.75 0.75 0 0]
+                              vertices    [-0.5 -0.5 0.5 0.25 0.25 0.0 0.0
+                                            0.5 -0.5 0.5 0.75 0.25 0.0 0.0
+                                           -0.5  0.5 0.5 0.25 0.75 0.0 0.0
+                                            0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]

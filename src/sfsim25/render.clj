@@ -14,7 +14,7 @@
 (set! *warn-on-reflection* true)
 
 ; Malli schema for recursive vector of strings
-(def shaders (m/schema [:schema {:registry {::node [:vector [:or :string [:ref ::node]]]}}
+(def shaders (m/schema [:schema {:registry {::node [:sequential [:or :string [:ref ::node]]]}}
                         [:ref ::node]]))
 
 (defn setup-rendering
