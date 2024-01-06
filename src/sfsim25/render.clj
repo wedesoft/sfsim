@@ -761,7 +761,7 @@
 
 (defn make-float-cubemap
   "Load floating-point 2D textures into red channel of an OpenGL cubemap"
-  {:malli/schema [:=> [:cat interpolation boundary [:vector float-image-2d]] texture-3d]}
+  {:malli/schema [:=> [:cat interpolation boundary [:sequential float-image-2d]] texture-3d]}
   [interpolation boundary images]
   (make-cubemap images interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
 
