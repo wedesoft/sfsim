@@ -2,8 +2,8 @@
   "Functions for doing OpenGL rendering"
   (:require [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
-            [sfsim25.matrix :refer (fvec3)]
-            [sfsim25.util :refer (N)])
+            [sfsim25.matrix :refer (fvec3 fmat3 fmat4 shadow-box)]
+            [sfsim25.util :refer (N image)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [org.lwjgl.glfw GLFW]
@@ -223,55 +223,65 @@
 
 (defn uniform-float
   "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
-  [^long program ^String k ^double value]
+  {:malli/schema [:=> [:cat :int :string :double] :nil]}
+  [program k value]
   (GL20/glUniform1f (GL20/glGetUniformLocation ^long program ^String k) value))
 
 (defn uniform-int
   "Set uniform integer variable in current shader program (don't forget to set the program using use-program first)"
-  [^long program ^String k ^long value]
+  {:malli/schema [:=> [:cat :int :string :int] :nil]}
+  [program k value]
   (GL20/glUniform1i (GL20/glGetUniformLocation ^long program ^String k) value))
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
-  [^long program ^String k ^Vec3 value]
+  {:malli/schema [:=> [:cat :int :string fvec3] :nil]}
+  [program k value]
   (GL20/glUniform3f (GL20/glGetUniformLocation ^long program ^String k) (value 0) (value 1) (value 2)))
 
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^long program ^String k ^Mat3x3 value]
+  {:malli/schema [:=> [:cat :int :string fmat3] :nil]}
+  [program k value]
   (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^long program ^String k) true
                            ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
-  [^long program ^String k ^Mat4x4 value]
+  {:malli/schema [:=> [:cat :int :string fmat4] :nil]}
+  [program k value]
   (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^long program ^String k) true
                            ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
-  [^long program ^String k ^long value]
+  {:malli/schema [:=> [:cat :int :string :int] :nil]}
+  [program k value]
   (GL20/glUniform1i (GL20/glGetUniformLocation ^long program ^String k) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
+  {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (GL30/glBindVertexArray ^long (:vertex-array-object vertex-array-object)))
 
 (defn render-quads
   "Render one or more quads"
+  {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL11/glDrawElements GL11/GL_QUADS ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-triangles
   "Render one or more triangles"
+  {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-patches
   "Render one or more tessellated quads"
+  {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
@@ -284,6 +294,12 @@
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_LINE)
      ~@body
      (GL11/glPolygonMode GL11/GL_FRONT_AND_BACK GL11/GL_FILL)))
+
+(def texture (m/schema [:map [:target :int] [:texture :int]]))
+(def texture-1d (m/schema [:map [:width N] [:target :int] [:texture :int]]))
+(def texture-2d (m/schema [:map [:width N] [:height N] [:target :int] [:texture :int]]))
+(def texture-3d (m/schema [:map [:width N] [:height N] [:depth N] [:target :int] [:texture :int]]))
+(def texture-4d (m/schema [:map [:width N] [:height N] [:depth N] [:hyperdepth N] [:target :int] [:texture :int]]))
 
 (defmacro with-texture
   "Macro to bind a texture and open a context with it"
@@ -300,15 +316,21 @@
   `(let [~texture (GL11/glGenTextures)]
      (with-texture ~target ~texture ~@body)))
 
+(def texture (m/schema [:map [:target :int] [:texture :int]]))
+
 (defn generate-mipmap
   "Generate mipmap for texture and set texture min filter to linear mipmap mode"
+  {:malli/schema [:=> [:cat texture] :nil]}
   [texture]
   (let [target (:target texture)]
     (with-texture target (:texture texture)
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target))))
 
+(def interpolation (m/schema [:or [:= :nearest] [:= :linear]]))
+
 (defmulti setup-interpolation (comp second vector))
+(m/=> setup-interpolation [:=> [:cat :int interpolation] :nil])
 
 (defmethod setup-interpolation :nearest
   [target _interpolation]
@@ -320,7 +342,10 @@
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
+(def boundary (m/schema [:or [:= :clamp] [:= :repeat]]))
+
 (defmulti setup-boundary-1d identity)
+(m/=> setup-boundary-1d [:=> [:cat boundary] :nil])
 
 (defmethod setup-boundary-1d :clamp
   [_boundary]
@@ -340,6 +365,7 @@
                    {:texture texture# :target GL11/GL_TEXTURE_1D :width ~width}))
 
 (defmulti setup-boundary-2d identity)
+(m/=> setup-boundary-2d [:=> [:cat boundary] :nil])
 
 (defmethod setup-boundary-2d :clamp
   [_boundary]
@@ -369,6 +395,7 @@
                       ~@body))
 
 (defmulti setup-boundary-3d (comp second vector))
+(m/=> setup-boundary-3d [:=> [:cat :int boundary] :nil])
 
 (defmethod setup-boundary-3d :clamp
   [target _boundary]
@@ -393,15 +420,17 @@
 
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
+  {:malli/schema [:=> [:cat interpolation boundary seqable?] texture-1d]}
   [interpolation boundary data]
   (let [buffer (make-float-buffer data)
         width  (count data) ]
     (create-texture-1d interpolation boundary width
-      (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT
-                         ^java.nio.DirectFloatBufferU buffer))))
+                       (GL11/glTexImage1D GL11/GL_TEXTURE_1D 0 GL30/GL_R32F width 0 GL11/GL_RED GL11/GL_FLOAT
+                                          ^java.nio.DirectFloatBufferU buffer))))
 
 (defn- make-byte-texture-2d-base
   "Initialise a 2D byte texture"
+  {:malli/schema [:=> [:cat image interpolation boundary :int :int :int] texture-2d]}
   [image interpolation boundary internalformat format_ type_]
   (let [buffer (make-byte-buffer (:data image))]
     (create-texture-2d interpolation boundary (:width image) (:height image)
@@ -410,6 +439,7 @@
 
 (defn- make-float-texture-2d-base
   "Initialise a 2D texture"
+  {:malli/schema [:=> [:cat image interpolation boundary :int :int :int] texture-2d]}
   [image interpolation boundary internalformat format_ type_]
   (let [buffer (make-float-buffer (:data image))]
     (create-texture-2d interpolation boundary (:width image) (:height image)
@@ -419,16 +449,24 @@
 
 (defn make-rgb-texture
   "Load image into an RGB OpenGL texture"
+  {:malli/schema [:=> [:cat interpolation boundary image] texture-2d]}
   [interpolation boundary image]
   (make-byte-texture-2d-base image interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
 (defn make-rgba-texture
   "Load image into an RGBA OpenGL texture"
+  {:malli/schema [:=> [:cat interpolation boundary image] texture-2d]}
   [interpolation boundary image]
   (make-byte-texture-2d-base image interpolation boundary GL11/GL_RGBA GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
+(def byte-image (m/schema [:map [:width N] [:height N] [:data bytes?]]))
+(def float-image-2d (m/schema [:map [:width N] [:height N] [:data seqable?]]))
+(def float-image-3d (m/schema [:map [:width N] [:height N] [:depth N] [:data seqable?]]))
+(def float-image-4d (m/schema [:map [:width N] [:height N] [:depth N] [:hyperdepth N] [:data seqable?]]))
+
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
+  {:malli/schema [:=> [:cat interpolation boundary float-image-2d] texture-2d]}
   [interpolation boundary image]
   (assoc (create-depth-texture interpolation boundary (:width image) (:height image)
                                (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F
@@ -439,17 +477,20 @@
 
 (defn make-empty-texture-2d
   "Create 2D texture with specified format and allocate storage"
+  {:malli/schema [:=> [:cat interpolation boundary :int N N] texture-2d]}
   [interpolation boundary internalformat width height]
   (create-texture-2d interpolation boundary width height
                      (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 internalformat width height)))
 
 (defn make-empty-float-texture-2d
   "Create 2D floating-point texture and allocate storage"
+  {:malli/schema [:=> [:cat interpolation boundary N N] texture-2d]}
   [interpolation boundary width height]
   (make-empty-texture-2d interpolation boundary GL30/GL_R32F width height))
 
 (defn make-empty-depth-texture-2d
   "Create 2D depth texture and allocate storage"
+  {:malli/schema [:=> [:cat interpolation boundary N N] texture-2d]}
   [interpolation boundary width height]
   (assoc (create-depth-texture interpolation boundary width height
                                (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH_COMPONENT32F width height))
@@ -457,6 +498,7 @@
 
 (defn make-empty-depth-stencil-texture-2d
   "Create 2D depth texture and allocate storage"
+  {:malli/schema [:=> [:cat interpolation boundary N N] texture-2d]}
   [interpolation boundary width height]
   (assoc (create-depth-texture interpolation boundary width height
                                (GL42/glTexStorage2D GL11/GL_TEXTURE_2D 1 GL30/GL_DEPTH32F_STENCIL8 width height))
@@ -464,21 +506,25 @@
 
 (defn make-float-texture-2d
   "Load floating-point 2D data into red channel of an OpenGL texture"
+  {:malli/schema [:=> [:cat interpolation boundary float-image-2d] texture-2d]}
   [interpolation boundary image]
   (make-float-texture-2d-base image interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
 
 (defn make-ubyte-texture-2d
   "Load unsigned-byte 2D data into red channel of an OpenGL texture (data needs to be 32-bit aligned!)"
+  {:malli/schema [:=> [:cat interpolation boundary byte-image] texture-2d]}
   [interpolation boundary image]
   (make-byte-texture-2d-base image interpolation boundary GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
 
 (defn make-vector-texture-2d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
+  {:malli/schema [:=> [:cat interpolation boundary float-image-2d] texture-2d]}
   [interpolation boundary image]
   (make-float-texture-2d-base image interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn make-float-texture-3d
   "Load floating-point 3D data into red channel of an OpenGL texture"
+  {:malli/schema [:=> [:cat interpolation boundary float-image-3d] texture-3d]}
   [interpolation boundary image]
   (let [buffer (make-float-buffer (:data image))]
     (create-texture-3d interpolation boundary (:width image) (:height image) (:depth image)
@@ -487,12 +533,14 @@
 
 (defn make-empty-float-texture-3d
   "Create empty 3D floating-point texture"
+  {:malli/schema [:=> [:cat interpolation boundary N N N] texture-3d]}
   [interpolation boundary width height depth]
   (create-texture-3d interpolation boundary width height depth
                      (GL42/glTexStorage3D GL12/GL_TEXTURE_3D 1 GL30/GL_R32F width height depth)))
 
 (defn- make-float-texture-4d
   "Initialise a 2D texture"
+  {:malli/schema [:=> [:cat float-image-4d interpolation boundary :int :int :int] texture-4d]}
   [image interpolation boundary internalformat format_ type_]
   (let [buffer     (make-float-buffer (:data image))
         width      ^long (:width image)
@@ -509,27 +557,32 @@
 
 (defn make-vector-texture-4d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
+  {:malli/schema [:=> [:cat interpolation boundary float-image-4d] texture-4d]}
   [interpolation boundary image]
   (make-float-texture-4d image interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn destroy-texture
   "Delete an OpenGL texture"
+  {:malli/schema [:=> [:cat texture] :nil]}
   [texture]
   (GL11/glDeleteTextures ^long (:texture texture)))
 
 (defn use-texture
   "Set texture with specified index"
-  [^long index texture]
-  (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 index))
+  {:malli/schema [:=> [:cat :int texture] :nil]}
+  [index texture]
+  (GL13/glActiveTexture ^long (+ GL13/GL_TEXTURE0 index))
   (GL11/glBindTexture (:target texture) (:texture texture)))
 
 (defn use-textures
   "Specify textures to be used in the next rendering operation"
+  {:malli/schema [:=> [:cat [:map-of :int texture]] :nil]}
   [textures]
   (doseq [[index texture] textures] (use-texture index texture)))
 
 (defn- list-texture-layers
   "Return 2D textures and each layer of 3D textures"
+  {:malli/schema [:=> [:cat [:sequential texture]] [:sequential texture]]}
   [textures]
   (flatten
     (map (fn [texture]
@@ -540,6 +593,7 @@
 
 (defn setup-color-attachments
   "Setup color attachments with 2D and 3D textures"
+  {:malli/schema [:=> [:cat [:sequential texture]] :nil]}
   [textures]
   (GL20/glDrawBuffers
     ^java.nio.DirectIntBufferU
@@ -596,6 +650,7 @@
 
 (defn shadow-cascade
   "Render cascaded shadow map"
+  {:malli/schema [:=> [:cat :int [:vector shadow-box] :int fn?] [:vector texture-2d]]}
   [size matrix-cascade program fun]
   (mapv
     (fn [shadow-level]
@@ -607,6 +662,7 @@
 
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
+  {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
@@ -617,6 +673,7 @@
 
 (defn float-texture-2d->floats
   "Extract floating-point floating-point data from texture"
+  {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
@@ -627,6 +684,7 @@
 
 (defn float-texture-3d->floats
   "Extract floating-point floating-point data from texture"
+  {:malli/schema [:=> [:cat texture-3d] float-image-3d]}
   [{:keys [target texture width height depth]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
@@ -637,6 +695,7 @@
 
 (defn rgb-texture->vectors3
   "Extract floating-point RGB vectors from texture"
+  {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
@@ -647,6 +706,7 @@
 
 (defn rgba-texture->vectors4
   "Extract floating-point RGBA vectors from texture"
+  {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
@@ -657,6 +717,7 @@
 
 (defn texture->image
   "Convert texture to RGB image"
+  {:malli/schema [:=> [:cat texture-2d] byte-image]}
   [{:keys [target texture width height]}]
   (with-texture target texture
     (let [size (* 4 width height)
@@ -677,8 +738,6 @@
          (destroy-texture tex#)
          (destroy-texture depth#)
          img#))))
-
-(def texture-3d (m/schema [:map [:width N] [:height N] [:depth N] [:target :int] [:texture :int]]))
 
 (defmacro create-cubemap
   "Macro to initialise cubemap"
