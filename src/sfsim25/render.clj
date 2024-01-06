@@ -751,6 +751,7 @@
 
 (defn- make-cubemap
   "Initialise a cubemap"
+  {:malli/schema [:=> [:cat [:vector float-image-2d] interpolation boundary :int :int :int] texture-3d]}
   [images interpolation boundary internalformat format_ type_]
   (let [size (:width (first images))]
     (create-cubemap interpolation boundary size
@@ -760,17 +761,20 @@
 
 (defn make-float-cubemap
   "Load floating-point 2D textures into red channel of an OpenGL cubemap"
+  {:malli/schema [:=> [:cat interpolation boundary [:vector float-image-2d]] texture-3d]}
   [interpolation boundary images]
   (make-cubemap images interpolation boundary GL30/GL_R32F GL11/GL_RED GL11/GL_FLOAT))
 
 (defn make-empty-float-cubemap
   "Create empty cubemap with faces of specified size"
+  {:malli/schema [:=> [:cat interpolation boundary :int] texture-3d]}
   [interpolation boundary size]
   (create-cubemap interpolation boundary size
                   (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_R32F size size)))
 
 (defn float-cubemap->floats
   "Extract floating-point data from cubemap face"
+  {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
   [{:keys [target texture width height]} face]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
@@ -781,17 +785,20 @@
 
 (defn make-vector-cubemap
   "Load vector 2D textures into an OpenGL cubemap"
+  {:malli/schema [:=> [:cat interpolation boundary [:vector float-image-2d]] texture-3d]}
   [interpolation boundary images]
   (make-cubemap images interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
 
 (defn make-empty-vector-cubemap
   "Create empty cubemap with faces of specified size"
+  {:malli/schema [:=> [:cat interpolation boundary :int] texture-3d]}
   [interpolation boundary size]
   (create-cubemap interpolation boundary size
                   (GL42/glTexStorage2D GL13/GL_TEXTURE_CUBE_MAP 1 GL30/GL_RGB32F size size)))
 
 (defn vector-cubemap->vectors3
   "Extract floating-point vector data from cubemap face"
+  {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
   [{:keys [target texture width height]} face]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))

@@ -369,18 +369,18 @@ void main()
                                            [?x ?y ?z ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
          ?albedo ?ampl ?x ?y ?z       ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g         ?b
-         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0   0   0   0           0          0
-         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
-         1       2     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.4         0          1.6
-         0.9     1     0  0  6378000  1          1.0      0          0   0   1   0      1   1   1   0.9         0          0.9
-         1       1     0  0  6378000  0          1.0      0          1   0   0   0      1   1   1   0           0          1.0
-         1       1     0  0  6378000  1          1.0      0          0   0   1   1      0.2 0.5 0.8 0.1         0          0.4
-         1       1     0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
-         1       1     0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
-         1       1     0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
-         1       1     0  0  6378000  0         -0.05     0          0   0   1   0      0   0   0   0           PI         0.0
-         1       1     0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
-         1       1     0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0)
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   0      0   0   0   0           0          0
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1.0     2.0   0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.4         0          1.6
+         0.9     1.0   0  0  6378000  1          1.0      0          0   0   1   0      1   1   1   0.9         0          0.9
+         1.0     1.0   0  0  6378000  0          1.0      0          1   0   0   0      1   1   1   0           0          1.0
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   1      0.2 0.5 0.8 0.1         0          0.4
+         1.0     1.0   0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
+         1.0     1.0   0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
+         1.0     1.0   0  0  6378000  0         -0.05     0          0   0   1   0      0   0   0   0           PI         0.0
+         1.0     1.0   0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
+         1.0     1.0   0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0)
 
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
@@ -462,8 +462,8 @@ float overall_shadow(vec4 point)
   (uniform-sampler program "surface_radiance" 6)
   (uniform-sampler program "water" 7)
   (uniform-sampler program "worley" 8)
-  (uniform-float program "specular" 100)
-  (uniform-float program "max_height" 100000)
+  (uniform-float program "specular" 100.0)
+  (uniform-float program "max_height" 100000.0)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
 
 (defn setup-uniforms [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
@@ -538,23 +538,23 @@ float overall_shadow(vec4 point)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
-         ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "colors"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "albedo"
-         "white"   0.9     2  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "amplify"
-         "white"   PI      1  1   0   0   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "transmit"
-         "pattern" PI      1  1   1   1   0.2 0.3 0.5   0       100 0   0     0       1.0  0   0   1   0   0   1   "ambient"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0       1.0  0   0   1   0   0   0   "water"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0   1   0   0   1   "reflection1"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0  -1   0   0   1   "reflection3"
-         "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0       1.0  0   0   1   0   0   1   "scatter"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0.5     1.0  0   0   1   0   0   1   "clouds"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       0.5  0   0   1   0   0   1   "shadow")
+         ?colors   ?albedo ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "colors"
+         "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9     1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9     2.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "amplify"
+         "white"   PI      1.0 1   0   0   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "transmit"
+         "pattern" PI      1.0 1   1   1   0.2 0.3 0.5   0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "ambient"
+         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.0   0.0     1.0  0   0   1   0   0   0   "water"
+         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "pattern" PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         "white"   PI      1.0 1   1   1   0   0   0     0     10000 0   0.0   0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1.0 1   1   1   0   0   0     0    200000 0   0.0   0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1.0 1   1   1   0   0   0     0       100 0.5 0.0   0.0     1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     0.5  0   0   1   0   0   1   "shadow")
 
 (def fragment-white-tree
 "#version 410 core
