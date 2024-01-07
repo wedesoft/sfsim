@@ -187,7 +187,7 @@
 
 (tabular "Get the four neighbours for a given path of a tile"
   (fact (?k (neighbour-paths [:5 :1 :2])) => ?path)
-  ?k     ?path
+  ?k                      ?path
   :sfsim25.quadtree/up    [:5 :1 :0]
   :sfsim25.quadtree/left  [:5 :0 :3]
   :sfsim25.quadtree/down  [:5 :3 :0]

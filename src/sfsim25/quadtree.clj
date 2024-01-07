@@ -130,6 +130,7 @@
 
 (defn tile-meta-data
   "Convert tile path to face, level, y and x"
+  {:malli/schema [:=> [:cat [:vector :keyword]] tile-info]}
   [path]
   (let [[top & tree]    path
         dy              {:0 0 :1 0 :2 1 :3 1}
@@ -142,31 +143,38 @@
 
 (defn tiles-meta-data
   "Convert multiple tile paths to face, level, y and x"
+  {:malli/schema [:=> [:cat [:sequential [:vector :keyword]]] [:vector tile-info]]}
   [paths]
-  (map tile-meta-data paths))
+  (mapv tile-meta-data paths))
 
 (defn quadtree-add
   "Add tiles to quad tree"
+  {:malli/schema [:=> [:cat [:maybe :map] [:sequential [:vector :keyword]] [:sequential :map]] [:maybe :map]]}
   [tree paths tiles]
   (reduce (fn [tree [path tile]] (assoc-in tree path tile)) tree (map vector paths tiles)))
 
 (defn quadtree-extract
   "Extract a list of tiles from quad tree"
+  {:malli/schema [:=> [:cat [:maybe :map] [:sequential [:vector :keyword]]] [:vector :map]]}
   [tree paths]
-  (map (partial get-in tree) paths))
+  (mapv (partial get-in tree) paths))
 
 (defn quadtree-drop
   "Drop tiles specified by path list from quad tree"
+  {:malli/schema [:=> [:cat [:maybe :map] [:sequential [:vector :keyword]]] [:maybe :map]]}
   [tree paths]
   (reduce dissoc-in tree paths))
 
 (defn quadtree-update
   "Update tiles with specified paths using a function with optional arguments from lists"
+  {:malli/schema [:=> [:cat [:maybe :map] [:sequential [:vector :keyword]] fn? [:* :any]] [:maybe :map]]}
   [tree paths fun & arglists]
   (reduce (fn [tree [path & args]] (apply update-in tree path fun args)) tree (apply map list paths arglists)))
 
 (defn neighbour-path
   "Determine path of neighbouring tile at same level"
+  {:malli/schema [:=> [:cat [:sequential :keyword] :int :int [:? :boolean]]
+                      [:or [:sequential :keyword] [:tuple [:sequential :keyword] :int :int]]]}
   ([path dy dx top-level]
    (if (empty? path)
      [() dy dx]
@@ -178,26 +186,27 @@
                c2           {:0 :3, :1 :2, :3 :0, :2 :1}
                c3           {:0 :1, :1 :3, :3 :2, :2 :0}
                [replacement rotation]
-                 (case (first path)
-                   :0 (case (long dy) -1 [:3 c2], 0 (case (long dx) -1 [:4 c1], 0 [:0 c0], 1 [:2 c3]), 1 [:1 c0])
-                   :1 (case (long dy) -1 [:0 c0], 0 (case (long dx) -1 [:4 c0], 0 [:1 c0], 1 [:2 c0]), 1 [:5 c0])
-                   :2 (case (long dy) -1 [:0 c1], 0 (case (long dx) -1 [:1 c0], 0 [:2 c0], 1 [:3 c0]), 1 [:5 c3])
-                   :3 (case (long dy) -1 [:0 c2], 0 (case (long dx) -1 [:2 c0], 0 [:3 c0], 1 [:4 c0]), 1 [:5 c2])
-                   :4 (case (long dy) -1 [:0 c3], 0 (case (long dx) -1 [:3 c0], 0 [:4 c0], 1 [:1 c0]), 1 [:5 c1])
-                   :5 (case (long dy) -1 [:1 c0], 0 (case (long dx) -1 [:4 c3], 0 [:5 c0], 1 [:2 c1]), 1 [:3 c2]))]
+               (case (first path)
+                 :0 (case (long dy) -1 [:3 c2], 0 (case (long dx) -1 [:4 c1], 0 [:0 c0], 1 [:2 c3]), 1 [:1 c0])
+                 :1 (case (long dy) -1 [:0 c0], 0 (case (long dx) -1 [:4 c0], 0 [:1 c0], 1 [:2 c0]), 1 [:5 c0])
+                 :2 (case (long dy) -1 [:0 c1], 0 (case (long dx) -1 [:1 c0], 0 [:2 c0], 1 [:3 c0]), 1 [:5 c3])
+                 :3 (case (long dy) -1 [:0 c2], 0 (case (long dx) -1 [:2 c0], 0 [:3 c0], 1 [:4 c0]), 1 [:5 c2])
+                 :4 (case (long dy) -1 [:0 c3], 0 (case (long dx) -1 [:3 c0], 0 [:4 c0], 1 [:1 c0]), 1 [:5 c1])
+                 :5 (case (long dy) -1 [:1 c0], 0 (case (long dx) -1 [:4 c3], 0 [:5 c0], 1 [:2 c1]), 1 [:3 c2]))]
            (cons replacement (map rotation tail)))
          (let [[replacement propagate]
-                 (case tile
-                   :0 (case (long dy) -1 [:2 true ], 0 (case (long dx) -1 [:1 true ] 0 [:0 false] 1 [:1 false]), 1 [:2 false])
-                   :1 (case (long dy) -1 [:3 true ], 0 (case (long dx) -1 [:0 false] 0 [:1 false] 1 [:0 true ]), 1 [:3 false])
-                   :2 (case (long dy) -1 [:0 false], 0 (case (long dx) -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
-                   :3 (case (long dy) -1 [:1 false], 0 (case (long dx) -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
-             [(cons replacement tail) (if propagate dy 0) (if propagate dx 0)])))))
+               (case tile
+                 :0 (case (long dy) -1 [:2 true ], 0 (case (long dx) -1 [:1 true ] 0 [:0 false] 1 [:1 false]), 1 [:2 false])
+                 :1 (case (long dy) -1 [:3 true ], 0 (case (long dx) -1 [:0 false] 0 [:1 false] 1 [:0 true ]), 1 [:3 false])
+                 :2 (case (long dy) -1 [:0 false], 0 (case (long dx) -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
+                 :3 (case (long dy) -1 [:1 false], 0 (case (long dx) -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
+           [(cons replacement tail) (if propagate dy 0) (if propagate dx 0)])))))
   ([path dy dx]
    (neighbour-path path dy dx true)))
 
 (defn neighbour-paths
   "Get the paths for the four neighbours of a tile"
+  {:malli/schema [:=> [:cat [:sequential :keyword]] [:map-of :keyword [:sequential :keyword]]]}
   [path]
   {::up    (neighbour-path path -1  0)
    ::left  (neighbour-path path  0 -1)
@@ -206,6 +215,7 @@
 
 (defn leaf-paths
   "Get a path to every leaf in the tree"
+  {:malli/schema [:=> [:cat [:maybe :map]] [:sequential [:sequential :keyword]]]}
   [tree]
   (mapcat
     (fn [[k v]]
@@ -216,6 +226,7 @@
 
 (defn- check-neighbours-for-tile
   "Update neighbourhood information for a single tile"
+  {:malli/schema [:=> [:cat [:maybe :map] [:sequential :keyword]] [:maybe :map]]}
   [tree path]
   (reduce
     (fn [updated-tree [direction neighbour-path]]
@@ -225,11 +236,16 @@
 
 (defn check-neighbours
   "Populate quad tree with neighbourhood information"
+  {:malli/schema [:=> [:cat [:maybe :map]] [:maybe :map]]}
   [tree]
   (reduce check-neighbours-for-tile tree (leaf-paths tree)))
 
 (defn update-level-of-detail
   "Return tree with updated level of detail (LOD), a list of dropped tiles and a list of new paths"
+  {:malli/schema [:=> [:cat [:maybe :map] :double fn? :boolean]
+                      [:map [:tree [:maybe :map]]
+                            [:drop [:vector :map]]
+                            [:load [:sequential [:vector :keyword]]]]]}
   [tree radius increase-level-fun? neighbours?]
   (let [drop-list (tiles-to-drop tree increase-level-fun?)
         load-list (tiles-to-load tree increase-level-fun?)
