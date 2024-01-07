@@ -2,13 +2,17 @@
   "Manage quad tree of map tiles."
   (:require [fastmath.vector :refer (sub mag)]
             [clojure.math :refer (tan to-radians)]
+            [malli.core :as m]
             [sfsim25.cubemap :refer (tile-center)]
-            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes slurp-normals dissoc-in)]))
+            [sfsim25.matrix :refer (fvec3)]
+            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes slurp-normals dissoc-in N N0 image)]))
 
 (set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 (defn quad-size
   "Determine screen size of a quad of the world map"
+  {:malli/schema [:=> [:cat N0 N :double N :double :double] :double]}
   [level tilesize radius1 width distance angle]
   (let [cnt         (bit-shift-left 1 level)
         real-size   (/ (* 2 radius1) cnt (dec tilesize))
@@ -18,6 +22,7 @@
 
 (defn- quad-size-for-camera-position
   "Determine screen size of a quad given the camera position"
+  {:malli/schema [:=> [:cat N :double N :double fvec3 N0 N0 N0 N0]]}
   [tilesize radius width angle position face level y x]
   (let [center   (tile-center face level y x radius)
         distance (mag (sub position center))]
@@ -25,12 +30,25 @@
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
+  {:malli/schema [:=> [:cat N :double N :double N N fvec3 N0 N0 N0 N0] :boolean]}
   [tilesize radius width angle max-size max-level position face level y x]
   (and (< level max-level)
        (> (quad-size-for-camera-position tilesize radius width angle position face level y x) max-size)))
 
+(def tile (m/schema [:map [:face N0]
+                          [:level N0]
+                          [:y N0]
+                          [:x N0]
+                          [:center :any]
+                          [:day :any]
+                          [:night :any]
+                          [:surface :any]
+                          [:normals :any]
+                          [:water :any]]))
+
 (defn load-tile-data
   "Load data associated with a cube map tile"
+  {:malli/schema [:=> [:cat N0 N0 N0 N0 :double] tile]}
   [face level y x radius]
   {:face    face
    :level   level
@@ -43,8 +61,11 @@
    :normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
    :water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
 
+(def tile-info (m/schema [:map [:face N0] [:level N0] [:y N0] [:x N0]]))
+
 (defn sub-tiles-info
   "Get metadata for sub tiles of cube map tile"
+  {:malli/schema [:=> [:cat N0 N0 N0 N0] [:vector tile-info]]}
   [face level y x]
   [{:face face :level (inc level) :y (* 2 y)       :x (* 2 x)}
    {:face face :level (inc level) :y (* 2 y)       :x (inc (* 2 x))}
@@ -53,11 +74,13 @@
 
 (defn load-tiles-data
   "Load a set of tiles"
+  {:malli/schema [:=> [:cat [:sequential tile-info] :double] [:vector :any]]}
   [metadata radius]
-  (map (fn [{:keys [face level y x]}] (load-tile-data face level y x radius)) metadata))
+  (mapv (fn [{:keys [face level y x]}] (load-tile-data face level y x radius)) metadata))
 
 (defn is-leaf?
   "Check whether specified tree node is a leaf"
+  {:malli/schema [:=> [:cat [:maybe :map]] :boolean]}
   [node]
   (not
     (or (nil? node)
@@ -70,6 +93,7 @@
 
 (defn- is-flat?
   "Check whether node has four leafs"
+  {:malli/schema [:=> [:cat :map] :boolean]}
   [node]
   (and (is-leaf? (:0 node)) (is-leaf? (:1 node)) (is-leaf? (:2 node)) (is-leaf? (:3 node))))
 
@@ -80,6 +104,7 @@
 
 (defn tiles-to-drop
   "Determine tiles to remove from the quad tree"
+  {:malli/schema [:=> [:cat [:maybe :map] fn? [:? [:vector :keyword]]] [:sequential [:vector :keyword]]]}
   ([tree increase-level-fun?]
    (mapcat #(tiles-to-drop (% tree) increase-level-fun? [%]) [:0 :1 :2 :3 :4 :5]))
   ([tree increase-level-fun? path]
@@ -90,6 +115,7 @@
 
 (defn tiles-to-load
   "Determine which tiles to load into the quad tree"
+  {:malli/schema [:=> [:cat [:maybe :map] fn? [:? [:vector :keyword]]] [:sequential [:vector :keyword]]]}
   ([tree increase-level-fun?]
    (if (empty? tree)
      [[:0] [:1] [:2] [:3] [:4] [:5]]
@@ -153,19 +179,19 @@
                c3           {:0 :1, :1 :3, :3 :2, :2 :0}
                [replacement rotation]
                  (case (first path)
-                   :0 (case dy -1 [:3 c2], 0 (case dx -1 [:4 c1], 0 [:0 c0], 1 [:2 c3]), 1 [:1 c0])
-                   :1 (case dy -1 [:0 c0], 0 (case dx -1 [:4 c0], 0 [:1 c0], 1 [:2 c0]), 1 [:5 c0])
-                   :2 (case dy -1 [:0 c1], 0 (case dx -1 [:1 c0], 0 [:2 c0], 1 [:3 c0]), 1 [:5 c3])
-                   :3 (case dy -1 [:0 c2], 0 (case dx -1 [:2 c0], 0 [:3 c0], 1 [:4 c0]), 1 [:5 c2])
-                   :4 (case dy -1 [:0 c3], 0 (case dx -1 [:3 c0], 0 [:4 c0], 1 [:1 c0]), 1 [:5 c1])
-                   :5 (case dy -1 [:1 c0], 0 (case dx -1 [:4 c3], 0 [:5 c0], 1 [:2 c1]), 1 [:3 c2]))]
+                   :0 (case (long dy) -1 [:3 c2], 0 (case (long dx) -1 [:4 c1], 0 [:0 c0], 1 [:2 c3]), 1 [:1 c0])
+                   :1 (case (long dy) -1 [:0 c0], 0 (case (long dx) -1 [:4 c0], 0 [:1 c0], 1 [:2 c0]), 1 [:5 c0])
+                   :2 (case (long dy) -1 [:0 c1], 0 (case (long dx) -1 [:1 c0], 0 [:2 c0], 1 [:3 c0]), 1 [:5 c3])
+                   :3 (case (long dy) -1 [:0 c2], 0 (case (long dx) -1 [:2 c0], 0 [:3 c0], 1 [:4 c0]), 1 [:5 c2])
+                   :4 (case (long dy) -1 [:0 c3], 0 (case (long dx) -1 [:3 c0], 0 [:4 c0], 1 [:1 c0]), 1 [:5 c1])
+                   :5 (case (long dy) -1 [:1 c0], 0 (case (long dx) -1 [:4 c3], 0 [:5 c0], 1 [:2 c1]), 1 [:3 c2]))]
            (cons replacement (map rotation tail)))
          (let [[replacement propagate]
                  (case tile
-                   :0 (case dy -1 [:2 true ], 0 (case dx -1 [:1 true ] 0 [:0 false] 1 [:1 false]), 1 [:2 false])
-                   :1 (case dy -1 [:3 true ], 0 (case dx -1 [:0 false] 0 [:1 false] 1 [:0 true ]), 1 [:3 false])
-                   :2 (case dy -1 [:0 false], 0 (case dx -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
-                   :3 (case dy -1 [:1 false], 0 (case dx -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
+                   :0 (case (long dy) -1 [:2 true ], 0 (case (long dx) -1 [:1 true ] 0 [:0 false] 1 [:1 false]), 1 [:2 false])
+                   :1 (case (long dy) -1 [:3 true ], 0 (case (long dx) -1 [:0 false] 0 [:1 false] 1 [:0 true ]), 1 [:3 false])
+                   :2 (case (long dy) -1 [:0 false], 0 (case (long dx) -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
+                   :3 (case (long dy) -1 [:1 false], 0 (case (long dx) -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
              [(cons replacement tail) (if propagate dy 0) (if propagate dx 0)])))))
   ([path dy dx]
    (neighbour-path path dy dx true)))
@@ -213,4 +239,5 @@
      :drop (quadtree-extract tree drop-list)
      :load load-list}))
 
+(set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

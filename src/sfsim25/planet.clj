@@ -338,7 +338,7 @@
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
   [{:keys [tilesize radius width]} tree position]
-  (let [increase? (partial increase-level? tilesize radius width 60 10 6 position)]
+  (let [increase? (partial increase-level? tilesize radius width 60.0 10 6 position)]; TODO: use parameters for values
     (update-level-of-detail tree radius increase? true)))
 
 (defn make-tile-tree
