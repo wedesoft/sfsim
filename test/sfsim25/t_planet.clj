@@ -1,5 +1,7 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (PI exp pow)]
@@ -17,6 +19,9 @@
               [sfsim25.clouds :as clouds])
     (:import [org.lwjgl.glfw GLFW]
              [fastmath.matrix Mat4x4]))
+
+(mi/collect! {:ns ['sfsim25.planet]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
@@ -614,7 +619,8 @@ void main()
   (let [calls (atom [])]
     (with-redefs [render-tile (fn [^long program ^clojure.lang.IPersistentMap tile ^Mat4x4 transform
                                    ^clojure.lang.PersistentVector texture-keys]
-                                  (swap! calls conj [program tile transform texture-keys]))]
+                                  (swap! calls conj [program tile transform texture-keys])
+                                  nil)]
       (render-tree program node transform texture-keys)
       @calls)))
 

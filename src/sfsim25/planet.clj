@@ -1,20 +1,26 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
     (:require [fastmath.matrix :refer (mulm eye)]
-              [sfsim25.matrix :refer (transformation-matrix)]
+              [malli.core :as m]
+              [sfsim25.matrix :refer (transformation-matrix fmat4 fvec3)]
               [sfsim25.cubemap :refer (cube-map-corners)]
-              [sfsim25.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail)]
+              [sfsim25.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info)]
               [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
                                       use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float
                                       make-vertex-array-object make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d
-                                      destroy-vertex-array-object)]
+                                      destroy-vertex-array-object vertex-array-object texture-2d) :as render]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
+              [sfsim25.util :refer (N N0)]
               [sfsim25.clouds :refer (overall-shadow cloud-planet)]
               [sfsim25.shaders :as shaders])
     (:import [fastmath.matrix Mat4x4]))
 
+(set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
+
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
+  {:malli/schema [:=> [:cat N0 N0 N0 N0 N N] [:vector :double]]}
   [face level y x height-tilesize color-tilesize]
   (let [[a b c d] (cube-map-corners face level y x)
         h0        (/ 0.5 height-tilesize)
@@ -57,6 +63,7 @@
 
 (defn fragment-planet
   "Fragment shader to render planetary surface"
+  {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [shaders/ray-sphere ground-radiance attenuation-track cloud-overlay (overall-shadow num-steps)
    (slurp "resources/shaders/planet/fragment.glsl")])
@@ -67,12 +74,14 @@
 
 (defn fragment-planet-clouds
   "Fragment shader to render clouds below horizon"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [(cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/planet/fragment-clouds.glsl")])
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
-  [^long program ^clojure.lang.IPersistentMap tile ^Mat4x4 transform ^clojure.lang.PersistentVector texture-keys]
+  {:malli/schema [:=> [:cat :int [:map [:vao vertex-array-object]] fmat4 [:vector :keyword]] :nil]}
+  [program tile transform ^clojure.lang.PersistentVector texture-keys]
   (let [neighbours  (bit-or (if (:sfsim25.quadtree/up    tile) 1 0)
                             (if (:sfsim25.quadtree/left  tile) 2 0)
                             (if (:sfsim25.quadtree/down  tile) 4 0)
@@ -86,7 +95,8 @@
 
 (defn render-tree
   "Call each tile in tree to be rendered"
-  [^long program ^clojure.lang.IPersistentMap node ^Mat4x4 transform ^clojure.lang.PersistentVector texture-keys]
+  {:malli/schema [:=> [:cat :int [:maybe :map] :any [:vector :keyword]] :nil]}
+  [program node transform texture-keys]
   (when-not (empty? node)
             (if (is-leaf? node)
               (render-tile program node transform texture-keys)
@@ -95,6 +105,7 @@
 
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
+  {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [tilesize shadow-size]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
@@ -111,22 +122,26 @@
 
 (defn render-shadow-cascade
   "Render planetary shadow cascade (untested)"
+  {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{:keys [program shadow-size]} & {:keys [matrix-cascade tree]}]
   (shadow-cascade shadow-size matrix-cascade program (fn [transform] (render-tree program tree transform [:surf-tex]))))
 
 (defn destroy-shadow-cascade
   "Destroy cascade of shadow maps (untested)"
+  {:malli/schema [:=> [:cat [:vector texture-2d]] :nil]}
   [shadows]
   (doseq [shadow shadows]
          (destroy-texture shadow)))
 
 (defn destroy-planet-shadow-renderer
   "Destroy renderer for planet shadow (untested)"
+  {:malli/schema [:=> [:cat :map] :nil]}
   [{:keys [program]}]
   (destroy-program program))
 
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
+  {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
              num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-planet]
@@ -188,6 +203,7 @@
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
+  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program transmittance scatter mie cloud-data]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade
              shadows opacities tree]}]
@@ -212,11 +228,13 @@
 
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon (untested)"
+  {:malli/schema [:=> [:cat :map] :nil]}
   [{:keys [program]}]
   (destroy-program program))
 
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
+  {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [width height num-steps tilesize color-tilesize albedo dawn-start dawn-end reflectivity specular radius max-height
              water-color amplification num-opacity-layers shadow-size transmittance scatter mie surface-radiance]}]
   (let [program (make-program :vertex [vertex-planet]
@@ -275,6 +293,7 @@
 
 (defn render-planet
   "Render planet (untested)"
+  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program transmittance scatter mie surface-radiance]}
    & {:keys [projection origin transform light-direction opacity-step window-width window-height shadow-bias splits
              matrix-cascade clouds shadows opacities tree]}]
@@ -298,11 +317,13 @@
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program (untested)"
+  {:malli/schema [:=> [:cat :map] :nil]}
   [{:keys [program]}]
   (destroy-program program))
 
 (defn load-tile-into-opengl
   "Load textures of single tile into OpenGL (untested)"
+  {:malli/schema [:=> [:cat :map tile-info] tile-info]}
   [{:keys [program tilesize color-tilesize]} tile]
   (let [indices    [0 2 3 1]
         vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
@@ -317,11 +338,13 @@
 
 (defn load-tiles-into-opengl
   "Load tiles into OpenGL (untested)"
+  {:malli/schema [:=> [:cat :map :map [:sequential [:vector :keyword]]] :map]}
   [planet-renderer tree paths]
   (quadtree-update tree paths (partial load-tile-into-opengl planet-renderer)))
 
 (defn unload-tile-from-opengl
   "Remove textures of single tile from OpenGL (untested)"
+  {:malli/schema [:=> [:cat tile-info] :nil]}
   [tile]
   (destroy-texture (:day-tex tile))
   (destroy-texture (:night-tex tile))
@@ -332,23 +355,29 @@
 
 (defn unload-tiles-from-opengl
   "Remove tile textures from OpenGL (untested)"
+  {:malli/schema [:=> [:cat [:sequential tile-info]] :nil]}
   [tiles]
   (doseq [tile tiles] (unload-tile-from-opengl tile)))
 
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
+  {:malli/schema [:=> [:cat :map :map fvec3] :map]}
   [{:keys [tilesize radius width]} tree position]
   (let [increase? (partial increase-level? tilesize radius width 60.0 10 6 position)]; TODO: use parameters for values
     (update-level-of-detail tree radius increase? true)))
 
+(def tree (m/schema [:map [:tree :some] [:changes :some]]))
+
 (defn make-tile-tree
   "Create empty tile tree and empty change object (untested)"
+  {:malli/schema [:=> :cat tree]}
   []
   {:tree    (atom [])
    :changes (atom (future {:tree {} :drop [] :load []}))})
 
 (defn update-tile-tree
   "Schedule background tile tree updates (untested)"
+  {:malli/schema [:=> [:cat :map tree fvec3] :any]}
   [planet-renderer {:keys [tree changes]} position]
   (when (realized? @changes)
     (let [data @@changes]
@@ -358,5 +387,9 @@
 
 (defn get-current-tree
   "Get current state of tile tree (untested)"
+  {:malli/schema [:=> [:cat tree] :map]}
   [{:keys [tree]}]
   @tree)
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)
