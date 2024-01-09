@@ -1,5 +1,7 @@
 (ns sfsim25.t-model
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [clojure.math :refer (to-radians sqrt PI)]
               [sfsim25.conftest :refer (roughly-matrix roughly-vector roughly-quaternion record-image is-image)]
               [fastmath.matrix :refer (eye mulm mat4x4)]
@@ -9,6 +11,9 @@
               [sfsim25.model :refer :all :as model]
               [sfsim25.quaternion :refer (->Quaternion)])
     (:import [org.lwjgl.glfw GLFW]))
+
+(mi/collect! {:ns ['sfsim25.model]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
