@@ -1,11 +1,16 @@
 (ns sfsim25.t-quaternion
   (:refer-clojure :exclude [+ - *])
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
+            [malli.dev.pretty :as pretty]
             [sfsim25.conftest :refer (roughly-vector)]
             [clojure.core :as c]
             [clojure.math :refer (PI E)]
             [fastmath.vector :refer (vec3)]
             [sfsim25.quaternion :refer :all]))
+
+(mi/collect! {:ns ['sfsim25.quaternion]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (def  o (->Quaternion  1  0  0  0))
 (def -o (->Quaternion -1  0  0  0))
@@ -52,7 +57,7 @@
   k  k -o)
 
 (fact "Scale quaternion by real number"
-      (scale (->Quaternion 2 3 5 7) 2) => (->Quaternion 4 6 10 14))
+      (scale (->Quaternion 2 3 5 7) 2.0) => (->Quaternion 4 6 10 14))
 
 (fact "Norm of quaternion"
   (norm (->Quaternion 0.216 0.288 0.48 0.8)) => 1.0)
@@ -90,12 +95,12 @@
 (tabular "Represent rotation using quaternion"
   (fact (?component (rotation ?angle ?axis)) => (roughly ?result 1e-6))
   ?axis                ?angle     ?component ?result
-  (vec3 0 0 1)         0          :a         1.0
+  (vec3 0 0 1)         0.0        :a         1.0
   (vec3 0 0 1)         (c/* 2 PI) :a        -1.0
   (vec3 0.36 0.48 0.8) PI         :b         0.36
   (vec3 0.36 0.48 0.8) PI         :d         0.8
   (vec3 0.36 0.48 0.8) (/ PI 3)   :b         0.18)
 
 (facts "Rotate a vector using a rotation quaternion"
-  (rotate-vector (rotation 0 (vec3 1 0 0)) (vec3 2 4 8))        => (roughly-vector (vec3 2  4 8) 1e-6)
+  (rotate-vector (rotation 0.0 (vec3 1 0 0)) (vec3 2 4 8))        => (roughly-vector (vec3 2  4 8) 1e-6)
   (rotate-vector (rotation (/ PI 2) (vec3 1 0 0)) (vec3 2 4 8)) => (roughly-vector (vec3 2 -8 4) 1e-6))
