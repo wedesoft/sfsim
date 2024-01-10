@@ -5,7 +5,7 @@
               [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
               [fastmath.vector :refer (vec3 mult add)]
               [sfsim25.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles make-rgba-texture
-                                      destroy-texture)]
+                                      destroy-texture vertex-array-object texture-2d)]
               [sfsim25.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
               [sfsim25.util :refer (N0 image)]
               [sfsim25.quaternion :refer (->Quaternion quaternion) :as q])
@@ -109,7 +109,7 @@
      :normal-texture-index (decode-texture-index material Assimp/aiTextureType_NORMALS)}))
 
 (def mesh (m/schema [:map [:indices [:vector N0]]
-                          [:vertices [:vector :double]]
+                          [:vertices [:vector number?]]
                           [:attributes [:vector [:or :string N0]]]
                           [:material-index N0]]))
 
@@ -223,38 +223,45 @@
 
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
+  {:malli/schema [:=> [:cat fn? mesh material] [:map [:vao vertex-array-object]]]}
   [program-selection mesh material]
   (assoc mesh :vao (make-vertex-array-object (program-selection material) (:indices mesh) (:vertices mesh) (:attributes mesh))))
 
 (defn- load-meshes-into-opengl
   "Load meshes into OpenGL buffers"
+  {:malli/schema [:=> [:cat [:map [:root node]] fn?] [:map [:root node] [:meshes [:vector mesh]]]]}
   [scene program-selection]
   (let [material (fn [mesh] (nth (:materials scene) (:material-index mesh)))]
     (update scene :meshes (fn [meshes] (mapv #(load-mesh-into-opengl program-selection % (material %)) meshes)))))
 
 (defn- load-textures-into-opengl
   "Load images into OpenGL textures"
+  {:malli/schema [:=> [:cat [:map [:root node]]] [:map [:root node] [:textures [:vector texture-2d]]]]}
   [scene]
   (update scene :textures (fn [textures] (mapv #(make-rgba-texture :linear :repeat %) textures))))
 
 (defn- propagate-texture
   "Add color and normal textures to material"
+  {:malli/schema [:=> [:cat material [:vector texture-2d]] material]}
   [material textures]
   (merge material {:colors  (some->> material :color-texture-index (nth textures))
                    :normals (some->> material :normal-texture-index (nth textures))}))
 
 (defn- propagate-textures
   "Add OpenGL textures to materials"
+  {:malli/schema [:=> [:cat [:map [:root node]]] [:map [:root node] [:materials [:vector material]]]]}
   [scene]
   (update scene :materials (fn [materials] (mapv #(propagate-texture % (:textures scene)) materials))))
 
 (defn- propagate-materials
   "Add material information to meshes"
+  {:malli/schema [:=> [:cat [:map [:root node]]] [:map [:root node] [:meshes [:vector mesh]]]]}
   [scene]
   (update scene :meshes (fn [meshes] (mapv #(assoc % :material (nth (:materials scene) (:material-index %))) meshes))))
 
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
+  {:malli/schema [:=> [:cat fn? [:map [:root node]]] [:map [:root node]]]}
   [program-selection scene]
   (-> scene
       load-textures-into-opengl
@@ -264,12 +271,14 @@
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
+  {:malli/schema [:=> [:cat [:map [:root node]]] :nil]}
   [scene]
   (doseq [mesh (:meshes scene)] (destroy-vertex-array-object (:vao mesh)))
   (doseq [texture (:textures scene)] (destroy-texture texture)))
 
 (defn render-scene
   "Render meshes of specified scene"
+  {:malli/schema [:=> [:cat fn? [:map [:root node]] :any [:? [:cat fmat4 node]]] :nil]}
   ([program-selection scene callback]
    (render-scene program-selection scene callback (eye 4) (:root scene)))
   ([program-selection scene callback transform node]
@@ -285,6 +294,7 @@
 
 (defn- interpolate-frame
   "Interpolate between pose frames"
+  {:malli/schema [:=> [:cat [:vector [:map [:time :double]]] :double :keyword fn?] :some]}
   [key-frames t k lerp]
   (let [n       (count key-frames)
         t0      (:time (first key-frames))
@@ -300,6 +310,7 @@
 
 (defn- nearest-quaternion
   "Return nearest rotation quaternion to q with same rotation as p"
+  {:malli/schema [:=> [:cat quaternion quaternion] quaternion]}
   [p q]
   (let [positive-p-dist (q/norm2 (q/- q p))
         negative-p-dist (q/norm2 (q/+ q p))]
@@ -307,24 +318,28 @@
 
 (defn interpolate-position
   "Interpolate between scaling frames"
+  {:malli/schema [:=> [:cat [:vector position-key] :double] fvec3]}
   [key-frames t]
   (interpolate-frame key-frames t :position
                      (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-rotation
   "Interpolate between rotation frames"
+  {:malli/schema [:=> [:cat [:vector rotation-key] :double] quaternion]}
   [key-frames t]
   (interpolate-frame key-frames t :rotation
                      (fn [a b weight] (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 weight))))))
 
 (defn interpolate-scaling
   "Interpolate between scaling frames"
+  {:malli/schema [:=> [:cat [:vector scaling-key] :double] fvec3]}
   [key-frames t]
   (interpolate-frame key-frames t :scaling
                      (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-transformation
   "Determine transformation matrix for a given channel and time"
+  {:malli/schema [:=> [:cat channel :double] fmat4]}
   [channel t]
   (let [position (interpolate-position (:position-keys channel) t)
         rotation (interpolate-rotation (:rotation-keys channel) t)
@@ -333,6 +348,7 @@
 
 (defn animations-frame
   "Create hash map with transforms for objects of model given a hash map of animation times"
+  {:malli/schema [:=> [:cat [:map [:animations :map]] :map] [:map-of :string :some]]}
   [model animation-times]
   (let [animations (:animations model)]
     (or (apply merge
@@ -344,6 +360,7 @@
 
 (defn- apply-transforms-node
   "Apply hash map of transforms to node and children"
+  {:malli/schema [:=> [:cat :map [:map-of :string :some]] :map]}
   [node transforms]
   (assoc node
          :transform (or (transforms (:name node)) (:transform node))
@@ -351,6 +368,7 @@
 
 (defn apply-transforms
   "Apply hash map of transforms to model in order to animate it"
+  {:malli/schema [:=> [:cat [:map [:root :map]] [:map-of :string :some]] [:map [:root :map]]]}
   [model transforms]
   (assoc model :root (apply-transforms-node (:root model) transforms)))
 
