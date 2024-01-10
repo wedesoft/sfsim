@@ -1,4 +1,5 @@
 # TODO
+* reflection warnings in model module
 * test for scale-elevation
 * enable warn on reflection in more places
 * problem with shadow map when near ground
