@@ -142,7 +142,7 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
+  [& {:keys [num-steps radius max-height depth tilesize reflectivity specular water-color amplification
              num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
@@ -181,7 +181,6 @@
     (uniform-int program "heading_size" (:width scatter))
     (uniform-int program "transmittance_height_size" (:height transmittance))
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
-    (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
     (uniform-float program "cloud_multiplier" (:cloud-multiplier cloud-data))

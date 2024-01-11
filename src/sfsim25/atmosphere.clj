@@ -408,7 +408,7 @@
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps albedo reflectivity num-opacity-layers shadow-size radius max-height specular amplification
+  [& {:keys [num-steps reflectivity shadow-size radius max-height specular amplification
              transmittance scatter mie surface-radiance]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
@@ -428,9 +428,7 @@
     (uniform-int program "transmittance_height_size" (:height transmittance))
     (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
     (uniform-int program "surface_height_size" (:height surface-radiance))
-    (uniform-float program "albedo" albedo)
     (uniform-float program "reflectivity" reflectivity)
-    (uniform-int program "num_opacity_layers" num-opacity-layers)
     (uniform-int program "shadow_size" shadow-size)
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)

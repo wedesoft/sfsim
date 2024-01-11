@@ -328,7 +328,7 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
+  [& {:keys [num-steps radius max-height depth tilesize amplification
              num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps
@@ -363,16 +363,12 @@
     (uniform-int program "heading_size" (:width scatter))
     (uniform-int program "transmittance_height_size" (:height transmittance))
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
-    (uniform-float program "albedo" albedo)
-    (uniform-float program "reflectivity" reflectivity)
-    (uniform-float program "specular" specular)
     (uniform-float program "cloud_multiplier" (:cloud-multiplier cloud-data))
     (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
     (uniform-float program "cap" (:cap cloud-data))
     (uniform-float program "anisotropic" (:anisotropic cloud-data))
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
-    (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" num-opacity-layers)

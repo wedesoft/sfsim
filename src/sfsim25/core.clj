@@ -123,7 +123,6 @@
                                      :max-height max-height
                                      :depth depth
                                      :tilesize tilesize
-                                     :albedo albedo
                                      :reflectivity reflectivity
                                      :specular specular
                                      :water-color water-color
@@ -142,10 +141,6 @@
                                          :max-height max-height
                                          :depth depth
                                          :tilesize tilesize
-                                         :albedo albedo
-                                         :reflectivity reflectivity
-                                         :specular specular
-                                         :water-color water-color
                                          :amplification amplification
                                          :num-opacity-layers num-opacity-layers
                                          :shadow-size shadow-size
@@ -180,9 +175,7 @@
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :num-steps num-steps
-                                       :albedo albedo
                                        :reflectivity 0.1
-                                       :num-opacity-layers num-opacity-layers
                                        :shadow-size shadow-size
                                        :radius radius
                                        :max-height max-height

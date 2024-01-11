@@ -3,7 +3,7 @@
   (:require [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
             [sfsim25.matrix :refer (fvec3 fmat3 fmat4 shadow-box)]
-            [sfsim25.util :refer (N image)])
+            [sfsim25.util :refer (N N0 image)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [org.lwjgl.glfw GLFW]
@@ -221,9 +221,9 @@
   [program]
   (GL20/glUseProgram ^long program))
 
-(defn uniform-location
+(defn- uniform-location
   "Get index of uniform variable"
-  {:malli/schema [:=> [:cat :int :string] N]}
+  {:malli/schema [:=> [:cat :int :string] :int]}
   [program k]
   (GL20/glGetUniformLocation ^long program ^String k))
 
