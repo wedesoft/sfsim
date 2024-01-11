@@ -328,7 +328,7 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps radius max-height depth tilesize amplification
+  [& {:keys [num-steps radius max-height tilesize amplification
              num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps
@@ -352,7 +352,6 @@
     (uniform-float program "cloud_top" (:cloud-top cloud-data))
     (uniform-float program "cloud_scale" (:cloud-scale cloud-data))
     (uniform-float program "detail_scale" (:detail-scale cloud-data))
-    (uniform-float program "depth" depth)
     (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
     (uniform-int program "noise_size" (:width (:bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))

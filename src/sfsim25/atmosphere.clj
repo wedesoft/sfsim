@@ -408,28 +408,20 @@
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps reflectivity shadow-size radius max-height specular amplification
-             transmittance scatter mie surface-radiance]}]
+  [& {:keys [radius max-height specular amplification transmittance scatter mie]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
     (uniform-sampler program "transmittance" 0)
     (uniform-sampler program "ray_scatter" 1)
     (uniform-sampler program "mie_strength" 2)
-    (uniform-sampler program "surface_radiance" 3)
-    (uniform-sampler program "clouds" 4)
-    (doseq [i (range num-steps)]
-           (uniform-sampler program (str "opacity" i) (+ i 5)))
+    (uniform-sampler program "clouds" 3)
     (uniform-int program "height_size" (:hyperdepth scatter))
     (uniform-int program "elevation_size" (:depth scatter))
     (uniform-int program "light_elevation_size" (:height scatter))
     (uniform-int program "heading_size" (:width scatter))
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
     (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
-    (uniform-int program "surface_height_size" (:height surface-radiance))
-    (uniform-float program "reflectivity" reflectivity)
-    (uniform-int program "shadow_size" shadow-size)
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
     (uniform-float program "specular" specular)
@@ -437,34 +429,24 @@
     {:program program
      :transmittance transmittance
      :scatter scatter
-     :mie mie
-     :surface-radiance surface-radiance}))
+     :mie mie}))
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program transmittance scatter mie surface-radiance]}
-   & {:keys [splits matrix-cascade projection extrinsics origin opacity-step window-width window-height light-direction clouds
-             opacities z-far]}]
+  [{:keys [program transmittance scatter mie]}
+   & {:keys [projection extrinsics origin window-width window-height light-direction clouds z-far]}]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
-    (doseq [[idx item] (map-indexed vector splits)]
-           (uniform-float program (str "split" idx) item))
-    (doseq [[idx item] (map-indexed vector matrix-cascade)]
-           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-           (uniform-float program (str "depth" idx) (:depth item)))
     (uniform-matrix4 program "projection" projection)
     (uniform-matrix4 program "extrinsics" extrinsics)
     (uniform-vector3 program "origin" origin)
-    (uniform-matrix4 program "transform" (inverse extrinsics))
-    (uniform-float program "opacity_step" opacity-step)
     (uniform-int program "window_width" window-width)
     (uniform-int program "window_height" window-height)
     (uniform-vector3 program "light_direction" light-direction)
-    (use-textures {0 transmittance 1 scatter 2 mie 3 surface-radiance 4 clouds})
-    (use-textures (zipmap (drop 5 (range)) opacities))
+    (use-textures {0 transmittance 1 scatter 2 mie 3 clouds})
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 

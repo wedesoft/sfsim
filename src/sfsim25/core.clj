@@ -20,6 +20,10 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+; (require '[malli.dev :as dev])
+; (require '[malli.dev.pretty :as pretty])
+; (dev/start! {:report (pretty/thrower)})
+
 (def width 1280)
 (def height 720)
 
@@ -123,9 +127,6 @@
                                      :max-height max-height
                                      :depth depth
                                      :tilesize tilesize
-                                     :reflectivity reflectivity
-                                     :specular specular
-                                     :water-color water-color
                                      :amplification amplification
                                      :num-opacity-layers num-opacity-layers
                                      :shadow-size shadow-size
@@ -139,7 +140,6 @@
   (clouds/make-cloud-atmosphere-renderer :num-steps num-steps
                                          :radius radius
                                          :max-height max-height
-                                         :depth depth
                                          :tilesize tilesize
                                          :amplification amplification
                                          :num-opacity-layers num-opacity-layers
@@ -174,17 +174,13 @@
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :num-steps num-steps
-                                       :reflectivity 0.1
-                                       :shadow-size shadow-size
-                                       :radius radius
+  (atmosphere/make-atmosphere-renderer :radius radius
                                        :max-height max-height
                                        :specular specular
                                        :amplification amplification
                                        :transmittance transmittance
                                        :scatter scatter
-                                       :mie mie
-                                       :surface-radiance surface-radiance))
+                                       :mie mie))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -302,18 +298,14 @@
                                                       :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer
-                                                              :splits splits
-                                                              :matrix-cascade matrix-cas
                                                               :projection projection
                                                               :extrinsics extrinsics
                                                               :origin @position
-                                                              :opacity-step opacity-step
                                                               :window-width (aget w 0)
                                                               :window-height (aget h 0)
                                                               :light-direction light-dir
                                                               :z-far z-far
-                                                              :clouds clouds
-                                                              :opacities opacities))
+                                                              :clouds clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-cascade opacities)
                (planet/destroy-shadow-cascade shadows))
