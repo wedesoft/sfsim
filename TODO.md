@@ -1,8 +1,8 @@
 # TODO
+* group uniforms
 * test for scale-elevation
 * enable warn on reflection in more places
 * problem with shadow map when near ground
-* look at https://github.com/metosin/malli
 * integration test using computed data set, use seed for random data?
 * make modules out of core.clj
   * group textures with dimension data
