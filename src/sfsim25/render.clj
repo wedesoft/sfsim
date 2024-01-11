@@ -221,43 +221,49 @@
   [program]
   (GL20/glUseProgram ^long program))
 
+(defn uniform-location
+  "Get index of uniform variable"
+  {:malli/schema [:=> [:cat :int :string] N]}
+  [program k]
+  (GL20/glGetUniformLocation ^long program ^String k))
+
 (defn uniform-float
   "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string :double] :nil]}
   [program k value]
-  (GL20/glUniform1f (GL20/glGetUniformLocation ^long program ^String k) value))
+  (GL20/glUniform1f ^long (uniform-location program k) value))
 
 (defn uniform-int
   "Set uniform integer variable in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string :int] :nil]}
   [program k value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^long program ^String k) value))
+  (GL20/glUniform1i ^long (uniform-location program k) value))
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string fvec3] :nil]}
   [program k value]
-  (GL20/glUniform3f (GL20/glGetUniformLocation ^long program ^String k) (value 0) (value 1) (value 2)))
+  (GL20/glUniform3f ^long (uniform-location program k) (value 0) (value 1) (value 2)))
 
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string fmat3] :nil]}
   [program k value]
-  (GL20/glUniformMatrix3fv (GL20/glGetUniformLocation ^long program ^String k) true
+  (GL20/glUniformMatrix3fv ^long (uniform-location program k) true
                            ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 (defn uniform-matrix4
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string fmat4] :nil]}
   [program k value]
-  (GL20/glUniformMatrix4fv (GL20/glGetUniformLocation ^long program ^String k) true
+  (GL20/glUniformMatrix4fv ^long (uniform-location program k) true
                            ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 (defn uniform-sampler
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string :int] :nil]}
   [program k value]
-  (GL20/glUniform1i (GL20/glGetUniformLocation ^long program ^String k) value))
+  (GL20/glUniform1i ^long (uniform-location program k) value))
 
 (defn- setup-vertex-array-object
   "Initialise rendering of a vertex array object"
