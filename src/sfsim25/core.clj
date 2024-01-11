@@ -3,8 +3,7 @@
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
             [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (make-window destroy-window clear destroy-texture generate-mipmap make-float-cubemap
-                                    make-float-texture-2d make-float-texture-3d make-vector-texture-2d make-vector-texture-4d
+            [sfsim25.render :refer (make-window destroy-window clear destroy-texture make-vector-texture-2d make-vector-texture-4d
                                     onscreen-render texture-render-color-depth)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]
@@ -32,13 +31,13 @@
 (def threshold (atom 18.2))
 (def anisotropic 0.25)
 (def shadow-bias (exp -6.0))
-(def cloud-bottom 2000)
-(def cloud-top 5000)
+(def cloud-bottom 2000.0)
+(def cloud-top 5000.0)
 (def cloud-multiplier 10.0)
 (def cover-multiplier 26.0)
 (def cap 0.007)
-(def detail-scale 4000)
-(def cloud-scale 100000)
+(def detail-scale 4000.0)
+(def cloud-scale 100000.0)
 (def series (take 4 (iterate #(* % 0.7) 1.0)))
 (def sum-series (apply + series))
 (def cloud-octaves (mapv #(/ % sum-series) series))
@@ -69,12 +68,12 @@
 (def num-opacity-layers 7)
 (def opacity-cutoff 0.01)
 (def albedo 0.9)
-(def specular 1000)
+(def specular 1000.0)
 (def reflectivity 0.1)
 (def dawn-start -0.2)
 (def dawn-end 0.0)
 (def water-color (vec3 0.09 0.11 0.34))
-(def amplification 6)
+(def amplification 6.0)
 
 (GLFW/glfwInit)
 
@@ -220,9 +219,9 @@
            (planet/update-tile-tree planet-renderer tile-tree @position)
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
-                 ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0))
-                 rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0))
-                 rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0))
+                 ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
+                 rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
+                 rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
                  v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 50 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -50 0))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
@@ -246,7 +245,7 @@
                    extrinsics   (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
                    splits       (split-list mix z-near z-far num-steps)
-                   scatter-am   (+ (* anisotropic (phase 0.76 -1)) (- 1 anisotropic))
+                   scatter-am   (+ (* anisotropic (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0)) (- 1 anisotropic))
                    cos-light    (/ (dot light-dir @position) (mag @position))
                    sin-light    (sqrt (- 1 (sqr cos-light)))
                    opacity-step (* (+ cos-light (* 10 sin-light)) @opacity-base)
@@ -259,7 +258,7 @@
                    h2         (quot (aget h 0) 2)
                    clouds     (texture-render-color-depth
                                 w2 h2 true
-                                (clear (vec3 0 0 0) 0)
+                                (clear (vec3 0 0 0) 0.0)
                                 ; Render clouds in front of planet
                                 (planet/render-cloud-planet cloud-planet-renderer
                                                             :cloud-step cloud-step
@@ -291,7 +290,7 @@
                                                                 :shadows shadows
                                                                 :opacities opacities))]
                (onscreen-render window
-                                (clear (vec3 0 1 0) 0)
+                                (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
                                 (planet/render-planet planet-renderer
                                                       :projection projection

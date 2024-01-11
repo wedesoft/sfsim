@@ -8,8 +8,7 @@
   (:import [java.io ByteArrayOutputStream]
            [java.nio DirectByteBuffer ByteBuffer ByteOrder]
            [org.lwjgl BufferUtils]
-           [org.lwjgl.stb STBImage STBImageWrite]
-           [fastmath.vector Vec3 Vec4]))
+           [org.lwjgl.stb STBImage STBImageWrite]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -209,7 +208,7 @@
 
 (defn get-pixel
   "Read color value from a pixel of an image"
-  {:malli/schema [:=> [:cat image N0 N0] [:vector :double]]}
+  {:malli/schema [:=> [:cat image N0 N0] [:tuple :double :double :double]]}
   [{:keys [width data]} y x]
   (let [offset (* 4 (+ (* width y) x))]
     (vec3 (byte->ubyte (aget ^bytes data ^long offset))
@@ -283,7 +282,7 @@
 
 (defn get-vector3
   "Read RGB vector from a vectors tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0] [:vector :double]]}
+  {:malli/schema [:=> [:cat field-2d N0 N0] [:tuple :double :double :double]]}
   [{:keys [width data]} y x]
   (let [offset (* 3 (+ (* width y) x))]
     (vec3 (aget ^floats data ^long (+ offset 0))

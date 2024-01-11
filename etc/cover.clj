@@ -24,8 +24,6 @@
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
 
-(def worley-size 64)
-
 (def data (slurp-floats "data/clouds/worley-north.raw"))
 (def worley-north (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (def data (slurp-floats "data/clouds/worley-south.raw"))

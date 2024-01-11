@@ -1,5 +1,7 @@
 (ns sfsim25.t-atmosphere
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [sfsim25.conftest :refer (roughly-vector record-image is-image shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
@@ -27,10 +29,13 @@
     (:import [fastmath.vector Vec3]
              [org.lwjgl.glfw GLFW]))
 
+(mi/collect! {:ns ['sfsim25.atmosphere]})
+(mi/instrument! {:report (pretty/thrower)})
+
 (GLFW/glfwInit)
 
-(def radius 6378000)
-(def max-height 100000)
+(def radius 6378000.0)
+(def max-height 100000.0)
 (def ray-steps 10)
 (def size 12)
 (def earth #:sfsim25.sphere{:centre (vec3 0 0 0)
@@ -38,42 +43,42 @@
                             :sfsim25.atmosphere/height max-height
                             :sfsim25.atmosphere/brightness (vec3 0.3 0.3 0.3)})
 (def mie #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5)
-                              :scatter-scale 1200
+                              :scatter-scale 1200.0
                               :scatter-g 0.76
                               :scatter-quotient 0.9})
 (def rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 13.5e-6 33.1e-6)
-                                   :scatter-scale 8000})
+                                   :scatter-scale 8000.0})
 (def scatter [mie rayleigh])
 
 (facts "Compute approximate scattering at different heights (testing with one component vector, normally three components)"
-  (let [rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 5.8e-6 5.8e-6) :scatter-scale 8000}]
-    ((scattering rayleigh          0) 0) => 5.8e-6
-    ((scattering rayleigh       8000) 0) => (roughly (/ 5.8e-6 E) 1e-12)
-    ((scattering rayleigh (* 2 8000)) 0) => (roughly (/ 5.8e-6 E E) 1e-12))
-  (let [mie #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200}]
-    ((scattering mie 1200) 0) => (roughly (/ 2e-5 E) 1e-12)))
+  (let [rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 5.8e-6 5.8e-6) :scatter-scale 8000.0}]
+    ((scattering rayleigh          0.0) 0) => 5.8e-6
+    ((scattering rayleigh       8000.0) 0) => (roughly (/ 5.8e-6 E) 1e-12)
+    ((scattering rayleigh (* 2 8000.0)) 0) => (roughly (/ 5.8e-6 E E) 1e-12))
+  (let [mie #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200.0}]
+    ((scattering mie 1200.0) 0) => (roughly (/ 2e-5 E) 1e-12)))
 
 (fact "Compute sum of scattering and absorption (i.e. Mie extinction)"
-  (let [mie #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200 :scatter-quotient 0.9}]
-    ((extinction mie 1200) 0) => (roughly (/ 2e-5 0.9 E) 1e-12))
-  (let [rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 5.8e-6 5.8e-6) :scatter-scale 8000}]
-    ((extinction rayleigh 8000) 0) => (roughly (/ 5.8e-6 E) 1e-12)))
+  (let [mie #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200.0 :scatter-quotient 0.9}]
+    ((extinction mie 1200.0) 0) => (roughly (/ 2e-5 0.9 E) 1e-12))
+  (let [rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 5.8e-6 5.8e-6) :scatter-scale 8000.0}]
+    ((extinction rayleigh 8000.0) 0) => (roughly (/ 5.8e-6 E) 1e-12)))
 
 (facts "Rayleigh phase function"
-  (phase {}  0) => (roughly (/ 3 (* 16 PI)))
-  (phase {}  1) => (roughly (/ 6 (* 16 PI)))
-  (phase {} -1) => (roughly (/ 6 (* 16 PI))))
+  (phase {}  0.0) => (roughly (/ 3 (* 16 PI)))
+  (phase {}  1.0) => (roughly (/ 6 (* 16 PI)))
+  (phase {} -1.0) => (roughly (/ 6 (* 16 PI))))
 
 (facts "Mie phase function"
   (let [g (fn [value] {:sfsim25.atmosphere/scatter-g value})]
-    (phase (g 0  )  0) => (roughly (/ 3 (* 16 PI)))
-    (phase (g 0  )  1) => (roughly (/ 6 (* 16 PI)))
-    (phase (g 0  ) -1) => (roughly (/ 6 (* 16 PI)))
-    (phase (g 0.5)  0) => (roughly (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5))))
-    (phase (g 0.5)  1) => (roughly (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))))
+    (phase (g 0.0)  0.0) => (roughly (/ 3 (* 16 PI)))
+    (phase (g 0.0)  1.0) => (roughly (/ 6 (* 16 PI)))
+    (phase (g 0.0) -1.0) => (roughly (/ 6 (* 16 PI)))
+    (phase (g 0.5)  0.0) => (roughly (/ (* 3 0.75) (* 8 PI 2.25 (pow 1.25 1.5))))
+    (phase (g 0.5)  1.0) => (roughly (/ (* 6 0.75) (* 8 PI 2.25 (pow 0.25 1.5))))))
 
 (facts "Get intersection with artificial limit of atmosphere"
-       (let [height 100000
+       (let [height 100000.0
              earth  #:sfsim25.sphere{:centre (vec3 0 0 0) :radius radius :sfsim25.atmosphere/height height}]
          (atmosphere-intersection earth #:sfsim25.ray{:origin (vec3 radius 0 0) :direction (vec3 1 0 0)})
          => (vec3 (+ radius height) 0 0)
@@ -92,15 +97,15 @@
          => (vec3 (+ radius 100) 0 0)))
 
 (facts "Check whether a point is near the surface or near the edge of the atmosphere"
-       (let [radius 6378000
-             height 100000
+       (let [radius 6378000.0
+             height 100000.0
              earth  #:sfsim25.sphere{:centre (vec3 0 0 0) :radius radius :sfsim25.atmosphere/height height}]
          (surface-point? earth (vec3 radius 0 0)) => true
          (surface-point? earth (vec3 (+ radius height) 0 0)) => false))
 
 (facts "Get intersection with surface of planet or artificial limit of atmosphere"
-       (let [radius 6378000
-             height 100000
+       (let [radius 6378000.0
+             height 100000.0
              earth  #:sfsim25.sphere{:centre (vec3 0 0 0) :radius radius :sfsim25.atmosphere/height height}]
          (ray-extremity earth #:sfsim25.ray{:origin (vec3 (+ radius 10000) 0 0) :direction (vec3 -1 0 0)})
          => (vec3 radius 0 0)
@@ -110,11 +115,11 @@
          => (vec3 (+ radius 100000) 0 0)))
 
 (facts "Determine transmittance of atmosphere for all color channels"
-       (let [radius   6378000
-             height   100000
+       (let [radius   6378000.0
+             height   100000.0
              earth    #:sfsim25.sphere{:centre (vec3 0 0 0) :radius radius :sfsim25.atmosphere/height height}
-             rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 13.5e-6 33.1e-6) :scatter-scale 8000}
-             mie      #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200 :scatter-quotient 0.9}
+             rayleigh #:sfsim25.atmosphere{:scatter-base (vec3 5.8e-6 13.5e-6 33.1e-6) :scatter-scale 8000.0}
+             mie      #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200.0 :scatter-quotient 0.9}
              both     [rayleigh mie]]
          (with-redefs [atmosphere/surface-intersection
                        (fn [planet ray]
@@ -162,7 +167,7 @@
   (let [radius           6378000.0
         height           100000.0
         earth            #:sfsim25.sphere{:centre (vec3 0 0 0) :radius radius :sfsim25.atmosphere/height height}
-        mie              #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200 :scatter-g 0.76}
+        mie              #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200.0 :scatter-g 0.76}
         intensity        (vec3 1.0 1.0 1.0)
         light-direction  (vec3 1.0 0.0 0.0)
         light-direction2 (vec3 -1.0 0.0 0.0)]
@@ -210,7 +215,7 @@
   (let [radius           6378000.0
         height           100000.0
         earth            #:sfsim25.sphere{:centre (vec3 0 0 0) :radius radius :sfsim25.atmosphere/height height}
-        mie              #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200 :scatter-g 0.76}
+        mie              #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200.0 :scatter-g 0.76}
         light-direction  (vec3 0.36 0.48 0.8)
         constant-scatter (fn [y view-direction light-direction above-horizon]
                              (facts "Check point-scatter function gets called with correct arguments"
@@ -263,7 +268,7 @@
         intensity        (vec3 1 1 1)
         earth            #:sfsim25.sphere{:centre (vec3 0 0 0) :radius radius :sfsim25.atmosphere/height height
                                           :sfsim25.atmosphere/brightness (mult (vec3 0.3 0.3 0.3) PI)}
-        mie              #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200 :scatter-g 0.76}
+        mie              #:sfsim25.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5) :scatter-scale 1200.0 :scatter-g 0.76}
         ray-scatter1     (fn [x view-direction light-direction above-horizon]
                              (facts x => x1
                                     view-direction => (vec3 0 1 0)
@@ -344,11 +349,11 @@
          (is-above-horizon? earth (vec3 (+ radius 100000) 0 0) (vec3 (- (sqrt 0.5)) (sqrt 0.5) 0)) => false))
 
 (facts "Distance from point with radius to horizon of planet"
-       (horizon-distance {:sfsim25.sphere/radius 4.0} 4.0) => 0.0
-       (horizon-distance {:sfsim25.sphere/radius 4.0} 5.0) => 3.0)
+       (horizon-distance #:sfsim25.sphere{:centre (vec3 0 0 0) :radius 4.0} 4.0) => 0.0
+       (horizon-distance #:sfsim25.sphere{:centre (vec3 0 0 0) :radius 4.0} 5.0) => 3.0)
 
 (facts "Convert elevation to index"
-       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
+       (let [planet {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0}]
          (elevation-to-index planet 2 (vec3 4 0 0) (vec3 -1 0 0) false) => (roughly 0.5 1e-3)
          (elevation-to-index planet 2 (vec3 5 0 0) (vec3 -1 0 0) false) => (roughly (/ 1 3) 1e-3)
          (elevation-to-index planet 2 (vec3 5 0 0) (vec3 (- (sqrt 0.5)) (sqrt 0.5) 0) false) => (roughly 0.223 1e-3)
@@ -363,16 +368,16 @@
          (elevation-to-index planet 2 (vec3 4 0 0) (vec3 1 0 0) false) => (roughly 0.5 1e-3)))
 
 (facts "Convert index and height to elevation"
-       (let [planet {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1}]
-         (first (index-to-elevation planet 2 5.0 (/ 1 3))) => (roughly-vector (vec3 -1 0 0) 1e-3)
-         (first (index-to-elevation planet 3 5.0 (/ 2 3))) => (roughly-vector (vec3 -1 0 0) 1e-3)
-         (second (index-to-elevation planet 2 5.0 (/ 1 3))) => false
+       (let [planet {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0}]
+         (first (index-to-elevation planet 2 5.0 (/ 1.0 3.0))) => (roughly-vector (vec3 -1 0 0) 1e-3)
+         (first (index-to-elevation planet 3 5.0 (/ 2.0 3.0))) => (roughly-vector (vec3 -1 0 0) 1e-3)
+         (second (index-to-elevation planet 2 5.0 (/ 1.0 3.0))) => false
          (first (index-to-elevation planet 2 5.0 0.222549)) => (roughly-vector (vec3 (- (sqrt 0.5)) (sqrt 0.5) 0) 1e-3)
          (first (index-to-elevation planet 2 5.0 0.4)) => (roughly-vector (vec3 -1 0 0) 1e-3)
          (first (index-to-elevation planet 2 4.0 0.4)) => (roughly-vector (vec3 0 1 0) 1e-3)
-         (first (index-to-elevation planet 2 4.0 (/ 2 3))) => (roughly-vector (vec3 1 0 0) 1e-3)
-         (first (index-to-elevation planet 3 4.0 (/ 4 3))) => (roughly-vector (vec3 1 0 0) 1e-3)
-         (second (index-to-elevation planet 2 4.0 (/ 2 3))) => true
+         (first (index-to-elevation planet 2 4.0 (/ 2.0 3.0))) => (roughly-vector (vec3 1 0 0) 1e-3)
+         (first (index-to-elevation planet 3 4.0 (/ 4.0 3.0))) => (roughly-vector (vec3 1 0 0) 1e-3)
+         (second (index-to-elevation planet 2 4.0 (/ 2.0 3.0))) => true
          (first (index-to-elevation planet 2 4.0 1.0)) => (roughly-vector (vec3 0 1 0) 1e-3)
          (first (index-to-elevation planet 2 5.0 1.0)) => (roughly-vector (vec3 -0.6 0.8 0) 1e-3)
          (first (index-to-elevation planet 2 5.0 0.5)) => (roughly-vector (vec3 0 1 0) 1e-3)
@@ -383,23 +388,31 @@
          (first (index-to-elevation planet 2 4.0 0.5001)) => (roughly-vector (vec3 1 0 0) 1e-3)))
 
 (facts "Convert height of point to index"
-       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (vec3 4 0 0)) => 0.0
-       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (vec3 5 0 0)) => 1.0
-       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 (vec3 4.5 0 0)) => (roughly 0.687 1e-3)
-       (height-to-index {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 17 (vec3 5 0 0)) => 16.0
-       (height-to-index {:sfsim25.sphere/radius 6378000.0 :sfsim25.atmosphere/height 35000.0} 32
-                        (vec3 6377999.999549146 -16.87508805500576 73.93459155883768)) => (roughly 0.0 1e-6))
+       (height-to-index {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0}
+                        2 (vec3 4 0 0)) => 0.0
+       (height-to-index {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0}
+                        2 (vec3 5 0 0)) => 1.0
+       (height-to-index {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0}
+                        2 (vec3 4.5 0 0)) => (roughly 0.687 1e-3)
+       (height-to-index {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0}
+                        17 (vec3 5 0 0)) => 16.0
+       (height-to-index {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 6378000.0 :sfsim25.atmosphere/height 35000.0}
+                        32 (vec3 6377999.999549146 -16.87508805500576 73.93459155883768)) => (roughly 0.0 1e-6))
 
 (facts "Convert index to point with corresponding height"
-       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.0) => (vec3 4 0 0)
-       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 1.0) => (vec3 5 0 0)
-       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 2 0.68718) => (roughly-vector (vec3 4.5 0 0) 1e-3)
-       (index-to-height {:sfsim25.sphere/radius 4 :sfsim25.atmosphere/height 1} 3 2.0) => (vec3 5 0 0))
+       (index-to-height {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0} 2 0.0)
+       => (vec3 4 0 0)
+       (index-to-height {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0} 2 1.0)
+       => (vec3 5 0 0)
+       (index-to-height {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0} 2 0.68718)
+       => (roughly-vector (vec3 4.5 0 0) 1e-3)
+       (index-to-height {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius 4.0 :sfsim25.atmosphere/height 1.0} 3 2.0)
+       => (vec3 5 0 0))
 
 (facts "Create transformations for interpolating transmittance function"
        (let [radius   6378000.0
              height   35000.0
-             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             earth    {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
              space    (transmittance-space earth [15 17])
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
@@ -412,16 +425,16 @@
          (second (backward 0.0 16.0)) => (roughly-vector (vec3 0 1 0) 1e-6)
          (second (backward 14.0 8.0)) => (vec3 0 1 0)
          (second (backward 0.0 8.0)) => (vec3 0 1 0)
-         (second (backward 0 8)) => (vec3 0 1 0)
+         (second (backward 0.0 8.0)) => (vec3 0 1 0)
          (third (backward 0.0 16.0)) => true
          (third (backward 14.0 8.0)) => true
          (third (backward 0.0 8.0)) => false
-         (third (backward 0 8)) => false))
+         (third (backward 0.0 8.0)) => false))
 
 (fact "Transformation for surface radiance interpolation"
       (let [radius   6378000.0
              height   35000.0
-             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             earth    {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
              space    (surface-radiance-space earth [15 17])
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
@@ -470,7 +483,7 @@
 (facts "Create transformation for interpolating ray scatter and point scatter"
        (let [radius   6378000.0
              height   100000.0
-             earth    {:sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
+             earth    {:sfsim25.sphere/centre (vec3 0 0 0) :sfsim25.sphere/radius radius :sfsim25.atmosphere/height height}
              space    (ray-scatter-space earth [21 19 17 15])
              forward  (:sfsim25.interpolate/forward space)
              backward (:sfsim25.interpolate/backward space)]
@@ -495,9 +508,6 @@
          (nth (backward 0.0 18.0 7.421805 7.0) 2) => (roughly-vector (vec3 0 0 1) 1e-3)
          (nth (backward 0.0 9.79376 0.0 0.0) 3) => true
          (nth (backward 20.0 8.206 16.0 0.0) 3) => false))
-
-(fact "Transformation for point scatter interpolation is the same as the one for ray scatter"
-      point-scatter-space => (exactly ray-scatter-space))
 
 (def transmittance-earth (partial transmittance earth scatter ray-steps))
 (def transmittance-space-earth (transmittance-space earth [size size]))

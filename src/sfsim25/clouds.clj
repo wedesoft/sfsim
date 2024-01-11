@@ -7,17 +7,18 @@
                                       make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d generate-mipmap
                                       make-float-texture-3d make-program make-vertex-array-object render-quads uniform-float
                                       uniform-int uniform-sampler uniform-matrix4 use-program use-textures
-                                      make-empty-float-texture-3d uniform-vector3 make-float-cubemap)]
+                                      make-empty-float-texture-3d uniform-vector3 make-float-cubemap texture-3d) :as render]
               [sfsim25.shaders :as shaders]
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.bluenoise :refer (noise-size) :as bluenoise]
               [sfsim25.atmosphere :refer (vertex-atmosphere) :as atmosphere]
-              [sfsim25.util :refer (slurp-floats)]))
+              [sfsim25.util :refer (slurp-floats N)]))
 
 (def cover-size 512)
 
 (defn cloud-noise
   "Shader for sampling 3D cloud noise"
+  {:malli/schema [:=> [:cat [:vector :double]] [:vector :string]]}
   [cloud-octaves]
   [(shaders/noise-octaves-lod "cloud_octaves" "lookup_3d" cloud-octaves) (shaders/lookup-3d-lod "lookup_3d" "worley")
    (slurp "resources/shaders/clouds/cloud-noise.glsl")])
@@ -40,6 +41,7 @@
 
 (defn identity-cubemap
   "Create identity cubemap"
+  {:malli/schema [:=> [:cat N] texture-3d]}
   [size]
   (let [result   (make-empty-vector-cubemap :linear :clamp size)
         indices  [0 1 3 2]
@@ -56,6 +58,7 @@
 
 (defn iterate-cubemap-warp-fragment
   "Fragment shader for iterating cubemap warp"
+  {:malli/schema [:=> [:cat :string :string] render/shaders]}
   [current-name field-method-name]
   [shaders/cubemap-vectors shaders/interpolate-vector-cubemap
    (template/eval (slurp "resources/shaders/clouds/iterate-cubemap-warp-fragment.glsl")
@@ -63,6 +66,7 @@
 
 (defn make-iterate-cubemap-warp-program
   "Create program to iteratively update cubemap warp vector field"
+  {:malli/schema [:=> [:cat :string :string render/shaders] :int]}
   [current-name field-method-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
                 :fragment (conj shaders (iterate-cubemap-warp-fragment current-name field-method-name))))
@@ -85,6 +89,7 @@
 
 (defn cubemap-warp-fragment
   "Fragment shader for looking up values using a cubemap warp vector field"
+  {:malli/schema [:=> [:cat :string :string] render/shaders]}
   [current-name lookup-name]
   [shaders/cubemap-vectors shaders/interpolate-vector-cubemap
    (template/eval (slurp "resources/shaders/clouds/cubemap-warp-fragment.glsl")
@@ -92,6 +97,7 @@
 
 (defn make-cubemap-warp-program
   "Create program to look up values using a given cubemap warp vector field"
+  {:malli/schema [:=> [:cat :string :string render/shaders] :int]}
   [current-name lookup-name shaders]
   (make-program :vertex [shaders/vertex-passthrough]
                 :fragment (conj shaders (cubemap-warp-fragment current-name lookup-name))))
@@ -113,12 +119,14 @@
 
 (defn curl-vector
   "Shader for computing curl vectors from a noise function"
+  {:malli/schema [:=> [:cat :string :string] render/shaders]}
   [method-name gradient-name]
   [shaders/rotate-vector shaders/project-vector
    (template/eval (slurp "resources/shaders/clouds/curl-vector.glsl") {:method-name method-name :gradient-name gradient-name})])
 
 (defn flow-field
   "Shader to create potential field for generating curl noise for global cloud cover"
+  {:malli/schema [:=> [:cat [:vector :double]] render/shaders]}
   [flow-octaves]
   [(shaders/noise-octaves "octaves_north" "lookup_north" flow-octaves) (shaders/lookup-3d "lookup_north" "worley_north")
    (shaders/noise-octaves "octaves_south" "lookup_south" flow-octaves) (shaders/lookup-3d "lookup_south" "worley_south")
@@ -126,6 +134,7 @@
 
 (defn cloud-cover-cubemap
   "Program to generate planetary cloud cover using curl noise"
+  {:malli/schema [:=> [:cat [:* :any]] texture-3d]}
   [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
              cover-scale num-iterations flow-scale]}]
   (let [warp        (atom (identity-cubemap size))
@@ -175,12 +184,14 @@
 
 (defn cloud-base
   "Shader for determining cloud density at specified point"
+  {:malli/schema [:=> [:cat [:vector :double]] render/shaders]}
   [perlin-octaves]
   [cloud-cover cloud-profile (sphere-noise "perlin_octaves") (shaders/lookup-3d "lookup_perlin" "perlin")
    (shaders/noise-octaves "perlin_octaves" "lookup_perlin" perlin-octaves) (slurp "resources/shaders/clouds/cloud-base.glsl")])
 
 (defn cloud-density
   "Compute cloud density at given point"
+  {:malli/schema [:=> [:cat [:vector :double] [:vector :double]] render/shaders]}
   [perlin-octaves cloud-octaves]
   [(cloud-base perlin-octaves) (cloud-noise cloud-octaves) shaders/remap (slurp "resources/shaders/clouds/cloud-density.glsl")])
 
@@ -190,12 +201,14 @@
 
 (defn opacity-fragment
   "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-layers perlin-octaves cloud-octaves]
   [shaders/ray-shell (cloud-density perlin-octaves cloud-octaves) linear-sampling
    (template/eval (slurp "resources/shaders/clouds/opacity-fragment.glsl") {:num-layers num-layers})])
 
 (defn overall-shadow
   "Multiply shadows to get overall shadow"
+  {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
    (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
@@ -205,24 +218,28 @@
 
 (defn cloud-transfer
   "Single cloud scattering update step"
+  {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [(overall-shadow num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
    (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 (defn sample-cloud
   "Shader to sample the cloud layer and apply cloud scattering update steps"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [linear-sampling bluenoise/sampling-offset atmosphere/phase-function (cloud-density perlin-octaves cloud-octaves)
    (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
 (defn cloud-planet
   "Shader to compute pixel of cloud foreground overlay for planet"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
    (slurp "resources/shaders/clouds/cloud-planet.glsl")])
 
 (defn cloud-atmosphere
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves)
    (slurp "resources/shaders/clouds/cloud-atmosphere.glsl")])
@@ -246,11 +263,13 @@
 
 (defn cloud-density-shaders
   "List of cloud shaders to sample density values"
+  {:malli/schema [:=> [:cat [:vector :double] [:vector :double]] render/shaders]}
   [cloud-octaves perlin-octaves]
   [(cloud-density perlin-octaves cloud-octaves) shaders/interpolate-float-cubemap shaders/convert-cubemap-index cloud-cover])
 
 (defn opacity-lookup-shaders
   "List of opacity lookup shaders"
+  {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
    (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
@@ -258,11 +277,13 @@
 
 (defn fragment-atmosphere-clouds
   "Shader for rendering clouds above horizon"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [(cloud-atmosphere num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
 
 (defn make-cloud-data
   "Method to load cloud textures and collect cloud data (not tested)"
+  {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [cloud-octaves perlin-octaves cloud-bottom cloud-top cloud-multiplier cover-multiplier cap detail-scale cloud-scale
              anisotropic opacity-cutoff]}]
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
@@ -297,6 +318,7 @@
 
 (defn destroy-cloud-data
   "Method to destroy cloud textures (not tested)"
+  {:malli/schema [:=> [:cat :map] :nil]}
   [{:keys [worley perlin-worley cloud-cover bluenoise]}]
   (destroy-texture worley)
   (destroy-texture perlin-worley)
@@ -305,8 +327,9 @@
 
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
+  {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
-             opacity-cutoff num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
+             num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds num-steps
                                                                      (:perlin-octaves cloud-data)
@@ -362,11 +385,12 @@
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
+  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program transmittance scatter mie cloud-data]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
-        vertices (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vertices (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
     (uniform-float program "cloud_step" cloud-step)
@@ -391,5 +415,6 @@
 
 (defn destroy-cloud-atmosphere-renderer
   "Destroy cloud rendering OpenGL program (not tested)"
+  {:malli/schema [:=> [:cat :map] :nil]}
   [{:keys [program]}]
   (destroy-program program))

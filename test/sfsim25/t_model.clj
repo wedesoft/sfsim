@@ -1,5 +1,7 @@
 (ns sfsim25.t-model
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [clojure.math :refer (to-radians sqrt PI)]
               [sfsim25.conftest :refer (roughly-matrix roughly-vector roughly-quaternion record-image is-image)]
               [fastmath.matrix :refer (eye mulm mat4x4)]
@@ -9,6 +11,9 @@
               [sfsim25.model :refer :all :as model]
               [sfsim25.quaternion :refer (->Quaternion)])
     (:import [org.lwjgl.glfw GLFW]))
+
+(mi/collect! {:ns ['sfsim25.model]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
@@ -110,7 +115,7 @@ void main()
               opengl-scene (load-scene-into-opengl (constantly program) cube)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
-          (clear (vec3 0 0 0) 0)
+          (clear (vec3 0 0 0) 0.0)
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
@@ -138,7 +143,7 @@ void main()
               opengl-scene (load-scene-into-opengl (constantly program) cubes)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
-          (clear (vec3 0 0 0) 0)
+          (clear (vec3 0 0 0) 0.0)
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
@@ -221,7 +226,7 @@ void main()
               opengl-scene (load-scene-into-opengl (constantly program) dice)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
-          (clear (vec3 0 0 0) 0)
+          (clear (vec3 0 0 0) 0.0)
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
@@ -287,7 +292,7 @@ void main()
               opengl-scene (load-scene-into-opengl (constantly program) bricks)
               transform    (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
-          (clear (vec3 0 0 0) 0)
+          (clear (vec3 0 0 0) 0.0)
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
@@ -322,7 +327,7 @@ void main()
               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
               transform         (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))
               moved-scene       (assoc-in opengl-scene [:root :transform] transform)]
-          (clear (vec3 0 0 0) 0)
+          (clear (vec3 0 0 0) 0.0)
           (doseq [program [program-cube program-dice]]
                  (use-program program)
                  (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))

@@ -1,10 +1,15 @@
 (ns sfsim25.t-quadtree
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
+            [malli.dev.pretty :as pretty]
             [fastmath.vector :refer (vec3 add)]
             [clojure.math :refer (tan to-radians)]
             [sfsim25.quadtree :refer :all :as quadtree]
             [sfsim25.cubemap :refer (cube-map) :as cubemap]
             [sfsim25.util :as util]))
+
+(mi/collect! {:ns ['sfsim25.quadtree]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (fact "Determine the size of a quad on the screen"
   (quad-size 2 33 6378000.0 1024 1000000.0 60.0) => (/ (* 512 (/ (/ 6378000.0 2 32) 1000000.0)) (tan (to-radians 30.0)))
@@ -182,7 +187,7 @@
 
 (tabular "Get the four neighbours for a given path of a tile"
   (fact (?k (neighbour-paths [:5 :1 :2])) => ?path)
-  ?k     ?path
+  ?k                      ?path
   :sfsim25.quadtree/up    [:5 :1 :0]
   :sfsim25.quadtree/left  [:5 :0 :3]
   :sfsim25.quadtree/down  [:5 :3 :0]

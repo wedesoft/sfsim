@@ -1,5 +1,7 @@
 (ns sfsim25.t-planet
     (:require [midje.sweet :refer :all]
+              [malli.instrument :as mi]
+              [malli.dev.pretty :as pretty]
               [sfsim25.conftest :refer (shader-test roughly-vector is-image record-image)]
               [comb.template :as template]
               [clojure.math :refer (PI exp pow)]
@@ -17,6 +19,9 @@
               [sfsim25.clouds :as clouds])
     (:import [org.lwjgl.glfw GLFW]
              [fastmath.matrix Mat4x4]))
+
+(mi/collect! {:ns ['sfsim25.planet]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
@@ -61,10 +66,10 @@ void main()
 (fact "Use vertex data to draw a quad"
       (offscreen-render 256 256
                         (let [indices   [0 1 3 2]
-                              vertices  [-0.5 -0.5 0.5 0 0 0 0
-                                          0.5 -0.5 0.5 0 0 0 0
-                                         -0.5  0.5 0.5 0 0 0 0
-                                          0.5  0.5 0.5 0 0 0 0]
+                              vertices  [-0.5 -0.5 0.5 0.0 0.0 0.0 0.0
+                                          0.5 -0.5 0.5 0.0 0.0 0.0 0.0
+                                         -0.5  0.5 0.5 0.0 0.0 0.0 0.0
+                                          0.5  0.5 0.5 0.0 0.0 0.0 0.0]
                               program   (make-program :vertex [vertex-planet]
                                                       :fragment [fragment-white])
                               variables ["point" 3 "surfacecoord" 2 "colorcoord" 2]
@@ -79,10 +84,10 @@ void main()
          (fact
            (offscreen-render 256 256
                              (let [indices     [0 1 3 2]
-                                   vertices    [-0.5 -0.5 0.5 0.25 0.25 0 0,
-                                                 0.5 -0.5 0.5 0.75 0.25 0 0,
-                                                -0.5  0.5 0.5 0.25 0.75 0 0,
-                                                 0.5  0.5 0.5 0.75 0.75 0 0]
+                                   vertices    [-0.5 -0.5 0.5 0.25 0.25 0.0 0.0,
+                                                 0.5 -0.5 0.5 0.75 0.25 0.0 0.0,
+                                                -0.5  0.5 0.5 0.25 0.75 0.0 0.0,
+                                                 0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                                    program     (make-program :vertex [vertex-planet]
                                                              :tess-control [tess-control-planet]
                                                              :tess-evaluation [tess-evaluation-planet]
@@ -169,10 +174,10 @@ void main()
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.6 -0.5 0.5 0.25 0.25 0 0
-                                            0.4 -0.5 0.5 0.75 0.25 0 0
-                                           -0.6  0.5 0.5 0.25 0.75 0 0
-                                            0.4  0.5 0.5 0.75 0.75 0 0]
+                              vertices    [-0.6 -0.5 0.5 0.25 0.25 0.0 0.0
+                                            0.4 -0.5 0.5 0.75 0.25 0.0 0.0
+                                           -0.6  0.5 0.5 0.25 0.75 0.0 0.0
+                                            0.4  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]
@@ -202,10 +207,10 @@ void main()
 (fact "Apply projection matrix to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.5 -0.5 0 0.25 0.25 0 0
-                                            0.5 -0.5 0 0.75 0.25 0 0
-                                           -0.5  0.5 0 0.25 0.75 0 0
-                                            0.5  0.5 0 0.75 0.75 0 0]
+                              vertices    [-0.5 -0.5 0.0 0.25 0.25 0.0 0.0
+                                            0.5 -0.5 0.0 0.75 0.25 0.0 0.0
+                                           -0.5  0.5 0.0 0.25 0.75 0.0 0.0
+                                            0.5  0.5 0.0 0.75 0.75 0.0 0.0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]
@@ -213,7 +218,7 @@ void main()
                                                         :fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              data        [-0.5 -0.5 0, 0.5 -0.5 0, -0.5  0.5 0, 0.5  0.5 0]
+                              data        [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5  0.5 0.0, 0.5  0.5 0.0]
                               surface     (make-vector-texture-2d :linear :clamp
                                                                   {:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
@@ -236,10 +241,10 @@ void main()
 (fact "Scale vertex coordinates using given height field"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
-                              vertices    [-0.5 -0.5 0.5 0.25 0.25 0 0
-                                            0.5 -0.5 0.5 0.75 0.25 0 0
-                                           -0.5  0.5 0.5 0.25 0.75 0 0
-                                            0.5  0.5 0.5 0.75 0.75 0 0]
+                              vertices    [-0.5 -0.5 0.5 0.25 0.25 0.0 0.0
+                                            0.5 -0.5 0.5 0.75 0.25 0.0 0.0
+                                           -0.5  0.5 0.5 0.25 0.75 0.0 0.0
+                                            0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :vertex [vertex-planet]
                                                         :tess-control [tess-control-planet]
                                                         :tess-evaluation [tess-evaluation-planet]
@@ -369,18 +374,18 @@ void main()
                                            [?x ?y ?z ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
                => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
          ?albedo ?ampl ?x ?y ?z       ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g         ?b
-         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0   0   0   0           0          0
-         1       1     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
-         1       2     0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.4         0          1.6
-         0.9     1     0  0  6378000  1          1.0      0          0   0   1   0      1   1   1   0.9         0          0.9
-         1       1     0  0  6378000  0          1.0      0          1   0   0   0      1   1   1   0           0          1.0
-         1       1     0  0  6378000  1          1.0      0          0   0   1   1      0.2 0.5 0.8 0.1         0          0.4
-         1       1     0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
-         1       1     0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
-         1       1     0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
-         1       1     0  0  6378000  0         -0.05     0          0   0   1   0      0   0   0   0           PI         0.0
-         1       1     0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
-         1       1     0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0)
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   0      0   0   0   0           0          0
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1.0     2.0   0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.4         0          1.6
+         0.9     1.0   0  0  6378000  1          1.0      0          0   0   1   0      1   1   1   0.9         0          0.9
+         1.0     1.0   0  0  6378000  0          1.0      0          1   0   0   0      1   1   1   0           0          1.0
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   1      0.2 0.5 0.8 0.1         0          0.4
+         1.0     1.0   0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
+         1.0     1.0   0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
+         1.0     1.0   0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
+         1.0     1.0   0  0  6378000  0         -0.05     0          0   0   1   0      0   0   0   0           PI         0.0
+         1.0     1.0   0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
+         1.0     1.0   0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0)
 
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
@@ -462,8 +467,8 @@ float overall_shadow(vec4 point)
   (uniform-sampler program "surface_radiance" 6)
   (uniform-sampler program "water" 7)
   (uniform-sampler program "worley" 8)
-  (uniform-float program "specular" 100)
-  (uniform-float program "max_height" 100000)
+  (uniform-float program "specular" 100.0)
+  (uniform-float program "max_height" 100000.0)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
 
 (defn setup-uniforms [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
@@ -538,23 +543,23 @@ float overall_shadow(vec4 point)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim25/fixtures/planet/" ?result ".png") 0.0))
-         ?colors   ?albedo ?a ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "colors"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     1  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "albedo"
-         "white"   0.9     2  1   1   1   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "amplify"
-         "white"   PI      1  1   0   0   0   0   0     0       100 0   0     0       1.0  0   0   1   0   0   1   "transmit"
-         "pattern" PI      1  1   1   1   0.2 0.3 0.5   0       100 0   0     0       1.0  0   0   1   0   0   1   "ambient"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0     0       1.0  0   0   1   0   0   0   "water"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0   1   0   0   1   "reflection1"
-         "white"   PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI      1  1   1   1   0   0   0   255       100 0   0.5   0       1.0  0   0  -1   0   0   1   "reflection3"
-         "white"   PI      1  1   1   1   0   0   0     0     10000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0    200000 0   0     0       1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI      1  1   1   1   0   0   0     0       100 0.5 0     0       1.0  0   0   1   0   0   1   "scatter"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0.5     1.0  0   0   1   0   0   1   "clouds"
-         "pattern" PI      1  1   1   1   0   0   0     0       100 0   0     0       0.5  0   0   1   0   0   1   "shadow")
+         ?colors   ?albedo ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "colors"
+         "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9     1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9     2.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "amplify"
+         "white"   PI      1.0 1   0   0   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "transmit"
+         "pattern" PI      1.0 1   1   1   0.2 0.3 0.5   0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "ambient"
+         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.0   0.0     1.0  0   0   1   0   0   0   "water"
+         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "pattern" PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         "white"   PI      1.0 1   1   1   0   0   0     0     10000 0   0.0   0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1.0 1   1   1   0   0   0     0    200000 0   0.0   0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI      1.0 1   1   1   0   0   0     0       100 0.5 0.0   0.0     1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     0.5  0   0   1   0   0   1   "shadow")
 
 (def fragment-white-tree
 "#version 410 core
@@ -614,7 +619,8 @@ void main()
   (let [calls (atom [])]
     (with-redefs [render-tile (fn [^long program ^clojure.lang.IPersistentMap tile ^Mat4x4 transform
                                    ^clojure.lang.PersistentVector texture-keys]
-                                  (swap! calls conj [program tile transform texture-keys]))]
+                                  (swap! calls conj [program tile transform texture-keys])
+                                  nil)]
       (render-tree program node transform texture-keys)
       @calls)))
 

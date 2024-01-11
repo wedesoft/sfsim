@@ -6,8 +6,7 @@
             [malli.core :as m]
             [sfsim25.matrix :refer (oriented-matrix fvec3)]
             [sfsim25.ray :refer (ray)]
-            [sfsim25.util :refer (sqr N)])
-  (:import [fastmath.vector Vec3]))
+            [sfsim25.util :refer (sqr N)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

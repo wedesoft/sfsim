@@ -5,10 +5,7 @@
             [fastmath.matrix :as fm]
             [fastmath.vector :as fv]
             [sfsim25.quaternion :refer (quaternion rotate-vector)]
-            [sfsim25.util :refer (N N0)])
-  (:import [fastmath.vector Vec3 Vec4]
-           [fastmath.matrix Mat3x3 Mat4x4]
-           [sfsim25.quaternion Quaternion]))
+            [sfsim25.util :refer (N N0)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

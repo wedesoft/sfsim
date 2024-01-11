@@ -1,5 +1,7 @@
 (ns sfsim25.t-render
   (:require [midje.sweet :refer :all]
+            [malli.instrument :as mi]
+            [malli.dev.pretty :as pretty]
             [sfsim25.conftest :refer (is-image record-image roughly-vector)]
             [fastmath.vector :refer (vec3 vec4 normalize)]
             [fastmath.matrix :refer (eye)]
@@ -12,6 +14,9 @@
   (:import [org.lwjgl.opengl GL11 GL12 GL30 GL42]
            [org.lwjgl.glfw GLFW]
            [org.lwjgl BufferUtils]))
+
+(mi/collect! {:ns ['sfsim25.render]})
+(mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
@@ -761,7 +766,7 @@ void main()
 
 (tabular "Render back face of quad into shadow map"
          (with-invisible-window
-           (let [indices  (reverse [0 1 3 2])
+           (let [indices  (vec (reverse [0 1 3 2]))
                  vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
                  program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
                  vao      (make-vertex-array-object program indices vertices ["point" 3])
@@ -827,9 +832,9 @@ void main(void)
               light-vector   (normalize (vec3 1 1 2))
               shadow-mat     (shadow-matrices projection transform light-vector 1.0)
               indices        [0 1 3 2 6 7 5 4 8 9 11 10]
-              vertices       [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
-                              -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
-                              -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
+              vertices       [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
+                              -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
+                              -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
               program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
                                            :fragment [fragment-shadow])
               program-main   (make-program :vertex [vertex-scene]
@@ -881,9 +886,9 @@ void main(void)
               light-vector   (normalize (vec3 1 1 2))
               shadow-mats    (shadow-matrix-cascade projection transform light-vector 1.0 0.5 2.0 5.0 num-steps)
               indices        [0 1 3 2 6 7 5 4 8 9 11 10]
-              vertices       [-2 -2 -4  , 2 -2 -4  , -2 2 -4  , 2 2 -4,
-                              -1 -1 -3  , 1 -1 -3  , -1 1 -3  , 1 1 -3
-                              -1 -1 -2.9, 1 -1 -2.9, -1 1 -2.9, 1 1 -2.9]
+              vertices       [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
+                              -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
+                              -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
               program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
                                            :fragment [fragment-shadow])
               program-main   (make-program :vertex [vertex-scene]
