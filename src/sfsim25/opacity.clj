@@ -6,11 +6,18 @@
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]))
 
+(defn make-shadow-data
+  "Collect information for opacity and shadow cascade"
+  [& {:keys [num-opacity-layers shadow-size num-steps]}]
+  {:num-opacity-layers num-opacity-layers
+   :shadow-size shadow-size
+   :num-steps num-steps})
+
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
-  [& {:keys [num-opacity-layers shadow-size radius cloud-data]}]
+  [& {:keys [radius shadow-data cloud-data]}]
   (let [program  (make-program :vertex [opacity-vertex]
-                               :fragment [(opacity-fragment num-opacity-layers
+                               :fragment [(opacity-fragment (:num-opacity-layers shadow-data)
                                                             (:perlin-octaves cloud-data)
                                                             (:cloud-octaves cloud-data))])
         indices  [0 1 3 2]
@@ -21,7 +28,7 @@
     (uniform-sampler program "perlin" 1)
     (uniform-sampler program "cover" 2)
     (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
-    (uniform-int program "shadow_size" shadow-size)
+    (uniform-int program "shadow_size" (:shadow-size shadow-data))
     (uniform-float program "radius" radius)
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:cloud-top cloud-data))
@@ -32,16 +39,16 @@
     (uniform-float program "cap" (:cap cloud-data))
     {:program program
      :cloud-data cloud-data
-     :vao vao
-     :shadow-size shadow-size
-     :num-opacity-layers num-opacity-layers}))
+     :shadow-data shadow-data
+     :vao vao}))
 
 (defn render-opacity-cascade
   "Render a cascade of opacity maps and return it as a list of 3D textures (untested)"
-  [{:keys [program vao shadow-size num-opacity-layers cloud-data]}
+  [{:keys [program vao shadow-data cloud-data]}
    matrix-cas light-direction cloud-threshold scatter-amount opacity-step]
   (use-textures {0 (:worley cloud-data) 1 (:perlin-worley cloud-data) 2 (:cloud-cover cloud-data)})
-  (opacity-cascade shadow-size num-opacity-layers matrix-cas (/ (:detail-scale cloud-data) worley-size) program
+  (opacity-cascade (:shadow-size shadow-data) (:num-opacity-layers shadow-data) matrix-cas
+                   (/ (:detail-scale cloud-data) worley-size) program
                    (uniform-vector3 program "light_direction" light-direction)
                    (uniform-float program "cloud_threshold" cloud-threshold)
                    (uniform-float program "scatter_amount" scatter-amount)

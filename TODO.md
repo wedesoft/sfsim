@@ -1,5 +1,6 @@
 # TODO
 * group uniforms
+* put keywords into namespaces
 * test for scale-elevation
 * enable warn on reflection in more places
 * problem with shadow map when near ground

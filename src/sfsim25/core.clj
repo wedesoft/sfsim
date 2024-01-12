@@ -84,6 +84,10 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
+(def shadow-data (opacity/make-shadow-data :num-opacity-layers num-opacity-layers
+                                           :shadow-size shadow-size
+                                           :num-steps num-steps))
+
 (def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
                                         :perlin-octaves perlin-octaves
                                         :cloud-bottom cloud-bottom
@@ -110,50 +114,44 @@
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
-  (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
-                                 :shadow-size shadow-size
-                                 :radius radius
+  (opacity/make-opacity-renderer :radius radius
+                                 :shadow-data shadow-data
                                  :cloud-data cloud-data))
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
   (planet/make-planet-shadow-renderer :tilesize tilesize
-                                      :shadow-size shadow-size))
+                                      :shadow-data shadow-data))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :num-steps num-steps
-                                     :radius radius
+  (planet/make-cloud-planet-renderer :radius radius
                                      :max-height max-height
                                      :depth depth
                                      :tilesize tilesize
                                      :amplification amplification
-                                     :num-opacity-layers num-opacity-layers
-                                     :shadow-size shadow-size
                                      :transmittance transmittance
                                      :scatter scatter
                                      :mie mie
+                                     :shadow-data shadow-data
                                      :cloud-data cloud-data))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :num-steps num-steps
-                                         :radius radius
+  (clouds/make-cloud-atmosphere-renderer :radius radius
                                          :max-height max-height
                                          :tilesize tilesize
                                          :amplification amplification
-                                         :num-opacity-layers num-opacity-layers
-                                         :shadow-size shadow-size
                                          :transmittance transmittance
                                          :scatter scatter
                                          :mie mie
+                                         :shadow-data shadow-data
                                          :cloud-data cloud-data))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
   (planet/make-planet-renderer :width width
                                :height height
-                               :num-steps num-steps
                                :tilesize tilesize
                                :color-tilesize color-tilesize
                                :albedo albedo
@@ -165,12 +163,11 @@
                                :max-height max-height
                                :water-color water-color
                                :amplification amplification
-                               :num-opacity-layers num-opacity-layers
-                               :shadow-size shadow-size
                                :transmittance transmittance
                                :scatter scatter
                                :mie mie
-                               :surface-radiance surface-radiance))
+                               :surface-radiance surface-radiance
+                               :shadow-data shadow-data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer

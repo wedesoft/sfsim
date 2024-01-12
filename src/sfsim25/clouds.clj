@@ -328,10 +328,9 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps radius max-height tilesize amplification
-             num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
+  [& {:keys [radius max-height tilesize amplification transmittance scatter mie shadow-data cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
-                              :fragment [(fragment-atmosphere-clouds num-steps
+                              :fragment [(fragment-atmosphere-clouds (:num-steps shadow-data)
                                                                      (:perlin-octaves cloud-data)
                                                                      (:cloud-octaves cloud-data))])]
     (use-program program)
@@ -342,10 +341,10 @@
     (uniform-sampler program "perlin"           4)
     (uniform-sampler program "bluenoise"        5)
     (uniform-sampler program "cover"            6)
-    (doseq [i (range num-steps)]
+    (doseq [i (range (:num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 7)))
-    (doseq [i (range num-steps)]
-           (uniform-sampler program (str "opacity" i) (+ i 7 num-steps)))
+    (doseq [i (range (:num-steps shadow-data))]
+           (uniform-sampler program (str "opacity" i) (+ i 7 (:num-steps shadow-data))))
     (uniform-float program "radius" radius)
     (uniform-float program "max_height" max-height)
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
@@ -370,8 +369,8 @@
     (uniform-float program "max_height" max-height)
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
-    (uniform-int program "num_opacity_layers" num-opacity-layers)
-    (uniform-int program "shadow_size" shadow-size)
+    (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
+    (uniform-int program "shadow_size" (:shadow-size shadow-data))
     {:program program
      :transmittance transmittance
      :scatter scatter
