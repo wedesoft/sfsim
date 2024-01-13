@@ -114,7 +114,10 @@
                                         :opacity-cutoff opacity-cutoff))
 
 (def planet-data (planet/make-planet-data :radius radius
-                                          :max-height max-height))
+                                          :max-height max-height
+                                          :albedo albedo
+                                          :reflectivity reflectivity
+                                          :water-color water-color))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -155,12 +158,9 @@
                                :height height
                                :tilesize tilesize
                                :color-tilesize color-tilesize
-                               :albedo albedo
                                :dawn-start dawn-start
                                :dawn-end dawn-end
-                               :reflectivity reflectivity
                                :specular specular
-                               :water-color water-color
                                :amplification amplification
                                :transmittance transmittance
                                :scatter scatter

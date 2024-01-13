@@ -105,9 +105,12 @@
 
 (defn make-planet-data
   "Collect data about planet"
-  [& {:keys [radius max-height]}]
+  [& {:keys [radius max-height albedo reflectivity water-color]}]
   {:radius radius
-   :max-height max-height})
+   :max-height max-height
+   :albedo albedo
+   :reflectivity reflectivity
+   :water-color water-color})
 
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
@@ -235,7 +238,7 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [width height tilesize color-tilesize albedo dawn-start dawn-end reflectivity specular water-color amplification
+  [& {:keys [width height tilesize color-tilesize dawn-start dawn-end specular amplification
              transmittance scatter mie surface-radiance planet-data shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
@@ -267,14 +270,14 @@
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
     (uniform-int program "surface_height_size" (:height surface-radiance))
     (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
-    (uniform-float program "albedo" albedo)
     (uniform-float program "dawn_start" dawn-start)
     (uniform-float program "dawn_end" dawn-end)
-    (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
     (uniform-float program "radius" (:radius planet-data))
     (uniform-float program "max_height" (:max-height planet-data))
-    (uniform-vector3 program "water_color" water-color)
+    (uniform-float program "albedo" (:albedo planet-data))
+    (uniform-float program "reflectivity" (:reflectivity planet-data))
+    (uniform-vector3 program "water_color" (:water-color planet-data))
     (uniform-float program "amplification" amplification)
     (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:shadow-size shadow-data))
