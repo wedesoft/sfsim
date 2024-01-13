@@ -99,7 +99,8 @@
 (def shadow-data (opacity/make-shadow-data :num-opacity-layers num-opacity-layers
                                            :shadow-size shadow-size
                                            :num-steps num-steps
-                                           :depth depth))
+                                           :depth depth
+                                           :shadow-bias shadow-bias))
 
 (def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
                                         :perlin-octaves perlin-octaves
@@ -285,7 +286,6 @@
                                                       :opacity-step opacity-step
                                                       :window-width (aget w 0)
                                                       :window-height (aget h 0)
-                                                      :shadow-bias shadow-bias
                                                       :splits splits
                                                       :matrix-cascade matrix-cas
                                                       :clouds clouds

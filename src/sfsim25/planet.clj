@@ -281,6 +281,7 @@
     (uniform-float program "amplification" amplification)
     (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:shadow-size shadow-data))
+    (uniform-float program "shadow_bias" (:shadow-bias shadow-data))
     {:width width
      :height height
      :program program
@@ -296,7 +297,7 @@
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program transmittance scatter mie surface-radiance]}
-   & {:keys [projection origin transform light-direction opacity-step window-width window-height shadow-bias splits
+   & {:keys [projection origin transform light-direction opacity-step window-width window-height splits
              matrix-cascade clouds shadows opacities tree]}]
   (use-program program)
   (uniform-matrix4 program "projection" projection)
@@ -306,7 +307,6 @@
   (uniform-float program "opacity_step" opacity-step)
   (uniform-int program "window_width" window-width)
   (uniform-int program "window_height" window-height)
-  (uniform-float program "shadow_bias" shadow-bias)
   (doseq [[idx item] (map-indexed vector splits)]
          (uniform-float program (str "split" idx) item))
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
