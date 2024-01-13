@@ -140,13 +140,12 @@
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :radius radius
-                                         :max-height max-height
-                                         :tilesize tilesize
+  (clouds/make-cloud-atmosphere-renderer :tilesize tilesize
                                          :amplification amplification
                                          :transmittance transmittance
                                          :scatter scatter
                                          :mie mie
+                                         :planet-data planet-data
                                          :shadow-data shadow-data
                                          :cloud-data cloud-data))
 
@@ -161,14 +160,13 @@
                                :dawn-end dawn-end
                                :reflectivity reflectivity
                                :specular specular
-                               :radius radius
-                               :max-height max-height
                                :water-color water-color
                                :amplification amplification
                                :transmittance transmittance
                                :scatter scatter
                                :mie mie
                                :surface-radiance surface-radiance
+                               :planet-data planet-data
                                :shadow-data shadow-data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)

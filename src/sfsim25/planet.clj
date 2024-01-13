@@ -235,8 +235,8 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [width height tilesize color-tilesize albedo dawn-start dawn-end reflectivity specular radius max-height water-color
-             amplification transmittance scatter mie surface-radiance shadow-data]}]
+  [& {:keys [width height tilesize color-tilesize albedo dawn-start dawn-end reflectivity specular water-color amplification
+             transmittance scatter mie surface-radiance planet-data shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -272,24 +272,22 @@
     (uniform-float program "dawn_end" dawn-end)
     (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
+    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "max_height" (:max-height planet-data))
     (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
     (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:shadow-size shadow-data))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
     {:width width
      :height height
      :program program
-     :radius radius
      :tilesize tilesize
      :color-tilesize color-tilesize
      :transmittance transmittance
      :scatter scatter
      :mie mie
-     :surface-radiance surface-radiance}))
+     :surface-radiance surface-radiance
+     :planet-data planet-data}))
 
 (defn render-planet
   "Render planet (untested)"
@@ -362,9 +360,9 @@
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
   {:malli/schema [:=> [:cat :map :map fvec3] :map]}
-  [{:keys [tilesize radius width]} tree position]
-  (let [increase? (partial increase-level? tilesize radius width 60.0 10 6 position)]; TODO: use parameters for values
-    (update-level-of-detail tree radius increase? true)))
+  [{:keys [tilesize width planet-data]} tree position]
+  (let [increase? (partial increase-level? tilesize (:radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
+    (update-level-of-detail tree (:radius planet-data) increase? true)))
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))
 

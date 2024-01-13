@@ -328,7 +328,7 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [radius max-height tilesize amplification transmittance scatter mie shadow-data cloud-data]}]
+  [& {:keys [tilesize amplification transmittance scatter mie planet-data shadow-data cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [(fragment-atmosphere-clouds (:num-steps shadow-data)
                                                                      (:perlin-octaves cloud-data)
@@ -345,8 +345,8 @@
            (uniform-sampler program (str "shadow_map" i) (+ i 7)))
     (doseq [i (range (:num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 7 (:num-steps shadow-data))))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
+    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "max_height" (:max-height planet-data))
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:cloud-top cloud-data))
     (uniform-float program "cloud_scale" (:cloud-scale cloud-data))
@@ -365,8 +365,6 @@
     (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
     (uniform-float program "cap" (:cap cloud-data))
     (uniform-float program "anisotropic" (:anisotropic cloud-data))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
