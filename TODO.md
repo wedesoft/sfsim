@@ -1,5 +1,5 @@
 # TODO
-* group uniforms
+* group atmospheric lookup tables and move sizes?
 * namespacing of keywords
 * schemas for main render function arguments
 * use seed for random data
