@@ -408,7 +408,7 @@
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [radius max-height specular amplification transmittance scatter mie]}]
+  [& {:keys [specular amplification transmittance scatter mie planet-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
@@ -422,8 +422,8 @@
     (uniform-int program "heading_size" (:width scatter))
     (uniform-int program "transmittance_elevation_size" (:width transmittance))
     (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
+    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "max_height" (:max-height planet-data))
     (uniform-float program "specular" specular)
     (uniform-float program "amplification" amplification)
     {:program program

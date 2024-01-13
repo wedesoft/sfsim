@@ -171,13 +171,12 @@
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :radius radius
-                                       :max-height max-height
-                                       :specular specular
+  (atmosphere/make-atmosphere-renderer :specular specular
                                        :amplification amplification
                                        :transmittance transmittance
                                        :scatter scatter
-                                       :mie mie))
+                                       :mie mie
+                                       :planet-data planet-data))
 
 (def tile-tree (planet/make-tile-tree))
 
