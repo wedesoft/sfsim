@@ -103,6 +103,12 @@
               (doseq [selector [:0 :1 :2 :3 :4 :5]]
                      (render-tree program (selector node) transform texture-keys)))))
 
+(defn make-planet-data
+  "Collect data about planet"
+  [& {:keys [radius max-height]}]
+  {:radius radius
+   :max-height max-height})
+
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
@@ -143,7 +149,7 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [radius max-height depth tilesize amplification transmittance scatter mie cloud-data shadow-data]}]
+  [& {:keys [depth tilesize amplification transmittance scatter mie planet-data cloud-data shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -164,13 +170,12 @@
            (uniform-sampler program (str "shadow_map" i) (+ i 8)))
     (doseq [i (range (:num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 8 (:num-steps shadow-data))))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
+    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "max_height" (:max-height planet-data))
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:cloud-top cloud-data))
     (uniform-float program "cloud_scale" (:cloud-scale cloud-data))
     (uniform-float program "detail_scale" (:detail-scale cloud-data))
-    (uniform-float program "depth" depth)
     (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
     (uniform-int program "noise_size" (:width (:bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
@@ -185,12 +190,11 @@
     (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
     (uniform-float program "cap" (:cap cloud-data))
     (uniform-float program "anisotropic" (:anisotropic cloud-data))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:shadow-size shadow-data))
+    (uniform-float program "depth" (:depth shadow-data))
     {:program program
      :transmittance transmittance
      :scatter scatter

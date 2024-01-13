@@ -8,14 +8,15 @@
 
 (defn make-shadow-data
   "Collect information for opacity and shadow cascade"
-  [& {:keys [num-opacity-layers shadow-size num-steps]}]
+  [& {:keys [num-opacity-layers shadow-size num-steps depth]}]
   {:num-opacity-layers num-opacity-layers
    :shadow-size shadow-size
-   :num-steps num-steps})
+   :num-steps num-steps
+   :depth depth})
 
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
-  [& {:keys [radius shadow-data cloud-data]}]
+  [& {:keys [planet-data shadow-data cloud-data]}]
   (let [program  (make-program :vertex [opacity-vertex]
                                :fragment [(opacity-fragment (:num-opacity-layers shadow-data)
                                                             (:perlin-octaves cloud-data)
@@ -29,7 +30,7 @@
     (uniform-sampler program "cover" 2)
     (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
     (uniform-int program "shadow_size" (:shadow-size shadow-data))
-    (uniform-float program "radius" radius)
+    (uniform-float program "radius" (:radius planet-data))
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:cloud-top cloud-data))
     (uniform-float program "detail_scale" (:detail-scale cloud-data))

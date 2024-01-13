@@ -84,9 +84,22 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
+(def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
+(def transmittance (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
+
+(def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
+(def scatter (make-vector-texture-4d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data scatter-data}))
+
+(def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
+(def mie (make-vector-texture-2d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data mie-data}))
+
+(def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
+(def surface-radiance (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
+
 (def shadow-data (opacity/make-shadow-data :num-opacity-layers num-opacity-layers
                                            :shadow-size shadow-size
-                                           :num-steps num-steps))
+                                           :num-steps num-steps
+                                           :depth depth))
 
 (def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
                                         :perlin-octaves perlin-octaves
@@ -100,21 +113,12 @@
                                         :anisotropic anisotropic
                                         :opacity-cutoff opacity-cutoff))
 
-(def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def transmittance (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
-
-(def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def scatter (make-vector-texture-4d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data scatter-data}))
-
-(def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def mie (make-vector-texture-2d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data mie-data}))
-
-(def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def surface-radiance (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
+(def planet-data (planet/make-planet-data :radius radius
+                                          :max-height max-height))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
-  (opacity/make-opacity-renderer :radius radius
+  (opacity/make-opacity-renderer :planet-data planet-data
                                  :shadow-data shadow-data
                                  :cloud-data cloud-data))
 
@@ -125,14 +129,12 @@
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :radius radius
-                                     :max-height max-height
-                                     :depth depth
-                                     :tilesize tilesize
+  (planet/make-cloud-planet-renderer :tilesize tilesize
                                      :amplification amplification
                                      :transmittance transmittance
                                      :scatter scatter
                                      :mie mie
+                                     :planet-data planet-data
                                      :shadow-data shadow-data
                                      :cloud-data cloud-data))
 
