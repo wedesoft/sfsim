@@ -55,14 +55,6 @@
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
               (sqrt (- (sqr (+ radius mount-everest)) (sqr radius)))))
-(def height-size 32)
-(def elevation-size 127)
-(def light-elevation-size 32)
-(def heading-size 8)
-(def transmittance-height-size 64)
-(def transmittance-elevation-size 255)
-(def surface-height-size 16)
-(def surface-sun-elevation-size 63)
 (def theta (to-radians 25))
 (def r (+ radius cloud-bottom -750))
 (def position (atom (vec3 (+ 3.0 radius) 0 0)))
@@ -83,18 +75,6 @@
 
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
-
-(def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def transmittance (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
-
-(def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def scatter (make-vector-texture-4d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data scatter-data}))
-
-(def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def mie (make-vector-texture-2d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data mie-data}))
-
-(def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def surface-radiance (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
 
 (def shadow-data (opacity/make-shadow-data :num-opacity-layers num-opacity-layers
                                            :shadow-size shadow-size
@@ -120,6 +100,8 @@
                                           :reflectivity reflectivity
                                           :water-color water-color))
 
+(def atmosphere-luts (atmosphere/load-atmosphere-luts))
+
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
   (opacity/make-opacity-renderer :planet-data planet-data
@@ -135,9 +117,7 @@
 (def cloud-planet-renderer
   (planet/make-cloud-planet-renderer :tilesize tilesize
                                      :amplification amplification
-                                     :transmittance transmittance
-                                     :scatter scatter
-                                     :mie mie
+                                     :atmosphere-luts atmosphere-luts
                                      :planet-data planet-data
                                      :shadow-data shadow-data
                                      :cloud-data cloud-data))
@@ -146,9 +126,7 @@
 (def cloud-atmosphere-renderer
   (clouds/make-cloud-atmosphere-renderer :tilesize tilesize
                                          :amplification amplification
-                                         :transmittance transmittance
-                                         :scatter scatter
-                                         :mie mie
+                                         :atmosphere-luts atmosphere-luts
                                          :planet-data planet-data
                                          :shadow-data shadow-data
                                          :cloud-data cloud-data))
@@ -163,10 +141,7 @@
                                :dawn-end dawn-end
                                :specular specular
                                :amplification amplification
-                               :transmittance transmittance
-                               :scatter scatter
-                               :mie mie
-                               :surface-radiance surface-radiance
+                               :atmosphere-luts atmosphere-luts
                                :planet-data planet-data
                                :shadow-data shadow-data))
 
@@ -174,9 +149,7 @@
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :specular specular
                                        :amplification amplification
-                                       :transmittance transmittance
-                                       :scatter scatter
-                                       :mie mie
+                                       :atmosphere-luts atmosphere-luts
                                        :planet-data planet-data))
 
 (def tile-tree (planet/make-tile-tree))
@@ -313,10 +286,7 @@
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
-  (destroy-texture surface-radiance)
-  (destroy-texture mie)
-  (destroy-texture scatter)
-  (destroy-texture transmittance)
+  (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)

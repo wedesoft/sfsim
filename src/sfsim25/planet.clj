@@ -152,7 +152,7 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [depth tilesize amplification transmittance scatter mie planet-data cloud-data shadow-data]}]
+  [& {:keys [depth tilesize amplification atmosphere-luts planet-data cloud-data shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -183,12 +183,12 @@
     (uniform-int program "noise_size" (:width (:bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth scatter))
-    (uniform-int program "elevation_size" (:depth scatter))
-    (uniform-int program "light_elevation_size" (:height scatter))
-    (uniform-int program "heading_size" (:width scatter))
-    (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-int program "transmittance_elevation_size" (:width transmittance))
+    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
+    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
+    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
+    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
+    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
+    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-float program "cloud_multiplier" (:cloud-multiplier cloud-data))
     (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
     (uniform-float program "cap" (:cap cloud-data))
@@ -199,15 +199,13 @@
     (uniform-int program "shadow_size" (:shadow-size shadow-data))
     (uniform-float program "depth" (:depth shadow-data))
     {:program program
-     :transmittance transmittance
-     :scatter scatter
-     :mie mie
+     :atmosphere-luts atmosphere-luts
      :cloud-data cloud-data}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program transmittance scatter mie cloud-data]}
+  [{:keys [program atmosphere-luts cloud-data]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade
              shadows opacities tree]}]
   (use-program program)
@@ -224,8 +222,8 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {1 transmittance 2 scatter 3 mie 4 (:worley cloud-data) 5 (:perlin-worley cloud-data) 6 (:bluenoise cloud-data)
-                 7 (:cloud-cover cloud-data)})
+  (use-textures {1 (:transmittance atmosphere-luts) 2 (:scatter atmosphere-luts) 3 (:mie atmosphere-luts) 4 (:worley cloud-data)
+                 5 (:perlin-worley cloud-data) 6 (:bluenoise cloud-data) 7 (:cloud-cover cloud-data)})
   (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
@@ -238,8 +236,8 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [width height tilesize color-tilesize dawn-start dawn-end specular amplification
-             transmittance scatter mie surface-radiance planet-data shadow-data]}]
+  [& {:keys [width height tilesize color-tilesize dawn-start dawn-end specular amplification atmosphere-luts planet-data
+             shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
@@ -262,14 +260,14 @@
            (uniform-sampler program (str "opacity" i) (+ i 10 (:num-steps shadow-data))))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth scatter))
-    (uniform-int program "elevation_size" (:depth scatter))
-    (uniform-int program "light_elevation_size" (:height scatter))
-    (uniform-int program "heading_size" (:width scatter))
-    (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-int program "transmittance_elevation_size" (:width transmittance))
-    (uniform-int program "surface_height_size" (:height surface-radiance))
-    (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
+    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
+    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
+    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
+    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
+    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
+    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
+    (uniform-int program "surface_height_size" (:height (:surface-radiance atmosphere-luts)))
+    (uniform-int program "surface_sun_elevation_size" (:width (:surface-radiance atmosphere-luts)))
     (uniform-float program "dawn_start" dawn-start)
     (uniform-float program "dawn_end" dawn-end)
     (uniform-float program "specular" specular)
@@ -287,16 +285,13 @@
      :program program
      :tilesize tilesize
      :color-tilesize color-tilesize
-     :transmittance transmittance
-     :scatter scatter
-     :mie mie
-     :surface-radiance surface-radiance
+     :atmosphere-luts atmosphere-luts
      :planet-data planet-data}))
 
 (defn render-planet
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program transmittance scatter mie surface-radiance]}
+  [{:keys [program atmosphere-luts]}
    & {:keys [projection origin transform light-direction opacity-step window-width window-height splits
              matrix-cascade clouds shadows opacities tree]}]
   (use-program program)
@@ -312,7 +307,8 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {5 transmittance 6 scatter 7 mie 8 surface-radiance 9 clouds})
+  (use-textures {5 (:transmittance atmosphere-luts) 6 (:scatter atmosphere-luts) 7 (:mie atmosphere-luts)
+                 8 (:surface-radiance atmosphere-luts) 9 clouds})
   (use-textures (zipmap (drop 10 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
 
