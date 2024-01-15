@@ -105,9 +105,8 @@
 
 (defn make-planet-data
   "Collect data about planet"
-  [& {:keys [radius max-height albedo reflectivity water-color]}]
+  [& {:keys [radius albedo reflectivity water-color]}]
   {:radius radius
-   :max-height max-height
    :albedo albedo
    :reflectivity reflectivity
    :water-color water-color})
@@ -174,7 +173,7 @@
     (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 8 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (:radius planet-data))
-    (uniform-float program "max_height" (:max-height planet-data))
+    (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
     (uniform-float program "cloud_bottom" (:sfsim25.clouds/cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:sfsim25.clouds/cloud-top cloud-data))
     (uniform-float program "cloud_scale" (:sfsim25.clouds/cloud-scale cloud-data))
@@ -274,7 +273,7 @@
     (uniform-float program "dawn_end" dawn-end)
     (uniform-float program "specular" specular)
     (uniform-float program "radius" (:radius planet-data))
-    (uniform-float program "max_height" (:max-height planet-data))
+    (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
     (uniform-float program "albedo" (:albedo planet-data))
     (uniform-float program "reflectivity" (:reflectivity planet-data))
     (uniform-vector3 program "water_color" (:water-color planet-data))

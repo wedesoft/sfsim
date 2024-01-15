@@ -415,13 +415,13 @@
 (def surface-sun-elevation-size 63)
 (def surface-height-size 16)
 
-(defn load-atmosphere-luts
+(defn make-atmosphere-luts
   "Load atmosphere lookup tables"
-  {:malli/schema [:=> [:cat] [:map [:transmittance texture-2d]
-                                   [:scatter texture-4d]
-                                   [:mie texture-2d]
-                                   [:surface-radiance texture-2d]]]}
-  []
+  {:malli/schema [:=> [:cat [:* :any]] [:map [:transmittance texture-2d]
+                                             [:scatter texture-4d]
+                                             [:mie texture-2d]
+                                             [:surface-radiance texture-2d]]]}
+  [& {::keys [max-height]}]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :linear :clamp
                                                       {:width transmittance-elevation-size
@@ -436,11 +436,11 @@
                                                        :data scatter-data})
         mie-data              (slurp-floats "data/atmosphere/mie-strength.scatter")
         mie                   (make-vector-texture-2d :linear :clamp
-                                                   {:width heading-size
-                                                    :height light-elevation-size
-                                                    :depth elevation-size
-                                                    :hyperdepth height-size
-                                                    :data mie-data})
+                                                      {:width heading-size
+                                                       :height light-elevation-size
+                                                       :depth elevation-size
+                                                       :hyperdepth height-size
+                                                       :data mie-data})
         surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter")
         surface-radiance      (make-vector-texture-2d :linear :clamp
                                                       {:width surface-sun-elevation-size
@@ -449,7 +449,8 @@
     {:transmittance transmittance
      :scatter scatter
      :mie mie
-     :surface-radiance surface-radiance}))
+     :surface-radiance surface-radiance
+     ::max-height max-height}))
 
 (defn destroy-atmosphere-luts
   "Destroy atmosphere lookup tables"
@@ -477,7 +478,7 @@
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
     (uniform-float program "radius" (:radius planet-data))
-    (uniform-float program "max_height" (:max-height planet-data))
+    (uniform-float program "max_height" (::max-height atmosphere-luts))
     (uniform-float program "specular" specular)
     (uniform-float program "amplification" amplification)
     {:program program

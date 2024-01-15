@@ -95,12 +95,11 @@
                                         :sfsim25.clouds/opacity-cutoff opacity-cutoff))
 
 (def planet-data (planet/make-planet-data :radius radius
-                                          :max-height max-height
                                           :albedo albedo
                                           :reflectivity reflectivity
                                           :water-color water-color))
 
-(def atmosphere-luts (atmosphere/load-atmosphere-luts))
+(def atmosphere-luts (atmosphere/make-atmosphere-luts :sfsim25.atmosphere/max-height max-height))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
