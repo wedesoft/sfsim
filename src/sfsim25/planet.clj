@@ -105,11 +105,11 @@
 
 (defn make-planet-data
   "Collect data about planet"
-  [& {:keys [radius albedo reflectivity water-color]}]
-  {:radius radius
-   :albedo albedo
-   :reflectivity reflectivity
-   :water-color water-color})
+  [& {::keys [radius albedo reflectivity water-color]}]
+  {::radius radius
+   ::albedo albedo
+   ::reflectivity reflectivity
+   ::water-color water-color})
 
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
@@ -172,7 +172,7 @@
            (uniform-sampler program (str "shadow_map" i) (+ i 8)))
     (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 8 (:sfsim25.opacity/num-steps shadow-data))))
-    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "radius" (::radius planet-data))
     (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
     (uniform-float program "cloud_bottom" (:sfsim25.clouds/cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:sfsim25.clouds/cloud-top cloud-data))
@@ -272,11 +272,11 @@
     (uniform-float program "dawn_start" dawn-start)
     (uniform-float program "dawn_end" dawn-end)
     (uniform-float program "specular" specular)
-    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "radius" (::radius planet-data))
     (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
-    (uniform-float program "albedo" (:albedo planet-data))
-    (uniform-float program "reflectivity" (:reflectivity planet-data))
-    (uniform-vector3 program "water_color" (:water-color planet-data))
+    (uniform-float program "albedo" (::albedo planet-data))
+    (uniform-float program "reflectivity" (::reflectivity planet-data))
+    (uniform-vector3 program "water_color" (::water-color planet-data))
     (uniform-float program "amplification" amplification)
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
@@ -361,8 +361,8 @@
   "Method to call in a backround thread for loading tiles (untested)"
   {:malli/schema [:=> [:cat :map :map fvec3] :map]}
   [{:keys [tilesize width planet-data]} tree position]
-  (let [increase? (partial increase-level? tilesize (:radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
-    (update-level-of-detail tree (:radius planet-data) increase? true)))
+  (let [increase? (partial increase-level? tilesize (::radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
+    (update-level-of-detail tree (::radius planet-data) increase? true)))
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))
 

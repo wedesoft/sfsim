@@ -31,7 +31,7 @@
     (uniform-sampler program "cover" 2)
     (uniform-int program "cover_size" (:width (:sfsim25.clouds/cloud-cover cloud-data)))
     (uniform-int program "shadow_size" (::shadow-size shadow-data))
-    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-float program "cloud_bottom" (:sfsim25.clouds/cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:sfsim25.clouds/cloud-top cloud-data))
     (uniform-float program "detail_scale" (:sfsim25.clouds/detail-scale cloud-data))

@@ -94,10 +94,10 @@
                                         :sfsim25.clouds/anisotropic anisotropic
                                         :sfsim25.clouds/opacity-cutoff opacity-cutoff))
 
-(def planet-data (planet/make-planet-data :radius radius
-                                          :albedo albedo
-                                          :reflectivity reflectivity
-                                          :water-color water-color))
+(def planet-data (planet/make-planet-data :sfsim25.planet/radius radius
+                                          :sfsim25.planet/albedo albedo
+                                          :sfsim25.planet/reflectivity reflectivity
+                                          :sfsim25.planet/water-color water-color))
 
 (def atmosphere-luts (atmosphere/make-atmosphere-luts :sfsim25.atmosphere/max-height max-height))
 

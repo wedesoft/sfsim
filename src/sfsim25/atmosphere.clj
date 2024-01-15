@@ -477,7 +477,7 @@
     (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
-    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-float program "max_height" (::max-height atmosphere-luts))
     (uniform-float program "specular" specular)
     (uniform-float program "amplification" amplification)

@@ -345,7 +345,7 @@
            (uniform-sampler program (str "shadow_map" i) (+ i 7)))
     (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 7 (:sfsim25.opacity/num-steps shadow-data))))
-    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
     (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (::cloud-top cloud-data))
