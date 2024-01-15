@@ -34,14 +34,8 @@
 (def max-height 35000.0)
 (def threshold (atom 18.2))
 (def anisotropic 0.25)
-(def shadow-bias (exp -6.0))
-(def cloud-bottom 2000.0)
 (def cloud-top 5000.0)
-(def cloud-multiplier 10.0)
-(def cover-multiplier 26.0)
-(def cap 0.007)
 (def detail-scale 4000.0)
-(def cloud-scale 100000.0)
 (def series (take 4 (iterate #(* % 0.7) 1.0)))
 (def sum-series (apply + series))
 (def cloud-octaves (mapv #(/ % sum-series) series))
@@ -51,24 +45,17 @@
 (def mix 0.8)
 (def opacity-base (atom 250.0))
 (def cloud-step 400.0)
-(def shadow-size 512)
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
               (sqrt (- (sqr (+ radius mount-everest)) (sqr radius)))))
 (def theta (to-radians 25))
-(def r (+ radius cloud-bottom -750))
 (def position (atom (vec3 (+ 3.0 radius) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
 (def num-steps 3)
-(def num-opacity-layers 7)
-(def opacity-cutoff 0.01)
-(def albedo 0.9)
 (def specular 1000.0)
-(def reflectivity 0.1)
 (def dawn-start -0.2)
 (def dawn-end 0.0)
-(def water-color (vec3 0.09 0.11 0.34))
 (def amplification 6.0)
 
 (GLFW/glfwInit)
@@ -76,28 +63,28 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
-(def shadow-data (opacity/make-shadow-data :sfsim25.opacity/num-opacity-layers num-opacity-layers
-                                           :sfsim25.opacity/shadow-size shadow-size
+(def shadow-data (opacity/make-shadow-data :sfsim25.opacity/num-opacity-layers 7
+                                           :sfsim25.opacity/shadow-size 512
                                            :sfsim25.opacity/num-steps num-steps
                                            :sfsim25.opacity/depth depth
-                                           :sfsim25.opacity/shadow-bias shadow-bias))
+                                           :sfsim25.opacity/shadow-bias (exp -6.0)))
 
 (def cloud-data (clouds/make-cloud-data :sfsim25.clouds/cloud-octaves cloud-octaves
                                         :sfsim25.clouds/perlin-octaves perlin-octaves
-                                        :sfsim25.clouds/cloud-bottom cloud-bottom
+                                        :sfsim25.clouds/cloud-bottom 2000.0
                                         :sfsim25.clouds/cloud-top cloud-top
                                         :sfsim25.clouds/detail-scale detail-scale
-                                        :sfsim25.clouds/cloud-scale cloud-scale
-                                        :sfsim25.clouds/cloud-multiplier cloud-multiplier
-                                        :sfsim25.clouds/cover-multiplier cover-multiplier
-                                        :sfsim25.clouds/cap cap
+                                        :sfsim25.clouds/cloud-scale 100000.0
+                                        :sfsim25.clouds/cloud-multiplier 10.0
+                                        :sfsim25.clouds/cover-multiplier 26.0
+                                        :sfsim25.clouds/cap 0.007
                                         :sfsim25.clouds/anisotropic anisotropic
-                                        :sfsim25.clouds/opacity-cutoff opacity-cutoff))
+                                        :sfsim25.clouds/opacity-cutoff 0.01))
 
 (def planet-data (planet/make-planet-data :sfsim25.planet/radius radius
-                                          :sfsim25.planet/albedo albedo
-                                          :sfsim25.planet/reflectivity reflectivity
-                                          :sfsim25.planet/water-color water-color))
+                                          :sfsim25.planet/albedo 0.9
+                                          :sfsim25.planet/reflectivity 0.1
+                                          :sfsim25.planet/water-color (vec3 0.09 0.11 0.34)))
 
 (def atmosphere-luts (atmosphere/make-atmosphere-luts :sfsim25.atmosphere/max-height max-height))
 
