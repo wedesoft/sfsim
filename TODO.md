@@ -1,9 +1,11 @@
 # TODO
-* group uniforms
+* namespacing of keywords
+* schemas for main render function arguments
+* use seed for random data
+* integration test using computed data set
 * test for scale-elevation
 * enable warn on reflection in more places
 * problem with shadow map when near ground
-* integration test using computed data set, use seed for random data?
 * make modules out of core.clj
   * group textures with dimension data
   * group cloud textures, sizes, and parameters

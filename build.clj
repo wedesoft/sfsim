@@ -17,6 +17,10 @@
               [sfsim25.util :as u])
     (:import [org.lwjgl.glfw GLFW]))
 
+; (require '[malli.dev :as dev])
+; (require '[malli.dev.pretty :as pretty])
+; (dev/start! {:report (pretty/thrower)})
+
 (defn worley
   "Generate 3D Worley noise textures"
   [& {:keys [size divisions] :or {size 64 divisions 8}}]

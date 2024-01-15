@@ -328,10 +328,9 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
-             num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
+  [& {:keys [tilesize amplification atmosphere-luts planet-data shadow-data cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
-                              :fragment [(fragment-atmosphere-clouds num-steps
+                              :fragment [(fragment-atmosphere-clouds (:num-steps shadow-data)
                                                                      (:perlin-octaves cloud-data)
                                                                      (:cloud-octaves cloud-data))])]
     (use-program program)
@@ -342,51 +341,42 @@
     (uniform-sampler program "perlin"           4)
     (uniform-sampler program "bluenoise"        5)
     (uniform-sampler program "cover"            6)
-    (doseq [i (range num-steps)]
+    (doseq [i (range (:num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 7)))
-    (doseq [i (range num-steps)]
-           (uniform-sampler program (str "opacity" i) (+ i 7 num-steps)))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
+    (doseq [i (range (:num-steps shadow-data))]
+           (uniform-sampler program (str "opacity" i) (+ i 7 (:num-steps shadow-data))))
+    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "max_height" (:max-height planet-data))
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:cloud-top cloud-data))
     (uniform-float program "cloud_scale" (:cloud-scale cloud-data))
     (uniform-float program "detail_scale" (:detail-scale cloud-data))
-    (uniform-float program "depth" depth)
     (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
     (uniform-int program "noise_size" (:width (:bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth scatter))
-    (uniform-int program "elevation_size" (:depth scatter))
-    (uniform-int program "light_elevation_size" (:height scatter))
-    (uniform-int program "heading_size" (:width scatter))
-    (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-int program "transmittance_elevation_size" (:width transmittance))
-    (uniform-float program "albedo" albedo)
-    (uniform-float program "reflectivity" reflectivity)
-    (uniform-float program "specular" specular)
+    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
+    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
+    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
+    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
+    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
+    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-float program "cloud_multiplier" (:cloud-multiplier cloud-data))
     (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
     (uniform-float program "cap" (:cap cloud-data))
     (uniform-float program "anisotropic" (:anisotropic cloud-data))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
-    (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
-    (uniform-int program "num_opacity_layers" num-opacity-layers)
-    (uniform-int program "shadow_size" shadow-size)
+    (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
+    (uniform-int program "shadow_size" (:shadow-size shadow-data))
     {:program program
-     :transmittance transmittance
-     :scatter scatter
-     :mie mie
+     :atmosphere-luts atmosphere-luts
      :cloud-data cloud-data}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program transmittance scatter mie cloud-data]}
+  [{:keys [program atmosphere-luts cloud-data]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
              matrix-cascade shadows opacities]}]
   (let [indices  [0 1 3 2]
@@ -407,8 +397,8 @@
     (doseq [[idx item] (map-indexed vector matrix-cascade)]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 transmittance 1 scatter 2 mie 3 (:worley cloud-data) 4 (:perlin-worley cloud-data) 5 (:bluenoise cloud-data)
-                   6 (:cloud-cover cloud-data)})
+    (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts) 3 (:worley cloud-data)
+                   4 (:perlin-worley cloud-data) 5 (:bluenoise cloud-data) 6 (:cloud-cover cloud-data)})
     (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
     (render-quads vao)
     (destroy-vertex-array-object vao)))

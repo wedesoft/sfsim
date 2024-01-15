@@ -20,6 +20,10 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+; (require '[malli.dev :as dev])
+; (require '[malli.dev.pretty :as pretty])
+; (dev/start! {:report (pretty/thrower)})
+
 (def width 1280)
 (def height 720)
 
@@ -51,14 +55,6 @@
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
               (sqrt (- (sqr (+ radius mount-everest)) (sqr radius)))))
-(def height-size 32)
-(def elevation-size 127)
-(def light-elevation-size 32)
-(def heading-size 8)
-(def transmittance-height-size 64)
-(def transmittance-elevation-size 255)
-(def surface-height-size 16)
-(def surface-sun-elevation-size 63)
 (def theta (to-radians 25))
 (def r (+ radius cloud-bottom -750))
 (def position (atom (vec3 (+ 3.0 radius) 0 0)))
@@ -80,6 +76,12 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
+(def shadow-data (opacity/make-shadow-data :num-opacity-layers num-opacity-layers
+                                           :shadow-size shadow-size
+                                           :num-steps num-steps
+                                           :depth depth
+                                           :shadow-bias shadow-bias))
+
 (def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
                                         :perlin-octaves perlin-octaves
                                         :cloud-bottom cloud-bottom
@@ -92,106 +94,63 @@
                                         :anisotropic anisotropic
                                         :opacity-cutoff opacity-cutoff))
 
-(def transmittance-data (slurp-floats "data/atmosphere/transmittance.scatter"))
-(def transmittance (make-vector-texture-2d :linear :clamp {:width transmittance-elevation-size :height transmittance-height-size :data transmittance-data}))
+(def planet-data (planet/make-planet-data :radius radius
+                                          :max-height max-height
+                                          :albedo albedo
+                                          :reflectivity reflectivity
+                                          :water-color water-color))
 
-(def scatter-data (slurp-floats "data/atmosphere/ray-scatter.scatter"))
-(def scatter (make-vector-texture-4d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data scatter-data}))
-
-(def mie-data (slurp-floats "data/atmosphere/mie-strength.scatter"))
-(def mie (make-vector-texture-2d :linear :clamp {:width heading-size :height light-elevation-size :depth elevation-size :hyperdepth height-size :data mie-data}))
-
-(def surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter"))
-(def surface-radiance (make-vector-texture-2d :linear :clamp {:width surface-sun-elevation-size :height surface-height-size :data surface-radiance-data}))
+(def atmosphere-luts (atmosphere/load-atmosphere-luts))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
-  (opacity/make-opacity-renderer :num-opacity-layers num-opacity-layers
-                                 :shadow-size shadow-size
-                                 :radius radius
+  (opacity/make-opacity-renderer :planet-data planet-data
+                                 :shadow-data shadow-data
                                  :cloud-data cloud-data))
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
   (planet/make-planet-shadow-renderer :tilesize tilesize
-                                      :shadow-size shadow-size))
+                                      :shadow-data shadow-data))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :num-steps num-steps
-                                     :radius radius
-                                     :max-height max-height
-                                     :depth depth
-                                     :tilesize tilesize
-                                     :albedo albedo
-                                     :reflectivity reflectivity
-                                     :specular specular
-                                     :water-color water-color
+  (planet/make-cloud-planet-renderer :tilesize tilesize
                                      :amplification amplification
-                                     :num-opacity-layers num-opacity-layers
-                                     :shadow-size shadow-size
-                                     :transmittance transmittance
-                                     :scatter scatter
-                                     :mie mie
+                                     :atmosphere-luts atmosphere-luts
+                                     :planet-data planet-data
+                                     :shadow-data shadow-data
                                      :cloud-data cloud-data))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :num-steps num-steps
-                                         :radius radius
-                                         :max-height max-height
-                                         :depth depth
-                                         :tilesize tilesize
-                                         :albedo albedo
-                                         :reflectivity reflectivity
-                                         :specular specular
-                                         :water-color water-color
+  (clouds/make-cloud-atmosphere-renderer :tilesize tilesize
                                          :amplification amplification
-                                         :num-opacity-layers num-opacity-layers
-                                         :shadow-size shadow-size
-                                         :transmittance transmittance
-                                         :scatter scatter
-                                         :mie mie
+                                         :atmosphere-luts atmosphere-luts
+                                         :planet-data planet-data
+                                         :shadow-data shadow-data
                                          :cloud-data cloud-data))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
   (planet/make-planet-renderer :width width
                                :height height
-                               :num-steps num-steps
                                :tilesize tilesize
                                :color-tilesize color-tilesize
-                               :albedo albedo
                                :dawn-start dawn-start
                                :dawn-end dawn-end
-                               :reflectivity reflectivity
                                :specular specular
-                               :radius radius
-                               :max-height max-height
-                               :water-color water-color
                                :amplification amplification
-                               :num-opacity-layers num-opacity-layers
-                               :shadow-size shadow-size
-                               :transmittance transmittance
-                               :scatter scatter
-                               :mie mie
-                               :surface-radiance surface-radiance))
+                               :atmosphere-luts atmosphere-luts
+                               :planet-data planet-data
+                               :shadow-data shadow-data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :num-steps num-steps
-                                       :albedo albedo
-                                       :reflectivity 0.1
-                                       :num-opacity-layers num-opacity-layers
-                                       :shadow-size shadow-size
-                                       :radius radius
-                                       :max-height max-height
-                                       :specular specular
+  (atmosphere/make-atmosphere-renderer :specular specular
                                        :amplification amplification
-                                       :transmittance transmittance
-                                       :scatter scatter
-                                       :mie mie
-                                       :surface-radiance surface-radiance))
+                                       :atmosphere-luts atmosphere-luts
+                                       :planet-data planet-data))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -300,7 +259,6 @@
                                                       :opacity-step opacity-step
                                                       :window-width (aget w 0)
                                                       :window-height (aget h 0)
-                                                      :shadow-bias shadow-bias
                                                       :splits splits
                                                       :matrix-cascade matrix-cas
                                                       :clouds clouds
@@ -309,18 +267,14 @@
                                                       :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer
-                                                              :splits splits
-                                                              :matrix-cascade matrix-cas
                                                               :projection projection
                                                               :extrinsics extrinsics
                                                               :origin @position
-                                                              :opacity-step opacity-step
                                                               :window-width (aget w 0)
                                                               :window-height (aget h 0)
                                                               :light-direction light-dir
                                                               :z-far z-far
-                                                              :clouds clouds
-                                                              :opacities opacities))
+                                                              :clouds clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-cascade opacities)
                (planet/destroy-shadow-cascade shadows))
@@ -332,10 +286,7 @@
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
-  (destroy-texture surface-radiance)
-  (destroy-texture mie)
-  (destroy-texture scatter)
-  (destroy-texture transmittance)
+  (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
   (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)

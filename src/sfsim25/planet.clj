@@ -103,10 +103,19 @@
               (doseq [selector [:0 :1 :2 :3 :4 :5]]
                      (render-tree program (selector node) transform texture-keys)))))
 
+(defn make-planet-data
+  "Collect data about planet"
+  [& {:keys [radius max-height albedo reflectivity water-color]}]
+  {:radius radius
+   :max-height max-height
+   :albedo albedo
+   :reflectivity reflectivity
+   :water-color water-color})
+
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [tilesize shadow-size]}]
+  [& {:keys [tilesize shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet-shadow]
@@ -116,15 +125,16 @@
     (uniform-sampler program "surface" 0)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "shadow_size" shadow-size)
+    (uniform-int program "shadow_size" (:shadow-size shadow-data))
     {:program program
-     :shadow-size shadow-size}))
+     :shadow-data shadow-data}))
 
 (defn render-shadow-cascade
   "Render planetary shadow cascade (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
-  [{:keys [program shadow-size]} & {:keys [matrix-cascade tree]}]
-  (shadow-cascade shadow-size matrix-cascade program (fn [transform] (render-tree program tree transform [:surf-tex]))))
+  [{:keys [program shadow-data]} & {:keys [matrix-cascade tree]}]
+  (shadow-cascade (:shadow-size shadow-data) matrix-cascade program
+                  (fn [transform] (render-tree program tree transform [:surf-tex]))))
 
 (defn destroy-shadow-cascade
   "Destroy cascade of shadow maps (untested)"
@@ -142,13 +152,12 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [num-steps radius max-height depth tilesize albedo reflectivity specular water-color amplification
-             num-opacity-layers shadow-size transmittance scatter mie cloud-data]}]
+  [& {:keys [depth tilesize amplification atmosphere-luts planet-data cloud-data shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
                               :geometry [geometry-planet]
-                              :fragment [(fragment-planet-clouds num-steps
+                              :fragment [(fragment-planet-clouds (:num-steps shadow-data)
                                                                  (:perlin-octaves cloud-data)
                                                                  (:cloud-octaves cloud-data))])]
     (use-program program)
@@ -160,51 +169,43 @@
     (uniform-sampler program "perlin"           5)
     (uniform-sampler program "bluenoise"        6)
     (uniform-sampler program "cover"            7)
-    (doseq [i (range num-steps)]
+    (doseq [i (range (:num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 8)))
-    (doseq [i (range num-steps)]
-           (uniform-sampler program (str "opacity" i) (+ i 8 num-steps)))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
+    (doseq [i (range (:num-steps shadow-data))]
+           (uniform-sampler program (str "opacity" i) (+ i 8 (:num-steps shadow-data))))
+    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "max_height" (:max-height planet-data))
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
     (uniform-float program "cloud_top" (:cloud-top cloud-data))
     (uniform-float program "cloud_scale" (:cloud-scale cloud-data))
     (uniform-float program "detail_scale" (:detail-scale cloud-data))
-    (uniform-float program "depth" depth)
     (uniform-int program "cover_size" (:width (:cloud-cover cloud-data)))
     (uniform-int program "noise_size" (:width (:bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth scatter))
-    (uniform-int program "elevation_size" (:depth scatter))
-    (uniform-int program "light_elevation_size" (:height scatter))
-    (uniform-int program "heading_size" (:width scatter))
-    (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-int program "transmittance_elevation_size" (:width transmittance))
-    (uniform-float program "albedo" albedo)
-    (uniform-float program "reflectivity" reflectivity)
-    (uniform-float program "specular" specular)
+    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
+    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
+    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
+    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
+    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
+    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-float program "cloud_multiplier" (:cloud-multiplier cloud-data))
     (uniform-float program "cover_multiplier" (:cover-multiplier cloud-data))
     (uniform-float program "cap" (:cap cloud-data))
     (uniform-float program "anisotropic" (:anisotropic cloud-data))
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
-    (uniform-vector3 program "water_color" water-color)
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
-    (uniform-int program "num_opacity_layers" num-opacity-layers)
-    (uniform-int program "shadow_size" shadow-size)
+    (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
+    (uniform-int program "shadow_size" (:shadow-size shadow-data))
+    (uniform-float program "depth" (:depth shadow-data))
     {:program program
-     :transmittance transmittance
-     :scatter scatter
-     :mie mie
+     :atmosphere-luts atmosphere-luts
      :cloud-data cloud-data}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program transmittance scatter mie cloud-data]}
+  [{:keys [program atmosphere-luts cloud-data]}
    & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade
              shadows opacities tree]}]
   (use-program program)
@@ -221,8 +222,8 @@
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {1 transmittance 2 scatter 3 mie 4 (:worley cloud-data) 5 (:perlin-worley cloud-data) 6 (:bluenoise cloud-data)
-                 7 (:cloud-cover cloud-data)})
+  (use-textures {1 (:transmittance atmosphere-luts) 2 (:scatter atmosphere-luts) 3 (:mie atmosphere-luts) 4 (:worley cloud-data)
+                 5 (:perlin-worley cloud-data) 6 (:bluenoise cloud-data) 7 (:cloud-cover cloud-data)})
   (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex]))
 
@@ -235,13 +236,13 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [width height num-steps tilesize color-tilesize albedo dawn-start dawn-end reflectivity specular radius max-height
-             water-color amplification num-opacity-layers shadow-size transmittance scatter mie surface-radiance]}]
+  [& {:keys [width height tilesize color-tilesize dawn-start dawn-end specular amplification atmosphere-luts planet-data
+             shadow-data]}]
   (let [program (make-program :vertex [vertex-planet]
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
                               :geometry [geometry-planet]
-                              :fragment [(fragment-planet num-steps)])]
+                              :fragment [(fragment-planet (:num-steps shadow-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (uniform-sampler program "day"              1)
@@ -253,49 +254,45 @@
     (uniform-sampler program "mie_strength"     7)
     (uniform-sampler program "surface_radiance" 8)
     (uniform-sampler program "clouds"           9)
-    (doseq [i (range num-steps)]
+    (doseq [i (range (:num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 10)))
-    (doseq [i (range num-steps)]
-           (uniform-sampler program (str "opacity" i) (+ i 10 num-steps)))
+    (doseq [i (range (:num-steps shadow-data))]
+           (uniform-sampler program (str "opacity" i) (+ i 10 (:num-steps shadow-data))))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth scatter))
-    (uniform-int program "elevation_size" (:depth scatter))
-    (uniform-int program "light_elevation_size" (:height scatter))
-    (uniform-int program "heading_size" (:width scatter))
-    (uniform-int program "transmittance_height_size" (:height transmittance))
-    (uniform-int program "transmittance_elevation_size" (:width transmittance))
-    (uniform-int program "surface_height_size" (:height surface-radiance))
-    (uniform-int program "surface_sun_elevation_size" (:width surface-radiance))
-    (uniform-float program "albedo" albedo)
+    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
+    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
+    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
+    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
+    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
+    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
+    (uniform-int program "surface_height_size" (:height (:surface-radiance atmosphere-luts)))
+    (uniform-int program "surface_sun_elevation_size" (:width (:surface-radiance atmosphere-luts)))
     (uniform-float program "dawn_start" dawn-start)
     (uniform-float program "dawn_end" dawn-end)
-    (uniform-float program "reflectivity" reflectivity)
     (uniform-float program "specular" specular)
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
-    (uniform-vector3 program "water_color" water-color)
+    (uniform-float program "radius" (:radius planet-data))
+    (uniform-float program "max_height" (:max-height planet-data))
+    (uniform-float program "albedo" (:albedo planet-data))
+    (uniform-float program "reflectivity" (:reflectivity planet-data))
+    (uniform-vector3 program "water_color" (:water-color planet-data))
     (uniform-float program "amplification" amplification)
-    (uniform-int program "num_opacity_layers" num-opacity-layers)
-    (uniform-int program "shadow_size" shadow-size)
-    (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
+    (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
+    (uniform-int program "shadow_size" (:shadow-size shadow-data))
+    (uniform-float program "shadow_bias" (:shadow-bias shadow-data))
     {:width width
      :height height
      :program program
-     :radius radius
      :tilesize tilesize
      :color-tilesize color-tilesize
-     :transmittance transmittance
-     :scatter scatter
-     :mie mie
-     :surface-radiance surface-radiance}))
+     :atmosphere-luts atmosphere-luts
+     :planet-data planet-data}))
 
 (defn render-planet
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program transmittance scatter mie surface-radiance]}
-   & {:keys [projection origin transform light-direction opacity-step window-width window-height shadow-bias splits
+  [{:keys [program atmosphere-luts]}
+   & {:keys [projection origin transform light-direction opacity-step window-width window-height splits
              matrix-cascade clouds shadows opacities tree]}]
   (use-program program)
   (uniform-matrix4 program "projection" projection)
@@ -305,13 +302,13 @@
   (uniform-float program "opacity_step" opacity-step)
   (uniform-int program "window_width" window-width)
   (uniform-int program "window_height" window-height)
-  (uniform-float program "shadow_bias" shadow-bias)
   (doseq [[idx item] (map-indexed vector splits)]
          (uniform-float program (str "split" idx) item))
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {5 transmittance 6 scatter 7 mie 8 surface-radiance 9 clouds})
+  (use-textures {5 (:transmittance atmosphere-luts) 6 (:scatter atmosphere-luts) 7 (:mie atmosphere-luts)
+                 8 (:surface-radiance atmosphere-luts) 9 clouds})
   (use-textures (zipmap (drop 10 (range)) (concat shadows opacities)))
   (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
 
@@ -362,9 +359,9 @@
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
   {:malli/schema [:=> [:cat :map :map fvec3] :map]}
-  [{:keys [tilesize radius width]} tree position]
-  (let [increase? (partial increase-level? tilesize radius width 60.0 10 6 position)]; TODO: use parameters for values
-    (update-level-of-detail tree radius increase? true)))
+  [{:keys [tilesize width planet-data]} tree position]
+  (let [increase? (partial increase-level? tilesize (:radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
+    (update-level-of-detail tree (:radius planet-data) increase? true)))
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))
 
