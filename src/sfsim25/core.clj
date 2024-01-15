@@ -35,7 +35,6 @@
 (def threshold (atom 18.2))
 (def anisotropic 0.25)
 (def cloud-top 5000.0)
-(def detail-scale 4000.0)
 (def series (take 4 (iterate #(* % 0.7) 1.0)))
 (def sum-series (apply + series))
 (def cloud-octaves (mapv #(/ % sum-series) series))
@@ -52,7 +51,6 @@
 (def position (atom (vec3 (+ 3.0 radius) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
-(def num-steps 3)
 (def specular 1000.0)
 (def dawn-start -0.2)
 (def dawn-end 0.0)
@@ -65,7 +63,7 @@
 
 (def shadow-data (opacity/make-shadow-data :sfsim25.opacity/num-opacity-layers 7
                                            :sfsim25.opacity/shadow-size 512
-                                           :sfsim25.opacity/num-steps num-steps
+                                           :sfsim25.opacity/num-steps 3
                                            :sfsim25.opacity/depth depth
                                            :sfsim25.opacity/shadow-bias (exp -6.0)))
 
@@ -73,7 +71,7 @@
                                         :sfsim25.clouds/perlin-octaves perlin-octaves
                                         :sfsim25.clouds/cloud-bottom 2000.0
                                         :sfsim25.clouds/cloud-top cloud-top
-                                        :sfsim25.clouds/detail-scale detail-scale
+                                        :sfsim25.clouds/detail-scale 4000.0
                                         :sfsim25.clouds/cloud-scale 100000.0
                                         :sfsim25.clouds/cloud-multiplier 10.0
                                         :sfsim25.clouds/cover-multiplier 26.0
@@ -180,16 +178,18 @@
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
              (let [norm-pos     (mag @position)
-                   dist         (- norm-pos radius cloud-top)
+                   dist         (- norm-pos radius (:sfsim25.clouds/cloud-top cloud-data))
                    z-near       (max 1.0 (* 0.4 dist))
-                   z-far        (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
+                   z-far        (+ (sqrt (- (sqr (+ radius (:sfsim25.clouds/cloud-top cloud-data))) (sqr radius)))
                                    (sqrt (- (sqr norm-pos) (sqr radius))))
                    light-dir    (vec3 (cos @light) (sin @light) 0)
                    projection   (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
-                   lod-offset   (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
+                   lod-offset   (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2)
+                                           (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
                    extrinsics   (transformation-matrix (quaternion->matrix @orientation) @position)
-                   matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
-                   splits       (split-list mix z-near z-far num-steps)
+                   matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir (:sfsim25.opacity/depth shadow-data)
+                                                       mix z-near z-far (:sfsim25.opacity/num-steps shadow-data))
+                   splits       (split-list mix z-near z-far (:sfsim25.opacity/num-steps shadow-data))
                    scatter-am   (+ (* anisotropic (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0)) (- 1 anisotropic))
                    cos-light    (/ (dot light-dir @position) (mag @position))
                    sin-light    (sqrt (- 1 (sqr cos-light)))
