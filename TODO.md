@@ -1,5 +1,6 @@
 # TODO
 * namespacing of keywords
+* refactor redundant code setting uniforms
 * schemas for main render function arguments
 * use seed for random data
 * integration test using computed data set

@@ -76,11 +76,11 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
-(def shadow-data (opacity/make-shadow-data :num-opacity-layers num-opacity-layers
-                                           :shadow-size shadow-size
-                                           :num-steps num-steps
-                                           :depth depth
-                                           :shadow-bias shadow-bias))
+(def shadow-data (opacity/make-shadow-data :sfsim25.opacity/num-opacity-layers num-opacity-layers
+                                           :sfsim25.opacity/shadow-size shadow-size
+                                           :sfsim25.opacity/num-steps num-steps
+                                           :sfsim25.opacity/depth depth
+                                           :sfsim25.opacity/shadow-bias shadow-bias))
 
 (def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
                                         :perlin-octaves perlin-octaves

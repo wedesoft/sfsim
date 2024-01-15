@@ -125,7 +125,7 @@
     (uniform-sampler program "surface" 0)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "shadow_size" (:shadow-size shadow-data))
+    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     {:program program
      :shadow-data shadow-data}))
 
@@ -133,7 +133,7 @@
   "Render planetary shadow cascade (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{:keys [program shadow-data]} & {:keys [matrix-cascade tree]}]
-  (shadow-cascade (:shadow-size shadow-data) matrix-cascade program
+  (shadow-cascade (:sfsim25.opacity/shadow-size shadow-data) matrix-cascade program
                   (fn [transform] (render-tree program tree transform [:surf-tex]))))
 
 (defn destroy-shadow-cascade
@@ -157,7 +157,7 @@
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
                               :geometry [geometry-planet]
-                              :fragment [(fragment-planet-clouds (:num-steps shadow-data)
+                              :fragment [(fragment-planet-clouds (:sfsim25.opacity/num-steps shadow-data)
                                                                  (:perlin-octaves cloud-data)
                                                                  (:cloud-octaves cloud-data))])]
     (use-program program)
@@ -169,10 +169,10 @@
     (uniform-sampler program "perlin"           5)
     (uniform-sampler program "bluenoise"        6)
     (uniform-sampler program "cover"            7)
-    (doseq [i (range (:num-steps shadow-data))]
+    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 8)))
-    (doseq [i (range (:num-steps shadow-data))]
-           (uniform-sampler program (str "opacity" i) (+ i 8 (:num-steps shadow-data))))
+    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
+           (uniform-sampler program (str "opacity" i) (+ i 8 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (:radius planet-data))
     (uniform-float program "max_height" (:max-height planet-data))
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
@@ -195,9 +195,9 @@
     (uniform-float program "anisotropic" (:anisotropic cloud-data))
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
-    (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
-    (uniform-int program "shadow_size" (:shadow-size shadow-data))
-    (uniform-float program "depth" (:depth shadow-data))
+    (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
+    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
+    (uniform-float program "depth" (:sfsim25.opacity/depth shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
      :cloud-data cloud-data}))
@@ -242,7 +242,7 @@
                               :tess-control [tess-control-planet]
                               :tess-evaluation [tess-evaluation-planet]
                               :geometry [geometry-planet]
-                              :fragment [(fragment-planet (:num-steps shadow-data))])]
+                              :fragment [(fragment-planet (:sfsim25.opacity/num-steps shadow-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (uniform-sampler program "day"              1)
@@ -254,10 +254,10 @@
     (uniform-sampler program "mie_strength"     7)
     (uniform-sampler program "surface_radiance" 8)
     (uniform-sampler program "clouds"           9)
-    (doseq [i (range (:num-steps shadow-data))]
+    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 10)))
-    (doseq [i (range (:num-steps shadow-data))]
-           (uniform-sampler program (str "opacity" i) (+ i 10 (:num-steps shadow-data))))
+    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
+           (uniform-sampler program (str "opacity" i) (+ i 10 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
@@ -277,9 +277,9 @@
     (uniform-float program "reflectivity" (:reflectivity planet-data))
     (uniform-vector3 program "water_color" (:water-color planet-data))
     (uniform-float program "amplification" amplification)
-    (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
-    (uniform-int program "shadow_size" (:shadow-size shadow-data))
-    (uniform-float program "shadow_bias" (:shadow-bias shadow-data))
+    (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
+    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
+    (uniform-float program "shadow_bias" (:sfsim25.opacity/shadow-bias shadow-data))
     {:width width
      :height height
      :program program

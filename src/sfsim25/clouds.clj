@@ -330,7 +330,7 @@
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [tilesize amplification atmosphere-luts planet-data shadow-data cloud-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
-                              :fragment [(fragment-atmosphere-clouds (:num-steps shadow-data)
+                              :fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
                                                                      (:perlin-octaves cloud-data)
                                                                      (:cloud-octaves cloud-data))])]
     (use-program program)
@@ -341,10 +341,10 @@
     (uniform-sampler program "perlin"           4)
     (uniform-sampler program "bluenoise"        5)
     (uniform-sampler program "cover"            6)
-    (doseq [i (range (:num-steps shadow-data))]
+    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 7)))
-    (doseq [i (range (:num-steps shadow-data))]
-           (uniform-sampler program (str "opacity" i) (+ i 7 (:num-steps shadow-data))))
+    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
+           (uniform-sampler program (str "opacity" i) (+ i 7 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (:radius planet-data))
     (uniform-float program "max_height" (:max-height planet-data))
     (uniform-float program "cloud_bottom" (:cloud-bottom cloud-data))
@@ -367,8 +367,8 @@
     (uniform-float program "anisotropic" (:anisotropic cloud-data))
     (uniform-float program "amplification" amplification)
     (uniform-float program "opacity_cutoff" (:opacity-cutoff cloud-data))
-    (uniform-int program "num_opacity_layers" (:num-opacity-layers shadow-data))
-    (uniform-int program "shadow_size" (:shadow-size shadow-data))
+    (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
+    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
      :cloud-data cloud-data}))
