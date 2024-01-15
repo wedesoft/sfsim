@@ -82,17 +82,17 @@
                                            :sfsim25.opacity/depth depth
                                            :sfsim25.opacity/shadow-bias shadow-bias))
 
-(def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
-                                        :perlin-octaves perlin-octaves
-                                        :cloud-bottom cloud-bottom
-                                        :cloud-top cloud-top
-                                        :detail-scale detail-scale
-                                        :cloud-scale cloud-scale
-                                        :cloud-multiplier cloud-multiplier
-                                        :cover-multiplier cover-multiplier
-                                        :cap cap
-                                        :anisotropic anisotropic
-                                        :opacity-cutoff opacity-cutoff))
+(def cloud-data (clouds/make-cloud-data :sfsim25.clouds/cloud-octaves cloud-octaves
+                                        :sfsim25.clouds/perlin-octaves perlin-octaves
+                                        :sfsim25.clouds/cloud-bottom cloud-bottom
+                                        :sfsim25.clouds/cloud-top cloud-top
+                                        :sfsim25.clouds/detail-scale detail-scale
+                                        :sfsim25.clouds/cloud-scale cloud-scale
+                                        :sfsim25.clouds/cloud-multiplier cloud-multiplier
+                                        :sfsim25.clouds/cover-multiplier cover-multiplier
+                                        :sfsim25.clouds/cap cap
+                                        :sfsim25.clouds/anisotropic anisotropic
+                                        :sfsim25.clouds/opacity-cutoff opacity-cutoff))
 
 (def planet-data (planet/make-planet-data :radius radius
                                           :max-height max-height
