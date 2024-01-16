@@ -48,7 +48,6 @@
 (def position (atom (vec3 (+ 3.0 radius) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
-(def specular 1000.0)
 (def dawn-start -0.2)
 (def dawn-end 0.0)
 
@@ -57,7 +56,8 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
-(def render-data #:sfsim25.render{:amplification 6.0})
+(def render-data #:sfsim25.render{:amplification 6.0
+                                  :specular 1000.0})
 
 (def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
                                    :shadow-size 512
@@ -120,7 +120,6 @@
                                :height height
                                :dawn-start dawn-start
                                :dawn-end dawn-end
-                               :specular specular
                                :render-data render-data
                                :atmosphere-luts atmosphere-luts
                                :planet-data planet-data
@@ -128,8 +127,7 @@
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :specular specular
-                                       :render-data render-data
+  (atmosphere/make-atmosphere-renderer :render-data render-data
                                        :atmosphere-luts atmosphere-luts
                                        :planet-data planet-data))
 
