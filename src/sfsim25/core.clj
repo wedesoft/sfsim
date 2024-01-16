@@ -48,8 +48,6 @@
 (def position (atom (vec3 (+ 3.0 radius) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
-(def dawn-start -0.2)
-(def dawn-end 0.0)
 
 (GLFW/glfwInit)
 
@@ -80,6 +78,8 @@
 
 (def planet-data #:sfsim25.planet{:radius radius
                                   :albedo 0.9
+                                  :dawn-start -0.2
+                                  :dawn-end 0.0
                                   :tilesize 33
                                   :color-tilesize 129
                                   :reflectivity 0.1
@@ -118,8 +118,6 @@
 (def planet-renderer
   (planet/make-planet-renderer :width width
                                :height height
-                               :dawn-start dawn-start
-                               :dawn-end dawn-end
                                :render-data render-data
                                :atmosphere-luts atmosphere-luts
                                :planet-data planet-data

@@ -231,7 +231,7 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [dawn-start dawn-end render-data atmosphere-luts planet-data shadow-data]}]
+  [& {:keys [render-data atmosphere-luts planet-data shadow-data]}]
   (let [tilesize (:sfsim25.planet/tilesize planet-data)
         program  (make-program :vertex [vertex-planet]
                                :tess-control [tess-control-planet]
@@ -263,8 +263,8 @@
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-int program "surface_height_size" (:height (:surface-radiance atmosphere-luts)))
     (uniform-int program "surface_sun_elevation_size" (:width (:surface-radiance atmosphere-luts)))
-    (uniform-float program "dawn_start" dawn-start)
-    (uniform-float program "dawn_end" dawn-end)
+    (uniform-float program "dawn_start" (:sfsim25.planet/dawn-start planet-data))
+    (uniform-float program "dawn_end" (:sfsim25.planet/dawn-end planet-data))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
     (uniform-float program "radius" (::radius planet-data))
     (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
