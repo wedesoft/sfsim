@@ -421,7 +421,7 @@
                                              [:scatter texture-4d]
                                              [:mie texture-2d]
                                              [:surface-radiance texture-2d]]]}
-  [& {::keys [max-height]}]
+  [max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :linear :clamp
                                                       {:width transmittance-elevation-size

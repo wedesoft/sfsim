@@ -29,9 +29,6 @@
 
 (def fov (to-radians 60.0))
 (def radius 6378000.0)
-(def tilesize 33)
-(def color-tilesize 129)
-(def max-height 35000.0)
 (def threshold (atom 18.2))
 (def anisotropic 0.25)
 (def cloud-top 5000.0)
@@ -61,30 +58,33 @@
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
 
-(def shadow-data (opacity/make-shadow-data :sfsim25.opacity/num-opacity-layers 7
-                                           :sfsim25.opacity/shadow-size 512
-                                           :sfsim25.opacity/num-steps 3
-                                           :sfsim25.opacity/depth depth
-                                           :sfsim25.opacity/shadow-bias (exp -6.0)))
+(def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
+                                   :shadow-size 512
+                                   :num-steps 3
+                                   :depth depth
+                                   :shadow-bias (exp -6.0)})
 
-(def cloud-data (clouds/make-cloud-data :sfsim25.clouds/cloud-octaves cloud-octaves
-                                        :sfsim25.clouds/perlin-octaves perlin-octaves
-                                        :sfsim25.clouds/cloud-bottom 2000.0
-                                        :sfsim25.clouds/cloud-top cloud-top
-                                        :sfsim25.clouds/detail-scale 4000.0
-                                        :sfsim25.clouds/cloud-scale 100000.0
-                                        :sfsim25.clouds/cloud-multiplier 10.0
-                                        :sfsim25.clouds/cover-multiplier 26.0
-                                        :sfsim25.clouds/cap 0.007
-                                        :sfsim25.clouds/anisotropic anisotropic
-                                        :sfsim25.clouds/opacity-cutoff 0.01))
+(def cloud-data
+  (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves cloud-octaves
+                                           :perlin-octaves perlin-octaves
+                                           :cloud-bottom 2000.0
+                                           :cloud-top cloud-top
+                                           :detail-scale 4000.0
+                                           :cloud-scale 100000.0
+                                           :cloud-multiplier 10.0
+                                           :cover-multiplier 26.0
+                                           :cap 0.007
+                                           :anisotropic anisotropic
+                                           :opacity-cutoff 0.01}))
 
-(def planet-data (planet/make-planet-data :sfsim25.planet/radius radius
-                                          :sfsim25.planet/albedo 0.9
-                                          :sfsim25.planet/reflectivity 0.1
-                                          :sfsim25.planet/water-color (vec3 0.09 0.11 0.34)))
+(def planet-data #:sfsim25.planet{:radius radius
+                                  :albedo 0.9
+                                  :tilesize 33
+                                  :color-tilesize 129
+                                  :reflectivity 0.1
+                                  :water-color (vec3 0.09 0.11 0.34)})
 
-(def atmosphere-luts (atmosphere/make-atmosphere-luts :sfsim25.atmosphere/max-height max-height))
+(def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -94,13 +94,12 @@
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
-  (planet/make-planet-shadow-renderer :tilesize tilesize
+  (planet/make-planet-shadow-renderer :planet-data planet-data
                                       :shadow-data shadow-data))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :tilesize tilesize
-                                     :amplification amplification
+  (planet/make-cloud-planet-renderer :amplification amplification
                                      :atmosphere-luts atmosphere-luts
                                      :planet-data planet-data
                                      :shadow-data shadow-data
@@ -108,8 +107,7 @@
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :tilesize tilesize
-                                         :amplification amplification
+  (clouds/make-cloud-atmosphere-renderer :amplification amplification
                                          :atmosphere-luts atmosphere-luts
                                          :planet-data planet-data
                                          :shadow-data shadow-data
@@ -119,8 +117,6 @@
 (def planet-renderer
   (planet/make-planet-renderer :width width
                                :height height
-                               :tilesize tilesize
-                               :color-tilesize color-tilesize
                                :dawn-start dawn-start
                                :dawn-end dawn-end
                                :specular specular

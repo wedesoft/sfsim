@@ -103,23 +103,16 @@
               (doseq [selector [:0 :1 :2 :3 :4 :5]]
                      (render-tree program (selector node) transform texture-keys)))))
 
-(defn make-planet-data
-  "Collect data about planet"
-  [& {::keys [radius albedo reflectivity water-color]}]
-  {::radius radius
-   ::albedo albedo
-   ::reflectivity reflectivity
-   ::water-color water-color})
-
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [tilesize shadow-data]}]
-  (let [program (make-program :vertex [vertex-planet]
-                              :tess-control [tess-control-planet]
-                              :tess-evaluation [tess-evaluation-planet-shadow]
-                              :geometry [geometry-planet]
-                              :fragment [fragment-planet-shadow])]
+  [& {:keys [planet-data shadow-data]}]
+  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+        program  (make-program :vertex [vertex-planet]
+                               :tess-control [tess-control-planet]
+                               :tess-evaluation [tess-evaluation-planet-shadow]
+                               :geometry [geometry-planet]
+                               :fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
     (uniform-int program "high_detail" (dec tilesize))
@@ -151,14 +144,15 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [depth tilesize amplification atmosphere-luts planet-data cloud-data shadow-data]}]
-  (let [program (make-program :vertex [vertex-planet]
-                              :tess-control [tess-control-planet]
-                              :tess-evaluation [tess-evaluation-planet]
-                              :geometry [geometry-planet]
-                              :fragment [(fragment-planet-clouds (:sfsim25.opacity/num-steps shadow-data)
-                                                                 (:sfsim25.clouds/perlin-octaves cloud-data)
-                                                                 (:sfsim25.clouds/cloud-octaves cloud-data))])]
+  [& {:keys [depth amplification atmosphere-luts planet-data cloud-data shadow-data]}]
+  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+        program  (make-program :vertex [vertex-planet]
+                               :tess-control [tess-control-planet]
+                               :tess-evaluation [tess-evaluation-planet]
+                               :geometry [geometry-planet]
+                               :fragment [(fragment-planet-clouds (:sfsim25.opacity/num-steps shadow-data)
+                                                                  (:sfsim25.clouds/perlin-octaves cloud-data)
+                                                                  (:sfsim25.clouds/cloud-octaves cloud-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (uniform-sampler program "transmittance"    1)
@@ -237,13 +231,13 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [width height tilesize color-tilesize dawn-start dawn-end specular amplification atmosphere-luts planet-data
-             shadow-data]}]
-  (let [program (make-program :vertex [vertex-planet]
-                              :tess-control [tess-control-planet]
-                              :tess-evaluation [tess-evaluation-planet]
-                              :geometry [geometry-planet]
-                              :fragment [(fragment-planet (:sfsim25.opacity/num-steps shadow-data))])]
+  [& {:keys [width height dawn-start dawn-end specular amplification atmosphere-luts planet-data shadow-data]}]
+  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+        program  (make-program :vertex [vertex-planet]
+                               :tess-control [tess-control-planet]
+                               :tess-evaluation [tess-evaluation-planet]
+                               :geometry [geometry-planet]
+                               :fragment [(fragment-planet (:sfsim25.opacity/num-steps shadow-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (uniform-sampler program "day"              1)
@@ -284,8 +278,6 @@
     {:width width
      :height height
      :program program
-     :tilesize tilesize
-     :color-tilesize color-tilesize
      :atmosphere-luts atmosphere-luts
      :planet-data planet-data}))
 
@@ -322,15 +314,17 @@
 (defn load-tile-into-opengl
   "Load textures of single tile into OpenGL (untested)"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}
-  [{:keys [program tilesize color-tilesize]} tile]
-  (let [indices    [0 2 3 1]
-        vertices   (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
-        vao        (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-        day-tex    (make-rgb-texture :linear :clamp (:day tile))
-        night-tex  (make-rgb-texture :linear :clamp (:night tile))
-        surf-tex   (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
-        normal-tex (make-vector-texture-2d :linear :clamp (:normals tile))
-        water-tex  (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
+  [{:keys [program planet-data]} tile]
+  (let [tilesize       (:sfsim25.planet/tilesize planet-data)
+        color-tilesize (:sfsim25.planet/color-tilesize planet-data)
+        indices        [0 2 3 1]
+        vertices       (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
+        vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+        day-tex        (make-rgb-texture :linear :clamp (:day tile))
+        night-tex      (make-rgb-texture :linear :clamp (:night tile))
+        surf-tex       (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
+        normal-tex     (make-vector-texture-2d :linear :clamp (:normals tile))
+        water-tex      (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
     (assoc (dissoc tile :day :night :surface :normals :water)
            :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
 
@@ -360,8 +354,9 @@
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
   {:malli/schema [:=> [:cat :map :map fvec3] :map]}
-  [{:keys [tilesize width planet-data]} tree position]
-  (let [increase? (partial increase-level? tilesize (::radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
+  [{:keys [width planet-data]} tree position]
+  (let [tilesize  (:sfsim25.planet/tilesize planet-data)
+        increase? (partial increase-level? tilesize (::radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius planet-data) increase? true)))
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))

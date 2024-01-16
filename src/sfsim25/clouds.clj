@@ -284,8 +284,7 @@
 (defn make-cloud-data
   "Method to load cloud textures and collect cloud data (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {::keys [cloud-octaves perlin-octaves cloud-bottom cloud-top cloud-multiplier cover-multiplier cap detail-scale cloud-scale
-              anisotropic opacity-cutoff]}]
+  [data]
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
         worley-data          {:width worley-size :height worley-size :depth worley-size :data worley-floats}
@@ -300,21 +299,11 @@
         bluenoise-data       {:width noise-size :height noise-size :data bluenoise-floats}
         bluenoise            (make-float-texture-2d :nearest :repeat bluenoise-data)]
     (generate-mipmap worley)
-    {::cloud-octaves cloud-octaves
-     ::perlin-octaves perlin-octaves
-     ::cloud-bottom cloud-bottom
-     ::cloud-top cloud-top
-     ::cloud-multiplier cloud-multiplier
-     ::cover-multiplier cover-multiplier
-     ::cap cap
-     ::anisotropic anisotropic
-     ::opacity-cutoff opacity-cutoff
-     ::detail-scale detail-scale
-     ::cloud-scale cloud-scale
-     ::worley worley
-     ::perlin-worley perlin-worley
-     ::cloud-cover cloud-cover
-     ::bluenoise bluenoise}))
+    (assoc data
+           ::worley worley
+           ::perlin-worley perlin-worley
+           ::cloud-cover cloud-cover
+           ::bluenoise bluenoise)))
 
 (defn destroy-cloud-data
   "Method to destroy cloud textures (not tested)"
@@ -328,11 +317,12 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [tilesize amplification atmosphere-luts planet-data shadow-data cloud-data]}]
-  (let [program (make-program :vertex [vertex-atmosphere]
-                              :fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
-                                                                     (::perlin-octaves cloud-data)
-                                                                     (::cloud-octaves cloud-data))])]
+  [& {:keys [amplification atmosphere-luts planet-data shadow-data cloud-data]}]
+  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+        program  (make-program :vertex [vertex-atmosphere]
+                               :fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
+                                                                      (::perlin-octaves cloud-data)
+                                                                      (::cloud-octaves cloud-data))])]
     (use-program program)
     (uniform-sampler program "transmittance"    0)
     (uniform-sampler program "ray_scatter"      1)

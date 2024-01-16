@@ -6,15 +6,6 @@
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]))
 
-(defn make-shadow-data
-  "Collect information for opacity and shadow cascade"
-  [& {::keys [num-opacity-layers shadow-size num-steps depth shadow-bias]}]
-  {::num-opacity-layers num-opacity-layers
-   ::shadow-size shadow-size
-   ::num-steps num-steps
-   ::depth depth
-   ::shadow-bias shadow-bias})
-
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
   [& {:keys [planet-data shadow-data cloud-data]}]
