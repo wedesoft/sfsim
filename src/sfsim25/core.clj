@@ -116,9 +116,7 @@
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
-  (planet/make-planet-renderer :width width
-                               :height height
-                               :render-data render-data
+  (planet/make-planet-renderer :render-data render-data
                                :atmosphere-luts atmosphere-luts
                                :planet-data planet-data
                                :shadow-data shadow-data))
