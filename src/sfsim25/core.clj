@@ -51,12 +51,13 @@
 (def specular 1000.0)
 (def dawn-start -0.2)
 (def dawn-end 0.0)
-(def amplification 6.0)
 
 (GLFW/glfwInit)
 
 (def window (make-window "sfsim25" width height))
 (GLFW/glfwShowWindow window)
+
+(def render-data #:sfsim25.render{:amplification 6.0})
 
 (def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
                                    :shadow-size 512
@@ -99,7 +100,7 @@
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :amplification amplification
+  (planet/make-cloud-planet-renderer :render-data render-data
                                      :atmosphere-luts atmosphere-luts
                                      :planet-data planet-data
                                      :shadow-data shadow-data
@@ -107,7 +108,7 @@
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :amplification amplification
+  (clouds/make-cloud-atmosphere-renderer :render-data render-data
                                          :atmosphere-luts atmosphere-luts
                                          :planet-data planet-data
                                          :shadow-data shadow-data
@@ -120,7 +121,7 @@
                                :dawn-start dawn-start
                                :dawn-end dawn-end
                                :specular specular
-                               :amplification amplification
+                               :render-data render-data
                                :atmosphere-luts atmosphere-luts
                                :planet-data planet-data
                                :shadow-data shadow-data))
@@ -128,7 +129,7 @@
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :specular specular
-                                       :amplification amplification
+                                       :render-data render-data
                                        :atmosphere-luts atmosphere-luts
                                        :planet-data planet-data))
 
@@ -155,7 +156,7 @@
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-           (planet/update-tile-tree planet-renderer tile-tree @position)
+           (planet/update-tile-tree planet-renderer tile-tree (aget w 0) @position)
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))

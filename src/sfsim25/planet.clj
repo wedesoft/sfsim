@@ -144,7 +144,7 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [depth amplification atmosphere-luts planet-data cloud-data shadow-data]}]
+  [& {:keys [depth render-data atmosphere-luts planet-data cloud-data shadow-data]}]
   (let [tilesize (:sfsim25.planet/tilesize planet-data)
         program  (make-program :vertex [vertex-planet]
                                :tess-control [tess-control-planet]
@@ -186,7 +186,7 @@
     (uniform-float program "cover_multiplier" (:sfsim25.clouds/cover-multiplier cloud-data))
     (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
     (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
-    (uniform-float program "amplification" amplification)
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-float program "opacity_cutoff" (:sfsim25.clouds/opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
@@ -231,7 +231,7 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [width height dawn-start dawn-end specular amplification atmosphere-luts planet-data shadow-data]}]
+  [& {:keys [dawn-start dawn-end specular render-data atmosphere-luts planet-data shadow-data]}]
   (let [tilesize (:sfsim25.planet/tilesize planet-data)
         program  (make-program :vertex [vertex-planet]
                                :tess-control [tess-control-planet]
@@ -271,13 +271,11 @@
     (uniform-float program "albedo" (::albedo planet-data))
     (uniform-float program "reflectivity" (::reflectivity planet-data))
     (uniform-vector3 program "water_color" (::water-color planet-data))
-    (uniform-float program "amplification" amplification)
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim25.opacity/shadow-bias shadow-data))
-    {:width width
-     :height height
-     :program program
+    {:program program
      :atmosphere-luts atmosphere-luts
      :planet-data planet-data}))
 
@@ -353,8 +351,8 @@
 
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
-  {:malli/schema [:=> [:cat :map :map fvec3] :map]}
-  [{:keys [width planet-data]} tree position]
+  {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
+  [{:keys [planet-data]} tree width position]
   (let [tilesize  (:sfsim25.planet/tilesize planet-data)
         increase? (partial increase-level? tilesize (::radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius planet-data) increase? true)))
@@ -370,13 +368,13 @@
 
 (defn update-tile-tree
   "Schedule background tile tree updates (untested)"
-  {:malli/schema [:=> [:cat :map tree fvec3] :any]}
-  [planet-renderer {:keys [tree changes]} position]
+  {:malli/schema [:=> [:cat :map tree N fvec3] :any]}
+  [planet-renderer {:keys [tree changes]} width position]
   (when (realized? @changes)
     (let [data @@changes]
       (unload-tiles-from-opengl (:drop data))
       (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
-      (reset! changes (future (background-tree-update planet-renderer @tree position))))))
+      (reset! changes (future (background-tree-update planet-renderer @tree width position))))))
 
 (defn get-current-tree
   "Get current state of tile tree (untested)"

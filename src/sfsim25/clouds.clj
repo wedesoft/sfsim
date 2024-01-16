@@ -317,7 +317,7 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [amplification atmosphere-luts planet-data shadow-data cloud-data]}]
+  [& {:keys [render-data atmosphere-luts planet-data shadow-data cloud-data]}]
   (let [tilesize (:sfsim25.planet/tilesize planet-data)
         program  (make-program :vertex [vertex-atmosphere]
                                :fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
@@ -355,7 +355,7 @@
     (uniform-float program "cover_multiplier" (::cover-multiplier cloud-data))
     (uniform-float program "cap" (::cap cloud-data))
     (uniform-float program "anisotropic" (::anisotropic cloud-data))
-    (uniform-float program "amplification" amplification)
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))

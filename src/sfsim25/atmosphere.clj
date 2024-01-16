@@ -463,7 +463,7 @@
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [specular amplification atmosphere-luts planet-data]}]
+  [& {:keys [specular render-data atmosphere-luts planet-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
@@ -480,7 +480,7 @@
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-float program "max_height" (::max-height atmosphere-luts))
     (uniform-float program "specular" specular)
-    (uniform-float program "amplification" amplification)
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     {:program program
      :atmosphere-luts atmosphere-luts}))
 
