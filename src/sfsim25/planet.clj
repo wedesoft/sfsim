@@ -124,8 +124,8 @@
 (defn render-shadow-cascade
   "Render planetary shadow cascade (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
-  [{:keys [program shadow-data]} & {:keys [matrix-cascade tree]}]
-  (shadow-cascade (:sfsim25.opacity/shadow-size shadow-data) matrix-cascade program
+  [{:keys [program shadow-data]} & {:keys [tree] :as data}]
+  (shadow-cascade (:sfsim25.opacity/shadow-size shadow-data) (:sfsim25.opacity/matrix-cascade data) program
                   (fn [transform] (render-tree program tree transform [:surf-tex]))))
 
 (defn destroy-shadow-cascade
@@ -200,7 +200,7 @@
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [projection origin transform light-direction splits matrix-cascade shadows opacities tree] :as data}]
+   & {:keys [projection origin transform light-direction shadows opacities tree] :as data}]
   (use-program program)
   (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
   (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
@@ -209,9 +209,9 @@
   (uniform-matrix4 program "transform" transform)
   (uniform-vector3 program "light_direction" light-direction)
   (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
-  (doseq [[idx item] (map-indexed vector splits)]
+  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
          (uniform-float program (str "split" idx) item))
-  (doseq [[idx item] (map-indexed vector matrix-cascade)]
+  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
   (use-textures {1 (:transmittance atmosphere-luts) 2 (:scatter atmosphere-luts) 3 (:mie atmosphere-luts)
@@ -282,7 +282,7 @@
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts]}
-   & {:keys [projection origin transform light-direction window-width window-height splits matrix-cascade clouds shadows
+   & {:keys [projection origin transform light-direction window-width window-height clouds shadows
              opacities tree] :as data}]
   (use-program program)
   (uniform-matrix4 program "projection" projection)
@@ -292,9 +292,9 @@
   (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
   (uniform-int program "window_width" window-width)
   (uniform-int program "window_height" window-height)
-  (doseq [[idx item] (map-indexed vector splits)]
+  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
          (uniform-float program (str "split" idx) item))
-  (doseq [[idx item] (map-indexed vector matrix-cascade)]
+  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
          (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
          (uniform-float program (str "depth" idx) (:depth item)))
   (use-textures {5 (:transmittance atmosphere-luts) 6 (:scatter atmosphere-luts) 7 (:mie atmosphere-luts)

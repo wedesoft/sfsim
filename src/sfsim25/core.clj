@@ -181,7 +181,7 @@
                    opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-amnt
                                                                 opacity-step)
                    shadows      (planet/render-shadow-cascade planet-shadow-renderer
-                                                              :matrix-cascade matrix-cas
+                                                              :sfsim25.opacity/matrix-cascade matrix-cas
                                                               :tree (planet/get-current-tree tile-tree))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
@@ -197,8 +197,8 @@
                                                             :transform (inverse extrinsics)
                                                             :light-direction light-dir
                                                             :sfsim25.opacity/opacity-step opacity-step
-                                                            :splits splits
-                                                            :matrix-cascade matrix-cas
+                                                            :sfsim25.opacity/splits splits
+                                                            :sfsim25.opacity/matrix-cascade matrix-cas
                                                             :shadows shadows
                                                             :opacities opacities
                                                             :tree (planet/get-current-tree tile-tree))
@@ -212,8 +212,8 @@
                                                                 :light-direction light-dir
                                                                 :z-far z-far
                                                                 :sfsim25.opacity/opacity-step opacity-step
-                                                                :splits splits
-                                                                :matrix-cascade matrix-cas
+                                                                :sfsim25.opacity/splits splits
+                                                                :sfsim25.opacity/matrix-cascade matrix-cas
                                                                 :shadows shadows
                                                                 :opacities opacities))]
                (onscreen-render window
@@ -227,8 +227,8 @@
                                                       :sfsim25.opacity/opacity-step opacity-step
                                                       :window-width (aget w 0)
                                                       :window-height (aget h 0)
-                                                      :splits splits
-                                                      :matrix-cascade matrix-cas
+                                                      :sfsim25.opacity/splits splits
+                                                      :sfsim25.opacity/matrix-cascade matrix-cas
                                                       :clouds clouds
                                                       :shadows shadows
                                                       :opacities opacities

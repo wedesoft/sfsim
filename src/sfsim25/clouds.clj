@@ -376,7 +376,7 @@
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [projection origin transform light-direction z-far splits matrix-cascade shadows opacities] :as data}]
+   & {:keys [projection origin transform light-direction z-far shadows opacities] :as data}]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])]
@@ -389,9 +389,9 @@
     (uniform-matrix4 program "transform" transform)
     (uniform-vector3 program "light_direction" light-direction)
     (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
-    (doseq [[idx item] (map-indexed vector splits)]
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
            (uniform-float program (str "split" idx) item))
-    (doseq [[idx item] (map-indexed vector matrix-cascade)]
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
     (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts)
