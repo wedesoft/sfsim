@@ -200,16 +200,15 @@
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade shadows
-             opacities tree]}]
+   & {:keys [projection origin transform light-direction splits matrix-cascade shadows opacities tree] :as data}]
   (use-program program)
-  (uniform-float program "cloud_threshold" cloud-threshold)
-  (uniform-float program "lod_offset" lod-offset)
+  (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
+  (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
   (uniform-matrix4 program "projection" projection)
   (uniform-vector3 program "origin" origin)
   (uniform-matrix4 program "transform" transform)
   (uniform-vector3 program "light_direction" light-direction)
-  (uniform-float program "opacity_step" opacity-step)
+  (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
   (doseq [[idx item] (map-indexed vector splits)]
          (uniform-float program (str "split" idx) item))
   (doseq [[idx item] (map-indexed vector matrix-cascade)]
@@ -283,14 +282,14 @@
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts]}
-   & {:keys [projection origin transform light-direction opacity-step window-width window-height splits
-             matrix-cascade clouds shadows opacities tree]}]
+   & {:keys [projection origin transform light-direction window-width window-height splits matrix-cascade clouds shadows
+             opacities tree] :as data}]
   (use-program program)
   (uniform-matrix4 program "projection" projection)
   (uniform-vector3 program "origin" origin)
   (uniform-matrix4 program "transform" transform)
   (uniform-vector3 program "light_direction" light-direction)
-  (uniform-float program "opacity_step" opacity-step)
+  (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
   (uniform-int program "window_width" window-width)
   (uniform-int program "window_height" window-height)
   (doseq [[idx item] (map-indexed vector splits)]

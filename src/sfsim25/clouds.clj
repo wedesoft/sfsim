@@ -376,20 +376,19 @@
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits matrix-cascade
-             shadows opacities]}]
+   & {:keys [projection origin transform light-direction z-far splits matrix-cascade shadows opacities] :as data}]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
-    (uniform-float program "cloud_threshold" cloud-threshold)
-    (uniform-float program "lod_offset" lod-offset)
+    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
+    (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
     (uniform-matrix4 program "projection" projection)
     (uniform-vector3 program "origin" origin)
     (uniform-matrix4 program "extrinsics" (inverse transform))
     (uniform-matrix4 program "transform" transform)
     (uniform-vector3 program "light_direction" light-direction)
-    (uniform-float program "opacity_step" opacity-step)
+    (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
     (doseq [[idx item] (map-indexed vector splits)]
            (uniform-float program (str "split" idx) item))
     (doseq [[idx item] (map-indexed vector matrix-cascade)]

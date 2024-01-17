@@ -190,13 +190,13 @@
                                 (clear (vec3 0 0 0) 0.0)
                                 ; Render clouds in front of planet
                                 (planet/render-cloud-planet cloud-planet-renderer
-                                                            :cloud-threshold @threshold
-                                                            :lod-offset lod-offset
+                                                            :sfsim25.clouds/threshold @threshold
+                                                            :sfsim25.clouds/lod-offset lod-offset
                                                             :projection projection
                                                             :origin @position
                                                             :transform (inverse extrinsics)
                                                             :light-direction light-dir
-                                                            :opacity-step opacity-step
+                                                            :sfsim25.opacity/opacity-step opacity-step
                                                             :splits splits
                                                             :matrix-cascade matrix-cas
                                                             :shadows shadows
@@ -204,14 +204,14 @@
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                :cloud-threshold @threshold
-                                                                :lod-offset lod-offset
+                                                                :sfsim25.clouds/threshold @threshold
+                                                                :sfsim25.clouds/lod-offset lod-offset
                                                                 :projection projection
                                                                 :origin @position
                                                                 :transform (inverse extrinsics)
                                                                 :light-direction light-dir
                                                                 :z-far z-far
-                                                                :opacity-step opacity-step
+                                                                :sfsim25.opacity/opacity-step opacity-step
                                                                 :splits splits
                                                                 :matrix-cascade matrix-cas
                                                                 :shadows shadows
@@ -224,7 +224,7 @@
                                                       :origin @position
                                                       :transform (inverse extrinsics)
                                                       :light-direction light-dir
-                                                      :opacity-step opacity-step
+                                                      :sfsim25.opacity/opacity-step opacity-step
                                                       :window-width (aget w 0)
                                                       :window-height (aget h 0)
                                                       :splits splits
