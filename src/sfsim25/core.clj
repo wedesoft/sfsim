@@ -34,7 +34,6 @@
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
               (sqrt (- (sqr (+ radius mount-everest)) (sqr radius)))))
-(def theta (to-radians 25))
 (def position (atom (vec3 (+ 3.0 radius) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
