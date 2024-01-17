@@ -187,6 +187,7 @@
     (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
     (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
+    (uniform-float program "cloud_step" (:sfsim25.clouds/cloud-step cloud-data))
     (uniform-float program "opacity_cutoff" (:sfsim25.clouds/opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
@@ -199,10 +200,9 @@
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade
-             shadows opacities tree]}]
+   & {:keys [cloud-threshold lod-offset projection origin transform light-direction opacity-step splits matrix-cascade shadows
+             opacities tree]}]
   (use-program program)
-  (uniform-float program "cloud_step" cloud-step)
   (uniform-float program "cloud_threshold" cloud-threshold)
   (uniform-float program "lod_offset" lod-offset)
   (uniform-matrix4 program "projection" projection)

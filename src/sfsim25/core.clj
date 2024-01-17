@@ -31,7 +31,6 @@
 (def cloud-octaves (clouds/octaves 4 0.7))
 (def perlin-octaves (clouds/octaves 4 0.7))
 (def opacity-base (atom 250.0))
-(def cloud-step 400.0)
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
               (sqrt (- (sqr (+ radius mount-everest)) (sqr radius)))))
@@ -67,6 +66,7 @@
                                            :cover-multiplier 26.0
                                            :cap 0.007
                                            :anisotropic 0.25
+                                           :cloud-step 400.0
                                            :opacity-cutoff 0.01}))
 
 (def planet-data #:sfsim25.planet{:radius radius
@@ -194,7 +194,6 @@
                                 (clear (vec3 0 0 0) 0.0)
                                 ; Render clouds in front of planet
                                 (planet/render-cloud-planet cloud-planet-renderer
-                                                            :cloud-step cloud-step
                                                             :cloud-threshold @threshold
                                                             :lod-offset lod-offset
                                                             :projection projection
@@ -209,7 +208,6 @@
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                :cloud-step cloud-step
                                                                 :cloud-threshold @threshold
                                                                 :lod-offset lod-offset
                                                                 :projection projection

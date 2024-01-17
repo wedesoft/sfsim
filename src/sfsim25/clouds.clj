@@ -364,6 +364,7 @@
     (uniform-float program "cap" (::cap cloud-data))
     (uniform-float program "anisotropic" (::anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
+    (uniform-float program "cloud_step" (::cloud-step cloud-data))
     (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
@@ -375,13 +376,12 @@
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [cloud-step cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits
-             matrix-cascade shadows opacities]}]
+   & {:keys [cloud-threshold lod-offset projection origin transform light-direction z-far opacity-step splits matrix-cascade
+             shadows opacities]}]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
-    (uniform-float program "cloud_step" cloud-step)
     (uniform-float program "cloud_threshold" cloud-threshold)
     (uniform-float program "lod_offset" lod-offset)
     (uniform-matrix4 program "projection" projection)
