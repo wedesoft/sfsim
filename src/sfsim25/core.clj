@@ -24,21 +24,12 @@
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})
 
-(def width 1280)
-(def height 720)
-
-(def fov (to-radians 60.0))
 (def radius 6378000.0)
 (def threshold (atom 18.2))
-(def anisotropic 0.25)
+
 (def cloud-top 5000.0)
-(def series (take 4 (iterate #(* % 0.7) 1.0)))
-(def sum-series (apply + series))
-(def cloud-octaves (mapv #(/ % sum-series) series))
-(def perlin-series (take 4 (iterate #(* % 0.7) 1.0)))
-(def perlin-sum-series (apply + perlin-series))
-(def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
-(def mix 0.8)
+(def cloud-octaves (clouds/octaves 4 0.7))
+(def perlin-octaves (clouds/octaves 4 0.7))
 (def opacity-base (atom 250.0))
 (def cloud-step 400.0)
 (def mount-everest 8000)
@@ -51,15 +42,17 @@
 
 (GLFW/glfwInit)
 
-(def window (make-window "sfsim25" width height))
+(def window (make-window "sfsim25" 1280 720))
 (GLFW/glfwShowWindow window)
 
 (def render-data #:sfsim25.render{:amplification 6.0
-                                  :specular 1000.0})
+                                  :specular 1000.0
+                                  :fov (to-radians 60.0)})
 
 (def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
                                    :shadow-size 512
                                    :num-steps 3
+                                   :mix 0.8
                                    :depth depth
                                    :shadow-bias (exp -6.0)})
 
@@ -73,7 +66,7 @@
                                            :cloud-multiplier 10.0
                                            :cover-multiplier 26.0
                                            :cap 0.007
-                                           :anisotropic anisotropic
+                                           :anisotropic 0.25
                                            :opacity-cutoff 0.01}))
 
 (def planet-data #:sfsim25.planet{:radius radius
@@ -174,18 +167,22 @@
                    z-far        (+ (sqrt (- (sqr (+ radius (:sfsim25.clouds/cloud-top cloud-data))) (sqr radius)))
                                    (sqrt (- (sqr norm-pos) (sqr radius))))
                    light-dir    (vec3 (cos @light) (sin @light) 0)
-                   projection   (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
-                   lod-offset   (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2)
+                   projection   (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) (:sfsim25.render/fov render-data))
+                   lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)
                                            (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
                    extrinsics   (transformation-matrix (quaternion->matrix @orientation) @position)
                    matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir (:sfsim25.opacity/depth shadow-data)
-                                                       mix z-near z-far (:sfsim25.opacity/num-steps shadow-data))
-                   splits       (split-list mix z-near z-far (:sfsim25.opacity/num-steps shadow-data))
-                   scatter-am   (+ (* anisotropic (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0)) (- 1 anisotropic))
+                                                       (:sfsim25.opacity/mix shadow-data)
+                                                       z-near z-far (:sfsim25.opacity/num-steps shadow-data))
+                   splits       (split-list (:sfsim25.opacity/mix shadow-data) z-near z-far
+                                            (:sfsim25.opacity/num-steps shadow-data))
+                   scatter-amnt (+ (* (:sfsim25.clouds/anisotropic cloud-data)
+                                      (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0))
+                                   (- 1 (:sfsim25.clouds/anisotropic cloud-data)))
                    cos-light    (/ (dot light-dir @position) (mag @position))
                    sin-light    (sqrt (- 1 (sqr cos-light)))
                    opacity-step (* (+ cos-light (* 10 sin-light)) @opacity-base)
-                   opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am
+                   opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-amnt
                                                                 opacity-step)
                    shadows      (planet/render-shadow-cascade planet-shadow-renderer
                                                               :matrix-cascade matrix-cas

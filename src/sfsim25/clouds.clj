@@ -16,6 +16,14 @@
 
 (def cover-size 512)
 
+(defn octaves
+  "Creat eoctaves summing to one"
+  {:malli/schema [:=> [:cat N :double] [:vector :double]]}
+  [n decay]
+  (let [series (take n (iterate #(* % decay) 1.0))
+        sum    (apply + series)]
+    (mapv #(/ % sum) series)))
+
 (defn cloud-noise
   "Shader for sampling 3D cloud noise"
   {:malli/schema [:=> [:cat [:vector :double]] [:vector :string]]}
