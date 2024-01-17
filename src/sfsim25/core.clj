@@ -26,10 +26,7 @@
 
 (def radius 6378000.0)
 (def threshold (atom 18.2))
-
 (def cloud-top 5000.0)
-(def cloud-octaves (clouds/octaves 4 0.7))
-(def perlin-octaves (clouds/octaves 4 0.7))
 (def opacity-base (atom 250.0))
 (def mount-everest 8000)
 (def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
@@ -55,8 +52,8 @@
                                    :shadow-bias (exp -6.0)})
 
 (def cloud-data
-  (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves cloud-octaves
-                                           :perlin-octaves perlin-octaves
+  (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves (clouds/octaves 4 0.7)
+                                           :perlin-octaves (clouds/octaves 4 0.7)
                                            :cloud-bottom 2000.0
                                            :cloud-top cloud-top
                                            :detail-scale 4000.0
