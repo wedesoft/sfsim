@@ -376,7 +376,7 @@
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [projection origin transform light-direction z-far shadows opacities] :as data}]
+   & {:keys [projection origin transform light-direction z-far] :as data}]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])]
@@ -397,7 +397,7 @@
     (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts)
                    3 (::worley cloud-data) 4 (::perlin-worley cloud-data) 5 (::bluenoise cloud-data)
                    6 (::cloud-cover cloud-data)})
-    (use-textures (zipmap (drop 7 (range)) (concat shadows opacities)))
+    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 

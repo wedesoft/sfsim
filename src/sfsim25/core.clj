@@ -199,8 +199,8 @@
                                                             :sfsim25.opacity/opacity-step opacity-step
                                                             :sfsim25.opacity/splits splits
                                                             :sfsim25.opacity/matrix-cascade matrix-cas
-                                                            :shadows shadows
-                                                            :opacities opacities
+                                                            :sfsim25.opacity/shadows shadows
+                                                            :sfsim25.opacity/opacities opacities
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
@@ -214,8 +214,8 @@
                                                                 :sfsim25.opacity/opacity-step opacity-step
                                                                 :sfsim25.opacity/splits splits
                                                                 :sfsim25.opacity/matrix-cascade matrix-cas
-                                                                :shadows shadows
-                                                                :opacities opacities))]
+                                                                :sfsim25.opacity/shadows shadows
+                                                                :sfsim25.opacity/opacities opacities))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
@@ -230,8 +230,8 @@
                                                       :sfsim25.opacity/splits splits
                                                       :sfsim25.opacity/matrix-cascade matrix-cas
                                                       :clouds clouds
-                                                      :shadows shadows
-                                                      :opacities opacities
+                                                      :sfsim25.opacity/shadows shadows
+                                                      :sfsim25.opacity/opacities opacities
                                                       :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
                                 (atmosphere/render-atmosphere atmosphere-renderer

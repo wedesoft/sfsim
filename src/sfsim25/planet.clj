@@ -200,7 +200,7 @@
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [projection origin transform light-direction shadows opacities tree] :as data}]
+   & {:keys [projection origin transform light-direction tree] :as data}]
   (use-program program)
   (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
   (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
@@ -218,7 +218,7 @@
                  4 (:sfsim25.clouds/worley cloud-data)
                  5 (:sfsim25.clouds/perlin-worley cloud-data) 6 (:sfsim25.clouds/bluenoise cloud-data)
                  7 (:sfsim25.clouds/cloud-cover cloud-data)})
-  (use-textures (zipmap (drop 8 (range)) (concat shadows opacities)))
+  (use-textures (zipmap (drop 8 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
   (render-tree program tree transform [:surf-tex]))
 
 (defn destroy-cloud-planet-renderer
@@ -282,8 +282,7 @@
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
   [{:keys [program atmosphere-luts]}
-   & {:keys [projection origin transform light-direction window-width window-height clouds shadows
-             opacities tree] :as data}]
+   & {:keys [projection origin transform light-direction window-width window-height clouds tree] :as data}]
   (use-program program)
   (uniform-matrix4 program "projection" projection)
   (uniform-vector3 program "origin" origin)
@@ -299,7 +298,7 @@
          (uniform-float program (str "depth" idx) (:depth item)))
   (use-textures {5 (:transmittance atmosphere-luts) 6 (:scatter atmosphere-luts) 7 (:mie atmosphere-luts)
                  8 (:surface-radiance atmosphere-luts) 9 clouds})
-  (use-textures (zipmap (drop 10 (range)) (concat shadows opacities)))
+  (use-textures (zipmap (drop 10 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
   (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
 
 (defn destroy-planet-renderer
