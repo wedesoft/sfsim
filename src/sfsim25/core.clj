@@ -224,12 +224,12 @@
                                                       :origin @position
                                                       :transform (inverse extrinsics)
                                                       :light-direction light-dir
-                                                      :sfsim25.opacity/opacity-step opacity-step
                                                       :window-width (aget w 0)
                                                       :window-height (aget h 0)
+                                                      :clouds clouds
+                                                      :sfsim25.opacity/opacity-step opacity-step
                                                       :sfsim25.opacity/splits splits
                                                       :sfsim25.opacity/matrix-cascade matrix-cas
-                                                      :clouds clouds
                                                       :sfsim25.opacity/shadows shadows
                                                       :sfsim25.opacity/opacities opacities
                                                       :tree (planet/get-current-tree tile-tree))
