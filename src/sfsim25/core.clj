@@ -190,12 +190,12 @@
                                 (clear (vec3 0 0 0) 0.0)
                                 ; Render clouds in front of planet
                                 (planet/render-cloud-planet cloud-planet-renderer
-                                                            :sfsim25.clouds/threshold @threshold
-                                                            :sfsim25.clouds/lod-offset lod-offset
                                                             :projection projection
                                                             :origin @position
                                                             :transform (inverse extrinsics)
                                                             :light-direction light-dir
+                                                            :sfsim25.clouds/threshold @threshold
+                                                            :sfsim25.clouds/lod-offset lod-offset
                                                             :sfsim25.opacity/opacity-step opacity-step
                                                             :sfsim25.opacity/splits splits
                                                             :sfsim25.opacity/matrix-cascade matrix-cas
@@ -204,13 +204,13 @@
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                :sfsim25.clouds/threshold @threshold
-                                                                :sfsim25.clouds/lod-offset lod-offset
                                                                 :projection projection
                                                                 :origin @position
                                                                 :transform (inverse extrinsics)
                                                                 :light-direction light-dir
                                                                 :z-far z-far
+                                                                :sfsim25.clouds/threshold @threshold
+                                                                :sfsim25.clouds/lod-offset lod-offset
                                                                 :sfsim25.opacity/opacity-step opacity-step
                                                                 :sfsim25.opacity/splits splits
                                                                 :sfsim25.opacity/matrix-cascade matrix-cas
