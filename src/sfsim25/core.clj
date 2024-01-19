@@ -44,13 +44,6 @@
                                   :specular 1000.0
                                   :fov (to-radians 60.0)})
 
-(def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
-                                   :shadow-size 512
-                                   :num-steps 3
-                                   :mix 0.8
-                                   :depth depth
-                                   :shadow-bias (exp -6.0)})
-
 (def cloud-data
   (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves (clouds/octaves 4 0.7)
                                            :perlin-octaves (clouds/octaves 4 0.7)
@@ -73,6 +66,13 @@
                                   :color-tilesize 129
                                   :reflectivity 0.1
                                   :water-color (vec3 0.09 0.11 0.34)})
+
+(def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
+                                   :shadow-size 512
+                                   :num-steps 3
+                                   :mix 0.8
+                                   :depth depth
+                                   :shadow-bias (exp -6.0)})
 
 (def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
 
