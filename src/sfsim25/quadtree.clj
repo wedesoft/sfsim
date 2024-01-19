@@ -5,7 +5,7 @@
             [malli.core :as m]
             [sfsim25.cubemap :refer (tile-center)]
             [sfsim25.matrix :refer (fvec3)]
-            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes slurp-normals dissoc-in N N0 image)]))
+            [sfsim25.util :refer (cube-path slurp-image slurp-floats slurp-bytes slurp-normals dissoc-in N N0)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

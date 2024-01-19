@@ -1,7 +1,6 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
     (:require [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
-              [fastmath.matrix :refer (inverse)]
               [malli.core :as m]
               [clojure.math :refer (exp pow PI sqrt log)]
               [sfsim25.matrix :refer (fvec3)]
@@ -13,7 +12,7 @@
                                       destroy-vertex-array-object render-quads texture-2d texture-4d
                                       make-vector-texture-2d make-vector-texture-4d destroy-texture)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer (third fourth limit-quot sqr N N0 slurp-floats)]))
+              [sfsim25.util :refer (third fourth limit-quot sqr N slurp-floats)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

@@ -3,12 +3,10 @@
   (:require [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
             [sfsim25.matrix :refer (fvec3 fmat3 fmat4 shadow-box)]
-            [sfsim25.util :refer (N N0 image)])
+            [sfsim25.util :refer (N image)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
-           [org.lwjgl.glfw GLFW]
-           [fastmath.matrix Mat3x3 Mat4x4]
-           [fastmath.vector Vec3]))
+           [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -321,8 +319,6 @@
   [target texture & body]
   `(let [~texture (GL11/glGenTextures)]
      (with-texture ~target ~texture ~@body)))
-
-(def texture (m/schema [:map [:target :int] [:texture :int]]))
 
 (defn generate-mipmap
   "Generate mipmap for texture and set texture min filter to linear mipmap mode"

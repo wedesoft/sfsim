@@ -1,17 +1,15 @@
 (ns sfsim25.core
   "Space flight simulator main program."
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
-            [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (make-window destroy-window clear destroy-texture make-vector-texture-2d make-vector-texture-4d
-                                    onscreen-render texture-render-color-depth)]
+            [sfsim25.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
             [sfsim25.worley :refer (worley-size)]
             [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-list transformation-matrix)]
             [sfsim25.quaternion :as q]
-            [sfsim25.util :refer (slurp-floats sqr)]
+            [sfsim25.util :refer (sqr)]
             [sfsim25.opacity :as opacity])
   (:import [org.lwjgl.opengl GL11]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])

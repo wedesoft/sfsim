@@ -5,8 +5,7 @@
             [clojure.math :refer (cos sqrt) :as m]
             [malli.core :as mc]
             [fastmath.vector :refer (vec3 mag mult)]
-            [sfsim25.util :refer (sinc sqr)])
-  (:import [fastmath.vector Vec3]))
+            [sfsim25.util :refer (sinc sqr)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

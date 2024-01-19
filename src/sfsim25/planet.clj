@@ -1,8 +1,7 @@
 (ns sfsim25.planet
     "Module with functionality to render a planet"
-    (:require [fastmath.matrix :refer (mulm eye)]
+    (:require [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
-              [fastmath.matrix :refer (inverse)]
               [sfsim25.matrix :refer (transformation-matrix fmat4 fvec3)]
               [sfsim25.cubemap :refer (cube-map-corners)]
               [sfsim25.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info)]
@@ -13,8 +12,7 @@
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.util :refer (N N0)]
               [sfsim25.clouds :refer (overall-shadow cloud-planet)]
-              [sfsim25.shaders :as shaders])
-    (:import [fastmath.matrix Mat4x4]))
+              [sfsim25.shaders :as shaders]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -145,7 +143,7 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [depth render-data atmosphere-luts planet-data cloud-data shadow-data]}]
+  [& {:keys [render-data atmosphere-luts planet-data cloud-data shadow-data]}]
   (let [tilesize (:sfsim25.planet/tilesize planet-data)
         program  (make-program :vertex [vertex-planet]
                                :tess-control [tess-control-planet]
