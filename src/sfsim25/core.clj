@@ -40,6 +40,16 @@
                                   :specular 1000.0
                                   :fov (to-radians 60.0)})
 
+(def planet-data #:sfsim25.planet{:radius 6378000.0
+                                  :max-height 8000.0
+                                  :albedo 0.9
+                                  :dawn-start -0.2
+                                  :dawn-end 0.0
+                                  :tilesize 33
+                                  :color-tilesize 129
+                                  :reflectivity 0.1
+                                  :water-color (vec3 0.09 0.11 0.34)})
+
 (def cloud-data
   (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves (clouds/octaves 4 0.7)
                                            :perlin-octaves (clouds/octaves 4 0.7)
@@ -54,26 +64,15 @@
                                            :cloud-step 400.0
                                            :opacity-cutoff 0.01}))
 
-(def planet-data #:sfsim25.planet{:radius 6378000.0
-                                  :max-height 8000.0
-                                  :albedo 0.9
-                                  :dawn-start -0.2
-                                  :dawn-end 0.0
-                                  :tilesize 33
-                                  :color-tilesize 129
-                                  :reflectivity 0.1
-                                  :water-color (vec3 0.09 0.11 0.34)})
-
 (def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
 
-(def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
-                                   :shadow-size 512
-                                   :num-steps 3
-                                   :mix 0.8
-                                   :depth (opacity/shadow-depth (:sfsim25.planet/radius planet-data)
-                                                                (:sfsim25.planet/max-height planet-data)
-                                                                (:sfsim25.clouds/cloud-top cloud-data))
-                                   :shadow-bias (exp -6.0)})
+(def shadow-data
+  (opacity/make-shadow-data #:sfsim25.opacity{:num-opacity-layers 7
+                                              :shadow-size 512
+                                              :num-steps 3
+                                              :mix 0.8
+                                              :shadow-bias (exp -6.0)}
+                            planet-data cloud-data))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer

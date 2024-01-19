@@ -18,6 +18,15 @@
   (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
      (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
 
+(defn make-shadow-data
+  "Create hash map with shadow parameters"
+  {:malli/schema [:=> [:cat :map :map :map] :map]}
+  [data planet-data cloud-data]
+  (assoc data
+         ::depth (shadow-depth (:sfsim25.planet/radius planet-data)
+                               (:sfsim25.planet/max-height planet-data)
+                               (:sfsim25.clouds/cloud-top cloud-data))))
+
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
   [& {:keys [planet-data shadow-data cloud-data]}]
