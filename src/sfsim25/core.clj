@@ -162,9 +162,11 @@
                    z-far        (opacity/shadow-depth radius (- norm-pos radius) (:sfsim25.clouds/cloud-top cloud-data))
                    light-dir    (vec3 (cos @light) (sin @light) 0)
                    projection   (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) (:sfsim25.render/fov render-data))
-                   lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)
-                                           (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
                    extrinsics   (transformation-matrix (quaternion->matrix @orientation) @position)
+                   render-vars  #:sfsim25.render{:projection projection
+                                                 :origin @position
+                                                 :extrinsics extrinsics
+                                                 :light-direction light-dir}
                    matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir (:sfsim25.opacity/depth shadow-data)
                                                        (:sfsim25.opacity/mix shadow-data)
                                                        z-near z-far (:sfsim25.opacity/num-steps shadow-data))
@@ -176,6 +178,8 @@
                    cos-light    (/ (dot light-dir @position) (mag @position))
                    sin-light    (sqrt (- 1 (sqr cos-light)))
                    opacity-step (* (+ cos-light (* 10 sin-light)) @opacity-base)
+                   lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)
+                                           (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
                    opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-amnt
                                                                 opacity-step)
                    shadows      (planet/render-shadow-cascade planet-shadow-renderer
@@ -187,11 +191,7 @@
                                 w2 h2 true
                                 (clear (vec3 0 0 0) 0.0)
                                 ; Render clouds in front of planet
-                                (planet/render-cloud-planet cloud-planet-renderer
-                                                            :projection projection
-                                                            :origin @position
-                                                            :transform (inverse extrinsics)
-                                                            :light-direction light-dir
+                                (planet/render-cloud-planet cloud-planet-renderer render-vars
                                                             :sfsim25.clouds/threshold @threshold
                                                             :sfsim25.clouds/lod-offset lod-offset
                                                             :sfsim25.opacity/opacity-step opacity-step
@@ -201,11 +201,7 @@
                                                             :sfsim25.opacity/opacities opacities
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
-                                (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                :projection projection
-                                                                :origin @position
-                                                                :transform (inverse extrinsics)
-                                                                :light-direction light-dir
+                                (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars
                                                                 :z-far z-far
                                                                 :sfsim25.clouds/threshold @threshold
                                                                 :sfsim25.clouds/lod-offset lod-offset
@@ -217,11 +213,7 @@
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
-                                (planet/render-planet planet-renderer
-                                                      :projection projection
-                                                      :origin @position
-                                                      :transform (inverse extrinsics)
-                                                      :light-direction light-dir
+                                (planet/render-planet planet-renderer render-vars
                                                       :window-width (aget w 0)
                                                       :window-height (aget h 0)
                                                       :clouds clouds
@@ -232,13 +224,9 @@
                                                       :sfsim25.opacity/opacities opacities
                                                       :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
-                                (atmosphere/render-atmosphere atmosphere-renderer
-                                                              :projection projection
-                                                              :extrinsics extrinsics
-                                                              :origin @position
+                                (atmosphere/render-atmosphere atmosphere-renderer render-vars
                                                               :window-width (aget w 0)
                                                               :window-height (aget h 0)
-                                                              :light-direction light-dir
                                                               :z-far z-far
                                                               :clouds clouds))
                (destroy-texture clouds)

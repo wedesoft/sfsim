@@ -2,6 +2,7 @@
     "Module with functionality to render a planet"
     (:require [fastmath.matrix :refer (mulm eye)]
               [malli.core :as m]
+              [fastmath.matrix :refer (inverse)]
               [sfsim25.matrix :refer (transformation-matrix fmat4 fvec3)]
               [sfsim25.cubemap :refer (cube-map-corners)]
               [sfsim25.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info)]
@@ -199,27 +200,27 @@
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data]}
-   & {:keys [projection origin transform light-direction tree] :as data}]
-  (use-program program)
-  (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
-  (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
-  (uniform-matrix4 program "projection" projection)
-  (uniform-vector3 program "origin" origin)
-  (uniform-matrix4 program "transform" transform)
-  (uniform-vector3 program "light_direction" light-direction)
-  (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
-  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
-         (uniform-float program (str "split" idx) item))
-  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
-         (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-         (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {1 (:transmittance atmosphere-luts) 2 (:scatter atmosphere-luts) 3 (:mie atmosphere-luts)
-                 4 (:sfsim25.clouds/worley cloud-data)
-                 5 (:sfsim25.clouds/perlin-worley cloud-data) 6 (:sfsim25.clouds/bluenoise cloud-data)
-                 7 (:sfsim25.clouds/cloud-cover cloud-data)})
-  (use-textures (zipmap (drop 8 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
-  (render-tree program tree transform [:surf-tex]))
+  [{:keys [program atmosphere-luts cloud-data]} render-vars & {:keys [tree] :as data}]
+  (let [transform (inverse (:sfsim25.render/extrinsics render-vars))]
+    (use-program program)
+    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
+    (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
+    (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
+    (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
+    (uniform-matrix4 program "transform" transform)
+    (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
+    (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
+           (uniform-float program (str "split" idx) item))
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:depth item)))
+    (use-textures {1 (:transmittance atmosphere-luts) 2 (:scatter atmosphere-luts) 3 (:mie atmosphere-luts)
+                   4 (:sfsim25.clouds/worley cloud-data)
+                   5 (:sfsim25.clouds/perlin-worley cloud-data) 6 (:sfsim25.clouds/bluenoise cloud-data)
+                   7 (:sfsim25.clouds/cloud-cover cloud-data)})
+    (use-textures (zipmap (drop 8 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
+    (render-tree program tree transform [:surf-tex])))
 
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon (untested)"
@@ -281,25 +282,25 @@
 (defn render-planet
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]}
-   & {:keys [projection origin transform light-direction window-width window-height clouds tree] :as data}]
-  (use-program program)
-  (uniform-matrix4 program "projection" projection)
-  (uniform-vector3 program "origin" origin)
-  (uniform-matrix4 program "transform" transform)
-  (uniform-vector3 program "light_direction" light-direction)
-  (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
-  (uniform-int program "window_width" window-width)
-  (uniform-int program "window_height" window-height)
-  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
-         (uniform-float program (str "split" idx) item))
-  (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
-         (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-         (uniform-float program (str "depth" idx) (:depth item)))
-  (use-textures {5 (:transmittance atmosphere-luts) 6 (:scatter atmosphere-luts) 7 (:mie atmosphere-luts)
-                 8 (:surface-radiance atmosphere-luts) 9 clouds})
-  (use-textures (zipmap (drop 10 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
-  (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex]))
+  [{:keys [program atmosphere-luts]} render-vars & {:keys [window-width window-height clouds tree] :as data}]
+  (let [transform (inverse (:sfsim25.render/extrinsics render-vars))]
+    (use-program program)
+    (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
+    (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
+    (uniform-matrix4 program "transform" transform)
+    (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
+    (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
+    (uniform-int program "window_width" window-width)
+    (uniform-int program "window_height" window-height)
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
+           (uniform-float program (str "split" idx) item))
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:depth item)))
+    (use-textures {5 (:transmittance atmosphere-luts) 6 (:scatter atmosphere-luts) 7 (:mie atmosphere-luts)
+                   8 (:surface-radiance atmosphere-luts) 9 clouds})
+    (use-textures (zipmap (drop 10 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
+    (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex])))
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program (untested)"
