@@ -24,14 +24,10 @@
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})
 
-(def radius 6378000.0)
 (def threshold (atom 18.2))
 (def cloud-top 5000.0)
 (def opacity-base (atom 250.0))
-(def mount-everest 8000)
-(def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
-              (sqrt (- (sqr (+ radius mount-everest)) (sqr radius)))))
-(def position (atom (vec3 (+ 3.0 radius) 0 0)))
+(def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
 
@@ -58,7 +54,8 @@
                                            :cloud-step 400.0
                                            :opacity-cutoff 0.01}))
 
-(def planet-data #:sfsim25.planet{:radius radius
+(def planet-data #:sfsim25.planet{:radius 6378000.0
+                                  :max-height 8000.0
                                   :albedo 0.9
                                   :dawn-start -0.2
                                   :dawn-end 0.0
@@ -67,14 +64,16 @@
                                   :reflectivity 0.1
                                   :water-color (vec3 0.09 0.11 0.34)})
 
+(def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
+
 (def shadow-data #:sfsim25.opacity{:num-opacity-layers 7
                                    :shadow-size 512
                                    :num-steps 3
                                    :mix 0.8
-                                   :depth depth
+                                   :depth (opacity/shadow-depth (:sfsim25.planet/radius planet-data)
+                                                                (:sfsim25.planet/max-height planet-data)
+                                                                (:sfsim25.clouds/cloud-top cloud-data))
                                    :shadow-bias (exp -6.0)})
-
-(def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -158,10 +157,10 @@
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
              (let [norm-pos     (mag @position)
+                   radius       (:sfsim25.planet/radius planet-data)
                    dist         (- norm-pos radius (:sfsim25.clouds/cloud-top cloud-data))
                    z-near       (max 1.0 (* 0.4 dist))
-                   z-far        (+ (sqrt (- (sqr (+ radius (:sfsim25.clouds/cloud-top cloud-data))) (sqr radius)))
-                                   (sqrt (- (sqr norm-pos) (sqr radius))))
+                   z-far        (opacity/shadow-depth radius (- norm-pos radius) (:sfsim25.clouds/cloud-top cloud-data))
                    light-dir    (vec3 (cos @light) (sin @light) 0)
                    projection   (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) (:sfsim25.render/fov render-data))
                    lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)

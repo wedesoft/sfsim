@@ -1,10 +1,22 @@
 (ns sfsim25.opacity
     "Rendering of deep opacity maps for cloud shadows"
-    (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
+    (:require [clojure.math :refer (sqrt)]
+              [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture)]
               [sfsim25.worley :refer (worley-size)]
-              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]))
+              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]
+              [sfsim25.util :refer (sqr)]))
+
+(set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
+
+(defn shadow-depth
+  "Determine maximum shadow depth for cloud shadows"
+  {:malli/schema [:=> [:cat :double :double :double] :double]}
+  [radius max-height cloud-top]
+  (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
+     (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
 
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
@@ -61,3 +73,6 @@
   [{:keys [vao program]}]
   (destroy-vertex-array-object vao)
   (destroy-program program))
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)
