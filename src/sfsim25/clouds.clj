@@ -375,9 +375,9 @@
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data]} render-vars & {:keys [z-far] :as data}]
+  [{:keys [program atmosphere-luts cloud-data]} render-vars & {:keys [] :as data}]
   (let [indices  [0 1 3 2]
-        vertices (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vertices (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])
         transform (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)

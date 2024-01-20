@@ -2,7 +2,8 @@
   "Space flight simulator main program."
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth)]
+            [sfsim25.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth
+                                    render-depth make-render-vars)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
@@ -153,22 +154,20 @@
              (swap! threshold + (* dt tr))
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
-             (let [norm-pos     (mag @position)
-                   radius       (:sfsim25.planet/radius planet-data)
-                   dist         (- norm-pos radius (:sfsim25.clouds/cloud-top cloud-data))
-                   z-near       (max 1.0 (* 0.4 dist))
-                   z-far        (opacity/shadow-depth radius (- norm-pos radius) (:sfsim25.clouds/cloud-top cloud-data))
-                   light-dir    (vec3 (cos @light) (sin @light) 0)
-                   projection   (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) (:sfsim25.render/fov render-data))
-                   extrinsics   (transformation-matrix (quaternion->matrix @orientation) @position)
-                   render-vars  #:sfsim25.render{:projection projection
-                                                 :origin @position
-                                                 :extrinsics extrinsics
-                                                 :light-direction light-dir}
-                   matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir (:sfsim25.opacity/depth shadow-data)
+             (let [light-dir    (vec3 (cos @light) (sin @light) 0)
+                   render-vars  (make-render-vars planet-data cloud-data render-data (aget w 0) (aget h 0) @position @orientation
+                                                  light-dir 1.0)
+                   matrix-cas   (shadow-matrix-cascade (:sfsim25.render/projection render-vars)
+                                                       (:sfsim25.render/extrinsics render-vars)
+                                                       light-dir
+                                                       (:sfsim25.opacity/depth shadow-data)
                                                        (:sfsim25.opacity/mix shadow-data)
-                                                       z-near z-far (:sfsim25.opacity/num-steps shadow-data))
-                   splits       (split-list (:sfsim25.opacity/mix shadow-data) z-near z-far
+                                                       (:sfsim25.render/z-near render-vars)
+                                                       (:sfsim25.render/z-far render-vars)
+                                                       (:sfsim25.opacity/num-steps shadow-data))
+                   splits       (split-list (:sfsim25.opacity/mix shadow-data)
+                                            (:sfsim25.render/z-near render-vars)
+                                            (:sfsim25.render/z-far render-vars)
                                             (:sfsim25.opacity/num-steps shadow-data))
                    scatter-amnt (+ (* (:sfsim25.clouds/anisotropic cloud-data)
                                       (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0))
@@ -200,7 +199,6 @@
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
                                 (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars
-                                                                :z-far z-far
                                                                 :sfsim25.clouds/threshold @threshold
                                                                 :sfsim25.clouds/lod-offset lod-offset
                                                                 :sfsim25.opacity/opacity-step opacity-step
@@ -225,7 +223,6 @@
                                 (atmosphere/render-atmosphere atmosphere-renderer render-vars
                                                               :window-width (aget w 0)
                                                               :window-height (aget h 0)
-                                                              :z-far z-far
                                                               :clouds clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-cascade opacities)

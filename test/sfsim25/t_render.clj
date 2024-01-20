@@ -4,13 +4,14 @@
             [malli.dev.pretty :as pretty]
             [sfsim25.conftest :refer (is-image record-image roughly-vector)]
             [fastmath.vector :refer (vec3 vec4 normalize)]
-            [fastmath.matrix :refer (eye)]
+            [fastmath.matrix :refer (eye diagonal) :as m]
             [clojure.math :refer (to-radians)]
             [comb.template :as template]
             [sfsim25.util :refer :all]
-            [sfsim25.matrix :refer :all]
+            [sfsim25.matrix :refer :all :as matrix]
             [sfsim25.shaders :as s]
-            [sfsim25.render :refer :all])
+            [sfsim25.quaternion :as q]
+            [sfsim25.render :refer :all :as render])
   (:import [org.lwjgl.opengl GL11 GL12 GL30 GL42]
            [org.lwjgl.glfw GLFW]
            [org.lwjgl BufferUtils]))
@@ -1014,5 +1015,31 @@ void main()
           (:hyperdepth tex) => 1
           (destroy-texture tex))))
 
+(facts "Maximum shadow depth for cloud shadows"
+       (render-depth 4.0 1.0 0.0) => 3.0
+       (render-depth 3.0 2.0 0.0) => 4.0
+       (render-depth 4.0 0.0 1.0) => 3.0
+       (render-depth 4.0 1.0 1.0) => 6.0)
+
+(facts "Create hashmap with render variables for rendering current frame"
+       (let [planet {:sfsim25.planet/radius 1000.0}
+             cloud  {:sfsim25.clouds/cloud-top 100.0}
+             render {:sfsim25.render/fov 0.5}
+             pos1   (vec3 (+ 1000 150) 0 0)
+             pos2   (vec3 (+ 1000 75) 0 0)
+             o      (q/rotation 0.0 (vec3 0 0 1))
+             light  (vec3 1 0 0)]
+         (with-redefs [render/render-depth (fn [radius height cloud-top] (fact [radius cloud-top] => [1000.0 100.0]) 300.0)
+                       matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
+                       matrix/transformation-matrix (fn [rot pos] (fact rot => :rotation-matrix) (eye 4))
+                       matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
+           (:sfsim25.render/origin (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => pos1
+           (:sfsim25.render/height (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 150.0
+           (:sfsim25.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 50.0
+           (:sfsim25.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => 1.0
+           (:sfsim25.render/z-far (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 300.0
+           (:sfsim25.render/extrinsics (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (eye 4)
+           (:sfsim25.render/projection (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (diagonal 1 2 3 4)
+           (:sfsim25.render/light-direction (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => light)))
 
 (GLFW/glfwTerminate)

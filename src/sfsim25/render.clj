@@ -1,9 +1,12 @@
 (ns sfsim25.render
   "Functions for doing OpenGL rendering"
-  (:require [fastmath.matrix :refer (mat->float-array)]
+  (:require [clojure.math :refer (sqrt)]
+            [fastmath.vector :refer (mag)]
+            [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
-            [sfsim25.matrix :refer (fvec3 fmat3 fmat4 shadow-box)]
-            [sfsim25.util :refer (N image)])
+            [sfsim25.matrix :refer (fvec3 fmat3 fmat4 shadow-box quaternion->matrix transformation-matrix projection-matrix)]
+            [sfsim25.quaternion :refer (quaternion) :as q]
+            [sfsim25.util :refer (sqr N image)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [org.lwjgl.glfw GLFW]))
@@ -808,6 +811,36 @@
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
       {:width width :height height :data data})))
+
+(defn render-depth
+  "Determine maximum shadow depth for cloud shadows"
+  {:malli/schema [:=> [:cat :double :double :double] :double]}
+  [radius max-height cloud-top]
+  (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
+     (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
+
+(defn make-render-vars
+  "Create hash map with render variables for rendering current frame"
+  {:malli/schema [:=> [:cat :map :map :map N N fvec3 quaternion fvec3 :double] :map]}
+  [planet-data cloud-data render-data window-width window-height position orientation light-direction min-z-near]
+  (let [distance   (mag position)
+        radius     (:sfsim25.planet/radius planet-data)
+        cloud-top  (:sfsim25.clouds/cloud-top cloud-data)
+        fov        (:sfsim25.render/fov render-data)
+        height     (- distance radius)
+        z-near     (max (- height cloud-top) min-z-near)
+        z-far      (render-depth radius height cloud-top)
+        rotation   (quaternion->matrix orientation)
+        extrinsics (transformation-matrix rotation position)
+        z-offset   1.0
+        projection (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+    {::origin position
+     ::height height
+     ::z-near z-near
+     ::z-far z-far
+     ::light-direction light-direction
+     ::extrinsics extrinsics
+     ::projection projection}))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

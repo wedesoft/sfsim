@@ -486,9 +486,9 @@
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]} render-vars & {:keys [window-width window-height clouds z-far]}]
+  [{:keys [program atmosphere-luts]} render-vars & {:keys [window-width window-height clouds]}]
   (let [indices    [0 1 3 2]
-        vertices   (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vertices   (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))

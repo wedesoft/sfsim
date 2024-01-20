@@ -3,7 +3,7 @@
     (:require [clojure.math :refer (sqrt)]
               [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
-                                      render-quads destroy-texture)]
+                                      render-quads destroy-texture render-depth)]
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]
               [sfsim25.util :refer (sqr)]))
@@ -11,19 +11,12 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(defn shadow-depth
-  "Determine maximum shadow depth for cloud shadows"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [radius max-height cloud-top]
-  (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
-     (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
-
 (defn make-shadow-data
   "Create hash map with shadow parameters"
   {:malli/schema [:=> [:cat :map :map :map] :map]}
   [data planet-data cloud-data]
   (assoc data
-         ::depth (shadow-depth (:sfsim25.planet/radius planet-data)
+         ::depth (render-depth (:sfsim25.planet/radius planet-data)
                                (:sfsim25.planet/max-height planet-data)
                                (:sfsim25.clouds/cloud-top cloud-data))))
 
