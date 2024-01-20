@@ -154,12 +154,11 @@
              (swap! threshold + (* dt tr))
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
-             (let [light-dir    (vec3 (cos @light) (sin @light) 0)
-                   render-vars  (make-render-vars planet-data cloud-data render-data (aget w 0) (aget h 0) @position @orientation
-                                                  light-dir 1.0)
+             (let [render-vars  (make-render-vars planet-data cloud-data render-data (aget w 0) (aget h 0) @position @orientation
+                                                  (vec3 (cos @light) (sin @light) 0) 1.0)
                    matrix-cas   (shadow-matrix-cascade (:sfsim25.render/projection render-vars)
                                                        (:sfsim25.render/extrinsics render-vars)
-                                                       light-dir
+                                                       (:sfsim25.render/light-direction render-vars)
                                                        (:sfsim25.opacity/depth shadow-data)
                                                        (:sfsim25.opacity/mix shadow-data)
                                                        (:sfsim25.render/z-near render-vars)
@@ -172,13 +171,14 @@
                    scatter-amnt (+ (* (:sfsim25.clouds/anisotropic cloud-data)
                                       (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0))
                                    (- 1 (:sfsim25.clouds/anisotropic cloud-data)))
-                   cos-light    (/ (dot light-dir @position) (mag @position))
+                   cos-light    (/ (dot (:sfsim25.render/light-direction render-vars) @position) (mag @position))
                    sin-light    (sqrt (- 1 (sqr cos-light)))
                    opacity-step (* (+ cos-light (* 10 sin-light)) @opacity-base)
                    lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)
                                            (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
-                   opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-amnt
-                                                                opacity-step)
+                   opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas
+                                                                (:sfsim25.render/light-direction render-vars) @threshold
+                                                                scatter-amnt opacity-step)
                    shadows      (planet/render-shadow-cascade planet-shadow-renderer
                                                               :sfsim25.opacity/matrix-cascade matrix-cas
                                                               :tree (planet/get-current-tree tile-tree))
