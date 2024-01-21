@@ -230,12 +230,12 @@
 
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices"
-  {:malli/schema [:=> [:cat fmat4 fmat4 fvec3 :double :double :double :double N] [:vector shadow-box]]}
-  [projection-matrix extrinsics light-vector longest-shadow mix near far num-steps]
+  {:malli/schema [:=> [:cat :map :map] [:vector shadow-box]]}
+  [{:sfsim25.opacity/keys [num-steps mix depth]} {:sfsim25.render/keys [projection extrinsics light-direction z-near z-far]}]
   (mapv (fn [idx]
-            (let [ndc1 (z-to-ndc near far (split-mixed mix near far num-steps idx))
-                  ndc2 (z-to-ndc near far (split-mixed mix near far num-steps (inc idx)))]
-              (shadow-matrices projection-matrix extrinsics light-vector longest-shadow ndc1 ndc2)))
+            (let [ndc1 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps idx))
+                  ndc2 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps (inc idx)))]
+              (shadow-matrices projection extrinsics light-direction depth ndc1 ndc2)))
         (range num-steps)))
 
 (set! *warn-on-reflection* false)
