@@ -1,12 +1,10 @@
 (ns sfsim25.opacity
     "Rendering of deep opacity maps for cloud shadows"
-    (:require [clojure.math :refer (sqrt)]
-              [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
+    (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture render-depth)]
               [sfsim25.worley :refer (worley-size)]
-              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]
-              [sfsim25.util :refer (sqr)]))
+              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

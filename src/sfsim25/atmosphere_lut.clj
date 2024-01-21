@@ -10,10 +10,10 @@
 
 (def radius 6378000.0)
 (def height 35000.0)
-(def earth #:sfsim25.sphere{:centre (vec3 0 0 0)
-                            :radius radius
-                            :sfsim25.atmosphere/height height
-                            :sfsim25.atmosphere/brightness (vec3 0.3 0.3 0.3)})
+(def earth {:sfsim25.sphere/centre (vec3 0 0 0)
+            :sfsim25.sphere/radius radius
+            :sfsim25.atmosphere/height height
+            :sfsim25.atmosphere/brightness (vec3 0.3 0.3 0.3)})
 (def mie #:sfsim25.atmosphere{:scatter-base (vec3 5e-6 5e-6 5e-6)
                               :scatter-scale 2000.0
                               :scatter-g 0.76

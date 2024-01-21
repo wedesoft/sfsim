@@ -3,12 +3,12 @@
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
             [sfsim25.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth
-                                    render-depth make-render-vars)]
+                                    make-render-vars)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
             [sfsim25.worley :refer (worley-size)]
-            [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-list transformation-matrix)]
+            [sfsim25.matrix :refer (shadow-matrix-cascade split-list)]
             [sfsim25.quaternion :as q]
             [sfsim25.util :refer (sqr)]
             [sfsim25.opacity :as opacity])
