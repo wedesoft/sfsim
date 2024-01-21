@@ -1,10 +1,10 @@
 {:deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        metosin/malli {:mvn/version "0.13.0"}
+        metosin/malli {:mvn/version "0.14.0"}
         org.clojure/core.memoize {:mvn/version "1.0.257"}
         comb/comb {:mvn/version "0.1.1"}
         progrock/progrock {:mvn/version "0.1.2"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
-        generateme/fastmath {:mvn/version "2.2.2-SNAPSHOT" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
+        generateme/fastmath {:mvn/version "2.3.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
         org.lwjgl/lwjgl {:mvn/version "3.3.2"}
         org.lwjgl/lwjgl$natives-windows {:mvn/version "3.3.2"}
         org.lwjgl/lwjgl-opengl {:mvn/version "3.3.2"}

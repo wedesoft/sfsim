@@ -1,7 +1,6 @@
 (ns sfsim25.atmosphere
     "Functions for computing the atmosphere"
     (:require [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
-              [fastmath.matrix :refer (inverse)]
               [malli.core :as m]
               [clojure.math :refer (exp pow PI sqrt log)]
               [sfsim25.matrix :refer (fvec3)]
@@ -13,7 +12,7 @@
                                       destroy-vertex-array-object render-quads texture-2d texture-4d
                                       make-vector-texture-2d make-vector-texture-4d destroy-texture)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer (third fourth limit-quot sqr N N0 slurp-floats)]))
+              [sfsim25.util :refer (third fourth limit-quot sqr N slurp-floats)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -415,13 +414,13 @@
 (def surface-sun-elevation-size 63)
 (def surface-height-size 16)
 
-(defn load-atmosphere-luts
+(defn make-atmosphere-luts
   "Load atmosphere lookup tables"
-  {:malli/schema [:=> [:cat] [:map [:transmittance texture-2d]
-                                   [:scatter texture-4d]
-                                   [:mie texture-2d]
-                                   [:surface-radiance texture-2d]]]}
-  []
+  {:malli/schema [:=> [:cat [:* :any]] [:map [:transmittance texture-2d]
+                                             [:scatter texture-4d]
+                                             [:mie texture-2d]
+                                             [:surface-radiance texture-2d]]]}
+  [max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :linear :clamp
                                                       {:width transmittance-elevation-size
@@ -436,11 +435,11 @@
                                                        :data scatter-data})
         mie-data              (slurp-floats "data/atmosphere/mie-strength.scatter")
         mie                   (make-vector-texture-2d :linear :clamp
-                                                   {:width heading-size
-                                                    :height light-elevation-size
-                                                    :depth elevation-size
-                                                    :hyperdepth height-size
-                                                    :data mie-data})
+                                                      {:width heading-size
+                                                       :height light-elevation-size
+                                                       :depth elevation-size
+                                                       :hyperdepth height-size
+                                                       :data mie-data})
         surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter")
         surface-radiance      (make-vector-texture-2d :linear :clamp
                                                       {:width surface-sun-elevation-size
@@ -449,7 +448,8 @@
     {:transmittance transmittance
      :scatter scatter
      :mie mie
-     :surface-radiance surface-radiance}))
+     :surface-radiance surface-radiance
+     ::max-height max-height}))
 
 (defn destroy-atmosphere-luts
   "Destroy atmosphere lookup tables"
@@ -462,7 +462,7 @@
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [specular amplification atmosphere-luts planet-data]}]
+  [& {:keys [render-data atmosphere-luts planet-data]}]
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
@@ -476,28 +476,27 @@
     (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
-    (uniform-float program "radius" (:radius planet-data))
-    (uniform-float program "max_height" (:max-height planet-data))
-    (uniform-float program "specular" specular)
-    (uniform-float program "amplification" amplification)
+    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
+    (uniform-float program "max_height" (::max-height atmosphere-luts))
+    (uniform-float program "specular" (:sfsim25.render/specular render-data))
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     {:program program
      :atmosphere-luts atmosphere-luts}))
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]}
-   & {:keys [projection extrinsics origin window-width window-height light-direction clouds z-far]}]
+  [{:keys [program atmosphere-luts]} render-vars & {:keys [window-width window-height clouds]}]
   (let [indices    [0 1 3 2]
-        vertices   (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vertices   (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
-    (uniform-matrix4 program "projection" projection)
-    (uniform-matrix4 program "extrinsics" extrinsics)
-    (uniform-vector3 program "origin" origin)
+    (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
+    (uniform-matrix4 program "extrinsics" (:sfsim25.render/extrinsics render-vars))
+    (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
+    (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
     (uniform-int program "window_width" window-width)
     (uniform-int program "window_height" window-height)
-    (uniform-vector3 program "light_direction" light-direction)
     (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts) 3 clouds})
     (render-quads vao)
     (destroy-vertex-array-object vao)))

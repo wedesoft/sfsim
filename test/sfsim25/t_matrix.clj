@@ -172,27 +172,28 @@
 (facts "Mixed linear and exponential split"
        (split-mixed 0.0 10.0 40.0 2 1) => 25.0
        (split-mixed 1.0 10.0 40.0 2 1) => 20.0
-       (split-list 0.0 10.0 40.0 2) => [10.0 25.0 40.0])
+       (split-list {:sfsim25.opacity/mix 0.0 :sfsim25.opacity/num-steps 2}
+                   {:sfsim25.render/z-near 10.0 :sfsim25.render/z-far 40.0})
+       => [10.0 25.0 40.0])
 
 (facts "Cascade of shadow matrices"
-       (let [near            10.0
-             far             40.0
-             projection      (projection-matrix 640 480 near far (* 0.5 PI))
+       (let [z-near          10.0
+             z-far           40.0
+             projection      (projection-matrix 640 480 z-near z-far (* 0.5 PI))
              extrinsics      (fm/eye 4)
-             light-direction (fv/vec3 0 1 0)]
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 0))
-                  (fv/vec4 0 0 -10 1))
+             light-direction (fv/vec3 0 1 0)
+             render-vars     #:sfsim25.render{:projection projection :extrinsics extrinsics :light-direction light-direction
+                                              :z-near z-near :z-far z-far}
+             shadow-data     (fn [depth mix num-steps] #:sfsim25.opacity{:depth depth :mix mix :num-steps num-steps})]
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade (shadow-data 0.0 0.0 2) render-vars) 0)) (fv/vec4 0 0 -10 1))
          => (roughly-vector (fv/vec4 -1 0 0.5 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 0))
-                  (fv/vec4 0 0 -25 1))
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade (shadow-data 0.0 0.0 2) render-vars) 0)) (fv/vec4 0 0 -25 1))
          => (roughly-vector (fv/vec4 1 0 0.5 1) 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 1.0 near far 2) 0))
-                  (fv/vec4 0 0 -20 1))
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade (shadow-data 0.0 1.0 2) render-vars) 0)) (fv/vec4 0 0 -20 1))
          => (roughly-vector (fv/vec4 1 0 0.5 1) 1e-6)
-         (:depth (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 0))
+         (:depth (nth (shadow-matrix-cascade (shadow-data 0.0 0.0 2) render-vars) 0))
          => (roughly 37.5 1e-6)
-         (:depth (nth (shadow-matrix-cascade projection extrinsics light-direction 10.0 0.0 near far 2) 0))
+         (:depth (nth (shadow-matrix-cascade (shadow-data 10.0 0.0 2) render-vars) 0))
          => (roughly 47.5 1e-6)
-         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade projection extrinsics light-direction 0.0 0.0 near far 2) 1))
-                  (fv/vec4 0 0 -25 1))
+         (fm/mulv (:shadow-ndc-matrix (nth (shadow-matrix-cascade (shadow-data 0.0 0.0 2) render-vars) 1)) (fv/vec4 0 0 -25 1))
          => (roughly-vector (fv/vec4 -1 0 0.5 1) 1e-6)))

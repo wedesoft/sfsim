@@ -1,17 +1,16 @@
 (ns sfsim25.core
   "Space flight simulator main program."
   (:require [clojure.math :refer (to-radians cos sin tan sqrt log exp)]
-            [fastmath.matrix :refer (inverse)]
             [fastmath.vector :refer (vec3 add mult mag dot)]
-            [sfsim25.render :refer (make-window destroy-window clear destroy-texture make-vector-texture-2d make-vector-texture-4d
-                                    onscreen-render texture-render-color-depth)]
+            [sfsim25.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth
+                                    make-render-vars)]
             [sfsim25.atmosphere :refer (phase) :as atmosphere]
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
             [sfsim25.worley :refer (worley-size)]
-            [sfsim25.matrix :refer (projection-matrix quaternion->matrix shadow-matrix-cascade split-list transformation-matrix)]
+            [sfsim25.matrix :refer (shadow-matrix-cascade split-list)]
             [sfsim25.quaternion :as q]
-            [sfsim25.util :refer (slurp-floats sqr)]
+            [sfsim25.util :refer (sqr)]
             [sfsim25.opacity :as opacity])
   (:import [org.lwjgl.opengl GL11]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -24,83 +23,55 @@
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})
 
-(def width 1280)
-(def height 720)
-
-(def fov (to-radians 60.0))
-(def radius 6378000.0)
-(def tilesize 33)
-(def color-tilesize 129)
-(def max-height 35000.0)
 (def threshold (atom 18.2))
-(def anisotropic 0.25)
-(def shadow-bias (exp -6.0))
-(def cloud-bottom 2000.0)
 (def cloud-top 5000.0)
-(def cloud-multiplier 10.0)
-(def cover-multiplier 26.0)
-(def cap 0.007)
-(def detail-scale 4000.0)
-(def cloud-scale 100000.0)
-(def series (take 4 (iterate #(* % 0.7) 1.0)))
-(def sum-series (apply + series))
-(def cloud-octaves (mapv #(/ % sum-series) series))
-(def perlin-series (take 4 (iterate #(* % 0.7) 1.0)))
-(def perlin-sum-series (apply + perlin-series))
-(def perlin-octaves (mapv #(/ % perlin-sum-series) perlin-series))
-(def mix 0.8)
 (def opacity-base (atom 250.0))
-(def cloud-step 400.0)
-(def shadow-size 512)
-(def mount-everest 8000)
-(def depth (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
-              (sqrt (- (sqr (+ radius mount-everest)) (sqr radius)))))
-(def theta (to-radians 25))
-(def r (+ radius cloud-bottom -750))
-(def position (atom (vec3 (+ 3.0 radius) 0 0)))
+(def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
-(def num-steps 3)
-(def num-opacity-layers 7)
-(def opacity-cutoff 0.01)
-(def albedo 0.9)
-(def specular 1000.0)
-(def reflectivity 0.1)
-(def dawn-start -0.2)
-(def dawn-end 0.0)
-(def water-color (vec3 0.09 0.11 0.34))
-(def amplification 6.0)
 
 (GLFW/glfwInit)
 
-(def window (make-window "sfsim25" width height))
+(def window (make-window "sfsim25" 1280 720))
 (GLFW/glfwShowWindow window)
 
-(def shadow-data (opacity/make-shadow-data :num-opacity-layers num-opacity-layers
-                                           :shadow-size shadow-size
-                                           :num-steps num-steps
-                                           :depth depth
-                                           :shadow-bias shadow-bias))
+(def render-data #:sfsim25.render{:amplification 6.0
+                                  :specular 1000.0
+                                  :fov (to-radians 60.0)})
 
-(def cloud-data (clouds/make-cloud-data :cloud-octaves cloud-octaves
-                                        :perlin-octaves perlin-octaves
-                                        :cloud-bottom cloud-bottom
-                                        :cloud-top cloud-top
-                                        :detail-scale detail-scale
-                                        :cloud-scale cloud-scale
-                                        :cloud-multiplier cloud-multiplier
-                                        :cover-multiplier cover-multiplier
-                                        :cap cap
-                                        :anisotropic anisotropic
-                                        :opacity-cutoff opacity-cutoff))
+(def planet-data #:sfsim25.planet{:radius 6378000.0
+                                  :max-height 8000.0
+                                  :albedo 0.9
+                                  :dawn-start -0.2
+                                  :dawn-end 0.0
+                                  :tilesize 33
+                                  :color-tilesize 129
+                                  :reflectivity 0.1
+                                  :water-color (vec3 0.09 0.11 0.34)})
 
-(def planet-data (planet/make-planet-data :radius radius
-                                          :max-height max-height
-                                          :albedo albedo
-                                          :reflectivity reflectivity
-                                          :water-color water-color))
+(def cloud-data
+  (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves (clouds/octaves 4 0.7)
+                                           :perlin-octaves (clouds/octaves 4 0.7)
+                                           :cloud-bottom 2000.0
+                                           :cloud-top cloud-top
+                                           :detail-scale 4000.0
+                                           :cloud-scale 100000.0
+                                           :cloud-multiplier 10.0
+                                           :cover-multiplier 26.0
+                                           :cap 0.007
+                                           :anisotropic 0.25
+                                           :cloud-step 400.0
+                                           :opacity-cutoff 0.01}))
 
-(def atmosphere-luts (atmosphere/load-atmosphere-luts))
+(def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
+
+(def shadow-data
+  (opacity/make-shadow-data #:sfsim25.opacity{:num-opacity-layers 7
+                                              :shadow-size 512
+                                              :num-steps 3
+                                              :mix 0.8
+                                              :shadow-bias (exp -6.0)}
+                            planet-data cloud-data))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
@@ -110,13 +81,12 @@
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
-  (planet/make-planet-shadow-renderer :tilesize tilesize
+  (planet/make-planet-shadow-renderer :planet-data planet-data
                                       :shadow-data shadow-data))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :tilesize tilesize
-                                     :amplification amplification
+  (planet/make-cloud-planet-renderer :render-data render-data
                                      :atmosphere-luts atmosphere-luts
                                      :planet-data planet-data
                                      :shadow-data shadow-data
@@ -124,8 +94,7 @@
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :tilesize tilesize
-                                         :amplification amplification
+  (clouds/make-cloud-atmosphere-renderer :render-data render-data
                                          :atmosphere-luts atmosphere-luts
                                          :planet-data planet-data
                                          :shadow-data shadow-data
@@ -133,22 +102,14 @@
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
-  (planet/make-planet-renderer :width width
-                               :height height
-                               :tilesize tilesize
-                               :color-tilesize color-tilesize
-                               :dawn-start dawn-start
-                               :dawn-end dawn-end
-                               :specular specular
-                               :amplification amplification
+  (planet/make-planet-renderer :render-data render-data
                                :atmosphere-luts atmosphere-luts
                                :planet-data planet-data
                                :shadow-data shadow-data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :specular specular
-                                       :amplification amplification
+  (atmosphere/make-atmosphere-renderer :render-data render-data
                                        :atmosphere-luts atmosphere-luts
                                        :planet-data planet-data))
 
@@ -175,7 +136,7 @@
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-           (planet/update-tile-tree planet-renderer tile-tree @position)
+           (planet/update-tile-tree planet-renderer tile-tree (aget w 0) @position)
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
@@ -193,25 +154,23 @@
              (swap! threshold + (* dt tr))
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
-             (let [norm-pos     (mag @position)
-                   dist         (- norm-pos radius cloud-top)
-                   z-near       (max 1.0 (* 0.4 dist))
-                   z-far        (+ (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))
-                                   (sqrt (- (sqr norm-pos) (sqr radius))))
-                   light-dir    (vec3 (cos @light) (sin @light) 0)
-                   projection   (projection-matrix (aget w 0) (aget h 0) z-near (+ z-far 1) fov)
-                   lod-offset   (/ (log (/ (tan (/ fov 2)) (/ (aget w 0) 2) (/ detail-scale worley-size))) (log 2))
-                   extrinsics   (transformation-matrix (quaternion->matrix @orientation) @position)
-                   matrix-cas   (shadow-matrix-cascade projection extrinsics light-dir depth mix z-near z-far num-steps)
-                   splits       (split-list mix z-near z-far num-steps)
-                   scatter-am   (+ (* anisotropic (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0)) (- 1 anisotropic))
-                   cos-light    (/ (dot light-dir @position) (mag @position))
+             (let [render-vars  (make-render-vars planet-data cloud-data render-data (aget w 0) (aget h 0) @position @orientation
+                                                  (vec3 (cos @light) (sin @light) 0) 1.0)
+                   matrix-cas   (shadow-matrix-cascade shadow-data render-vars)
+                   splits       (split-list shadow-data render-vars)
+                   scatter-amnt (+ (* (:sfsim25.clouds/anisotropic cloud-data)
+                                      (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0))
+                                   (- 1 (:sfsim25.clouds/anisotropic cloud-data)))
+                   cos-light    (/ (dot (:sfsim25.render/light-direction render-vars) @position) (mag @position))
                    sin-light    (sqrt (- 1 (sqr cos-light)))
                    opacity-step (* (+ cos-light (* 10 sin-light)) @opacity-base)
-                   opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas light-dir @threshold scatter-am
-                                                                opacity-step)
+                   lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)
+                                           (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
+                   opacities    (opacity/render-opacity-cascade opacity-renderer matrix-cas
+                                                                (:sfsim25.render/light-direction render-vars) @threshold
+                                                                scatter-amnt opacity-step)
                    shadows      (planet/render-shadow-cascade planet-shadow-renderer
-                                                              :matrix-cascade matrix-cas
+                                                              :sfsim25.opacity/matrix-cascade matrix-cas
                                                               :tree (planet/get-current-tree tile-tree))
                    w2         (quot (aget w 0) 2)
                    h2         (quot (aget h 0) 2)
@@ -219,61 +178,41 @@
                                 w2 h2 true
                                 (clear (vec3 0 0 0) 0.0)
                                 ; Render clouds in front of planet
-                                (planet/render-cloud-planet cloud-planet-renderer
-                                                            :cloud-step cloud-step
-                                                            :cloud-threshold @threshold
-                                                            :lod-offset lod-offset
-                                                            :projection projection
-                                                            :origin @position
-                                                            :transform (inverse extrinsics)
-                                                            :light-direction light-dir
-                                                            :opacity-step opacity-step
-                                                            :splits splits
-                                                            :matrix-cascade matrix-cas
-                                                            :shadows shadows
-                                                            :opacities opacities
+                                (planet/render-cloud-planet cloud-planet-renderer render-vars
+                                                            :sfsim25.clouds/threshold @threshold
+                                                            :sfsim25.clouds/lod-offset lod-offset
+                                                            :sfsim25.opacity/opacity-step opacity-step
+                                                            :sfsim25.opacity/splits splits
+                                                            :sfsim25.opacity/matrix-cascade matrix-cas
+                                                            :sfsim25.opacity/shadows shadows
+                                                            :sfsim25.opacity/opacities opacities
                                                             :tree (planet/get-current-tree tile-tree))
                                 ; Render clouds above the horizon
-                                (clouds/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                :cloud-step cloud-step
-                                                                :cloud-threshold @threshold
-                                                                :lod-offset lod-offset
-                                                                :projection projection
-                                                                :origin @position
-                                                                :transform (inverse extrinsics)
-                                                                :light-direction light-dir
-                                                                :z-far z-far
-                                                                :opacity-step opacity-step
-                                                                :splits splits
-                                                                :matrix-cascade matrix-cas
-                                                                :shadows shadows
-                                                                :opacities opacities))]
+                                (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars
+                                                                :sfsim25.clouds/threshold @threshold
+                                                                :sfsim25.clouds/lod-offset lod-offset
+                                                                :sfsim25.opacity/opacity-step opacity-step
+                                                                :sfsim25.opacity/splits splits
+                                                                :sfsim25.opacity/matrix-cascade matrix-cas
+                                                                :sfsim25.opacity/shadows shadows
+                                                                :sfsim25.opacity/opacities opacities))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
-                                (planet/render-planet planet-renderer
-                                                      :projection projection
-                                                      :origin @position
-                                                      :transform (inverse extrinsics)
-                                                      :light-direction light-dir
-                                                      :opacity-step opacity-step
+                                (planet/render-planet planet-renderer render-vars
                                                       :window-width (aget w 0)
                                                       :window-height (aget h 0)
-                                                      :splits splits
-                                                      :matrix-cascade matrix-cas
                                                       :clouds clouds
-                                                      :shadows shadows
-                                                      :opacities opacities
+                                                      :sfsim25.opacity/opacity-step opacity-step
+                                                      :sfsim25.opacity/splits splits
+                                                      :sfsim25.opacity/matrix-cascade matrix-cas
+                                                      :sfsim25.opacity/shadows shadows
+                                                      :sfsim25.opacity/opacities opacities
                                                       :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
-                                (atmosphere/render-atmosphere atmosphere-renderer
-                                                              :projection projection
-                                                              :extrinsics extrinsics
-                                                              :origin @position
+                                (atmosphere/render-atmosphere atmosphere-renderer render-vars
                                                               :window-width (aget w 0)
                                                               :window-height (aget h 0)
-                                                              :light-direction light-dir
-                                                              :z-far z-far
                                                               :clouds clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-cascade opacities)
