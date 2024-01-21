@@ -207,26 +207,26 @@
 (defn split-linear
   "Perform linear z-split for frustum"
   {:malli/schema [:=> [:cat :double :double N N0] :double]}
-  [near far num-steps step]
-  (+ near (/ (* (- far near) step) num-steps)))
+  [z-near z-far num-steps step]
+  (+ z-near (/ (* (- z-far z-near) step) num-steps)))
 
 (defn split-exponential
   "Perform exponential z-split for frustum"
   {:malli/schema [:=> [:cat :double :double N N0] :double]}
-  [near far num-steps step]
-  (* near (pow (/ far near) (/ step num-steps))))
+  [z-near z-far num-steps step]
+  (* z-near (pow (/ z-far z-near) (/ step num-steps))))
 
 (defn split-mixed
   "Mixed linear and exponential split"
   {:malli/schema [:=> [:cat :double :double :double N N0] :double]}
-  [mix near far num-steps step]
-  (+ (* (- 1 mix) (split-linear near far num-steps step)) (* mix (split-exponential near far num-steps step))))
+  [mix z-near z-far num-steps step]
+  (+ (* (- 1 mix) (split-linear z-near z-far num-steps step)) (* mix (split-exponential z-near z-far num-steps step))))
 
 (defn split-list
   "Get list of splits including z-far"
-  {:malli/schema [:=> [:cat :double :double :double N] [:vector :double]]}
-  [mix near far num-steps]
-  (mapv (fn [step] (split-mixed mix near far num-steps step)) (range (inc num-steps))))
+  {:malli/schema [:=> [:cat :map :map] [:vector :double]]}
+  [{:sfsim25.opacity/keys [mix num-steps]} {:sfsim25.render/keys [z-near z-far]}]
+  (mapv (fn [step] (split-mixed mix z-near z-far num-steps step)) (range (inc num-steps))))
 
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices"

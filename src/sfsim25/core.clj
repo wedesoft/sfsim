@@ -157,10 +157,7 @@
              (let [render-vars  (make-render-vars planet-data cloud-data render-data (aget w 0) (aget h 0) @position @orientation
                                                   (vec3 (cos @light) (sin @light) 0) 1.0)
                    matrix-cas   (shadow-matrix-cascade shadow-data render-vars)
-                   splits       (split-list (:sfsim25.opacity/mix shadow-data)
-                                            (:sfsim25.render/z-near render-vars)
-                                            (:sfsim25.render/z-far render-vars)
-                                            (:sfsim25.opacity/num-steps shadow-data))
+                   splits       (split-list shadow-data render-vars)
                    scatter-amnt (+ (* (:sfsim25.clouds/anisotropic cloud-data)
                                       (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0))
                                    (- 1 (:sfsim25.clouds/anisotropic cloud-data)))

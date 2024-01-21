@@ -172,7 +172,9 @@
 (facts "Mixed linear and exponential split"
        (split-mixed 0.0 10.0 40.0 2 1) => 25.0
        (split-mixed 1.0 10.0 40.0 2 1) => 20.0
-       (split-list 0.0 10.0 40.0 2) => [10.0 25.0 40.0])
+       (split-list {:sfsim25.opacity/mix 0.0 :sfsim25.opacity/num-steps 2}
+                   {:sfsim25.render/z-near 10.0 :sfsim25.render/z-far 40.0})
+       => [10.0 25.0 40.0])
 
 (facts "Cascade of shadow matrices"
        (let [z-near          10.0
