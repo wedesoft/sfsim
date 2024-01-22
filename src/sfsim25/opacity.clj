@@ -1,10 +1,16 @@
 (ns sfsim25.opacity
     "Rendering of deep opacity maps for cloud shadows"
-    (:require [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
+    (:require [clojure.math :refer (sqrt)]
+              [fastmath.vector :refer (mag dot)]
+              [sfsim25.matrix :refer (split-list shadow-matrix-cascade)]
+              [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture render-depth)]
               [sfsim25.worley :refer (worley-size)]
-              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]))
+              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]
+              [sfsim25.planet :refer (render-shadow-cascade destroy-shadow-cascade)]
+              [sfsim25.atmosphere :refer (phase)]
+              [sfsim25.util :refer (sqr)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -73,6 +79,33 @@
   [{:keys [vao program]}]
   (destroy-vertex-array-object vao)
   (destroy-program program))
+
+(defn opacity-and-shadow-cascade
+  "Compute deep opacity map cascade and shadow cascade"
+  [opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars tree threshold opacity-base]
+  (let [splits          (split-list shadow-data render-vars)
+        matrix-cascade  (shadow-matrix-cascade shadow-data render-vars)
+        position        (:sfsim25.render/origin render-vars)
+        cos-light       (/ (dot (:sfsim25.render/light-direction render-vars) position) (mag position))
+        sin-light       (sqrt (- 1 (sqr cos-light)))
+        opacity-step    (* (+ cos-light (* 10 sin-light)) opacity-base)
+        scatter-amount  (+ (* (:sfsim25.clouds/anisotropic cloud-data) (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0))
+                          (- 1 (:sfsim25.clouds/anisotropic cloud-data)))
+        light-direction (:sfsim25.render/light-direction render-vars)
+        opacities       (render-opacity-cascade opacity-renderer matrix-cascade light-direction threshold scatter-amount
+                                                opacity-step)
+        shadows         (render-shadow-cascade planet-shadow-renderer ::matrix-cascade matrix-cascade :tree tree)]
+    {::opacity-step opacity-step
+     ::splits splits
+     ::matrix-cascade matrix-cascade
+     ::shadows shadows
+     ::opacities opacities}))
+
+(defn destroy-opacity-and-shadow
+  "Destroy deep opacity map cascade and shadow cascade"
+  [{::keys [shadows opacities]}]
+  (destroy-opacity-cascade opacities)
+  (destroy-shadow-cascade shadows))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

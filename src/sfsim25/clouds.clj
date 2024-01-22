@@ -375,7 +375,7 @@
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data]} render-vars & {:keys [] :as data}]
+  [{:keys [program atmosphere-luts cloud-data]} render-vars shadow-vars & {:keys [] :as data}]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])
@@ -388,16 +388,17 @@
     (uniform-matrix4 program "extrinsics" (:sfsim25.render/extrinsics render-vars))
     (uniform-matrix4 program "transform" transform)
     (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
-    (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
-    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
+    (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step shadow-vars))
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits shadow-vars))]
            (uniform-float program (str "split" idx) item))
-    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade shadow-vars))]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
     (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts)
                    3 (::worley cloud-data) 4 (::perlin-worley cloud-data) 5 (::bluenoise cloud-data)
                    6 (::cloud-cover cloud-data)})
-    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
+    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim25.opacity/shadows shadow-vars)
+                                                   (:sfsim25.opacity/opacities shadow-vars))))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
