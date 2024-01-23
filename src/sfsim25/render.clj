@@ -838,6 +838,8 @@
      ::height height
      ::z-near z-near
      ::z-far z-far
+     ::window-width window-width
+     ::window-height window-height
      ::light-direction light-direction
      ::extrinsics extrinsics
      ::projection projection}))

@@ -154,10 +154,11 @@
                                                   (vec3 (cos @light) (sin @light) 0) 1.0)
                    shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
                                                                     render-vars (planet/get-current-tree tile-tree) @opacity-base)
-                   lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)
+                   lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2))
+                                           (/ (:sfsim25.render/window-width render-vars) 2)
                                            (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
-                   w2           (quot (aget w 0) 2)
-                   h2           (quot (aget h 0) 2)
+                   w2           (quot (:sfsim25.render/window-width render-vars) 2)
+                   h2           (quot (:sfsim25.render/window-height render-vars) 2)
                    clouds       (texture-render-color-depth
                                   w2 h2 true
                                   (clear (vec3 0 0 0) 0.0)
@@ -172,15 +173,9 @@
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
                                 (planet/render-planet planet-renderer render-vars shadow-vars
-                                                      :window-width (aget w 0)
-                                                      :window-height (aget h 0)
-                                                      :clouds clouds
-                                                      :tree (planet/get-current-tree tile-tree))
+                                                      :clouds clouds :tree (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
-                                (atmosphere/render-atmosphere atmosphere-renderer render-vars
-                                                              :window-width (aget w 0)
-                                                              :window-height (aget h 0)
-                                                              :clouds clouds))
+                                (atmosphere/render-atmosphere atmosphere-renderer render-vars :clouds clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-and-shadow shadow-vars))
              (GLFW/glfwPollEvents)

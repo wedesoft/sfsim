@@ -486,7 +486,7 @@
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]} render-vars & {:keys [window-width window-height clouds]}]
+  [{:keys [program atmosphere-luts]} render-vars & {:keys [clouds]}]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
@@ -495,8 +495,8 @@
     (uniform-matrix4 program "extrinsics" (:sfsim25.render/extrinsics render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
     (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
-    (uniform-int program "window_width" window-width)
-    (uniform-int program "window_height" window-height)
+    (uniform-int program "window_width" (:sfsim25.render/window-width render-vars))
+    (uniform-int program "window_height" (:sfsim25.render/window-height render-vars))
     (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts) 3 clouds})
     (render-quads vao)
     (destroy-vertex-array-object vao)))

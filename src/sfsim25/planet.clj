@@ -281,7 +281,7 @@
 (defn render-planet
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]} render-vars shadow-vars & {:keys [window-width window-height clouds tree]}]
+  [{:keys [program atmosphere-luts]} render-vars shadow-vars & {:keys [clouds tree]}]
   (let [transform (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
@@ -289,8 +289,8 @@
     (uniform-matrix4 program "transform" transform)
     (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step shadow-vars))
-    (uniform-int program "window_width" window-width)
-    (uniform-int program "window_height" window-height)
+    (uniform-int program "window_width" (:sfsim25.render/window-width render-vars))
+    (uniform-int program "window_height" (:sfsim25.render/window-height render-vars))
     (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits shadow-vars))]
            (uniform-float program (str "split" idx) item))
     (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade shadow-vars))]
