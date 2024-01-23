@@ -184,6 +184,7 @@
     (uniform-float program "cloud_multiplier" (:sfsim25.clouds/cloud-multiplier cloud-data))
     (uniform-float program "cover_multiplier" (:sfsim25.clouds/cover-multiplier cloud-data))
     (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
+    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold cloud-data))
     (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-float program "cloud_step" (:sfsim25.clouds/cloud-step cloud-data))
@@ -201,7 +202,6 @@
   [{:keys [program atmosphere-luts cloud-data]} render-vars shadow-vars & {:keys [tree] :as data}]
   (let [transform (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
     (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))

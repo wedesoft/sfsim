@@ -21,7 +21,6 @@
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})
 
-(def threshold (atom 18.2))
 (def cloud-top 5000.0)
 (def opacity-base (atom 250.0))
 (def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
@@ -56,6 +55,7 @@
                                            :cloud-scale 100000.0
                                            :cloud-multiplier 10.0
                                            :cover-multiplier 26.0
+                                           :threshold 18.2
                                            :cap 0.007
                                            :anisotropic 0.25
                                            :cloud-step 400.0
@@ -142,37 +142,32 @@
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
                  v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) 50 (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) -50 0))
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
-                 tr (if (@keystates GLFW/GLFW_KEY_Q) 0.001 (if (@keystates GLFW/GLFW_KEY_A) -0.001 0))
                  to (if (@keystates GLFW/GLFW_KEY_W) 0.05 (if (@keystates GLFW/GLFW_KEY_S) -0.05 0))]
              (swap! orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
              (swap! orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
              (swap! orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
              (swap! position add (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* dt v)))
              (swap! light + (* l 0.1 dt))
-             (swap! threshold + (* dt tr))
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
              (let [render-vars  (make-render-vars planet-data cloud-data render-data (aget w 0) (aget h 0) @position @orientation
                                                   (vec3 (cos @light) (sin @light) 0) 1.0)
                    shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
-                                                                    render-vars (planet/get-current-tree tile-tree) @threshold
-                                                                    @opacity-base)
+                                                                    render-vars (planet/get-current-tree tile-tree) @opacity-base)
                    lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2)) (/ (aget w 0) 2)
                                            (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
-                   w2         (quot (aget w 0) 2)
-                   h2         (quot (aget h 0) 2)
-                   clouds     (texture-render-color-depth
-                                w2 h2 true
-                                (clear (vec3 0 0 0) 0.0)
-                                ; Render clouds in front of planet
-                                (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars
-                                                            :sfsim25.clouds/threshold @threshold
-                                                            :sfsim25.clouds/lod-offset lod-offset
-                                                            :tree (planet/get-current-tree tile-tree))
-                                ; Render clouds above the horizon
-                                (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars
-                                                                :sfsim25.clouds/threshold @threshold
-                                                                :sfsim25.clouds/lod-offset lod-offset))]
+                   w2           (quot (aget w 0) 2)
+                   h2           (quot (aget h 0) 2)
+                   clouds       (texture-render-color-depth
+                                  w2 h2 true
+                                  (clear (vec3 0 0 0) 0.0)
+                                  ; Render clouds in front of planet
+                                  (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars
+                                                              :sfsim25.clouds/lod-offset lod-offset
+                                                              :tree (planet/get-current-tree tile-tree))
+                                  ; Render clouds above the horizon
+                                  (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars
+                                                                  :sfsim25.clouds/lod-offset lod-offset))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
@@ -191,8 +186,7 @@
              (GLFW/glfwPollEvents)
              (swap! n inc)
              (when (zero? (mod @n 10))
-               (print (format "\rthres (q/a) %.1f, o.-step (w/s) %.0f, dt %.3f"
-                              @threshold @opacity-base (* dt 0.001)))
+               (print (format "\ro.-step (w/s) %.0f, dt %.3f" @opacity-base (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)

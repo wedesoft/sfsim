@@ -361,6 +361,7 @@
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
     (uniform-float program "cloud_multiplier" (::cloud-multiplier cloud-data))
     (uniform-float program "cover_multiplier" (::cover-multiplier cloud-data))
+    (uniform-float program "cloud_threshold" (::threshold cloud-data))
     (uniform-float program "cap" (::cap cloud-data))
     (uniform-float program "anisotropic" (::anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
@@ -381,7 +382,6 @@
         vao      (make-vertex-array-object program indices vertices ["point" 3])
         transform (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
     (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))

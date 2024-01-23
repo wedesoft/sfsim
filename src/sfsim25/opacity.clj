@@ -48,6 +48,7 @@
     (uniform-float program "cloud_multiplier" (:sfsim25.clouds/cloud-multiplier cloud-data))
     (uniform-float program "cover_multiplier" (:sfsim25.clouds/cover-multiplier cloud-data))
     (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
+    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold cloud-data))
     {:program program
      :cloud-data cloud-data
      :shadow-data shadow-data
@@ -55,14 +56,12 @@
 
 (defn render-opacity-cascade
   "Render a cascade of opacity maps and return it as a list of 3D textures (untested)"
-  [{:keys [program vao shadow-data cloud-data]}
-   matrix-cas light-direction cloud-threshold scatter-amount opacity-step]
+  [{:keys [program vao shadow-data cloud-data]} matrix-cas light-direction scatter-amount opacity-step]
   (use-textures {0 (:sfsim25.clouds/worley cloud-data) 1 (:sfsim25.clouds/perlin-worley cloud-data)
                  2 (:sfsim25.clouds/cloud-cover cloud-data)})
   (opacity-cascade (::shadow-size shadow-data) (::num-opacity-layers shadow-data) matrix-cas
                    (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size) program
                    (uniform-vector3 program "light_direction" light-direction)
-                   (uniform-float program "cloud_threshold" cloud-threshold)
                    (uniform-float program "scatter_amount" scatter-amount)
                    (uniform-float program "opacity_step" opacity-step)
                    (uniform-float program "cloud_max_step" (* 0.5 opacity-step))
@@ -82,7 +81,7 @@
 
 (defn opacity-and-shadow-cascade
   "Compute deep opacity map cascade and shadow cascade"
-  [opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars tree threshold opacity-base]
+  [opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars tree opacity-base]
   (let [splits          (split-list shadow-data render-vars)
         matrix-cascade  (shadow-matrix-cascade shadow-data render-vars)
         position        (:sfsim25.render/origin render-vars)
@@ -92,8 +91,7 @@
         scatter-amount  (+ (* (:sfsim25.clouds/anisotropic cloud-data) (phase {:sfsim25.atmosphere/scatter-g 0.76} -1.0))
                           (- 1 (:sfsim25.clouds/anisotropic cloud-data)))
         light-direction (:sfsim25.render/light-direction render-vars)
-        opacities       (render-opacity-cascade opacity-renderer matrix-cascade light-direction threshold scatter-amount
-                                                opacity-step)
+        opacities       (render-opacity-cascade opacity-renderer matrix-cascade light-direction scatter-amount opacity-step)
         shadows         (render-shadow-cascade planet-shadow-renderer ::matrix-cascade matrix-cascade :tree tree)]
     {::opacity-step opacity-step
      ::splits splits
