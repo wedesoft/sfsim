@@ -1259,7 +1259,10 @@ void main()
               projection   (projection-matrix 320 240 z-near z-far (to-radians 45))
               extrinsics   (transformation-matrix (eye 3) (vec3 0 0 4))
               light        (vec3 0 0 1)
-              shadow-mats  (shadow-matrix-cascade projection extrinsics light 5 0.5 z-near z-far num-steps)
+              shadow-data  #:sfsim25.opacity{:num-steps num-steps :mix 0.5 :depth 5.0}
+              render-vars  #:sfsim25.render{:projection projection :extrinsics extrinsics :light-direction light
+                                            :z-near z-near :z-far z-far}
+              shadow-mats  (shadow-matrix-cascade shadow-data render-vars)
               program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
                                          :fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
                                                     shaders/ray-sphere linear-sampling opacity-cascade-mocks])
