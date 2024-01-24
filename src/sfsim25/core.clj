@@ -154,9 +154,6 @@
                                                   (vec3 (cos @light) (sin @light) 0) 1.0)
                    shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
                                                                     render-vars (planet/get-current-tree tile-tree) @opacity-base)
-                   lod-offset   (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2))
-                                           (/ (:sfsim25.render/window-width render-vars) 2)
-                                           (/ (:sfsim25.clouds/detail-scale cloud-data) worley-size))) (log 2))
                    w2           (quot (:sfsim25.render/window-width render-vars) 2)
                    h2           (quot (:sfsim25.render/window-height render-vars) 2)
                    clouds       (texture-render-color-depth
@@ -164,11 +161,9 @@
                                   (clear (vec3 0 0 0) 0.0)
                                   ; Render clouds in front of planet
                                   (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars
-                                                              :sfsim25.clouds/lod-offset lod-offset
                                                               :tree (planet/get-current-tree tile-tree))
                                   ; Render clouds above the horizon
-                                  (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars
-                                                                  :sfsim25.clouds/lod-offset lod-offset))]
+                                  (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay

@@ -11,7 +11,7 @@
                                       destroy-vertex-array-object vertex-array-object texture-2d) :as render]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.util :refer (N N0)]
-              [sfsim25.clouds :refer (overall-shadow cloud-planet)]
+              [sfsim25.clouds :refer (overall-shadow cloud-planet lod-offset)]
               [sfsim25.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -194,15 +194,16 @@
     (uniform-float program "depth" (:sfsim25.opacity/depth shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
-     :cloud-data cloud-data}))
+     :cloud-data cloud-data
+     :render-data render-data}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data]} render-vars shadow-vars & {:keys [tree] :as data}]
-  (let [transform (inverse (:sfsim25.render/extrinsics render-vars))]
+  [{:keys [program atmosphere-luts cloud-data render-data]} render-vars shadow-vars & {:keys [tree] :as data}]
+  (let [transform    (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
+    (uniform-float program "lod_offset" (lod-offset render-data cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
     (uniform-matrix4 program "transform" transform)

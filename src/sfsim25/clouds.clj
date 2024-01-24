@@ -1,7 +1,7 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
     (:require [comb.template :as template]
-              [clojure.math :refer (pow log)]
+              [clojure.math :refer (tan pow log)]
               [fastmath.matrix :refer (inverse)]
               [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
                                       make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d generate-mipmap
@@ -289,6 +289,14 @@
   [num-steps perlin-octaves cloud-octaves]
   [(cloud-atmosphere num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
 
+(defn lod-offset
+  "Compute level of detail offset for sampling cloud textures"
+  {:malli/schema [:=> [:cat :map :map :map] :double]}
+  [render-data cloud-data render-vars]
+  (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2))
+             (/ (:sfsim25.render/window-width render-vars) 2)
+             (/ (::detail-scale cloud-data) worley-size))) (log 2)))
+
 (defn make-cloud-data
   "Method to load cloud textures and collect cloud data (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
@@ -371,18 +379,19 @@
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
+     :render-data render-data
      :cloud-data cloud-data}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data]} render-vars shadow-vars & {:keys [] :as data}]
+  [{:keys [program atmosphere-luts render-data cloud-data]} render-vars shadow-vars & {:keys [] :as data}]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])
         transform (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
+    (uniform-float program "lod_offset" (lod-offset render-data cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
     (uniform-matrix4 program "extrinsics" (:sfsim25.render/extrinsics render-vars))
