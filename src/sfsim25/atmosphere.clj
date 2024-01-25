@@ -459,6 +459,20 @@
   (destroy-texture mie)
   (destroy-texture surface-radiance))
 
+(defn setup-atmosphere-uniforms
+  "Set up uniforms for atmospheric lookup tables"
+  {:malli/schema [:=> [:cat :int :map] :nil]}
+  [program atmosphere-luts]
+  (uniform-int program "height_size" (:hyperdepth (::scatter atmosphere-luts)))
+  (uniform-int program "elevation_size" (:depth (::scatter atmosphere-luts)))
+  (uniform-int program "light_elevation_size" (:height (::scatter atmosphere-luts)))
+  (uniform-int program "heading_size" (:width (::scatter atmosphere-luts)))
+  (uniform-int program "transmittance_elevation_size" (:width (::transmittance atmosphere-luts)))
+  (uniform-int program "transmittance_height_size" (:height (::transmittance atmosphere-luts)))
+  (uniform-int program "surface_height_size" (:height (:sfsim25.atmosphere/surface-radiance atmosphere-luts)))
+  (uniform-int program "surface_sun_elevation_size" (:width (:sfsim25.atmosphere/surface-radiance atmosphere-luts)))
+  (uniform-float program "max_height" (::max-height atmosphere-luts)))
+
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
@@ -470,14 +484,8 @@
     (uniform-sampler program "ray_scatter" 1)
     (uniform-sampler program "mie_strength" 2)
     (uniform-sampler program "clouds" 3)
-    (uniform-int program "height_size" (:hyperdepth (::scatter atmosphere-luts)))
-    (uniform-int program "elevation_size" (:depth (::scatter atmosphere-luts)))
-    (uniform-int program "light_elevation_size" (:height (::scatter atmosphere-luts)))
-    (uniform-int program "heading_size" (:width (::scatter atmosphere-luts)))
-    (uniform-int program "transmittance_elevation_size" (:width (::transmittance atmosphere-luts)))
-    (uniform-int program "transmittance_height_size" (:height (::transmittance atmosphere-luts)))
+    (setup-atmosphere-uniforms program atmosphere-luts)
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
-    (uniform-float program "max_height" (::max-height atmosphere-luts))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     {:program program

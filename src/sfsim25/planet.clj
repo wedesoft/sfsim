@@ -9,7 +9,7 @@
                                       use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float
                                       make-vertex-array-object make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d
                                       destroy-vertex-array-object vertex-array-object texture-2d) :as render]
-              [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
+              [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms)]
               [sfsim25.util :refer (N N0)]
               [sfsim25.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-render-uniforms
                                       setup-cloud-sampling-uniforms)]
@@ -167,17 +167,11 @@
     (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 8 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (::radius planet-data))
-    (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
     (setup-cloud-render-uniforms program cloud-data)
     (setup-cloud-sampling-uniforms program cloud-data)
+    (setup-atmosphere-uniforms program atmosphere-luts)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "elevation_size" (:depth (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "light_elevation_size" (:height (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "heading_size" (:width (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "transmittance_height_size" (:height (:sfsim25.atmosphere/transmittance atmosphere-luts)))
-    (uniform-int program "transmittance_elevation_size" (:width (:sfsim25.atmosphere/transmittance atmosphere-luts)))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
@@ -245,19 +239,11 @@
            (uniform-sampler program (str "opacity" i) (+ i 10 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "elevation_size" (:depth (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "light_elevation_size" (:height (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "heading_size" (:width (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "transmittance_height_size" (:height (:sfsim25.atmosphere/transmittance atmosphere-luts)))
-    (uniform-int program "transmittance_elevation_size" (:width (:sfsim25.atmosphere/transmittance atmosphere-luts)))
-    (uniform-int program "surface_height_size" (:height (:sfsim25.atmosphere/surface-radiance atmosphere-luts)))
-    (uniform-int program "surface_sun_elevation_size" (:width (:sfsim25.atmosphere/surface-radiance atmosphere-luts)))
+    (setup-atmosphere-uniforms program atmosphere-luts)
     (uniform-float program "dawn_start" (:sfsim25.planet/dawn-start planet-data))
     (uniform-float program "dawn_end" (:sfsim25.planet/dawn-end planet-data))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
     (uniform-float program "radius" (::radius planet-data))
-    (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
     (uniform-float program "albedo" (::albedo planet-data))
     (uniform-float program "reflectivity" (::reflectivity planet-data))
     (uniform-vector3 program "water_color" (::water-color planet-data))

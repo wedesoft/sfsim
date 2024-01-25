@@ -11,7 +11,7 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.bluenoise :refer (noise-size) :as bluenoise]
-              [sfsim25.atmosphere :refer (vertex-atmosphere) :as atmosphere]
+              [sfsim25.atmosphere :refer (vertex-atmosphere setup-atmosphere-uniforms) :as atmosphere]
               [sfsim25.util :refer (slurp-floats N)]))
 
 (def cover-size 512)
@@ -332,7 +332,7 @@
 
 (defn setup-cloud-render-uniforms
   "Method to set up uniform variables for cloud rendering"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat :int :map] :nil]}
   [program cloud-data]
   (uniform-int program "cover_size" (:width (:sfsim25.clouds/cloud-cover cloud-data)))
   (uniform-float program "cloud_bottom" (:sfsim25.clouds/cloud-bottom cloud-data))
@@ -346,7 +346,7 @@
 
 (defn setup-cloud-sampling-uniforms
  "Method to set up uniform variables for sampling clouds"
- {:malli/schema [:=> [:cat :map] :nil]}
+ {:malli/schema [:=> [:cat :int :map] :nil]}
  [program cloud-data]
  (uniform-int program "noise_size" (:width (:sfsim25.clouds/bluenoise cloud-data)))
  (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
@@ -380,12 +380,7 @@
     (setup-cloud-sampling-uniforms program cloud-data)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "elevation_size" (:depth (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "light_elevation_size" (:height (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "heading_size" (:width (:sfsim25.atmosphere/scatter atmosphere-luts)))
-    (uniform-int program "transmittance_height_size" (:height (:sfsim25.atmosphere/transmittance atmosphere-luts)))
-    (uniform-int program "transmittance_elevation_size" (:width (:sfsim25.atmosphere/transmittance atmosphere-luts)))
+    (setup-atmosphere-uniforms program atmosphere-luts)
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
