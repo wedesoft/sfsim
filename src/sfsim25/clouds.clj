@@ -330,8 +330,8 @@
   (destroy-texture cloud-cover)
   (destroy-texture bluenoise))
 
-(defn setup-cloud-uniforms
-  "Method to set up uniform variables for clouds"
+(defn setup-cloud-render-uniforms
+  "Method to set up uniform variables for cloud rendering"
   {:malli/schema [:=> [:cat :map] :nil]}
   [program cloud-data]
   (uniform-int program "cover_size" (:width (:sfsim25.clouds/cloud-cover cloud-data)))
@@ -343,6 +343,15 @@
   (uniform-float program "cover_multiplier" (:sfsim25.clouds/cover-multiplier cloud-data))
   (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
   (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold cloud-data)))
+
+(defn setup-cloud-sampling-uniforms
+ "Method to set up uniform variables for sampling clouds"
+ {:malli/schema [:=> [:cat :map] :nil]}
+ [program cloud-data]
+ (uniform-int program "noise_size" (:width (:sfsim25.clouds/bluenoise cloud-data)))
+ (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
+ (uniform-float program "cloud_step" (:sfsim25.clouds/cloud-step cloud-data))
+ (uniform-float program "opacity_cutoff" (:sfsim25.clouds/opacity-cutoff cloud-data)))
 
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
@@ -367,8 +376,8 @@
            (uniform-sampler program (str "opacity" i) (+ i 7 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
-    (setup-cloud-uniforms program cloud-data)
-    (uniform-int program "noise_size" (:width (::bluenoise cloud-data)))
+    (setup-cloud-render-uniforms program cloud-data)
+    (setup-cloud-sampling-uniforms program cloud-data)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
@@ -377,10 +386,7 @@
     (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
     (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
-    (uniform-float program "anisotropic" (::anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
-    (uniform-float program "cloud_step" (::cloud-step cloud-data))
-    (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     {:program program

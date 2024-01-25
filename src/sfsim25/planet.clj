@@ -11,7 +11,8 @@
                                       destroy-vertex-array-object vertex-array-object texture-2d) :as render]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.util :refer (N N0)]
-              [sfsim25.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-uniforms)]
+              [sfsim25.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-render-uniforms
+                                      setup-cloud-sampling-uniforms)]
               [sfsim25.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -167,8 +168,8 @@
            (uniform-sampler program (str "opacity" i) (+ i 8 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (::radius planet-data))
     (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
-    (setup-cloud-uniforms program cloud-data)
-    (uniform-int program "noise_size" (:width (:sfsim25.clouds/bluenoise cloud-data)))
+    (setup-cloud-render-uniforms program cloud-data)
+    (setup-cloud-sampling-uniforms program cloud-data)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
@@ -177,10 +178,7 @@
     (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
     (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
-    (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
-    (uniform-float program "cloud_step" (:sfsim25.clouds/cloud-step cloud-data))
-    (uniform-float program "opacity_cutoff" (:sfsim25.clouds/opacity-cutoff cloud-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     (uniform-float program "depth" (:sfsim25.opacity/depth shadow-data))

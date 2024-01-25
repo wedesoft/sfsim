@@ -7,7 +7,7 @@
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture render-depth)]
               [sfsim25.worley :refer (worley-size)]
-              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-uniforms)]
+              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms)]
               [sfsim25.planet :refer (render-shadow-cascade destroy-shadow-cascade)]
               [sfsim25.atmosphere :refer (phase)]
               [sfsim25.util :refer (sqr)]))
@@ -38,7 +38,7 @@
     (uniform-sampler program "worley" 0)
     (uniform-sampler program "perlin" 1)
     (uniform-sampler program "cover" 2)
-    (setup-cloud-uniforms program cloud-data)
+    (setup-cloud-render-uniforms program cloud-data)
     (uniform-int program "shadow_size" (::shadow-size shadow-data))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     {:program program
