@@ -4,8 +4,8 @@
               [fastmath.vector :refer (mag dot)]
               [sfsim25.matrix :refer (split-list shadow-matrix-cascade)]
               [sfsim25.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
-                                      use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
-                                      render-quads destroy-texture render-depth)]
+                                      use-program uniform-int uniform-float use-textures uniform-vector3 render-quads
+                                      destroy-texture render-depth)]
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms)]
               [sfsim25.planet :refer (render-shadow-cascade destroy-shadow-cascade)]
