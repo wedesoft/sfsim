@@ -885,7 +885,10 @@ void main(void)
               transform      (eye 4)
               num-steps      1
               light-vector   (normalize (vec3 1 1 2))
-              shadow-mats    (shadow-matrix-cascade projection transform light-vector 1.0 0.5 2.0 5.0 num-steps)
+              shadow-data    #:sfsim25.opacity{:num-steps num-steps :mix 0.5 :depth 1.0}
+              render-vars    #:sfsim25.render{:projection projection :extrinsics transform :light-direction light-vector
+                                              :z-near 2.0 :z-far 5.0}
+              shadow-mats    (shadow-matrix-cascade shadow-data render-vars)
               indices        [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices       [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
                               -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0

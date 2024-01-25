@@ -40,6 +40,11 @@ Requires OpenGL 4.5.
 * Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json` (delete out-windows folder first)
 * Create Windows installer: `makensis nsis-config.nsi`
 
+# Lint
+
+* [Install clj-kondo](https://github.com/clj-kondo/clj-kondo/blob/master/doc/install.md)
+* Run `clj-kondo --lint src/sfsim25`
+
 # Run
 
 * Run tests: `clj -M:test`

@@ -1,17 +1,18 @@
 (ns sfsim25.clouds
     "Rendering of clouds"
     (:require [comb.template :as template]
-              [clojure.math :refer (pow log)]
+              [clojure.math :refer (tan pow log)]
               [fastmath.matrix :refer (inverse)]
               [sfsim25.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
                                       make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d generate-mipmap
                                       make-float-texture-3d make-program make-vertex-array-object render-quads uniform-float
                                       uniform-int uniform-sampler uniform-matrix4 use-program use-textures
-                                      make-empty-float-texture-3d uniform-vector3 make-float-cubemap texture-3d) :as render]
+                                      make-empty-float-texture-3d uniform-vector3 make-float-cubemap texture-3d
+                                      setup-shadow-and-opacity-maps) :as render]
               [sfsim25.shaders :as shaders]
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.bluenoise :refer (noise-size) :as bluenoise]
-              [sfsim25.atmosphere :refer (vertex-atmosphere) :as atmosphere]
+              [sfsim25.atmosphere :refer (vertex-atmosphere setup-atmosphere-uniforms) :as atmosphere]
               [sfsim25.util :refer (slurp-floats N)]))
 
 (def cover-size 512)
@@ -289,6 +290,14 @@
   [num-steps perlin-octaves cloud-octaves]
   [(cloud-atmosphere num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
 
+(defn lod-offset
+  "Compute level of detail offset for sampling cloud textures"
+  {:malli/schema [:=> [:cat :map :map :map] :double]}
+  [render-data cloud-data render-vars]
+  (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2))
+             (/ (:sfsim25.render/window-width render-vars) 2)
+             (/ (::detail-scale cloud-data) worley-size))) (log 2)))
+
 (defn make-cloud-data
   "Method to load cloud textures and collect cloud data (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
@@ -322,6 +331,33 @@
   (destroy-texture cloud-cover)
   (destroy-texture bluenoise))
 
+(defn setup-cloud-render-uniforms
+  "Method to set up uniform variables for cloud rendering"
+  {:malli/schema [:=> [:cat :int :map :int] :nil]}
+  [program cloud-data sampler-offset]
+  (uniform-sampler program "worley" sampler-offset)
+  (uniform-sampler program "perlin" (+ sampler-offset 1))
+  (uniform-sampler program "cover" (+ sampler-offset 2))
+  (uniform-int program "cover_size" (:width (::cloud-cover cloud-data)))
+  (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
+  (uniform-float program "cloud_top" (::cloud-top cloud-data))
+  (uniform-float program "detail_scale" (::detail-scale cloud-data))
+  (uniform-float program "cloud_scale" (::cloud-scale cloud-data))
+  (uniform-float program "cloud_multiplier" (::cloud-multiplier cloud-data))
+  (uniform-float program "cover_multiplier" (::cover-multiplier cloud-data))
+  (uniform-float program "cap" (::cap cloud-data))
+  (uniform-float program "cloud_threshold" (::threshold cloud-data)))
+
+(defn setup-cloud-sampling-uniforms
+ "Method to set up uniform variables for sampling clouds"
+ {:malli/schema [:=> [:cat :int :map :int] :nil]}
+ [program cloud-data sampler-offset]
+ (uniform-sampler program "bluenoise" sampler-offset)
+ (uniform-int program "noise_size" (:width (::bluenoise cloud-data)))
+ (uniform-float program "anisotropic" (::anisotropic cloud-data))
+ (uniform-float program "cloud_step" (::cloud-step cloud-data))
+ (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
+
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
@@ -332,72 +368,45 @@
                                                                       (::perlin-octaves cloud-data)
                                                                       (::cloud-octaves cloud-data))])]
     (use-program program)
-    (uniform-sampler program "transmittance"    0)
-    (uniform-sampler program "ray_scatter"      1)
-    (uniform-sampler program "mie_strength"     2)
-    (uniform-sampler program "worley"           3)
-    (uniform-sampler program "perlin"           4)
-    (uniform-sampler program "bluenoise"        5)
-    (uniform-sampler program "cover"            6)
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "shadow_map" i) (+ i 7)))
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "opacity" i) (+ i 7 (:sfsim25.opacity/num-steps shadow-data))))
+    (setup-shadow-and-opacity-maps program shadow-data 7)
+    (setup-cloud-render-uniforms program cloud-data 3)
+    (setup-cloud-sampling-uniforms program cloud-data 6)
+    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
-    (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
-    (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
-    (uniform-float program "cloud_top" (::cloud-top cloud-data))
-    (uniform-float program "cloud_scale" (::cloud-scale cloud-data))
-    (uniform-float program "detail_scale" (::detail-scale cloud-data))
-    (uniform-int program "cover_size" (:width (::cloud-cover cloud-data)))
-    (uniform-int program "noise_size" (:width (::bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
-    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
-    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
-    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
-    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
-    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
-    (uniform-float program "cloud_multiplier" (::cloud-multiplier cloud-data))
-    (uniform-float program "cover_multiplier" (::cover-multiplier cloud-data))
-    (uniform-float program "cap" (::cap cloud-data))
-    (uniform-float program "anisotropic" (::anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
-    (uniform-float program "cloud_step" (::cloud-step cloud-data))
-    (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data))
-    (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
-    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
+     :render-data render-data
      :cloud-data cloud-data}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data]} render-vars & {:keys [] :as data}]
+  [{:keys [program atmosphere-luts render-data cloud-data]} render-vars shadow-vars]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])
         transform (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold data))
-    (uniform-float program "lod_offset" (:sfsim25.clouds/lod-offset data))
+    (uniform-float program "lod_offset" (lod-offset render-data cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
     (uniform-matrix4 program "extrinsics" (:sfsim25.render/extrinsics render-vars))
     (uniform-matrix4 program "transform" transform)
     (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
-    (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step data))
-    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits data))]
+    (uniform-float program "opacity_step" (:sfsim25.opacity/opacity-step shadow-vars))
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/splits shadow-vars))]
            (uniform-float program (str "split" idx) item))
-    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade data))]
+    (doseq [[idx item] (map-indexed vector (:sfsim25.opacity/matrix-cascade shadow-vars))]
            (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
            (uniform-float program (str "depth" idx) (:depth item)))
-    (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts)
-                   3 (::worley cloud-data) 4 (::perlin-worley cloud-data) 5 (::bluenoise cloud-data)
-                   6 (::cloud-cover cloud-data)})
-    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim25.opacity/shadows data) (:sfsim25.opacity/opacities data))))
+    (use-textures {0 (:sfsim25.atmosphere/transmittance atmosphere-luts) 1 (:sfsim25.atmosphere/scatter atmosphere-luts)
+                   2 (:sfsim25.atmosphere/mie atmosphere-luts) 3 (::worley cloud-data) 4 (::perlin-worley cloud-data)
+                   5 (::cloud-cover cloud-data) 6 (::bluenoise cloud-data)})
+    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim25.opacity/shadows shadow-vars)
+                                                   (:sfsim25.opacity/opacities shadow-vars))))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 

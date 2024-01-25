@@ -17,16 +17,16 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def scatter (m/schema [:map [:sfsim25.atmosphere/scatter-base fvec3]
-                             [:sfsim25.atmosphere/scatter-scale :double]
-                             [:sfsim25.atmosphere/scatter-quotient {:optional true} :double]
-                             [:sfsim25.atmosphere/scatter-g {:optional true} :double]]))
+(def scatter (m/schema [:map [::scatter-base fvec3]
+                             [::scatter-scale :double]
+                             [::scatter-quotient {:optional true} :double]
+                             [::scatter-g {:optional true} :double]]))
 
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
   {:malli/schema [:function [:=> [:cat scatter :double] fvec3]
                             [:=> [:cat sphere scatter fvec3] fvec3]]}
-  ([{:sfsim25.atmosphere/keys [scatter-base scatter-scale]} height]
+  ([{::keys [scatter-base scatter-scale]} height]
    (mult scatter-base (-> height (/ scatter-scale) - exp)))
   ([planet component x]
    (scattering component (height planet x))))
@@ -39,21 +39,21 @@
 
 (defn phase
   "Mie scattering phase function by Henyey-Greenstein depending on assymetry g and mu = cos(theta)"
-  {:malli/schema [:=> [:cat [:map [:sfsim25.atmosphere/scatter-g {:optional true} :double]] :double] :double]}
-  [{:sfsim25.atmosphere/keys [scatter-g] :or {scatter-g 0}} mu]
+  {:malli/schema [:=> [:cat [:map [::scatter-g {:optional true} :double]] :double] :double]}
+  [{::keys [scatter-g] :or {scatter-g 0}} mu]
   (let [scatter-g-sqr (sqr scatter-g)]
     (/ (* 3 (- 1 scatter-g-sqr) (+ 1 (sqr mu)))
        (* 8 PI (+ 2 scatter-g-sqr) (pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
 
 (def atmosphere (m/schema [:map [:sfsim25.sphere/centre fvec3]
                                 [:sfsim25.sphere/radius :double]
-                                [:sfsim25.atmosphere/height :double]]))
+                                [::height :double]]))
 
 (defn atmosphere-intersection
   "Get intersection of ray with artificial limit of atmosphere"
   {:malli/schema [:=> [:cat atmosphere ray] fvec3]}
   [{:sfsim25.sphere/keys [centre radius] :as planet} ray]
-  (let [height                    (:sfsim25.atmosphere/height planet)
+  (let [height                    (::height planet)
         atmosphere                #:sfsim25.sphere{:centre centre :radius (+ radius height)}
         {:sfsim25.intersection/keys [distance length]} (ray-sphere-intersection atmosphere ray)]
     (add (:sfsim25.ray/origin ray) (mult (:sfsim25.ray/direction ray) (+ distance length)))))
@@ -69,7 +69,7 @@
   "Check whether a point is near the surface or near the edge of the atmosphere"
   {:malli/schema [:=> [:cat atmosphere fvec3] :boolean]}
   [planet point]
-  (< (* 2 (height planet point)) (:sfsim25.atmosphere/height planet)))
+  (< (* 2 (height planet point)) (::height planet)))
 
 (defn is-above-horizon?
   "Check whether there is sky or ground in a certain direction"
@@ -202,7 +202,7 @@
   [planet size point direction above-horizon]
   (let [radius        (mag point)
         ground-radius (:sfsim25.sphere/radius planet)
-        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        top-radius    (+ ground-radius (::height planet))
         sin-elevation (/ (dot point direction) radius)
         rho           (horizon-distance planet radius)
         Delta         (- (sqr (* radius sin-elevation)) (sqr rho))
@@ -217,7 +217,7 @@
   {:malli/schema [:=> [:cat atmosphere N :double :double] [:tuple fvec3 :boolean]]}
   [planet size radius index]
   (let [ground-radius (:sfsim25.sphere/radius planet)
-        top-radius    (+ ground-radius (:sfsim25.atmosphere/height planet))
+        top-radius    (+ ground-radius (::height planet))
         horizon-dist  (horizon-distance planet radius)
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
         scaled-index  (/ index (dec size))]
@@ -234,7 +234,7 @@
   {:malli/schema [:=> [:cat atmosphere N fvec3] :double]}
   [planet size point]
   (let [radius     (:sfsim25.sphere/radius planet)
-        max-height (:sfsim25.atmosphere/height planet)]
+        max-height (::height planet)]
     (* (dec size) (/ (horizon-distance planet (mag point)) (horizon-distance planet (+ radius max-height))))))
 
 (defn index-to-height
@@ -242,7 +242,7 @@
   {:malli/schema [:=> [:cat atmosphere N :double] fvec3]}
   [planet size index]
   (let [radius       (:sfsim25.sphere/radius planet)
-        max-height   (:sfsim25.atmosphere/height planet)
+        max-height   (::height planet)
         max-horizon  (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
         horizon-dist (* (/ index (dec size)) max-horizon)]
     (vec3 (sqrt (+ (sqr radius) (sqr horizon-dist))) 0 0)))
@@ -416,10 +416,10 @@
 
 (defn make-atmosphere-luts
   "Load atmosphere lookup tables"
-  {:malli/schema [:=> [:cat [:* :any]] [:map [:transmittance texture-2d]
-                                             [:scatter texture-4d]
-                                             [:mie texture-2d]
-                                             [:surface-radiance texture-2d]]]}
+  {:malli/schema [:=> [:cat [:* :any]] [:map [::transmittance texture-2d]
+                                             [::scatter texture-4d]
+                                             [::mie texture-2d]
+                                             [::surface-radiance texture-2d]]]}
   [max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :linear :clamp
@@ -445,19 +445,39 @@
                                                       {:width surface-sun-elevation-size
                                                        :height surface-height-size
                                                        :data surface-radiance-data})]
-    {:transmittance transmittance
-     :scatter scatter
-     :mie mie
-     :surface-radiance surface-radiance
+    {::transmittance transmittance
+     ::scatter scatter
+     ::mie mie
+     ::surface-radiance surface-radiance
      ::max-height max-height}))
 
 (defn destroy-atmosphere-luts
   "Destroy atmosphere lookup tables"
-  [{:keys [transmittance scatter mie surface-radiance]}]
+  [{::keys [transmittance scatter mie surface-radiance]}]
   (destroy-texture transmittance)
   (destroy-texture scatter)
   (destroy-texture mie)
   (destroy-texture surface-radiance))
+
+(defn setup-atmosphere-uniforms
+  "Set up uniforms for atmospheric lookup tables"
+  {:malli/schema [:=> [:cat :int :map :int :boolean] :nil]}
+  [program atmosphere-luts sampler-offset surface-radiance]
+  (uniform-sampler program "transmittance" sampler-offset)
+  (uniform-sampler program "ray_scatter" (+ sampler-offset 1))
+  (uniform-sampler program "mie_strength" (+ sampler-offset 2))
+  (when surface-radiance
+    (uniform-sampler program "surface_radiance" (+ sampler-offset 3)))
+  (uniform-int program "height_size" (:hyperdepth (::scatter atmosphere-luts)))
+  (uniform-int program "elevation_size" (:depth (::scatter atmosphere-luts)))
+  (uniform-int program "light_elevation_size" (:height (::scatter atmosphere-luts)))
+  (uniform-int program "heading_size" (:width (::scatter atmosphere-luts)))
+  (uniform-int program "transmittance_elevation_size" (:width (::transmittance atmosphere-luts)))
+  (uniform-int program "transmittance_height_size" (:height (::transmittance atmosphere-luts)))
+  (when surface-radiance
+    (uniform-int program "surface_height_size" (:height (::surface-radiance atmosphere-luts)))
+    (uniform-int program "surface_sun_elevation_size" (:width (::surface-radiance atmosphere-luts))))
+  (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
@@ -466,18 +486,9 @@
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
-    (uniform-sampler program "transmittance" 0)
-    (uniform-sampler program "ray_scatter" 1)
-    (uniform-sampler program "mie_strength" 2)
+    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-sampler program "clouds" 3)
-    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
-    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
-    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
-    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
-    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
-    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
-    (uniform-float program "max_height" (::max-height atmosphere-luts))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     {:program program
@@ -486,7 +497,7 @@
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]} render-vars & {:keys [window-width window-height clouds]}]
+  [{:keys [program atmosphere-luts]} render-vars & {:keys [clouds]}]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
@@ -495,9 +506,9 @@
     (uniform-matrix4 program "extrinsics" (:sfsim25.render/extrinsics render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
     (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
-    (uniform-int program "window_width" window-width)
-    (uniform-int program "window_height" window-height)
-    (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts) 3 clouds})
+    (uniform-int program "window_width" (:sfsim25.render/window-width render-vars))
+    (uniform-int program "window_height" (:sfsim25.render/window-height render-vars))
+    (use-textures {0 (::transmittance atmosphere-luts) 1 (::scatter atmosphere-luts) 2 (::mie atmosphere-luts) 3 clouds})
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
