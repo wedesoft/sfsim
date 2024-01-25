@@ -4,7 +4,7 @@
               [malli.dev.pretty :as pretty]
               [sfsim25.conftest :refer (roughly-vector shader-test is-image record-image)]
               [comb.template :as template]
-              [clojure.math :refer (exp log sin cos asin to-radians)]
+              [clojure.math :refer (exp log sin cos asin atan to-radians PI)]
               [fastmath.vector :refer (vec3)]
               [fastmath.matrix :refer (mat3x3 eye inverse)]
               [sfsim25.render :refer :all]
@@ -13,6 +13,7 @@
               [sfsim25.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
               [sfsim25.atmosphere :refer (vertex-atmosphere)]
               [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
+              [sfsim25.worley :refer (worley-size)]
               [sfsim25.clouds :refer :all])
     (:import [org.lwjgl.glfw GLFW]))
 
@@ -1338,5 +1339,17 @@ void main()
 
 (fact "Multiply shadows to get overall shadow"
       ((overall-shadow-test [2.0 3.0] []) 0) => 6.0)
+
+(facts "Test level-of-detail offset computation"
+       (lod-offset {:sfsim25.render/fov (/ PI 2)} {:sfsim25.clouds/detail-scale worley-size} {:sfsim25.render/window-width 1})
+       => (roughly 1.0 1e-5)
+       (lod-offset {:sfsim25.render/fov (/ PI 2)} {:sfsim25.clouds/detail-scale worley-size} {:sfsim25.render/window-width 1024})
+       => (roughly -9.0 1e-5)
+       (lod-offset {:sfsim25.render/fov (/ PI 2)} {:sfsim25.clouds/detail-scale (/ worley-size 2)}
+                   {:sfsim25.render/window-width 1})
+       => (roughly 2.0 1e-5)
+       (lod-offset {:sfsim25.render/fov (* 2 (atan 2))} {:sfsim25.clouds/detail-scale worley-size}
+                   {:sfsim25.render/window-width 1})
+       => (roughly 2.0 1e-5))
 
 (GLFW/glfwTerminate)

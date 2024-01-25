@@ -200,7 +200,7 @@
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data render-data]} render-vars shadow-vars & {:keys [tree] :as data}]
+  [{:keys [program atmosphere-luts cloud-data render-data]} render-vars shadow-vars & {:keys [tree]}]
   (let [transform    (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
     (uniform-float program "lod_offset" (lod-offset render-data cloud-data render-vars))

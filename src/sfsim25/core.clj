@@ -1,13 +1,12 @@
 (ns sfsim25.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (to-radians cos sin tan log exp)]
+  (:require [clojure.math :refer (to-radians cos sin exp)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim25.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth
                                     make-render-vars)]
             [sfsim25.atmosphere :as atmosphere]
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
-            [sfsim25.worley :refer (worley-size)]
             [sfsim25.quaternion :as q]
             [sfsim25.opacity :as opacity])
   (:import [org.lwjgl.opengl GL11]
