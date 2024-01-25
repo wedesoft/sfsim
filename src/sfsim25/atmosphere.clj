@@ -416,10 +416,10 @@
 
 (defn make-atmosphere-luts
   "Load atmosphere lookup tables"
-  {:malli/schema [:=> [:cat [:* :any]] [:map [:transmittance texture-2d]
-                                             [:scatter texture-4d]
-                                             [:mie texture-2d]
-                                             [:surface-radiance texture-2d]]]}
+  {:malli/schema [:=> [:cat [:* :any]] [:map [::transmittance texture-2d]
+                                             [::scatter texture-4d]
+                                             [::mie texture-2d]
+                                             [::surface-radiance texture-2d]]]}
   [max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :linear :clamp
@@ -445,15 +445,15 @@
                                                       {:width surface-sun-elevation-size
                                                        :height surface-height-size
                                                        :data surface-radiance-data})]
-    {:transmittance transmittance
-     :scatter scatter
-     :mie mie
-     :surface-radiance surface-radiance
+    {::transmittance transmittance
+     ::scatter scatter
+     ::mie mie
+     ::surface-radiance surface-radiance
      ::max-height max-height}))
 
 (defn destroy-atmosphere-luts
   "Destroy atmosphere lookup tables"
-  [{:keys [transmittance scatter mie surface-radiance]}]
+  [{::keys [transmittance scatter mie surface-radiance]}]
   (destroy-texture transmittance)
   (destroy-texture scatter)
   (destroy-texture mie)
@@ -470,12 +470,12 @@
     (uniform-sampler program "ray_scatter" 1)
     (uniform-sampler program "mie_strength" 2)
     (uniform-sampler program "clouds" 3)
-    (uniform-int program "height_size" (:hyperdepth (:scatter atmosphere-luts)))
-    (uniform-int program "elevation_size" (:depth (:scatter atmosphere-luts)))
-    (uniform-int program "light_elevation_size" (:height (:scatter atmosphere-luts)))
-    (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
-    (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
-    (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
+    (uniform-int program "height_size" (:hyperdepth (::scatter atmosphere-luts)))
+    (uniform-int program "elevation_size" (:depth (::scatter atmosphere-luts)))
+    (uniform-int program "light_elevation_size" (:height (::scatter atmosphere-luts)))
+    (uniform-int program "heading_size" (:width (::scatter atmosphere-luts)))
+    (uniform-int program "transmittance_elevation_size" (:width (::transmittance atmosphere-luts)))
+    (uniform-int program "transmittance_height_size" (:height (::transmittance atmosphere-luts)))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-float program "max_height" (::max-height atmosphere-luts))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
@@ -497,7 +497,7 @@
     (uniform-vector3 program "light_direction" (:sfsim25.render/light-direction render-vars))
     (uniform-int program "window_width" (:sfsim25.render/window-width render-vars))
     (uniform-int program "window_height" (:sfsim25.render/window-height render-vars))
-    (use-textures {0 (:transmittance atmosphere-luts) 1 (:scatter atmosphere-luts) 2 (:mie atmosphere-luts) 3 clouds})
+    (use-textures {0 (::transmittance atmosphere-luts) 1 (::scatter atmosphere-luts) 2 (::mie atmosphere-luts) 3 clouds})
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
