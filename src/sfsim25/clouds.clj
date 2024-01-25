@@ -332,8 +332,11 @@
 
 (defn setup-cloud-render-uniforms
   "Method to set up uniform variables for cloud rendering"
-  {:malli/schema [:=> [:cat :int :map] :nil]}
-  [program cloud-data]
+  {:malli/schema [:=> [:cat :int :map :int] :nil]}
+  [program cloud-data sampler-offset]
+  (uniform-sampler program "worley" sampler-offset)
+  (uniform-sampler program "perlin" (+ sampler-offset 1))
+  (uniform-sampler program "cover" (+ sampler-offset 2))
   (uniform-int program "cover_size" (:width (::cloud-cover cloud-data)))
   (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
   (uniform-float program "cloud_top" (::cloud-top cloud-data))
@@ -346,8 +349,9 @@
 
 (defn setup-cloud-sampling-uniforms
  "Method to set up uniform variables for sampling clouds"
- {:malli/schema [:=> [:cat :int :map] :nil]}
- [program cloud-data]
+ {:malli/schema [:=> [:cat :int :map :int] :nil]}
+ [program cloud-data sampler-offset]
+ (uniform-sampler program "bluenoise" sampler-offset)
  (uniform-int program "noise_size" (:width (::bluenoise cloud-data)))
  (uniform-float program "anisotropic" (::anisotropic cloud-data))
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
@@ -363,21 +367,14 @@
                                                                       (::perlin-octaves cloud-data)
                                                                       (::cloud-octaves cloud-data))])]
     (use-program program)
-    (uniform-sampler program "transmittance"    0)
-    (uniform-sampler program "ray_scatter"      1)
-    (uniform-sampler program "mie_strength"     2)
-    (uniform-sampler program "worley"           3)
-    (uniform-sampler program "perlin"           4)
-    (uniform-sampler program "bluenoise"        5)
-    (uniform-sampler program "cover"            6)
     (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "shadow_map" i) (+ i 7)))
     (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 7 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
-    (setup-cloud-render-uniforms program cloud-data)
-    (setup-cloud-sampling-uniforms program cloud-data)
-    (setup-atmosphere-uniforms program atmosphere-luts)
+    (setup-cloud-render-uniforms program cloud-data 3)
+    (setup-cloud-sampling-uniforms program cloud-data 6)
+    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
@@ -411,7 +408,7 @@
            (uniform-float program (str "depth" idx) (:depth item)))
     (use-textures {0 (:sfsim25.atmosphere/transmittance atmosphere-luts) 1 (:sfsim25.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim25.atmosphere/mie atmosphere-luts) 3 (::worley cloud-data) 4 (::perlin-worley cloud-data)
-                   5 (::bluenoise cloud-data) 6 (::cloud-cover cloud-data)})
+                   5 (::cloud-cover cloud-data) 6 (::bluenoise cloud-data)})
     (use-textures (zipmap (drop 7 (range)) (concat (:sfsim25.opacity/shadows shadow-vars)
                                                    (:sfsim25.opacity/opacities shadow-vars))))
     (render-quads vao)

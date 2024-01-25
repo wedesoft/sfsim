@@ -461,16 +461,22 @@
 
 (defn setup-atmosphere-uniforms
   "Set up uniforms for atmospheric lookup tables"
-  {:malli/schema [:=> [:cat :int :map] :nil]}
-  [program atmosphere-luts]
+  {:malli/schema [:=> [:cat :int :map :int :boolean] :nil]}
+  [program atmosphere-luts sampler-offset surface-radiance]
+  (uniform-sampler program "transmittance" sampler-offset)
+  (uniform-sampler program "ray_scatter" (+ sampler-offset 1))
+  (uniform-sampler program "mie_strength" (+ sampler-offset 2))
+  (when surface-radiance
+    (uniform-sampler program "surface_radiance" (+ sampler-offset 3)))
   (uniform-int program "height_size" (:hyperdepth (::scatter atmosphere-luts)))
   (uniform-int program "elevation_size" (:depth (::scatter atmosphere-luts)))
   (uniform-int program "light_elevation_size" (:height (::scatter atmosphere-luts)))
   (uniform-int program "heading_size" (:width (::scatter atmosphere-luts)))
   (uniform-int program "transmittance_elevation_size" (:width (::transmittance atmosphere-luts)))
   (uniform-int program "transmittance_height_size" (:height (::transmittance atmosphere-luts)))
-  (uniform-int program "surface_height_size" (:height (::surface-radiance atmosphere-luts)))
-  (uniform-int program "surface_sun_elevation_size" (:width (::surface-radiance atmosphere-luts)))
+  (when surface-radiance
+    (uniform-int program "surface_height_size" (:height (::surface-radiance atmosphere-luts)))
+    (uniform-int program "surface_sun_elevation_size" (:width (::surface-radiance atmosphere-luts))))
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
 (defn make-atmosphere-renderer
@@ -480,11 +486,8 @@
   (let [program (make-program :vertex [vertex-atmosphere]
                               :fragment [fragment-atmosphere])]
     (use-program program)
-    (uniform-sampler program "transmittance" 0)
-    (uniform-sampler program "ray_scatter" 1)
-    (uniform-sampler program "mie_strength" 2)
+    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-sampler program "clouds" 3)
-    (setup-atmosphere-uniforms program atmosphere-luts)
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))

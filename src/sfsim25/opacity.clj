@@ -35,10 +35,7 @@
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao              (make-vertex-array-object program indices vertices ["point" 2])]
     (use-program program)
-    (uniform-sampler program "worley" 0)
-    (uniform-sampler program "perlin" 1)
-    (uniform-sampler program "cover" 2)
-    (setup-cloud-render-uniforms program cloud-data)
+    (setup-cloud-render-uniforms program cloud-data 0)
     (uniform-int program "shadow_size" (::shadow-size shadow-data))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     {:program program
