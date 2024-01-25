@@ -7,7 +7,7 @@
                                       use-program uniform-sampler uniform-int uniform-float use-textures uniform-vector3
                                       render-quads destroy-texture render-depth)]
               [sfsim25.worley :refer (worley-size)]
-              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade)]
+              [sfsim25.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-uniforms)]
               [sfsim25.planet :refer (render-shadow-cascade destroy-shadow-cascade)]
               [sfsim25.atmosphere :refer (phase)]
               [sfsim25.util :refer (sqr)]))
@@ -38,17 +38,9 @@
     (uniform-sampler program "worley" 0)
     (uniform-sampler program "perlin" 1)
     (uniform-sampler program "cover" 2)
-    (uniform-int program "cover_size" (:width (:sfsim25.clouds/cloud-cover cloud-data)))
+    (setup-cloud-uniforms program cloud-data)
     (uniform-int program "shadow_size" (::shadow-size shadow-data))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
-    (uniform-float program "cloud_bottom" (:sfsim25.clouds/cloud-bottom cloud-data))
-    (uniform-float program "cloud_top" (:sfsim25.clouds/cloud-top cloud-data))
-    (uniform-float program "detail_scale" (:sfsim25.clouds/detail-scale cloud-data))
-    (uniform-float program "cloud_scale" (:sfsim25.clouds/cloud-scale cloud-data))
-    (uniform-float program "cloud_multiplier" (:sfsim25.clouds/cloud-multiplier cloud-data))
-    (uniform-float program "cover_multiplier" (:sfsim25.clouds/cover-multiplier cloud-data))
-    (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
-    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold cloud-data))
     {:program program
      :cloud-data cloud-data
      :shadow-data shadow-data

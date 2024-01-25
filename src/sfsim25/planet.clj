@@ -11,7 +11,7 @@
                                       destroy-vertex-array-object vertex-array-object texture-2d) :as render]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay)]
               [sfsim25.util :refer (N N0)]
-              [sfsim25.clouds :refer (overall-shadow cloud-planet lod-offset)]
+              [sfsim25.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-uniforms)]
               [sfsim25.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -167,11 +167,7 @@
            (uniform-sampler program (str "opacity" i) (+ i 8 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (::radius planet-data))
     (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
-    (uniform-float program "cloud_bottom" (:sfsim25.clouds/cloud-bottom cloud-data))
-    (uniform-float program "cloud_top" (:sfsim25.clouds/cloud-top cloud-data))
-    (uniform-float program "cloud_scale" (:sfsim25.clouds/cloud-scale cloud-data))
-    (uniform-float program "detail_scale" (:sfsim25.clouds/detail-scale cloud-data))
-    (uniform-int program "cover_size" (:width (:sfsim25.clouds/cloud-cover cloud-data)))
+    (setup-cloud-uniforms program cloud-data)
     (uniform-int program "noise_size" (:width (:sfsim25.clouds/bluenoise cloud-data)))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
@@ -181,10 +177,6 @@
     (uniform-int program "heading_size" (:width (:scatter atmosphere-luts)))
     (uniform-int program "transmittance_height_size" (:height (:transmittance atmosphere-luts)))
     (uniform-int program "transmittance_elevation_size" (:width (:transmittance atmosphere-luts)))
-    (uniform-float program "cloud_multiplier" (:sfsim25.clouds/cloud-multiplier cloud-data))
-    (uniform-float program "cover_multiplier" (:sfsim25.clouds/cover-multiplier cloud-data))
-    (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
-    (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold cloud-data))
     (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-float program "cloud_step" (:sfsim25.clouds/cloud-step cloud-data))
