@@ -107,7 +107,7 @@
   "Create program for rendering cascaded shadow maps of planet (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [planet-data shadow-data]}]
-  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+  (let [tilesize (::tilesize planet-data)
         program  (make-program :vertex [vertex-planet]
                                :tess-control [tess-control-planet]
                                :tess-evaluation [tess-evaluation-planet-shadow]
@@ -145,7 +145,7 @@
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [render-data atmosphere-luts planet-data cloud-data shadow-data]}]
-  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+  (let [tilesize (::tilesize planet-data)
         program  (make-program :vertex [vertex-planet]
                                :tess-control [tess-control-planet]
                                :tess-evaluation [tess-evaluation-planet]
@@ -216,7 +216,7 @@
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [render-data atmosphere-luts planet-data shadow-data]}]
-  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+  (let [tilesize (::tilesize planet-data)
         program  (make-program :vertex [vertex-planet]
                                :tess-control [tess-control-planet]
                                :tess-evaluation [tess-evaluation-planet]
@@ -240,8 +240,8 @@
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (setup-atmosphere-uniforms program atmosphere-luts)
-    (uniform-float program "dawn_start" (:sfsim25.planet/dawn-start planet-data))
-    (uniform-float program "dawn_end" (:sfsim25.planet/dawn-end planet-data))
+    (uniform-float program "dawn_start" (::dawn-start planet-data))
+    (uniform-float program "dawn_end" (::dawn-end planet-data))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
     (uniform-float program "radius" (::radius planet-data))
     (uniform-float program "albedo" (::albedo planet-data))
@@ -289,8 +289,8 @@
   "Load textures of single tile into OpenGL (untested)"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}
   [{:keys [program planet-data]} tile]
-  (let [tilesize       (:sfsim25.planet/tilesize planet-data)
-        color-tilesize (:sfsim25.planet/color-tilesize planet-data)
+  (let [tilesize       (::tilesize planet-data)
+        color-tilesize (::color-tilesize planet-data)
         indices        [0 2 3 1]
         vertices       (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
@@ -329,7 +329,7 @@
   "Method to call in a backround thread for loading tiles (untested)"
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{:keys [planet-data]} tree width position]
-  (let [tilesize  (:sfsim25.planet/tilesize planet-data)
+  (let [tilesize  (::tilesize planet-data)
         increase? (partial increase-level? tilesize (::radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius planet-data) increase? true)))
 

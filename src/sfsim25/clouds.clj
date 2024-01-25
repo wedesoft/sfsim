@@ -334,24 +334,24 @@
   "Method to set up uniform variables for cloud rendering"
   {:malli/schema [:=> [:cat :int :map] :nil]}
   [program cloud-data]
-  (uniform-int program "cover_size" (:width (:sfsim25.clouds/cloud-cover cloud-data)))
-  (uniform-float program "cloud_bottom" (:sfsim25.clouds/cloud-bottom cloud-data))
-  (uniform-float program "cloud_top" (:sfsim25.clouds/cloud-top cloud-data))
-  (uniform-float program "detail_scale" (:sfsim25.clouds/detail-scale cloud-data))
-  (uniform-float program "cloud_scale" (:sfsim25.clouds/cloud-scale cloud-data))
-  (uniform-float program "cloud_multiplier" (:sfsim25.clouds/cloud-multiplier cloud-data))
-  (uniform-float program "cover_multiplier" (:sfsim25.clouds/cover-multiplier cloud-data))
-  (uniform-float program "cap" (:sfsim25.clouds/cap cloud-data))
-  (uniform-float program "cloud_threshold" (:sfsim25.clouds/threshold cloud-data)))
+  (uniform-int program "cover_size" (:width (::cloud-cover cloud-data)))
+  (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
+  (uniform-float program "cloud_top" (::cloud-top cloud-data))
+  (uniform-float program "detail_scale" (::detail-scale cloud-data))
+  (uniform-float program "cloud_scale" (::cloud-scale cloud-data))
+  (uniform-float program "cloud_multiplier" (::cloud-multiplier cloud-data))
+  (uniform-float program "cover_multiplier" (::cover-multiplier cloud-data))
+  (uniform-float program "cap" (::cap cloud-data))
+  (uniform-float program "cloud_threshold" (::threshold cloud-data)))
 
 (defn setup-cloud-sampling-uniforms
  "Method to set up uniform variables for sampling clouds"
  {:malli/schema [:=> [:cat :int :map] :nil]}
  [program cloud-data]
- (uniform-int program "noise_size" (:width (:sfsim25.clouds/bluenoise cloud-data)))
- (uniform-float program "anisotropic" (:sfsim25.clouds/anisotropic cloud-data))
- (uniform-float program "cloud_step" (:sfsim25.clouds/cloud-step cloud-data))
- (uniform-float program "opacity_cutoff" (:sfsim25.clouds/opacity-cutoff cloud-data)))
+ (uniform-int program "noise_size" (:width (::bluenoise cloud-data)))
+ (uniform-float program "anisotropic" (::anisotropic cloud-data))
+ (uniform-float program "cloud_step" (::cloud-step cloud-data))
+ (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
 
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
@@ -375,12 +375,11 @@
     (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
            (uniform-sampler program (str "opacity" i) (+ i 7 (:sfsim25.opacity/num-steps shadow-data))))
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
-    (uniform-float program "max_height" (:sfsim25.atmosphere/max-height atmosphere-luts))
     (setup-cloud-render-uniforms program cloud-data)
     (setup-cloud-sampling-uniforms program cloud-data)
+    (setup-atmosphere-uniforms program atmosphere-luts)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (setup-atmosphere-uniforms program atmosphere-luts)
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
     (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
     (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))

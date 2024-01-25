@@ -20,7 +20,6 @@
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})
 
-(def cloud-top 5000.0)
 (def opacity-base (atom 250.0))
 (def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
@@ -49,7 +48,7 @@
   (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves (clouds/octaves 4 0.7)
                                            :perlin-octaves (clouds/octaves 4 0.7)
                                            :cloud-bottom 2000.0
-                                           :cloud-top cloud-top
+                                           :cloud-top 5000.0
                                            :detail-scale 4000.0
                                            :cloud-scale 100000.0
                                            :cloud-multiplier 10.0

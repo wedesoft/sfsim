@@ -826,7 +826,7 @@
   (let [distance   (mag position)
         radius     (:sfsim25.planet/radius planet-data)
         cloud-top  (:sfsim25.clouds/cloud-top cloud-data)
-        fov        (:sfsim25.render/fov render-data)
+        fov        (::fov render-data)
         height     (- distance radius)
         z-near     (max (- height cloud-top) min-z-near)
         z-far      (render-depth radius height cloud-top)
