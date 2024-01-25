@@ -8,7 +8,9 @@
               [sfsim25.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
                                       use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float
                                       make-vertex-array-object make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d
-                                      destroy-vertex-array-object vertex-array-object texture-2d) :as render]
+                                      destroy-vertex-array-object vertex-array-object texture-2d setup-shadow-and-opacity-maps
+                                      setup-shadow-and-opacity-maps)
+                              :as render]
               [sfsim25.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms)]
               [sfsim25.util :refer (N N0)]
               [sfsim25.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-render-uniforms
@@ -155,20 +157,14 @@
                                                                   (:sfsim25.clouds/cloud-octaves cloud-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "shadow_map" i) (+ i 8)))
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "opacity" i) (+ i 8 (:sfsim25.opacity/num-steps shadow-data))))
-    (uniform-float program "radius" (::radius planet-data))
+    (setup-shadow-and-opacity-maps program shadow-data 8)
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
     (setup-atmosphere-uniforms program atmosphere-luts 1 false)
+    (uniform-float program "radius" (::radius planet-data))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
-    (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
-    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
-    (uniform-float program "depth" (:sfsim25.opacity/depth shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
      :cloud-data cloud-data
@@ -222,13 +218,10 @@
     (uniform-sampler program "normals"          3)
     (uniform-sampler program "water"            4)
     (uniform-sampler program "clouds"           9)
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "shadow_map" i) (+ i 10)))
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "opacity" i) (+ i 10 (:sfsim25.opacity/num-steps shadow-data))))
+    (setup-shadow-and-opacity-maps program shadow-data 10)
+    (setup-atmosphere-uniforms program atmosphere-luts 5 true)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (setup-atmosphere-uniforms program atmosphere-luts 5 true)
     (uniform-float program "dawn_start" (::dawn-start planet-data))
     (uniform-float program "dawn_end" (::dawn-end planet-data))
     (uniform-float program "specular" (:sfsim25.render/specular render-data))
@@ -237,9 +230,6 @@
     (uniform-float program "reflectivity" (::reflectivity planet-data))
     (uniform-vector3 program "water_color" (::water-color planet-data))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
-    (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
-    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
-    (uniform-float program "shadow_bias" (:sfsim25.opacity/shadow-bias shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
      :planet-data planet-data}))

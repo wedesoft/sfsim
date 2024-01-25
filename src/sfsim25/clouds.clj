@@ -7,7 +7,8 @@
                                       make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d generate-mipmap
                                       make-float-texture-3d make-program make-vertex-array-object render-quads uniform-float
                                       uniform-int uniform-sampler uniform-matrix4 use-program use-textures
-                                      make-empty-float-texture-3d uniform-vector3 make-float-cubemap texture-3d) :as render]
+                                      make-empty-float-texture-3d uniform-vector3 make-float-cubemap texture-3d
+                                      setup-shadow-and-opacity-maps) :as render]
               [sfsim25.shaders :as shaders]
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.bluenoise :refer (noise-size) :as bluenoise]
@@ -367,19 +368,14 @@
                                                                       (::perlin-octaves cloud-data)
                                                                       (::cloud-octaves cloud-data))])]
     (use-program program)
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "shadow_map" i) (+ i 7)))
-    (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
-           (uniform-sampler program (str "opacity" i) (+ i 7 (:sfsim25.opacity/num-steps shadow-data))))
-    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
+    (setup-shadow-and-opacity-maps program shadow-data 7)
     (setup-cloud-render-uniforms program cloud-data 3)
     (setup-cloud-sampling-uniforms program cloud-data 6)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
+    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
-    (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
-    (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
     {:program program
      :atmosphere-luts atmosphere-luts
      :render-data render-data

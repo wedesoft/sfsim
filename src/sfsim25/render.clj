@@ -844,5 +844,18 @@
      ::extrinsics extrinsics
      ::projection projection}))
 
+(defn setup-shadow-and-opacity-maps
+  "Set up cascade of deep opacity maps and cascade of shadow maps"
+  {:malli/schema [:=> [:cat :int :map :int] :nil]}
+  [program shadow-data sampler-offset]
+  (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
+         (uniform-sampler program (str "shadow_map" i) (+ i sampler-offset)))
+  (doseq [i (range (:sfsim25.opacity/num-steps shadow-data))]
+         (uniform-sampler program (str "opacity" i) (+ i sampler-offset (:sfsim25.opacity/num-steps shadow-data))))
+  (uniform-int program "num_opacity_layers" (:sfsim25.opacity/num-opacity-layers shadow-data))
+  (uniform-int program "shadow_size" (:sfsim25.opacity/shadow-size shadow-data))
+  (uniform-float program "depth" (:sfsim25.opacity/depth shadow-data))
+  (uniform-float program "shadow_bias" (:sfsim25.opacity/shadow-bias shadow-data)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
