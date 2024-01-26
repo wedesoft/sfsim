@@ -146,7 +146,7 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-data atmosphere-luts planet-data cloud-data shadow-data]}]
+  [& {:keys [render-config atmosphere-luts planet-data cloud-data shadow-data]}]
   (let [tilesize (::tilesize planet-data)
         program  (make-program :sfsim25.render/vertex [vertex-planet]
                                :sfsim25.render/tess-control [tess-control-planet]
@@ -164,19 +164,19 @@
     (uniform-float program "radius" (::radius planet-data))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-config))
     {:program program
      :atmosphere-luts atmosphere-luts
      :cloud-data cloud-data
-     :render-data render-data}))
+     :render-config render-config}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data render-data]} render-vars shadow-vars & {:keys [tree]}]
+  [{:keys [program atmosphere-luts cloud-data render-config]} render-vars shadow-vars & {:keys [tree]}]
   (let [transform    (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "lod_offset" (lod-offset render-data cloud-data render-vars))
+    (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
     (uniform-matrix4 program "transform" transform)
@@ -204,7 +204,7 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-data atmosphere-luts planet-data shadow-data]}]
+  [& {:keys [render-config atmosphere-luts planet-data shadow-data]}]
   (let [tilesize (::tilesize planet-data)
         program  (make-program :sfsim25.render/vertex [vertex-planet]
                                :sfsim25.render/tess-control [tess-control-planet]
@@ -224,12 +224,12 @@
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "dawn_start" (::dawn-start planet-data))
     (uniform-float program "dawn_end" (::dawn-end planet-data))
-    (uniform-float program "specular" (:sfsim25.render/specular render-data))
+    (uniform-float program "specular" (:sfsim25.render/specular render-config))
     (uniform-float program "radius" (::radius planet-data))
     (uniform-float program "albedo" (::albedo planet-data))
     (uniform-float program "reflectivity" (::reflectivity planet-data))
     (uniform-vector3 program "water_color" (::water-color planet-data))
-    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-config))
     {:program program
      :atmosphere-luts atmosphere-luts
      :planet-data planet-data}))

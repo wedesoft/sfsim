@@ -8,7 +8,8 @@
             [sfsim25.planet :as planet]
             [sfsim25.clouds :as clouds]
             [sfsim25.quaternion :as q]
-            [sfsim25.opacity :as opacity])
+            [sfsim25.opacity :as opacity]
+            [sfsim25.config :as config])
   (:import [org.lwjgl.opengl GL11]
            [org.lwjgl.glfw GLFW GLFWKeyCallback])
   (:gen-class))
@@ -29,10 +30,6 @@
 
 (def window (make-window "sfsim25" 1280 720))
 (GLFW/glfwShowWindow window)
-
-(def render-data #:sfsim25.render{:amplification 6.0
-                                  :specular 1000.0
-                                  :fov (to-radians 60.0)})
 
 (def planet-data #:sfsim25.planet{:radius 6378000.0
                                   :max-height 8000.0
@@ -82,7 +79,7 @@
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :render-data render-data
+  (planet/make-cloud-planet-renderer :render-config config/render-config
                                      :atmosphere-luts atmosphere-luts
                                      :planet-data planet-data
                                      :shadow-data shadow-data
@@ -90,7 +87,7 @@
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :render-data render-data
+  (clouds/make-cloud-atmosphere-renderer :render-config config/render-config
                                          :atmosphere-luts atmosphere-luts
                                          :planet-data planet-data
                                          :shadow-data shadow-data
@@ -98,14 +95,14 @@
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
-  (planet/make-planet-renderer :render-data render-data
+  (planet/make-planet-renderer :render-config config/render-config
                                :atmosphere-luts atmosphere-luts
                                :planet-data planet-data
                                :shadow-data shadow-data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :render-data render-data
+  (atmosphere/make-atmosphere-renderer :render-config config/render-config
                                        :atmosphere-luts atmosphere-luts
                                        :planet-data planet-data))
 
@@ -148,8 +145,8 @@
              (swap! light + (* l 0.1 dt))
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
-             (let [render-vars  (make-render-vars planet-data cloud-data render-data (aget w 0) (aget h 0) @position @orientation
-                                                  (vec3 (cos @light) (sin @light) 0) 1.0)
+             (let [render-vars  (make-render-vars planet-data cloud-data config/render-config (aget w 0) (aget h 0)
+                                                  @position @orientation (vec3 (cos @light) (sin @light) 0) 1.0)
                    shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
                                                                     render-vars (planet/get-current-tree tile-tree) @opacity-base)
                    w2           (quot (:sfsim25.render/window-width render-vars) 2)

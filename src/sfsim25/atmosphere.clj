@@ -482,15 +482,15 @@
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-data atmosphere-luts planet-data]}]
+  [& {:keys [render-config atmosphere-luts planet-data]}]
   (let [program (make-program :sfsim25.render/vertex [vertex-atmosphere]
                               :sfsim25.render/fragment [fragment-atmosphere])]
     (use-program program)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-sampler program "clouds" 3)
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
-    (uniform-float program "specular" (:sfsim25.render/specular render-data))
-    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
+    (uniform-float program "specular" (:sfsim25.render/specular render-config))
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-config))
     {:program program
      :atmosphere-luts atmosphere-luts}))
 

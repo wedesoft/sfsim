@@ -293,8 +293,8 @@
 (defn lod-offset
   "Compute level of detail offset for sampling cloud textures"
   {:malli/schema [:=> [:cat :map :map :map] :double]}
-  [render-data cloud-data render-vars]
-  (/ (log (/ (tan (/ (:sfsim25.render/fov render-data) 2))
+  [render-config cloud-data render-vars]
+  (/ (log (/ (tan (/ (:sfsim25.render/fov render-config) 2))
              (/ (:sfsim25.render/window-width render-vars) 2)
              (/ (::detail-scale cloud-data) worley-size))) (log 2)))
 
@@ -361,7 +361,7 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-data atmosphere-luts planet-data shadow-data cloud-data]}]
+  [& {:keys [render-config atmosphere-luts planet-data shadow-data cloud-data]}]
   (let [tilesize (:sfsim25.planet/tilesize planet-data)
         program  (make-program :sfsim25.render/vertex [vertex-atmosphere]
                                :sfsim25.render/fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
@@ -375,22 +375,22 @@
     (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-float program "amplification" (:sfsim25.render/amplification render-data))
+    (uniform-float program "amplification" (:sfsim25.render/amplification render-config))
     {:program program
      :atmosphere-luts atmosphere-luts
-     :render-data render-data
+     :render-config render-config
      :cloud-data cloud-data}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts render-data cloud-data]} render-vars shadow-vars]
+  [{:keys [program atmosphere-luts render-config cloud-data]} render-vars shadow-vars]
   (let [indices  [0 1 3 2]
         vertices (mapv #(* % (:sfsim25.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao      (make-vertex-array-object program indices vertices ["point" 3])
         transform (inverse (:sfsim25.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "lod_offset" (lod-offset render-data cloud-data render-vars))
+    (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim25.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim25.render/origin render-vars))
     (uniform-matrix4 program "extrinsics" (:sfsim25.render/extrinsics render-vars))

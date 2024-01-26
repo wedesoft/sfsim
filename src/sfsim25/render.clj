@@ -822,11 +822,11 @@
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame"
   {:malli/schema [:=> [:cat :map :map :map N N fvec3 quaternion fvec3 :double] :map]}
-  [planet-data cloud-data render-data window-width window-height position orientation light-direction min-z-near]
+  [planet-data cloud-data render-config window-width window-height position orientation light-direction min-z-near]
   (let [distance   (mag position)
         radius     (:sfsim25.planet/radius planet-data)
         cloud-top  (:sfsim25.clouds/cloud-top cloud-data)
-        fov        (::fov render-data)
+        fov        (::fov render-config)
         height     (- distance radius)
         z-near     (max (- height cloud-top) min-z-near)
         z-far      (render-depth radius height cloud-top)
