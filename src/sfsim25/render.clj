@@ -116,13 +116,13 @@
 (defn make-program
   "Compile and link a shader program"
   {:malli/schema [:=> [:cat
-                       [:cat [:= :vertex] shaders]
-                       [:? [:cat [:= :tess-control] shaders]]
-                       [:? [:cat [:= :tess-evaluation] shaders]]
-                       [:? [:cat [:= :geometry] shaders]]
-                       [:cat [:= :fragment] shaders]]
+                       [:cat [:= ::vertex] shaders]
+                       [:? [:cat [:= ::tess-control] shaders]]
+                       [:? [:cat [:= ::tess-evaluation] shaders]]
+                       [:? [:cat [:= ::geometry] shaders]]
+                       [:cat [:= ::fragment] shaders]]
                   :int]}
-  [& {:keys [vertex tess-control tess-evaluation geometry fragment]
+  [& {::keys [vertex tess-control tess-evaluation geometry fragment]
       :or {vertex [] tess-control [] tess-evaluation [] geometry [] fragment []}}]
   (let [shaders (concat (map (partial make-shader "vertex" GL20/GL_VERTEX_SHADER)
                              (distinct (flatten vertex)))

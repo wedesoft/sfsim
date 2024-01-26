@@ -203,8 +203,8 @@ void main()
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data      (repeat 4 shadow-depth)
           shadows   (make-depth-texture :linear :clamp {:width 2 :height 2 :data (float-array data)})
-          program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(shadow-lookup-probe lookup-depth) shadow-lookup])
+          program   (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                  :sfsim25.render/fragment [(shadow-lookup-probe lookup-depth) shadow-lookup])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -256,9 +256,9 @@ void main()
     (let [indices       [0 1 3 2]
           vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           transform     (transformation-matrix (eye 3) (vec3 0 0 shift-z))
-          program       (make-program :vertex [vertex-passthrough]
-                                      :fragment [(shadow-cascade-lookup-probe z) (shadow-cascade-lookup n "shadow_lookup")
-                                                 shadow-lookup-mock])
+          program       (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                      :sfsim25.render/fragment [(shadow-cascade-lookup-probe z)
+                                                                (shadow-cascade-lookup n "shadow_lookup") shadow-lookup-mock])
           vao              (make-vertex-array-object program indices vertices ["point" 3])
           shadow-texs   (map #(make-depth-texture :linear :clamp {:width 1 :height 1 :data (float-array [%])}) shadows)
           tex           (texture-render-color 1 1 true
@@ -371,8 +371,8 @@ void main()
           data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
           table     (make-vector-texture-2d :linear :clamp
                                             {:width 2 :height 3 :data (float-array data-flat)})
-          program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(interpolate-2d-probe x y) interpolate-2d])
+          program   (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                  :sfsim25.render/fragment [(interpolate-2d-probe x y) interpolate-2d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -413,8 +413,8 @@ void main()
           data-3d   (range (* 2 3 4))
           table     (make-float-texture-3d :linear :clamp
                                            {:width 4 :height 3 :depth 2 :data (float-array data-3d)})
-          program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(interpolate-3d-probe x y z) interpolate-3d])
+          program   (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                  :sfsim25.render/fragment [(interpolate-3d-probe x y z) interpolate-3d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -459,9 +459,9 @@ void main()
           datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
           data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
           cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
-          program     (make-program :vertex [vertex-passthrough]
-                                    :fragment [(interpolate-cubemap-probe method selector x y z)
-                                               interpolate-float-cubemap interpolate-vector-cubemap])
+          program     (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                    :sfsim25.render/fragment [(interpolate-cubemap-probe method selector x y z)
+                                                              interpolate-float-cubemap interpolate-vector-cubemap])
           vao         (make-vertex-array-object program indices vertices ["point" 3])
           tex         (texture-render-color
                         1 1 true
@@ -503,8 +503,8 @@ void main()
           data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
           data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
           table     (make-vector-texture-2d :linear :clamp {:width 4 :height 4 :data (float-array data-flat)})
-          program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(interpolate-4d-probe x y z w) interpolate-4d])
+          program   (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                  :sfsim25.render/fragment [(interpolate-4d-probe x y z w) interpolate-4d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -574,8 +574,8 @@ void main()
           data-flat (flatten data-3d)
           table     (make-float-texture-3d :linear :repeat
                                            {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
-          program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
+          program   (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                  :sfsim25.render/fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -617,9 +617,9 @@ void main()
           data-flat (flatten data-3d)
           table     (make-float-texture-3d :linear :repeat
                                            {:width 2 :height 2 :depth 2 :data (float-array data-flat)})
-          program   (make-program :vertex [vertex-passthrough]
-                                  :fragment [(lookup-3d-lod-probe x y z lod)
-                                             (lookup-3d-lod "lookup_3d_lod" "table")])
+          program   (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                  :sfsim25.render/fragment [(lookup-3d-lod-probe x y z lod)
+                                                            (lookup-3d-lod "lookup_3d_lod" "table")])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -1010,15 +1010,16 @@ void main()
              (let [cubemap  (make-empty-vector-cubemap :linear :clamp 32)
                    indices  [0 1 3 2]
                    vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                   program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-vectors cubemap-vectors])
+                   program  (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                          :sfsim25.render/fragment [fragment-cubemap-vectors cubemap-vectors])
                    vao      (make-vertex-array-object program indices vertices ["point" 3])]
                (framebuffer-render 32 32 :cullback nil [cubemap]
                                    (use-program program)
                                    (render-quads vao))
                (destroy-vertex-array-object vao)
                (destroy-program program)
-               (let [program (make-program :vertex [vertex-passthrough]
-                                           :fragment [(face-vector-probe ?x ?y ?z) convert-cubemap-index])
+               (let [program (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                           :sfsim25.render/fragment [(face-vector-probe ?x ?y ?z) convert-cubemap-index])
                      vao     (make-vertex-array-object program indices vertices ["point" 3])
                      tex     (texture-render-color 1 1 true
                                                    (use-program program)

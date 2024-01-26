@@ -111,7 +111,7 @@ void main()
 
 (fact "Render red cube"
       (offscreen-render 160 120
-        (let [program      (make-program :vertex [vertex-cube] :fragment [fragment-cube])
+        (let [program      (make-program :sfsim25.render/vertex [vertex-cube] :sfsim25.render/fragment [fragment-cube])
               opengl-scene (load-scene-into-opengl (constantly program) cube)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
@@ -139,7 +139,7 @@ void main()
 
 (fact "Render red and green cube"
       (offscreen-render 160 120
-        (let [program      (make-program :vertex [vertex-cube] :fragment [fragment-cube])
+        (let [program      (make-program :sfsim25.render/vertex [vertex-cube] :sfsim25.render/fragment [fragment-cube])
               opengl-scene (load-scene-into-opengl (constantly program) cubes)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
@@ -222,7 +222,7 @@ void main()
 
 (fact "Render textured cube"
       (offscreen-render 160 120
-        (let [program      (make-program :vertex [vertex-dice] :fragment [fragment-dice])
+        (let [program      (make-program :sfsim25.render/vertex [vertex-dice] :sfsim25.render/fragment [fragment-dice])
               opengl-scene (load-scene-into-opengl (constantly program) dice)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
@@ -288,7 +288,7 @@ void main()
 
 (fact "Render brick wall"
       (offscreen-render 160 120
-        (let [program      (make-program :vertex [vertex-bricks] :fragment [fragment-bricks])
+        (let [program      (make-program :sfsim25.render/vertex [vertex-bricks] :sfsim25.render/fragment [fragment-bricks])
               opengl-scene (load-scene-into-opengl (constantly program) bricks)
               transform    (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3))
               moved-scene  (assoc-in opengl-scene [:root :transform] transform)]
@@ -321,8 +321,8 @@ void main()
 
 (fact "Render uniformly colored cube and textured cube"
       (offscreen-render 160 120
-        (let [program-cube      (make-program :vertex [vertex-cube] :fragment [fragment-cube])
-              program-dice      (make-program :vertex [vertex-dice] :fragment [fragment-dice])
+        (let [program-cube      (make-program :sfsim25.render/vertex [vertex-cube] :sfsim25.render/fragment [fragment-cube])
+              program-dice      (make-program :sfsim25.render/vertex [vertex-dice] :sfsim25.render/fragment [fragment-dice])
               program-selection (fn [material] (if (:color-texture-index material) program-dice program-cube))
               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
               transform         (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))

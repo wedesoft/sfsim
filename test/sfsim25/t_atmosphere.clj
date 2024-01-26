@@ -526,7 +526,8 @@
         (let [indices       [0 1 3 2]
               vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
-              program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              program       (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                          :sfsim25.render/fragment (conj shaders (apply probe args)))
               vao           (make-vertex-array-object program indices vertices ["point" 3])
               tex           (texture-render-color
                               1 1 true
@@ -606,7 +607,8 @@ void main()
               transmittance (make-vector-texture-2d :linear :clamp {:width size :height size :data T})
               ray-scatter   (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data S})
               mie-strength  (make-vector-texture-2d :linear :clamp {:width (* size size) :height (* size size) :data M})
-              program       (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              program       (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                          :sfsim25.render/fragment (conj shaders (apply probe args)))
               vao           (make-vertex-array-object program indices vertices ["point" 3])
               tex           (texture-render-color
                               1 1 true
@@ -682,8 +684,8 @@ void main()
                                                0.5 -0.5 -1
                                               -0.5  0.5 -1
                                                0.5  0.5 -1]
-                                   program   (make-program :vertex [vertex-atmosphere]
-                                                           :fragment [(vertex-atmosphere-probe ?selector)])
+                                   program   (make-program :sfsim25.render/vertex [vertex-atmosphere]
+                                                           :sfsim25.render/fragment [(vertex-atmosphere-probe ?selector)])
                                    variables ["point" 3]
                                    vao       (make-vertex-array-object program indices vertices variables)]
                                (clear (vec3 0 0 0))
@@ -720,9 +722,10 @@ vec4 cloud_overlay()
                                                    0.5  0.5 -1]
                                    origin        (vec3 ?x ?y ?z)
                                    extrinsics    (transformation-matrix (rotation-x ?rotation) origin)
-                                   program       (make-program :vertex [vertex-atmosphere]
-                                                               :fragment [(last fragment-atmosphere) shaders/ray-sphere
-                                                                          attenuation-outer (cloud-overlay-mock ?cloud)])
+                                   program       (make-program :sfsim25.render/vertex [vertex-atmosphere]
+                                                               :sfsim25.render/fragment [(last fragment-atmosphere)
+                                                                                         shaders/ray-sphere attenuation-outer
+                                                                                         (cloud-overlay-mock ?cloud)])
                                    variables     ["point" 3]
                                    transmittance (make-vector-texture-2d :linear :clamp
                                                                          {:width size :height size :data T})
@@ -808,7 +811,8 @@ void main()
               data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
               img      {:width 2 :height 2 :data (byte-array data)}
               clouds   (make-rgba-texture :linear :clamp img)
-              program  (make-program :vertex [shaders/vertex-passthrough] :fragment [fragment-overlay-lookup cloud-overlay])
+              program  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                     :sfsim25.render/fragment [fragment-overlay-lookup cloud-overlay])
               vao      (make-vertex-array-object program indices vertices ["point" 3])]
           (use-program program)
           (uniform-sampler program "clouds" 0)

@@ -483,8 +483,8 @@
   "Initialise atmosphere rendering program (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [render-data atmosphere-luts planet-data]}]
-  (let [program (make-program :vertex [vertex-atmosphere]
-                              :fragment [fragment-atmosphere])]
+  (let [program (make-program :sfsim25.render/vertex [vertex-atmosphere]
+                              :sfsim25.render/fragment [fragment-atmosphere])]
     (use-program program)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-sampler program "clouds" 3)

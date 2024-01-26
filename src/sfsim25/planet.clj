@@ -110,11 +110,11 @@
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [planet-data shadow-data]}]
   (let [tilesize (::tilesize planet-data)
-        program  (make-program :vertex [vertex-planet]
-                               :tess-control [tess-control-planet]
-                               :tess-evaluation [tess-evaluation-planet-shadow]
-                               :geometry [geometry-planet]
-                               :fragment [fragment-planet-shadow])]
+        program  (make-program :sfsim25.render/vertex [vertex-planet]
+                               :sfsim25.render/tess-control [tess-control-planet]
+                               :sfsim25.render/tess-evaluation [tess-evaluation-planet-shadow]
+                               :sfsim25.render/geometry [geometry-planet]
+                               :sfsim25.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
     (uniform-int program "high_detail" (dec tilesize))
@@ -148,13 +148,13 @@
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [render-data atmosphere-luts planet-data cloud-data shadow-data]}]
   (let [tilesize (::tilesize planet-data)
-        program  (make-program :vertex [vertex-planet]
-                               :tess-control [tess-control-planet]
-                               :tess-evaluation [tess-evaluation-planet]
-                               :geometry [geometry-planet]
-                               :fragment [(fragment-planet-clouds (:sfsim25.opacity/num-steps shadow-data)
-                                                                  (:sfsim25.clouds/perlin-octaves cloud-data)
-                                                                  (:sfsim25.clouds/cloud-octaves cloud-data))])]
+        program  (make-program :sfsim25.render/vertex [vertex-planet]
+                               :sfsim25.render/tess-control [tess-control-planet]
+                               :sfsim25.render/tess-evaluation [tess-evaluation-planet]
+                               :sfsim25.render/geometry [geometry-planet]
+                               :sfsim25.render/fragment [(fragment-planet-clouds (:sfsim25.opacity/num-steps shadow-data)
+                                                                                 (:sfsim25.clouds/perlin-octaves cloud-data)
+                                                                                 (:sfsim25.clouds/cloud-octaves cloud-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (setup-shadow-and-opacity-maps program shadow-data 8)
@@ -206,11 +206,11 @@
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [render-data atmosphere-luts planet-data shadow-data]}]
   (let [tilesize (::tilesize planet-data)
-        program  (make-program :vertex [vertex-planet]
-                               :tess-control [tess-control-planet]
-                               :tess-evaluation [tess-evaluation-planet]
-                               :geometry [geometry-planet]
-                               :fragment [(fragment-planet (:sfsim25.opacity/num-steps shadow-data))])]
+        program  (make-program :sfsim25.render/vertex [vertex-planet]
+                               :sfsim25.render/tess-control [tess-control-planet]
+                               :sfsim25.render/tess-evaluation [tess-evaluation-planet]
+                               :sfsim25.render/geometry [geometry-planet]
+                               :sfsim25.render/fragment [(fragment-planet (:sfsim25.opacity/num-steps shadow-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (uniform-sampler program "day"              1)

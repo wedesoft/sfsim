@@ -70,7 +70,7 @@ void main()
     fragColor = vec3(0, 0, 0);
 }")
 
-(def program (make-program :vertex [vertex-shader] :fragment [fragment-shader shaders/ray-sphere]))
+(def program (make-program :sfsim25.render/vertex [vertex-shader] :sfsim25.render/fragment [fragment-shader shaders/ray-sphere]))
 (def indices [0 1 3 2])
 (def vertices [-1 -1 0, 1 -1 0, -1 1 0, 1  1 0])
 (def vao (make-vertex-array-object program indices vertices ["point" 3]))

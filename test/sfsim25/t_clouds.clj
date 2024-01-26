@@ -49,8 +49,8 @@ void main()
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
           worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
-          program  (make-program :vertex [shaders/vertex-passthrough]
-                                 :fragment [(cloud-noise-probe x y z) (last (cloud-noise []))])
+          program  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                 :sfsim25.render/fragment [(cloud-noise-probe x y z) (last (cloud-noise []))])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           tex      (texture-render-color 1 1 true
                                          (use-program program)
@@ -165,9 +165,9 @@ float cloud_density(vec3 point, float lod)
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
             ndc-to-shadow   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
             light-direction (vec3 0 0 1)
-            program         (make-program :vertex [opacity-vertex]
-                                          :fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock cloud-density-mock
-                                                     linear-sampling])
+            program         (make-program :sfsim25.render/vertex [opacity-vertex]
+                                          :sfsim25.render/fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock
+                                                                    cloud-density-mock linear-sampling])
             vao             (make-vertex-array-object program indices vertices ["point" 2])
             opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 8)
             index           ({:offset 0 :layer (inc ?layer)} ?selector)]
@@ -222,8 +222,8 @@ void main()
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program         (make-program :vertex [shaders/vertex-passthrough]
-                                        :fragment [(opacity-lookup-probe x y z depth) opacity-lookup])
+          program         (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                        :sfsim25.render/fragment [(opacity-lookup-probe x y z depth) opacity-lookup])
           vao             (make-vertex-array-object program indices vertices ["point" 3])
           zeropad         (fn [x] [0 x 0 0])
           offset-data     (zeropad offset)
@@ -283,9 +283,10 @@ void main()
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           transform       (transformation-matrix (eye 3) (vec3 0 0 shift-z))
-          program         (make-program :vertex [shaders/vertex-passthrough]
-                                        :fragment [(opacity-cascade-lookup-probe z) (opacity-cascade-lookup n "opacity_lookup")
-                                                   opacity-lookup-mock])
+          program         (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                        :sfsim25.render/fragment [(opacity-cascade-lookup-probe z)
+                                                                  (opacity-cascade-lookup n "opacity_lookup")
+                                                                  opacity-lookup-mock])
           vao             (make-vertex-array-object program indices vertices ["point" 3])
           opacity-texs    (map #(make-float-texture-3d :linear :clamp
                                                        {:width 1 :height 1 :depth 1 :data (float-array [%1 %2])})
@@ -340,8 +341,8 @@ void main()
   (with-invisible-window
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program  (make-program :vertex [shaders/vertex-passthrough]
-                                 :fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
+          program  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                 :sfsim25.render/fragment [(cubemap-probe x y z) shaders/convert-cubemap-index])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           cubemap  (identity-cubemap 15)
           tex      (texture-render-color 1 1 true
@@ -392,8 +393,8 @@ vec3 curl_field_mock(vec3 point)
   (with-invisible-window
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program  (make-program :vertex [shaders/vertex-passthrough]
-                                 :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
+          program  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                 :sfsim25.render/fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           cubemap  (atom (identity-cubemap 15))
           update   (make-iterate-cubemap-warp-program "current" "curl_field_mock" [curl-field-mock])]
@@ -447,8 +448,8 @@ float lookup_mock(vec3 point)
   (with-invisible-window
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program  (make-program :vertex [shaders/vertex-passthrough]
-                                 :fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
+          program  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                 :sfsim25.render/fragment [(cubemap-probe px py pz) shaders/convert-cubemap-index])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           vectors  [[1 0 0] [0 2 0] [0 0 4] [-1 0 0] [0 -1 0] [0 0 -1]]
           to-data  (fn [v] (float-array (flatten (repeat 9 v))))
@@ -616,7 +617,8 @@ void main()
             worley-cover (make-float-texture-3d :linear :repeat
                                                 {:width worley-size :height worley-size :depth worley-size
                                                  :data (slurp-floats "test/sfsim25/fixtures/clouds/worley-cover.raw")})
-            program      (make-program :vertex [cover-vertex] :fragment [cover-fragment shaders/ray-sphere])
+            program      (make-program :sfsim25.render/vertex [cover-vertex]
+                                       :sfsim25.render/fragment [cover-fragment shaders/ray-sphere])
             indices      [0 1 3 2]
             vertices     [-1 -1 0, 1 -1 0, -1 1 0, 1 1 0]
             vao          (make-vertex-array-object program indices vertices ["point" 3])
@@ -780,8 +782,8 @@ void main()
           datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
           data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
           cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
-          program     (make-program :vertex [shaders/vertex-passthrough]
-                                    :fragment [(cloud-cover-probe x y z) cloud-cover])
+          program     (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                    :sfsim25.render/fragment [(cloud-cover-probe x y z) cloud-cover])
           vao         (make-vertex-array-object program indices vertices ["point" 3])
           tex         (texture-render-color
                         1 1 true
@@ -1164,16 +1166,16 @@ void main()
           projection  (projection-matrix width height z-near (+ z-far 1) fov)
           origin      (vec3 0 0 10)
           extrinsics  (transformation-matrix (eye 3) origin)
-          planet      (make-program :vertex [vertex-planet]
-                                    :tess-control [tess-control-planet]
-                                    :tess-evaluation [tess-evaluation-planet]
-                                    :geometry [geometry-planet]
-                                    :fragment [fragment-planet-clouds (last (cloud-planet 3 [] []))])
+          planet      (make-program :sfsim25.render/vertex [vertex-planet]
+                                    :sfsim25.render/tess-control [tess-control-planet]
+                                    :sfsim25.render/tess-evaluation [tess-evaluation-planet]
+                                    :sfsim25.render/geometry [geometry-planet]
+                                    :sfsim25.render/fragment [fragment-planet-clouds (last (cloud-planet 3 [] []))])
           indices     [0 1 3 2]
           vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile        (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-          atmosphere  (make-program :vertex [vertex-atmosphere]
-                                    :fragment [fragment-atmosphere-clouds-mock (last (cloud-atmosphere 3 [] []))])
+          atmosphere  (make-program :sfsim25.render/vertex [vertex-atmosphere]
+                                    :sfsim25.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-atmosphere 3 [] []))])
           indices     [0 1 3 2]
           vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao         (make-vertex-array-object atmosphere indices vertices ["point" 3])
@@ -1264,9 +1266,9 @@ void main()
               render-vars  #:sfsim25.render{:projection projection :extrinsics extrinsics :light-direction light
                                             :z-near z-near :z-far z-far}
               shadow-mats  (shadow-matrix-cascade shadow-data render-vars)
-              program-opac (make-program :vertex [opacity-vertex shaders/grow-shadow-index]
-                                         :fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
-                                                    shaders/ray-sphere linear-sampling opacity-cascade-mocks])
+              program-opac (make-program :sfsim25.render/vertex [opacity-vertex shaders/grow-shadow-index]
+                                         :sfsim25.render/fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
+                                                                   shaders/ray-sphere linear-sampling opacity-cascade-mocks])
               vao          (make-vertex-array-object program-opac indices vertices ["point" 2])
               opacity-maps (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
                                             (uniform-vector3 program-opac "light_direction" light)
@@ -1280,10 +1282,11 @@ void main()
               tex          (texture-render-color-depth 320 240 false
                              (let [indices   [0 1 3 2]
                                    vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
-                                   program   (make-program :vertex [vertex-render-opacity]
-                                                           :fragment [fragment-render-opacity
-                                                                      (opacity-cascade-lookup num-steps "opacity_lookup")
-                                                                      opacity-lookup])
+                                   program   (make-program :sfsim25.render/vertex [vertex-render-opacity]
+                                                           :sfsim25.render/fragment [fragment-render-opacity
+                                                                                     (opacity-cascade-lookup num-steps
+                                                                                                             "opacity_lookup")
+                                                                                     opacity-lookup])
                                    vao       (make-vertex-array-object program indices vertices ["point" 3])]
                                (clear (vec3 0 0 0) 0)
                                (use-program program)

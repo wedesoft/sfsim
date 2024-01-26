@@ -58,7 +58,8 @@
       (with-invisible-window
         (let [indices  [0 1 3 2]
               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              program  (make-program :vertex [shaders/vertex-passthrough] :fragment (conj shaders (apply probe args)))
+              program  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                                     :sfsim25.render/fragment (conj shaders (apply probe args)))
               vao      (make-vertex-array-object program indices vertices ["point" 3])
               tex      (texture-render-color 1 1 true
                                              (use-program program)

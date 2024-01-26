@@ -55,8 +55,8 @@
   (let [result   (make-empty-vector-cubemap :linear :clamp size)
         indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-        program (make-program :vertex [shaders/vertex-passthrough]
-                              :fragment [identity-cubemap-fragment])
+        program (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                              :sfsim25.render/fragment [identity-cubemap-fragment])
         vao     (make-vertex-array-object program indices vertices ["point" 3])]
     (framebuffer-render size size :cullback nil [result]
                         (use-program program)
@@ -77,8 +77,8 @@
   "Create program to iteratively update cubemap warp vector field"
   {:malli/schema [:=> [:cat :string :string render/shaders] :int]}
   [current-name field-method-name shaders]
-  (make-program :vertex [shaders/vertex-passthrough]
-                :fragment (conj shaders (iterate-cubemap-warp-fragment current-name field-method-name))))
+  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                :sfsim25.render/fragment (conj shaders (iterate-cubemap-warp-fragment current-name field-method-name))))
 
 (defmacro iterate-cubemap
   "Macro to run program to update cubemap"
@@ -108,8 +108,8 @@
   "Create program to look up values using a given cubemap warp vector field"
   {:malli/schema [:=> [:cat :string :string render/shaders] :int]}
   [current-name lookup-name shaders]
-  (make-program :vertex [shaders/vertex-passthrough]
-                :fragment (conj shaders (cubemap-warp-fragment current-name lookup-name))))
+  (make-program :sfsim25.render/vertex [shaders/vertex-passthrough]
+                :sfsim25.render/fragment (conj shaders (cubemap-warp-fragment current-name lookup-name))))
 
 (defmacro cubemap-warp
   "Macro to run program to look up values using cubemap warp vector field"
@@ -363,10 +363,10 @@
   {:malli/schema [:=> [:cat [:* :any]] :map]}
   [& {:keys [render-data atmosphere-luts planet-data shadow-data cloud-data]}]
   (let [tilesize (:sfsim25.planet/tilesize planet-data)
-        program  (make-program :vertex [vertex-atmosphere]
-                               :fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
-                                                                      (::perlin-octaves cloud-data)
-                                                                      (::cloud-octaves cloud-data))])]
+        program  (make-program :sfsim25.render/vertex [vertex-atmosphere]
+                               :sfsim25.render/fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
+                                                                                     (::perlin-octaves cloud-data)
+                                                                                     (::cloud-octaves cloud-data))])]
     (use-program program)
     (setup-shadow-and-opacity-maps program shadow-data 7)
     (setup-cloud-render-uniforms program cloud-data 3)

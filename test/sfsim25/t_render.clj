@@ -45,7 +45,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
+          program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -57,7 +57,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [[vertex-passthrough]] :fragment [[fragment-blue]])
+          program  (make-program :sfsim25.render/vertex [[vertex-passthrough]] :sfsim25.render/fragment [[fragment-blue]])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -89,7 +89,7 @@ void main()
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-          program  (make-program :vertex [vertex-color] :fragment [fragment-color])
+          program  (make-program :sfsim25.render/vertex [vertex-color] :sfsim25.render/fragment [fragment-color])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -102,7 +102,7 @@ void main()
     (let [indices  [0 1 3 2, 4 5 7 6]
           vertices [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0,
                     -0.5 -0.5 0.1 0.0 1.0, 1.0 -0.5 0.1 0.0 1.0, -0.5 1.0 0.1 0.0 1.0, 1.0 1.0 0.1 0.0 1.0]
-          program  (make-program :vertex [vertex-color] :fragment [fragment-color])
+          program  (make-program :sfsim25.render/vertex [vertex-color] :sfsim25.render/fragment [fragment-color])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -123,8 +123,8 @@ void main()
     (let [indices   [0 1 3 2]
           vertices1 [-1.0 -1.0 0.1, 0.5 -1.0 0.1, -1.0 0.5 0.1, 0.5 0.5 0.1]
           vertices2 [-0.5 -0.5 0.2, 1.0 -0.5 0.2, -0.5 1.0 0.2, 1.0 1.0 0.2]
-          program1  (make-program :vertex [vertex-passthrough] :fragment [fragment-red])
-          program2  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
+          program1  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-red])
+          program2  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-blue])
           vao1      (make-vertex-array-object program1 indices vertices1 ["point" 3])
           vao2      (make-vertex-array-object program2 indices vertices2 ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
@@ -141,7 +141,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-blue])
+          program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -164,7 +164,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-floats])
+          program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-uniform-floats])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -190,7 +190,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-ints])
+          program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-uniform-ints])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -214,7 +214,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-uniform-vector3])
+          program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-uniform-vector3])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -236,7 +236,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-transform3] :fragment [fragment-blue])
+          program  (make-program :sfsim25.render/vertex [vertex-transform3] :sfsim25.render/fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -258,7 +258,7 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-transform4] :fragment [fragment-blue])
+          program  (make-program :sfsim25.render/vertex [vertex-transform4] :sfsim25.render/fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -300,7 +300,8 @@ void main()
     (offscreen-render 64 64
                       (let [indices  [0 1 3 2]
                             vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
-                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-1d])
+                            program  (make-program :sfsim25.render/vertex [vertex-texture]
+                                                   :sfsim25.render/fragment [fragment-texture-1d])
                             vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                             tex      (make-float-texture-1d ?interpolation ?boundary (float-array [0.0 1.0]))]
                         (clear (vec3 0.0 0.0 0.0))
@@ -339,7 +340,7 @@ void main()
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-          program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
+          program  (make-program :sfsim25.render/vertex [vertex-texture] :sfsim25.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex      (make-rgb-texture :linear :clamp (slurp-image "test/sfsim25/fixtures/render/pattern.png"))]
       (clear (vec3 0.0 0.0 0.0))
@@ -356,7 +357,8 @@ void main()
     (offscreen-render 64 64
                       (let [indices  [0 1 3 2]
                             vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
-                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
+                            program  (make-program :sfsim25.render/vertex [vertex-texture]
+                                                   :sfsim25.render/fragment [fragment-texture-2d])
                             vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                             img      {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])}
                             tex      (make-float-texture-2d ?interpolation ?boundary img)]
@@ -379,7 +381,7 @@ void main()
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-          program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
+          program  (make-program :sfsim25.render/vertex [vertex-texture] :sfsim25.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex      (make-ubyte-texture-2d :linear :clamp {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
       (clear (vec3 0.0 0.0 0.0))
@@ -395,7 +397,7 @@ void main()
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-          program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-2d])
+          program  (make-program :sfsim25.render/vertex [vertex-texture] :sfsim25.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
@@ -439,7 +441,8 @@ void main(void)
   (offscreen-render 64 64
                     (let [indices  [0 1 3 2]
                           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                          program  (make-program :vertex [vertex-interpolate] :fragment [fragment-sample-shadow])
+                          program  (make-program :sfsim25.render/vertex [vertex-interpolate]
+                                                 :sfsim25.render/fragment [fragment-sample-shadow])
                           vao      (make-vertex-array-object program indices vertices ["point" 3])
                           data     [0.4 0.4 0.4 0.4, 0.4 0.6 0.6 0.4, 0.4 0.6 0.6 0.4, 0.4 0.4 0.4 0.4]
                           depth    (make-depth-texture :linear :clamp {:width 4 :height 4 :data (float-array data)})]
@@ -477,7 +480,8 @@ void main()
     (offscreen-render 64 64
                       (let [indices  [0 1 3 2]
                             vertices [-1.0 -1.0 0.5 -1.0 -1.0, 1.0 -1.0 0.5 2.0 -1.0, -1.0 1.0 0.5 -1.0 2.0, 1.0 1.0 0.5 2.0 2.0]
-                            program  (make-program :vertex [vertex-texture] :fragment [fragment-texture-3d])
+                            program  (make-program :sfsim25.render/vertex [vertex-texture]
+                                                   :sfsim25.render/fragment [fragment-texture-3d])
                             vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                             data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
                             tex      (make-float-texture-3d ?interpolation ?boundary
@@ -515,7 +519,7 @@ void main()
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-          program  (make-program :vertex [vertex-texture] :fragment [fragment-two-textures])
+          program  (make-program :sfsim25.render/vertex [vertex-texture] :sfsim25.render/fragment [fragment-two-textures])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
           tex1     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
           tex2     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
@@ -576,8 +580,9 @@ void main(void)
   (offscreen-render 64 64
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          program  (make-program :vertex [vertex-passthrough] :tess-control [control-uniform] :tess-evaluation [evaluation-mix]
-                                 :geometry [geometry-triangle] :fragment [fragment-blue])
+          program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/tess-control [control-uniform]
+                                 :sfsim25.render/tess-evaluation [evaluation-mix] :sfsim25.render/geometry [geometry-triangle]
+                                 :sfsim25.render/fragment [fragment-blue])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -606,7 +611,8 @@ void main()
   (offscreen-render 160 120
     (let [indices  [0 1 3 2]
           vertices [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5 0.5 0.5, 0.5 0.5 0.5]
-          program  (make-program :vertex [vertex-passthrough] :fragment [fragment-part1 fragment-part2])
+          program  (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                 :sfsim25.render/fragment [fragment-part1 fragment-part2])
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -643,7 +649,8 @@ void main()
                tex2     (make-empty-float-texture-2d :linear :clamp 1 1)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
+               program  (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                      :sfsim25.render/fragment [fragment-two-attachments])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullback nil [tex1 tex2]
                                (use-program program)
@@ -660,7 +667,8 @@ void main()
          (let [tex      (make-empty-float-texture-3d :linear :clamp 1 1 2)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-two-attachments])
+               program  (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                      :sfsim25.render/fragment [fragment-two-attachments])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullback nil [tex]
                                (use-program program)
@@ -686,7 +694,7 @@ void main(void)
          (let [depth    (make-empty-depth-texture-2d :linear :clamp 1 1)
                indices  [2 3 1 0]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
+               program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-noop])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullfront depth []
                                (use-program program)
@@ -714,7 +722,7 @@ void main()
            (offscreen-render 64 64
              (let [indices  [0 1 3 2]
                    vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-                   program  (make-program :vertex [vertex-texture] :fragment [lod-texture-1d])
+                   program  (make-program :sfsim25.render/vertex [vertex-texture] :sfsim25.render/fragment [lod-texture-1d])
                    vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                    data     (flatten (repeat 8 [0 0 1 1]))
                    tex      (make-float-texture-1d :linear :clamp (float-array data))]
@@ -747,7 +755,8 @@ void main()
            (with-invisible-window
              (let [indices  [0 1 3 2]
                    vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                   program  (make-program :vertex [vertex-passthrough] :fragment [(alpha-probe ?alpha)])
+                   program  (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                          :sfsim25.render/fragment [(alpha-probe ?alpha)])
                    vao      (make-vertex-array-object program indices vertices ["point" 3])
                    tex      (texture-render-color 1 1 true (use-program program) (render-quads vao))
                    img      (rgba-texture->vectors4 tex)]
@@ -769,7 +778,7 @@ void main()
          (with-invisible-window
            (let [indices  (vec (reverse [0 1 3 2]))
                  vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
-                 program  (make-program :vertex [vertex-passthrough] :fragment [fragment-noop])
+                 program  (make-program :sfsim25.render/vertex [vertex-passthrough] :sfsim25.render/fragment [fragment-noop])
                  vao      (make-vertex-array-object program indices vertices ["point" 3])
                  tex      (texture-render-depth 10 10 (clear) (use-program program) (render-quads vao))]
              (get-float (depth-texture->floats tex) 5 5) => ?z
@@ -836,10 +845,10 @@ void main(void)
               vertices       [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
                               -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
                               -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
-              program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
-                                           :fragment [fragment-shadow])
-              program-main   (make-program :vertex [vertex-scene]
-                                           :fragment [fragment-scene s/shadow-lookup])
+              program-shadow (make-program :sfsim25.render/vertex [vertex-shadow s/shrink-shadow-index]
+                                           :sfsim25.render/fragment [fragment-shadow])
+              program-main   (make-program :sfsim25.render/vertex [vertex-scene]
+                                           :sfsim25.render/fragment [fragment-scene s/shadow-lookup])
               vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-map     (texture-render-depth
                                128 128
@@ -893,11 +902,12 @@ void main(void)
               vertices       [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
                               -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
                               -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
-              program-shadow (make-program :vertex [vertex-shadow s/shrink-shadow-index]
-                                           :fragment [fragment-shadow])
-              program-main   (make-program :vertex [vertex-scene]
-                                           :fragment [fragment-scene-cascade (s/shadow-cascade-lookup num-steps "shadow_lookup")
-                                                      s/shadow-lookup])
+              program-shadow (make-program :sfsim25.render/vertex [vertex-shadow s/shrink-shadow-index]
+                                           :sfsim25.render/fragment [fragment-shadow])
+              program-main   (make-program :sfsim25.render/vertex [vertex-scene]
+                                           :sfsim25.render/fragment [fragment-scene-cascade
+                                                                     (s/shadow-cascade-lookup num-steps "shadow_lookup")
+                                                                     s/shadow-lookup])
               vao            (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-maps    (shadow-cascade 128 shadow-mats program-shadow
                                              (fn [shadow-ndc-matrix]
@@ -959,7 +969,8 @@ void main()
          (let [tex      (make-empty-float-cubemap :linear :clamp 1)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-               program  (make-program :vertex [vertex-passthrough] :fragment [fragment-cubemap-attachment])
+               program  (make-program :sfsim25.render/vertex [vertex-passthrough]
+                                      :sfsim25.render/fragment [fragment-cubemap-attachment])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
            (framebuffer-render 1 1 :cullback nil [tex]
                                (use-program program)
@@ -986,7 +997,7 @@ void main()
           vertices1 [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0]
           indices2  [0 1 3 2]
           vertices2 [-0.5 -0.5 0.3 0.0 1.0, 1.0 -0.5 0.3 0.0 1.0, -0.5 1.0 0.3 0.0 1.0, 1.0 1.0 0.3 0.0 1.0]
-          program   (make-program :vertex [vertex-color] :fragment [fragment-color])
+          program   (make-program :sfsim25.render/vertex [vertex-color] :sfsim25.render/fragment [fragment-color])
           vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
           vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
       (with-stencils
