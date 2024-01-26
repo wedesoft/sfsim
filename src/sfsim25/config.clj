@@ -1,6 +1,6 @@
 (ns sfsim25.config
     "Configuration values for software"
-    (:require [clojure.math :refer (to-radians)]
+    (:require [clojure.math :refer (exp to-radians)]
               [fastmath.vector :refer (vec3)]
               [sfsim25.util :refer (octaves)]))
 
@@ -34,6 +34,12 @@
                                    :anisotropic 0.25
                                    :cloud-step 400.0
                                    :opacity-cutoff 0.01})
+
+(def shadow-config #:sfsim25.opacity{:num-opacity-layers 7
+                                     :shadow-size 512
+                                     :num-steps 3
+                                     :mix 0.8
+                                     :shadow-bias (exp -6.0)})
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

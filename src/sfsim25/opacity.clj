@@ -18,8 +18,8 @@
 (defn make-shadow-data
   "Create hash map with shadow parameters"
   {:malli/schema [:=> [:cat :map :map :map] :map]}
-  [data planet-config cloud-data]
-  (assoc data
+  [shadow-config planet-config cloud-data]
+  (assoc shadow-config
          ::depth (render-depth (:sfsim25.planet/radius planet-config)
                                (:sfsim25.planet/max-height planet-config)
                                (:sfsim25.clouds/cloud-top cloud-data))))
