@@ -31,20 +31,7 @@
 (def window (make-window "sfsim25" 1280 720))
 (GLFW/glfwShowWindow window)
 
-(def cloud-data
-  (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves (clouds/octaves 4 0.7)
-                                           :perlin-octaves (clouds/octaves 4 0.7)
-                                           :cloud-bottom 2000.0
-                                           :cloud-top 5000.0
-                                           :detail-scale 4000.0
-                                           :cloud-scale 100000.0
-                                           :cloud-multiplier 10.0
-                                           :cover-multiplier 26.0
-                                           :threshold 18.2
-                                           :cap 0.007
-                                           :anisotropic 0.25
-                                           :cloud-step 400.0
-                                           :opacity-cutoff 0.01}))
+(def cloud-data (clouds/make-cloud-data config/cloud-config))
 
 (def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
 

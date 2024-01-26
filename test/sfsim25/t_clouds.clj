@@ -22,10 +22,6 @@
 
 (GLFW/glfwInit)
 
-(facts "Create octaves summing to one"
-       (octaves 4 1.0) => [0.25 0.25 0.25 0.25]
-       (octaves 2 0.25) => [0.8 0.2])
-
 (def cloud-noise-probe
   (template/fn [x y z]
 "#version 410 core

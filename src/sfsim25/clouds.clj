@@ -17,14 +17,6 @@
 
 (def cover-size 512)
 
-(defn octaves
-  "Creat eoctaves summing to one"
-  {:malli/schema [:=> [:cat N :double] [:vector :double]]}
-  [n decay]
-  (let [series (take n (iterate #(* % decay) 1.0))
-        sum    (apply + series)]
-    (mapv #(/ % sum) series)))
-
 (defn cloud-noise
   "Shader for sampling 3D cloud noise"
   {:malli/schema [:=> [:cat [:vector :double]] [:vector :string]]}
@@ -301,7 +293,7 @@
 (defn make-cloud-data
   "Method to load cloud textures and collect cloud data (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [data]
+  [cloud-config]
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
         worley-data          {:width worley-size :height worley-size :depth worley-size :data worley-floats}
@@ -316,7 +308,7 @@
         bluenoise-data       {:width noise-size :height noise-size :data bluenoise-floats}
         bluenoise            (make-float-texture-2d :nearest :repeat bluenoise-data)]
     (generate-mipmap worley)
-    (assoc data
+    (assoc cloud-config
            ::worley worley
            ::perlin-worley perlin-worley
            ::cloud-cover cloud-cover

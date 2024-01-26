@@ -436,5 +436,13 @@
   [array dimension]
   (count (nth (iterate first array) dimension)))
 
+(defn octaves
+  "Creat eoctaves summing to one"
+  {:malli/schema [:=> [:cat N :double] [:vector :double]]}
+  [n decay]
+  (let [series (take n (iterate #(* % decay) 1.0))
+        sum    (apply + series)]
+    (mapv #(/ % sum) series)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -201,3 +201,7 @@
        (dimension-count [[1 2 3]] 0) => 1
        (dimension-count [[1 2 3]] 1) => 3
        (dimension-count [[[1 2]]] 2) => 2)
+
+(facts "Create octaves summing to one"
+       (octaves 4 1.0) => [0.25 0.25 0.25 0.25]
+       (octaves 2 0.25) => [0.8 0.2])
