@@ -18,15 +18,15 @@
 (defn make-shadow-data
   "Create hash map with shadow parameters"
   {:malli/schema [:=> [:cat :map :map :map] :map]}
-  [data planet-data cloud-data]
+  [data planet-config cloud-data]
   (assoc data
-         ::depth (render-depth (:sfsim25.planet/radius planet-data)
-                               (:sfsim25.planet/max-height planet-data)
+         ::depth (render-depth (:sfsim25.planet/radius planet-config)
+                               (:sfsim25.planet/max-height planet-config)
                                (:sfsim25.clouds/cloud-top cloud-data))))
 
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
-  [& {:keys [planet-data shadow-data cloud-data]}]
+  [& {:keys [planet-config shadow-data cloud-data]}]
   (let [program  (make-program :sfsim25.render/vertex [opacity-vertex]
                                :sfsim25.render/fragment [(opacity-fragment (::num-opacity-layers shadow-data)
                                                                            (:sfsim25.clouds/perlin-octaves cloud-data)
@@ -37,7 +37,7 @@
     (use-program program)
     (setup-cloud-render-uniforms program cloud-data 0)
     (uniform-int program "shadow_size" (::shadow-size shadow-data))
-    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
+    (uniform-float program "radius" (:sfsim25.planet/radius planet-config))
     {:program program
      :cloud-data cloud-data
      :shadow-data shadow-data

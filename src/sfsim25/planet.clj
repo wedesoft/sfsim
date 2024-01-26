@@ -108,8 +108,8 @@
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [planet-data shadow-data]}]
-  (let [tilesize (::tilesize planet-data)
+  [& {:keys [planet-config shadow-data]}]
+  (let [tilesize (::tilesize planet-config)
         program  (make-program :sfsim25.render/vertex [vertex-planet]
                                :sfsim25.render/tess-control [tess-control-planet]
                                :sfsim25.render/tess-evaluation [tess-evaluation-planet-shadow]
@@ -146,8 +146,8 @@
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-data cloud-data shadow-data]}]
-  (let [tilesize (::tilesize planet-data)
+  [& {:keys [render-config atmosphere-luts planet-config cloud-data shadow-data]}]
+  (let [tilesize (::tilesize planet-config)
         program  (make-program :sfsim25.render/vertex [vertex-planet]
                                :sfsim25.render/tess-control [tess-control-planet]
                                :sfsim25.render/tess-evaluation [tess-evaluation-planet]
@@ -161,7 +161,7 @@
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
     (setup-atmosphere-uniforms program atmosphere-luts 1 false)
-    (uniform-float program "radius" (::radius planet-data))
+    (uniform-float program "radius" (::radius planet-config))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-config))
@@ -204,8 +204,8 @@
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-data shadow-data]}]
-  (let [tilesize (::tilesize planet-data)
+  [& {:keys [render-config atmosphere-luts planet-config shadow-data]}]
+  (let [tilesize (::tilesize planet-config)
         program  (make-program :sfsim25.render/vertex [vertex-planet]
                                :sfsim25.render/tess-control [tess-control-planet]
                                :sfsim25.render/tess-evaluation [tess-evaluation-planet]
@@ -222,17 +222,17 @@
     (setup-atmosphere-uniforms program atmosphere-luts 5 true)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-float program "dawn_start" (::dawn-start planet-data))
-    (uniform-float program "dawn_end" (::dawn-end planet-data))
+    (uniform-float program "dawn_start" (::dawn-start planet-config))
+    (uniform-float program "dawn_end" (::dawn-end planet-config))
     (uniform-float program "specular" (:sfsim25.render/specular render-config))
-    (uniform-float program "radius" (::radius planet-data))
-    (uniform-float program "albedo" (::albedo planet-data))
-    (uniform-float program "reflectivity" (::reflectivity planet-data))
-    (uniform-vector3 program "water_color" (::water-color planet-data))
+    (uniform-float program "radius" (::radius planet-config))
+    (uniform-float program "albedo" (::albedo planet-config))
+    (uniform-float program "reflectivity" (::reflectivity planet-config))
+    (uniform-vector3 program "water_color" (::water-color planet-config))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-config))
     {:program program
      :atmosphere-luts atmosphere-luts
-     :planet-data planet-data}))
+     :planet-config planet-config}))
 
 (defn render-planet
   "Render planet (untested)"
@@ -267,9 +267,9 @@
 (defn load-tile-into-opengl
   "Load textures of single tile into OpenGL (untested)"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}
-  [{:keys [program planet-data]} tile]
-  (let [tilesize       (::tilesize planet-data)
-        color-tilesize (::color-tilesize planet-data)
+  [{:keys [program planet-config]} tile]
+  (let [tilesize       (::tilesize planet-config)
+        color-tilesize (::color-tilesize planet-config)
         indices        [0 2 3 1]
         vertices       (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
@@ -307,10 +307,10 @@
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
-  [{:keys [planet-data]} tree width position]
-  (let [tilesize  (::tilesize planet-data)
-        increase? (partial increase-level? tilesize (::radius planet-data) width 60.0 10 6 position)]; TODO: use params for values
-    (update-level-of-detail tree (::radius planet-data) increase? true)))
+  [{:keys [planet-config]} tree width position]
+  (let [tilesize  (::tilesize planet-config)
+        increase? (partial increase-level? tilesize (::radius planet-config) width 60.0 10 6 position)]; TODO: use params for values
+    (update-level-of-detail tree (::radius planet-config) increase? true)))
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))
 

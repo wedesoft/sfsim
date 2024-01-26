@@ -31,16 +31,6 @@
 (def window (make-window "sfsim25" 1280 720))
 (GLFW/glfwShowWindow window)
 
-(def planet-data #:sfsim25.planet{:radius 6378000.0
-                                  :max-height 8000.0
-                                  :albedo 0.9
-                                  :dawn-start -0.2
-                                  :dawn-end 0.0
-                                  :tilesize 33
-                                  :color-tilesize 129
-                                  :reflectivity 0.1
-                                  :water-color (vec3 0.09 0.11 0.34)})
-
 (def cloud-data
   (clouds/make-cloud-data #:sfsim25.clouds{:cloud-octaves (clouds/octaves 4 0.7)
                                            :perlin-octaves (clouds/octaves 4 0.7)
@@ -64,24 +54,24 @@
                                               :num-steps 3
                                               :mix 0.8
                                               :shadow-bias (exp -6.0)}
-                            planet-data cloud-data))
+                            config/planet-config cloud-data))
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
-  (opacity/make-opacity-renderer :planet-data planet-data
+  (opacity/make-opacity-renderer :planet-config config/planet-config
                                  :shadow-data shadow-data
                                  :cloud-data cloud-data))
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
-  (planet/make-planet-shadow-renderer :planet-data planet-data
+  (planet/make-planet-shadow-renderer :planet-config config/planet-config
                                       :shadow-data shadow-data))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
   (planet/make-cloud-planet-renderer :render-config config/render-config
                                      :atmosphere-luts atmosphere-luts
-                                     :planet-data planet-data
+                                     :planet-config config/planet-config
                                      :shadow-data shadow-data
                                      :cloud-data cloud-data))
 
@@ -89,7 +79,7 @@
 (def cloud-atmosphere-renderer
   (clouds/make-cloud-atmosphere-renderer :render-config config/render-config
                                          :atmosphere-luts atmosphere-luts
-                                         :planet-data planet-data
+                                         :planet-config config/planet-config
                                          :shadow-data shadow-data
                                          :cloud-data cloud-data))
 
@@ -97,14 +87,14 @@
 (def planet-renderer
   (planet/make-planet-renderer :render-config config/render-config
                                :atmosphere-luts atmosphere-luts
-                               :planet-data planet-data
+                               :planet-config config/planet-config
                                :shadow-data shadow-data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
   (atmosphere/make-atmosphere-renderer :render-config config/render-config
                                        :atmosphere-luts atmosphere-luts
-                                       :planet-data planet-data))
+                                       :planet-config config/planet-config))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -145,7 +135,7 @@
              (swap! light + (* l 0.1 dt))
              (swap! opacity-base + (* dt to))
              (GL11/glFinish)
-             (let [render-vars  (make-render-vars planet-data cloud-data config/render-config (aget w 0) (aget h 0)
+             (let [render-vars  (make-render-vars config/planet-config cloud-data config/render-config (aget w 0) (aget h 0)
                                                   @position @orientation (vec3 (cos @light) (sin @light) 0) 1.0)
                    shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
                                                                     render-vars (planet/get-current-tree tile-tree) @opacity-base)

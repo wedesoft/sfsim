@@ -361,8 +361,8 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-data shadow-data cloud-data]}]
-  (let [tilesize (:sfsim25.planet/tilesize planet-data)
+  [& {:keys [render-config atmosphere-luts planet-config shadow-data cloud-data]}]
+  (let [tilesize (:sfsim25.planet/tilesize planet-config)
         program  (make-program :sfsim25.render/vertex [vertex-atmosphere]
                                :sfsim25.render/fragment [(fragment-atmosphere-clouds (:sfsim25.opacity/num-steps shadow-data)
                                                                                      (::perlin-octaves cloud-data)
@@ -372,7 +372,7 @@
     (setup-cloud-render-uniforms program cloud-data 3)
     (setup-cloud-sampling-uniforms program cloud-data 6)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
-    (uniform-float program "radius" (:sfsim25.planet/radius planet-data))
+    (uniform-float program "radius" (:sfsim25.planet/radius planet-config))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim25.render/amplification render-config))
