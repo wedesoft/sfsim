@@ -12,7 +12,8 @@
               [sfsim25.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
               [sfsim25.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
               [sfsim25.atmosphere :refer (vertex-atmosphere)]
-              [sfsim25.util :refer (get-vector3 get-float get-float-3d slurp-floats)]
+              [sfsim25.image :refer (get-vector3 get-float get-float-3d)]
+              [sfsim25.util :refer (slurp-floats)]
               [sfsim25.worley :refer (worley-size)]
               [sfsim25.clouds :refer :all])
     (:import [org.lwjgl.glfw GLFW]))

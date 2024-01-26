@@ -5,7 +5,7 @@
                                       texture-render-color use-program with-invisible-window destroy-program destroy-texture
                                       destroy-vertex-array-object)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer (get-vector3 slurp-image spit-png)]))
+              [sfsim25.image :refer (get-vector3 slurp-image spit-png)]))
 
 (defn roughly-matrix
   "compare matrix with expected value."

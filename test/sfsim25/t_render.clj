@@ -8,6 +8,7 @@
             [clojure.math :refer (to-radians)]
             [comb.template :as template]
             [sfsim25.util :refer :all]
+            [sfsim25.image :refer :all]
             [sfsim25.matrix :refer :all :as matrix]
             [sfsim25.shaders :as s]
             [sfsim25.quaternion :as q]

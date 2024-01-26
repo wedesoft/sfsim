@@ -13,6 +13,7 @@
               [sfsim25.shaders :as shaders]
               [sfsim25.matrix :refer :all]
               [sfsim25.interpolate :refer :all]
+              [sfsim25.image :refer :all]
               [sfsim25.util :refer :all]
               [sfsim25.planet :refer :all]
               [sfsim25.bluenoise :as bluenoise]

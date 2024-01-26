@@ -3,7 +3,7 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [sfsim25.conftest :refer (is-image)]
-              [sfsim25.util :refer (slurp-image)]
+              [sfsim25.image :refer (slurp-image)]
               [sfsim25.scale-image :refer :all])
     (:import [java.io File]))
 

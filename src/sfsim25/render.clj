@@ -6,7 +6,8 @@
             [malli.core :as m]
             [sfsim25.matrix :refer (fvec3 fmat3 fmat4 shadow-box quaternion->matrix transformation-matrix projection-matrix)]
             [sfsim25.quaternion :refer (quaternion) :as q]
-            [sfsim25.util :refer (sqr N image)])
+            [sfsim25.util :refer (sqr N)]
+            [sfsim25.image :refer (image)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [org.lwjgl.glfw GLFW]))

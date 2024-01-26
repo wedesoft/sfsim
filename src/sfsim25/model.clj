@@ -7,7 +7,8 @@
               [sfsim25.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles make-rgba-texture
                                       destroy-texture vertex-array-object texture-2d)]
               [sfsim25.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
-              [sfsim25.util :refer (N0 image)]
+              [sfsim25.image :refer (image)]
+              [sfsim25.util :refer (N0)]
               [sfsim25.quaternion :refer (->Quaternion quaternion) :as q])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
               AINodeAnim AIMatrix4x4 AIFace AIVector3D AIScene AIVectorKey AIQuatKey]

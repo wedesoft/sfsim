@@ -5,6 +5,7 @@
             [sfsim25.conftest :refer (roughly-vector)]
             [fastmath.vector :refer (vec3 add mult)]
             [clojure.math :refer (sqrt PI)]
+            [sfsim25.image :as image]
             [sfsim25.util :as util]
             [sfsim25.cubemap :refer :all :as cubemap])
   (:import [fastmath.vector Vec3]))
@@ -162,7 +163,7 @@
 (fact "Load (and cache) map tile"
   (world-map-tile "tmp/day" 2 3 5) => :map-tile
     (provided
-      (util/slurp-image "tmp/day/2/3/5.png") => :map-tile :times irrelevant
+      (image/slurp-image "tmp/day/2/3/5.png") => :map-tile :times irrelevant
       (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
@@ -174,14 +175,14 @@
 
 (facts "Read pixels from world map tile"
   (with-redefs [cubemap/world-map-tile list
-                util/get-pixel         (fn [img ^long y ^long x] (list 'get-pixel img y x))]
+                image/get-pixel        (fn [img ^long y ^long x] (list 'get-pixel img y x))]
     ((world-map-pixel "tmp/day") 240 320 5 675) => '(get-pixel ("tmp/day" 5 0 0) 240 320)
     ((world-map-pixel "tmp/day") (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => '(get-pixel ("tmp/day" 5 2 1) 240 320)))
 
 (facts "Read pixels from elevation tile"
   (let [args (atom nil)]
     (with-redefs [cubemap/elevation-tile list
-                  util/get-short         (fn [img ^long y ^long x] (reset! args (list img y x)) 42)]
+                  image/get-short        (fn [img ^long y ^long x] (reset! args (list img y x)) 42)]
       (elevation-pixel 240 320 5 675) => 42
       @args => '((5 0 0) 240 320)
       (elevation-pixel (+ (* 2 675) 240) (+ (* 1 675) 320) 5 675) => 42

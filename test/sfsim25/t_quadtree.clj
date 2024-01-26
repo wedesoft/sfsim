@@ -6,6 +6,7 @@
             [clojure.math :refer (tan to-radians)]
             [sfsim25.quadtree :refer :all :as quadtree]
             [sfsim25.cubemap :refer (cube-map) :as cubemap]
+            [sfsim25.image :as image]
             [sfsim25.util :as util]))
 
 (mi/collect! {:ns ['sfsim25.quadtree]})
@@ -24,10 +25,10 @@
 (tabular "Load normals, scale factors and colors for a tile"
   (fact (?k (load-tile-data 3 2 2 1 6378000.0)) => ?result
     (provided
-      (util/slurp-image "data/globe/3/2/1/2.jpg")       => "2.jpg"
-      (util/slurp-image "data/globe/3/2/1/2.night.jpg") => "2.night.jpg"
+      (image/slurp-image "data/globe/3/2/1/2.jpg")       => "2.jpg"
+      (image/slurp-image "data/globe/3/2/1/2.night.jpg") => "2.night.jpg"
       (util/slurp-floats "data/globe/3/2/1/2.surf")     => "2.surf"
-      (util/slurp-normals "data/globe/3/2/1/2.png")     => "2.png"
+      (image/slurp-normals "data/globe/3/2/1/2.png")     => "2.png"
       (util/slurp-bytes "data/globe/3/2/1/2.water")     => "2.water"
       (cubemap/tile-center 3 2 2 1 6378000.0)           => :tile-center))
   ?k       ?result

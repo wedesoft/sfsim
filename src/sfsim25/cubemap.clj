@@ -5,7 +5,8 @@
             [fastmath.matrix :refer (mulv)]
             [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
             [sfsim25.matrix :refer (rotation-y rotation-z fvec3)]
-            [sfsim25.util :refer (tile-path slurp-image slurp-shorts get-pixel get-short sqr)]))
+            [sfsim25.image :refer (slurp-image get-pixel get-short)]
+            [sfsim25.util :refer (slurp-shorts tile-path sqr)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

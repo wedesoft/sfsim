@@ -10,7 +10,7 @@
             [sfsim25.render :refer :all]
             [sfsim25.shaders :refer :all]
             [sfsim25.matrix :refer (orthogonal transformation-matrix)]
-            [sfsim25.util :refer (get-float get-vector3 convert-4d-to-2d)])
+            [sfsim25.image :refer (get-float get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim25.shaders]})

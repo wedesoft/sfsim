@@ -1,6 +1,6 @@
 (ns sfsim25.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (to-radians cos sin exp)]
+  (:require [clojure.math :refer (to-radians cos sin)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim25.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth
                                     make-render-vars)]

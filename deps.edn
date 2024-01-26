@@ -5,16 +5,16 @@
         progrock/progrock {:mvn/version "0.1.2"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.3.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
-        org.lwjgl/lwjgl {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-stb {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-assimp {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.3.3"}}
+        org.lwjgl/lwjgl {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-stb {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-assimp {:mvn/version "3.3.2"}
+        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.3.2"}}
  :paths ["src"]
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3"
                                                          :git/sha "e537cd1f3ac65c4cbc5001dce00a636d0006da39"}

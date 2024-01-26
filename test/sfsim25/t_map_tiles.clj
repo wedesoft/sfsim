@@ -3,7 +3,7 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [sfsim25.conftest :refer (is-image)]
-              [sfsim25.util :refer (slurp-image)]
+              [sfsim25.image :refer (slurp-image)]
               [sfsim25.map-tiles :refer :all])
     (:import [java.nio.file Files]
              [java.nio.file.attribute FileAttribute]))

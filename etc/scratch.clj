@@ -16,7 +16,8 @@
 
 ; (def model (atom (read-gltf "etc/gear.gltf")))
 ; (def model (atom (read-gltf "etc/cone.gltf")))
-(def model (atom (read-gltf "etc/venturestar.gltf")))
+; (def model (atom (read-gltf "etc/venturestar.gltf")))
+(def model (atom (read-gltf "test/sfsim25/fixtures/model/cube.gltf")))
 
 (defn extract [child]
   (merge {:name (:name child)}

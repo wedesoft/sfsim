@@ -16,7 +16,8 @@
                                       uniform-sampler uniform-vector3 use-program use-textures with-invisible-window
                                       make-rgba-texture)]
               [sfsim25.shaders :as shaders]
-              [sfsim25.util :refer (convert-4d-to-2d get-vector3 third)]
+              [sfsim25.image :refer (convert-4d-to-2d get-vector3)]
+              [sfsim25.util :refer (third)]
               [sfsim25.atmosphere :refer (atmosphere-intersection attenuation-outer attenuation-track elevation-to-index
                                           extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
                                           index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?

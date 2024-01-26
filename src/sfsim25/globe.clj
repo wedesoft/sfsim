@@ -4,8 +4,8 @@
             [fastmath.vector :refer (sub)]
             [sfsim25.cubemap :refer (cartesian->geodetic color-geodetic-day color-geodetic-night cube-coordinate cube-map
                                      normal-for-point project-onto-globe water-geodetic tile-center)]
-            [sfsim25.util :refer (align-address cube-dir cube-path make-progress-bar set-byte! set-pixel!
-                                  set-vector3! spit-bytes spit-floats spit-jpg sqr tick-and-print spit-normals)])
+            [sfsim25.image :refer (set-byte! set-pixel! set-vector3! spit-jpg spit-normals)]
+            [sfsim25.util :refer (align-address cube-dir cube-path make-progress-bar spit-bytes spit-floats sqr tick-and-print)])
   (:import [java.io File])
   (:gen-class))
 

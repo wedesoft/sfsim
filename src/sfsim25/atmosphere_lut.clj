@@ -6,7 +6,8 @@
                                           surface-radiance-space transmittance transmittance-space)]
               [sfsim25.interpolate :refer (interpolate-function make-lookup-table)]
               [sfsim25.matrix :refer (pack-matrices)]
-              [sfsim25.util :refer (convert-4d-to-2d progress-wrap size-of-shape spit-floats)]))
+              [sfsim25.image :refer (convert-4d-to-2d)]
+              [sfsim25.util :refer (progress-wrap size-of-shape spit-floats)]))
 
 (def radius 6378000.0)
 (def height 35000.0)
