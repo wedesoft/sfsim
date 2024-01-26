@@ -77,8 +77,8 @@ Here is an example on how to use Malli schemas in the REPL:
   * [Oreon Engine](https://github.com/fynnfluegge/oreon-engine)
   * [Emulating double precision in Godot](https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds)
 * LWJGL
-  * [LWJGL 2](http://legacy.lwjgl.org/)
-  * [LWJGL Wiki](http://wiki.lwjgl.org/)
+  * [LWJGL](https://www.lwjgl.org/)
+  * [LWJGL Wiki](https://github.com/LWJGL/lwjgl3-wiki/wiki)
   * [LWJGL key table](https://gist.github.com/Mumfrey/5cfc3b7e14fef91b6fa56470dc05218a)
 * Publications
   * [Bruneton: Precomputed Atmospheric Scattering](https://hal.inria.fr/inria-00288758/document)
