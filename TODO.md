@@ -1,5 +1,4 @@
 # TODO
-* get etc/scratch.clj model display working again
 * upgrade to LWJGL 3.3.3 and fix tests
 * integration test using computed data set (only if test image exists)
 * problem with shadow map when near ground

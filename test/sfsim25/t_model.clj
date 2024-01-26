@@ -39,7 +39,7 @@
 
 (fact "12 triangles in index buffer"
       (:indices (first (:meshes cube)))
-      => [1 14 20, 1 20 7, 10 6 19, 10 19 23, 21 18 12, 21 12 15, 16 3 9, 16 9 22, 5 2 8, 5 8 11, 17 13, 0 17 0 4])
+      => [0 1 2, 0 2 3, 4 5 6, 4 6 7, 8 9 10, 8 10 11, 12 13 14, 12 14 15, 16 17 18, 16 18 19, 20 21 22, 20 22 23])
 
 (fact "Size of vertex buffer"
       (count (:vertices (first (:meshes cube)))) => (* 24 6))
@@ -49,10 +49,10 @@
 
 (fact "Find vertices with normals in vertex buffer"
       (take (* 4 6) (:vertices (first (:meshes cube)))) =>
-      [1.0  1.0 -1.0 0.0  0.0 -1.0,
-       1.0  1.0 -1.0 0.0  1.0  0.0,
-       1.0  1.0 -1.0 1.0  0.0  0.0,
-       1.0 -1.0 -1.0 0.0 -1.0  0.0])
+      [1.0  1.0 -1.0 0.0  1.0  0.0,
+      -1.0  1.0 -1.0 0.0  1.0  0.0,
+      -1.0  1.0  1.0 0.0  1.0  0.0,
+       1.0  1.0  1.0 0.0  1.0  0.0])
 
 (fact "Vertex attributes of textureless cube"
       (:attributes (first (:meshes cube))) => ["vertex" 3 "normal" 3])
@@ -180,10 +180,10 @@ void main()
 
 (fact "Find vertices with normals and texture coordinates in vertex buffer"
       (take (* 4 8) (:vertices (first (:meshes dice)))) =>
-      [1.0  1.0 -1.0 0.0  0.0 -1.0 0.625 0.5,
-       1.0  1.0 -1.0 0.0  1.0 -0.0 0.625 0.5,
-       1.0  1.0 -1.0 1.0  0.0 -0.0 0.625 0.5,
-       1.0 -1.0 -1.0 0.0 -1.0 -0.0 0.375 0.5])
+      [1.0  1.0 -1.0 0.0  1.0  0.0 0.625 0.5,
+      -1.0  1.0 -1.0 0.0  1.0  0.0 0.875 0.5,
+      -1.0  1.0  1.0 0.0  1.0  0.0 0.875 0.25,
+       1.0  1.0  1.0 0.0  1.0  0.0 0.625 0.25])
 
 (def vertex-dice
 "#version 410 core
