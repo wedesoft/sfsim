@@ -3,7 +3,7 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (to-radians sqrt PI)]
-              [sfsim25.conftest :refer (roughly-matrix roughly-vector roughly-quaternion record-image is-image)]
+              [sfsim25.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
               [fastmath.matrix :refer (eye mulm mat4x4)]
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim25.matrix :refer :all]

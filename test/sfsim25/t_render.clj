@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [malli.instrument :as mi]
             [malli.dev.pretty :as pretty]
-            [sfsim25.conftest :refer (is-image record-image roughly-vector)]
+            [sfsim25.conftest :refer (is-image roughly-vector)]
             [fastmath.vector :refer (vec3 vec4 normalize)]
             [fastmath.matrix :refer (eye diagonal) :as m]
             [clojure.math :refer (to-radians)]

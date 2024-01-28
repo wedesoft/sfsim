@@ -2,7 +2,7 @@
     (:require [midje.sweet :refer :all]
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
-              [sfsim25.conftest :refer (roughly-vector record-image is-image shader-test)]
+              [sfsim25.conftest :refer (roughly-vector is-image shader-test)]
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [fastmath.vector :refer (vec3 mult emult add dot)]

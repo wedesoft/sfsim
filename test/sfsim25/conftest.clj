@@ -1,5 +1,6 @@
 (ns sfsim25.conftest
     (:require [clojure.math :refer (sqrt)]
+              [clojure.java.io :as io]
               [fastmath.matrix :as fm]
               [sfsim25.render :refer (make-program make-vertex-array-object render-quads rgb-texture->vectors3
                                       texture-render-color use-program with-invisible-window destroy-program destroy-texture
@@ -38,20 +39,18 @@
   "Compare RGB components of image and ignore alpha values."
   [filename tolerance]
   (fn [other]
-      (let [{:keys [width height data]} (slurp-image filename)]
-        (and (== (:width other) width)
-             (== (:height other) height)
-             (let [avg-dist (average-rgba-dist (:data other) data)]
-               (or (<= avg-dist tolerance)
-                   (do
-                     (println (format "Average deviation from %s averages %5.2f > %5.2f" filename avg-dist tolerance))
-                     false)))))))
-
-(defn record-image
-  "Use this test function to record the image the first time."
-  [filename _]
-  (fn [other]
-      (spit-png filename other)))
+      (if (.exists (io/file filename))
+        (let [{:keys [width height data]} (slurp-image filename)]
+          (and (== (:width other) width)
+               (== (:height other) height)
+               (let [avg-dist (average-rgba-dist (:data other) data)]
+                 (or (<= avg-dist tolerance)
+                     (do
+                       (println (format "Average deviation from %s averages %5.2f > %5.2f." filename avg-dist tolerance))
+                       false)))))
+        (do
+          (println (format "Recording image fixture %s." filename))
+          (spit-png filename other)))))
 
 (defn shader-test [setup probe & shaders]
   (fn [uniforms args]

@@ -4,7 +4,7 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [fastmath.vector :refer (vec3)]
-              [sfsim25.conftest :refer (record-image is-image)]
+              [sfsim25.conftest :refer (is-image)]
               [sfsim25.bluenoise :refer :all]
               [sfsim25.render :refer :all]
               [sfsim25.shaders :as shaders])
