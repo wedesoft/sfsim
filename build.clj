@@ -3,18 +3,18 @@
     (:require [clojure.tools.build.api :as b]
               [clojure.java.io :as io]
               [clojure.java.shell :refer (sh)]
-              [sfsim25.worley :as w]
-              [sfsim25.perlin :as p]
-              [sfsim25.scale-image :as si]
-              [sfsim25.scale-elevation :as se]
-              [sfsim25.bluenoise :as bn]
-              [sfsim25.render :as rn]
-              [sfsim25.clouds :as cl]
-              [sfsim25.atmosphere-lut :as al]
-              [sfsim25.map-tiles :as mt]
-              [sfsim25.elevation-tiles :as et]
-              [sfsim25.globe :as g]
-              [sfsim25.util :as u])
+              [sfsim.worley :as w]
+              [sfsim.perlin :as p]
+              [sfsim.scale-image :as si]
+              [sfsim.scale-elevation :as se]
+              [sfsim.bluenoise :as bn]
+              [sfsim.render :as rn]
+              [sfsim.clouds :as cl]
+              [sfsim.atmosphere-lut :as al]
+              [sfsim.map-tiles :as mt]
+              [sfsim.elevation-tiles :as et]
+              [sfsim.globe :as g]
+              [sfsim.util :as u])
     (:import [org.lwjgl.glfw GLFW]))
 
 ; (require '[malli.dev :as dev])
@@ -303,9 +303,9 @@
                   :src-dirs ["src"]
                   :class-dir class-dir})
   (b/uber {:class-dir class-dir
-           :uber-file "target/sfsim25.jar"
+           :uber-file "target/sfsim.jar"
            :basis basis
-           :main 'sfsim25.core}))
+           :main 'sfsim.core}))
 
 (defn all [_]
   (worley)

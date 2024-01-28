@@ -2,10 +2,10 @@
          '[clojure.pprint :as p]
          '[clojure.math :as m]
          '[fastmath.vector :as v]
-         '[sfsim25.render :refer :all]
-         '[sfsim25.util :refer :all]
-         '[sfsim25.matrix :refer (projection-matrix transformation-matrix quaternion->matrix)]
-         '[sfsim25.quaternion :as q])
+         '[sfsim.render :refer :all]
+         '[sfsim.util :refer :all]
+         '[sfsim.matrix :refer (projection-matrix transformation-matrix quaternion->matrix)]
+         '[sfsim.quaternion :as q])
 
 (import '[org.lwjgl.assimp Assimp AIMesh AIVector3D AIVector3D$Buffer AIColor4D AIColor4D$Buffer AIMaterial AIString AITexture AIMaterialProperty AINode AIAnimation AINodeAnim])
 (import '[org.lwjgl PointerBuffer])

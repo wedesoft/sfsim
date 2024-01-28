@@ -1,5 +1,4 @@
 # TODO
-* rename sfsim25 to sfsim
 * integration test using computed data set (only if test image exists)
 * problem with shadow map when near ground
 * namespacing of keywords

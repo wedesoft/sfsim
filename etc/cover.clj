@@ -1,12 +1,12 @@
 (require '[clojure.math :refer (sin cos PI sqrt exp log pow)]
          '[fastmath.vector :refer (vec3)]
          '[fastmath.matrix :refer (mulm)]
-         '[sfsim25.render :refer :all]
-         '[sfsim25.matrix :refer :all]
-         '[sfsim25.worley :refer :all]
-         '[sfsim25.shaders :as shaders]
-         '[sfsim25.clouds :refer :all]
-         '[sfsim25.util :refer :all])
+         '[sfsim.render :refer :all]
+         '[sfsim.matrix :refer :all]
+         '[sfsim.worley :refer :all]
+         '[sfsim.shaders :as shaders]
+         '[sfsim.clouds :refer :all]
+         '[sfsim.util :refer :all])
 
 (import '[org.lwjgl.opengl GL]
         '[org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -70,7 +70,7 @@ void main()
     fragColor = vec3(0, 0, 0);
 }")
 
-(def program (make-program :sfsim25.render/vertex [vertex-shader] :sfsim25.render/fragment [fragment-shader shaders/ray-sphere]))
+(def program (make-program :sfsim.render/vertex [vertex-shader] :sfsim.render/fragment [fragment-shader shaders/ray-sphere]))
 (def indices [0 1 3 2])
 (def vertices [-1 -1 0, 1 -1 0, -1 1 0, 1  1 0])
 (def vao (make-vertex-array-object program indices vertices ["point" 3]))
