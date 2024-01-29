@@ -10,8 +10,7 @@
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.config :as config])
-  (:import [org.lwjgl.opengl GL11]
-           [org.lwjgl.glfw GLFW GLFWKeyCallback])
+  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback])
   (:gen-class))
 
 (set! *unchecked-math* true)
