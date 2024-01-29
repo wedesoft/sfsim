@@ -10,6 +10,7 @@ elevation.*.raw
 .cache
 .cpcache
 .eastwood
+.integration
 .lein-*
 .nrepl-port
 *.class

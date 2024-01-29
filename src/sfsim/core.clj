@@ -33,7 +33,7 @@
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 
-(def atmosphere-luts (atmosphere/make-atmosphere-luts 35000.0))
+(def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
 
 (def shadow-data
   (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
@@ -116,7 +116,6 @@
              (swap! position add (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* dt v)))
              (swap! light + (* l 0.1 dt))
              (swap! opacity-base + (* dt to))
-             (GL11/glFinish)
              (let [render-vars  (make-render-vars config/planet-config cloud-data config/render-config (aget w 0) (aget h 0)
                                                   @position @orientation (vec3 (cos @light) (sin @light) 0) 1.0)
                    shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
@@ -147,14 +146,14 @@
                (flush))
              (swap! t0 + dt))))
   ; TODO: unload all planet tiles (vaos and textures)
+  (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
+  (planet/destroy-planet-renderer planet-renderer)
+  (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
-  (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
-  (planet/destroy-planet-renderer planet-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
-  (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (destroy-window window)
   (GLFW/glfwTerminate)
   (System/exit 0))

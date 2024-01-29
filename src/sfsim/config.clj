@@ -7,6 +7,8 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+(def max-height 35000.0)
+
 (def render-config #:sfsim.render{:amplification 6.0
                                   :specular 1000.0
                                   :fov (to-radians 60.0)})

@@ -318,7 +318,7 @@
   "Create empty tile tree and empty change object (untested)"
   {:malli/schema [:=> :cat tree]}
   []
-  {:tree    (atom [])
+  {:tree    (atom {})
    :changes (atom (future {:tree {} :drop [] :load []}))})
 
 (defn update-tile-tree
