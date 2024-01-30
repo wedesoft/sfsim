@@ -154,7 +154,7 @@
     (.get buffer data)
     (.flip buffer)
     (STBImage/stbi_image_free buffer)
-    {:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
+    #:sfsim.image{:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
 
 (def position-key (m/schema [:map [:time :double] [:position fvec3]]))
 

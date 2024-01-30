@@ -45,7 +45,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
-          worley   (make-float-texture-3d :linear :repeat {:width 2 :height 2 :depth 2 :data (float-array data)})
+          worley   (make-float-texture-3d :linear :repeat #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data)})
           program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                  :sfsim.render/fragment [(cloud-noise-probe x y z) (last (cloud-noise []))])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
@@ -226,7 +226,8 @@ void main()
           offset-data     (zeropad offset)
           opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
           data            (concat offset-data opacity-data)
-          opacity-layers  (make-float-texture-3d :linear :clamp {:width 2 :height 2 :depth 8 :data (float-array data)})
+          opacity-layers  (make-float-texture-3d :linear :clamp
+                                                 #:sfsim.image{:width 2 :height 2 :depth 8 :data (float-array data)})
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
                                                 (uniform-sampler program "opacity_layers" 0)
@@ -286,7 +287,7 @@ void main()
                                                                 opacity-lookup-mock])
           vao             (make-vertex-array-object program indices vertices ["point" 3])
           opacity-texs    (map #(make-float-texture-3d :linear :clamp
-                                                       {:width 1 :height 1 :depth 1 :data (float-array [%1 %2])})
+                                                       #:sfsim.image{:width 1 :height 1 :depth 1 :data (float-array [%1 %2])})
                                opacities offsets)
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
@@ -450,7 +451,7 @@ float lookup_mock(vec3 point)
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           vectors  [[1 0 0] [0 2 0] [0 0 4] [-1 0 0] [0 -1 0] [0 0 -1]]
           to-data  (fn [v] (float-array (flatten (repeat 9 v))))
-          current  (make-vector-cubemap :linear :clamp (mapv (fn [v] {:width 3 :height 3 :data (to-data v)}) vectors))
+          current  (make-vector-cubemap :linear :clamp (mapv (fn [v] #:sfsim.image{:width 3 :height 3 :data (to-data v)}) vectors))
           warp     (make-cubemap-warp-program "current" "lookup_mock" [lookup-mock])
           warped   (cubemap-warp 3 warp
                                  (uniform-sampler warp "current" 0)
@@ -606,14 +607,14 @@ void main()
     (with-invisible-window
       (let [worley-size  8
             worley-north (make-float-texture-3d :linear :repeat
-                                                {:width worley-size :height worley-size :depth worley-size
-                                                 :data (slurp-floats "test/sfsim/fixtures/clouds/worley-north.raw")})
+                                                #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                              :data (slurp-floats "test/sfsim/fixtures/clouds/worley-north.raw")})
             worley-south (make-float-texture-3d :linear :repeat
-                                                {:width worley-size :height worley-size :depth worley-size
-                                                 :data (slurp-floats "test/sfsim/fixtures/clouds/worley-south.raw")})
+                                                #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                              :data (slurp-floats "test/sfsim/fixtures/clouds/worley-south.raw")})
             worley-cover (make-float-texture-3d :linear :repeat
-                                                {:width worley-size :height worley-size :depth worley-size
-                                                 :data (slurp-floats "test/sfsim/fixtures/clouds/worley-cover.raw")})
+                                                #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                              :data (slurp-floats "test/sfsim/fixtures/clouds/worley-cover.raw")})
             program      (make-program :sfsim.render/vertex [cover-vertex]
                                        :sfsim.render/fragment [cover-fragment shaders/ray-sphere])
             indices      [0 1 3 2]
@@ -777,7 +778,7 @@ void main()
     (let [indices     [0 1 3 2]
           vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
-          data->image (fn [data] {:width 2 :height 2 :data (float-array data)})
+          data->image (fn [data] #:sfsim.image{:width 2 :height 2 :data (float-array data)})
           cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
           program     (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                     :sfsim.render/fragment [(cloud-cover-probe x y z) cloud-cover])
@@ -1159,7 +1160,8 @@ void main()
           z-far       100.0
           tilesize    33
           data        (flatten (for [y (range -1.0 1.0625 0.0625) x (range -1.0 1.0625 0.0625)] [x y 5.0]))
-          surface     (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (float-array data)})
+          surface     (make-vector-texture-2d :linear :clamp
+                                              #:sfsim.image{:width tilesize :height tilesize :data (float-array data)})
           projection  (projection-matrix width height z-near (+ z-far 1) fov)
           origin      (vec3 0 0 10)
           extrinsics  (transformation-matrix (eye 3) origin)

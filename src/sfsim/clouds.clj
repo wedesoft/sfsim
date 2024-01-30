@@ -296,16 +296,17 @@
   [cloud-config]
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
-        worley-data          {:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
         worley               (make-float-texture-3d :linear :repeat worley-data)
         perlin-worley-floats (float-array (map #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
-        perlin-worley-data   {:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
+        perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
         perlin-worley        (make-float-texture-3d :linear :repeat perlin-worley-data)
         cover-floats-list    (map (fn [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
-        cover-data           (map (fn [cover-floats] {:width cover-size :height cover-size :data cover-floats}) cover-floats-list)
+        cover-data           (map (fn [cover-floats] #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
+                                  cover-floats-list)
         cloud-cover          (make-float-cubemap :linear :clamp cover-data)
         bluenoise-floats     (slurp-floats "data/bluenoise.raw")
-        bluenoise-data       {:width noise-size :height noise-size :data bluenoise-floats}
+        bluenoise-data       #:sfsim.image{:width noise-size :height noise-size :data bluenoise-floats}
         bluenoise            (make-float-texture-2d :nearest :repeat bluenoise-data)]
     (generate-mipmap worley)
     (assoc cloud-config

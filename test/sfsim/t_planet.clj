@@ -98,7 +98,7 @@ void main()
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    data        [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5]
                                    surface     (make-vector-texture-2d :linear :clamp
-                                                                       {:width 2 :height 2 :data (float-array data)})]
+                                                                       #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "surface" 0)
@@ -151,7 +151,7 @@ void main()
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    data        (map #(* % ?scale) [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5])
                                    surface     (make-vector-texture-2d :linear :clamp
-                                                                       {:width 2 :height 2 :data (float-array data)})]
+                                                                       #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "surface" 0)
@@ -188,7 +188,7 @@ void main()
                               data        [-0.6 -0.5 0.5, 0.4 -0.5 0.5, -0.6  0.5 0.5, 0.4  0.5 0.5]
                               vao         (make-vertex-array-object program indices vertices variables)
                               surface     (make-vector-texture-2d :linear :clamp
-                                                                  {:width 2 :height 2 :data (float-array data)})]
+                                                                  #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
@@ -221,7 +221,7 @@ void main()
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5  0.5 0.0, 0.5  0.5 0.0]
                               surface     (make-vector-texture-2d :linear :clamp
-                                                                  {:width 2 :height 2 :data (float-array data)})]
+                                                                  #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
@@ -255,7 +255,7 @@ void main()
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.25 -0.25 0.25, 0.5 -0.5 0.5, -0.75 0.75 0.75, 1.0 1.0 1.0]
                               surface     (make-vector-texture-2d :linear :clamp
-                                                                  {:width 2 :height 2 :data (float-array data)})]
+                                                                  #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
@@ -285,7 +285,7 @@ void main()
       (with-invisible-window
         (let [indices          [0 1 3 2]
               vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              surface-radiance (make-vector-texture-2d :linear :clamp {:width size :height size :data S})
+              surface-radiance (make-vector-texture-2d :linear :clamp #:sfsim.image{:width size :height size :data S})
               program          (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                              :sfsim.render/fragment (conj shaders (apply probe args)))
               vao              (make-vertex-array-object program indices vertices ["point" 3])
@@ -516,32 +516,32 @@ float overall_shadow(vec4 point)
                                    night         (make-rgb-texture :linear :clamp
                                                    (slurp-image (str "test/sfsim/fixtures/planet/night.png")))
                                    normals       (make-vector-texture-2d :linear :clamp
-                                                   {:width 2 :height 2 :data (float-array (flatten (repeat 4 [?nx ?ny ?nz])))})
+                                                   #:sfsim.image{:width 2 :height 2
+                                                                 :data (float-array (flatten (repeat 4 [?nx ?ny ?nz])))})
                                    transmittance (make-vector-texture-2d :linear :clamp
-                                                   {:width size :height size
-                                                    :data (float-array (flatten (repeat (* size size) [?tr ?tg ?tb])))})
+                                                   #:sfsim.image{:width size :height size
+                                                                 :data (float-array (flatten (repeat (* size size) [?tr ?tg ?tb])))})
                                    ray-scatter   (make-vector-texture-2d :linear :clamp
-                                                   {:width (* size size) :height (* size size)
-                                                    :data (float-array (repeat (* size size size size 3) ?s))})
+                                                   #:sfsim.image{:width (* size size) :height (* size size)
+                                                                 :data (float-array (repeat (* size size size size 3) ?s))})
                                    mie-strength  (make-vector-texture-2d :linear :clamp
-                                                   {:width (* size size) :height (* size size)
-                                                    :data (float-array (repeat (* size size size size 3) 0))})
+                                                   #:sfsim.image{:width (* size size) :height (* size size)
+                                                                 :data (float-array (repeat (* size size size size 3) 0))})
                                    radiance      (make-vector-texture-2d :linear :clamp
-                                                   {:width size :height size
-                                                    :data (float-array (flatten (repeat (* size size) [?ar ?ag ?ab])))})
+                                                   #:sfsim.image{:width size :height size
+                                                                 :data (float-array (flatten (repeat (* size size) [?ar ?ag ?ab])))})
                                    water         (make-ubyte-texture-2d :linear :clamp
-                                                   {:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
+                                                   #:sfsim.image{:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
                                    worley-data   (float-array (repeat (* 2 2 2) 1.0))
                                    worley        (make-float-texture-3d :linear :repeat
-                                                                        {:width 2 :height 2 :depth 2 :data worley-data})]
+                                                   #:sfsim.image{:width 2 :height 2 :depth 2 :data worley-data})
+                                   textures      [day night normals transmittance ray-scatter mie-strength radiance water worley]]
                                (clear (vec3 0 0 0))
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
-                               (use-textures {0 day 1 night 2 normals 3 transmittance 4 ray-scatter 5 mie-strength 6 radiance
-                                              7 water 8 worley})
+                               (use-textures (zipmap (range) textures))
                                (render-quads vao)
-                               (doseq [tex [worley water radiance ray-scatter mie-strength transmittance normals night day]]
-                                      (destroy-texture tex))
+                               (doseq [tex textures] (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/sfsim/fixtures/planet/" ?result ".png") 0.0))
@@ -590,7 +590,8 @@ void main()
                                    data       (flatten
                                                 (for [y (range 1.0 -1.25 -0.25) x (range -1.0 1.25 0.25)]
                                                      [(* x 0.5) (* y 0.5) 0.5]))
-                                   surf-tex   (make-vector-texture-2d :linear :clamp {:width 9 :height 9 :data (float-array data)})
+                                   surf-tex   (make-vector-texture-2d :linear :clamp
+                                                                      #:sfsim.image{:width 9 :height 9 :data (float-array data)})
                                    vao        (make-vertex-array-object program indices vertices
                                                                         ["point" 3 "surfacecoord" 2 "colorcoord" 2])
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2.5))

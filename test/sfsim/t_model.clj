@@ -163,8 +163,8 @@ void main()
       (:textures dice) => vector?)
 
 (facts "Size of texture"
-       (:width  (first (:textures dice))) => 64
-       (:height (first (:textures dice))) => 64)
+       (:sfsim.image/width  (first (:textures dice))) => 64
+       (:sfsim.image/height (first (:textures dice))) => 64)
 
 (fact "Color texture index for dice material is zero"
       (:color-texture-index (first (:materials dice))) => 0)

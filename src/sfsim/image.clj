@@ -11,7 +11,11 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def image (m/schema [:map [:width N] [:height N] [:channels N] [:data bytes?]]))
+(def image (m/schema [:map [::width N] [::height N] [::channels N] [::data bytes?]]))
+(def byte-image (m/schema [:map [::width N] [::height N] [::data bytes?]]))
+(def float-image-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
+(def float-image-3d (m/schema [:map [::width N] [::height N] [::depth N] [::data seqable?]]))
+(def float-image-4d (m/schema [:map [::width N] [::height N] [::depth N] [::hyperdepth N] [::data seqable?]]))
 
 (defn slurp-image
   "Load an RGB image"
@@ -27,12 +31,12 @@
     (.get ^DirectByteBuffer buffer ^bytes data)
     (.flip ^DirectByteBuffer buffer)
     (STBImage/stbi_image_free ^DirectByteBuffer buffer)
-    {:data data :width width :height height :channels (aget channels 0)}))
+    {::data data ::width width ::height height ::channels (aget channels 0)}))
 
 (defn spit-png
   "Save RGB image as PNG file"
-  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [:channels [:= 4]]]]] image]}
-  [path {:keys [width height data] :as img}]
+  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]]] image]}
+  [path {::keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
     (.put ^DirectByteBuffer buffer ^bytes data)
     (.flip buffer)
@@ -41,20 +45,20 @@
 
 (defn spit-jpg
   "Save RGB image as JPEG file"
-  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [:channels [:= 4]]]]] image]}
-  [path {:keys [width height data] :as img}]
+  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]]] image]}
+  [path {::keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
     (.put ^DirectByteBuffer buffer ^bytes data)
     (.flip buffer)
     (STBImageWrite/stbi_write_jpg ^String path ^long width ^long height 4 ^DirectByteBuffer buffer ^long (* 4 width))
     img))
 
-(def normals (m/schema [:map [:width N] [:height N] [:data seqable?]]))
+(def normals (m/schema [:map [::width N] [::height N] [::data seqable?]]))
 
 (defn spit-normals
   "Compress normals to PNG and save"
   {:malli/schema [:=> [:cat non-empty-string normals] normals]}
-  [path {:keys [width height data] :as img}]
+  [path {::keys [width height data] :as img}]
   (let [buffer    (BufferUtils/createByteBuffer (count data))
         byte-data (byte-array (count data))]
     (doseq [i (range (count data))]
@@ -80,12 +84,12 @@
     (STBImage/stbi_image_free ^DirectByteBuffer buffer)
     (doseq [i (range (count data))]
            (aset-float ^floats data ^long i ^float (/ (+ (aget ^bytes byte-data ^long i) 0.5) 127.5)))
-    {:width width :height height :data data}))
+    {::width width ::height height ::data data}))
 
 (defn get-pixel
   "Read color value from a pixel of an image"
   {:malli/schema [:=> [:cat image N0 N0] [:tuple :double :double :double]]}
-  [{:keys [width data]} y x]
+  [{::keys [width data]} y x]
   (let [offset (* 4 (+ (* width y) x))]
     (vec3 (byte->ubyte (aget ^bytes data ^long offset))
           (byte->ubyte (aget ^bytes data ^long (inc offset)))
@@ -94,7 +98,7 @@
 (defn set-pixel!
   "Set color value of a pixel in an image"
   {:malli/schema [:=> [:cat image N0 N0 [:vector :double]] [:vector :double]]}
-  [{:keys [width data]} y x c]
+  [{::keys [width data]} y x c]
   (let [offset (* 4 (+ (* width y) x))]
     (aset-byte data offset (ubyte->byte (long (c 0))))
     (aset-byte data (inc offset) (ubyte->byte (long (c 1))))
@@ -102,64 +106,64 @@
     (aset-byte data (inc (inc (inc offset))) -1)
     c))
 
-(def field-2d (m/schema [:map [:width N] [:height N] [:data seqable?]]))
+(def field-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
 
 (defn get-short
   "Read value from a short integer tile"
   {:malli/schema [:=> [:cat field-2d N0 N0] :int]}
-  [{:keys [width data]} y x]
+  [{::keys [width data]} y x]
   (aget ^shorts data ^long (+ (* width y) x)))
 
 (defn set-short!
   "Write value to a short integer tile"
   {:malli/schema [:=> [:cat field-2d N0 N0 :int] :int]}
-  [{:keys [width data]} y x value]
+  [{::keys [width data]} y x value]
   (aset-short data (+ (* width y) x) value))
 
 (defn get-float
   "Read value from a floating-point tile"
   {:malli/schema [:=> [:cat field-2d N0 N0] number?]}
-  [{:keys [width data]} y x]
+  [{::keys [width data]} y x]
   (aget ^floats data ^long (+ (* width y) x)))
 
 (defn set-float!
   "Write value to a floating-point tile"
   {:malli/schema [:=> [:cat field-2d N0 N0 number?] number?]}
-  [{:keys [width data]} y x value]
+  [{::keys [width data]} y x value]
   (aset-float data (+ (* width y) x) value))
 
-(def field-3d (m/schema [:map [:width N] [:height N] [:depth N] [:data seqable?]]))
+(def field-3d (m/schema [:map [::width N] [::height N] [::depth N] [::data seqable?]]))
 
 (defn get-float-3d
   "Read floating-point value from a 3D cube"
   {:malli/schema [:=> [:cat field-3d N0 N0 N0] number?]}
-  [{:keys [width height data]} z y x]
+  [{::keys [width height data]} z y x]
   (aget ^floats data ^long (+ (* width (+ (* height z) y)) x)))
 
 (defn set-float-3d!
   "Write floating-point value to a 3D cube"
   {:malli/schema [:=> [:cat field-3d N0 N0 N0 number?] number?]}
-  [{:keys [width height data]} z y x value]
+  [{::keys [width height data]} z y x value]
   (aset-float data (+ (* width (+ (* height z) y)) x) value))
 
-(def byte-field-2d (m/schema [:map [:width N] [:height N] [:data bytes?]]))
+(def byte-field-2d (m/schema [:map [::width N] [::height N] [::data bytes?]]))
 
 (defn get-byte
   "Read byte value from a tile"
   {:malli/schema [:=> [:cat byte-field-2d N0 N0] :int]}
-  [{:keys [width data]} y x]
+  [{::keys [width data]} y x]
   (byte->ubyte (aget ^bytes data ^long (+ (* width y) x))))
 
 (defn set-byte!
   "Write byte value to a tile"
   {:malli/schema [:=> [:cat byte-field-2d N0 N0 :int] :int]}
-  [{:keys [width data]} y x value]
+  [{::keys [width data]} y x value]
   (aset-byte data (+ (* width y) x) (ubyte->byte value)))
 
 (defn get-vector3
   "Read RGB vector from a vectors tile"
   {:malli/schema [:=> [:cat field-2d N0 N0] [:tuple :double :double :double]]}
-  [{:keys [width data]} y x]
+  [{::keys [width data]} y x]
   (let [offset (* 3 (+ (* width y) x))]
     (vec3 (aget ^floats data ^long (+ offset 0))
           (aget ^floats data ^long (+ offset 1))
@@ -168,7 +172,7 @@
 (defn set-vector3!
   "Write RGB vector value to vectors tile"
   {:malli/schema [:=> [:cat field-2d N0 N0 [:vector :double]] [:vector :double]]}
-  [{:keys [width data]} y x value]
+  [{::keys [width data]} y x value]
   (let [offset (* 3 (+ (* width y) x))]
     (aset-float data (+ offset 0) (value 0))
     (aset-float data (+ offset 1) (value 1))
@@ -178,7 +182,7 @@
 (defn get-vector4
   "read RGBA vector from a vectors tile"
   {:malli/schema [:=> [:cat field-2d N0 N0] [:vector :double]]}
-  [{:keys [width data]} y x]
+  [{::keys [width data]} y x]
   (let [offset (* 4 (+ (* width y) x))]
     (vec4 (aget ^floats data ^long (+ offset 0))
           (aget ^floats data ^long (+ offset 1))
@@ -188,7 +192,7 @@
 (defn set-vector4!
   "Write RGBA vector value to vectors tile"
   {:malli/schema [:=> [:cat field-2d N0 N0 [:vector :double]] [:vector :double]]}
-  [{:keys [width data]} y x value]
+  [{::keys [width data]} y x value]
   (let [offset (* 4 (+ (* width y) x))]
     (aset-float data (+ offset 0) (value 0))
     (aset-float data (+ offset 1) (value 1))

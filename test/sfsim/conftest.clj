@@ -40,10 +40,10 @@
   [filename tolerance]
   (fn [other]
       (if (.exists (io/file filename))
-        (let [{:keys [width height data]} (slurp-image filename)]
-          (and (== (:width other) width)
-               (== (:height other) height)
-               (let [avg-dist (average-rgba-dist (:data other) data)]
+        (let [{:sfsim.image/keys [width height data]} (slurp-image filename)]
+          (and (== (:sfsim.image/width other) width)
+               (== (:sfsim.image/height other) height)
+               (let [avg-dist (average-rgba-dist (:sfsim.image/data other) data)]
                  (or (<= avg-dist tolerance)
                      (do
                        (println (format "Average deviation from %s averages %5.2f > %5.2f." filename avg-dist tolerance))

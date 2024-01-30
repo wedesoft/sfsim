@@ -7,7 +7,7 @@
             [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box quaternion->matrix transformation-matrix projection-matrix)]
             [sfsim.quaternion :refer (quaternion) :as q]
             [sfsim.util :refer (sqr N)]
-            [sfsim.image :refer (image)])
+            [sfsim.image :refer (image byte-image float-image-2d float-image-3d float-image-4d)])
   (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
            [org.lwjgl BufferUtils]
            [org.lwjgl.glfw GLFW]))
@@ -438,19 +438,19 @@
   "Initialise a 2D byte texture"
   {:malli/schema [:=> [:cat image interpolation boundary :int :int :int] texture-2d]}
   [image interpolation boundary internalformat format_ type_]
-  (let [buffer (make-byte-buffer (:data image))]
-    (create-texture-2d interpolation boundary (:width image) (:height image)
-      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (:width image) ^long (:height image) 0
-                         ^long format_ ^long type_ ^java.nio.DirectByteBuffer buffer))))
+  (let [buffer (make-byte-buffer (:sfsim.image/data image))]
+    (create-texture-2d interpolation boundary (:sfsim.image/width image) (:sfsim.image/height image)
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (:sfsim.image/width image)
+                         ^long (:sfsim.image/height image) 0 ^long format_ ^long type_ ^java.nio.DirectByteBuffer buffer))))
 
 (defn- make-float-texture-2d-base
   "Initialise a 2D texture"
   {:malli/schema [:=> [:cat image interpolation boundary :int :int :int] texture-2d]}
   [image interpolation boundary internalformat format_ type_]
-  (let [buffer (make-float-buffer (:data image))]
-    (create-texture-2d interpolation boundary (:width image) (:height image)
-      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (:width image) ^long (:height image) 0
-                         ^long format_ ^long type_ ^java.nio.DirectFloatBufferU buffer))))
+  (let [buffer (make-float-buffer (:sfsim.image/data image))]
+    (create-texture-2d interpolation boundary (:sfsim.image/width image) (:sfsim.image/height image)
+      (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (:sfsim.image/width image)
+                         ^long (:sfsim.image/height image) 0 ^long format_ ^long type_ ^java.nio.DirectFloatBufferU buffer))))
 
 
 (defn make-rgb-texture
@@ -465,20 +465,15 @@
   [interpolation boundary image]
   (make-byte-texture-2d-base image interpolation boundary GL11/GL_RGBA GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
-(def byte-image (m/schema [:map [:width N] [:height N] [:data bytes?]]))
-(def float-image-2d (m/schema [:map [:width N] [:height N] [:data seqable?]]))
-(def float-image-3d (m/schema [:map [:width N] [:height N] [:depth N] [:data seqable?]]))
-(def float-image-4d (m/schema [:map [:width N] [:height N] [:depth N] [:hyperdepth N] [:data seqable?]]))
-
 (defn make-depth-texture
   "Load floating-point values into a shadow map"
   {:malli/schema [:=> [:cat interpolation boundary float-image-2d] texture-2d]}
   [interpolation boundary image]
-  (assoc (create-depth-texture interpolation boundary (:width image) (:height image)
+  (assoc (create-depth-texture interpolation boundary (:sfsim.image/width image) (:sfsim.image/height image)
                                (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL30/GL_DEPTH_COMPONENT32F
-                                                  ^long (:width image) ^long (:height image) 0
+                                                  ^long (:sfsim.image/width image) ^long (:sfsim.image/height image) 0
                                                   GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT
-                                                  ^java.nio.DirectFloatBufferU (make-float-buffer (:data image))))
+                                                  ^java.nio.DirectFloatBufferU (make-float-buffer (:sfsim.image/data image))))
          :stencil false))
 
 (defn make-empty-texture-2d
@@ -532,10 +527,10 @@
   "Load floating-point 3D data into red channel of an OpenGL texture"
   {:malli/schema [:=> [:cat interpolation boundary float-image-3d] texture-3d]}
   [interpolation boundary image]
-  (let [buffer (make-float-buffer (:data image))]
-    (create-texture-3d interpolation boundary (:width image) (:height image) (:depth image)
-      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F ^long (:width image) ^long (:height image) ^long (:depth image) 0
-                         GL11/GL_RED GL11/GL_FLOAT ^java.nio.DirectFloatBufferU buffer))))
+  (let [buffer (make-float-buffer (:sfsim.image/data image))]
+    (create-texture-3d interpolation boundary (:sfsim.image/width image) (:sfsim.image/height image) (:sfsim.image/depth image)
+      (GL12/glTexImage3D GL12/GL_TEXTURE_3D 0 GL30/GL_R32F ^long (:sfsim.image/width image) ^long (:sfsim.image/height image)
+                         ^long (:sfsim.image/depth image) 0 GL11/GL_RED GL11/GL_FLOAT ^java.nio.DirectFloatBufferU buffer))))
 
 (defn make-empty-float-texture-3d
   "Create empty 3D floating-point texture"
@@ -548,11 +543,11 @@
   "Initialise a 2D texture"
   {:malli/schema [:=> [:cat float-image-4d interpolation boundary :int :int :int] texture-4d]}
   [image interpolation boundary internalformat format_ type_]
-  (let [buffer     (make-float-buffer (:data image))
-        width      ^long (:width image)
-        height     ^long (:height image)
-        depth      ^long (:depth image)
-        hyperdepth ^long (:hyperdepth image)]
+  (let [buffer     (make-float-buffer (:sfsim.image/data image))
+        width      ^long (:sfsim.image/width image)
+        height     ^long (:sfsim.image/height image)
+        depth      ^long (:sfsim.image/depth image)
+        hyperdepth ^long (:sfsim.image/hyperdepth image)]
     (assoc (create-texture-2d interpolation boundary (* width depth) (* height hyperdepth)
              (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (* width depth) ^long (* height hyperdepth) 0
                                 ^long format_ ^long type_ ^java.nio.DirectFloatBufferU buffer))
@@ -675,7 +670,7 @@
           data (float-array (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data})))
 
 (defn float-texture-2d->floats
   "Extract floating-point floating-point data from texture"
@@ -686,7 +681,7 @@
           data (float-array (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data})))
 
 (defn float-texture-3d->floats
   "Extract floating-point floating-point data from texture"
@@ -697,7 +692,7 @@
           data (float-array (* width height depth))]
       (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :depth depth :data data})))
+      #:sfsim.image{:width width :height height :depth depth :data data})))
 
 (defn rgb-texture->vectors3
   "Extract floating-point RGB vectors from texture"
@@ -708,7 +703,7 @@
           data (float-array (* width height 3))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data})))
 
 (defn rgba-texture->vectors4
   "Extract floating-point RGBA vectors from texture"
@@ -719,7 +714,7 @@
           data (float-array (* width height 4))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data})))
 
 (defn texture->image
   "Convert texture to RGB image"
@@ -731,7 +726,7 @@
           data (byte-array size)]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data})))
 
 (defmacro offscreen-render
   "Macro to render to a texture using depth and stencil buffer and convert it to an image"
@@ -759,11 +754,12 @@
   "Initialise a cubemap"
   {:malli/schema [:=> [:cat [:vector float-image-2d] interpolation boundary :int :int :int] texture-3d]}
   [images interpolation boundary internalformat format_ type_]
-  (let [size (:width (first images))]
+  (let [size (:sfsim.image/width (first images))]
     (create-cubemap interpolation boundary size
       (doseq [[face image] (map-indexed vector images)]
              (GL11/glTexImage2D ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 ^long internalformat ^long size ^long size
-                                0 ^long format_ ^long type_ ^java.nio.DirectFloatBufferU (make-float-buffer (:data image)))))))
+                                0 ^long format_ ^long type_
+                                ^java.nio.DirectFloatBufferU (make-float-buffer (:sfsim.image/data image)))))))
 
 (defn make-float-cubemap
   "Load floating-point 2D textures into red channel of an OpenGL cubemap"
@@ -787,7 +783,7 @@
           data (float-array (* width height))]
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data})))
 
 (defn make-vector-cubemap
   "Load vector 2D textures into an OpenGL cubemap"
@@ -811,7 +807,7 @@
           data (float-array (* width height 3))]
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       (.get buf data)
-      {:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data})))
 
 (defn render-depth
   "Determine maximum shadow depth for cloud shadows"

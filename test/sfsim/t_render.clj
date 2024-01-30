@@ -361,7 +361,7 @@ void main()
                             program  (make-program :sfsim.render/vertex [vertex-texture]
                                                    :sfsim.render/fragment [fragment-texture-2d])
                             vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-                            img      {:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])}
+                            img      #:sfsim.image{:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])}
                             tex      (make-float-texture-2d ?interpolation ?boundary img)]
                         (clear (vec3 0.0 0.0 0.0))
                         (use-program program)
@@ -384,7 +384,8 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-          tex      (make-ubyte-texture-2d :linear :clamp {:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
+          tex      (make-ubyte-texture-2d :linear :clamp
+                                          #:sfsim.image{:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
@@ -400,7 +401,8 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-          tex      (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
+          tex      (make-vector-texture-2d :linear :clamp
+                                           #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
@@ -412,7 +414,7 @@ void main()
 
 (fact "Size of 2D depth texture"
       (with-invisible-window
-        (let [tex (make-depth-texture :linear :clamp {:width 2 :height 1 :data (float-array [0 0])})]
+        (let [tex (make-depth-texture :linear :clamp #:sfsim.image{:width 2 :height 1 :data (float-array [0 0])})]
           (:width tex) => 2
           (:height tex) => 1
           (destroy-texture tex))))
@@ -446,7 +448,7 @@ void main(void)
                                                  :sfsim.render/fragment [fragment-sample-shadow])
                           vao      (make-vertex-array-object program indices vertices ["point" 3])
                           data     [0.4 0.4 0.4 0.4, 0.4 0.6 0.6 0.4, 0.4 0.6 0.6 0.4, 0.4 0.4 0.4 0.4]
-                          depth    (make-depth-texture :linear :clamp {:width 4 :height 4 :data (float-array data)})]
+                          depth    (make-depth-texture :linear :clamp #:sfsim.image{:width 4 :height 4 :data (float-array data)})]
                       (clear (vec3 1.0 0.0 0.0))
                       (use-program program)
                       (uniform-sampler program "shadow_map" 0)
@@ -460,7 +462,7 @@ void main(void)
 (fact "Size of 3D texture"
       (with-invisible-window
         (let [tex (make-float-texture-3d :linear :clamp
-                                         {:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
+                                         #:sfsim.image{:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
           (:width tex) => 3
           (:height tex) => 2
           (:depth tex) => 1
@@ -486,7 +488,7 @@ void main()
                             vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                             data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
                             tex      (make-float-texture-3d ?interpolation ?boundary
-                                                            {:width 2 :height 2 :depth 2 :data (float-array data)})]
+                                                            #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data)})]
                         (clear (vec3 0.0 0.0 0.0))
                         (use-program program)
                         (uniform-sampler program "tex" 0)
@@ -522,8 +524,10 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-two-textures])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-          tex1     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
-          tex2     (make-vector-texture-2d :linear :clamp {:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
+          tex1     (make-vector-texture-2d :linear :clamp
+                                           #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
+          tex2     (make-vector-texture-2d :linear :clamp
+                                           #:sfsim.image{:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex1" 0)
@@ -940,7 +944,7 @@ void main(void)
 (fact "Create floating-point cube map and read them out"
       (with-invisible-window
         (let [cubemap (make-float-cubemap :linear :clamp
-                                          (mapv (fn [i] {:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
+                        (mapv (fn [i] #:sfsim.image{:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
           (doseq [i (range 6)]
                  (get-float (float-cubemap->floats cubemap i) 0 0) => (float (inc i)))
           (:width cubemap) => 1
@@ -986,7 +990,7 @@ void main()
       (with-invisible-window
         (let [gen-vector (fn [i] (let [i3 (* i 3)] [i3 (inc i3) (inc (inc i3))]))
               cubemap (make-vector-cubemap :linear :clamp
-                                           (mapv (fn [i] {:width 1 :height 1 :data (float-array (gen-vector i))})
+                                           (mapv (fn [i] #:sfsim.image{:width 1 :height 1 :data (float-array (gen-vector i))})
                                                  (range 6)))]
           (doseq [i (range 6)]
                  (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
@@ -1023,7 +1027,7 @@ void main()
       (with-invisible-window
         (let [data (float-array (repeat (* 4 3 2 1 4) 0))
               tex  (make-vector-texture-4d :linear :clamp
-                                           {:width 4 :height 3 :depth 2 :hyperdepth 1 :data data})]
+                                           #:sfsim.image{:width 4 :height 3 :depth 2 :hyperdepth 1 :data data})]
           (:width tex) => 4
           (:height tex) => 3
           (:depth tex) => 2

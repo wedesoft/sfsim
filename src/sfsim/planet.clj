@@ -275,9 +275,11 @@
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
         day-tex        (make-rgb-texture :linear :clamp (:day tile))
         night-tex      (make-rgb-texture :linear :clamp (:night tile))
-        surf-tex       (make-vector-texture-2d :linear :clamp {:width tilesize :height tilesize :data (:surface tile)})
+        surf-tex       (make-vector-texture-2d :linear :clamp
+                                               #:sfsim.image{:width tilesize :height tilesize :data (:surface tile)})
         normal-tex     (make-vector-texture-2d :linear :clamp (:normals tile))
-        water-tex      (make-ubyte-texture-2d :linear :clamp {:width color-tilesize :height color-tilesize :data (:water tile)})]
+        water-tex      (make-ubyte-texture-2d :linear :clamp
+                                              #:sfsim.image{:width color-tilesize :height color-tilesize :data (:water tile)})]
     (assoc (dissoc tile :day :night :surface :normals :water)
            :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
 
