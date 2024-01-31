@@ -1,4 +1,4 @@
-# [SFsim25][1] [![GPL-3.0](https://img.shields.io/github/license/wedesoft/sfsim25)](https://www.gnu.org/copyleft/gpl.html) [![tipping jar](https://img.shields.io/badge/tipping%20jar-wedesoft%40getalby.com-yellow)](https://getalby.com/wedesoft)
+# [sfsim][1] [![EPL-2.0](https://img.shields.io/github/license/wedesoft/sfsim)](https://opensource.org/license/epl-1-0/) [![tipping jar](https://img.shields.io/badge/tipping%20jar-wedesoft%40getalby.com-yellow)](https://getalby.com/wedesoft)
 
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
@@ -39,18 +39,19 @@ Requires OpenGL 4.5.
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json` (delete out-windows folder first)
 * Create Windows installer: `makensis nsis-config.nsi`
+* Enable integration tests: `touch .integration`
 
 # Lint
 
 * [Install clj-kondo](https://github.com/clj-kondo/clj-kondo/blob/master/doc/install.md)
-* Run `clj-kondo --lint src/sfsim25`
+* Run `clj-kondo --lint src/sfsim`
 
 # Run
 
 * Run tests: `clj -M:test`
-* Run test for specific module (rendering for example): `clj -M:test sfsim25.t-render`
+* Run test for specific module (rendering for example): `clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
-* Run main program displaying black window: `clj -M -m sfsim25.core`
+* Run main program displaying black window: `clj -M -m sfsim.core`
 
 # REPL with Schema validation
 
@@ -59,7 +60,7 @@ Here is an example on how to use Malli schemas in the REPL:
 ```Clojure
 (require '[malli.dev :as dev])
 (require '[malli.dev.pretty :as pretty])
-(require '[sfsim25.util :refer (third)])
+(require '[sfsim.util :refer (third)])
 (dev/start! {:report (pretty/thrower)})
 (third [2 3])
 ```
@@ -77,8 +78,8 @@ Here is an example on how to use Malli schemas in the REPL:
   * [Oreon Engine](https://github.com/fynnfluegge/oreon-engine)
   * [Emulating double precision in Godot](https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds)
 * LWJGL
-  * [LWJGL 2](http://legacy.lwjgl.org/)
-  * [LWJGL Wiki](http://wiki.lwjgl.org/)
+  * [LWJGL](https://www.lwjgl.org/)
+  * [LWJGL Wiki](https://github.com/LWJGL/lwjgl3-wiki/wiki)
   * [LWJGL key table](https://gist.github.com/Mumfrey/5cfc3b7e14fef91b6fa56470dc05218a)
 * Publications
   * [Bruneton: Precomputed Atmospheric Scattering](https://hal.inria.fr/inria-00288758/document)
@@ -100,4 +101,4 @@ Here is an example on how to use Malli schemas in the REPL:
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
 
-  [1]: https://github.com/wedesoft/sfsim25
+  [1]: https://github.com/wedesoft/sfsim

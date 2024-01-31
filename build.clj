@@ -3,18 +3,19 @@
     (:require [clojure.tools.build.api :as b]
               [clojure.java.io :as io]
               [clojure.java.shell :refer (sh)]
-              [sfsim25.worley :as w]
-              [sfsim25.perlin :as p]
-              [sfsim25.scale-image :as si]
-              [sfsim25.scale-elevation :as se]
-              [sfsim25.bluenoise :as bn]
-              [sfsim25.render :as rn]
-              [sfsim25.clouds :as cl]
-              [sfsim25.atmosphere-lut :as al]
-              [sfsim25.map-tiles :as mt]
-              [sfsim25.elevation-tiles :as et]
-              [sfsim25.globe :as g]
-              [sfsim25.util :as u])
+              [sfsim.worley :as w]
+              [sfsim.perlin :as p]
+              [sfsim.scale-image :as si]
+              [sfsim.scale-elevation :as se]
+              [sfsim.bluenoise :as bn]
+              [sfsim.texture :as t]
+              [sfsim.render :as rn]
+              [sfsim.clouds :as cl]
+              [sfsim.atmosphere-lut :as al]
+              [sfsim.map-tiles :as mt]
+              [sfsim.elevation-tiles :as et]
+              [sfsim.globe :as g]
+              [sfsim.util :as u])
     (:import [org.lwjgl.glfw GLFW]))
 
 ; (require '[malli.dev :as dev])
@@ -45,10 +46,11 @@
   [& {:keys [worley-size] :or {worley-size w/worley-size}}]
   (GLFW/glfwInit)
   (rn/with-invisible-window
-    (let [load-floats  (fn [filename] {:width worley-size :height worley-size :depth worley-size :data (u/slurp-floats filename)})
-          worley-north (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
-          worley-south (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
-          worley-cover (rn/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-cover.raw"))
+    (let [load-floats  (fn [filename] #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                    :data (u/slurp-floats filename)})
+          worley-north (t/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
+          worley-south (t/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
+          worley-cover (t/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-cover.raw"))
           cubemap      (cl/cloud-cover-cubemap :size cl/cover-size
                                                :worley-size worley-size
                                                :worley-south worley-south
@@ -63,11 +65,11 @@
                                                :num-iterations 50
                                                :flow-scale 6e-3)]
       (doseq [i (range 6)]
-             (u/spit-floats (str "data/clouds/cover" i ".raw") (:data (rn/float-cubemap->floats cubemap i))))
-      (rn/destroy-texture cubemap)
-      (rn/destroy-texture worley-cover)
-      (rn/destroy-texture worley-south)
-      (rn/destroy-texture worley-north)
+             (u/spit-floats (str "data/clouds/cover" i ".raw") (:sfsim.image/data (t/float-cubemap->floats cubemap i))))
+      (t/destroy-texture cubemap)
+      (t/destroy-texture worley-cover)
+      (t/destroy-texture worley-south)
+      (t/destroy-texture worley-north)
       (GLFW/glfwTerminate))))
 
 (defn atmosphere-lut [_]
@@ -303,9 +305,9 @@
                   :src-dirs ["src"]
                   :class-dir class-dir})
   (b/uber {:class-dir class-dir
-           :uber-file "target/sfsim25.jar"
+           :uber-file "target/sfsim.jar"
            :basis basis
-           :main 'sfsim25.core}))
+           :main 'sfsim.core}))
 
 (defn all [_]
   (worley)

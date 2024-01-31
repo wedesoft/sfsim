@@ -1,13 +1,13 @@
 !include "MUI2.nsh"
 
 !define COMPANYNAME "wedesoft"
-!define APPNAME "sfsim25"
+!define APPNAME "sfsim"
 
-Name "sfsim25"
+Name "sfsim"
 
-Outfile "sfsim25-installer.exe"
-InstallDir "$PROGRAMFILES64\sfsim25"
-InstallDirRegKey HKLM "Software\NSIS_sfsim25" "Install_Dir"
+Outfile "sfsim-installer.exe"
+InstallDir "$PROGRAMFILES64\sfsim"
+InstallDirRegKey HKLM "Software\NSIS_sfsim" "Install_Dir"
 
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_COMPONENTS
@@ -18,7 +18,7 @@ InstallDirRegKey HKLM "Software\NSIS_sfsim25" "Install_Dir"
 
 !insertmacro MUI_LANGUAGE "English"
 
-Section "sfsim25 (required)"
+Section "sfsim (required)"
   SectionIn RO
   # Install JRE, JAR, config, and icon
   SetOutPath $INSTDIR
@@ -31,7 +31,7 @@ Section "sfsim25 (required)"
   setOutPath $INSTDIR
   writeUninstaller "$INSTDIR\uninstall.exe"
   # Write installation path
-  WriteRegStr HKLM "SOFTWARE\NSIS_sfsim25" "Install_Dir" "$INSTDIR"
+  WriteRegStr HKLM "SOFTWARE\NSIS_sfsim" "Install_Dir" "$INSTDIR"
   # Register uninstaller
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}" "DisplayName" "${APPNAME}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}" "DisplayVersion" "0.1"
@@ -43,25 +43,25 @@ Section "sfsim25 (required)"
 SectionEnd
 
 Section "Start Menu Shortcuts"
-  CreateDirectory "$SMPROGRAMS\sfsim25"
-  CreateShortCut "$SMPROGRAMS\sfsim25\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\sfsim25\sfsim25.lnk" "$INSTDIR\sfsim25.exe" "" "$INSTDIR\logo.ico" 0
+  CreateDirectory "$SMPROGRAMS\sfsim"
+  CreateShortCut "$SMPROGRAMS\sfsim\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+  CreateShortCut "$SMPROGRAMS\sfsim\sfsim.lnk" "$INSTDIR\sfsim.exe" "" "$INSTDIR\logo.ico" 0
 SectionEnd
 
 Section "Desktop Shortcut"
-  CreateShortCut "$DESKTOP\sfsim25.lnk" "$INSTDIR\sfsim25.exe" "" "$INSTDIR\logo.ico" 0
+  CreateShortCut "$DESKTOP\sfsim.lnk" "$INSTDIR\sfsim.exe" "" "$INSTDIR\logo.ico" 0
 SectionEnd
 
 Section "Uninstall"
   ; Remove registry keys
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}"
-  DeleteRegKey HKLM "SOFTWARE\NSIS_sfsim25"
+  DeleteRegKey HKLM "SOFTWARE\NSIS_sfsim"
   ; Remove files and uninstaller
   RmDir /r "$INSTDIR\*.*"
   Rmdir "$INSTDIR"
   ; Remove shortcuts, if any
-  Delete "$SMPROGRAMS\sfsim25\*.*"
-  Delete "$DESKTOP\sfsim25.lnk"
+  Delete "$SMPROGRAMS\sfsim\*.*"
+  Delete "$DESKTOP\sfsim.lnk"
   ; Remove directories used
-  RMDir "$SMPROGRAMS\sfsim25"
+  RMDir "$SMPROGRAMS\sfsim"
 SectionEnd

@@ -1,12 +1,11 @@
 # TODO
-* namespacing of keywords
+* integration test using computed data set (only if test image exists)
+* problem with shadow map when near ground
+* namespacing of keywords (render textures)
 * refactor redundant code setting uniforms
 * schemas for main render function arguments
-* use seed for random data
-* integration test using computed data set
 * test for scale-elevation
 * enable warn on reflection in more places
-* problem with shadow map when near ground
 * make modules out of core.clj
   * group textures with dimension data
   * group cloud textures, sizes, and parameters
