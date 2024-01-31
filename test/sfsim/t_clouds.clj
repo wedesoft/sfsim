@@ -7,6 +7,7 @@
               [clojure.math :refer (exp log sin cos asin atan to-radians PI)]
               [fastmath.vector :refer (vec3)]
               [fastmath.matrix :refer (mat3x3 eye inverse)]
+              [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
               [sfsim.shaders :as shaders]
               [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]

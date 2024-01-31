@@ -7,6 +7,7 @@
             [clojure.math :refer (cos sin PI sqrt)]
             [fastmath.vector :refer (vec3 div ediv dot mag cross)]
             [fastmath.matrix :refer (eye)]
+            [sfsim.texture :refer :all]
             [sfsim.render :refer :all]
             [sfsim.shaders :refer :all]
             [sfsim.matrix :refer (orthogonal transformation-matrix)]

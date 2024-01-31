@@ -2,8 +2,8 @@
   "Space flight simulator main program."
   (:require [clojure.math :refer (to-radians cos sin)]
             [fastmath.vector :refer (vec3 add mult)]
-            [sfsim.render :refer (make-window destroy-window clear destroy-texture onscreen-render texture-render-color-depth
-                                  make-render-vars)]
+            [sfsim.texture :refer (destroy-texture)]
+            [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth make-render-vars)]
             [sfsim.atmosphere :as atmosphere]
             [sfsim.planet :as planet]
             [sfsim.clouds :as clouds]

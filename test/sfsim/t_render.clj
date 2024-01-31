@@ -12,6 +12,7 @@
             [sfsim.matrix :refer :all :as matrix]
             [sfsim.shaders :as s]
             [sfsim.quaternion :as q]
+            [sfsim.texture :refer :all]
             [sfsim.render :refer :all :as render])
   (:import [org.lwjgl.opengl GL11 GL12 GL30 GL42]
            [org.lwjgl.glfw GLFW]
@@ -268,12 +269,6 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim/fixtures/render/quad.png" 0.0))
 
-(fact "Size of 1D texture"
-      (with-invisible-window
-        (let [tex (make-float-texture-1d :linear :clamp (float-array [0 1 0 1]))]
-          (:width tex) => 4
-          (destroy-texture tex))))
-
 (def vertex-texture
 "#version 410 core
 in vec3 point;
@@ -319,13 +314,6 @@ void main()
   :linear        :clamp    "floats-1d-linear-clamp"
   :nearest       :repeat   "floats-1d-nearest-repeat"
   :linear        :repeat   "floats-1d-linear-repeat")
-
-(fact "Size of 2D RGB texture"
-      (with-invisible-window
-        (let [tex (make-rgb-texture :linear :clamp (slurp-image "test/sfsim/fixtures/render/pattern.png"))]
-          (:width tex) => 2
-          (:height tex) => 2
-          (destroy-texture tex))))
 
 (def fragment-texture-2d
 "#version 410 core
@@ -412,13 +400,6 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim/fixtures/render/vectors.png" 0.0))
 
-(fact "Size of 2D depth texture"
-      (with-invisible-window
-        (let [tex (make-depth-texture :linear :clamp #:sfsim.image{:width 2 :height 1 :data (float-array [0 0])})]
-          (:width tex) => 2
-          (:height tex) => 1
-          (destroy-texture tex))))
-
 (def vertex-interpolate
 "#version 410 core
 in vec3 point;
@@ -458,15 +439,6 @@ void main(void)
                       (destroy-vertex-array-object vao)
                       (destroy-program program)))
   => (is-image "test/sfsim/fixtures/render/shadow-sample.png" 0.0))
-
-(fact "Size of 3D texture"
-      (with-invisible-window
-        (let [tex (make-float-texture-3d :linear :clamp
-                                         #:sfsim.image{:width 3 :height 2 :depth 1 :data (float-array (repeat 6 0))})]
-          (:width tex) => 3
-          (:height tex) => 2
-          (:depth tex) => 1
-          (destroy-texture tex))))
 
 (def fragment-texture-3d
 "#version 410 core

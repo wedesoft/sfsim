@@ -2,9 +2,9 @@
     (:require [clojure.math :refer (sqrt)]
               [clojure.java.io :as io]
               [fastmath.matrix :as fm]
-              [sfsim.render :refer (make-program make-vertex-array-object render-quads rgb-texture->vectors3
-                                    texture-render-color use-program with-invisible-window destroy-program destroy-texture
-                                    destroy-vertex-array-object)]
+              [sfsim.texture :refer (rgb-texture->vectors3 destroy-texture)]
+              [sfsim.render :refer (make-program make-vertex-array-object render-quads texture-render-color use-program
+                                    with-invisible-window destroy-program destroy-vertex-array-object)]
               [sfsim.shaders :as shaders]
               [sfsim.image :refer (get-vector3 slurp-image spit-png)]))
 

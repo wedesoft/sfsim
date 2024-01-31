@@ -3,12 +3,11 @@
     (:require [comb.template :as template]
               [clojure.math :refer (tan pow log)]
               [fastmath.matrix :refer (inverse)]
-              [sfsim.render :refer (destroy-program destroy-texture destroy-vertex-array-object framebuffer-render
-                                    make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d generate-mipmap
-                                    make-float-texture-3d make-program make-vertex-array-object render-quads uniform-float
-                                    uniform-int uniform-sampler uniform-matrix4 use-program use-textures
-                                    make-empty-float-texture-3d uniform-vector3 make-float-cubemap texture-3d
-                                    setup-shadow-and-opacity-maps) :as render]
+              [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
+                                     make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d)]
+              [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures 
+                                    make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler uniform-matrix4
+                                    use-program uniform-vector3 setup-shadow-and-opacity-maps) :as render]
               [sfsim.shaders :as shaders]
               [sfsim.worley :refer (worley-size)]
               [sfsim.bluenoise :refer (noise-size) :as bluenoise]

@@ -3,9 +3,10 @@
     (:require [clojure.math :refer (sqrt)]
               [fastmath.vector :refer (mag dot)]
               [sfsim.matrix :refer (split-list shadow-matrix-cascade)]
+              [sfsim.texture :refer (destroy-texture)]
               [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
-                                    use-program uniform-int uniform-float use-textures uniform-vector3 render-quads
-                                    destroy-texture render-depth)]
+                                    use-program uniform-int uniform-float uniform-vector3 render-quads render-depth
+                                    use-textures)]
               [sfsim.worley :refer (worley-size)]
               [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms)]
               [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade)]

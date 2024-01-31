@@ -7,6 +7,7 @@
               [fastmath.matrix :refer (eye mulm mat4x4)]
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim.matrix :refer :all]
+              [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
               [sfsim.model :refer :all :as model]
               [sfsim.quaternion :refer (->Quaternion)])

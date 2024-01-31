@@ -10,11 +10,8 @@
               [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
               [sfsim.sphere :as sphere]
               [sfsim.interpolate :refer (make-lookup-table)]
-              [sfsim.render :refer (clear destroy-program destroy-texture destroy-vertex-array-object make-program
-                                    make-vector-texture-2d make-vertex-array-object offscreen-render render-quads
-                                    rgb-texture->vectors3 texture-render-color uniform-float uniform-int uniform-matrix4
-                                    uniform-sampler uniform-vector3 use-program use-textures with-invisible-window
-                                    make-rgba-texture)]
+              [sfsim.texture :refer :all]
+              [sfsim.render :refer :all]
               [sfsim.shaders :as shaders]
               [sfsim.image :refer (convert-4d-to-2d get-vector3)]
               [sfsim.util :refer (third)]

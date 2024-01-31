@@ -9,6 +9,7 @@
               [fastmath.matrix :refer (eye inverse)]
               [sfsim.cubemap :as cubemap]
               [sfsim.atmosphere :as atmosphere]
+              [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
               [sfsim.shaders :as shaders]
               [sfsim.matrix :refer :all]

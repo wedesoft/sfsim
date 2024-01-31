@@ -6,6 +6,7 @@
               [fastmath.vector :refer (vec3)]
               [sfsim.conftest :refer (is-image)]
               [sfsim.bluenoise :refer :all]
+              [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
               [sfsim.shaders :as shaders])
     (:import [org.lwjgl.glfw GLFW]))

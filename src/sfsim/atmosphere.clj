@@ -7,10 +7,11 @@
               [sfsim.ray :refer (integral-ray ray)]
               [sfsim.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
               [sfsim.interpolate :refer (interpolation-space)]
+              [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d
+                                     texture-2d texture-4d)]
               [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
-                                    uniform-vector3 use-textures destroy-program make-vertex-array-object
-                                    destroy-vertex-array-object render-quads texture-2d texture-4d
-                                    make-vector-texture-2d make-vector-texture-4d destroy-texture)]
+                                    uniform-vector3 destroy-program make-vertex-array-object use-textures
+                                    destroy-vertex-array-object render-quads )]
               [sfsim.shaders :as shaders]
               [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats)]))
 

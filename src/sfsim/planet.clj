@@ -5,11 +5,11 @@
               [sfsim.matrix :refer (transformation-matrix fmat4 fvec3)]
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info)]
-              [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 use-textures render-patches make-program
-                                    use-program uniform-sampler destroy-program shadow-cascade destroy-texture uniform-float
-                                    make-vertex-array-object make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d
-                                    destroy-vertex-array-object vertex-array-object texture-2d setup-shadow-and-opacity-maps
-                                    setup-shadow-and-opacity-maps)
+              [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d)]
+              [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
+                                    uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
+                                    destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
+                                    setup-shadow-and-opacity-maps use-textures)
                               :as render]
               [sfsim.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms)]
               [sfsim.util :refer (N N0)]

@@ -4,8 +4,8 @@
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
               [fastmath.vector :refer (vec3 mult add)]
-              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles make-rgba-texture
-                                    destroy-texture vertex-array-object texture-2d)]
+              [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
+              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object)]
               [sfsim.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
               [sfsim.image :refer (image)]
               [sfsim.util :refer (N0)]

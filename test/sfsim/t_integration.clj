@@ -7,6 +7,7 @@
               [sfsim.conftest :refer (is-image)]
               [fastmath.vector :refer (vec3)]
               [sfsim.quaternion :as q]
+              [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
               [sfsim.atmosphere :as atmosphere]
               [sfsim.opacity :as opacity]
