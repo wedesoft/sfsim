@@ -469,15 +469,15 @@
   (uniform-sampler program "mie_strength" (+ sampler-offset 2))
   (when surface-radiance
     (uniform-sampler program "surface_radiance" (+ sampler-offset 3)))
-  (uniform-int program "height_size" (:hyperdepth (::scatter atmosphere-luts)))
-  (uniform-int program "elevation_size" (:depth (::scatter atmosphere-luts)))
-  (uniform-int program "light_elevation_size" (:height (::scatter atmosphere-luts)))
-  (uniform-int program "heading_size" (:width (::scatter atmosphere-luts)))
-  (uniform-int program "transmittance_elevation_size" (:width (::transmittance atmosphere-luts)))
-  (uniform-int program "transmittance_height_size" (:height (::transmittance atmosphere-luts)))
+  (uniform-int program "height_size" (:sfsim.texture/hyperdepth (::scatter atmosphere-luts)))
+  (uniform-int program "elevation_size" (:sfsim.texture/depth (::scatter atmosphere-luts)))
+  (uniform-int program "light_elevation_size" (:sfsim.texture/height (::scatter atmosphere-luts)))
+  (uniform-int program "heading_size" (:sfsim.texture/width (::scatter atmosphere-luts)))
+  (uniform-int program "transmittance_elevation_size" (:sfsim.texture/width (::transmittance atmosphere-luts)))
+  (uniform-int program "transmittance_height_size" (:sfsim.texture/height (::transmittance atmosphere-luts)))
   (when surface-radiance
-    (uniform-int program "surface_height_size" (:height (::surface-radiance atmosphere-luts)))
-    (uniform-int program "surface_sun_elevation_size" (:width (::surface-radiance atmosphere-luts))))
+    (uniform-int program "surface_height_size" (:sfsim.texture/height (::surface-radiance atmosphere-luts)))
+    (uniform-int program "surface_sun_elevation_size" (:sfsim.texture/width (::surface-radiance atmosphere-luts))))
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
 (defn make-atmosphere-renderer

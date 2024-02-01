@@ -5,7 +5,7 @@
               [fastmath.matrix :refer (inverse)]
               [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                                      make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d)]
-              [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures 
+              [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                                     make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler uniform-matrix4
                                     use-program uniform-vector3 setup-shadow-and-opacity-maps) :as render]
               [sfsim.shaders :as shaders]
@@ -330,7 +330,7 @@
   (uniform-sampler program "worley" sampler-offset)
   (uniform-sampler program "perlin" (+ sampler-offset 1))
   (uniform-sampler program "cover" (+ sampler-offset 2))
-  (uniform-int program "cover_size" (:width (::cloud-cover cloud-data)))
+  (uniform-int program "cover_size" (:sfsim.texture/width (::cloud-cover cloud-data)))
   (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
   (uniform-float program "cloud_top" (::cloud-top cloud-data))
   (uniform-float program "detail_scale" (::detail-scale cloud-data))
@@ -345,7 +345,7 @@
  {:malli/schema [:=> [:cat :int :map :int] :nil]}
  [program cloud-data sampler-offset]
  (uniform-sampler program "bluenoise" sampler-offset)
- (uniform-int program "noise_size" (:width (::bluenoise cloud-data)))
+ (uniform-int program "noise_size" (:sfsim.texture/width (::bluenoise cloud-data)))
  (uniform-float program "anisotropic" (::anisotropic cloud-data))
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
  (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))

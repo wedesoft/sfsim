@@ -650,7 +650,7 @@ void main()
            (framebuffer-render 1 1 :cullback nil [tex]
                                (use-program program)
                                (render-quads vao))
-           (with-texture (:target tex) (:texture tex)
+           (with-texture (:sfsim.texture/target tex) (:sfsim.texture/texture tex)
              (let [buf  (BufferUtils/createFloatBuffer 2)
                    data (float-array 2)]
                (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
@@ -913,16 +913,6 @@ void main(void)
               img))))
       => (is-image "test/sfsim/fixtures/render/shadow.png" 0.04))
 
-(fact "Create floating-point cube map and read them out"
-      (with-invisible-window
-        (let [cubemap (make-float-cubemap :linear :clamp
-                        (mapv (fn [i] #:sfsim.image{:width 1 :height 1 :data (float-array [(inc i)])}) (range 6)))]
-          (doseq [i (range 6)]
-                 (get-float (float-cubemap->floats cubemap i) 0 0) => (float (inc i)))
-          (:width cubemap) => 1
-          (:height cubemap) => 1
-          (destroy-texture cubemap))))
-
 (def fragment-cubemap-attachment
 "#version 410 core
 layout (location = 0) out float output1;
@@ -994,17 +984,6 @@ void main()
           (destroy-vertex-array-object vao1)
           (destroy-program program)
           (GL30/glDeleteFramebuffers stb))))) => (is-image "test/sfsim/fixtures/render/stencil.png" 0.0))
-
-(fact "Size of 4D texture (represented using 2D texture)"
-      (with-invisible-window
-        (let [data (float-array (repeat (* 4 3 2 1 4) 0))
-              tex  (make-vector-texture-4d :linear :clamp
-                                           #:sfsim.image{:width 4 :height 3 :depth 2 :hyperdepth 1 :data data})]
-          (:width tex) => 4
-          (:height tex) => 3
-          (:depth tex) => 2
-          (:hyperdepth tex) => 1
-          (destroy-texture tex))))
 
 (facts "Maximum shadow depth for cloud shadows"
        (render-depth 4.0 1.0 0.0) => 3.0

@@ -250,7 +250,7 @@
   {:malli/schema [:=> [:cat :int texture] :nil]}
   [index texture]
   (GL13/glActiveTexture ^long (+ GL13/GL_TEXTURE0 index))
-  (GL11/glBindTexture (:target texture) (:texture texture)))
+  (GL11/glBindTexture (:sfsim.texture/target texture) (:sfsim.texture/texture texture)))
 
 (defn use-textures
   "Specify textures to be used in the next rendering operation"
@@ -300,8 +300,8 @@
   [textures]
   (flatten
     (map (fn [texture]
-             (if (:depth texture)
-               (map (fn [layer] (assoc texture :layer layer)) (range (:depth texture)))
+             (if (:sfsim.texture/depth texture)
+               (map (fn [layer] (assoc texture :sfsim.texture/layer layer)) (range (:sfsim.texture/depth texture)))
                texture))
          textures)))
 
@@ -316,9 +316,10 @@
         (map-indexed
           (fn [index texture]
               (let [color-attachment (+ GL30/GL_COLOR_ATTACHMENT0 index)]
-                (if (:layer texture)
-                  (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:texture texture) 0 (:layer texture))
-                  (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER color-attachment (:texture texture) 0))
+                (if (:sfsim.texture/layer texture)
+                  (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:sfsim.texture/texture texture) 0
+                                                  (:sfsim.texture/layer texture))
+                  (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER color-attachment (:sfsim.texture/texture texture) 0))
                 color-attachment))
           (list-texture-layers textures))))))
 
@@ -330,7 +331,7 @@
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
        (when ~depth-texture
          (let [attachment-type# (if (:stencil ~depth-texture) GL30/GL_DEPTH_STENCIL_ATTACHMENT GL30/GL_DEPTH_ATTACHMENT)]
-           (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:texture ~depth-texture) 0)))
+           (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:sfsim.texture/texture ~depth-texture) 0)))
        (setup-color-attachments ~color-textures)
        (setup-rendering ~width ~height ~culling)
        ~@body
