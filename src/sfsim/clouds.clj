@@ -43,7 +43,7 @@
   "Create identity cubemap"
   {:malli/schema [:=> [:cat N] texture-3d]}
   [size]
-  (let [result   (make-empty-vector-cubemap :linear :clamp size)
+  (let [result   (make-empty-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp size)
         indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
@@ -77,7 +77,7 @@
   `(let [indices#  [0 1 3 2]
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
-         result#   (make-empty-vector-cubemap :linear :clamp ~size)]
+         result#   (make-empty-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp ~size)]
      (framebuffer-render ~size ~size :cullback nil [result#]
                          (use-program ~program)
                          (uniform-int ~program "size" ~size)
@@ -108,7 +108,7 @@
   `(let [indices#  [0 1 3 2]
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
-         result#   (make-empty-float-cubemap :linear :clamp ~size)]
+         result#   (make-empty-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp ~size)]
      (framebuffer-render ~size ~size :cullback nil [result#]
                          (use-program ~program)
                          (uniform-int ~program "size" ~size)
@@ -249,7 +249,7 @@
   [size num-opacity-layers matrix-cascade voxel-size program & body]
   `(mapv
      (fn [opacity-level#]
-         (let [opacity-layers#  (make-empty-float-texture-3d :linear :clamp ~size ~size (inc ~num-opacity-layers))
+         (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size (inc ~num-opacity-layers))
                level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
            (framebuffer-render ~size ~size :cullback nil [opacity-layers#]
                                (use-program ~program)
@@ -296,17 +296,17 @@
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
         worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
-        worley               (make-float-texture-3d :linear :repeat worley-data)
+        worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)
         perlin-worley-floats (float-array (map #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
         perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
-        perlin-worley        (make-float-texture-3d :linear :repeat perlin-worley-data)
+        perlin-worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat perlin-worley-data)
         cover-floats-list    (map (fn [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
         cover-data           (map (fn [cover-floats] #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
                                   cover-floats-list)
-        cloud-cover          (make-float-cubemap :linear :clamp cover-data)
+        cloud-cover          (make-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp cover-data)
         bluenoise-floats     (slurp-floats "data/bluenoise.raw")
         bluenoise-data       #:sfsim.image{:width noise-size :height noise-size :data bluenoise-floats}
-        bluenoise            (make-float-texture-2d :nearest :repeat bluenoise-data)]
+        bluenoise            (make-float-texture-2d :sfsim.texture/nearest :sfsim.texture/repeat bluenoise-data)]
     (generate-mipmap worley)
     (assoc cloud-config
            ::worley worley

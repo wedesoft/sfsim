@@ -25,11 +25,11 @@
 (GL/createCapabilities)
 
 (def data (slurp-floats "data/clouds/worley-north.raw"))
-(def worley-north (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def worley-north (make-float-texture-3d :linear :sfsim.texture/repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (def data (slurp-floats "data/clouds/worley-south.raw"))
-(def worley-south (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def worley-south (make-float-texture-3d :linear :sfsim.texture/repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
-(def worley-cover (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def worley-cover (make-float-texture-3d :linear :sfsim.texture/repeat {:width worley-size :height worley-size :depth worley-size :data data}))
 
 (def cloud-cover-tex (atom nil))
 

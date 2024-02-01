@@ -310,10 +310,10 @@ void main()
                         (destroy-program program)))
     => (is-image (str "test/sfsim/fixtures/render/" ?result ".png") 0.0))
   ?interpolation ?boundary ?result
-  :nearest       :clamp    "floats-1d-nearest-clamp"
-  :linear        :clamp    "floats-1d-linear-clamp"
-  :nearest       :repeat   "floats-1d-nearest-repeat"
-  :linear        :repeat   "floats-1d-linear-repeat")
+  :sfsim.texture/nearest       :sfsim.texture/clamp    "floats-1d-nearest-clamp"
+  :sfsim.texture/linear        :sfsim.texture/clamp    "floats-1d-linear-clamp"
+  :sfsim.texture/nearest       :sfsim.texture/repeat   "floats-1d-nearest-repeat"
+  :sfsim.texture/linear        :sfsim.texture/repeat   "floats-1d-linear-repeat")
 
 (def fragment-texture-2d
 "#version 410 core
@@ -331,7 +331,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-          tex      (make-rgb-texture :linear :clamp (slurp-image "test/sfsim/fixtures/render/pattern.png"))]
+          tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (slurp-image "test/sfsim/fixtures/render/pattern.png"))]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
       (uniform-sampler program "tex" 0)
@@ -361,10 +361,10 @@ void main()
                         (destroy-program program)))
     => (is-image (str "test/sfsim/fixtures/render/" ?result ".png") 0.0))
   ?interpolation ?boundary ?result
-  :nearest       :clamp    "floats-2d-nearest-clamp"
-  :linear        :clamp    "floats-2d-linear-clamp"
-  :nearest       :repeat   "floats-2d-nearest-repeat"
-  :linear        :repeat   "floats-2d-linear-repeat")
+  :sfsim.texture/nearest       :sfsim.texture/clamp    "floats-2d-nearest-clamp"
+  :sfsim.texture/linear        :sfsim.texture/clamp    "floats-2d-linear-clamp"
+  :sfsim.texture/nearest       :sfsim.texture/repeat   "floats-2d-nearest-repeat"
+  :sfsim.texture/linear        :sfsim.texture/repeat   "floats-2d-linear-repeat")
 
 (fact "Render 2D unsigned-byte texture"
   (offscreen-render 64 64
@@ -372,7 +372,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-          tex      (make-ubyte-texture-2d :linear :clamp
+          tex      (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                           #:sfsim.image{:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -389,7 +389,7 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-          tex      (make-vector-texture-2d :linear :clamp
+          tex      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                            #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -429,7 +429,7 @@ void main(void)
                                                  :sfsim.render/fragment [fragment-sample-shadow])
                           vao      (make-vertex-array-object program indices vertices ["point" 3])
                           data     [0.4 0.4 0.4 0.4, 0.4 0.6 0.6 0.4, 0.4 0.6 0.6 0.4, 0.4 0.4 0.4 0.4]
-                          depth    (make-depth-texture :linear :clamp #:sfsim.image{:width 4 :height 4 :data (float-array data)})]
+                          depth    (make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 4 :height 4 :data (float-array data)})]
                       (clear (vec3 1.0 0.0 0.0))
                       (use-program program)
                       (uniform-sampler program "shadow_map" 0)
@@ -471,10 +471,10 @@ void main()
                         (destroy-program program)))
     => (is-image (str "test/sfsim/fixtures/render/" ?result ".png") 0.0))
   ?interpolation ?boundary ?result
-  :nearest       :clamp    "floats-3d-nearest-clamp"
-  :linear        :clamp    "floats-3d-linear-clamp"
-  :nearest       :repeat   "floats-3d-nearest-repeat"
-  :linear        :repeat   "floats-3d-linear-repeat")
+  :sfsim.texture/nearest       :sfsim.texture/clamp    "floats-3d-nearest-clamp"
+  :sfsim.texture/linear        :sfsim.texture/clamp    "floats-3d-linear-clamp"
+  :sfsim.texture/nearest       :sfsim.texture/repeat   "floats-3d-nearest-repeat"
+  :sfsim.texture/linear        :sfsim.texture/repeat   "floats-3d-linear-repeat")
 
 (def fragment-two-textures
 "#version 410 core
@@ -496,9 +496,9 @@ void main()
           vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
           program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-two-textures])
           vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-          tex1     (make-vector-texture-2d :linear :clamp
+          tex1     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                            #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
-          tex2     (make-vector-texture-2d :linear :clamp
+          tex2     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                            #:sfsim.image{:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
@@ -622,8 +622,8 @@ void main()
 
 (facts "Using framebuffer to render to two color textures"
        (with-invisible-window
-         (let [tex1     (make-empty-float-texture-2d :linear :clamp 1 1)
-               tex2     (make-empty-float-texture-2d :linear :clamp 1 1)
+         (let [tex1     (make-empty-float-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 1 1)
+               tex2     (make-empty-float-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 1 1)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :sfsim.render/vertex [vertex-passthrough]
@@ -641,7 +641,7 @@ void main()
 
 (facts "Using framebuffer to render to layers of 3D texture"
        (with-invisible-window
-         (let [tex      (make-empty-float-texture-3d :linear :clamp 1 1 2)
+         (let [tex      (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 1 1 2)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :sfsim.render/vertex [vertex-passthrough]
@@ -668,7 +668,7 @@ void main(void)
 
 (facts "Using framebuffer to render to depth texture"
        (with-invisible-window
-         (let [depth    (make-empty-depth-texture-2d :linear :clamp 1 1)
+         (let [depth    (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 1 1)
                indices  [2 3 1 0]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :sfsim.render/vertex [vertex-passthrough] :sfsim.render/fragment [fragment-noop])
@@ -702,7 +702,7 @@ void main()
                    program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [lod-texture-1d])
                    vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                    data     (flatten (repeat 8 [0 0 1 1]))
-                   tex      (make-float-texture-1d :linear :clamp (float-array data))]
+                   tex      (make-float-texture-1d :sfsim.texture/linear :sfsim.texture/clamp (float-array data))]
                (generate-mipmap tex)
                (clear (vec3 0.0 0.0 0.0))
                (use-program program)
@@ -833,8 +833,8 @@ void main(void)
                                (use-program program-shadow)
                                (uniform-matrix4 program-shadow "transform" (:shadow-ndc-matrix shadow-mat))
                                (render-quads vao))]
-          (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
-                tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
+          (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
+                tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
             (framebuffer-render 320 240 :cullback depth [tex]
                                 (clear (vec3 0 0 0))
                                 (use-program program-main)
@@ -890,8 +890,8 @@ void main(void)
                                              (fn [shadow-ndc-matrix]
                                                  (uniform-matrix4 program-shadow "transform" shadow-ndc-matrix)
                                                  (render-quads vao)))]
-          (let [depth (make-empty-depth-texture-2d :linear :clamp 320 240)
-                tex   (make-empty-texture-2d :linear :clamp GL11/GL_RGBA8 320 240)]
+          (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
+                tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
             (framebuffer-render 320 240 :cullback depth [tex]
                                 (clear (vec3 0 0 0))
                                 (use-program program-main)
@@ -933,7 +933,7 @@ void main()
 
 (facts "Using framebuffer to render to faces of cubemap"
        (with-invisible-window
-         (let [tex      (make-empty-float-cubemap :linear :clamp 1)
+         (let [tex      (make-empty-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp 1)
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :sfsim.render/vertex [vertex-passthrough]
@@ -951,7 +951,7 @@ void main()
 (fact "Create cube map of 3D vectors and read them out"
       (with-invisible-window
         (let [gen-vector (fn [i] (let [i3 (* i 3)] [i3 (inc i3) (inc (inc i3))]))
-              cubemap (make-vector-cubemap :linear :clamp
+              cubemap (make-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp
                                            (mapv (fn [i] #:sfsim.image{:width 1 :height 1 :data (float-array (gen-vector i))})
                                                  (range 6)))]
           (doseq [i (range 6)]

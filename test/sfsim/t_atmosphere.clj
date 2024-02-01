@@ -523,7 +523,7 @@
       (with-invisible-window
         (let [indices       [0 1 3 2]
               vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              transmittance (make-vector-texture-2d :linear :clamp #:sfsim.image{:width size :height size :data T})
+              transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width size :height size :data T})
               program       (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                           :sfsim.render/fragment (conj shaders (apply probe args)))
               vao           (make-vertex-array-object program indices vertices ["point" 3])
@@ -602,11 +602,11 @@ void main()
       (with-invisible-window
         (let [indices       [0 1 3 2]
               vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              transmittance (make-vector-texture-2d :linear :clamp
+              transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                     #:sfsim.image{:width size :height size :data T})
-              ray-scatter   (make-vector-texture-2d :linear :clamp
+              ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                     #:sfsim.image{:width (* size size) :height (* size size) :data S})
-              mie-strength  (make-vector-texture-2d :linear :clamp
+              mie-strength  (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                     #:sfsim.image{:width (* size size) :height (* size size) :data M})
               program       (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                           :sfsim.render/fragment (conj shaders (apply probe args)))
@@ -728,11 +728,11 @@ vec4 cloud_overlay()
                                                                                        shaders/ray-sphere attenuation-outer
                                                                                        (cloud-overlay-mock ?cloud)])
                                    variables     ["point" 3]
-                                   transmittance (make-vector-texture-2d :linear :clamp
+                                   transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                  #:sfsim.image{:width size :height size :data T})
-                                   ray-scatter   (make-vector-texture-2d :linear :clamp
+                                   ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                    #:sfsim.image{:width (* size size) :height (* size size) :data S})
-                                   mie-strength  (make-vector-texture-2d :linear :clamp
+                                   mie-strength  (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                    #:sfsim.image{:width (* size size) :height (* size size) :data M})
                                    vao           (make-vertex-array-object program indices vertices variables)]
                                (clear (vec3 0 0 0))
@@ -811,7 +811,7 @@ void main()
               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
               img      #:sfsim.image{:width 2 :height 2 :data (byte-array data)}
-              clouds   (make-rgba-texture :linear :clamp img)
+              clouds   (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp img)
               program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                      :sfsim.render/fragment [fragment-overlay-lookup cloud-overlay])
               vao      (make-vertex-array-object program indices vertices ["point" 3])]

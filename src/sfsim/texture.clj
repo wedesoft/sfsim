@@ -62,31 +62,31 @@
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target))))
 
-(def interpolation (m/schema [:or [:= :nearest] [:= :linear]]))
+(def interpolation (m/schema [:or [:= ::nearest] [:= ::linear]]))
 
 (defmulti setup-interpolation (comp second vector))
 (m/=> setup-interpolation [:=> [:cat :int interpolation] :nil])
 
-(defmethod setup-interpolation :nearest
+(defmethod setup-interpolation ::nearest
   [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
 
-(defmethod setup-interpolation :linear
+(defmethod setup-interpolation ::linear
   [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
-(def boundary (m/schema [:or [:= :clamp] [:= :repeat]]))
+(def boundary (m/schema [:or [:= ::clamp] [:= ::repeat]]))
 
 (defmulti setup-boundary-1d identity)
 (m/=> setup-boundary-1d [:=> [:cat boundary] :nil])
 
-(defmethod setup-boundary-1d :clamp
+(defmethod setup-boundary-1d ::clamp
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE))
 
-(defmethod setup-boundary-1d :repeat
+(defmethod setup-boundary-1d ::repeat
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
 
@@ -102,12 +102,12 @@
 (defmulti setup-boundary-2d identity)
 (m/=> setup-boundary-2d [:=> [:cat boundary] :nil])
 
-(defmethod setup-boundary-2d :clamp
+(defmethod setup-boundary-2d ::clamp
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
 
-(defmethod setup-boundary-2d :repeat
+(defmethod setup-boundary-2d ::repeat
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
@@ -132,13 +132,13 @@
 (defmulti setup-boundary-3d (comp second vector))
 (m/=> setup-boundary-3d [:=> [:cat :int boundary] :nil])
 
-(defmethod setup-boundary-3d :clamp
+(defmethod setup-boundary-3d ::clamp
   [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
 
-(defmethod setup-boundary-3d :repeat
+(defmethod setup-boundary-3d ::repeat
   [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)

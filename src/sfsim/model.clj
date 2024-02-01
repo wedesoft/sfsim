@@ -247,7 +247,7 @@
   "Load images into OpenGL textures"
   {:malli/schema [:=> [:cat [:map [:root node]]] [:map [:root node] [:textures [:vector texture-2d]]]]}
   [scene]
-  (update scene :textures (fn [textures] (mapv #(make-rgba-texture :linear :repeat %) textures))))
+  (update scene :textures (fn [textures] (mapv #(make-rgba-texture :sfsim.texture/linear :sfsim.texture/repeat %) textures))))
 
 (defn- propagate-texture
   "Add color and normal textures to material"
