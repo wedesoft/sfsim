@@ -39,9 +39,9 @@
 
 ; Program to render cascade of deep opacity maps
 (def opacity-renderer
-  (opacity/make-opacity-renderer :planet-config config/planet-config
-                                 :shadow-data shadow-data
-                                 :cloud-data cloud-data))
+  (opacity/make-opacity-renderer {:sfsim.planet/config config/planet-config
+                                  :sfsim.opacity/data shadow-data
+                                  :sfsim.clouds/data cloud-data}))
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer

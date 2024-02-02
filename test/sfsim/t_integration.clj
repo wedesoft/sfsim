@@ -41,9 +41,9 @@
               cloud-data                (clouds/make-cloud-data config/cloud-config)
               atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
               shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-              opacity-renderer          (opacity/make-opacity-renderer :planet-config config/planet-config
-                                                                       :shadow-data shadow-data
-                                                                       :cloud-data cloud-data)
+              opacity-renderer          (opacity/make-opacity-renderer {:sfsim.planet/config config/planet-config
+                                                                        :sfsim.opacity/data shadow-data
+                                                                        :sfsim.clouds/data cloud-data})
 
               planet-shadow-renderer    (planet/make-planet-shadow-renderer :planet-config config/planet-config
                                                                             :shadow-data shadow-data)

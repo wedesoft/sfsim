@@ -107,7 +107,7 @@
 
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
-  {:malli/schema [:=> [:cat [:* :any]] :map]}
+  {:malli/schema [:=> [:cat :map] :map]}
   [& {:keys [planet-config shadow-data]}]
   (let [tilesize (::tilesize planet-config)
         program  (make-program :sfsim.render/vertex [vertex-planet]

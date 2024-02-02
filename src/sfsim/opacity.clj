@@ -27,14 +27,18 @@
 
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
-  [& {:keys [planet-config shadow-data cloud-data]}]
-  (let [program  (make-program :sfsim.render/vertex [opacity-vertex]
-                               :sfsim.render/fragment [(opacity-fragment (::num-opacity-layers shadow-data)
-                                                                         (:sfsim.clouds/perlin-octaves cloud-data)
-                                                                         (:sfsim.clouds/cloud-octaves cloud-data))])
-        indices  [0 1 3 2]
-        vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-        vao              (make-vertex-array-object program indices vertices ["point" 2])]
+  {:malli/schema [:=> [:cat :map] :map]}
+  [data]
+  (let [planet-config (:sfsim.planet/config data)
+        shadow-data   (::data data)
+        cloud-data    (:sfsim.clouds/data data)
+        program       (make-program :sfsim.render/vertex [opacity-vertex]
+                                    :sfsim.render/fragment [(opacity-fragment (::num-opacity-layers shadow-data)
+                                                                              (:sfsim.clouds/perlin-octaves cloud-data)
+                                                                              (:sfsim.clouds/cloud-octaves cloud-data))])
+        indices       [0 1 3 2]
+        vertices      [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+        vao           (make-vertex-array-object program indices vertices ["point" 2])]
     (use-program program)
     (setup-cloud-render-uniforms program cloud-data 0)
     (uniform-int program "shadow_size" (::shadow-size shadow-data))
