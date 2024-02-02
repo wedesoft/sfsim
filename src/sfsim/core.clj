@@ -66,10 +66,10 @@
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer
-  (planet/make-planet-renderer :render-config config/render-config
-                               :atmosphere-luts atmosphere-luts
-                               :planet-config config/planet-config
-                               :shadow-data shadow-data))
+  (planet/make-planet-renderer {:sfsim.render/config config/render-config
+                                :sfsim.atmosphere/luts atmosphere-luts
+                                :sfsim.planet/config config/planet-config
+                                :sfsim.opacity/data shadow-data}))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer

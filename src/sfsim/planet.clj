@@ -212,14 +212,17 @@
 
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
-  {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-config shadow-data]}]
-  (let [tilesize (::tilesize planet-config)
-        program  (make-program :sfsim.render/vertex [vertex-planet]
-                               :sfsim.render/tess-control [tess-control-planet]
-                               :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                               :sfsim.render/geometry [geometry-planet]
-                               :sfsim.render/fragment [(fragment-planet (:sfsim.opacity/num-steps shadow-data))])]
+  {:malli/schema [:=> [:cat :map] :map]}
+  [{::keys [config] :as other}]
+  (let [tilesize        (::tilesize config)
+        render-config   (:sfsim.render/config other)
+        atmosphere-luts (:sfsim.atmosphere/luts other)
+        shadow-data     (:sfsim.opacity/data other)
+        program         (make-program :sfsim.render/vertex [vertex-planet]
+                                      :sfsim.render/tess-control [tess-control-planet]
+                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
+                                      :sfsim.render/geometry [geometry-planet]
+                                      :sfsim.render/fragment [(fragment-planet (:sfsim.opacity/num-steps shadow-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (uniform-sampler program "day"              1)
@@ -231,23 +234,24 @@
     (setup-atmosphere-uniforms program atmosphere-luts 5 true)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
-    (uniform-float program "dawn_start" (::dawn-start planet-config))
-    (uniform-float program "dawn_end" (::dawn-end planet-config))
+    (uniform-float program "dawn_start" (::dawn-start config))
+    (uniform-float program "dawn_end" (::dawn-end config))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
-    (uniform-float program "radius" (::radius planet-config))
-    (uniform-float program "albedo" (::albedo planet-config))
-    (uniform-float program "reflectivity" (::reflectivity planet-config))
-    (uniform-vector3 program "water_color" (::water-color planet-config))
+    (uniform-float program "radius" (::radius config))
+    (uniform-float program "albedo" (::albedo config))
+    (uniform-float program "reflectivity" (::reflectivity config))
+    (uniform-vector3 program "water_color" (::water-color config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {:program program
-     :atmosphere-luts atmosphere-luts
-     :planet-config planet-config}))
+    {::program program
+     :sfsim.atmosphere/luts atmosphere-luts
+     ::config config}))
 
 (defn render-planet
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]} render-vars shadow-vars & {:keys [clouds tree]}]
-  (let [transform (inverse (:sfsim.render/extrinsics render-vars))]
+  [{::keys [program] :as other} render-vars shadow-vars & {:keys [clouds tree]}]
+  (let [atmosphere-luts (:sfsim.atmosphere/luts other)
+        transform       (inverse (:sfsim.render/extrinsics render-vars))]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
@@ -270,15 +274,15 @@
 (defn destroy-planet-renderer
   "Destroy planet rendering program (untested)"
   {:malli/schema [:=> [:cat :map] :nil]}
-  [{:keys [program]}]
+  [{::keys [program]}]
   (destroy-program program))
 
 (defn load-tile-into-opengl
   "Load textures of single tile into OpenGL (untested)"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}
-  [{:keys [program planet-config]} tile]
-  (let [tilesize       (::tilesize planet-config)
-        color-tilesize (::color-tilesize planet-config)
+  [{::keys [program config]} tile]
+  (let [tilesize       (::tilesize config)
+        color-tilesize (::color-tilesize config)
         indices        [0 2 3 1]
         vertices       (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
@@ -318,10 +322,10 @@
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles (untested)"
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
-  [{:keys [planet-config]} tree width position]
-  (let [tilesize  (::tilesize planet-config)
-        increase? (partial increase-level? tilesize (::radius planet-config) width 60.0 10 6 position)]; TODO: use params for values
-    (update-level-of-detail tree (::radius planet-config) increase? true)))
+  [{::keys [config]} tree width position]
+  (let [tilesize  (::tilesize config)
+        increase? (partial increase-level? tilesize (::radius config) width 60.0 10 6 position)]; TODO: use params for values
+    (update-level-of-detail tree (::radius config) increase? true)))
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))
 
