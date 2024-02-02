@@ -53,11 +53,11 @@
                                                                             :sfsim.planet/config config/planet-config
                                                                             :sfsim.opacity/data shadow-data
                                                                             :sfsim.clouds/data cloud-data})
-              cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer :render-config config/render-config
-                                                                               :atmosphere-luts atmosphere-luts
-                                                                               :planet-config config/planet-config
-                                                                               :shadow-data shadow-data
-                                                                               :cloud-data cloud-data)
+              cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer {:sfsim.render/config config/render-config
+                                                                                :sfsim.atmosphere/luts atmosphere-luts
+                                                                                :sfsim.planet/config config/planet-config
+                                                                                :sfsim.opacity/data shadow-data
+                                                                                :sfsim.clouds/data cloud-data})
 
               planet-renderer           (planet/make-planet-renderer :render-config config/render-config
                                                                      :atmosphere-luts atmosphere-luts
