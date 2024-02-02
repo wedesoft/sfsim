@@ -41,30 +41,17 @@
               cloud-data                (clouds/make-cloud-data config/cloud-config)
               atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
               shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-              opacity-renderer          (opacity/make-opacity-renderer {:sfsim.planet/config config/planet-config
-                                                                        :sfsim.opacity/data shadow-data
-                                                                        :sfsim.clouds/data cloud-data})
-
-              planet-shadow-renderer    (planet/make-planet-shadow-renderer {:sfsim.planet/config config/planet-config
-                                                                             :sfsim.opacity/data shadow-data})
-
-              cloud-planet-renderer     (planet/make-cloud-planet-renderer {:sfsim.render/config config/render-config
-                                                                            :sfsim.atmosphere/luts atmosphere-luts
-                                                                            :sfsim.planet/config config/planet-config
-                                                                            :sfsim.opacity/data shadow-data
-                                                                            :sfsim.clouds/data cloud-data})
-              cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer {:sfsim.render/config config/render-config
-                                                                                :sfsim.atmosphere/luts atmosphere-luts
-                                                                                :sfsim.planet/config config/planet-config
-                                                                                :sfsim.opacity/data shadow-data
-                                                                                :sfsim.clouds/data cloud-data})
-              planet-renderer           (planet/make-planet-renderer {:sfsim.render/config config/render-config
-                                                                      :sfsim.atmosphere/luts atmosphere-luts
-                                                                      :sfsim.planet/config config/planet-config
-                                                                      :sfsim.opacity/data shadow-data})
-              atmosphere-renderer       (atmosphere/make-atmosphere-renderer {:sfsim.render/config config/render-config
-                                                                              :sfsim.atmosphere/luts atmosphere-luts
-                                                                              :sfsim.planet/config config/planet-config})
+              data                      {:sfsim.render/config config/render-config
+                                         :sfsim.planet/config config/planet-config
+                                         :sfsim.opacity/data shadow-data
+                                         :sfsim.clouds/data cloud-data
+                                         :sfsim.atmosphere/luts atmosphere-luts}
+              opacity-renderer          (opacity/make-opacity-renderer data)
+              planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
+              cloud-planet-renderer     (planet/make-cloud-planet-renderer data)
+              cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer data)
+              planet-renderer           (planet/make-planet-renderer data)
+              atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
               tree                      (load-tile-tree planet-renderer {} width position level)
               render-vars               (make-render-vars config/planet-config cloud-data config/render-config width height
                                                           position orientation (vec3 1 0 0) 1.0)
