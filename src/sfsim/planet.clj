@@ -146,16 +146,21 @@
 
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
-  {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-config cloud-data shadow-data]}]
-  (let [tilesize (::tilesize planet-config)
-        program  (make-program :sfsim.render/vertex [vertex-planet]
-                               :sfsim.render/tess-control [tess-control-planet]
-                               :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                               :sfsim.render/geometry [geometry-planet]
-                               :sfsim.render/fragment [(fragment-planet-clouds (:sfsim.opacity/num-steps shadow-data)
-                                                                               (:sfsim.clouds/perlin-octaves cloud-data)
-                                                                               (:sfsim.clouds/cloud-octaves cloud-data))])]
+  {:malli/schema [:=> [:cat :map] :map]}
+  [data]
+  (let [render-config   (:sfsim.render/config data)
+        planet-config   (:sfsim.planet/config data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        shadow-data     (:sfsim.opacity/data data)
+        cloud-data      (:sfsim.clouds/data data)
+        tilesize        (::tilesize planet-config)
+        program         (make-program :sfsim.render/vertex [vertex-planet]
+                                      :sfsim.render/tess-control [tess-control-planet]
+                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
+                                      :sfsim.render/geometry [geometry-planet]
+                                      :sfsim.render/fragment [(fragment-planet-clouds (:sfsim.opacity/num-steps shadow-data)
+                                                                                      (:sfsim.clouds/perlin-octaves cloud-data)
+                                                                                      (:sfsim.clouds/cloud-octaves cloud-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
     (setup-shadow-and-opacity-maps program shadow-data 8)

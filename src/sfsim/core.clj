@@ -50,11 +50,11 @@
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :render-config config/render-config
-                                     :atmosphere-luts atmosphere-luts
-                                     :planet-config config/planet-config
-                                     :shadow-data shadow-data
-                                     :cloud-data cloud-data))
+  (planet/make-cloud-planet-renderer {:sfsim.render/config config/render-config
+                                      :sfsim.atmosphere/luts atmosphere-luts
+                                      :sfsim.planet/config config/planet-config
+                                      :sfsim.opacity/data shadow-data
+                                      :sfsim.clouds/data cloud-data}))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer
