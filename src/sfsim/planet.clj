@@ -121,14 +121,14 @@
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
-    {:program program
-     :shadow-data shadow-data}))
+    {::program program
+     :sfsim.opacity/data shadow-data}))
 
 (defn render-shadow-cascade
   "Render planetary shadow cascade (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
-  [{:keys [program shadow-data]} & {:keys [tree] :as data}]
-  (shadow-cascade (:sfsim.opacity/shadow-size shadow-data) (:sfsim.opacity/matrix-cascade data) program
+  [{::keys [program] :as other} & {:keys [tree] :as data}]
+  (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
                   (fn [transform] (render-tree program tree transform [:surf-tex]))))
 
 (defn destroy-shadow-cascade
@@ -141,7 +141,7 @@
 (defn destroy-planet-shadow-renderer
   "Destroy renderer for planet shadow (untested)"
   {:malli/schema [:=> [:cat :map] :nil]}
-  [{:keys [program]}]
+  [{::keys [program]}]
   (destroy-program program))
 
 (defn make-cloud-planet-renderer
@@ -171,16 +171,19 @@
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {:program program
-     :atmosphere-luts atmosphere-luts
-     :cloud-data cloud-data
-     :render-config render-config}))
+    {::program program
+     :sfsim.atmosphere/luts atmosphere-luts
+     :sfsim.clouds/data cloud-data
+     :sfsim.render/config render-config}))
 
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts cloud-data render-config]} render-vars shadow-vars & {:keys [tree]}]
-  (let [transform    (inverse (:sfsim.render/extrinsics render-vars))]
+  [{::keys [program] :as other} render-vars shadow-vars & {:keys [tree]}]
+  (let [atmosphere-luts (:sfsim.atmosphere/luts other)
+        cloud-data      (:sfsim.clouds/data other)
+        render-config   (:sfsim.render/config other)
+        transform       (inverse (:sfsim.render/extrinsics render-vars))]
     (use-program program)
     (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
@@ -204,7 +207,7 @@
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map] :nil]}
-  [{:keys [program]}]
+  [{::keys [program]}]
   (destroy-program program))
 
 (defn make-planet-renderer
