@@ -43,23 +43,24 @@
     (setup-cloud-render-uniforms program cloud-data 0)
     (uniform-int program "shadow_size" (::shadow-size shadow-data))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
-    {:program program
-     :cloud-data cloud-data
-     :shadow-data shadow-data
-     :vao vao}))
+    {::program program
+     :sfsim.clouds/data cloud-data
+     ::data shadow-data
+     ::vao vao}))
 
 (defn render-opacity-cascade
   "Render a cascade of opacity maps and return it as a list of 3D textures (untested)"
-  [{:keys [program vao shadow-data cloud-data]} matrix-cas light-direction scatter-amount opacity-step]
-  (use-textures {0 (:sfsim.clouds/worley cloud-data) 1 (:sfsim.clouds/perlin-worley cloud-data)
-                 2 (:sfsim.clouds/cloud-cover cloud-data)})
-  (opacity-cascade (::shadow-size shadow-data) (::num-opacity-layers shadow-data) matrix-cas
-                   (/ (:sfsim.clouds/detail-scale cloud-data) worley-size) program
-                   (uniform-vector3 program "light_direction" light-direction)
-                   (uniform-float program "scatter_amount" scatter-amount)
-                   (uniform-float program "opacity_step" opacity-step)
-                   (uniform-float program "cloud_max_step" (* 0.5 opacity-step))
-                   (render-quads vao)))
+  [{::keys [program vao data] :as other} matrix-cas light-direction scatter-amount opacity-step]
+  (let [cloud-data (:sfsim.clouds/data other)]
+    (use-textures {0 (:sfsim.clouds/worley cloud-data) 1 (:sfsim.clouds/perlin-worley cloud-data)
+                   2 (:sfsim.clouds/cloud-cover cloud-data)})
+    (opacity-cascade (::shadow-size data) (::num-opacity-layers data) matrix-cas
+                     (/ (:sfsim.clouds/detail-scale cloud-data) worley-size) program
+                     (uniform-vector3 program "light_direction" light-direction)
+                     (uniform-float program "scatter_amount" scatter-amount)
+                     (uniform-float program "opacity_step" opacity-step)
+                     (uniform-float program "cloud_max_step" (* 0.5 opacity-step))
+                     (render-quads vao))))
 
 (defn destroy-opacity-cascade
   "Destroy cascade of opacity maps (untested)"
@@ -69,7 +70,7 @@
 
 (defn destroy-opacity-renderer
   "Delete opacity renderer objects (untested)"
-  [{:keys [vao program]}]
+  [{::keys [vao program]}]
   (destroy-vertex-array-object vao)
   (destroy-program program))
 
