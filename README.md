@@ -53,18 +53,6 @@ Requires OpenGL 4.5.
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program displaying black window: `clj -M -m sfsim.core`
 
-# REPL with Schema validation
-
-Here is an example on how to use Malli schemas in the REPL:
-
-```Clojure
-(require '[malli.dev :as dev])
-(require '[malli.dev.pretty :as pretty])
-(require '[sfsim.util :refer (third)])
-(dev/start! {:report (pretty/thrower)})
-(third [2 3])
-```
-
 # External Links
 
 * Simulators
