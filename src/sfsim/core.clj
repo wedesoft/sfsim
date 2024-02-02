@@ -45,8 +45,8 @@
 
 ; Program to render shadow map of planet
 (def planet-shadow-renderer
-  (planet/make-planet-shadow-renderer :planet-config config/planet-config
-                                      :shadow-data shadow-data))
+  (planet/make-planet-shadow-renderer {:sfsim.planet/config config/planet-config
+                                       :sfsim.opacity/data shadow-data}))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
 (def cloud-planet-renderer

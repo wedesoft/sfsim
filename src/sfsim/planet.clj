@@ -108,13 +108,14 @@
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
   {:malli/schema [:=> [:cat :map] :map]}
-  [& {:keys [planet-config shadow-data]}]
-  (let [tilesize (::tilesize planet-config)
-        program  (make-program :sfsim.render/vertex [vertex-planet]
-                               :sfsim.render/tess-control [tess-control-planet]
-                               :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
-                               :sfsim.render/geometry [geometry-planet]
-                               :sfsim.render/fragment [fragment-planet-shadow])]
+  [data]
+  (let [shadow-data (:sfsim.opacity/data data)
+        tilesize    (::tilesize (:sfsim.planet/config data))
+        program     (make-program :sfsim.render/vertex [vertex-planet]
+                                  :sfsim.render/tess-control [tess-control-planet]
+                                  :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
+                                  :sfsim.render/geometry [geometry-planet]
+                                  :sfsim.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
     (uniform-int program "high_detail" (dec tilesize))
