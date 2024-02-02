@@ -62,9 +62,9 @@
                                                                       :sfsim.atmosphere/luts atmosphere-luts
                                                                       :sfsim.planet/config config/planet-config
                                                                       :sfsim.opacity/data shadow-data})
-              atmosphere-renderer       (atmosphere/make-atmosphere-renderer :render-config config/render-config
-                                                                             :atmosphere-luts atmosphere-luts
-                                                                             :planet-config config/planet-config)
+              atmosphere-renderer       (atmosphere/make-atmosphere-renderer {:sfsim.render/config config/render-config
+                                                                              :sfsim.atmosphere/luts atmosphere-luts
+                                                                              :sfsim.planet/config config/planet-config})
               tree                      (load-tile-tree planet-renderer {} width position level)
               render-vars               (make-render-vars config/planet-config cloud-data config/render-config width height
                                                           position orientation (vec3 1 0 0) 1.0)

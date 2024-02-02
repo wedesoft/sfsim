@@ -482,23 +482,25 @@
 
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
-  {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-config]}]
-  (let [program (make-program :sfsim.render/vertex [vertex-atmosphere]
-                              :sfsim.render/fragment [fragment-atmosphere])]
+  {:malli/schema [:=> [:cat :map] :map]}
+  [{::keys [luts] :as other}]
+  (let [render-config (:sfsim.render/config other)
+        planet-config (:sfsim.planet/config other)
+        program       (make-program :sfsim.render/vertex [vertex-atmosphere]
+                                    :sfsim.render/fragment [fragment-atmosphere])]
     (use-program program)
-    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
+    (setup-atmosphere-uniforms program luts 0 false)
     (uniform-sampler program "clouds" 3)
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {:program program
-     :atmosphere-luts atmosphere-luts}))
+    {::program program
+     ::luts luts}))
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]} render-vars & {:keys [clouds]}]
+  [{::keys [program luts]} render-vars & {:keys [clouds]}]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
@@ -509,14 +511,14 @@
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
     (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
-    (use-textures {0 (::transmittance atmosphere-luts) 1 (::scatter atmosphere-luts) 2 (::mie atmosphere-luts) 3 clouds})
+    (use-textures {0 (::transmittance luts) 1 (::scatter luts) 2 (::mie luts) 3 clouds})
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
 (defn destroy-atmosphere-renderer
   "Destroy atmosphere renderer (untested)"
   {:malli/schema [:=> [:cat :map] :nil]}
-  [{:keys [program]}]
+  [{::keys [program]}]
   (destroy-program program))
 
 (set! *warn-on-reflection* false)

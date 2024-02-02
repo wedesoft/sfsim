@@ -73,9 +73,9 @@
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :render-config config/render-config
-                                       :atmosphere-luts atmosphere-luts
-                                       :planet-config config/planet-config))
+  (atmosphere/make-atmosphere-renderer {:sfsim.render/config config/render-config
+                                        :sfsim.atmosphere/luts atmosphere-luts
+                                        :sfsim.planet/config config/planet-config}))
 
 (def tile-tree (planet/make-tile-tree))
 
