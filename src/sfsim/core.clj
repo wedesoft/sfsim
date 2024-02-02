@@ -31,51 +31,31 @@
 (GLFW/glfwShowWindow window)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
-
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
-
-(def shadow-data
-  (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
+(def shadow-data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
+(def data {:sfsim.render/config config/render-config
+           :sfsim.planet/config config/planet-config
+           :sfsim.opacity/data shadow-data
+           :sfsim.clouds/data cloud-data
+           :sfsim.atmosphere/luts atmosphere-luts})
 
 ; Program to render cascade of deep opacity maps
-(def opacity-renderer
-  (opacity/make-opacity-renderer {:sfsim.planet/config config/planet-config
-                                  :sfsim.opacity/data shadow-data
-                                  :sfsim.clouds/data cloud-data}))
+(def opacity-renderer (opacity/make-opacity-renderer data))
 
 ; Program to render shadow map of planet
-(def planet-shadow-renderer
-  (planet/make-planet-shadow-renderer {:sfsim.planet/config config/planet-config
-                                       :sfsim.opacity/data shadow-data}))
+(def planet-shadow-renderer (planet/make-planet-shadow-renderer data))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer {:sfsim.render/config config/render-config
-                                      :sfsim.atmosphere/luts atmosphere-luts
-                                      :sfsim.planet/config config/planet-config
-                                      :sfsim.opacity/data shadow-data
-                                      :sfsim.clouds/data cloud-data}))
+(def cloud-planet-renderer (planet/make-cloud-planet-renderer data))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer {:sfsim.render/config config/render-config
-                                          :sfsim.atmosphere/luts atmosphere-luts
-                                          :sfsim.planet/config config/planet-config
-                                          :sfsim.opacity/data shadow-data
-                                          :sfsim.clouds/data cloud-data}))
+(def cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer data))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
-(def planet-renderer
-  (planet/make-planet-renderer {:sfsim.render/config config/render-config
-                                :sfsim.atmosphere/luts atmosphere-luts
-                                :sfsim.planet/config config/planet-config
-                                :sfsim.opacity/data shadow-data}))
+(def planet-renderer (planet/make-planet-renderer data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
-(def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer {:sfsim.render/config config/render-config
-                                        :sfsim.atmosphere/luts atmosphere-luts
-                                        :sfsim.planet/config config/planet-config}))
+(def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
 (def tile-tree (planet/make-tile-tree))
 
