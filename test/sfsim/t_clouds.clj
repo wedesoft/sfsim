@@ -169,7 +169,7 @@ float cloud_density(vec3 point, float lod)
             vao             (make-vertex-array-object program indices vertices ["point" 2])
             opacity-layers  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 3 3 8)
             index           ({:offset 0 :layer (inc ?layer)} ?selector)]
-        (framebuffer-render 3 3 :cullback nil [opacity-layers]
+        (framebuffer-render 3 3 :sfsim.render/cullback nil [opacity-layers]
                             (use-program program)
                             (setup-opacity-fragment-static-uniforms program)
                             (setup-opacity-fragment-dynamic-uniforms program ndc-to-shadow light-direction ?shells ?multiplier

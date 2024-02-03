@@ -629,7 +629,7 @@ void main()
                program  (make-program :sfsim.render/vertex [vertex-passthrough]
                                       :sfsim.render/fragment [fragment-two-attachments])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
-           (framebuffer-render 1 1 :cullback nil [tex1 tex2]
+           (framebuffer-render 1 1 :sfsim.render/cullback nil [tex1 tex2]
                                (use-program program)
                                (render-quads vao))
            (get-float (float-texture-2d->floats tex1) 0 0) => 0.25
@@ -647,7 +647,7 @@ void main()
                program  (make-program :sfsim.render/vertex [vertex-passthrough]
                                       :sfsim.render/fragment [fragment-two-attachments])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
-           (framebuffer-render 1 1 :cullback nil [tex]
+           (framebuffer-render 1 1 :sfsim.render/cullback nil [tex]
                                (use-program program)
                                (render-quads vao))
            (with-texture (:sfsim.texture/target tex) (:sfsim.texture/texture tex)
@@ -673,7 +673,7 @@ void main(void)
                vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                program  (make-program :sfsim.render/vertex [vertex-passthrough] :sfsim.render/fragment [fragment-noop])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
-           (framebuffer-render 1 1 :cullfront depth []
+           (framebuffer-render 1 1 :sfsim.render/cullfront depth []
                                (use-program program)
                                (clear)
                                (render-quads vao))
@@ -835,7 +835,7 @@ void main(void)
                                (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
-            (framebuffer-render 320 240 :cullback depth [tex]
+            (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
                                 (clear (vec3 0 0 0))
                                 (use-program program-main)
                                 (uniform-sampler program-main "shadow_map" 0)
@@ -892,7 +892,7 @@ void main(void)
                                                  (render-quads vao)))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
-            (framebuffer-render 320 240 :cullback depth [tex]
+            (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
                                 (clear (vec3 0 0 0))
                                 (use-program program-main)
                                 (uniform-sampler program-main "shadow_map0" 0)
@@ -939,7 +939,7 @@ void main()
                program  (make-program :sfsim.render/vertex [vertex-passthrough]
                                       :sfsim.render/fragment [fragment-cubemap-attachment])
                vao      (make-vertex-array-object program indices vertices ["point" 3])]
-           (framebuffer-render 1 1 :cullback nil [tex]
+           (framebuffer-render 1 1 :sfsim.render/cullback nil [tex]
                                (use-program program)
                                (render-quads vao))
            (doseq [i (range 6)]

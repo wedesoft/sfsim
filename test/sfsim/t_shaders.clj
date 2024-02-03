@@ -1015,7 +1015,7 @@ void main()
                    program  (make-program :sfsim.render/vertex [vertex-passthrough]
                                           :sfsim.render/fragment [fragment-cubemap-vectors cubemap-vectors])
                    vao      (make-vertex-array-object program indices vertices ["point" 3])]
-               (framebuffer-render 32 32 :cullback nil [cubemap]
+               (framebuffer-render 32 32 :sfsim.render/cullback nil [cubemap]
                                    (use-program program)
                                    (render-quads vao))
                (destroy-vertex-array-object vao)

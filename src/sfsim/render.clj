@@ -23,12 +23,12 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
-  {:malli/schema [:=> [:cat N N [:or [:= :cullfront] [:= :cullback]]] :nil]}
+  {:malli/schema [:=> [:cat N N [:or [:= ::cullfront] [:= ::cullback]]] :nil]}
   [width height culling]
   (GL11/glViewport 0 0 width height)
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace ({:cullfront GL11/GL_FRONT :cullback GL11/GL_BACK} culling))
+  (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} culling))
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
@@ -77,7 +77,7 @@
   `(let [width#  (int-array 1)
          height# (int-array 1)]
      (GLFW/glfwGetWindowSize ~(vary-meta window assoc :tag 'long) width# height#)
-     (setup-rendering (aget width# 0) (aget height# 0) :cullback)
+     (setup-rendering (aget width# 0) (aget height# 0) ::cullback)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))
 
@@ -344,7 +344,7 @@
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
          texture#        (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp internalformat# ~width ~height)]
-     (framebuffer-render ~width ~height :cullback nil [texture#] ~@body)
+     (framebuffer-render ~width ~height ::cullback nil [texture#] ~@body)
      texture#))
 
 (defmacro texture-render-color-depth
@@ -353,7 +353,7 @@
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
          texture#        (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp internalformat# ~width ~height)
          depth#          (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
-     (framebuffer-render ~width ~height :cullback depth# [texture#] ~@body)
+     (framebuffer-render ~width ~height ::cullback depth# [texture#] ~@body)
      (destroy-texture depth#)
      texture#))
 
@@ -361,7 +361,7 @@
   "Macro to create shadow map"
   [width height & body]
   `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
-     (framebuffer-render ~width ~height :cullfront tex# [] ~@body tex#)))
+     (framebuffer-render ~width ~height ::cullfront tex# [] ~@body tex#)))
 
 (defn shadow-cascade
   "Render cascaded shadow map"
@@ -381,7 +381,7 @@
   `(with-invisible-window
      (let [depth# (make-empty-depth-stencil-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)
            tex#   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
-       (framebuffer-render ~width ~height :cullback depth# [tex#] ~@body)
+       (framebuffer-render ~width ~height ::cullback depth# [tex#] ~@body)
        (let [img# (texture->image tex#)]
          (destroy-texture tex#)
          (destroy-texture depth#)

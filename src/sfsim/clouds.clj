@@ -49,7 +49,7 @@
         program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                               :sfsim.render/fragment [identity-cubemap-fragment])
         vao     (make-vertex-array-object program indices vertices ["point" 3])]
-    (framebuffer-render size size :cullback nil [result]
+    (framebuffer-render size size :sfsim.render/cullback nil [result]
                         (use-program program)
                         (uniform-int program "size" size)
                         (render-quads vao))
@@ -78,7 +78,7 @@
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
          result#   (make-empty-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp ~size)]
-     (framebuffer-render ~size ~size :cullback nil [result#]
+     (framebuffer-render ~size ~size :sfsim.render/cullback nil [result#]
                          (use-program ~program)
                          (uniform-int ~program "size" ~size)
                          (uniform-float ~program "scale" ~scale)
@@ -109,7 +109,7 @@
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
          result#   (make-empty-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp ~size)]
-     (framebuffer-render ~size ~size :cullback nil [result#]
+     (framebuffer-render ~size ~size :sfsim.render/cullback nil [result#]
                          (use-program ~program)
                          (uniform-int ~program "size" ~size)
                          ~@body
@@ -252,7 +252,7 @@
          (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size
                                                              (inc ~num-opacity-layers))
                level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
-           (framebuffer-render ~size ~size :cullback nil [opacity-layers#]
+           (framebuffer-render ~size ~size :sfsim.render/cullback nil [opacity-layers#]
                                (use-program ~program)
                                (uniform-int ~program "shadow_size" ~size)
                                (uniform-float ~program "level_of_detail" level-of-detail#)
