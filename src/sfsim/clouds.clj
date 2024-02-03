@@ -249,7 +249,8 @@
   [size num-opacity-layers matrix-cascade voxel-size program & body]
   `(mapv
      (fn [opacity-level#]
-         (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size (inc ~num-opacity-layers))
+         (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size
+                                                             (inc ~num-opacity-layers))
                level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
            (framebuffer-render ~size ~size :cullback nil [opacity-layers#]
                                (use-program ~program)

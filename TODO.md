@@ -1,6 +1,10 @@
 # TODO
 * problem with shadow map when near ground
-* namespacing of keywords
+* namespacing of keywords, :cullback, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
+  render-cloud-planet :tree keyword, render-planet keyword arguments, render-atmosphere keyword arguments [& {:as x}],
+  fix images in globe.clj (use methods to create empty images?), use keywords in model module,
+  use keyword namespace for load-tile-into-opengl (planet, render, and texture namespace) and quadtree,
+  quaternion (use real, imag, ...), make-vertex-array-object
 * refactor redundant code setting uniforms
 * schemas for main render function arguments
 * test for scale-elevation
