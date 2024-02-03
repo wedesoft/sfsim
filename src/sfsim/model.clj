@@ -26,10 +26,10 @@
           (.c1 ^AIMatrix4x4 m) (.c2 ^AIMatrix4x4 m) (.c3 ^AIMatrix4x4 m) (.c4 ^AIMatrix4x4 m)
           (.d1 ^AIMatrix4x4 m) (.d2 ^AIMatrix4x4 m) (.d3 ^AIMatrix4x4 m) (.d4 ^AIMatrix4x4 m)))
 
-(def node (m/schema [:schema {:registry {::node [:map [:name :string]
-                                                      [:transform fmat4]
-                                                      [:mesh-indices [:vector N0]]
-                                                      [:children [:vector [:ref ::node]]]]}}
+(def node (m/schema [:schema {:registry {::node [:map [::name :string]
+                                                      [::transform fmat4]
+                                                      [::mesh-indices [:vector N0]]
+                                                      [::children [:vector [:ref ::node]]]]}}
                      [:ref ::node]]))
 
 (defn- decode-node
@@ -40,10 +40,10 @@
         num-meshes   (.mNumMeshes ^AINode node)
         children     (.mChildren ^AINode node)
         num-children (.mNumChildren ^AINode node)]
-    {:name         (.dataString (.mName ^AINode node))
-     :transform    (decode-matrix (.mTransformation ^AINode node))
-     :mesh-indices (mapv #(.get meshes ^long %) (range num-meshes))
-     :children     (mapv #(decode-node (AINode/create ^long (.get children ^long %))) (range num-children))}))
+    {::name         (.dataString (.mName ^AINode node))
+     ::transform    (decode-matrix (.mTransformation ^AINode node))
+     ::mesh-indices (mapv #(.get meshes ^long %) (range num-meshes))
+     ::children     (mapv #(decode-node (AINode/create ^long (.get children ^long %))) (range num-children))}))
 
 (defn- decode-face
   "Get indices from face"
@@ -113,14 +113,14 @@
   {:malli/schema [:=> [:cat :some N0] material]}
   [scene i]
   (let [material (AIMaterial/create ^long (.get (.mMaterials ^AIScene scene) ^long i))]
-    {:diffuse              (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
-     :color-texture-index  (decode-texture-index material Assimp/aiTextureType_DIFFUSE)
-     :normal-texture-index (decode-texture-index material Assimp/aiTextureType_NORMALS)}))
+    {::diffuse              (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
+     ::color-texture-index  (decode-texture-index material Assimp/aiTextureType_DIFFUSE)
+     ::normal-texture-index (decode-texture-index material Assimp/aiTextureType_NORMALS)}))
 
-(def mesh (m/schema [:map [:indices [:vector N0]]
-                          [:vertices [:vector number?]]
-                          [:attributes [:vector [:or :string N0]]]
-                          [:material-index N0]]))
+(def mesh (m/schema [:map [::indices [:vector N0]]
+                          [::vertices [:vector number?]]
+                          [::attributes [:vector [:or :string N0]]]
+                          [::material-index N0]]))
 
 (defn- decode-mesh
   "Fetch vertex and index data for mesh with given index"
@@ -130,16 +130,16 @@
         mesh                (AIMesh/create ^long (.get buffer ^long i))
         material-index      (.mMaterialIndex mesh)
         material            (nth materials material-index)
-        has-color-texture   (:color-texture-index material)
-        has-normal-texture  (:normal-texture-index material)]
-    {:indices             (decode-indices mesh)
-     :vertices            (decode-vertices mesh has-color-texture has-normal-texture)
-     :attributes          (if has-color-texture
-                            (if has-normal-texture
-                              ["vertex" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]
-                              ["vertex" 3 "normal" 3 "texcoord" 2])
-                            ["vertex" 3 "normal" 3])
-     :material-index      material-index}))
+        has-color-texture   (::color-texture-index material)
+        has-normal-texture  (::normal-texture-index material)]
+    {::indices             (decode-indices mesh)
+     ::vertices            (decode-vertices mesh has-color-texture has-normal-texture)
+     ::attributes          (if has-color-texture
+                             (if has-normal-texture
+                               ["vertex" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]
+                               ["vertex" 3 "normal" 3 "texcoord" 2])
+                             ["vertex" 3 "normal" 3])
+     ::material-index      material-index}))
 
 (defn- decode-texture
   "Read texture with specified index from memory"
@@ -156,7 +156,7 @@
     (STBImage/stbi_image_free buffer)
     #:sfsim.image{:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
 
-(def position-key (m/schema [:map [:time :double] [:position fvec3]]))
+(def position-key (m/schema [:map [::time :double] [::position fvec3]]))
 
 (defn- decode-position-key
   "Read a position key from an animation channel"
@@ -164,10 +164,10 @@
   [channel ticks-per-second i]
   (let [position-key (.get (.mPositionKeys ^AINodeAnim channel) ^long i)
         position     (.mValue ^AIVectorKey position-key)]
-    {:time (/ (.mTime ^AIVectorKey position-key) ticks-per-second)
-     :position (vec3 (.x position) (.y position) (.z position))}))
+    {::time (/ (.mTime ^AIVectorKey position-key) ticks-per-second)
+     ::position (vec3 (.x position) (.y position) (.z position))}))
 
-(def rotation-key (m/schema [:map [:time :double] [:rotation quaternion]]))
+(def rotation-key (m/schema [:map [::time :double] [::rotation quaternion]]))
 
 (defn- decode-rotation-key
   "Read a rotation key from an animation channel"
@@ -175,10 +175,10 @@
   [channel ticks-per-second i]
   (let [rotation-key (.get (.mRotationKeys ^AINodeAnim channel) ^long i)
         rotation     (.mValue ^AIQuatKey rotation-key)]
-    {:time (/ (.mTime ^AIQuatKey rotation-key) ticks-per-second)
-     :rotation (->Quaternion (.w rotation) (.x rotation) (.y rotation) (.z rotation))}))
+    {::time (/ (.mTime ^AIQuatKey rotation-key) ticks-per-second)
+     ::rotation (->Quaternion (.w rotation) (.x rotation) (.y rotation) (.z rotation))}))
 
-(def scaling-key (m/schema [:map [:time :double] [:scaling fvec3]]))
+(def scaling-key (m/schema [:map [::time :double] [::scaling fvec3]]))
 
 (defn- decode-scaling-key
   "Read a scaling key from an animation channel"
@@ -186,12 +186,12 @@
   [channel ticks-per-second i]
   (let [scaling-key (.get (.mScalingKeys ^AINodeAnim channel) ^long i)
         scaling     (.mValue ^AIVectorKey scaling-key)]
-    {:time (/ (.mTime ^AIVectorKey scaling-key) ticks-per-second)
-     :scaling (vec3 (.x scaling) (.y scaling) (.z scaling))}))
+    {::time (/ (.mTime ^AIVectorKey scaling-key) ticks-per-second)
+     ::scaling (vec3 (.x scaling) (.y scaling) (.z scaling))}))
 
-(def channel (m/schema [:map [:position-keys [:vector position-key]]
-                             [:rotation-keys [:vector rotation-key]]
-                             [:scaling-keys [:vector scaling-key]]]))
+(def channel (m/schema [:map [::position-keys [:vector position-key]]
+                             [::rotation-keys [:vector rotation-key]]
+                             [::scaling-keys [:vector scaling-key]]]))
 
 (defn- decode-channel
   "Read channel of an animation"
@@ -199,34 +199,34 @@
   [animation ticks-per-second i]
   (let [channel (AINodeAnim/create ^long (.get (.mChannels ^AIAnimation animation) ^long i))]
     [(.dataString (.mNodeName channel))
-     {:position-keys (mapv #(decode-position-key channel ticks-per-second %) (range (.mNumPositionKeys channel)))
-      :rotation-keys (mapv #(decode-rotation-key channel ticks-per-second %) (range (.mNumRotationKeys channel)))
-      :scaling-keys (mapv #(decode-scaling-key channel ticks-per-second %) (range (.mNumScalingKeys channel)))}]))
+     {::position-keys (mapv #(decode-position-key channel ticks-per-second %) (range (.mNumPositionKeys channel)))
+      ::rotation-keys (mapv #(decode-rotation-key channel ticks-per-second %) (range (.mNumRotationKeys channel)))
+      ::scaling-keys (mapv #(decode-scaling-key channel ticks-per-second %) (range (.mNumScalingKeys channel)))}]))
 
 (defn- decode-animation
   "Read animation data of scene"
-  {:malli/schema [:=> [:cat :some N0] [:tuple :string [:map [:duration :double] [:channels [:map-of :string channel]]]]]}
+  {:malli/schema [:=> [:cat :some N0] [:tuple :string [:map [::duration :double] [::channels [:map-of :string channel]]]]]}
   [scene i]
   (let [animation        (AIAnimation/create ^long (.get (.mAnimations ^AIScene scene) ^long i))
         ticks-per-second (.mTicksPerSecond animation)]
     [(.dataString (.mName animation))
-     {:duration (/ (.mDuration animation) ticks-per-second)
-      :channels (into {} (map #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation))))}]))
+     {::duration (/ (.mDuration animation) ticks-per-second)
+      ::channels (into {} (map #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation))))}]))
 
 (defn read-gltf
   "Import a glTF model file"
-  {:malli/schema [:=> [:cat :string] [:map [:root node]]]}
+  {:malli/schema [:=> [:cat :string] [:map [::root node]]]}
   [filename]
   (let [scene      (Assimp/aiImportFile ^String filename (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace))
         materials  (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
         meshes     (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
         textures   (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
         animations (into {} (map #(decode-animation scene %) (range (.mNumAnimations scene))))
-        result     {:root (decode-node (.mRootNode scene))
-                    :materials materials
-                    :meshes meshes
-                    :textures textures
-                    :animations animations}]
+        result     {::root (decode-node (.mRootNode scene))
+                    ::materials materials
+                    ::meshes meshes
+                    ::textures textures
+                    ::animations animations}]
     (Assimp/aiReleaseImport scene)
     result))
 
@@ -234,43 +234,44 @@
   "Load index and vertex data into OpenGL buffer"
   {:malli/schema [:=> [:cat fn? mesh material] [:map [:vao vertex-array-object]]]}
   [program-selection mesh material]
-  (assoc mesh :vao (make-vertex-array-object (program-selection material) (:indices mesh) (:vertices mesh) (:attributes mesh))))
+  (assoc mesh ::vao (make-vertex-array-object (program-selection material) (::indices mesh) (::vertices mesh)
+                                              (::attributes mesh))))
 
 (defn- load-meshes-into-opengl
   "Load meshes into OpenGL buffers"
   {:malli/schema [:=> [:cat [:map [:root node]] fn?] [:map [:root node] [:meshes [:vector mesh]]]]}
   [scene program-selection]
-  (let [material (fn [mesh] (nth (:materials scene) (:material-index mesh)))]
-    (update scene :meshes (fn [meshes] (mapv #(load-mesh-into-opengl program-selection % (material %)) meshes)))))
+  (let [material (fn [mesh] (nth (::materials scene) (::material-index mesh)))]
+    (update scene ::meshes (fn [meshes] (mapv #(load-mesh-into-opengl program-selection % (material %)) meshes)))))
 
 (defn- load-textures-into-opengl
   "Load images into OpenGL textures"
-  {:malli/schema [:=> [:cat [:map [:root node]]] [:map [:root node] [:textures [:vector texture-2d]]]]}
+  {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node] [::textures [:vector texture-2d]]]]}
   [scene]
-  (update scene :textures (fn [textures] (mapv #(make-rgba-texture :sfsim.texture/linear :sfsim.texture/repeat %) textures))))
+  (update scene ::textures (fn [textures] (mapv #(make-rgba-texture :sfsim.texture/linear :sfsim.texture/repeat %) textures))))
 
 (defn- propagate-texture
   "Add color and normal textures to material"
   {:malli/schema [:=> [:cat material [:vector texture-2d]] material]}
   [material textures]
-  (merge material {:colors  (some->> material :color-texture-index (nth textures))
-                   :normals (some->> material :normal-texture-index (nth textures))}))
+  (merge material {::colors  (some->> material ::color-texture-index (nth textures))
+                   ::normals (some->> material ::normal-texture-index (nth textures))}))
 
 (defn- propagate-textures
   "Add OpenGL textures to materials"
-  {:malli/schema [:=> [:cat [:map [:root node]]] [:map [:root node] [:materials [:vector material]]]]}
+  {:malli/schema [:=> [:cat [:map [:root node]]] [:map [::root node] [::materials [:vector material]]]]}
   [scene]
-  (update scene :materials (fn [materials] (mapv #(propagate-texture % (:textures scene)) materials))))
+  (update scene ::materials (fn [materials] (mapv #(propagate-texture % (::textures scene)) materials))))
 
 (defn- propagate-materials
   "Add material information to meshes"
-  {:malli/schema [:=> [:cat [:map [:root node]]] [:map [:root node] [:meshes [:vector mesh]]]]}
+  {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node] [::meshes [:vector mesh]]]]}
   [scene]
-  (update scene :meshes (fn [meshes] (mapv #(assoc % :material (nth (:materials scene) (:material-index %))) meshes))))
+  (update scene ::meshes (fn [meshes] (mapv #(assoc % ::material (nth (::materials scene) (::material-index %))) meshes))))
 
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
-  {:malli/schema [:=> [:cat fn? [:map [:root node]]] [:map [:root node]]]}
+  {:malli/schema [:=> [:cat fn? [:map [::root node]]] [:map [::root node]]]}
   [program-selection scene]
   (-> scene
       load-textures-into-opengl
@@ -280,41 +281,41 @@
 
 (defn unload-scene-from-opengl
   "Destroy vertex array objects of scene"
-  {:malli/schema [:=> [:cat [:map [:root node]]] :nil]}
+  {:malli/schema [:=> [:cat [:map [::root node]]] :nil]}
   [scene]
-  (doseq [mesh (:meshes scene)] (destroy-vertex-array-object (:vao mesh)))
-  (doseq [texture (:textures scene)] (destroy-texture texture)))
+  (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
+  (doseq [texture (::textures scene)] (destroy-texture texture)))
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat fn? [:map [:root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  {:malli/schema [:=> [:cat fn? [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
   ([program-selection scene callback]
-   (render-scene program-selection scene callback (eye 4) (:root scene)))
+   (render-scene program-selection scene callback (eye 4) (::root scene)))
   ([program-selection scene callback transform node]
-   (let [transform (mulm transform (:transform node))]
-     (doseq [child-node (:children node)]
+   (let [transform (mulm transform (::transform node))]
+     (doseq [child-node (::children node)]
             (render-scene program-selection scene callback transform child-node))
-     (doseq [mesh-index (:mesh-indices node)]
-            (let [mesh                (nth (:meshes scene) mesh-index)
-                  material            (:material mesh)
+     (doseq [mesh-index (::mesh-indices node)]
+            (let [mesh                (nth (::meshes scene) mesh-index)
+                  material            (::material mesh)
                   program             (program-selection material)]
-              (callback (merge material {:program program :transform transform}))
-              (render-triangles (:vao mesh)))))))
+              (callback (merge material {::program program ::transform transform}))
+              (render-triangles (::vao mesh)))))))
 
 (defn- interpolate-frame
   "Interpolate between pose frames"
-  {:malli/schema [:=> [:cat [:vector [:map [:time :double]]] :double :keyword fn?] :some]}
+  {:malli/schema [:=> [:cat [:vector [:map [::time :double]]] :double :keyword fn?] :some]}
   [key-frames t k lerp]
   (let [n       (count key-frames)
-        t0      (:time (first key-frames))
-        t1      (:time (last key-frames))
+        t0      (::time (first key-frames))
+        t1      (::time (last key-frames))
         delta-t (if (<= n 1) 1.0 (/ (- t1 t0) (dec n)))
         index   (int (floor (/ (- t t0) delta-t)))]
     (cond (<  index 0)       (k (first key-frames))
           (>= index (dec n)) (k (last key-frames))
           :else              (let [frame-a  (nth key-frames index)
                                    frame-b  (nth key-frames (inc index))
-                                   weight   (/ (- (:time frame-b) t) delta-t)]
+                                   weight   (/ (- (::time frame-b) t) delta-t)]
                                (lerp (k frame-a) (k frame-b) weight)))))
 
 (defn- nearest-quaternion
@@ -329,41 +330,41 @@
   "Interpolate between scaling frames"
   {:malli/schema [:=> [:cat [:vector position-key] :double] fvec3]}
   [key-frames t]
-  (interpolate-frame key-frames t :position
+  (interpolate-frame key-frames t ::position
                      (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-rotation
   "Interpolate between rotation frames"
   {:malli/schema [:=> [:cat [:vector rotation-key] :double] quaternion]}
   [key-frames t]
-  (interpolate-frame key-frames t :rotation
+  (interpolate-frame key-frames t ::rotation
                      (fn [a b weight] (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 weight))))))
 
 (defn interpolate-scaling
   "Interpolate between scaling frames"
   {:malli/schema [:=> [:cat [:vector scaling-key] :double] fvec3]}
   [key-frames t]
-  (interpolate-frame key-frames t :scaling
+  (interpolate-frame key-frames t ::scaling
                      (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-transformation
   "Determine transformation matrix for a given channel and time"
   {:malli/schema [:=> [:cat channel :double] fmat4]}
   [channel t]
-  (let [position (interpolate-position (:position-keys channel) t)
-        rotation (interpolate-rotation (:rotation-keys channel) t)
-        scaling (interpolate-scaling (:scaling-keys channel) t)]
+  (let [position (interpolate-position (::position-keys channel) t)
+        rotation (interpolate-rotation (::rotation-keys channel) t)
+        scaling (interpolate-scaling (::scaling-keys channel) t)]
     (transformation-matrix (mulm (quaternion->matrix rotation) (diagonal scaling)) position)))
 
 (defn animations-frame
   "Create hash map with transforms for objects of model given a hash map of animation times"
-  {:malli/schema [:=> [:cat [:map [:animations :map]] :map] [:map-of :string :some]]}
+  {:malli/schema [:=> [:cat [:map [::animations :map]] :map] [:map-of :string :some]]}
   [model animation-times]
-  (let [animations (:animations model)]
+  (let [animations (::animations model)]
     (or (apply merge
                (for [[animation-name animation-time] animation-times]
                     (let [animation (animations animation-name)]
-                      (into {} (for [[object-name channel] (:channels animation)]
+                      (into {} (for [[object-name channel] (::channels animation)]
                                     [object-name (interpolate-transformation channel animation-time)])))))
         {})))
 
@@ -372,14 +373,14 @@
   {:malli/schema [:=> [:cat :map [:map-of :string :some]] :map]}
   [node transforms]
   (assoc node
-         :transform (or (transforms (:name node)) (:transform node))
-         :children (mapv #(apply-transforms-node % transforms) (:children node))))
+         ::transform (or (transforms (::name node)) (::transform node))
+         ::children (mapv #(apply-transforms-node % transforms) (::children node))))
 
 (defn apply-transforms
   "Apply hash map of transforms to model in order to animate it"
-  {:malli/schema [:=> [:cat [:map [:root :map]] [:map-of :string :some]] [:map [:root :map]]]}
+  {:malli/schema [:=> [:cat [:map [::root :map]] [:map-of :string :some]] [:map [::root :map]]]}
   [model transforms]
-  (assoc model :root (apply-transforms-node (:root model) transforms)))
+  (assoc model ::root (apply-transforms-node (::root model) transforms)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
