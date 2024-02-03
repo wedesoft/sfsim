@@ -23,11 +23,16 @@
         radius             6378000.0
         bar                (agent (make-progress-bar (* 6 n n) 1))]
     (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
-      (let [tile-day   {:width color-tilesize :height color-tilesize :channels 4 :data (byte-array (* 4 (sqr color-tilesize)))}
-            tile-night {:width color-tilesize :height color-tilesize :channels 4 :data (byte-array (* 4 (sqr color-tilesize)))}
-            water      {:width (align-address color-tilesize 4) :height color-tilesize :data (byte-array (* color-tilesize (+ color-tilesize 3)))}
-            surface    {:width surface-tilesize :height surface-tilesize :data (float-array (* 3 (sqr surface-tilesize)))}
-            normals    {:width color-tilesize :height color-tilesize :data (float-array (* 3 (sqr color-tilesize)))}
+      (let [tile-day   #:sfsim.image{:width color-tilesize :height color-tilesize :channels 4
+                                     :data (byte-array (* 4 (sqr color-tilesize)))}
+            tile-night #:sfsim.image{:width color-tilesize :height color-tilesize :channels 4
+                                     :data (byte-array (* 4 (sqr color-tilesize)))}
+            water      #:sfsim.image{:width (align-address color-tilesize 4) :height color-tilesize
+                                     :data (byte-array (* color-tilesize (+ color-tilesize 3)))}
+            surface    #:sfsim.image{:width surface-tilesize :height surface-tilesize
+                                     :data (float-array (* 3 (sqr surface-tilesize)))}
+            normals    #:sfsim.image{:width color-tilesize :height color-tilesize
+                                     :data (float-array (* 3 (sqr color-tilesize)))}
             center     (tile-center k out-level b a radius)]
         (doseq [v (range surface-tilesize) u (range surface-tilesize)]
           (let [j                 (cube-coordinate out-level surface-tilesize b (double v))
@@ -52,8 +57,8 @@
         (.mkdirs (File. (cube-dir "data/globe" k out-level a)))
         (spit-jpg (cube-path "data/globe" k out-level b a ".jpg") tile-day)
         (spit-jpg (cube-path "data/globe" k out-level b a ".night.jpg") tile-night)
-        (spit-bytes (cube-path "data/globe" k out-level b a ".water") (:data water))
-        (spit-floats (cube-path "data/globe" k out-level b a ".surf") (:data surface))
+        (spit-bytes (cube-path "data/globe" k out-level b a ".water") (:sfsim.image/data water))
+        (spit-floats (cube-path "data/globe" k out-level b a ".surf") (:sfsim.image/data surface))
         (spit-normals (cube-path "data/globe" k out-level b a ".png") normals)
         (send bar tick-and-print)))))
 

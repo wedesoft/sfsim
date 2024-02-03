@@ -181,7 +181,7 @@
     (fn [in-level ty tx]
       (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
             size (int (round (sqrt (alength data))))]
-        {:width size :height size :data data}))
+        {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data data}))
     :lru/threshold 128))
 
 (defn world-map-pixel
