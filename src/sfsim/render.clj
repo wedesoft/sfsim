@@ -152,7 +152,7 @@
   (GL20/glDeleteProgram program))
 
 (def vertex-array-object
-  (m/schema [:map [:vertex-array-object :int] [:array-buffer :int] [:index-buffer :int] [:nrows N] [:ncols N]]))
+  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int] [::nrows N] [::ncols N]]))
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
@@ -176,16 +176,16 @@
           (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program ^String attribute) ^long size
                                       GL11/GL_FLOAT false ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
           (GL20/glEnableVertexAttribArray i))
-        {:vertex-array-object vertex-array-object
-         :array-buffer        array-buffer
-         :index-buffer        index-buffer
-         :nrows               (count indices)
-         :ncols               (count attribute-pairs)}))))
+        {::vertex-array-object vertex-array-object
+         ::array-buffer        array-buffer
+         ::index-buffer        index-buffer
+         ::nrows               (count indices)
+         ::ncols               (count attribute-pairs)}))))
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
-  [{:keys [vertex-array-object array-buffer index-buffer ncols]}]
+  [{::keys [vertex-array-object array-buffer index-buffer ncols]}]
   (GL30/glBindVertexArray vertex-array-object)
   (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
@@ -262,21 +262,21 @@
   "Initialise rendering of a vertex array object"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (GL30/glBindVertexArray ^long (:vertex-array-object vertex-array-object)))
+  (GL30/glBindVertexArray ^long (::vertex-array-object vertex-array-object)))
 
 (defn render-quads
   "Render one or more quads"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_QUADS ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL11/GL_QUADS ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-triangles
   "Render one or more triangles"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL11/GL_TRIANGLES ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-patches
   "Render one or more tessellated quads"
@@ -284,7 +284,7 @@
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL40/GL_PATCHES ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
