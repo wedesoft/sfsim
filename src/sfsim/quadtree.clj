@@ -36,11 +36,11 @@
   (and (< level max-level)
        (> (quad-size-for-camera-position tilesize radius width angle position face level y x) max-size)))
 
-(def tile (m/schema [:map [:face N0]
-                          [:level N0]
-                          [:y N0]
-                          [:x N0]
-                          [:center :any]
+(def tile (m/schema [:map [::face N0]
+                          [::level N0]
+                          [::y N0]
+                          [::x N0]
+                          [::center :any]
                           [:sfsim.planet/day :any]
                           [:sfsim.planet/night :any]
                           [:sfsim.planet/surface :any]
@@ -51,33 +51,33 @@
   "Load data associated with a cube map tile"
   {:malli/schema [:=> [:cat N0 N0 N0 N0 :double] tile]}
   [face level y x radius]
-  {:face                 face
-   :level                level
-   :y                    y
-   :x                    x
-   :center               (tile-center face level y x radius)
+  {::face                 face
+   ::level                level
+   ::y                    y
+   ::x                    x
+   ::center               (tile-center face level y x radius)
    :sfsim.planet/day     (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
    :sfsim.planet/night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
    :sfsim.planet/surface (slurp-floats  (cube-path "data/globe" face level y x ".surf"))
    :sfsim.planet/normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
    :sfsim.planet/water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
 
-(def tile-info (m/schema [:map [:face N0] [:level N0] [:y N0] [:x N0]]))
+(def tile-info (m/schema [:map [::face N0] [::level N0] [::y N0] [::x N0]]))
 
 (defn sub-tiles-info
   "Get metadata for sub tiles of cube map tile"
   {:malli/schema [:=> [:cat N0 N0 N0 N0] [:vector tile-info]]}
   [face level y x]
-  [{:face face :level (inc level) :y (* 2 y)       :x (* 2 x)}
-   {:face face :level (inc level) :y (* 2 y)       :x (inc (* 2 x))}
-   {:face face :level (inc level) :y (inc (* 2 y)) :x (* 2 x)}
-   {:face face :level (inc level) :y (inc (* 2 y)) :x (inc (* 2 x))}])
+  [{::face face ::level (inc level) ::y (* 2 y)       ::x (* 2 x)}
+   {::face face ::level (inc level) ::y (* 2 y)       ::x (inc (* 2 x))}
+   {::face face ::level (inc level) ::y (inc (* 2 y)) ::x (* 2 x)}
+   {::face face ::level (inc level) ::y (inc (* 2 y)) ::x (inc (* 2 x))}])
 
 (defn load-tiles-data
   "Load a set of tiles"
   {:malli/schema [:=> [:cat [:sequential tile-info] :double] [:vector :any]]}
   [metadata radius]
-  (mapv (fn [{:keys [face level y x]}] (load-tile-data face level y x radius)) metadata))
+  (mapv (fn [{::keys [face level y x]}] (load-tile-data face level y x radius)) metadata))
 
 (defn is-leaf?
   "Check whether specified tree node is a leaf"
@@ -111,7 +111,7 @@
   ([tree increase-level-fun? path]
    (cond
      (nil? tree) []
-     (and (is-flat? tree) (not (increase-level-fun? (:face tree) (:level tree) (:y tree) (:x tree)))) (sub-paths path)
+     (and (is-flat? tree) (not (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree)))) (sub-paths path)
      :else (mapcat #(tiles-to-drop (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3]))))
 
 (defn tiles-to-load
@@ -123,7 +123,7 @@
      (mapcat (fn [k] (tiles-to-load (k tree) increase-level-fun? [k])) [:0 :1 :2 :3 :4 :5])))
   ([tree increase-level-fun? path]
    (if (nil? tree) []
-     (let [increase? (increase-level-fun? (:face tree) (:level tree) (:y tree) (:x tree))]
+     (let [increase? (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree))]
        (cond
          (and (is-leaf? tree) increase?) (sub-paths path)
          increase? (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3])
@@ -137,10 +137,10 @@
         dy              {:0 0 :1 0 :2 1 :3 1}
         dx              {:0 0 :1 1 :2 0 :3 1}
         combine-offsets #(bit-or (bit-shift-left %1 1) %2)]
-    {:face (Integer/parseInt (name top))
-     :level (count tree)
-     :y (reduce combine-offsets 0 (map dy tree))
-     :x (reduce combine-offsets 0 (map dx tree))}))
+    {::face (Integer/parseInt (name top))
+     ::level (count tree)
+     ::y (reduce combine-offsets 0 (map dy tree))
+     ::x (reduce combine-offsets 0 (map dx tree))}))
 
 (defn tiles-meta-data
   "Convert multiple tile paths to face, level, y and x"

@@ -88,7 +88,7 @@
                             (if (:sfsim.quadtree/left  tile) 2 0)
                             (if (:sfsim.quadtree/down  tile) 4 0)
                             (if (:sfsim.quadtree/right tile) 8 0))
-        tile-center (:center tile)]
+        tile-center (:sfsim.quadtree/center tile)]
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
     (uniform-matrix4 program "recenter_and_transform" (mulm transform (transformation-matrix (eye 3) tile-center)))
@@ -284,7 +284,8 @@
   (let [tilesize       (::tilesize config)
         color-tilesize (::color-tilesize config)
         indices        [0 2 3 1]
-        vertices       (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
+        vertices       (make-cube-map-tile-vertices (:sfsim.quadtree/face tile) (:sfsim.quadtree/level tile)
+                                                    (:sfsim.quadtree/y tile) (:sfsim.quadtree/x tile) tilesize color-tilesize)
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
         day-tex        (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (::day tile))
         night-tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (::night tile))

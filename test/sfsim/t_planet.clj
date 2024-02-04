@@ -32,9 +32,9 @@
 (def ray-steps 10)
 (def size 12)
 (def earth #:sfsim.sphere{:centre (vec3 0 0 0)
-                            :radius radius
-                            :sfsim.atmosphere/height max-height
-                            :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
+                          :radius radius
+                          :sfsim.atmosphere/height max-height
+                          :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (vec3 -0.75 -0.5  -1.0)
@@ -606,7 +606,8 @@ void main()
                                                :sfsim.quadtree/left  ?left
                                                :sfsim.quadtree/down  ?down
                                                :sfsim.quadtree/right ?right}
-                                   tile       (merge {:sfsim.planet/vao vao :sfsim.planet/surf-tex surf-tex :center (vec3 0 0 0.5)} neighbours)]
+                                   tile       (merge {:sfsim.planet/vao vao :sfsim.planet/surf-tex surf-tex
+                                                      :sfsim.quadtree/center (vec3 0 0 0.5)} neighbours)]
                                (use-program program)
                                (clear (vec3 0 0 0))
                                (uniform-sampler program "surface" 0)

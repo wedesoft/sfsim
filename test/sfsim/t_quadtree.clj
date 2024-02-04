@@ -37,22 +37,23 @@
   :sfsim.planet/surface "2.surf"
   :sfsim.planet/normals "2.png"
   :sfsim.planet/water   "2.water"
-  :face    3
-  :level   2
-  :y       2
-  :x       1
-  :center  :tile-center)
+  :sfsim.quadtree/face    3
+  :sfsim.quadtree/level   2
+  :sfsim.quadtree/y       2
+  :sfsim.quadtree/x       1
+  :sfsim.quadtree/center  :tile-center)
 
 (tabular "Get information for loading sub tiles"
   (fact (nth (sub-tiles-info 3 2 2 1) ?i) => ?result)
   ?i ?result
-  0  {:face 3 :level 3 :y 4 :x 2}
-  1  {:face 3 :level 3 :y 4 :x 3}
-  2  {:face 3 :level 3 :y 5 :x 2}
-  3  {:face 3 :level 3 :y 5 :x 3})
+  0  #:sfsim.quadtree{:face 3 :level 3 :y 4 :x 2}
+  1  #:sfsim.quadtree{:face 3 :level 3 :y 4 :x 3}
+  2  #:sfsim.quadtree{:face 3 :level 3 :y 5 :x 2}
+  3  #:sfsim.quadtree{:face 3 :level 3 :y 5 :x 3})
 
 (fact "Load multiple tiles"
-  (load-tiles-data [{:face 3 :level 2 :y 3 :x 1} {:face 2 :level 3 :y 1 :x 0}] 6378000.0) => [:data-a :data-b]
+  (load-tiles-data [#:sfsim.quadtree{:face 3 :level 2 :y 3 :x 1} #:sfsim.quadtree{:face 2 :level 3 :y 1 :x 0}] 6378000.0)
+  => [:data-a :data-b]
     (provided
       (load-tile-data 3 2 3 1 6378000.0) => :data-a
       (load-tile-data 2 3 1 0 6378000.0) => :data-b))
@@ -68,7 +69,7 @@
   (is-leaf? {:5 {}}) => false)
 
 (facts "Determine list of tiles to remove"
-  (let [quad     {:5 {:face 2 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}
+  (let [quad     {:5 {:sfsim.quadtree/face 2 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0 :0 {} :1 {} :2 {} :3 {}}}
         sub-quad {:5 {:0 {} :1 {} :2 {:0 {} :1 {} :2 {} :3 {}} :3 {}}}
         basic    {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {}}]
     (tiles-to-drop {}   (fn [face level y x] false)) => []
@@ -78,9 +79,9 @@
     (tiles-to-drop basic (fn [face level y x] false)) => []))
 
 (facts "Determine list of tiles to load"
-  (let [basic    {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:face 5 :level 1 :y 0 :x 0}}
-        quad     {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:face 5 :level 1 :y 0 :x 0 :0 {} :1 {} :2 {} :3 {}}}
-        sub-quad {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:face 5 :level 1 :y 0 :x 0 :0 {} :1 {:face 5 :level 2 :y 0 :x 1} :2 {} :3 {}}}]
+  (let [basic    {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0}}
+        quad     {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0 :0 {} :1 {} :2 {} :3 {}}}
+        sub-quad {:0 {} :1 {} :2 {} :3 {} :4 {} :5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0 :0 {} :1 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 2 :sfsim.quadtree/y 0 :sfsim.quadtree/x 1} :2 {} :3 {}}}]
     (tiles-to-load basic (fn [face level y x] false)) => []
     (tiles-to-load {}  (fn [face level y x] false)) => [[:0] [:1] [:2] [:3] [:4] [:5]]
     (tiles-to-load basic (fn [face level y x] (= [face level y x] [5 1 0 0]))) => [[:5 :0] [:5 :1] [:5 :2] [:5 :3]]
@@ -89,7 +90,7 @@
     (tiles-to-load sub-quad (fn [face level y x] (= [5 2] [face level]))) => []))
 
 (tabular "Convert tile path to face, level, y and x"
-  (fact (tile-meta-data ?path) => {:face ?face :level ?level :y ?y :x ?x})
+  (fact (tile-meta-data ?path) => {:sfsim.quadtree/face ?face :sfsim.quadtree/level ?level :sfsim.quadtree/y ?y :sfsim.quadtree/x ?x})
   ?path      ?face ?level ?y ?x
   [:5]       5     0      0  0
   [:5 :0]    5     1      0  0
@@ -101,15 +102,15 @@
 
 (facts "Get tile metadata for multiple tiles"
   (tiles-meta-data []) => []
-  (tiles-meta-data [[:5 :2 :1]]) => [{:face 5 :level 2 :y 2 :x 1}])
+  (tiles-meta-data [[:5 :2 :1]]) => [{:sfsim.quadtree/face 5 :sfsim.quadtree/level 2 :sfsim.quadtree/y 2 :sfsim.quadtree/x 1}])
 
 (facts "Add tiles to the quad tree"
   (quadtree-add {} [] []) => {}
-  (quadtree-add {} [[:5 :2]] [{:face 5 :level 1 :y 1 :x 0}]) => {:5 {:2 {:face 5 :level 1 :y 1 :x 0}}})
+  (quadtree-add {} [[:5 :2]] [{:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 1 :sfsim.quadtree/x 0}]) => {:5 {:2 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 1 :sfsim.quadtree/x 0}}})
 
 (facts "Extract list of nodes from quad tree"
   (quadtree-extract {} []) => []
-  (quadtree-extract {:5 {:2 {:level 2}}} [[:5 :2]]) => [{:level 2}])
+  (quadtree-extract {:5 {:2 {:sfsim.quadtree/level 2}}} [[:5 :2]]) => [{:sfsim.quadtree/level 2}])
 
 (facts "Remove tiles from quad tree"
   (quadtree-drop {:3 {}} []) => {:3 {}}
@@ -209,7 +210,7 @@
 
 (facts "Update level of detail (LOD)"
   (with-redefs [quadtree/load-tile-data (fn [face level y x radius] (fact face => 2 level => 1) {:id (+ (* y 2) x 1)})]
-    (let [face     (fn [f] {:face f, :level 0, :y 0, :x 0})
+    (let [face     (fn [f] {:sfsim.quadtree/face f, :sfsim.quadtree/level 0, :sfsim.quadtree/y 0, :sfsim.quadtree/x 0})
           flat     {:0 (face 0), :1 (face 1), :2 (face 2), :3 (face 3), :4 (face 4), :5 (face 5)}
           quad     (fn [f] (merge (face f) {:0 {:id 1} :1 {:id 2} :2 {:id 3} :3 {:id 4}}))
           one-face {:0 (face 0), :1 (face 1), :2 (quad 2) , :3 (face 3), :4 (face 4), :5 (face 5)}

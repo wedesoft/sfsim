@@ -1,4 +1,5 @@
 # TODO
+* quadtree change :0, :1, ... front, back, left, right, top bottom
 * problem with shadow map when near ground
 * namespacing of keywords, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
   render-cloud-planet :tree keyword, render-planet keyword arguments, render-atmosphere keyword arguments [& {:as x}],
