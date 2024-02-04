@@ -32,11 +32,11 @@
       (util/slurp-bytes "data/globe/3/2/1/2.water")     => "2.water"
       (cubemap/tile-center 3 2 2 1 6378000.0)           => :tile-center))
   ?k       ?result
-  :day     "2.jpg"
-  :night   "2.night.jpg"
-  :surface "2.surf"
-  :normals "2.png"
-  :water   "2.water"
+  :sfsim.planet/day     "2.jpg"
+  :sfsim.planet/night   "2.night.jpg"
+  :sfsim.planet/surface "2.surf"
+  :sfsim.planet/normals "2.png"
+  :sfsim.planet/water   "2.water"
   :face    3
   :level   2
   :y       2

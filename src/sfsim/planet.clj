@@ -110,7 +110,7 @@
   {:malli/schema [:=> [:cat :map] :map]}
   [data]
   (let [shadow-data (:sfsim.opacity/data data)
-        tilesize    (::tilesize (:sfsim.planet/config data))
+        tilesize    (::tilesize (::config data))
         program     (make-program :sfsim.render/vertex [vertex-planet]
                                   :sfsim.render/tess-control [tess-control-planet]
                                   :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
@@ -149,7 +149,7 @@
   {:malli/schema [:=> [:cat :map] :map]}
   [data]
   (let [render-config   (:sfsim.render/config data)
-        planet-config   (:sfsim.planet/config data)
+        planet-config   (::config data)
         atmosphere-luts (:sfsim.atmosphere/luts data)
         shadow-data     (:sfsim.opacity/data data)
         cloud-data      (:sfsim.clouds/data data)
@@ -286,14 +286,14 @@
         indices        [0 2 3 1]
         vertices       (make-cube-map-tile-vertices (:face tile) (:level tile) (:y tile) (:x tile) tilesize color-tilesize)
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-        day-tex        (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (:day tile))
-        night-tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (:night tile))
+        day-tex        (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (::day tile))
+        night-tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (::night tile))
         surf-tex       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                               #:sfsim.image{:width tilesize :height tilesize :data (:surface tile)})
-        normal-tex     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp (:normals tile))
+                                               #:sfsim.image{:width tilesize :height tilesize :data (::surface tile)})
+        normal-tex     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp (::normals tile))
         water-tex      (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width color-tilesize :height color-tilesize :data (:water tile)})]
-    (assoc (dissoc tile :day :night :surface :normals :water)
+                                              #:sfsim.image{:width color-tilesize :height color-tilesize :data (::water tile)})]
+    (assoc (dissoc tile ::day ::night ::surface ::normals ::water)
            ::vao vao ::day-tex day-tex ::night-tex night-tex ::surf-tex surf-tex ::normal-tex normal-tex ::water-tex water-tex)))
 
 (defn load-tiles-into-opengl

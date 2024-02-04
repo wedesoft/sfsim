@@ -169,9 +169,9 @@
 (facts "Load (and cache) elevation tile"
   (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
                 util/tile-path    str]
-    (:width (elevation-tile 2 3 5)) => 2
-    (:height (elevation-tile 2 3 5)) => 2
-    (seq (:data (elevation-tile 2 3 5))) => [2 3 5 7]))
+    (:sfsim.image/width (elevation-tile 2 3 5)) => 2
+    (:sfsim.image/height (elevation-tile 2 3 5)) => 2
+    (seq (:sfsim.image/data (elevation-tile 2 3 5))) => [2 3 5 7]))
 
 (facts "Read pixels from world map tile"
   (with-redefs [cubemap/world-map-tile list

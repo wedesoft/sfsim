@@ -41,26 +41,26 @@
                           [:y N0]
                           [:x N0]
                           [:center :any]
-                          [:day :any]
-                          [:night :any]
-                          [:surface :any]
-                          [:normals :any]
-                          [:water :any]]))
+                          [:sfsim.planet/day :any]
+                          [:sfsim.planet/night :any]
+                          [:sfsim.planet/surface :any]
+                          [:sfsim.planet/normals :any]
+                          [:sfsim.planet/water :any]]))
 
 (defn load-tile-data
   "Load data associated with a cube map tile"
   {:malli/schema [:=> [:cat N0 N0 N0 N0 :double] tile]}
   [face level y x radius]
-  {:face    face
-   :level   level
-   :y       y
-   :x       x
-   :center  (tile-center face level y x radius)
-   :day     (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
-   :night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
-   :surface (slurp-floats  (cube-path "data/globe" face level y x ".surf"))
-   :normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
-   :water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
+  {:face                 face
+   :level                level
+   :y                    y
+   :x                    x
+   :center               (tile-center face level y x radius)
+   :sfsim.planet/day     (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
+   :sfsim.planet/night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
+   :sfsim.planet/surface (slurp-floats  (cube-path "data/globe" face level y x ".surf"))
+   :sfsim.planet/normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
+   :sfsim.planet/water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
 
 (def tile-info (m/schema [:map [:face N0] [:level N0] [:y N0] [:x N0]]))
 

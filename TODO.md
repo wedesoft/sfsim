@@ -2,7 +2,7 @@
 * problem with shadow map when near ground
 * namespacing of keywords, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
   render-cloud-planet :tree keyword, render-planet keyword arguments, render-atmosphere keyword arguments [& {:as x}],
-  use keyword namespace for load-tile-into-opengl (planet, render, and texture namespace) and quadtree,
+  use keyword namespace for quadtree,
   quaternion (use real, imag, ...), make-vertex-array-object
 * methods to create empty images for globe.clj
 * refactor redundant code setting uniforms
