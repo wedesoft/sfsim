@@ -60,12 +60,12 @@
 
               clouds                    (texture-render-color-depth width height true
                                           (clear (vec3 0 0 0) 0.0)
-                                          (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars :tree tree)
+                                          (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
                                           (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
               tex                       (texture-render-color-depth width height true
                                           (clear (vec3 0 1 0) 0.0)
-                                          (planet/render-planet planet-renderer render-vars shadow-vars :clouds clouds :tree tree)
-                                          (atmosphere/render-atmosphere atmosphere-renderer render-vars :clouds clouds))]
+                                          (planet/render-planet planet-renderer render-vars shadow-vars clouds tree)
+                                          (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
           (texture->image tex) => (is-image "test/sfsim/fixtures/integration/planet.png" 0.0)
           (destroy-texture tex)
           (destroy-texture clouds)

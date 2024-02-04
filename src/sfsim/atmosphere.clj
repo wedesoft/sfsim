@@ -500,7 +500,7 @@
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{::keys [program luts]} render-vars & {:keys [clouds]}]
+  [{::keys [program luts]} render-vars clouds]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]

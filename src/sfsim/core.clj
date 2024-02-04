@@ -106,16 +106,16 @@
                                   (clear (vec3 0 0 0) 0.0)
                                   ; Render clouds in front of planet
                                   (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars
-                                                              :tree (planet/get-current-tree tile-tree))
+                                                              (planet/get-current-tree tile-tree))
                                   ; Render clouds above the horizon
                                   (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
-                                (planet/render-planet planet-renderer render-vars shadow-vars
-                                                      :clouds clouds :tree (planet/get-current-tree tile-tree))
+                                (planet/render-planet planet-renderer render-vars shadow-vars clouds
+                                                      (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
-                                (atmosphere/render-atmosphere atmosphere-renderer render-vars :clouds clouds))
+                                (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-and-shadow shadow-vars))
              (GLFW/glfwPollEvents)

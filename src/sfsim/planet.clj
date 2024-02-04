@@ -179,7 +179,7 @@
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{::keys [program] :as other} render-vars shadow-vars & {:keys [tree]}]
+  [{::keys [program] :as other} render-vars shadow-vars tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         cloud-data      (:sfsim.clouds/data other)
         render-config   (:sfsim.render/config other)
@@ -249,7 +249,7 @@
 (defn render-planet
   "Render planet (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{::keys [program] :as other} render-vars shadow-vars & {:keys [clouds tree]}]
+  [{::keys [program] :as other} render-vars shadow-vars clouds tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         transform       (inverse (:sfsim.render/extrinsics render-vars))]
     (use-program program)

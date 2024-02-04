@@ -1,8 +1,9 @@
 # TODO
-* quadtree change :0, :1, ... front, back, left, right, top bottom
+* name anonymous functions, use add-watch?
+* quadtree change :0, :1, ... to face0, face1, face2, face3, ..., tile0, tile1, tile2, tile3
 * problem with shadow map when near ground
 * namespacing of keywords, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
-  render-cloud-planet :tree keyword, render-planet keyword arguments, render-atmosphere keyword arguments [& {:as x}],
+  render-cloud-planet :tree keyword
   use keyword namespace for quadtree,
   quaternion (use real, imag, ...), make-vertex-array-object
 * methods to create empty images for globe.clj
