@@ -82,7 +82,7 @@
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
-  {:malli/schema [:=> [:cat :int [:map [:vao vertex-array-object]] fmat4 [:vector :keyword]] :nil]}
+  {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector :keyword]] :nil]}
   [program tile transform ^clojure.lang.PersistentVector texture-keys]
   (let [neighbours  (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
                             (if (:sfsim.quadtree/left  tile) 2 0)
@@ -93,7 +93,7 @@
     (uniform-vector3 program "tile_center" tile-center)
     (uniform-matrix4 program "recenter_and_transform" (mulm transform (transformation-matrix (eye 3) tile-center)))
     (use-textures (zipmap (range) (map tile texture-keys)))
-    (render-patches (:vao tile))))
+    (render-patches (::vao tile))))
 
 (defn render-tree
   "Call each tile in tree to be rendered"
@@ -129,7 +129,7 @@
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{::keys [program] :as other} & {:keys [tree] :as data}]
   (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
-                  (fn [transform] (render-tree program tree transform [:surf-tex]))))
+                  (fn [transform] (render-tree program tree transform [::surf-tex]))))
 
 (defn destroy-shadow-cascade
   "Destroy cascade of shadow maps (untested)"
@@ -202,7 +202,7 @@
                    7 (:sfsim.clouds/bluenoise cloud-data)})
     (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree transform [:surf-tex])))
+    (render-tree program tree transform [::surf-tex])))
 
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon (untested)"
@@ -269,7 +269,7 @@
                    7 (:sfsim.atmosphere/mie atmosphere-luts) 8 (:sfsim.atmosphere/surface-radiance atmosphere-luts) 9 clouds})
     (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                     (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree transform [:surf-tex :day-tex :night-tex :normal-tex :water-tex])))
+    (render-tree program tree transform [::surf-tex ::day-tex ::night-tex ::normal-tex ::water-tex])))
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program (untested)"
@@ -294,7 +294,7 @@
         water-tex      (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width color-tilesize :height color-tilesize :data (:water tile)})]
     (assoc (dissoc tile :day :night :surface :normals :water)
-           :vao vao :day-tex day-tex :night-tex night-tex :surf-tex surf-tex :normal-tex normal-tex :water-tex water-tex)))
+           ::vao vao ::day-tex day-tex ::night-tex night-tex ::surf-tex surf-tex ::normal-tex normal-tex ::water-tex water-tex)))
 
 (defn load-tiles-into-opengl
   "Load tiles into OpenGL (untested)"
@@ -306,12 +306,12 @@
   "Remove textures of single tile from OpenGL (untested)"
   {:malli/schema [:=> [:cat tile-info] :nil]}
   [tile]
-  (destroy-texture (:day-tex tile))
-  (destroy-texture (:night-tex tile))
-  (destroy-texture (:surf-tex tile))
-  (destroy-texture (:normal-tex tile))
-  (destroy-texture (:water-tex tile))
-  (destroy-vertex-array-object (:vao tile)))
+  (destroy-texture (::day-tex tile))
+  (destroy-texture (::night-tex tile))
+  (destroy-texture (::surf-tex tile))
+  (destroy-texture (::normal-tex tile))
+  (destroy-texture (::water-tex tile))
+  (destroy-vertex-array-object (::vao tile)))
 
 (defn unload-tiles-from-opengl
   "Remove tile textures from OpenGL (untested)"

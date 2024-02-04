@@ -606,14 +606,14 @@ void main()
                                                :sfsim.quadtree/left  ?left
                                                :sfsim.quadtree/down  ?down
                                                :sfsim.quadtree/right ?right}
-                                   tile       (merge {:vao vao :surf-tex surf-tex :center (vec3 0 0 0.5)} neighbours)]
+                                   tile       (merge {:sfsim.planet/vao vao :sfsim.planet/surf-tex surf-tex :center (vec3 0 0 0.5)} neighbours)]
                                (use-program program)
                                (clear (vec3 0 0 0))
                                (uniform-sampler program "surface" 0)
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "projection" projection)
-                               (raster-lines (render-tile program tile (inverse transform) [:surf-tex]))
+                               (raster-lines (render-tile program tile (inverse transform) [:sfsim.planet/surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim/fixtures/planet/" ?result) 0.01))
@@ -634,16 +634,16 @@ void main()
       @calls)))
 
 (tabular "Call each tile in tree to be rendered"
-         (fact (render-tile-calls ?program ?node ?transform ?texture-keys) => ?result)
-         ?program ?transform ?node               ?texture-keys ?result
-         1234     :transform {}                  [:surf-tex]   []
-         1234     :transform {:vao 42}           [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:0 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:1 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:2 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:3 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:4 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:5 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:3 {:2 {:vao 42}}} [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]])
+         (fact (render-tile-calls ?program ?node ?transform [:sfsim.planet/surf-tex]) => ?result)
+         ?program ?transform ?node                            ?result
+         1234     :transform {}                               []
+         1234     :transform {:sfsim.planet/vao 42}           [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234     :transform {:0 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234     :transform {:1 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234     :transform {:2 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234     :transform {:3 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234     :transform {:4 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234     :transform {:5 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234     :transform {:3 {:2 {:sfsim.planet/vao 42}}} [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]])
 
 (GLFW/glfwTerminate)
