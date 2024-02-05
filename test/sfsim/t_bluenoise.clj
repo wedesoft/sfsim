@@ -39,12 +39,14 @@
 (facts "Index of largest element"
        (argmax-with-mask [5 3 2] (repeat 3 true)) => 0
        (argmax-with-mask [3 5 2] (repeat 3 true)) => 1
-       (argmax-with-mask [3 5 2] [true false true]) => 0)
+       (argmax-with-mask [3 5 2] [true false true]) => 0
+       (argmax-with-mask [3 2 5] [true false true]) => 2)
 
-(facts "Index of largest element"
+(facts "Index of smallest element"
        (argmin-with-mask [2 3 5] (repeat 3 false)) => 0
        (argmin-with-mask [3 2 5] (repeat 3 false)) => 1
-       (argmin-with-mask [3 2 5] [false true false]) => 0)
+       (argmin-with-mask [3 2 5] [false true false]) => 0
+       (argmin-with-mask [3 5 2] [false true false]) => 2)
 
 (facts "Wrap coordinate"
        (wrap 0 5) => 0

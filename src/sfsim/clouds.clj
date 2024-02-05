@@ -248,7 +248,7 @@
   "Render cascade of deep opacity maps"
   [size num-opacity-layers matrix-cascade voxel-size program & body]
   `(mapv
-     (fn [opacity-level#]
+     (fn render-deep-opacity-map [opacity-level#]
          (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size
                                                              (inc ~num-opacity-layers))
                level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
@@ -301,8 +301,9 @@
         perlin-worley-floats (float-array (map #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
         perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
         perlin-worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat perlin-worley-data)
-        cover-floats-list    (map (fn [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
-        cover-data           (map (fn [cover-floats] #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
+        cover-floats-list    (map (fn load-cloud-cubemap-face [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
+        cover-data           (map (fn make-cloud-cover-image [cover-floats]
+                                      #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
                                   cover-floats-list)
         cloud-cover          (make-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp cover-data)
         bluenoise-floats     (slurp-floats "data/bluenoise.raw")

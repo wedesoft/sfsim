@@ -46,8 +46,8 @@
   [& {:keys [worley-size] :or {worley-size w/worley-size}}]
   (GLFW/glfwInit)
   (rn/with-invisible-window
-    (let [load-floats  (fn [filename] #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                    :data (u/slurp-floats filename)})
+    (let [load-floats  (fn slurp-float-image [filename] #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                                      :data (u/slurp-floats filename)})
           worley-north (t/make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat (load-floats "data/clouds/worley-north.raw"))
           worley-south (t/make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat (load-floats "data/clouds/worley-south.raw"))
           worley-cover (t/make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat (load-floats "data/clouds/worley-cover.raw"))

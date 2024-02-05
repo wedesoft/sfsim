@@ -59,7 +59,7 @@
         first-order-rayleigh          (interpolate-function ray-scatter-base-rayleigh ray-scatter-space-planet)
         first-order-mie-strength      (interpolate-function ray-scatter-strength-mie ray-scatter-space-planet)
         dS                            (atom
-                                        (fn [x view-direction light-direction above-horizon]
+                                        (fn dS [x view-direction light-direction above-horizon]
                                             (add (first-order-rayleigh x view-direction light-direction above-horizon)
                                                  (mult (first-order-mie-strength x view-direction light-direction above-horizon)
                                                        (phase mie (dot view-direction light-direction))))))
@@ -72,8 +72,10 @@
                  ray-scatter-planet      (bar (partial ray-scatter earth scatter ray-steps dJ))]
              (reset! dE (interpolate-function surface-radiance-planet surface-radiance-space-planet))
              (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
-             (reset! E (let [E @E dE @dE] (interpolate-function (fn [x s] (add (E x s) (dE x s))) surface-radiance-space-planet)))
-             (reset! S (let [S @S dS @dS] (interpolate-function (fn [x v s a] (add (S x v s a) (dS x v s a))) ray-scatter-space-planet)))))
+             (reset! E (let [E @E dE @dE] (interpolate-function (fn E+dE [x s] (add (E x s) (dE x s)))
+                                                                surface-radiance-space-planet)))
+             (reset! S (let [S @S dS @dS] (interpolate-function (fn S+dS [x v s a] (add (S x v s a) (dS x v s a)))
+                                                                ray-scatter-space-planet)))))
     (let [lookup-table-transmittance    (make-lookup-table T transmittance-space-planet)
           lookup-table-surface-radiance (make-lookup-table @E surface-radiance-space-planet)
           lookup-table-ray-scatter      (make-lookup-table @S ray-scatter-space-planet)

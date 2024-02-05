@@ -1,9 +1,9 @@
 # TODO
+* name anonymous functions
 * namespacing of keywords, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
   render-cloud-planet :tree keyword
   use keyword namespace for quadtree,
   quaternion (use real, imag, ...)
-* name anonymous functions
 * quadtree change :0, :1, ... to face0, face1, face2, face3, ..., tile0, tile1, tile2, tile3
 * problem with shadow map when near ground
 * use add-watch?

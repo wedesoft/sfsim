@@ -94,7 +94,7 @@
   {:malli/schema [:function [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3] fvec3]
                             [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 :boolean] fvec3]]}
   ([planet scatter steps x x0]
-   (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
+   (let [overall-extinction (fn overall-extinction [point] (apply add (map #(extinction % (height planet point)) scatter)))]
      (-> (integral-ray #:sfsim.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub fv/exp)))
   ([planet scatter steps x v above-horizon]
    (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
@@ -171,7 +171,7 @@
   (let [normal        (normalize (sub x (:sfsim.sphere/centre planet)))]
     (integral-sphere sphere-steps
                      normal
-                     (fn [omega]
+                     (fn in-scatter-from-direction [omega]
                          (let [ray             #:sfsim.ray{:origin x :direction omega}
                                point           (ray-extremity planet ray)
                                surface         (surface-point? planet point)
@@ -252,7 +252,7 @@
   "Forward transformation for interpolating transmittance function"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat fvec3 fvec3 :boolean] [:tuple :double :double]]]}
   [planet shape]
-  (fn [point direction above-horizon]
+  (fn transmittance-forward [point direction above-horizon]
       (let [height-index    (height-to-index planet (first shape) point)
             elevation-index (elevation-to-index planet (second shape) point direction above-horizon)]
         [height-index elevation-index])))
@@ -261,7 +261,7 @@
   "Backward transformation for looking up transmittance values"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat :double :double] [:tuple fvec3 fvec3 :boolean]]]}
   [planet shape]
-  (fn [height-index elevation-index]
+  (fn transmittance-backward [height-index elevation-index]
       (let [point                     (index-to-height planet (first shape) height-index)
             [direction above-horizon] (index-to-elevation planet (second shape) (point 0) elevation-index)]
         [point direction above-horizon])))
@@ -291,7 +291,7 @@
   "Forward transformation for interpolating surface-radiance function"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat fvec3 fvec3] [:tuple :double :double]]]}
   [planet shape]
-  (fn [point direction]
+  (fn surface-radiance-forward [point direction]
       (let [height-index        (height-to-index planet (first shape) point)
             sun-elevation-index (sun-elevation-to-index (second shape) point direction)]
         [height-index sun-elevation-index])))
@@ -300,7 +300,7 @@
   "Backward transformation for looking up surface-radiance values"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat :double :double] [:tuple fvec3 fvec3]]]}
   [planet shape]
-  (fn [height-index sun-elevation-index]
+  (fn surface-radiance-backward [height-index sun-elevation-index]
       (let [point             (index-to-height planet (first shape) height-index)
             sin-sun-elevation (index-to-sin-sun-elevation (second shape) sun-elevation-index)
             cos-sun-elevation (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
@@ -336,7 +336,7 @@
   {:malli/schema [:=> [:cat atmosphere [:tuple N N N N]]
                       [:=> [:cat fvec3 fvec3 fvec3 :boolean] [:tuple :double :double :double :double]]]}
   [planet shape]
-  (fn [point direction light-direction above-horizon]
+  (fn ray-scatter-forward [point direction light-direction above-horizon]
       (let [height-index        (height-to-index planet (first shape) point)
             elevation-index     (elevation-to-index planet (second shape) point direction above-horizon)
             sun-elevation-index (sun-elevation-to-index (third shape) point light-direction)
@@ -348,7 +348,7 @@
   {:malli/schema [:=> [:cat atmosphere [:tuple N N N N]]
                       [:=> [:cat :double :double :double :double] [:tuple fvec3 fvec3 fvec3 :boolean]]]}
   [planet shape]
-  (fn [height-index elevation-index sun-elevation-index sun-angle-index]
+  (fn ray-scatter-backward [height-index elevation-index sun-elevation-index sun-angle-index]
       (let [point                     (index-to-height planet (first shape) height-index)
             [direction above-horizon] (index-to-elevation planet (second shape) (point 0) elevation-index)
             sin-sun-elevation         (index-to-sin-sun-elevation (third shape) sun-elevation-index)
