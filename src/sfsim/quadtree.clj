@@ -77,7 +77,7 @@
   "Load a set of tiles"
   {:malli/schema [:=> [:cat [:sequential tile-info] :double] [:vector :any]]}
   [metadata radius]
-  (mapv (fn [{::keys [face level y x]}] (load-tile-data face level y x radius)) metadata))
+  (mapv (fn load-tile-using-info [{::keys [face level y x]}] (load-tile-data face level y x radius)) metadata))
 
 (defn is-leaf?
   "Check whether specified tree node is a leaf"
@@ -120,14 +120,14 @@
   ([tree increase-level-fun?]
    (if (empty? tree)
      [[:0] [:1] [:2] [:3] [:4] [:5]]
-     (mapcat (fn [k] (tiles-to-load (k tree) increase-level-fun? [k])) [:0 :1 :2 :3 :4 :5])))
+     (mapcat (fn load-tiles-for-face [k] (tiles-to-load (k tree) increase-level-fun? [k])) [:0 :1 :2 :3 :4 :5])))
   ([tree increase-level-fun? path]
    (if (nil? tree) []
      (let [increase? (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree))]
        (cond
          (and (is-leaf? tree) increase?) (sub-paths path)
-         increase? (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3])
-         :else [])))))
+         increase?                       (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3])
+         :else                           [])))))
 
 (defn tile-meta-data
   "Convert tile path to face, level, y and x"
@@ -152,7 +152,7 @@
   "Add tiles to quad tree"
   {:malli/schema [:=> [:cat [:maybe :map] [:sequential [:vector :keyword]] [:sequential :map]] [:maybe :map]]}
   [tree paths tiles]
-  (reduce (fn [tree [path tile]] (assoc-in tree path tile)) tree (map vector paths tiles)))
+  (reduce (fn add-title-to-quadtree [tree [path tile]] (assoc-in tree path tile)) tree (map vector paths tiles)))
 
 (defn quadtree-extract
   "Extract a list of tiles from quad tree"
@@ -170,7 +170,8 @@
   "Update tiles with specified paths using a function with optional arguments from lists"
   {:malli/schema [:=> [:cat [:maybe :map] [:sequential [:vector :keyword]] fn? [:* :any]] [:maybe :map]]}
   [tree paths fun & arglists]
-  (reduce (fn [tree [path & args]] (apply update-in tree path fun args)) tree (apply map list paths arglists)))
+  (reduce (fn update-tile-in-quadtree [tree [path & args]]
+              (apply update-in tree path fun args)) tree (apply map list paths arglists)))
 
 (defn neighbour-path
   "Determine path of neighbouring tile at same level"
@@ -219,7 +220,7 @@
   {:malli/schema [:=> [:cat [:maybe :map]] [:sequential [:sequential :keyword]]]}
   [tree]
   (mapcat
-    (fn [[k v]]
+    (fn leaves-of-node [[k v]]
       (if (is-leaf? v)
         [(list k)]
         (map #(cons k %) (leaf-paths v))))
@@ -230,7 +231,7 @@
   {:malli/schema [:=> [:cat [:maybe :map] [:sequential :keyword]] [:maybe :map]]}
   [tree path]
   (reduce
-    (fn [updated-tree [direction neighbour-path]]
+    (fn check-neighbour-resolution [updated-tree [direction neighbour-path]]
       (assoc-in updated-tree (conj (vec path) direction) (boolean (get-in tree neighbour-path))))
     tree
     (neighbour-paths path)))

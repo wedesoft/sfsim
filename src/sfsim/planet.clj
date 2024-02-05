@@ -129,7 +129,7 @@
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{::keys [program] :as other} & {:keys [tree] :as data}]
   (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
-                  (fn [transform] (render-tree program tree transform [::surf-tex]))))
+                  (fn render-planet-shadow [transform] (render-tree program tree transform [::surf-tex]))))
 
 (defn destroy-shadow-cascade
   "Destroy cascade of shadow maps (untested)"

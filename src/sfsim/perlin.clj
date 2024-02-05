@@ -28,7 +28,10 @@
   ([divisions]
    (random-gradient-grid divisions random-gradient))
   ([divisions random-gradient]
-   (vec (repeatedly divisions (fn [] (vec (repeatedly divisions (fn [] (vec (repeatedly divisions random-gradient))))))))))
+   (vec (repeatedly divisions
+                    (fn random-gradient-table []
+                        (vec (repeatedly divisions
+                                         (fn random-gradient-row [] (vec (repeatedly divisions random-gradient))))))))))
 
 (defn determine-division
   "Determine division point belongs to"

@@ -79,12 +79,13 @@
         texcoords  (AIVector3D$Buffer. ^long (.get (.mTextureCoords ^AIMesh mesh) 0) (.mNumVertices ^AIMesh mesh))]
     (vec
       (mapcat
-        (fn [^long i] (concat
-                  (decode-vector3 (.get vertices i))
-                  (if has-normal-texture (decode-vector3 (.get tangents i)) [])
-                  (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
-                  (decode-vector3 (.get normals i))
-                  (if (or has-color-texture has-normal-texture) (decode-vector2 (.get texcoords i)) [])))
+        (fn decode-vertex [^long i]
+            (concat
+              (decode-vector3 (.get vertices i))
+              (if has-normal-texture (decode-vector3 (.get tangents i)) [])
+              (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
+              (decode-vector3 (.get normals i))
+              (if (or has-color-texture has-normal-texture) (decode-vector2 (.get texcoords i)) [])))
         (range (.mNumVertices ^AIMesh mesh))))))
 
 (defn- decode-color
@@ -241,14 +242,16 @@
   "Load meshes into OpenGL buffers"
   {:malli/schema [:=> [:cat [:map [:root node]] fn?] [:map [:root node] [:meshes [:vector mesh]]]]}
   [scene program-selection]
-  (let [material (fn [mesh] (nth (::materials scene) (::material-index mesh)))]
-    (update scene ::meshes (fn [meshes] (mapv #(load-mesh-into-opengl program-selection % (material %)) meshes)))))
+  (let [material (fn lookup-material-for-mesh [mesh] (nth (::materials scene) (::material-index mesh)))]
+    (update scene ::meshes
+      (fn load-meshes-into-opengl [meshes] (mapv #(load-mesh-into-opengl program-selection % (material %)) meshes)))))
 
 (defn- load-textures-into-opengl
   "Load images into OpenGL textures"
   {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node] [::textures [:vector texture-2d]]]]}
   [scene]
-  (update scene ::textures (fn [textures] (mapv #(make-rgba-texture :sfsim.texture/linear :sfsim.texture/repeat %) textures))))
+  (update scene ::textures
+    (fn load-textures-into-opengl [textures] (mapv #(make-rgba-texture :sfsim.texture/linear :sfsim.texture/repeat %) textures))))
 
 (defn- propagate-texture
   "Add color and normal textures to material"
@@ -261,13 +264,14 @@
   "Add OpenGL textures to materials"
   {:malli/schema [:=> [:cat [:map [:root node]]] [:map [::root node] [::materials [:vector material]]]]}
   [scene]
-  (update scene ::materials (fn [materials] (mapv #(propagate-texture % (::textures scene)) materials))))
+  (update scene ::materials (fn propagate-textures [materials] (mapv #(propagate-texture % (::textures scene)) materials))))
 
 (defn- propagate-materials
   "Add material information to meshes"
   {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node] [::meshes [:vector mesh]]]]}
   [scene]
-  (update scene ::meshes (fn [meshes] (mapv #(assoc % ::material (nth (::materials scene) (::material-index %))) meshes))))
+  (update scene ::meshes
+    (fn propagate-materials [meshes] (mapv #(assoc % ::material (nth (::materials scene) (::material-index %))) meshes))))
 
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
@@ -331,21 +335,21 @@
   {:malli/schema [:=> [:cat [:vector position-key] :double] fvec3]}
   [key-frames t]
   (interpolate-frame key-frames t ::position
-                     (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+    (fn weight-positions [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-rotation
   "Interpolate between rotation frames"
   {:malli/schema [:=> [:cat [:vector rotation-key] :double] quaternion]}
   [key-frames t]
   (interpolate-frame key-frames t ::rotation
-                     (fn [a b weight] (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 weight))))))
+    (fn weight-rotations [a b weight] (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 weight))))))
 
 (defn interpolate-scaling
   "Interpolate between scaling frames"
   {:malli/schema [:=> [:cat [:vector scaling-key] :double] fvec3]}
   [key-frames t]
   (interpolate-frame key-frames t ::scaling
-                     (fn [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+    (fn weight-scales [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
 
 (defn interpolate-transformation
   "Determine transformation matrix for a given channel and time"

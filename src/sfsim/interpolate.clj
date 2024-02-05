@@ -15,13 +15,15 @@
   "Linear mapping onto interpolation table of given shape"
   {:malli/schema [:=> [:cat [:vector :double] [:vector :double] [:vector N]] [:=> [:cat [:* :double]] [:vector :double]]]}
   [minima maxima shape]
-  (fn [& point] (map (fn [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
+  (fn linear-forward [& point]
+      (map (fn linear-forward-component [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
 
 (defn- linear-backward
   "Inverse linear mapping to get sample values for lookup table"
   {:malli/schema [:=> [:cat [:vector :double] [:vector :double] [:vector N]] [:=> [:cat [:* :double]] [:vector :double]]]}
   [minima maxima shape]
-  (fn [& indices] (map (fn [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
+  (fn linear-backward [& indices]
+      (map (fn linear-backward-component [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
 
 (defn linear-space
   "Create forward and backward mapping for linear sampling"
@@ -44,7 +46,7 @@
   "Create n-dimensional lookup table using given function to sample and inverse mapping"
   {:malli/schema [:=> [:cat fn? interpolation-space] table]}
   [fun space]
-  (sample-function (fn [args] (apply fun (apply (::backward space) args))) (::shape space) [] pmap))
+  (sample-function (fn lookup-sample [args] (apply fun (apply (::backward space) args))) (::shape space) [] pmap))
 
 (defn clip
   "Clip a value to [0, size - 1]"
@@ -72,7 +74,7 @@
 (defn interpolation-table
   "Linear interpolation using lookup table and mapping function"
   [^clojure.lang.PersistentVector lookup-table {:sfsim.interpolate/keys [forward]}]
-  (fn [& coords] (interpolate-value lookup-table (apply forward coords))))
+  (fn interpolation-table [& coords] (interpolate-value lookup-table (apply forward coords))))
 
 (defn interpolate-function
   "Linear interpolation of function"

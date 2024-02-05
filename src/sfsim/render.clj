@@ -299,9 +299,10 @@
   {:malli/schema [:=> [:cat [:sequential texture]] [:sequential texture]]}
   [textures]
   (flatten
-    (map (fn [texture]
+    (map (fn layers-of-texture [texture]
              (if (:sfsim.texture/depth texture)
-               (map (fn [layer] (assoc texture :sfsim.texture/layer layer)) (range (:sfsim.texture/depth texture)))
+               (map (fn layer-of-3d-texture [layer] (assoc texture :sfsim.texture/layer layer))
+                    (range (:sfsim.texture/depth texture)))
                texture))
          textures)))
 
@@ -314,7 +315,7 @@
     (make-int-buffer
       (int-array
         (map-indexed
-          (fn [index texture]
+          (fn setup-color-attachment [index texture]
               (let [color-attachment (+ GL30/GL_COLOR_ATTACHMENT0 index)]
                 (if (:sfsim.texture/layer texture)
                   (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:sfsim.texture/texture texture) 0
@@ -368,7 +369,7 @@
   {:malli/schema [:=> [:cat :int [:vector shadow-box] :int fn?] [:vector texture-2d]]}
   [size matrix-cascade program fun]
   (mapv
-    (fn [shadow-level]
+    (fn render-shadow-segment [shadow-level]
         (texture-render-depth size size
                               (clear)
                               (use-program program)

@@ -248,7 +248,7 @@
   "Render cascade of deep opacity maps"
   [size num-opacity-layers matrix-cascade voxel-size program & body]
   `(mapv
-     (fn render-deep-opacity-map [opacity-level#]
+     (fn render-deep-opacity-map# [opacity-level#]
          (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size
                                                              (inc ~num-opacity-layers))
                level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
