@@ -20,9 +20,9 @@
    (random-point-grid divisions size rand))
   ([divisions size random]
    (let [cellsize (/ size divisions)]
-     (mapv (fn [k]
-               (mapv (fn [j]
-                         (mapv (fn [i]
+     (mapv (fn random-table [k]
+               (mapv (fn random-row [j]
+                         (mapv (fn random-point [i]
                                    (add (vec3 (* i cellsize) (* j cellsize) (* k cellsize))
                                         (apply vec3 (repeatedly 3 #(random cellsize)))))
                                (range divisions)))

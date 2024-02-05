@@ -159,7 +159,7 @@
   "Combine multiple-argument functions"
   {:malli/schema [:=> [:cat fn? fn?] fn?]}
   [f g]
-  (fn [& args] (apply f (apply g args))))
+  (fn comp* [& args] (apply f (apply g args))))
 
 (defn pack-floats
   "Pack nested floating-point vector into float array"
@@ -213,7 +213,7 @@
   {:malli/schema [:=> [:cat fn? N0 N] fn?]}
   [fun size step]
   (let [bar (agent (make-progress-bar size step))]
-    (fn [& args]
+    (fn progress-wrap [& args]
         (send bar tick-and-print)
         (apply fun args))))
 
