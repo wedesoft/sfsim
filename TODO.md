@@ -1,5 +1,4 @@
 # TODO
-* name anonymous functions
 * namespacing of keywords, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
   render-cloud-planet :tree keyword
   use keyword namespace for quadtree,

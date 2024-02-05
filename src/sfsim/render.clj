@@ -7,11 +7,9 @@
             [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box quaternion->matrix transformation-matrix projection-matrix)]
             [sfsim.quaternion :refer (quaternion) :as q]
             [sfsim.util :refer (sqr N)]
-            [sfsim.image :refer (image byte-image float-image-2d float-image-3d float-image-4d)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
-  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
-           [org.lwjgl BufferUtils]
+  (:import [org.lwjgl.opengl GL GL11 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)

@@ -2,7 +2,7 @@
     (:require [malli.core :as m]
               [sfsim.image :refer (image byte-image float-image-2d float-image-3d float-image-4d)]
               [sfsim.util :refer (N)])
-    (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL30 GL42]
+    (:import [org.lwjgl.opengl GL11 GL12 GL13 GL14 GL30 GL42]
              [org.lwjgl BufferUtils]))
 
 (set! *unchecked-math* true)
