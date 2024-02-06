@@ -1,5 +1,5 @@
 # TODO
-* quadtree change :0, :1, :2, :3 to quad0, quad1, quad2, quad3
+* quadtree change :0, :1, :2, :3 to ::quad0, ::quad1, ::quad2, ::quad3
 * namespacing of keywords, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
   render-cloud-planet :tree keyword
   use keyword namespace for quadtree,
