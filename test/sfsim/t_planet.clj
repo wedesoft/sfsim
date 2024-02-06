@@ -636,15 +636,15 @@ void main()
 
 (tabular "Call each tile in tree to be rendered"
          (fact (render-tile-calls ?program ?node ?transform [:sfsim.planet/surf-tex]) => ?result)
-         ?program ?transform ?node                            ?result
-         1234     :transform {}                               []
-         1234     :transform {:sfsim.planet/vao 42}           [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
-         1234     :transform {:0 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
-         1234     :transform {:1 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
-         1234     :transform {:2 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
-         1234     :transform {:3 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
-         1234     :transform {:4 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
-         1234     :transform {:5 {:sfsim.planet/vao 42}}      [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
-         1234     :transform {:3 {:2 {:sfsim.planet/vao 42}}} [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]])
+         ?program ?transform ?node                        ?result
+         1234 :transform {}                               []
+         1234 :transform {:sfsim.planet/vao 42}           [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234 :transform {:face0 {:sfsim.planet/vao 42}}  [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234 :transform {:face1 {:sfsim.planet/vao 42}}  [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234 :transform {:face2 {:sfsim.planet/vao 42}}  [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234 :transform {:face3 {:sfsim.planet/vao 42}}  [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234 :transform {:face4 {:sfsim.planet/vao 42}}  [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234 :transform {:face5 {:sfsim.planet/vao 42}}  [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]]
+         1234 :transform {:face3 {:2 {:sfsim.planet/vao 42}}} [[1234 {:sfsim.planet/vao 42} :transform [:sfsim.planet/surf-tex]]])
 
 (GLFW/glfwTerminate)

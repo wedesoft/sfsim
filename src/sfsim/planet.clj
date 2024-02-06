@@ -102,7 +102,7 @@
   (when-not (empty? node)
             (if (is-leaf? node)
               (render-tile program node transform texture-keys)
-              (doseq [selector [:0 :1 :2 :3 :4 :5]]
+              (doseq [selector [:face0 :face1 :face2 :face3 :face4 :face5 :0 :1 :2 :3]]
                      (render-tree program (selector node) transform texture-keys)))))
 
 (defn make-planet-shadow-renderer
