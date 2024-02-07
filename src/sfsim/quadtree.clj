@@ -91,21 +91,21 @@
         (contains? node :face3)
         (contains? node :face4)
         (contains? node :face5)
-        (contains? node :0)
-        (contains? node :1)
-        (contains? node :2)
-        (contains? node :3))))
+        (contains? node :quad0)
+        (contains? node :quad1)
+        (contains? node :quad2)
+        (contains? node :quad3))))
 
 (defn- is-flat?
   "Check whether node has four leafs"
   {:malli/schema [:=> [:cat :map] :boolean]}
   [node]
-  (and (is-leaf? (:0 node)) (is-leaf? (:1 node)) (is-leaf? (:2 node)) (is-leaf? (:3 node))))
+  (and (is-leaf? (:quad0 node)) (is-leaf? (:quad1 node)) (is-leaf? (:quad2 node)) (is-leaf? (:quad3 node))))
 
 (defn- sub-paths
   "Get path for each leaf"
   [path]
-  [(conj path :0) (conj path :1) (conj path :2) (conj path :3)])
+  [(conj path :quad0) (conj path :quad1) (conj path :quad2) (conj path :quad3)])
 
 (defn tiles-to-drop
   "Determine tiles to remove from the quad tree"
@@ -116,7 +116,7 @@
    (cond
      (nil? tree) []
      (and (is-flat? tree) (not (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree)))) (sub-paths path)
-     :else (mapcat #(tiles-to-drop (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3]))))
+     :else (mapcat #(tiles-to-drop (% tree) increase-level-fun? (conj path %)) [:quad0 :quad1 :quad2 :quad3]))))
 
 (defn tiles-to-load
   "Determine which tiles to load into the quad tree"
@@ -131,7 +131,8 @@
      (let [increase? (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree))]
        (cond
          (and (is-leaf? tree) increase?) (sub-paths path)
-         increase?                       (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %)) [:0 :1 :2 :3])
+         increase?                       (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %))
+                                                 [:quad0 :quad1 :quad2 :quad3])
          :else                           [])))))
 
 (def face->index {:face0 0 :face1 1 :face2 2 :face3 3 :face4 4 :face5 5})
@@ -141,8 +142,8 @@
   {:malli/schema [:=> [:cat [:vector :keyword]] tile-info]}
   [path]
   (let [[top & tree]    path
-        dy              {:0 0 :1 0 :2 1 :3 1}
-        dx              {:0 0 :1 1 :2 0 :3 1}
+        dy              {:quad0 0 :quad1 0 :quad2 1 :quad3 1}
+        dx              {:quad0 0 :quad1 1 :quad2 0 :quad3 1}
         combine-offsets #(bit-or (bit-shift-left %1 1) %2)]
     {::face  (face->index top)
      ::level (count tree)
@@ -190,10 +191,10 @@
      (let [[tail dy dx] (neighbour-path (rest path) dy dx false)
            tile         (first path)]
        (if top-level
-         (let [c0           {:0 :0, :1 :1, :3 :3, :2 :2}
-               c1           {:0 :2, :1 :0, :3 :1, :2 :3}
-               c2           {:0 :3, :1 :2, :3 :0, :2 :1}
-               c3           {:0 :1, :1 :3, :3 :2, :2 :0}
+         (let [c0           {:quad0 :quad0, :quad1 :quad1, :quad3 :quad3, :quad2 :quad2}
+               c1           {:quad0 :quad2, :quad1 :quad0, :quad3 :quad1, :quad2 :quad3}
+               c2           {:quad0 :quad3, :quad1 :quad2, :quad3 :quad0, :quad2 :quad1}
+               c3           {:quad0 :quad1, :quad1 :quad3, :quad3 :quad2, :quad2 :quad0}
                [replacement rotation]
                (case (first path)
                  :face0 (case (long dy) -1 [:face3 c2],
@@ -217,10 +218,18 @@
            (cons replacement (map rotation tail)))
          (let [[replacement propagate]
                (case tile
-                 :0 (case (long dy) -1 [:2 true ], 0 (case (long dx) -1 [:1 true ] 0 [:0 false] 1 [:1 false]), 1 [:2 false])
-                 :1 (case (long dy) -1 [:3 true ], 0 (case (long dx) -1 [:0 false] 0 [:1 false] 1 [:0 true ]), 1 [:3 false])
-                 :2 (case (long dy) -1 [:0 false], 0 (case (long dx) -1 [:3 true ] 0 [:2 false] 1 [:3 false]), 1 [:0 true ])
-                 :3 (case (long dy) -1 [:1 false], 0 (case (long dx) -1 [:2 false] 0 [:3 false] 1 [:2 true ]), 1 [:1 true ]))]
+                 :quad0 (case (long dy) -1 [:quad2 true ],
+                                         0 (case (long dx) -1 [:quad1 true ] 0 [:quad0 false] 1 [:quad1 false]),
+                                         1 [:quad2 false])
+                 :quad1 (case (long dy) -1 [:quad3 true ],
+                                         0 (case (long dx) -1 [:quad0 false] 0 [:quad1 false] 1 [:quad0 true ]),
+                                         1 [:quad3 false])
+                 :quad2 (case (long dy) -1 [:quad0 false],
+                                         0 (case (long dx) -1 [:quad3 true ] 0 [:quad2 false] 1 [:quad3 false]),
+                                         1 [:quad0 true ])
+                 :quad3 (case (long dy) -1 [:quad1 false],
+                                         0 (case (long dx) -1 [:quad2 false] 0 [:quad3 false] 1 [:quad2 true ]),
+                                         1 [:quad1 true ]))]
            [(cons replacement tail) (if propagate dy 0) (if propagate dx 0)])))))
   ([path dy dx]
    (neighbour-path path dy dx true)))
@@ -243,7 +252,7 @@
       (if (is-leaf? v)
         [(list k)]
         (map #(cons k %) (leaf-paths v))))
-    (select-keys tree #{:face0 :face1 :face2 :face3 :face4 :face5 :0 :1 :2 :3})))
+    (select-keys tree #{:face0 :face1 :face2 :face3 :face4 :face5 :quad0 :quad1 :quad2 :quad3})))
 
 (defn- check-neighbours-for-tile
   "Update neighbourhood information for a single tile"
