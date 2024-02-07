@@ -102,7 +102,9 @@
   (when-not (empty? node)
             (if (is-leaf? node)
               (render-tile program node transform texture-keys)
-              (doseq [selector [:face0 :face1 :face2 :face3 :face4 :face5 :quad0 :quad1 :quad2 :quad3]]
+              (doseq [selector [:sfsim.quadtree/face0 :sfsim.quadtree/face1 :sfsim.quadtree/face2 :sfsim.quadtree/face3
+                                :sfsim.quadtree/face4 :sfsim.quadtree/face5
+                                :sfsim.quadtree/quad0 :sfsim.quadtree/quad1 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3]]
                      (render-tree program (selector node) transform texture-keys)))))
 
 (defn make-planet-shadow-renderer
