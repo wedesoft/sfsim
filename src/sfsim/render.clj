@@ -150,7 +150,8 @@
   (GL20/glDeleteProgram program))
 
 (def vertex-array-object
-  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int] [::nrows N] [::ncols N]]))
+  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int] [::nrows N]
+                  [::attribute-locations [:vector :int]]]))
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
@@ -169,23 +170,25 @@
       (let [attribute-pairs (partition 2 attributes)
             sizes           (map second attribute-pairs)
             stride          (apply + sizes)
-            offsets         (reductions + (cons 0 (butlast sizes)))]
-        (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
-          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program ^String attribute) ^long size
-                                      GL11/GL_FLOAT false ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
-          (GL20/glEnableVertexAttribArray i))
+            offsets         (reductions + (cons 0 (butlast sizes)))
+            attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
+                                 (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
+                                   (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false
+                                                               ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
+                                   (GL20/glEnableVertexAttribArray location)
+                                   location))]
         {::vertex-array-object vertex-array-object
          ::array-buffer        array-buffer
          ::index-buffer        index-buffer
-         ::nrows               (count indices)
-         ::ncols               (count attribute-pairs)}))))
+         ::attribute-locations (vec attr-locations)
+         ::nrows               (count indices)}))))
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
-  [{::keys [vertex-array-object array-buffer index-buffer ncols]}]
+  [{::keys [vertex-array-object array-buffer index-buffer attribute-locations]}]
   (GL30/glBindVertexArray vertex-array-object)
-  (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
+  (doseq [location attribute-locations] (GL20/glDisableVertexAttribArray location))
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
   (GL15/glDeleteBuffers ^long index-buffer)
   (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
