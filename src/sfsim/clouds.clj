@@ -135,8 +135,8 @@
 (defn cloud-cover-cubemap
   "Program to generate planetary cloud cover using curl noise"
   {:malli/schema [:=> [:cat [:* :any]] texture-3d]}
-  [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
-             cover-scale num-iterations flow-scale]}]
+  [& {::keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
+              cover-scale num-iterations flow-scale]}]
   (let [warp        (atom (identity-cubemap size))
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
