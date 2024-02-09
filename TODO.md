@@ -1,5 +1,5 @@
 # TODO
-* namespacing of keywords, cloud-cover-cubemap parameters, opacity-cascade, shadow-matrix-cascade,
+* namespacing of keywords, cloud-cover-cubemap parameters, shadow-matrix-cascade,
   use keyword namespace for quadtree,
   quaternion (use real, imag, ...)
 * problem with shadow map when near ground

@@ -831,7 +831,7 @@ void main(void)
                                128 128
                                (clear)
                                (use-program program-shadow)
-                               (uniform-matrix4 program-shadow "transform" (:shadow-ndc-matrix shadow-mat))
+                               (uniform-matrix4 program-shadow "transform" (:sfsim.matrix/shadow-ndc-matrix shadow-mat))
                                (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
@@ -841,7 +841,7 @@ void main(void)
                                 (uniform-sampler program-main "shadow_map" 0)
                                 (uniform-int program-main "shadow_size" 128)
                                 (uniform-matrix4 program-main "projection" projection)
-                                (uniform-matrix4 program-main "shadow_map_matrix" (:shadow-map-matrix shadow-mat))
+                                (uniform-matrix4 program-main "shadow_map_matrix" (:sfsim.matrix/shadow-map-matrix shadow-mat))
                                 (use-textures {0 shadow-map})
                                 (render-quads vao))
             (let [img (texture->image tex)]
@@ -901,7 +901,8 @@ void main(void)
                                 (uniform-int program-main "shadow_size" 128)
                                 (uniform-matrix4 program-main "projection" projection)
                                 (uniform-matrix4 program-main "transform" (eye 4))
-                                (uniform-matrix4 program-main "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
+                                (uniform-matrix4 program-main "shadow_map_matrix0"
+                                                 (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))
                                 (use-textures (zipmap (range) shadow-maps))
                                 (render-quads vao))
             (let [img (texture->image tex)]
