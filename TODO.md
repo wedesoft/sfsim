@@ -1,7 +1,5 @@
 # TODO
-* namespacing of keywords
-  use keyword namespace for quadtree,
-  quaternion (use real, imag, ...)
+* namespacing of keywords: quaternion (use real, imag, ...)
 * problem with shadow map when near ground
 * use add-watch?
 * methods to create empty images for globe.clj
