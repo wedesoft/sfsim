@@ -1,11 +1,11 @@
 (ns sfsim.t-render
   (:require [midje.sweet :refer :all]
+            [clojure.math :refer (to-radians cos)]
             [malli.instrument :as mi]
             [malli.dev.pretty :as pretty]
             [sfsim.conftest :refer (is-image roughly-vector)]
             [fastmath.vector :refer (vec3 vec4 normalize)]
             [fastmath.matrix :refer (eye diagonal) :as m]
-            [clojure.math :refer (to-radians)]
             [comb.template :as template]
             [sfsim.util :refer :all]
             [sfsim.image :refer :all]
@@ -1006,8 +1006,8 @@ void main()
                        matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
            (:sfsim.render/origin (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => pos1
            (:sfsim.render/height (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 150.0
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 50.0
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => 1.0
+           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (* 50.0 (cos 0.25))
+           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => (cos 0.25)
            (:sfsim.render/z-far (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 300.0
            (:sfsim.render/extrinsics (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (eye 4)
            (:sfsim.render/projection (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (diagonal 1 2 3 4)
