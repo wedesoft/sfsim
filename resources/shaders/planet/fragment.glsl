@@ -17,7 +17,7 @@ in GEO_OUT
   vec3 point;
 } fs_in;
 
-out vec3 fragColor;
+out vec4 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float cos_normal,
@@ -53,5 +53,5 @@ void main()
   atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
   vec4 cloud_scatter = cloud_overlay();
-  fragColor = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
+  fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
 }
