@@ -1,6 +1,6 @@
 (ns sfsim.render
   "Functions for doing OpenGL rendering"
-  (:require [clojure.math :refer (sqrt)]
+  (:require [clojure.math :refer (sqrt cos)]
             [fastmath.vector :refer (mag)]
             [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
@@ -405,7 +405,7 @@
         cloud-top  (:sfsim.clouds/cloud-top cloud-data)
         fov        (::fov render-config)
         height     (- distance radius)
-        z-near     (max (- height cloud-top) min-z-near)
+        z-near     (* (max (- height cloud-top) min-z-near) (cos (* 0.5 fov)))
         z-far      (render-depth radius height cloud-top)
         rotation   (quaternion->matrix orientation)
         extrinsics (transformation-matrix rotation position)
