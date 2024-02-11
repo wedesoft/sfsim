@@ -1,6 +1,7 @@
 # TODO
-* namespacing of keywords: quaternion (use real, imag, ...)
 * problem with shadow map when near ground
+* namespacing of keywords: quaternion (use real, imag, ...)
+* NVidia fails test with two programs
 * use add-watch?
 * methods to create empty images for globe.clj
 * refactor redundant code setting uniforms

@@ -23,6 +23,8 @@
 (def opacity-base (atom 250.0))
 (def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
+; (def position (atom (vec3 0 0 (* 1.5 6378000.0))))
+; (def orientation (atom (q/rotation (to-radians -20) (vec3 0 1 0))))
 (def light (atom 0.0))
 
 (GLFW/glfwInit)
