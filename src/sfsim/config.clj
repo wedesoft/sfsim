@@ -1,6 +1,6 @@
 (ns sfsim.config
     "Configuration values for software"
-    (:require [clojure.math :refer (exp to-radians)]
+    (:require [clojure.math :refer (to-radians)]
               [fastmath.vector :refer (vec3)]
               [sfsim.util :refer (octaves)]))
 
