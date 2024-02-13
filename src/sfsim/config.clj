@@ -41,7 +41,7 @@
                                    :shadow-size 512
                                    :num-steps 3
                                    :mix 0.8
-                                   :shadow-bias (exp -6.0)})
+                                   :shadow-bias 1e-6})
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
