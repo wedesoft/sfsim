@@ -992,6 +992,11 @@ void main()
        (render-depth 4.0 0.0 1.0) => 3.0
        (render-depth 4.0 1.0 1.0) => 6.0)
 
+(facts "Diagonal field of view"
+       (diagonal-field-of-view 320   0 0.2) => (roughly 0.2   1e-3)
+       (diagonal-field-of-view 320 320 0.2) => (roughly 0.283 1e-3)
+       (diagonal-field-of-view 320 240 0.2) => (roughly 0.250 1e-3))
+
 (facts "Create hashmap with render variables for rendering current frame"
        (let [planet {:sfsim.planet/radius 1000.0}
              cloud  {:sfsim.clouds/cloud-top 100.0}
@@ -1006,8 +1011,8 @@ void main()
                        matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
            (:sfsim.render/origin (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => pos1
            (:sfsim.render/height (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 150.0
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (* 50.0 (cos 0.25))
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => (cos 0.25)
+           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => (roughly 0.951 1e-3)
            (:sfsim.render/z-far (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 300.0
            (:sfsim.render/extrinsics (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (eye 4)
            (:sfsim.render/projection (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (diagonal 1 2 3 4)
