@@ -1,5 +1,4 @@
 # TODO
-* problem with shadow map when near ground (z between split0 and split1)
 * namespacing of keywords: quaternion (use real, imag, ...)
 * NVidia fails test with two programs
 * use add-watch?
