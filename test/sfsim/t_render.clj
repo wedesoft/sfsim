@@ -1,6 +1,6 @@
 (ns sfsim.t-render
   (:require [midje.sweet :refer :all]
-            [clojure.math :refer (to-radians cos)]
+            [clojure.math :refer (to-radians cos asin sin sqrt PI)]
             [malli.instrument :as mi]
             [malli.dev.pretty :as pretty]
             [sfsim.conftest :refer (is-image roughly-vector)]
@@ -993,9 +993,9 @@ void main()
        (render-depth 4.0 1.0 1.0) => 6.0)
 
 (facts "Diagonal field of view"
-       (diagonal-field-of-view 320   0 0.2) => (roughly 0.2   1e-3)
-       (diagonal-field-of-view 320 320 0.2) => (roughly 0.283 1e-3)
-       (diagonal-field-of-view 320 240 0.2) => (roughly 0.250 1e-3))
+       (diagonal-field-of-view 320   0 (* 0.25 PI)) => (roughly (* 0.25 PI) 1e-6)
+       (diagonal-field-of-view 320 320 (* 0.25 PI)) => (roughly (* 2 (asin (* (sqrt 2.0) (sin (* 0.125 PI))))) 1e-6)
+       (diagonal-field-of-view 320 240 (* 0.25 PI)) => (roughly 0.997559 1e-6))
 
 (facts "Create hashmap with render variables for rendering current frame"
        (let [planet {:sfsim.planet/radius 1000.0}
