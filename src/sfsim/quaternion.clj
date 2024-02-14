@@ -10,46 +10,46 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(defrecord Quaternion [^double a ^double b ^double c ^double d])
+(defrecord Quaternion [^double real ^double imag ^double jmag ^double kmag])
 
 (def fvec3 (mc/schema [:tuple :double :double :double]))
-(def quaternion (mc/schema [:map [:a :double] [:b :double] [:c :double] [:d :double]]))
+(def quaternion (mc/schema [:map [:real :double] [:imag :double] [:jmag :double] [:kmag :double]]))
 
 (defn +
   "Add two quaternions"
   {:malli/schema [:=> [:cat quaternion quaternion] quaternion]}
   [p q]
-  (->Quaternion (c/+ (:a p) (:a q)) (c/+ (:b p) (:b q)) (c/+ (:c p) (:c q)) (c/+ (:d p) (:d q))))
+  (->Quaternion (c/+ (:real p) (:real q)) (c/+ (:imag p) (:imag q)) (c/+ (:jmag p) (:jmag q)) (c/+ (:kmag p) (:kmag q))))
 
 (defn -
   "Negate quaternion or subtract two quaternions"
   {:malli/schema [:=> [:cat quaternion [:? quaternion]] quaternion]}
   ([p]
-   (->Quaternion (c/- (:a p)) (c/- (:b p)) (c/- (:c p)) (c/- (:d p))))
+   (->Quaternion (c/- (:real p)) (c/- (:imag p)) (c/- (:jmag p)) (c/- (:kmag p))))
   ([p q]
-   (->Quaternion (c/- (:a p) (:a q)) (c/- (:b p) (:b q)) (c/- (:c p) (:c q)) (c/- (:d p) (:d q)))))
+   (->Quaternion (c/- (:real p) (:real q)) (c/- (:imag p) (:imag q)) (c/- (:jmag p) (:jmag q)) (c/- (:kmag p) (:kmag q)))))
 
 (defn *
   "Multiply two quaternions"
   {:malli/schema [:=> [:cat quaternion quaternion] quaternion]}
   [p q]
   (->Quaternion
-    (c/- (c/* (:a p) (:a q)) (c/* (:b p) (:b q)) (c/* (:c p) (:c q)) (c/* (:d p) (:d q)))
-    (c/- (c/+ (c/* (:a p) (:b q)) (c/* (:b p) (:a q)) (c/* (:c p) (:d q))) (c/* (:d p) (:c q)))
-    (c/+ (c/- (c/* (:a p) (:c q)) (c/* (:b p) (:d q))) (c/* (:c p) (:a q)) (c/* (:d p) (:b q)))
-    (c/+ (c/- (c/+ (c/* (:a p) (:d q)) (c/* (:b p) (:c q))) (c/* (:c p) (:b q))) (c/* (:d p) (:a q)))))
+    (c/- (c/* (:real p) (:real q)) (c/* (:imag p) (:imag q)) (c/* (:jmag p) (:jmag q)) (c/* (:kmag p) (:kmag q)))
+    (c/- (c/+ (c/* (:real p) (:imag q)) (c/* (:imag p) (:real q)) (c/* (:jmag p) (:kmag q))) (c/* (:kmag p) (:jmag q)))
+    (c/+ (c/- (c/* (:real p) (:jmag q)) (c/* (:imag p) (:kmag q))) (c/* (:jmag p) (:real q)) (c/* (:kmag p) (:imag q)))
+    (c/+ (c/- (c/+ (c/* (:real p) (:kmag q)) (c/* (:imag p) (:jmag q))) (c/* (:jmag p) (:imag q))) (c/* (:kmag p) (:real q)))))
 
 (defn scale
   "Multiply quaternion with real number"
   {:malli/schema [:=> [:cat quaternion :double] quaternion]}
   [q s]
-  (->Quaternion (c/* (:a q) s) (c/* (:b q) s) (c/* (:c q) s) (c/* (:d q) s)))
+  (->Quaternion (c/* (:real q) s) (c/* (:imag q) s) (c/* (:jmag q) s) (c/* (:kmag q) s)))
 
 (defn norm2
   "Compute square of norm of quaternion"
   {:malli/schema [:=> [:cat quaternion] :double]}
   [q]
-  (c/+ (sqr (:a q)) (sqr (:b q)) (sqr (:c q)) (sqr (:d q))))
+  (c/+ (sqr (:real q)) (sqr (:imag q)) (sqr (:jmag q)) (sqr (:kmag q))))
 
 (defn norm
   "Compute norm of quaternion"
@@ -62,20 +62,20 @@
   {:malli/schema [:=> [:cat quaternion] quaternion]}
   [q]
   (let [factor (/ 1.0 (norm q))]
-    (->Quaternion (c/* (:a q) factor) (c/* (:b q) factor) (c/* (:c q) factor) (c/* (:d q) factor))))
+    (->Quaternion (c/* (:real q) factor) (c/* (:imag q) factor) (c/* (:jmag q) factor) (c/* (:kmag q) factor))))
 
 (defn conjugate
   "Return conjugate of quaternion"
   {:malli/schema [:=> [:cat quaternion] quaternion]}
   [q]
-  (->Quaternion (:a q) (c/- (:b q)) (c/- (:c q)) (c/- (:d q))))
+  (->Quaternion (:real q) (c/- (:imag q)) (c/- (:jmag q)) (c/- (:kmag q))))
 
 (defn inverse
   "Return inverse of quaternion"
   {:malli/schema [:=> [:cat quaternion] quaternion]}
   [q]
   (let [factor (/ 1.0 (norm2 q))]
-    (->Quaternion (c/* (:a q) factor) (c/* (c/- (:b q)) factor) (c/* (c/- (:c q)) factor) (c/* (c/- (:d q)) factor))))
+    (->Quaternion (c/* (:real q) factor) (c/* (c/- (:imag q)) factor) (c/* (c/- (:jmag q)) factor) (c/* (c/- (:kmag q)) factor))))
 
 (defn vector->quaternion
   "Convert 3D vector to quaternion"
@@ -87,17 +87,17 @@
   "Convert quaternion to 3D vector"
   {:malli/schema [:=> [:cat quaternion] fvec3]}
   [q]
-  (vec3 (:b q) (:c q) (:d q)))
+  (vec3 (:imag q) (:jmag q) (:kmag q)))
 
 (defn exp
   "Exponentiation of quaternion"
   {:malli/schema [:=> [:cat quaternion] quaternion]}
   [q]
-  (let [scale      (m/exp (:a q))
+  (let [scale      (m/exp (:real q))
         rotation   (mag (quaternion->vector q))
         cos-scale  (c/* scale (cos rotation))
         sinc-scale (c/* scale (sinc rotation))]
-    (->Quaternion cos-scale (c/* sinc-scale (:b q)) (c/* sinc-scale (:c q)) (c/* sinc-scale (:d q)))))
+    (->Quaternion cos-scale (c/* sinc-scale (:imag q)) (c/* sinc-scale (:jmag q)) (c/* sinc-scale (:kmag q)))))
 
 (defn rotation
   "Generate quaternion to represent rotation"

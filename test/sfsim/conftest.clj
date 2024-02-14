@@ -26,7 +26,7 @@
   "Compare quaternion with expected value."
   [expected error]
   (fn [actual]
-      (and (<= (sqrt (apply + (map (comp #(* % %) #(- (% actual) (% expected))) [:a :b :c :d]))) error))))
+      (and (<= (sqrt (apply + (map (comp #(* % %) #(- (% actual) (% expected))) [:real :imag :jmag :kmag]))) error))))
 
 (defn rgba-dist [c1 c2]
   (apply max (map #(abs (- %1 %2)) c1 c2)))

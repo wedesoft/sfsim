@@ -210,16 +210,16 @@
   (let [[d c b a] (dimensions array)
         h         (* d b)
         w         (* c a)]
-    (mapv (fn [y] (mapv (fn [x] (get-in array [(quot y b) (quot x a) (mod y b) (mod x a)])) (range w))) (range h))))
+    (mapv (fn row-2d [y] (mapv (fn pixel-2d [x] (get-in array [(quot y b) (quot x a) (mod y b) (mod x a)])) (range w))) (range h))))
 
 (defn convert-2d-to-4d
   "Convert 2D array with tiles to 4D array (assuming that each two dimensions are the same)"
   {:malli/schema [:=> [:cat array-2d N N N N] array-4d]}
   [array d c b a]
-  (mapv (fn [y]
-            (mapv (fn [x]
-                      (mapv (fn [v]
-                                (mapv (fn [u] (get-in array [(+ v (* y b)) (+ u (* x a))]))
+  (mapv (fn cube-4d [y]
+            (mapv (fn plane-4d [x]
+                      (mapv (fn row-4d [v]
+                                (mapv (fn pixel-4d [u] (get-in array [(+ v (* y b)) (+ u (* x a))]))
                                       (range a)))
                             (range b)))
                   (range c)))

@@ -178,17 +178,17 @@
 (def elevation-tile
   "Load and cache elevation tiles"
   (z/lru
-    (fn [in-level ty tx]
+    (fn elevation-tile [in-level ty tx]
       (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
             size (int (round (sqrt (alength data))))]
-        {:width size :height size :data data}))
+        {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data data}))
     :lru/threshold 128))
 
 (defn world-map-pixel
   "Get world map RGB value for a given pixel coordinate"
   {:malli/schema [:=> [:cat :string] [:=> [:cat :int :int :int :int] fvec3]]}
   [prefix]
-  (fn [dy dx in-level width]
+  (fn world-map-pixel [dy dx in-level width]
       (let [ty  (quot dy width)
             tx  (quot dx width)
             py  (mod dy width)

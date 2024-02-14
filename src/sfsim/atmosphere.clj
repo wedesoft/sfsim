@@ -94,7 +94,7 @@
   {:malli/schema [:function [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3] fvec3]
                             [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 :boolean] fvec3]]}
   ([planet scatter steps x x0]
-   (let [overall-extinction (fn [point] (apply add (map #(extinction % (height planet point)) scatter)))]
+   (let [overall-extinction (fn overall-extinction [point] (apply add (map #(extinction % (height planet point)) scatter)))]
      (-> (integral-ray #:sfsim.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub fv/exp)))
   ([planet scatter steps x v above-horizon]
    (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
@@ -171,7 +171,7 @@
   (let [normal        (normalize (sub x (:sfsim.sphere/centre planet)))]
     (integral-sphere sphere-steps
                      normal
-                     (fn [omega]
+                     (fn in-scatter-from-direction [omega]
                          (let [ray             #:sfsim.ray{:origin x :direction omega}
                                point           (ray-extremity planet ray)
                                surface         (surface-point? planet point)
@@ -252,7 +252,7 @@
   "Forward transformation for interpolating transmittance function"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat fvec3 fvec3 :boolean] [:tuple :double :double]]]}
   [planet shape]
-  (fn [point direction above-horizon]
+  (fn transmittance-forward [point direction above-horizon]
       (let [height-index    (height-to-index planet (first shape) point)
             elevation-index (elevation-to-index planet (second shape) point direction above-horizon)]
         [height-index elevation-index])))
@@ -261,7 +261,7 @@
   "Backward transformation for looking up transmittance values"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat :double :double] [:tuple fvec3 fvec3 :boolean]]]}
   [planet shape]
-  (fn [height-index elevation-index]
+  (fn transmittance-backward [height-index elevation-index]
       (let [point                     (index-to-height planet (first shape) height-index)
             [direction above-horizon] (index-to-elevation planet (second shape) (point 0) elevation-index)]
         [point direction above-horizon])))
@@ -291,7 +291,7 @@
   "Forward transformation for interpolating surface-radiance function"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat fvec3 fvec3] [:tuple :double :double]]]}
   [planet shape]
-  (fn [point direction]
+  (fn surface-radiance-forward [point direction]
       (let [height-index        (height-to-index planet (first shape) point)
             sun-elevation-index (sun-elevation-to-index (second shape) point direction)]
         [height-index sun-elevation-index])))
@@ -300,7 +300,7 @@
   "Backward transformation for looking up surface-radiance values"
   {:malli/schema [:=> [:cat atmosphere [:tuple N N]] [:=> [:cat :double :double] [:tuple fvec3 fvec3]]]}
   [planet shape]
-  (fn [height-index sun-elevation-index]
+  (fn surface-radiance-backward [height-index sun-elevation-index]
       (let [point             (index-to-height planet (first shape) height-index)
             sin-sun-elevation (index-to-sin-sun-elevation (second shape) sun-elevation-index)
             cos-sun-elevation (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
@@ -336,7 +336,7 @@
   {:malli/schema [:=> [:cat atmosphere [:tuple N N N N]]
                       [:=> [:cat fvec3 fvec3 fvec3 :boolean] [:tuple :double :double :double :double]]]}
   [planet shape]
-  (fn [point direction light-direction above-horizon]
+  (fn ray-scatter-forward [point direction light-direction above-horizon]
       (let [height-index        (height-to-index planet (first shape) point)
             elevation-index     (elevation-to-index planet (second shape) point direction above-horizon)
             sun-elevation-index (sun-elevation-to-index (third shape) point light-direction)
@@ -348,7 +348,7 @@
   {:malli/schema [:=> [:cat atmosphere [:tuple N N N N]]
                       [:=> [:cat :double :double :double :double] [:tuple fvec3 fvec3 fvec3 :boolean]]]}
   [planet shape]
-  (fn [height-index elevation-index sun-elevation-index sun-angle-index]
+  (fn ray-scatter-backward [height-index elevation-index sun-elevation-index sun-angle-index]
       (let [point                     (index-to-height planet (first shape) height-index)
             [direction above-horizon] (index-to-elevation planet (second shape) (point 0) elevation-index)
             sin-sun-elevation         (index-to-sin-sun-elevation (third shape) sun-elevation-index)
@@ -423,26 +423,26 @@
                                              [::surface-radiance texture-2d]]]}
   [max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
-        transmittance         (make-vector-texture-2d :linear :clamp
+        transmittance         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width transmittance-elevation-size
                                                                     :height transmittance-height-size
                                                                     :data transmittance-data})
         scatter-data          (slurp-floats "data/atmosphere/ray-scatter.scatter")
-        scatter               (make-vector-texture-4d :linear :clamp
+        scatter               (make-vector-texture-4d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width heading-size
                                                                     :height light-elevation-size
                                                                     :depth elevation-size
                                                                     :hyperdepth height-size
                                                                     :data scatter-data})
         mie-data              (slurp-floats "data/atmosphere/mie-strength.scatter")
-        mie                   (make-vector-texture-2d :linear :clamp
+        mie                   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width heading-size
                                                                     :height light-elevation-size
                                                                     :depth elevation-size
                                                                     :hyperdepth height-size
                                                                     :data mie-data})
         surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter")
-        surface-radiance      (make-vector-texture-2d :linear :clamp
+        surface-radiance      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width surface-sun-elevation-size
                                                                     :height surface-height-size
                                                                     :data surface-radiance-data})]
@@ -469,36 +469,38 @@
   (uniform-sampler program "mie_strength" (+ sampler-offset 2))
   (when surface-radiance
     (uniform-sampler program "surface_radiance" (+ sampler-offset 3)))
-  (uniform-int program "height_size" (:hyperdepth (::scatter atmosphere-luts)))
-  (uniform-int program "elevation_size" (:depth (::scatter atmosphere-luts)))
-  (uniform-int program "light_elevation_size" (:height (::scatter atmosphere-luts)))
-  (uniform-int program "heading_size" (:width (::scatter atmosphere-luts)))
-  (uniform-int program "transmittance_elevation_size" (:width (::transmittance atmosphere-luts)))
-  (uniform-int program "transmittance_height_size" (:height (::transmittance atmosphere-luts)))
+  (uniform-int program "height_size" (:sfsim.texture/hyperdepth (::scatter atmosphere-luts)))
+  (uniform-int program "elevation_size" (:sfsim.texture/depth (::scatter atmosphere-luts)))
+  (uniform-int program "light_elevation_size" (:sfsim.texture/height (::scatter atmosphere-luts)))
+  (uniform-int program "heading_size" (:sfsim.texture/width (::scatter atmosphere-luts)))
+  (uniform-int program "transmittance_elevation_size" (:sfsim.texture/width (::transmittance atmosphere-luts)))
+  (uniform-int program "transmittance_height_size" (:sfsim.texture/height (::transmittance atmosphere-luts)))
   (when surface-radiance
-    (uniform-int program "surface_height_size" (:height (::surface-radiance atmosphere-luts)))
-    (uniform-int program "surface_sun_elevation_size" (:width (::surface-radiance atmosphere-luts))))
+    (uniform-int program "surface_height_size" (:sfsim.texture/height (::surface-radiance atmosphere-luts)))
+    (uniform-int program "surface_sun_elevation_size" (:sfsim.texture/width (::surface-radiance atmosphere-luts))))
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
-  {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-config]}]
-  (let [program (make-program :sfsim.render/vertex [vertex-atmosphere]
-                              :sfsim.render/fragment [fragment-atmosphere])]
+  {:malli/schema [:=> [:cat :map] :map]}
+  [{::keys [luts] :as other}]
+  (let [render-config (:sfsim.render/config other)
+        planet-config (:sfsim.planet/config other)
+        program       (make-program :sfsim.render/vertex [vertex-atmosphere]
+                                    :sfsim.render/fragment [fragment-atmosphere])]
     (use-program program)
-    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
+    (setup-atmosphere-uniforms program luts 0 false)
     (uniform-sampler program "clouds" 3)
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {:program program
-     :atmosphere-luts atmosphere-luts}))
+    {::program program
+     ::luts luts}))
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
   {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts]} render-vars & {:keys [clouds]}]
+  [{::keys [program luts]} render-vars clouds]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
@@ -509,14 +511,14 @@
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
     (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
-    (use-textures {0 (::transmittance atmosphere-luts) 1 (::scatter atmosphere-luts) 2 (::mie atmosphere-luts) 3 clouds})
+    (use-textures {0 (::transmittance luts) 1 (::scatter luts) 2 (::mie luts) 3 clouds})
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
 (defn destroy-atmosphere-renderer
   "Destroy atmosphere renderer (untested)"
   {:malli/schema [:=> [:cat :map] :nil]}
-  [{:keys [program]}]
+  [{::keys [program]}]
   (destroy-program program))
 
 (set! *warn-on-reflection* false)

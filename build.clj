@@ -46,24 +46,24 @@
   [& {:keys [worley-size] :or {worley-size w/worley-size}}]
   (GLFW/glfwInit)
   (rn/with-invisible-window
-    (let [load-floats  (fn [filename] #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                    :data (u/slurp-floats filename)})
-          worley-north (t/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-north.raw"))
-          worley-south (t/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-south.raw"))
-          worley-cover (t/make-float-texture-3d :linear :repeat (load-floats "data/clouds/worley-cover.raw"))
-          cubemap      (cl/cloud-cover-cubemap :size cl/cover-size
-                                               :worley-size worley-size
-                                               :worley-south worley-south
-                                               :worley-north worley-north
-                                               :worley-cover worley-cover
-                                               :flow-octaves [0.5 0.25 0.125]
-                                               :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
-                                               :whirl 1.0
-                                               :prevailing 0.0
-                                               :curl-scale 2.0
-                                               :cover-scale 1.0
-                                               :num-iterations 50
-                                               :flow-scale 6e-3)]
+    (let [load-floats  (fn slurp-float-image [filename] #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                                      :data (u/slurp-floats filename)})
+          worley-north (t/make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat (load-floats "data/clouds/worley-north.raw"))
+          worley-south (t/make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat (load-floats "data/clouds/worley-south.raw"))
+          worley-cover (t/make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat (load-floats "data/clouds/worley-cover.raw"))
+          cubemap      (cl/cloud-cover-cubemap :sfsim.clouds/size cl/cover-size
+                                               :sfsim.clouds/worley-size worley-size
+                                               :sfsim.clouds/worley-south worley-south
+                                               :sfsim.clouds/worley-north worley-north
+                                               :sfsim.clouds/worley-cover worley-cover
+                                               :sfsim.clouds/flow-octaves [0.5 0.25 0.125]
+                                               :sfsim.clouds/cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                               :sfsim.clouds/whirl 1.0
+                                               :sfsim.clouds/prevailing 0.0
+                                               :sfsim.clouds/curl-scale 2.0
+                                               :sfsim.clouds/cover-scale 1.0
+                                               :sfsim.clouds/num-iterations 50
+                                               :sfsim.clouds/flow-scale 6e-3)]
       (doseq [i (range 6)]
              (u/spit-floats (str "data/clouds/cover" i ".raw") (:sfsim.image/data (t/float-cubemap->floats cubemap i))))
       (t/destroy-texture cubemap)

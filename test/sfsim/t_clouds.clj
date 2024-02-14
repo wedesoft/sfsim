@@ -46,7 +46,7 @@ void main()
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data     (cons 1.0 (repeat (dec (* 2 2 2)) 0.0))
-          worley   (make-float-texture-3d :linear :repeat #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data)})
+          worley   (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data)})
           program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                  :sfsim.render/fragment [(cloud-noise-probe x y z) (last (cloud-noise []))])
           vao      (make-vertex-array-object program indices vertices ["point" 3])
@@ -167,9 +167,9 @@ float cloud_density(vec3 point, float lod)
                                           :sfsim.render/fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock
                                                                   cloud-density-mock linear-sampling])
             vao             (make-vertex-array-object program indices vertices ["point" 2])
-            opacity-layers  (make-empty-float-texture-3d :linear :clamp 3 3 8)
+            opacity-layers  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 3 3 8)
             index           ({:offset 0 :layer (inc ?layer)} ?selector)]
-        (framebuffer-render 3 3 :cullback nil [opacity-layers]
+        (framebuffer-render 3 3 :sfsim.render/cullback nil [opacity-layers]
                             (use-program program)
                             (setup-opacity-fragment-static-uniforms program)
                             (setup-opacity-fragment-dynamic-uniforms program ndc-to-shadow light-direction ?shells ?multiplier
@@ -227,7 +227,7 @@ void main()
           offset-data     (zeropad offset)
           opacity-data    (flatten (map (partial repeat 4) [1.0 0.9 0.8 0.7 0.6 0.5 0.4]))
           data            (concat offset-data opacity-data)
-          opacity-layers  (make-float-texture-3d :linear :clamp
+          opacity-layers  (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp
                                                  #:sfsim.image{:width 2 :height 2 :depth 8 :data (float-array data)})
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
@@ -287,7 +287,7 @@ void main()
                                                                 (opacity-cascade-lookup n "opacity_lookup")
                                                                 opacity-lookup-mock])
           vao             (make-vertex-array-object program indices vertices ["point" 3])
-          opacity-texs    (map #(make-float-texture-3d :linear :clamp
+          opacity-texs    (map #(make-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp
                                                        #:sfsim.image{:width 1 :height 1 :depth 1 :data (float-array [%1 %2])})
                                opacities offsets)
           tex             (texture-render-color 1 1 true
@@ -452,7 +452,7 @@ float lookup_mock(vec3 point)
           vao      (make-vertex-array-object program indices vertices ["point" 3])
           vectors  [[1 0 0] [0 2 0] [0 0 4] [-1 0 0] [0 -1 0] [0 0 -1]]
           to-data  (fn [v] (float-array (flatten (repeat 9 v))))
-          current  (make-vector-cubemap :linear :clamp (mapv (fn [v] #:sfsim.image{:width 3 :height 3 :data (to-data v)}) vectors))
+          current  (make-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp (mapv (fn [v] #:sfsim.image{:width 3 :height 3 :data (to-data v)}) vectors))
           warp     (make-cubemap-warp-program "current" "lookup_mock" [lookup-mock])
           warped   (cubemap-warp 3 warp
                                  (uniform-sampler warp "current" 0)
@@ -607,13 +607,13 @@ void main()
 (fact "Program to generate planetary cloud cover using curl noise"
     (with-invisible-window
       (let [worley-size  8
-            worley-north (make-float-texture-3d :linear :repeat
+            worley-north (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                                 #:sfsim.image{:width worley-size :height worley-size :depth worley-size
                                                               :data (slurp-floats "test/sfsim/fixtures/clouds/worley-north.raw")})
-            worley-south (make-float-texture-3d :linear :repeat
+            worley-south (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                                 #:sfsim.image{:width worley-size :height worley-size :depth worley-size
                                                               :data (slurp-floats "test/sfsim/fixtures/clouds/worley-south.raw")})
-            worley-cover (make-float-texture-3d :linear :repeat
+            worley-cover (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                                 #:sfsim.image{:width worley-size :height worley-size :depth worley-size
                                                               :data (slurp-floats "test/sfsim/fixtures/clouds/worley-cover.raw")})
             program      (make-program :sfsim.render/vertex [cover-vertex]
@@ -621,19 +621,19 @@ void main()
             indices      [0 1 3 2]
             vertices     [-1 -1 0, 1 -1 0, -1 1 0, 1 1 0]
             vao          (make-vertex-array-object program indices vertices ["point" 3])
-            cubemap      (cloud-cover-cubemap :size 256
-                                              :worley-size worley-size
-                                              :worley-south worley-south
-                                              :worley-north worley-north
-                                              :worley-cover worley-cover
-                                              :flow-octaves [0.5 0.25 0.125]
-                                              :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
-                                              :whirl 2.0
-                                              :prevailing 0.1
-                                              :curl-scale 1.0
-                                              :cover-scale 2.0
-                                              :num-iterations 50
-                                              :flow-scale 1.5e-3)]
+            cubemap      (cloud-cover-cubemap :sfsim.clouds/size 256
+                                              :sfsim.clouds/worley-size worley-size
+                                              :sfsim.clouds/worley-south worley-south
+                                              :sfsim.clouds/worley-north worley-north
+                                              :sfsim.clouds/worley-cover worley-cover
+                                              :sfsim.clouds/flow-octaves [0.5 0.25 0.125]
+                                              :sfsim.clouds/cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                              :sfsim.clouds/whirl 2.0
+                                              :sfsim.clouds/prevailing 0.1
+                                              :sfsim.clouds/curl-scale 1.0
+                                              :sfsim.clouds/cover-scale 2.0
+                                              :sfsim.clouds/num-iterations 50
+                                              :sfsim.clouds/flow-scale 1.5e-3)]
         (let [tex (texture-render-color 128 128 false
                                         (clear (vec3 1 0 0))
                                         (use-program program)
@@ -780,7 +780,7 @@ void main()
           vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
           data->image (fn [data] #:sfsim.image{:width 2 :height 2 :data (float-array data)})
-          cube        (make-float-cubemap :linear :clamp (mapv data->image datas))
+          cube        (make-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp (mapv data->image datas))
           program     (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                     :sfsim.render/fragment [(cloud-cover-probe x y z) cloud-cover])
           vao         (make-vertex-array-object program indices vertices ["point" 3])
@@ -1161,7 +1161,7 @@ void main()
           z-far       100.0
           tilesize    33
           data        (flatten (for [y (range -1.0 1.0625 0.0625) x (range -1.0 1.0625 0.0625)] [x y 5.0]))
-          surface     (make-vector-texture-2d :linear :clamp
+          surface     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width tilesize :height tilesize :data (float-array data)})
           projection  (projection-matrix width height z-near (+ z-far 1) fov)
           origin      (vec3 0 0 10)
@@ -1298,8 +1298,8 @@ void main()
                                (uniform-matrix4 program "transform" (inverse extrinsics))
                                (uniform-float program "split0" z-near)
                                (uniform-float program "split1" z-far)
-                               (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
-                               (uniform-float program "depth0" (:depth (shadow-mats 0)))
+                               (uniform-matrix4 program "shadow_map_matrix0" (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))
+                               (uniform-float program "depth0" (:sfsim.matrix/depth (shadow-mats 0)))
                                (use-textures (zipmap (range) opacity-maps))
                                (render-quads vao)
                                (destroy-vertex-array-object vao)

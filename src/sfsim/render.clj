@@ -1,17 +1,15 @@
 (ns sfsim.render
   "Functions for doing OpenGL rendering"
-  (:require [clojure.math :refer (sqrt)]
+  (:require [clojure.math :refer (sqrt cos sin asin hypot)]
             [fastmath.vector :refer (mag)]
             [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
             [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box quaternion->matrix transformation-matrix projection-matrix)]
             [sfsim.quaternion :refer (quaternion) :as q]
             [sfsim.util :refer (sqr N)]
-            [sfsim.image :refer (image byte-image float-image-2d float-image-3d float-image-4d)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
-  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL42 GL45]
-           [org.lwjgl BufferUtils]
+  (:import [org.lwjgl.opengl GL GL11 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)
@@ -23,12 +21,12 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
-  {:malli/schema [:=> [:cat N N [:or [:= :cullfront] [:= :cullback]]] :nil]}
+  {:malli/schema [:=> [:cat N N [:or [:= ::cullfront] [:= ::cullback]]] :nil]}
   [width height culling]
   (GL11/glViewport 0 0 width height)
   (GL11/glEnable GL11/GL_DEPTH_TEST)
   (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace ({:cullfront GL11/GL_FRONT :cullback GL11/GL_BACK} culling))
+  (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} culling))
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
@@ -77,7 +75,7 @@
   `(let [width#  (int-array 1)
          height# (int-array 1)]
      (GLFW/glfwGetWindowSize ~(vary-meta window assoc :tag 'long) width# height#)
-     (setup-rendering (aget width# 0) (aget height# 0) :cullback)
+     (setup-rendering (aget width# 0) (aget height# 0) ::cullback)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))
 
@@ -152,7 +150,8 @@
   (GL20/glDeleteProgram program))
 
 (def vertex-array-object
-  (m/schema [:map [:vertex-array-object :int] [:array-buffer :int] [:index-buffer :int] [:nrows N] [:ncols N]]))
+  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int] [::nrows N]
+                  [::attribute-locations [:vector :int]]]))
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects"
@@ -171,23 +170,25 @@
       (let [attribute-pairs (partition 2 attributes)
             sizes           (map second attribute-pairs)
             stride          (apply + sizes)
-            offsets         (reductions + (cons 0 (butlast sizes)))]
-        (doseq [[i [attribute size] offset] (map list (range) attribute-pairs offsets)]
-          (GL20/glVertexAttribPointer (GL20/glGetAttribLocation ^long program ^String attribute) ^long size
-                                      GL11/GL_FLOAT false ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
-          (GL20/glEnableVertexAttribArray i))
-        {:vertex-array-object vertex-array-object
-         :array-buffer        array-buffer
-         :index-buffer        index-buffer
-         :nrows               (count indices)
-         :ncols               (count attribute-pairs)}))))
+            offsets         (reductions + (cons 0 (butlast sizes)))
+            attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
+                                 (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
+                                   (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false
+                                                               ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
+                                   (GL20/glEnableVertexAttribArray location)
+                                   location))]
+        {::vertex-array-object vertex-array-object
+         ::array-buffer        array-buffer
+         ::index-buffer        index-buffer
+         ::attribute-locations (vec attr-locations)
+         ::nrows               (count indices)}))))
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
-  [{:keys [vertex-array-object array-buffer index-buffer ncols]}]
+  [{::keys [vertex-array-object array-buffer index-buffer attribute-locations]}]
   (GL30/glBindVertexArray vertex-array-object)
-  (doseq [i (range ncols)] (GL20/glDisableVertexAttribArray i))
+  (doseq [location attribute-locations] (GL20/glDisableVertexAttribArray location))
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
   (GL15/glDeleteBuffers ^long index-buffer)
   (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
@@ -250,7 +251,7 @@
   {:malli/schema [:=> [:cat :int texture] :nil]}
   [index texture]
   (GL13/glActiveTexture ^long (+ GL13/GL_TEXTURE0 index))
-  (GL11/glBindTexture (:target texture) (:texture texture)))
+  (GL11/glBindTexture (:sfsim.texture/target texture) (:sfsim.texture/texture texture)))
 
 (defn use-textures
   "Specify textures to be used in the next rendering operation"
@@ -262,21 +263,21 @@
   "Initialise rendering of a vertex array object"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (GL30/glBindVertexArray ^long (:vertex-array-object vertex-array-object)))
+  (GL30/glBindVertexArray ^long (::vertex-array-object vertex-array-object)))
 
 (defn render-quads
   "Render one or more quads"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_QUADS ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL11/GL_QUADS ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-triangles
   "Render one or more triangles"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_TRIANGLES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL11/GL_TRIANGLES ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defn render-patches
   "Render one or more tessellated quads"
@@ -284,7 +285,7 @@
   [vertex-array-object]
   (setup-vertex-array-object vertex-array-object)
   (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES ^long (:nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  (GL11/glDrawElements GL40/GL_PATCHES ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
 
 (defmacro raster-lines
   "Macro for temporarily switching polygon rasterization to line mode"
@@ -299,9 +300,10 @@
   {:malli/schema [:=> [:cat [:sequential texture]] [:sequential texture]]}
   [textures]
   (flatten
-    (map (fn [texture]
-             (if (:depth texture)
-               (map (fn [layer] (assoc texture :layer layer)) (range (:depth texture)))
+    (map (fn layers-of-texture [texture]
+             (if (:sfsim.texture/depth texture)
+               (map (fn layer-of-3d-texture [layer] (assoc texture :sfsim.texture/layer layer))
+                    (range (:sfsim.texture/depth texture)))
                texture))
          textures)))
 
@@ -314,11 +316,12 @@
     (make-int-buffer
       (int-array
         (map-indexed
-          (fn [index texture]
+          (fn setup-color-attachment [index texture]
               (let [color-attachment (+ GL30/GL_COLOR_ATTACHMENT0 index)]
-                (if (:layer texture)
-                  (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:texture texture) 0 (:layer texture))
-                  (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER color-attachment (:texture texture) 0))
+                (if (:sfsim.texture/layer texture)
+                  (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:sfsim.texture/texture texture) 0
+                                                  (:sfsim.texture/layer texture))
+                  (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER color-attachment (:sfsim.texture/texture texture) 0))
                 color-attachment))
           (list-texture-layers textures))))))
 
@@ -330,7 +333,7 @@
        (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo#)
        (when ~depth-texture
          (let [attachment-type# (if (:stencil ~depth-texture) GL30/GL_DEPTH_STENCIL_ATTACHMENT GL30/GL_DEPTH_ATTACHMENT)]
-           (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:texture ~depth-texture) 0)))
+           (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:sfsim.texture/texture ~depth-texture) 0)))
        (setup-color-attachments ~color-textures)
        (setup-rendering ~width ~height ~culling)
        ~@body
@@ -342,45 +345,45 @@
   "Macro to render to a 2D color texture"
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
-         texture#        (make-empty-texture-2d :linear :clamp internalformat# ~width ~height)]
-     (framebuffer-render ~width ~height :cullback nil [texture#] ~@body)
+         texture#        (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp internalformat# ~width ~height)]
+     (framebuffer-render ~width ~height ::cullback nil [texture#] ~@body)
      texture#))
 
 (defmacro texture-render-color-depth
   "Macro to render to a 2D color texture using ad depth buffer"
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
-         texture#        (make-empty-texture-2d :linear :clamp internalformat# ~width ~height)
-         depth#          (make-empty-depth-texture-2d :linear :clamp ~width ~height)]
-     (framebuffer-render ~width ~height :cullback depth# [texture#] ~@body)
+         texture#        (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp internalformat# ~width ~height)
+         depth#          (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
+     (framebuffer-render ~width ~height ::cullback depth# [texture#] ~@body)
      (destroy-texture depth#)
      texture#))
 
 (defmacro texture-render-depth
   "Macro to create shadow map"
   [width height & body]
-  `(let [tex# (make-empty-depth-texture-2d :linear :clamp ~width ~height)]
-     (framebuffer-render ~width ~height :cullfront tex# [] ~@body tex#)))
+  `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
+     (framebuffer-render ~width ~height ::cullfront tex# [] ~@body tex#)))
 
 (defn shadow-cascade
   "Render cascaded shadow map"
   {:malli/schema [:=> [:cat :int [:vector shadow-box] :int fn?] [:vector texture-2d]]}
   [size matrix-cascade program fun]
   (mapv
-    (fn [shadow-level]
+    (fn render-shadow-segment [shadow-level]
         (texture-render-depth size size
                               (clear)
                               (use-program program)
-                              (fun (:shadow-ndc-matrix shadow-level))))
+                              (fun (:sfsim.matrix/shadow-ndc-matrix shadow-level))))
     matrix-cascade))
 
 (defmacro offscreen-render
   "Macro to render to a texture using depth and stencil buffer and convert it to an image"
   [width height & body]
   `(with-invisible-window
-     (let [depth# (make-empty-depth-stencil-texture-2d :linear :clamp ~width ~height)
-           tex#   (make-empty-texture-2d :linear :clamp GL11/GL_RGB8 ~width ~height)]
-       (framebuffer-render ~width ~height :cullback depth# [tex#] ~@body)
+     (let [depth# (make-empty-depth-stencil-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)
+           tex#   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
+       (framebuffer-render ~width ~height ::cullback depth# [tex#] ~@body)
        (let [img# (texture->image tex#)]
          (destroy-texture tex#)
          (destroy-texture depth#)
@@ -393,21 +396,31 @@
   (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
      (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
 
+(defn diagonal-field-of-view
+  "Compute diagonal field of view angle"
+  {:malli/schema [:=> [:cat :int :int :double] :double]}
+  [width height fov]
+  (let [dx  (sin (* 0.5 fov))
+        dy  (/ (* height dx) width)
+        dxy (hypot dx dy)]
+    (* 2.0 (asin dxy))))
+
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame"
   {:malli/schema [:=> [:cat :map :map :map N N fvec3 quaternion fvec3 :double] :map]}
   [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
-  (let [distance   (mag position)
-        radius     (:sfsim.planet/radius planet-config)
-        cloud-top  (:sfsim.clouds/cloud-top cloud-data)
-        fov        (::fov render-config)
-        height     (- distance radius)
-        z-near     (max (- height cloud-top) min-z-near)
-        z-far      (render-depth radius height cloud-top)
-        rotation   (quaternion->matrix orientation)
-        extrinsics (transformation-matrix rotation position)
-        z-offset   1.0
-        projection (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+  (let [distance     (mag position)
+        radius       (:sfsim.planet/radius planet-config)
+        cloud-top    (:sfsim.clouds/cloud-top cloud-data)
+        fov          (::fov render-config)
+        height       (- distance radius)
+        diagonal-fov (diagonal-field-of-view window-width window-height fov)
+        z-near       (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
+        z-far        (render-depth radius height cloud-top)
+        rotation     (quaternion->matrix orientation)
+        extrinsics   (transformation-matrix rotation position)
+        z-offset     1.0
+        projection   (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
     {::origin position
      ::height height
      ::z-near z-near

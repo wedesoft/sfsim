@@ -2,17 +2,17 @@
     (:require [malli.core :as m]
               [sfsim.image :refer (image byte-image float-image-2d float-image-3d float-image-4d)]
               [sfsim.util :refer (N)])
-    (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL30 GL42]
+    (:import [org.lwjgl.opengl GL11 GL12 GL13 GL14 GL30 GL42]
              [org.lwjgl BufferUtils]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def texture (m/schema [:map [:target :int] [:texture :int]]))
-(def texture-1d (m/schema [:map [:width N] [:target :int] [:texture :int]]))
-(def texture-2d (m/schema [:map [:width N] [:height N] [:target :int] [:texture :int]]))
-(def texture-3d (m/schema [:map [:width N] [:height N] [:depth N] [:target :int] [:texture :int]]))
-(def texture-4d (m/schema [:map [:width N] [:height N] [:depth N] [:hyperdepth N] [:target :int] [:texture :int]]))
+(def texture (m/schema [:map [::target :int] [::texture :int]]))
+(def texture-1d (m/schema [:map [::width N] [::target :int] [::texture :int]]))
+(def texture-2d (m/schema [:map [::width N] [::height N] [::target :int] [::texture :int]]))
+(def texture-3d (m/schema [:map [::width N] [::height N] [::depth N] [::target :int] [::texture :int]]))
+(def texture-4d (m/schema [:map [::width N] [::height N] [::depth N] [::hyperdepth N] [::target :int] [::texture :int]]))
 
 (defn make-float-buffer
   "Create a floating-point buffer object"
@@ -57,36 +57,36 @@
   "Generate mipmap for texture and set texture min filter to linear mipmap mode"
   {:malli/schema [:=> [:cat texture] :nil]}
   [texture]
-  (let [target (:target texture)]
-    (with-texture target (:texture texture)
+  (let [target (::target texture)]
+    (with-texture target (::texture texture)
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target))))
 
-(def interpolation (m/schema [:or [:= :nearest] [:= :linear]]))
+(def interpolation (m/schema [:or [:= ::nearest] [:= ::linear]]))
 
 (defmulti setup-interpolation (comp second vector))
 (m/=> setup-interpolation [:=> [:cat :int interpolation] :nil])
 
-(defmethod setup-interpolation :nearest
+(defmethod setup-interpolation ::nearest
   [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST))
 
-(defmethod setup-interpolation :linear
+(defmethod setup-interpolation ::linear
   [target _interpolation]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
-(def boundary (m/schema [:or [:= :clamp] [:= :repeat]]))
+(def boundary (m/schema [:or [:= ::clamp] [:= ::repeat]]))
 
 (defmulti setup-boundary-1d identity)
 (m/=> setup-boundary-1d [:=> [:cat boundary] :nil])
 
-(defmethod setup-boundary-1d :clamp
+(defmethod setup-boundary-1d ::clamp
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE))
 
-(defmethod setup-boundary-1d :repeat
+(defmethod setup-boundary-1d ::repeat
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
 
@@ -97,17 +97,17 @@
                    (setup-interpolation GL11/GL_TEXTURE_1D ~interpolation)
                    (setup-boundary-1d ~boundary)
                    ~@body
-                   {:texture texture# :target GL11/GL_TEXTURE_1D :width ~width}))
+                   {::texture texture# ::target GL11/GL_TEXTURE_1D ::width ~width}))
 
 (defmulti setup-boundary-2d identity)
 (m/=> setup-boundary-2d [:=> [:cat boundary] :nil])
 
-(defmethod setup-boundary-2d :clamp
+(defmethod setup-boundary-2d ::clamp
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE))
 
-(defmethod setup-boundary-2d :repeat
+(defmethod setup-boundary-2d ::repeat
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
@@ -119,7 +119,7 @@
                    (setup-interpolation GL11/GL_TEXTURE_2D ~interpolation)
                    (setup-boundary-2d ~boundary)
                    ~@body
-                   {:texture texture# :target GL11/GL_TEXTURE_2D :width ~width :height ~height}))
+                   {::texture texture# ::target GL11/GL_TEXTURE_2D ::width ~width ::height ~height}))
 
 (defmacro create-depth-texture
   "Macro to initialise shadow map"
@@ -132,13 +132,13 @@
 (defmulti setup-boundary-3d (comp second vector))
 (m/=> setup-boundary-3d [:=> [:cat :int boundary] :nil])
 
-(defmethod setup-boundary-3d :clamp
+(defmethod setup-boundary-3d ::clamp
   [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL12/GL_CLAMP_TO_EDGE)
   (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL12/GL_CLAMP_TO_EDGE))
 
-(defmethod setup-boundary-3d :repeat
+(defmethod setup-boundary-3d ::repeat
   [target _boundary]
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
@@ -151,7 +151,7 @@
                    (setup-interpolation GL12/GL_TEXTURE_3D ~interpolation)
                    (setup-boundary-3d GL12/GL_TEXTURE_3D ~boundary)
                    ~@body
-                   {:texture texture# :target GL12/GL_TEXTURE_3D :width ~width :height ~height :depth ~depth}))
+                   {::texture texture# ::target GL12/GL_TEXTURE_3D ::width ~width ::height ~height ::depth ~depth}))
 
 (defn make-float-texture-1d
   "Load floating-point 1D data into red channel of an OpenGL texture"
@@ -280,10 +280,10 @@
     (assoc (create-texture-2d interpolation boundary (* width depth) (* height hyperdepth)
              (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (* width depth) ^long (* height hyperdepth) 0
                                 ^long format_ ^long type_ ^java.nio.DirectFloatBufferU buffer))
-           :width width
-           :height height
-           :depth depth
-           :hyperdepth hyperdepth)))
+           ::width width
+           ::height height
+           ::depth depth
+           ::hyperdepth hyperdepth)))
 
 (defn make-vector-texture-4d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
@@ -295,12 +295,12 @@
   "Delete an OpenGL texture"
   {:malli/schema [:=> [:cat texture] :nil]}
   [texture]
-  (GL11/glDeleteTextures ^long (:texture texture)))
+  (GL11/glDeleteTextures ^long (::texture texture)))
 
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{:keys [target texture width height]}]
+  [{::keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
           data (float-array (* width height))]
@@ -311,7 +311,7 @@
 (defn float-texture-2d->floats
   "Extract floating-point floating-point data from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{:keys [target texture width height]}]
+  [{::keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
           data (float-array (* width height))]
@@ -322,7 +322,7 @@
 (defn float-texture-3d->floats
   "Extract floating-point floating-point data from texture"
   {:malli/schema [:=> [:cat texture-3d] float-image-3d]}
-  [{:keys [target texture width height depth]}]
+  [{::keys [target texture width height depth]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
           data (float-array (* width height depth))]
@@ -333,7 +333,7 @@
 (defn rgb-texture->vectors3
   "Extract floating-point RGB vectors from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{:keys [target texture width height]}]
+  [{::keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]
@@ -344,7 +344,7 @@
 (defn rgba-texture->vectors4
   "Extract floating-point RGBA vectors from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{:keys [target texture width height]}]
+  [{::keys [target texture width height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
           data (float-array (* width height 4))]
@@ -355,7 +355,7 @@
 (defn texture->image
   "Convert texture to RGB image"
   {:malli/schema [:=> [:cat texture-2d] byte-image]}
-  [{:keys [target texture width height]}]
+  [{::keys [target texture width height]}]
   (with-texture target texture
     (let [size (* 4 width height)
           buf  (BufferUtils/createByteBuffer size)
@@ -371,7 +371,7 @@
                    (setup-interpolation GL13/GL_TEXTURE_CUBE_MAP ~interpolation)
                    (setup-boundary-3d GL13/GL_TEXTURE_CUBE_MAP ~boundary)
                    ~@body
-                   {:width ~size :height ~size :depth 6 :target GL13/GL_TEXTURE_CUBE_MAP :texture texture#}))
+                   {::width ~size ::height ~size ::depth 6 ::target GL13/GL_TEXTURE_CUBE_MAP ::texture texture#}))
 
 
 (defn- make-cubemap
@@ -401,7 +401,7 @@
 (defn float-cubemap->floats
   "Extract floating-point data from cubemap face"
   {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
-  [{:keys [target texture width height]} face]
+  [{::keys [target texture width height]} face]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height))
           data (float-array (* width height))]
@@ -425,7 +425,7 @@
 (defn vector-cubemap->vectors3
   "Extract floating-point vector data from cubemap face"
   {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
-  [{:keys [target texture width height]} face]
+  [{::keys [target texture width height]} face]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
           data (float-array (* width height 3))]

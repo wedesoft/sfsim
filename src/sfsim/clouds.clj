@@ -5,7 +5,7 @@
               [fastmath.matrix :refer (inverse)]
               [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                                      make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d)]
-              [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures 
+              [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                                     make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler uniform-matrix4
                                     use-program uniform-vector3 setup-shadow-and-opacity-maps) :as render]
               [sfsim.shaders :as shaders]
@@ -43,13 +43,13 @@
   "Create identity cubemap"
   {:malli/schema [:=> [:cat N] texture-3d]}
   [size]
-  (let [result   (make-empty-vector-cubemap :linear :clamp size)
+  (let [result   (make-empty-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp size)
         indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                               :sfsim.render/fragment [identity-cubemap-fragment])
         vao     (make-vertex-array-object program indices vertices ["point" 3])]
-    (framebuffer-render size size :cullback nil [result]
+    (framebuffer-render size size :sfsim.render/cullback nil [result]
                         (use-program program)
                         (uniform-int program "size" size)
                         (render-quads vao))
@@ -77,8 +77,8 @@
   `(let [indices#  [0 1 3 2]
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
-         result#   (make-empty-vector-cubemap :linear :clamp ~size)]
-     (framebuffer-render ~size ~size :cullback nil [result#]
+         result#   (make-empty-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp ~size)]
+     (framebuffer-render ~size ~size :sfsim.render/cullback nil [result#]
                          (use-program ~program)
                          (uniform-int ~program "size" ~size)
                          (uniform-float ~program "scale" ~scale)
@@ -108,8 +108,8 @@
   `(let [indices#  [0 1 3 2]
          vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          vao#      (make-vertex-array-object ~program indices# vertices# ["point" 3])
-         result#   (make-empty-float-cubemap :linear :clamp ~size)]
-     (framebuffer-render ~size ~size :cullback nil [result#]
+         result#   (make-empty-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp ~size)]
+     (framebuffer-render ~size ~size :sfsim.render/cullback nil [result#]
                          (use-program ~program)
                          (uniform-int ~program "size" ~size)
                          ~@body
@@ -135,8 +135,8 @@
 (defn cloud-cover-cubemap
   "Program to generate planetary cloud cover using curl noise"
   {:malli/schema [:=> [:cat [:* :any]] texture-3d]}
-  [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
-             cover-scale num-iterations flow-scale]}]
+  [& {::keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
+              cover-scale num-iterations flow-scale]}]
   (let [warp        (atom (identity-cubemap size))
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
@@ -248,15 +248,17 @@
   "Render cascade of deep opacity maps"
   [size num-opacity-layers matrix-cascade voxel-size program & body]
   `(mapv
-     (fn [opacity-level#]
-         (let [opacity-layers#  (make-empty-float-texture-3d :linear :clamp ~size ~size (inc ~num-opacity-layers))
-               level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
-           (framebuffer-render ~size ~size :cullback nil [opacity-layers#]
+     (fn render-deep-opacity-map# [opacity-level#]
+         (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size
+                                                             (inc ~num-opacity-layers))
+               level-of-detail# (/ (log (/ (/ (:sfsim.matrix/scale opacity-level#) ~size) ~voxel-size)) (log 2))]
+           (framebuffer-render ~size ~size :sfsim.render/cullback nil [opacity-layers#]
                                (use-program ~program)
                                (uniform-int ~program "shadow_size" ~size)
                                (uniform-float ~program "level_of_detail" level-of-detail#)
-                               (uniform-matrix4 ~program "ndc_to_shadow" (inverse (:shadow-ndc-matrix opacity-level#)))
-                               (uniform-float ~program "depth" (:depth opacity-level#))
+                               (uniform-matrix4 ~program "ndc_to_shadow"
+                                                (inverse (:sfsim.matrix/shadow-ndc-matrix opacity-level#)))
+                               (uniform-float ~program "depth" (:sfsim.matrix/depth opacity-level#))
                                ~@body)
            opacity-layers#))
      ~matrix-cascade))
@@ -296,17 +298,18 @@
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
         worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
-        worley               (make-float-texture-3d :linear :repeat worley-data)
+        worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)
         perlin-worley-floats (float-array (map #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
         perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
-        perlin-worley        (make-float-texture-3d :linear :repeat perlin-worley-data)
-        cover-floats-list    (map (fn [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
-        cover-data           (map (fn [cover-floats] #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
+        perlin-worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat perlin-worley-data)
+        cover-floats-list    (map (fn load-cloud-cubemap-face [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
+        cover-data           (map (fn make-cloud-cover-image [cover-floats]
+                                      #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
                                   cover-floats-list)
-        cloud-cover          (make-float-cubemap :linear :clamp cover-data)
+        cloud-cover          (make-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp cover-data)
         bluenoise-floats     (slurp-floats "data/bluenoise.raw")
         bluenoise-data       #:sfsim.image{:width noise-size :height noise-size :data bluenoise-floats}
-        bluenoise            (make-float-texture-2d :nearest :repeat bluenoise-data)]
+        bluenoise            (make-float-texture-2d :sfsim.texture/nearest :sfsim.texture/repeat bluenoise-data)]
     (generate-mipmap worley)
     (assoc cloud-config
            ::worley worley
@@ -330,7 +333,7 @@
   (uniform-sampler program "worley" sampler-offset)
   (uniform-sampler program "perlin" (+ sampler-offset 1))
   (uniform-sampler program "cover" (+ sampler-offset 2))
-  (uniform-int program "cover_size" (:width (::cloud-cover cloud-data)))
+  (uniform-int program "cover_size" (:sfsim.texture/width (::cloud-cover cloud-data)))
   (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
   (uniform-float program "cloud_top" (::cloud-top cloud-data))
   (uniform-float program "detail_scale" (::detail-scale cloud-data))
@@ -345,7 +348,7 @@
  {:malli/schema [:=> [:cat :int :map :int] :nil]}
  [program cloud-data sampler-offset]
  (uniform-sampler program "bluenoise" sampler-offset)
- (uniform-int program "noise_size" (:width (::bluenoise cloud-data)))
+ (uniform-int program "noise_size" (:sfsim.texture/width (::bluenoise cloud-data)))
  (uniform-float program "anisotropic" (::anisotropic cloud-data))
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
  (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
@@ -353,36 +356,42 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:* :any]] :map]}
-  [& {:keys [render-config atmosphere-luts planet-config shadow-data cloud-data]}]
-  (let [tilesize (:sfsim.planet/tilesize planet-config)
-        program  (make-program :sfsim.render/vertex [vertex-atmosphere]
-                               :sfsim.render/fragment [(fragment-atmosphere-clouds (:sfsim.opacity/num-steps shadow-data)
-                                                                                   (::perlin-octaves cloud-data)
-                                                                                   (::cloud-octaves cloud-data))])]
+  [& {::keys [data] :as other}]
+  (let [render-config   (:sfsim.render/config other)
+        atmosphere-luts (:sfsim.atmosphere/luts other)
+        planet-config   (:sfsim.planet/config other)
+        shadow-data     (:sfsim.opacity/data other)
+        tilesize        (:sfsim.planet/tilesize planet-config)
+        program         (make-program :sfsim.render/vertex [vertex-atmosphere]
+                                      :sfsim.render/fragment [(fragment-atmosphere-clouds (:sfsim.opacity/num-steps shadow-data)
+                                                                                          (::perlin-octaves data)
+                                                                                          (::cloud-octaves data))])]
     (use-program program)
     (setup-shadow-and-opacity-maps program shadow-data 7)
-    (setup-cloud-render-uniforms program cloud-data 3)
-    (setup-cloud-sampling-uniforms program cloud-data 6)
+    (setup-cloud-render-uniforms program data 3)
+    (setup-cloud-sampling-uniforms program data 6)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {:program program
-     :atmosphere-luts atmosphere-luts
-     :render-config render-config
-     :cloud-data cloud-data}))
+    {::program program
+     :sfsim.atmosphere/luts atmosphere-luts
+     :sfsim.render/config render-config
+     ::data data}))
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
-  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
-  [{:keys [program atmosphere-luts render-config cloud-data]} render-vars shadow-vars]
-  (let [indices  [0 1 3 2]
-        vertices (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-        vao      (make-vertex-array-object program indices vertices ["point" 3])
-        transform (inverse (:sfsim.render/extrinsics render-vars))]
+  {:malli/schema [:=> [:cat :map :map :map] :nil]}
+  [{::keys [program data] :as other} render-vars shadow-vars]
+  (let [render-config   (:sfsim.render/config other)
+        atmosphere-luts (:sfsim.atmosphere/luts other)
+        indices         [0 1 3 2]
+        vertices        (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+        vao             (make-vertex-array-object program indices vertices ["point" 3])
+        transform       (inverse (:sfsim.render/extrinsics render-vars))]
     (use-program program)
-    (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
+    (uniform-float program "lod_offset" (lod-offset render-config data render-vars))
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-matrix4 program "extrinsics" (:sfsim.render/extrinsics render-vars))
@@ -392,11 +401,11 @@
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
            (uniform-float program (str "split" idx) item))
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-           (uniform-float program (str "depth" idx) (:depth item)))
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:sfsim.matrix/shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (::worley cloud-data) 4 (::perlin-worley cloud-data)
-                   5 (::cloud-cover cloud-data) 6 (::bluenoise cloud-data)})
+                   2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (::worley data) 4 (::perlin-worley data) 5 (::cloud-cover data)
+                   6 (::bluenoise data)})
     (use-textures (zipmap (drop 7 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
     (render-quads vao)
@@ -405,5 +414,5 @@
 (defn destroy-cloud-atmosphere-renderer
   "Destroy cloud rendering OpenGL program (not tested)"
   {:malli/schema [:=> [:cat :map] :nil]}
-  [{:keys [program]}]
+  [{::keys [program]}]
   (destroy-program program))

@@ -72,14 +72,14 @@
         delta2  (/ theta-range theta-steps 2)
         mat     (transpose (oriented-matrix normal))]
     (reduce add
-      (map (fn [theta]
+      (map (fn sample-circle [theta]
         (let [factor    (- (cos (- theta delta2)) (cos (+ theta delta2)))
               ringsteps (int (ceil (* (sin theta) phi-steps)))
               cos-theta (cos theta)
               sin-theta (sin theta)]
           (mult (integrate-circle
                   ringsteps
-                  (fn [phi]
+                  (fn sample-point [phi]
                       (let [x cos-theta
                             y (* sin-theta (cos phi))
                             z (* sin-theta (sin phi))]

@@ -10,8 +10,8 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def fmat3 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 3))]]))
-(def fmat4 (m/schema [:and ifn? [:fn (fn [m] (= (fm/ncol m) (fm/nrow m) 4))]]))
+(def fmat3 (m/schema [:and ifn? [:fn (fn check-3x3-matrix [m] (= (fm/ncol m) (fm/nrow m) 3))]]))
+(def fmat4 (m/schema [:and ifn? [:fn (fn check-4x4-matrix [m] (= (fm/ncol m) (fm/nrow m) 4))]]))
 (def fvec3 (m/schema [:tuple :double :double :double]))
 (def fvec4 (m/schema [:tuple :double :double :double :double]))
 
@@ -184,7 +184,7 @@
         light-corners   (transform-point-list light-matrix rotated-corners)]
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
-(def shadow-box (m/schema [:map [:shadow-ndc-matrix fmat4] [:shadow-map-matrix fmat4] [:scale :double] [:depth :double]]))
+(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::shadow-map-matrix fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
@@ -199,10 +199,10 @@
          span         (span-of-box bounding-box)
          scale        (* 0.5 (+ (span 0) (span 1)))
          depth        (- (span 2))]
-     {:shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
-      :shadow-map-matrix (fm/mulm shadow-map light-matrix)
-      :scale scale
-      :depth depth})))
+     {::shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
+      ::shadow-map-matrix (fm/mulm shadow-map light-matrix)
+      ::scale scale
+      ::depth depth})))
 
 (defn split-linear
   "Perform linear z-split for frustum"
@@ -226,13 +226,13 @@
   "Get list of splits including z-far"
   {:malli/schema [:=> [:cat :map :map] [:vector :double]]}
   [{:sfsim.opacity/keys [mix num-steps]} {:sfsim.render/keys [z-near z-far]}]
-  (mapv (fn [step] (split-mixed mix z-near z-far num-steps step)) (range (inc num-steps))))
+  (mapv (partial split-mixed mix z-near z-far num-steps) (range (inc num-steps))))
 
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices"
   {:malli/schema [:=> [:cat :map :map] [:vector shadow-box]]}
   [{:sfsim.opacity/keys [num-steps mix depth]} {:sfsim.render/keys [projection extrinsics light-direction z-near z-far]}]
-  (mapv (fn [idx]
+  (mapv (fn shadow-matrices-for-segment [idx]
             (let [ndc1 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps idx))
                   ndc2 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps (inc idx)))]
               (shadow-matrices projection extrinsics light-direction depth ndc1 ndc2)))

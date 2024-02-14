@@ -32,9 +32,9 @@
 (def ray-steps 10)
 (def size 12)
 (def earth #:sfsim.sphere{:centre (vec3 0 0 0)
-                            :radius radius
-                            :sfsim.atmosphere/height max-height
-                            :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
+                          :radius radius
+                          :sfsim.atmosphere/height max-height
+                          :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (vec3 -0.75 -0.5  -1.0)
@@ -98,7 +98,7 @@ void main()
                                    variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    data        [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5]
-                                   surface     (make-vector-texture-2d :linear :clamp
+                                   surface     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                        #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                                (clear (vec3 0 0 0))
                                (use-program program)
@@ -151,7 +151,7 @@ void main()
                                    variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
                                    data        (map #(* % ?scale) [-0.5 -0.5 0.5, 0.5 -0.5 0.5, -0.5  0.5 0.5, 0.5  0.5 0.5])
-                                   surface     (make-vector-texture-2d :linear :clamp
+                                   surface     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                        #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                                (clear (vec3 0 0 0))
                                (use-program program)
@@ -188,7 +188,7 @@ void main()
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               data        [-0.6 -0.5 0.5, 0.4 -0.5 0.5, -0.6  0.5 0.5, 0.4  0.5 0.5]
                               vao         (make-vertex-array-object program indices vertices variables)
-                              surface     (make-vector-texture-2d :linear :clamp
+                              surface     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                   #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
@@ -221,7 +221,7 @@ void main()
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.5 -0.5 0.0, 0.5 -0.5 0.0, -0.5  0.5 0.0, 0.5  0.5 0.0]
-                              surface     (make-vector-texture-2d :linear :clamp
+                              surface     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                   #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
@@ -255,7 +255,7 @@ void main()
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
                               data        [-0.25 -0.25 0.25, 0.5 -0.5 0.5, -0.75 0.75 0.75, 1.0 1.0 1.0]
-                              surface     (make-vector-texture-2d :linear :clamp
+                              surface     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                   #:sfsim.image{:width 2 :height 2 :data (float-array data)})]
                           (clear (vec3 0 0 0))
                           (use-program program)
@@ -286,7 +286,8 @@ void main()
       (with-invisible-window
         (let [indices          [0 1 3 2]
               vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              surface-radiance (make-vector-texture-2d :linear :clamp #:sfsim.image{:width size :height size :data S})
+              surface-radiance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                       #:sfsim.image{:width size :height size :data S})
               program          (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                              :sfsim.render/fragment (conj shaders (apply probe args)))
               vao              (make-vertex-array-object program indices vertices ["point" 3])
@@ -504,6 +505,34 @@ float overall_shadow(vec4 point)
                       -0.5  0.5 0.5 0.25 0.75 0.5 0.5
                        0.5  0.5 0.5 0.75 0.75 0.5 0.5])
 
+(defn planet-textures
+  [colors nx ny nz tr tg tb s ar ag ab water size]
+  (let [day           (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
+                                        (slurp-image (str "test/sfsim/fixtures/planet/" colors ".png")))
+        night         (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
+                                        (slurp-image (str "test/sfsim/fixtures/planet/night.png")))
+        normals       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width 2 :height 2
+                                                            :data (float-array (flatten (repeat 4 [nx ny nz])))})
+        transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width size :height size
+                                                            :data (float-array (flatten (repeat (* size size) [tr tg tb])))})
+        ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width (* size size) :height (* size size)
+                                                            :data (float-array (repeat (* size size size size 3) s))})
+        mie-strength  (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width (* size size) :height (* size size)
+                                                            :data (float-array (repeat (* size size size size 3) 0))})
+        radiance      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width size :height size
+                                                            :data (float-array (flatten (repeat (* size size) [ar ag ab])))})
+        water         (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                             #:sfsim.image{:width 2 :height 2 :data (byte-array (repeat 8 water))})
+        worley-data   (float-array (repeat (* 2 2 2) 1.0))
+        worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
+                                             #:sfsim.image{:width 2 :height 2 :depth 2 :data worley-data})]
+    [day night normals transmittance ray-scatter mie-strength radiance water worley]))
+
 (tabular "Fragment shader to render planetary surface"
          (fact
            (offscreen-render 256 256
@@ -512,31 +541,7 @@ float overall_shadow(vec4 point)
                                    vao           (make-vertex-array-object program planet-indices planet-vertices variables)
                                    radius        6378000
                                    size          7
-                                   day           (make-rgb-texture :linear :clamp
-                                                   (slurp-image (str "test/sfsim/fixtures/planet/" ?colors ".png")))
-                                   night         (make-rgb-texture :linear :clamp
-                                                   (slurp-image (str "test/sfsim/fixtures/planet/night.png")))
-                                   normals       (make-vector-texture-2d :linear :clamp
-                                                   #:sfsim.image{:width 2 :height 2
-                                                                 :data (float-array (flatten (repeat 4 [?nx ?ny ?nz])))})
-                                   transmittance (make-vector-texture-2d :linear :clamp
-                                                   #:sfsim.image{:width size :height size
-                                                                 :data (float-array (flatten (repeat (* size size) [?tr ?tg ?tb])))})
-                                   ray-scatter   (make-vector-texture-2d :linear :clamp
-                                                   #:sfsim.image{:width (* size size) :height (* size size)
-                                                                 :data (float-array (repeat (* size size size size 3) ?s))})
-                                   mie-strength  (make-vector-texture-2d :linear :clamp
-                                                   #:sfsim.image{:width (* size size) :height (* size size)
-                                                                 :data (float-array (repeat (* size size size size 3) 0))})
-                                   radiance      (make-vector-texture-2d :linear :clamp
-                                                   #:sfsim.image{:width size :height size
-                                                                 :data (float-array (flatten (repeat (* size size) [?ar ?ag ?ab])))})
-                                   water         (make-ubyte-texture-2d :linear :clamp
-                                                   #:sfsim.image{:width 2 :height 2 :data (byte-array (repeat 8 ?water))})
-                                   worley-data   (float-array (repeat (* 2 2 2) 1.0))
-                                   worley        (make-float-texture-3d :linear :repeat
-                                                   #:sfsim.image{:width 2 :height 2 :depth 2 :data worley-data})
-                                   textures      [day night normals transmittance ray-scatter mie-strength radiance water worley]]
+                                   textures      (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
                                (clear (vec3 0 0 0))
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
@@ -591,7 +596,7 @@ void main()
                                    data       (flatten
                                                 (for [y (range 1.0 -1.25 -0.25) x (range -1.0 1.25 0.25)]
                                                      [(* x 0.5) (* y 0.5) 0.5]))
-                                   surf-tex   (make-vector-texture-2d :linear :clamp
+                                   surf-tex   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                       #:sfsim.image{:width 9 :height 9 :data (float-array data)})
                                    vao        (make-vertex-array-object program indices vertices
                                                                         ["point" 3 "surfacecoord" 2 "colorcoord" 2])
@@ -601,14 +606,15 @@ void main()
                                                :sfsim.quadtree/left  ?left
                                                :sfsim.quadtree/down  ?down
                                                :sfsim.quadtree/right ?right}
-                                   tile       (merge {:vao vao :surf-tex surf-tex :center (vec3 0 0 0.5)} neighbours)]
+                                   tile       (merge {:sfsim.planet/vao vao :sfsim.planet/surf-tex surf-tex
+                                                      :sfsim.quadtree/center (vec3 0 0 0.5)} neighbours)]
                                (use-program program)
                                (clear (vec3 0 0 0))
                                (uniform-sampler program "surface" 0)
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "projection" projection)
-                               (raster-lines (render-tile program tile (inverse transform) [:surf-tex]))
+                               (raster-lines (render-tile program tile (inverse transform) [:sfsim.planet/surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim/fixtures/planet/" ?result) 0.01))
@@ -628,17 +634,18 @@ void main()
       (render-tree program node transform texture-keys)
       @calls)))
 
-(tabular "Call each tile in tree to be rendered"
-         (fact (render-tile-calls ?program ?node ?transform ?texture-keys) => ?result)
-         ?program ?transform ?node               ?texture-keys ?result
-         1234     :transform {}                  [:surf-tex]   []
-         1234     :transform {:vao 42}           [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:0 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:1 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:2 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:3 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:4 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:5 {:vao 42}}      [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]]
-         1234     :transform {:3 {:2 {:vao 42}}} [:surf-tex]   [[1234 {:vao 42} :transform [:surf-tex]]])
+(let [vao :sfsim.planet/vao]
+  (tabular "Call each tile in tree to be rendered"
+    (fact (render-tile-calls ?program ?node ?transform [:sfsim.planet/surf-tex]) => ?result)
+    ?program ?transform ?node                                ?result
+    1234 :transform {}                                       []
+    1234 :transform {vao 42}                                  [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face0 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face1 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face2 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face3 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face4 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face5 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face3 {:sfsim.quadtree/quad2 {vao 42}}} [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]))
 
 (GLFW/glfwTerminate)

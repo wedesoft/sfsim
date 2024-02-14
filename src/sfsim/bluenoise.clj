@@ -39,19 +39,19 @@
   "Return 2D Gauss bell function for given SIGMA"
   {:malli/schema [:=> [:cat :double] F]}
   [sigma]
-  (fn [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
+  (fn density-function [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
 
 (defn argmax-with-mask
-  "Return index of largest element in ARR with corresponding MASK value begin true"
+  "Return index of largest element in ARR with corresponding MASK value being true"
   {:malli/schema [:=> [:cat [:sequential number?] [:sequential :boolean]] N0]}
   [arr mask]
-  (first (apply max-key second (filter (fn [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
+  (first (apply max-key second (filter (fn mask-lookup [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
 
 (defn argmin-with-mask
-  "Return index of smallest element in ARR with corresponding MASK value begin false"
+  "Return index of smallest element in ARR with corresponding MASK value being false"
   {:malli/schema [:=> [:cat [:sequential number?] [:sequential :boolean]] N0]}
   [arr mask]
-  (first (apply min-key second (remove (fn [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
+  (first (apply min-key second (remove (fn mask-lookup [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
 
 (defn wrap
   "Wrap index X to be within -M/2 and +M/2"

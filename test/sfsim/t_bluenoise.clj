@@ -39,12 +39,14 @@
 (facts "Index of largest element"
        (argmax-with-mask [5 3 2] (repeat 3 true)) => 0
        (argmax-with-mask [3 5 2] (repeat 3 true)) => 1
-       (argmax-with-mask [3 5 2] [true false true]) => 0)
+       (argmax-with-mask [3 5 2] [true false true]) => 0
+       (argmax-with-mask [3 2 5] [true false true]) => 2)
 
-(facts "Index of largest element"
+(facts "Index of smallest element"
        (argmin-with-mask [2 3 5] (repeat 3 false)) => 0
        (argmin-with-mask [3 2 5] (repeat 3 false)) => 1
-       (argmin-with-mask [3 2 5] [false true false]) => 0)
+       (argmin-with-mask [3 2 5] [false true false]) => 0
+       (argmin-with-mask [3 5 2] [false true false]) => 2)
 
 (facts "Wrap coordinate"
        (wrap 0 5) => 0
@@ -105,7 +107,7 @@ void main()
                         (let [indices   [0 1 3 2]
                               vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                               data      [0.25 0.5 0.75 1.0]
-                              bluenoise (make-float-texture-2d :nearest :repeat
+                              bluenoise (make-float-texture-2d :sfsim.texture/nearest :sfsim.texture/repeat
                                                                #:sfsim.image{:width 2 :height 2 :data (float-array data)})
                               program   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                       :sfsim.render/fragment [fragment-noise sampling-offset])

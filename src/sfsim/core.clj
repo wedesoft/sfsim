@@ -1,6 +1,6 @@
 (ns sfsim.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (to-radians cos sin)]
+  (:require [clojure.math :refer (cos sin to-radians)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth make-render-vars)]
@@ -23,6 +23,8 @@
 (def opacity-base (atom 250.0))
 (def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
+; (def position (atom (vec3 0 0 (* 1.5 6378000.0))))
+; (def orientation (atom (q/rotation (to-radians -20) (vec3 0 1 0))))
 (def light (atom 0.0))
 
 (GLFW/glfwInit)
@@ -31,51 +33,31 @@
 (GLFW/glfwShowWindow window)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
-
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
-
-(def shadow-data
-  (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
+(def shadow-data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
+(def data {:sfsim.render/config config/render-config
+           :sfsim.planet/config config/planet-config
+           :sfsim.opacity/data shadow-data
+           :sfsim.clouds/data cloud-data
+           :sfsim.atmosphere/luts atmosphere-luts})
 
 ; Program to render cascade of deep opacity maps
-(def opacity-renderer
-  (opacity/make-opacity-renderer :planet-config config/planet-config
-                                 :shadow-data shadow-data
-                                 :cloud-data cloud-data))
+(def opacity-renderer (opacity/make-opacity-renderer data))
 
 ; Program to render shadow map of planet
-(def planet-shadow-renderer
-  (planet/make-planet-shadow-renderer :planet-config config/planet-config
-                                      :shadow-data shadow-data))
+(def planet-shadow-renderer (planet/make-planet-shadow-renderer data))
 
 ; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def cloud-planet-renderer
-  (planet/make-cloud-planet-renderer :render-config config/render-config
-                                     :atmosphere-luts atmosphere-luts
-                                     :planet-config config/planet-config
-                                     :shadow-data shadow-data
-                                     :cloud-data cloud-data))
+(def cloud-planet-renderer (planet/make-cloud-planet-renderer data))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def cloud-atmosphere-renderer
-  (clouds/make-cloud-atmosphere-renderer :render-config config/render-config
-                                         :atmosphere-luts atmosphere-luts
-                                         :planet-config config/planet-config
-                                         :shadow-data shadow-data
-                                         :cloud-data cloud-data))
+(def cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer data))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
-(def planet-renderer
-  (planet/make-planet-renderer :render-config config/render-config
-                               :atmosphere-luts atmosphere-luts
-                               :planet-config config/planet-config
-                               :shadow-data shadow-data))
+(def planet-renderer (planet/make-planet-renderer data))
 
 ; Program to render atmosphere with cloud overlay (last rendering step)
-(def atmosphere-renderer
-  (atmosphere/make-atmosphere-renderer :render-config config/render-config
-                                       :atmosphere-luts atmosphere-luts
-                                       :planet-config config/planet-config))
+(def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -126,16 +108,16 @@
                                   (clear (vec3 0 0 0) 0.0)
                                   ; Render clouds in front of planet
                                   (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars
-                                                              :tree (planet/get-current-tree tile-tree))
+                                                              (planet/get-current-tree tile-tree))
                                   ; Render clouds above the horizon
                                   (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
-                                (planet/render-planet planet-renderer render-vars shadow-vars
-                                                      :clouds clouds :tree (planet/get-current-tree tile-tree))
+                                (planet/render-planet planet-renderer render-vars shadow-vars clouds
+                                                      (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
-                                (atmosphere/render-atmosphere atmosphere-renderer render-vars :clouds clouds))
+                                (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-and-shadow shadow-vars))
              (GLFW/glfwPollEvents)
