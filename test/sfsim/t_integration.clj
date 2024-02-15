@@ -29,15 +29,14 @@
           tree (planet/load-tiles-into-opengl planet-renderer (:tree data) (:load data))]
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
-(fact "Integration test rendering of planet, atmosphere, and clouds"
-      (if (.exists (io/file ".integration"))
-        (with-invisible-window
+(if (.exists (io/file ".integration"))
+  (tabular "Integration test rendering of planet, atmosphere, and clouds"
+    (fact
+      (with-invisible-window
         (let [width                     320
               height                    240
               level                     5
-              position                  (vec3 (+ 300.0 6378000.0) 0 0)
               opacity-base              250.0
-              orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
               cloud-data                (clouds/make-cloud-data config/cloud-config)
               atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
               shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
@@ -52,21 +51,21 @@
               cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer data)
               planet-renderer           (planet/make-planet-renderer data)
               atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
-              tree                      (load-tile-tree planet-renderer {} width position level)
+              tree                      (load-tile-tree planet-renderer {} width ?position level)
               render-vars               (make-render-vars config/planet-config cloud-data config/render-config width height
-                                                          position orientation (vec3 1 0 0) 1.0)
+                                                          ?position ?orientation (vec3 1 0 0) 1.0)
               shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                             cloud-data render-vars tree opacity-base)
 
               clouds                    (texture-render-color-depth width height true
-                                          (clear (vec3 0 0 0) 0.0)
-                                          (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
-                                          (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
+                                                                    (clear (vec3 0 0 0) 0.0)
+                                                                    (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
+                                                                    (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
               tex                       (texture-render-color-depth width height true
-                                          (clear (vec3 0 1 0) 0.0)
-                                          (planet/render-planet planet-renderer render-vars shadow-vars clouds tree)
-                                          (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-          (texture->image tex) => (is-image "test/sfsim/fixtures/integration/planet.png" 0.0)
+                                                                    (clear (vec3 0 1 0) 0.0)
+                                                                    (planet/render-planet planet-renderer render-vars shadow-vars clouds tree)
+                                                                    (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
+          (texture->image tex) => (is-image (str "test/sfsim/fixtures/integration/" ?result) 0.0)
           (destroy-texture tex)
           (destroy-texture clouds)
           (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -78,6 +77,9 @@
           (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
           (opacity/destroy-opacity-renderer opacity-renderer)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
-          (clouds/destroy-cloud-data cloud-data)))))
+          (clouds/destroy-cloud-data cloud-data))))
+    ?position                      ?orientation                               ?result
+    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
+    (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
 
 (GLFW/glfwTerminate)

@@ -1,6 +1,6 @@
 (ns sfsim.render
   "Functions for doing OpenGL rendering"
-  (:require [clojure.math :refer (sqrt)]
+  (:require [clojure.math :refer (sqrt cos sin asin hypot)]
             [fastmath.vector :refer (mag)]
             [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
@@ -374,7 +374,7 @@
         (texture-render-depth size size
                               (clear)
                               (use-program program)
-                              (fun (:shadow-ndc-matrix shadow-level))))
+                              (fun (:sfsim.matrix/shadow-ndc-matrix shadow-level))))
     matrix-cascade))
 
 (defmacro offscreen-render
@@ -396,21 +396,31 @@
   (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
      (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
 
+(defn diagonal-field-of-view
+  "Compute diagonal field of view angle"
+  {:malli/schema [:=> [:cat :int :int :double] :double]}
+  [width height fov]
+  (let [dx  (sin (* 0.5 fov))
+        dy  (/ (* height dx) width)
+        dxy (hypot dx dy)]
+    (* 2.0 (asin dxy))))
+
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame"
   {:malli/schema [:=> [:cat :map :map :map N N fvec3 quaternion fvec3 :double] :map]}
   [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
-  (let [distance   (mag position)
-        radius     (:sfsim.planet/radius planet-config)
-        cloud-top  (:sfsim.clouds/cloud-top cloud-data)
-        fov        (::fov render-config)
-        height     (- distance radius)
-        z-near     (max (- height cloud-top) min-z-near)
-        z-far      (render-depth radius height cloud-top)
-        rotation   (quaternion->matrix orientation)
-        extrinsics (transformation-matrix rotation position)
-        z-offset   1.0
-        projection (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+  (let [distance     (mag position)
+        radius       (:sfsim.planet/radius planet-config)
+        cloud-top    (:sfsim.clouds/cloud-top cloud-data)
+        fov          (::fov render-config)
+        height       (- distance radius)
+        diagonal-fov (diagonal-field-of-view window-width window-height fov)
+        z-near       (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
+        z-far        (render-depth radius height cloud-top)
+        rotation     (quaternion->matrix orientation)
+        extrinsics   (transformation-matrix rotation position)
+        z-offset     1.0
+        projection   (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
     {::origin position
      ::height height
      ::z-near z-near

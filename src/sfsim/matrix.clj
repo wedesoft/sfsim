@@ -184,7 +184,7 @@
         light-corners   (transform-point-list light-matrix rotated-corners)]
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
-(def shadow-box (m/schema [:map [:shadow-ndc-matrix fmat4] [:shadow-map-matrix fmat4] [:scale :double] [:depth :double]]))
+(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::shadow-map-matrix fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
@@ -199,10 +199,10 @@
          span         (span-of-box bounding-box)
          scale        (* 0.5 (+ (span 0) (span 1)))
          depth        (- (span 2))]
-     {:shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
-      :shadow-map-matrix (fm/mulm shadow-map light-matrix)
-      :scale scale
-      :depth depth})))
+     {::shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
+      ::shadow-map-matrix (fm/mulm shadow-map light-matrix)
+      ::scale scale
+      ::depth depth})))
 
 (defn split-linear
   "Perform linear z-split for frustum"

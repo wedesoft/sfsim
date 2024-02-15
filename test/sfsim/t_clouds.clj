@@ -621,19 +621,19 @@ void main()
             indices      [0 1 3 2]
             vertices     [-1 -1 0, 1 -1 0, -1 1 0, 1 1 0]
             vao          (make-vertex-array-object program indices vertices ["point" 3])
-            cubemap      (cloud-cover-cubemap :size 256
-                                              :worley-size worley-size
-                                              :worley-south worley-south
-                                              :worley-north worley-north
-                                              :worley-cover worley-cover
-                                              :flow-octaves [0.5 0.25 0.125]
-                                              :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
-                                              :whirl 2.0
-                                              :prevailing 0.1
-                                              :curl-scale 1.0
-                                              :cover-scale 2.0
-                                              :num-iterations 50
-                                              :flow-scale 1.5e-3)]
+            cubemap      (cloud-cover-cubemap :sfsim.clouds/size 256
+                                              :sfsim.clouds/worley-size worley-size
+                                              :sfsim.clouds/worley-south worley-south
+                                              :sfsim.clouds/worley-north worley-north
+                                              :sfsim.clouds/worley-cover worley-cover
+                                              :sfsim.clouds/flow-octaves [0.5 0.25 0.125]
+                                              :sfsim.clouds/cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                              :sfsim.clouds/whirl 2.0
+                                              :sfsim.clouds/prevailing 0.1
+                                              :sfsim.clouds/curl-scale 1.0
+                                              :sfsim.clouds/cover-scale 2.0
+                                              :sfsim.clouds/num-iterations 50
+                                              :sfsim.clouds/flow-scale 1.5e-3)]
         (let [tex (texture-render-color 128 128 false
                                         (clear (vec3 1 0 0))
                                         (use-program program)
@@ -1298,8 +1298,8 @@ void main()
                                (uniform-matrix4 program "transform" (inverse extrinsics))
                                (uniform-float program "split0" z-near)
                                (uniform-float program "split1" z-far)
-                               (uniform-matrix4 program "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
-                               (uniform-float program "depth0" (:depth (shadow-mats 0)))
+                               (uniform-matrix4 program "shadow_map_matrix0" (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))
+                               (uniform-float program "depth0" (:sfsim.matrix/depth (shadow-mats 0)))
                                (use-textures (zipmap (range) opacity-maps))
                                (render-quads vao)
                                (destroy-vertex-array-object vao)

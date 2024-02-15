@@ -196,8 +196,8 @@
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
            (uniform-float program (str "split" idx) item))
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-           (uniform-float program (str "depth" idx) (:depth item)))
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:sfsim.matrix/shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
     (use-textures {1 (:sfsim.atmosphere/transmittance atmosphere-luts) 2 (:sfsim.atmosphere/scatter atmosphere-luts)
                    3 (:sfsim.atmosphere/mie atmosphere-luts) 4 (:sfsim.clouds/worley cloud-data)
                    5 (:sfsim.clouds/perlin-worley cloud-data) 6 (:sfsim.clouds/cloud-cover cloud-data)
@@ -265,8 +265,8 @@
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
            (uniform-float program (str "split" idx) item))
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-           (uniform-float program (str "depth" idx) (:depth item)))
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:sfsim.matrix/shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
     (use-textures {5 (:sfsim.atmosphere/transmittance atmosphere-luts) 6 (:sfsim.atmosphere/scatter atmosphere-luts)
                    7 (:sfsim.atmosphere/mie atmosphere-luts) 8 (:sfsim.atmosphere/surface-radiance atmosphere-luts) 9 clouds})
     (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)

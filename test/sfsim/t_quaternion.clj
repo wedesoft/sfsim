@@ -22,10 +22,10 @@
 (def -k (->Quaternion  0  0  0 -1))
 
 (facts "Get components of quaternion"
-  (:a (->Quaternion 2 3 5 7)) => 2.0
-  (:b (->Quaternion 2 3 5 7)) => 3.0
-  (:c (->Quaternion 2 3 5 7)) => 5.0
-  (:d (->Quaternion 2 3 5 7)) => 7.0)
+  (:real (->Quaternion 2 3 5 7)) => 2.0
+  (:imag (->Quaternion 2 3 5 7)) => 3.0
+  (:jmag (->Quaternion 2 3 5 7)) => 5.0
+  (:kmag (->Quaternion 2 3 5 7)) => 7.0)
 
 (fact "Add two quaternions"
   (+ (->Quaternion 1 2 3 4) (->Quaternion 5 6 7 8)) => (->Quaternion 6 8 10 12))
@@ -80,26 +80,26 @@
 
 (tabular "Exponentation of quaternions"
   (fact (?component (exp ?q)) => (roughly ?result 1e-6))
-  ?q                                           ?component ?result
-  (->Quaternion 0 0 PI 0)                      :a         -1.0
-  (->Quaternion 0 0 PI 0)                      :c          0.0
-  (->Quaternion 0 0 (/ PI 2) 0)                :a          0.0
-  (->Quaternion 0 0 (/ PI 2) 0)                :c          1.0
-  (->Quaternion 1 0 PI 0)                      :a         -E
-  (->Quaternion 1 0 (/ PI 2) 0)                :c          E
-  (->Quaternion 0 0 0 PI)                      :d          0.0
-  (->Quaternion 0 0 0 (/ PI 2))                :d          1.0
-  (->Quaternion 0 (c/* 0.4 PI) (c/* 0.3 PI) 0) :b          0.8
-  (->Quaternion 0 (c/* 0.4 PI) (c/* 0.3 PI) 0) :c          0.6)
+  ?q                                           ?component    ?result
+  (->Quaternion 0 0 PI 0)                      :real         -1.0
+  (->Quaternion 0 0 PI 0)                      :jmag          0.0
+  (->Quaternion 0 0 (/ PI 2) 0)                :real          0.0
+  (->Quaternion 0 0 (/ PI 2) 0)                :jmag          1.0
+  (->Quaternion 1 0 PI 0)                      :real         -E
+  (->Quaternion 1 0 (/ PI 2) 0)                :jmag          E
+  (->Quaternion 0 0 0 PI)                      :kmag          0.0
+  (->Quaternion 0 0 0 (/ PI 2))                :kmag          1.0
+  (->Quaternion 0 (c/* 0.4 PI) (c/* 0.3 PI) 0) :imag          0.8
+  (->Quaternion 0 (c/* 0.4 PI) (c/* 0.3 PI) 0) :jmag          0.6)
 
 (tabular "Represent rotation using quaternion"
   (fact (?component (rotation ?angle ?axis)) => (roughly ?result 1e-6))
-  ?axis                ?angle     ?component ?result
-  (vec3 0 0 1)         0.0        :a         1.0
-  (vec3 0 0 1)         (c/* 2 PI) :a        -1.0
-  (vec3 0.36 0.48 0.8) PI         :b         0.36
-  (vec3 0.36 0.48 0.8) PI         :d         0.8
-  (vec3 0.36 0.48 0.8) (/ PI 3)   :b         0.18)
+  ?axis                ?angle     ?component    ?result
+  (vec3 0 0 1)         0.0        :real         1.0
+  (vec3 0 0 1)         (c/* 2 PI) :real        -1.0
+  (vec3 0.36 0.48 0.8) PI         :imag         0.36
+  (vec3 0.36 0.48 0.8) PI         :kmag         0.8
+  (vec3 0.36 0.48 0.8) (/ PI 3)   :imag         0.18)
 
 (facts "Rotate a vector using a rotation quaternion"
   (rotate-vector (rotation 0.0 (vec3 1 0 0)) (vec3 2 4 8))        => (roughly-vector (vec3 2  4 8) 1e-6)

@@ -1,6 +1,6 @@
 (ns sfsim.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (to-radians cos sin)]
+  (:require [clojure.math :refer (cos sin to-radians)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth make-render-vars)]
@@ -23,6 +23,8 @@
 (def opacity-base (atom 250.0))
 (def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
+; (def position (atom (vec3 0 0 (* 1.5 6378000.0))))
+; (def orientation (atom (q/rotation (to-radians -20) (vec3 0 1 0))))
 (def light (atom 0.0))
 
 (GLFW/glfwInit)

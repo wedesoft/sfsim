@@ -1,11 +1,11 @@
 (ns sfsim.t-render
   (:require [midje.sweet :refer :all]
+            [clojure.math :refer (to-radians cos asin sin sqrt PI)]
             [malli.instrument :as mi]
             [malli.dev.pretty :as pretty]
             [sfsim.conftest :refer (is-image roughly-vector)]
             [fastmath.vector :refer (vec3 vec4 normalize)]
             [fastmath.matrix :refer (eye diagonal) :as m]
-            [clojure.math :refer (to-radians)]
             [comb.template :as template]
             [sfsim.util :refer :all]
             [sfsim.image :refer :all]
@@ -831,7 +831,7 @@ void main(void)
                                128 128
                                (clear)
                                (use-program program-shadow)
-                               (uniform-matrix4 program-shadow "transform" (:shadow-ndc-matrix shadow-mat))
+                               (uniform-matrix4 program-shadow "transform" (:sfsim.matrix/shadow-ndc-matrix shadow-mat))
                                (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
@@ -841,7 +841,7 @@ void main(void)
                                 (uniform-sampler program-main "shadow_map" 0)
                                 (uniform-int program-main "shadow_size" 128)
                                 (uniform-matrix4 program-main "projection" projection)
-                                (uniform-matrix4 program-main "shadow_map_matrix" (:shadow-map-matrix shadow-mat))
+                                (uniform-matrix4 program-main "shadow_map_matrix" (:sfsim.matrix/shadow-map-matrix shadow-mat))
                                 (use-textures {0 shadow-map})
                                 (render-quads vao))
             (let [img (texture->image tex)]
@@ -901,7 +901,8 @@ void main(void)
                                 (uniform-int program-main "shadow_size" 128)
                                 (uniform-matrix4 program-main "projection" projection)
                                 (uniform-matrix4 program-main "transform" (eye 4))
-                                (uniform-matrix4 program-main "shadow_map_matrix0" (:shadow-map-matrix (shadow-mats 0)))
+                                (uniform-matrix4 program-main "shadow_map_matrix0"
+                                                 (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))
                                 (use-textures (zipmap (range) shadow-maps))
                                 (render-quads vao))
             (let [img (texture->image tex)]
@@ -991,6 +992,11 @@ void main()
        (render-depth 4.0 0.0 1.0) => 3.0
        (render-depth 4.0 1.0 1.0) => 6.0)
 
+(facts "Diagonal field of view"
+       (diagonal-field-of-view 320   0 (* 0.25 PI)) => (roughly (* 0.25 PI) 1e-6)
+       (diagonal-field-of-view 320 320 (* 0.25 PI)) => (roughly (* 2 (asin (* (sqrt 2.0) (sin (* 0.125 PI))))) 1e-6)
+       (diagonal-field-of-view 320 240 (* 0.25 PI)) => (roughly 0.997559 1e-6))
+
 (facts "Create hashmap with render variables for rendering current frame"
        (let [planet {:sfsim.planet/radius 1000.0}
              cloud  {:sfsim.clouds/cloud-top 100.0}
@@ -1005,8 +1011,8 @@ void main()
                        matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
            (:sfsim.render/origin (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => pos1
            (:sfsim.render/height (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 150.0
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 50.0
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => 1.0
+           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => (roughly 0.951 1e-3)
            (:sfsim.render/z-far (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 300.0
            (:sfsim.render/extrinsics (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (eye 4)
            (:sfsim.render/projection (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (diagonal 1 2 3 4)

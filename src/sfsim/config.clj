@@ -1,6 +1,6 @@
 (ns sfsim.config
     "Configuration values for software"
-    (:require [clojure.math :refer (exp to-radians)]
+    (:require [clojure.math :refer (to-radians)]
               [fastmath.vector :refer (vec3)]
               [sfsim.util :refer (octaves)]))
 
@@ -41,7 +41,7 @@
                                    :shadow-size 512
                                    :num-steps 3
                                    :mix 0.8
-                                   :shadow-bias (exp -6.0)})
+                                   :shadow-bias 1e-6})
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

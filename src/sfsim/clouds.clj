@@ -135,8 +135,8 @@
 (defn cloud-cover-cubemap
   "Program to generate planetary cloud cover using curl noise"
   {:malli/schema [:=> [:cat [:* :any]] texture-3d]}
-  [& {:keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
-             cover-scale num-iterations flow-scale]}]
+  [& {::keys [size worley-size worley-south worley-north worley-cover flow-octaves cloud-octaves whirl prevailing curl-scale
+              cover-scale num-iterations flow-scale]}]
   (let [warp        (atom (identity-cubemap size))
         update-warp (make-iterate-cubemap-warp-program
                       "current" "curl"
@@ -251,13 +251,14 @@
      (fn render-deep-opacity-map# [opacity-level#]
          (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size
                                                              (inc ~num-opacity-layers))
-               level-of-detail# (/ (log (/ (/ (:scale opacity-level#) ~size) ~voxel-size)) (log 2))]
+               level-of-detail# (/ (log (/ (/ (:sfsim.matrix/scale opacity-level#) ~size) ~voxel-size)) (log 2))]
            (framebuffer-render ~size ~size :sfsim.render/cullback nil [opacity-layers#]
                                (use-program ~program)
                                (uniform-int ~program "shadow_size" ~size)
                                (uniform-float ~program "level_of_detail" level-of-detail#)
-                               (uniform-matrix4 ~program "ndc_to_shadow" (inverse (:shadow-ndc-matrix opacity-level#)))
-                               (uniform-float ~program "depth" (:depth opacity-level#))
+                               (uniform-matrix4 ~program "ndc_to_shadow"
+                                                (inverse (:sfsim.matrix/shadow-ndc-matrix opacity-level#)))
+                               (uniform-float ~program "depth" (:sfsim.matrix/depth opacity-level#))
                                ~@body)
            opacity-layers#))
      ~matrix-cascade))
@@ -400,8 +401,8 @@
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
            (uniform-float program (str "split" idx) item))
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:shadow-map-matrix item))
-           (uniform-float program (str "depth" idx) (:depth item)))
+           (uniform-matrix4 program (str "shadow_map_matrix" idx) (:sfsim.matrix/shadow-map-matrix item))
+           (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (::worley data) 4 (::perlin-worley data) 5 (::cloud-cover data)
                    6 (::bluenoise data)})
