@@ -1,18 +1,11 @@
 # TODO
-* NVidia fails test with two programs
-* use add-watch?
-* methods to create empty images for globe.clj
-* refactor redundant code setting uniforms
-* schemas for main render function arguments
 * test for scale-elevation
-* enable warn on reflection in more places
-* make modules out of core.clj
-  * group textures with dimension data
-  * group cloud textures, sizes, and parameters
-  * group atmospheric lookup tables and parameters
-* integration-test modules
+* schemas for main render function arguments
+* methods to create empty images for globe.clj
+* NVidia fails test with two programs
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
+* use add-watch?
 * cockpit
   * top:
     warnings (status display)
