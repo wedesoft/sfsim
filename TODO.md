@@ -1,5 +1,4 @@
 # TODO
-* test for scale-elevation
 * schemas for main render function arguments
 * methods to create empty images for globe.clj
 * NVidia fails test with two programs
