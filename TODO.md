@@ -1,7 +1,5 @@
 # TODO
-* test for scale-elevation
 * schemas for main render function arguments
-* methods to create empty images for globe.clj
 * NVidia fails test with two programs
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils

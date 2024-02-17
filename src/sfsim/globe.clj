@@ -4,7 +4,8 @@
             [fastmath.vector :refer (sub)]
             [sfsim.cubemap :refer (cartesian->geodetic color-geodetic-day color-geodetic-night cube-coordinate cube-map
                                    normal-for-point project-onto-globe water-geodetic tile-center)]
-            [sfsim.image :refer (set-byte! set-pixel! set-vector3! spit-jpg spit-normals)]
+            [sfsim.image :refer (set-byte! set-pixel! set-vector3! spit-jpg spit-normals make-image make-byte-image
+                                 make-vector-image)]
             [sfsim.util :refer (align-address cube-dir cube-path make-progress-bar spit-bytes spit-floats sqr tick-and-print)])
   (:import [java.io File])
   (:gen-class))
@@ -23,16 +24,11 @@
         radius             6378000.0
         bar                (agent (make-progress-bar (* 6 n n) 1))]
     (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
-      (let [tile-day   #:sfsim.image{:width color-tilesize :height color-tilesize :channels 4
-                                     :data (byte-array (* 4 (sqr color-tilesize)))}
-            tile-night #:sfsim.image{:width color-tilesize :height color-tilesize :channels 4
-                                     :data (byte-array (* 4 (sqr color-tilesize)))}
-            water      #:sfsim.image{:width (align-address color-tilesize 4) :height color-tilesize
-                                     :data (byte-array (* color-tilesize (+ color-tilesize 3)))}
-            surface    #:sfsim.image{:width surface-tilesize :height surface-tilesize
-                                     :data (float-array (* 3 (sqr surface-tilesize)))}
-            normals    #:sfsim.image{:width color-tilesize :height color-tilesize
-                                     :data (float-array (* 3 (sqr color-tilesize)))}
+      (let [tile-day   (make-image color-tilesize color-tilesize)
+            tile-night (make-image color-tilesize color-tilesize)
+            water      (make-byte-image (align-address color-tilesize 4) color-tilesize)
+            surface    (make-vector-image surface-tilesize surface-tilesize)
+            normals    (make-vector-image color-tilesize color-tilesize)
             center     (tile-center k out-level b a radius)]
         (doseq [v (range surface-tilesize) u (range surface-tilesize)]
           (let [j                 (cube-coordinate out-level surface-tilesize b (double v))
