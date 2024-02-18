@@ -1,5 +1,9 @@
 # TODO
 * schemas for main render function arguments
+  arguments for make-planet-shadow-renderer, make-cloud-planet-renderer make-cloud-atmosphere-renderer, make-planet-renderer,
+  make-atmosphere-renderer, make-render-vars. opacity-and-shadow-cascade, render-cloud-planet, render-cloud-atmosphere,
+  render-planet, render-atmosphere, destroy-\*
+* concept for bundling shaders with uniform setting methods?
 * NVidia fails test with two programs
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils

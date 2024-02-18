@@ -2,9 +2,11 @@
     "Rendering of clouds"
     (:require [comb.template :as template]
               [clojure.math :refer (tan pow log)]
+              [malli.core :as m]
               [fastmath.matrix :refer (inverse)]
               [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
-                                     make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d)]
+                                     make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
+                                     texture-2d)]
               [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                                     make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler uniform-matrix4
                                     use-program uniform-vector3 setup-shadow-and-opacity-maps) :as render]
@@ -291,9 +293,19 @@
              (/ (:sfsim.render/window-width render-vars) 2)
              (/ (::detail-scale cloud-data) worley-size))) (log 2)))
 
+(def cloud-config (m/schema [:map [::cloud-octaves [:vector :double]] [::perlin-octaves [:vector :double]]
+                                  [::cloud-bottom :double] [::cloud-top :double] [::detail-scale :double]
+                                  [::cloud-scale :double] [::cloud-multiplier :double] [::cover-multiplier :double]
+                                  [::threshold :double] [::cap :double] [::anisotropic :double] [::cloud-step :double]
+                                  [::opacity-cutoff :double]]))
+
+(def cloud-data (m/schema [:and cloud-config
+                                [:map [::worley texture-3d] [::perlin-worley texture-3d] [::cloud-cover texture-3d]
+                                      [::bluenoise texture-2d]]]))
+
 (defn make-cloud-data
   "Method to load cloud textures and collect cloud data (not tested)"
-  {:malli/schema [:=> [:cat [:* :any]] :map]}
+  {:malli/schema [:=> [:cat cloud-config] cloud-data]}
   [cloud-config]
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")

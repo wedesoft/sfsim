@@ -405,6 +405,8 @@
         dxy (hypot dx dy)]
     (* 2.0 (asin dxy))))
 
+(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double]]))
+
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame"
   {:malli/schema [:=> [:cat :map :map :map N N fvec3 quaternion fvec3 :double] :map]}
