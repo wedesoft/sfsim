@@ -7,7 +7,7 @@
               [sfsim.texture :refer (destroy-texture)]
               [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                     use-program uniform-int uniform-float uniform-vector3 render-quads render-depth
-                                    use-textures render-config)]
+                                    use-textures render-config vertex-array-object)]
               [sfsim.worley :refer (worley-size)]
               [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
               [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config)]
@@ -21,6 +21,9 @@
                                    [::shadow-bias :double]]))
 (def shadow-data (m/schema [:and shadow-config [:map [::depth :double]]]))
 
+(def opacity-renderer (m/schema [:map [::program :int] [:sfsim.clouds/data cloud-data] [::data shadow-data]
+                                      [::vao vertex-array-object]]))
+
 (defn make-shadow-data
   "Create hash map with shadow parameters"
   {:malli/schema [:=> [:cat shadow-config planet-config cloud-data] shadow-data]}
@@ -33,7 +36,7 @@
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [:sfsim.planet/config planet-config]
-                                  [:sfsim.clouds/data cloud-data] [::data shadow-data]]] :map]}
+                                  [:sfsim.clouds/data cloud-data] [::data shadow-data]]] opacity-renderer]}
   [data]
   (let [planet-config (:sfsim.planet/config data)
         shadow-data   (::data data)
