@@ -415,12 +415,12 @@
 (def surface-sun-elevation-size 63)
 (def surface-height-size 16)
 
+(def atmosphere-luts (m/schema [:map [::transmittance texture-2d] [::scatter texture-4d] [::mie texture-2d]
+                                     [::surface-radiance texture-2d]]))
+
 (defn make-atmosphere-luts
   "Load atmosphere lookup tables"
-  {:malli/schema [:=> [:cat [:* :any]] [:map [::transmittance texture-2d]
-                                             [::scatter texture-4d]
-                                             [::mie texture-2d]
-                                             [::surface-radiance texture-2d]]]}
+  {:malli/schema [:=> [:cat :double] atmosphere-luts]}
   [max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp

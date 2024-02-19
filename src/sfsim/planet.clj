@@ -9,12 +9,13 @@
               [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                                     uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
-                                    setup-shadow-and-opacity-maps use-textures)
+                                    setup-shadow-and-opacity-maps use-textures render-config)
                               :as render]
-              [sfsim.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms)]
+              [sfsim.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms
+                                        atmosphere-luts)]
               [sfsim.util :refer (N N0)]
               [sfsim.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-render-uniforms
-                                      setup-cloud-sampling-uniforms)]
+                                      setup-cloud-sampling-uniforms cloud-data)]
               [sfsim.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -152,9 +153,14 @@
   [{::keys [program]}]
   (destroy-program program))
 
+(def cloud-planet-renderer (m/schema [:map [::program :int] [:sfsim.atmosphere/luts atmosphere-luts]
+                                           [:sfsim.clouds/data cloud-data] [:sfsim.render/config render-config]]))
+
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon (untested)"
-  {:malli/schema [:=> [:cat :map] :map]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::config planet-config]
+                                  [:sfsim.atmosphere/luts atmosphere-luts] [:sfsim.opacity/data shadow-data]
+                                  [:sfsim.clouds/data cloud-data]]] :map]}
   [data]
   (let [render-config   (:sfsim.render/config data)
         planet-config   (::config data)
