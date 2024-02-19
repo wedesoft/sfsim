@@ -12,7 +12,7 @@
               [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
               [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config)]
               [sfsim.atmosphere :refer (phase)]
-              [sfsim.util :refer (sqr N)]))
+              [sfsim.util :refer (sqr)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)

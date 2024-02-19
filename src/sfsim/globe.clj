@@ -6,7 +6,7 @@
                                    normal-for-point project-onto-globe water-geodetic tile-center)]
             [sfsim.image :refer (set-byte! set-pixel! set-vector3! spit-jpg spit-normals make-image make-byte-image
                                  make-vector-image)]
-            [sfsim.util :refer (align-address cube-dir cube-path make-progress-bar spit-bytes spit-floats sqr tick-and-print)])
+            [sfsim.util :refer (align-address cube-dir cube-path make-progress-bar spit-bytes spit-floats tick-and-print)])
   (:import [java.io File])
   (:gen-class))
 
