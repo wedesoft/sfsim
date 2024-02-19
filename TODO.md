@@ -1,6 +1,6 @@
 # TODO
 * schemas for main render function arguments
-  arguments for make-planet-shadow-renderer, make-cloud-planet-renderer make-cloud-atmosphere-renderer, make-planet-renderer,
+  arguments for make-cloud-planet-renderer make-cloud-atmosphere-renderer, make-planet-renderer,
   make-atmosphere-renderer, make-render-vars. opacity-and-shadow-cascade, render-cloud-planet, render-cloud-atmosphere,
   render-planet, render-atmosphere, destroy-\*
 * concept for bundling shaders with uniform setting methods?

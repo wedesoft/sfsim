@@ -184,6 +184,11 @@
         light-corners   (transform-point-list light-matrix rotated-corners)]
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
+(def shadow-config (m/schema [:map [:sfsim.opacity/num-opacity-layers N] [:sfsim.opacity/shadow-size N]
+                                   [:sfsim.opacity/num-steps N] [:sfsim.opacity/mix :double]
+                                   [:sfsim.opacity/shadow-bias :double]]))
+(def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
+
 (def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::shadow-map-matrix fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices

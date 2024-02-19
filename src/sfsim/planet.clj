@@ -2,7 +2,7 @@
     "Module with functionality to render a planet"
     (:require [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
-              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3)]
+              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data)]
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info)]
               [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d)]
@@ -111,9 +111,11 @@
                                    [::dawn-end :double] [::tilesize N] [::color-tilesize N] [::reflectivity :double]
                                    [::water-color fvec3]]))
 
+(def planet-shadow-renderer (m/schema [:map [::program :int] [:sfsim.opacity/data shadow-data]]))
+
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
-  {:malli/schema [:=> [:cat :map] :map]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.opacity/data shadow-data] [::config planet-config]]] planet-shadow-renderer]}
   [data]
   (let [shadow-data (:sfsim.opacity/data data)
         tilesize    (::tilesize (::config data))

@@ -3,7 +3,7 @@
     (:require [clojure.math :refer (sqrt)]
               [malli.core :as m]
               [fastmath.vector :refer (mag dot)]
-              [sfsim.matrix :refer (split-list shadow-matrix-cascade)]
+              [sfsim.matrix :refer (split-list shadow-matrix-cascade shadow-config shadow-data)]
               [sfsim.texture :refer (destroy-texture)]
               [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                     use-program uniform-int uniform-float uniform-vector3 render-quads render-depth
@@ -16,10 +16,6 @@
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
-
-(def shadow-config (m/schema [:map [::num-opacity-layers N] [::shadow-size N] [::num-steps N] [::mix :double]
-                                   [::shadow-bias :double]]))
-(def shadow-data (m/schema [:and shadow-config [:map [::depth :double]]]))
 
 (def opacity-renderer (m/schema [:map [::program :int] [:sfsim.clouds/data cloud-data] [::data shadow-data]
                                       [::vao vertex-array-object]]))
