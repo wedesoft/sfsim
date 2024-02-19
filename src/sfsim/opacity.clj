@@ -1,24 +1,29 @@
 (ns sfsim.opacity
     "Rendering of deep opacity maps for cloud shadows"
     (:require [clojure.math :refer (sqrt)]
+              [malli.core :as m]
               [fastmath.vector :refer (mag dot)]
               [sfsim.matrix :refer (split-list shadow-matrix-cascade)]
               [sfsim.texture :refer (destroy-texture)]
               [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                     use-program uniform-int uniform-float uniform-vector3 render-quads render-depth
-                                    use-textures)]
+                                    use-textures render-config)]
               [sfsim.worley :refer (worley-size)]
-              [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms)]
-              [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade)]
+              [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
+              [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config)]
               [sfsim.atmosphere :refer (phase)]
-              [sfsim.util :refer (sqr)]))
+              [sfsim.util :refer (sqr N)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+(def shadow-config (m/schema [:map [::num-opacity-layers N] [::shadow-size N] [::num-steps N] [::mix :double]
+                                   [::shadow-bias :double]]))
+(def shadow-data (m/schema [:and shadow-config [:map [::depth :double]]]))
+
 (defn make-shadow-data
   "Create hash map with shadow parameters"
-  {:malli/schema [:=> [:cat :map :map :map] :map]}
+  {:malli/schema [:=> [:cat shadow-config planet-config cloud-data] shadow-data]}
   [shadow-config planet-config cloud-data]
   (assoc shadow-config
          ::depth (render-depth (:sfsim.planet/radius planet-config)
@@ -27,7 +32,8 @@
 
 (defn make-opacity-renderer
   "Initialise an opacity program (untested)"
-  {:malli/schema [:=> [:cat :map] :map]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [:sfsim.planet/config planet-config]
+                                  [:sfsim.clouds/data cloud-data] [::data shadow-data]]] :map]}
   [data]
   (let [planet-config (:sfsim.planet/config data)
         shadow-data   (::data data)

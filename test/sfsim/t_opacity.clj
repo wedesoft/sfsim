@@ -4,5 +4,5 @@
             [malli.dev.pretty :as pretty]
             [sfsim.opacity :refer :all]))
 
-(mi/collect! {:ns ['sfsim.util]})
+(mi/collect! {:ns ['sfsim.opacity]})
 (mi/instrument! {:report (pretty/thrower)})

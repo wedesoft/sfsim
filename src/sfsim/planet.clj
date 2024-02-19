@@ -107,6 +107,10 @@
                                 :sfsim.quadtree/quad0 :sfsim.quadtree/quad1 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3]]
                      (render-tree program (selector node) transform texture-keys)))))
 
+(def planet-config (m/schema [:map [::radius :double] [::max-height :double] [::albedo :double] [::dawn-start :double]
+                                   [::dawn-end :double] [::tilesize N] [::color-tilesize N] [::reflectivity :double]
+                                   [::water-color fvec3]]))
+
 (defn make-planet-shadow-renderer
   "Create program for rendering cascaded shadow maps of planet (untested)"
   {:malli/schema [:=> [:cat :map] :map]}
