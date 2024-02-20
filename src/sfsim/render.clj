@@ -407,9 +407,13 @@
 
 (def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double]]))
 
+(def render-vars (m/schema [:map [::origin fvec3] [::height :double] [::z-near :double] [::z-far :double] [::window-width N]
+                                 [::window-height N] [::light-direction fvec3] [::extrinsics fmat4] [::projection fmat4]]))
+
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame"
-  {:malli/schema [:=> [:cat :map :map :map N N fvec3 quaternion fvec3 :double] :map]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]] render-config N N fvec3
+                                  quaternion fvec3 :double] render-vars]}
   [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
   (let [distance     (mag position)
         radius       (:sfsim.planet/radius planet-config)
