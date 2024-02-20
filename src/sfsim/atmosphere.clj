@@ -11,7 +11,7 @@
                                      texture-2d texture-4d)]
               [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                     uniform-vector3 destroy-program make-vertex-array-object use-textures
-                                    destroy-vertex-array-object render-quads )]
+                                    destroy-vertex-array-object render-quads render-config)]
               [sfsim.shaders :as shaders]
               [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats)]))
 
@@ -480,9 +480,12 @@
     (uniform-int program "surface_sun_elevation_size" (:sfsim.texture/width (::surface-radiance atmosphere-luts))))
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
+(def atmosphere-renderer (m/schema [:map [::program :int] [::luts atmosphere-luts]]))
+
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
-  {:malli/schema [:=> [:cat :map] :map]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::luts atmosphere-luts]
+                                  [:sfsim.planet/config [:map [:sfsim.planet/radius :double]]]]] atmosphere-renderer]}
   [{::keys [luts] :as other}]
   (let [render-config (:sfsim.render/config other)
         planet-config (:sfsim.planet/config other)
