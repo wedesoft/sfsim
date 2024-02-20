@@ -10,7 +10,8 @@
                                     use-textures render-config vertex-array-object render-vars)]
               [sfsim.worley :refer (worley-size)]
               [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
-              [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config planet-shadow-renderer)]
+              [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config planet-shadow-renderer
+                                    shadow-vars)]
               [sfsim.atmosphere :refer (phase)]
               [sfsim.util :refer (sqr)]))
 
@@ -79,13 +80,10 @@
   (destroy-vertex-array-object vao)
   (destroy-program program))
 
-(def cascades (m/schema [:map [::opacity-step :double] [::splits [:vector :double]] [::matrix-cascade [:vector shadow-box]]
-                              [::shadows [:vector texture-2d]] [::opacities [:vector texture-3d]]]))
-
 (defn opacity-and-shadow-cascade
   "Compute deep opacity map cascade and shadow cascade"
   {:malli/schema [:=> [:cat opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars [:maybe :map] :double]
-                      cascades]}
+                      shadow-vars]}
   [opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars tree opacity-base]
   (let [splits          (split-list shadow-data render-vars)
         matrix-cascade  (shadow-matrix-cascade shadow-data render-vars)

@@ -1,7 +1,7 @@
 # TODO
 * schemas for main render function arguments
   arguments for make-planet-renderer,
-  render-cloud-planet, render-cloud-atmosphere, render-planet, render-atmosphere, destroy-\*
+  render-cloud-atmosphere, render-planet, render-atmosphere, destroy-\*
 * concept for bundling shaders with uniform setting methods?
 * NVidia fails test with two programs
 * shadow and opacity map with different resolution for spaceship

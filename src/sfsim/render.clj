@@ -412,8 +412,8 @@
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame"
-  {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]] render-config N N fvec3
-                                  quaternion fvec3 :double] render-vars]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]] [:map [::fov :double]]
+                            N N fvec3 quaternion fvec3 :double] render-vars]}
   [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
   (let [distance     (mag position)
         radius       (:sfsim.planet/radius planet-config)

@@ -2,14 +2,15 @@
     "Module with functionality to render a planet"
     (:require [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
-              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data)]
+              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box)]
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info)]
-              [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d)]
+              [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d
+                                     texture-3d)]
               [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                                     uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
-                                    setup-shadow-and-opacity-maps use-textures render-quads render-config)
+                                    setup-shadow-and-opacity-maps use-textures render-quads render-config render-vars)
                               :as render]
               [sfsim.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms
                                         vertex-atmosphere atmosphere-luts)]
@@ -190,9 +191,13 @@
      :sfsim.clouds/data cloud-data
      :sfsim.render/config render-config}))
 
+(def shadow-vars (m/schema [:map [:sfsim.opacity/opacity-step :double] [:sfsim.opacity/splits [:vector :double]]
+                                 [:sfsim.opacity/matrix-cascade [:vector shadow-box]]
+                                 [:sfsim.opacity/shadows [:vector texture-2d]] [:sfsim.opacity/opacities [:vector texture-3d]]]))
+
 (defn render-cloud-planet
   "Render clouds below horizon (untested)"
-  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
+  {:malli/schema [:=> [:cat cloud-planet-renderer render-vars shadow-vars [:maybe :map]] :nil]}
   [{::keys [program] :as other} render-vars shadow-vars tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         cloud-data      (:sfsim.clouds/data other)
