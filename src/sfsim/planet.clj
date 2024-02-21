@@ -299,9 +299,12 @@
   [{:sfsim.clouds/keys [program]}]
   (destroy-program program))
 
+(def planet-renderer (m/schema [:map [::program :int] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
+
 (defn make-planet-renderer
   "Program to render planet with cloud overlay (untested)"
-  {:malli/schema [:=> [:cat :map] :map]}
+  {:malli/schema [:=> [:cat [:map [::config planet-config] [:sfsim.render/config render-config]
+                                  [:sfsim.atmosphere/luts atmosphere-luts] [:sfsim.opacity/data shadow-data]]] planet-renderer]}
   [{::keys [config] :as other}]
   (let [tilesize        (::tilesize config)
         render-config   (:sfsim.render/config other)
