@@ -340,7 +340,7 @@
 
 (defn render-planet
   "Render planet (untested)"
-  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
+  {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars texture-2d [:maybe :map]] :nil]}
   [{::keys [program] :as other} render-vars shadow-vars clouds tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         transform       (inverse (:sfsim.render/extrinsics render-vars))]
