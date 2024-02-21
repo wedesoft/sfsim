@@ -11,7 +11,7 @@
                                      texture-2d texture-4d)]
               [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                     uniform-vector3 destroy-program make-vertex-array-object use-textures
-                                    destroy-vertex-array-object render-quads render-config)]
+                                    destroy-vertex-array-object render-quads render-config render-vars)]
               [sfsim.shaders :as shaders]
               [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats)]))
 
@@ -502,7 +502,7 @@
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
-  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
+  {:malli/schema [:=> [:cat atmosphere-renderer render-vars texture-2d] :nil]}
   [{::keys [program luts]} render-vars clouds]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
