@@ -150,7 +150,7 @@
 
 (defn destroy-planet-shadow-renderer
   "Destroy renderer for planet shadow (untested)"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat planet-shadow-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
 
@@ -225,7 +225,7 @@
 
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon (untested)"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat cloud-planet-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
 
@@ -295,7 +295,7 @@
 
 (defn destroy-cloud-atmosphere-renderer
   "Destroy cloud rendering OpenGL program (not tested)"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat cloud-atmosphere-renderer] :nil]}
   [{:sfsim.clouds/keys [program]}]
   (destroy-program program))
 
@@ -365,7 +365,7 @@
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program (untested)"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat planet-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
 

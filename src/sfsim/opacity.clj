@@ -76,6 +76,7 @@
 
 (defn destroy-opacity-renderer
   "Delete opacity renderer objects (untested)"
+  {:malli/schema [:=> [:cat opacity-renderer] :nil]}
   [{::keys [vao program]}]
   (destroy-vertex-array-object vao)
   (destroy-program program))

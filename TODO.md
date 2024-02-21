@@ -1,6 +1,4 @@
 # TODO
-* schemas for main render function arguments
-  arguments for destroy-\*
 * concept for bundling shaders with uniform setting methods?
 * NVidia fails test with two programs
 * shadow and opacity map with different resolution for spaceship

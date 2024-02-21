@@ -454,6 +454,7 @@
 
 (defn destroy-atmosphere-luts
   "Destroy atmosphere lookup tables"
+  {:malli/schema [:=> [:cat atmosphere-luts] :nil]}
   [{::keys [transmittance scatter mie surface-radiance]}]
   (destroy-texture transmittance)
   (destroy-texture scatter)
@@ -520,7 +521,7 @@
 
 (defn destroy-atmosphere-renderer
   "Destroy atmosphere renderer (untested)"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat atmosphere-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
 

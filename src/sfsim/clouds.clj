@@ -331,7 +331,7 @@
 
 (defn destroy-cloud-data
   "Method to destroy cloud textures (not tested)"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat cloud-data] :nil]}
   [{::keys [worley perlin-worley cloud-cover bluenoise]}]
   (destroy-texture worley)
   (destroy-texture perlin-worley)
