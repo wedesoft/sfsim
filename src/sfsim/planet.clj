@@ -264,7 +264,7 @@
 
 (defn render-cloud-atmosphere
   "Render clouds above horizon (not tested)"
-  {:malli/schema [:=> [:cat :map :map :map] :nil]}
+  {:malli/schema [:=> [:cat cloud-atmosphere-renderer render-vars shadow-vars] :nil]}
   [{:sfsim.clouds/keys [program data] :as other} render-vars shadow-vars]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
