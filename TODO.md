@@ -1,5 +1,5 @@
 # TODO
-* render space ship from outside,
+* integration test rendering of brick wall segment,
   use atmosphere intersection and cloud layer intersection to render foreground (see cloud\_planet),
   low-res blue noise?
 * concept for bundling shaders with uniform setting methods?
