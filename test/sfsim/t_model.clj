@@ -471,4 +471,69 @@ void main()
        => {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform :mock :sfsim.model/children
                               [{:sfsim.model/name "Cube" :sfsim.model/transform :mock-changed :sfsim.model/children []}]}})
 
+(def vertex-cube-fog
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 transform;
+in vec3 vertex;
+in vec3 normal;
+out VS_OUT
+{
+  vec3 point;
+  vec3 normal;
+} vs_out;
+void main()
+{
+  vs_out.point = vertex;
+  vs_out.normal = mat3(transform) * normal;
+  gl_Position = projection * transform * vec4(vertex, 1);
+}")
+
+(def fragment-cube-fog
+"#version 410 core
+uniform vec3 light;
+uniform vec3 diffuse_color;
+in VS_OUT
+{
+  vec3 point;
+  vec3 normal;
+} fs_in;
+out vec3 fragColor;
+vec4 cloud_planet(vec3 point);
+void main()
+{
+  vec3 object_color = diffuse_color * max(0, dot(light, fs_in.normal));
+  vec4 fog = cloud_planet(fs_in.point);
+  fragColor = object_color * (1 - fog.a) + fog.rgb * fog.a;
+}")
+
+(def cloud-planet-mock
+"#version 410 core
+uniform vec3 origin;
+vec4 cloud_planet(vec3 point)
+{
+  float dist = distance(origin, point);
+  float transparency = exp(-dist / 5.0);
+  return vec4(0.5, 0.5, 0.5, 1 - transparency);
+}")
+
+(fact "Render red cube with fog"
+      (offscreen-render 160 120
+        (let [program      (make-program :sfsim.render/vertex [vertex-cube-fog]
+                                         :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock])
+              opengl-scene (load-scene-into-opengl (constantly program) cube)
+              origin       (vec3 0 0 5)
+              transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
+              moved-scene  (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] transform)]
+          (clear (vec3 0.5 0.5 0.5) 0.0)
+          (use-program program)
+          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+          (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
+          (render-scene (constantly program) moved-scene
+                        (fn [{:sfsim.model/keys [transform diffuse]}]
+                            (uniform-vector3 program "origin" origin)
+                            (uniform-matrix4 program "transform" transform)
+                            (uniform-vector3 program "diffuse_color" diffuse)))
+          (unload-scene-from-opengl opengl-scene)
+          (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cube-fog.png" 0.0))
 (GLFW/glfwTerminate)
