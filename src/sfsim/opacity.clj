@@ -3,8 +3,8 @@
     (:require [clojure.math :refer (sqrt)]
               [malli.core :as m]
               [fastmath.vector :refer (mag dot)]
-              [sfsim.matrix :refer (split-list shadow-matrix-cascade shadow-config shadow-data shadow-box)]
-              [sfsim.texture :refer (destroy-texture texture-2d texture-3d)]
+              [sfsim.matrix :refer (split-list shadow-matrix-cascade shadow-config shadow-data)]
+              [sfsim.texture :refer (destroy-texture)]
               [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                     use-program uniform-int uniform-float uniform-vector3 render-quads render-depth
                                     use-textures render-config vertex-array-object render-vars)]
