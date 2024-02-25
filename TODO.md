@@ -1,6 +1,8 @@
 # TODO
-* object pose relative to planet, object pose relative to camera, camera center relative to planet,
-  determine light using transmittance\_outer, use ground\_radiance?, apply transmittance\_track for rest light and in\_scatter
+* determine light using transmittance\_outer, use ground\_radiance?, apply transmittance\_track for rest light and in\_scatter
+* create resources/shaders/model directory
+* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
+* object pose relative to planet, object pose relative to camera, camera center relative to planet
 * render cube with fog (extrinsics relative to camera, pose relative to planet, origin relative to planet),
   integration test rendering of brick wall segment,
   use atmosphere intersection and cloud layer intersection to render foreground (see cloud\_planet),
