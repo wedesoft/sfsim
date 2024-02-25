@@ -491,7 +491,7 @@ void main()
 
 (def fragment-cube-fog
 "#version 410 core
-uniform vec3 light;
+uniform vec3 light_direction;
 uniform vec3 diffuse_color;
 in VS_OUT
 {
@@ -500,12 +500,15 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec4 cloud_planet(vec3 point);
+vec3 transmittance_outer(vec3 point, vec3 direction);
 void main()
 {
-  vec3 object_color = diffuse_color * max(0, dot(light, fs_in.normal));
+  float cos_incidence = max(dot(light_direction, fs_in.normal), 0);
+  vec3 direct_light = transmittance_outer(fs_in.point, light_direction);
+  vec3 object_color = diffuse_color * cos_incidence * direct_light;
   vec4 fog = cloud_planet(fs_in.point);
   fragColor = object_color * (1 - fog.a) + fog.rgb * fog.a;
-}")
+}");
 
 (def cloud-planet-mock
 "#version 410 core
@@ -517,10 +520,18 @@ vec4 cloud_planet(vec3 point)
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
 }")
 
-(fact "Render red cube with fog"
+(def transmittance-outer-mock
+"#version 410 core
+vec3 transmittance_outer(vec3 point, vec3 direction)
+{
+  float brightness = clamp(0.5 * point.y + 0.5, 0.0, 1.0);
+  return vec3(brightness, brightness, brightness);
+}")
+
+(fact "Render red cube with fog and atmosphere"
       (offscreen-render 160 120
         (let [program      (make-program :sfsim.render/vertex [vertex-cube-fog]
-                                         :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock])
+                                         :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock])
               opengl-scene (load-scene-into-opengl (constantly program) cube)
               origin       (vec3 0 0 5)
               transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
@@ -528,7 +539,7 @@ vec4 cloud_planet(vec3 point)
           (clear (vec3 0.5 0.5 0.5) 0.0)
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-          (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
+          (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform diffuse]}]
                             (uniform-vector3 program "origin" origin)
