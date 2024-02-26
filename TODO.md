@@ -1,5 +1,7 @@
 # TODO
-* determine light using transmittance\_outer, use ground\_radiance?, apply transmittance\_track for rest light and in\_scatter
+* attenuation and shadow
+* determine light using use ground\_radiance?, apply attenuation\_track for rest light and in-scatter
+  (see ground-radiance and planet/fragment)
 * create resources/shaders/model directory
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * object pose relative to planet, object pose relative to camera, camera center relative to planet
