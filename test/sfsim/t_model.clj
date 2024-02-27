@@ -491,6 +491,9 @@ void main()
 
 (def fragment-cube-fog
 "#version 410 core
+uniform vec3 origin;
+uniform float radius;
+uniform float max_height;
 uniform vec3 light_direction;
 uniform vec3 diffuse_color;
 in VS_OUT
@@ -499,11 +502,13 @@ in VS_OUT
   vec3 normal;
 } fs_in;
 out vec3 fragColor;
-vec4 cloud_planet(vec3 point);
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 bool is_above_horizon(vec3 point, vec3 direction);
 vec3 transmittance_outer(vec3 point, vec3 direction);
-float overall_shadow(vec4 point);
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+vec4 cloud_planet(vec3 point);
+float overall_shadow(vec4 point);
 void main()
 {
   vec3 direct_light;
@@ -520,7 +525,12 @@ void main()
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
   vec3 object_color = diffuse_color * (incidence_fraction * direct_light + ambient_light);
   vec4 fog = cloud_planet(fs_in.point);
-  fragColor = object_color * (1 - fog.a) + fog.rgb * fog.a;
+  vec3 incoming = object_color * (1 - fog.a) + fog.rgb * fog.a;
+  vec3 direction = normalize(fs_in.point - origin);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
+  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  fragColor = incoming;
 }");
 
 (def cloud-planet-mock
@@ -565,12 +575,28 @@ float overall_shadow(vec4 point)
   return shadow;
 }")
 
+(def ray-sphere-mock
+"#version 410 core
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  return vec2(0, 10);
+}")
+
+(def attenuation-mock
+"#version 410 core
+uniform float attenuation;
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+{
+  return incoming * attenuation;
+}")
+
 (tabular "Render red cube with fog and atmosphere"
   (fact
     (offscreen-render 160 120
       (let [program      (make-program :sfsim.render/vertex [vertex-cube-fog]
                                        :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
-                                                               above-horizon-mock surface-radiance-mock overall-shadow-mock])
+                                                               above-horizon-mock surface-radiance-mock overall-shadow-mock
+                                                               ray-sphere-mock attenuation-mock])
             opengl-scene (load-scene-into-opengl (constantly program) cube)
             origin       (vec3 0 0 5)
             transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
@@ -582,6 +608,9 @@ float overall_shadow(vec4 point)
         (uniform-float program "transmittance" ?transmittance)
         (uniform-float program "ambient" ?ambient)
         (uniform-float program "shadow" ?shadow)
+        (uniform-float program "attenuation" ?attenuation)
+        (uniform-float program "radius" 1000.0)
+        (uniform-float program "max_height" 100.0)
         (uniform-int program "above" ?above)
         (render-scene (constantly program) moved-scene
                       (fn [{:sfsim.model/keys [transform diffuse]}]
@@ -590,11 +619,12 @@ float overall_shadow(vec4 point)
                           (uniform-vector3 program "diffuse_color" diffuse)))
         (unload-scene-from-opengl opengl-scene)
         (destroy-program program))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
-  ?transmittance ?above ?ambient ?shadow ?result
-  1.0            1      0.0      1.0     "cube-fog.png"
-  0.5            1      0.0      1.0     "cube-dark.png"
-  1.0            0      0.0      1.0     "cube-sunset.png"
-  1.0            0      1.0      1.0     "cube-ambient.png"
-  1.0            1      0.0      0.5     "cube-shadow.png")
+  ?transmittance ?above ?ambient ?shadow ?attenuation ?result
+  1.0            1      0.0      1.0     1.0          "cube-fog.png"
+  0.5            1      0.0      1.0     1.0          "cube-dark.png"
+  1.0            0      0.0      1.0     1.0          "cube-sunset.png"
+  1.0            0      1.0      1.0     1.0          "cube-ambient.png"
+  1.0            1      0.0      0.5     1.0          "cube-shadow.png"
+  1.0            1      0.0      1.0     0.5          "cube-attenuation.png")
 
 (GLFW/glfwTerminate)

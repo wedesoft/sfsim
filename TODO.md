@@ -1,10 +1,7 @@
 # TODO
-* attenuation and shadow
-* determine light using use ground\_radiance?, apply attenuation\_track for rest light and in-scatter
-  (see ground-radiance and planet/fragment)
-* create resources/shaders/model directory
-* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * object pose relative to planet, object pose relative to camera, camera center relative to planet
+* create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?
+* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * render cube with fog (extrinsics relative to camera, pose relative to planet, origin relative to planet),
   integration test rendering of brick wall segment,
   use atmosphere intersection and cloud layer intersection to render foreground (see cloud\_planet),
