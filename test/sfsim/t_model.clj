@@ -4,7 +4,7 @@
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (to-radians sqrt PI)]
               [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-              [fastmath.matrix :refer (eye mulm mat4x4)]
+              [fastmath.matrix :refer (eye mulm inverse mat4x4)]
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim.matrix :refer :all]
               [sfsim.texture :refer :all]
@@ -474,6 +474,7 @@ void main()
 (def vertex-cube-fog
 "#version 410 core
 uniform mat4 projection;
+uniform mat4 pose;
 uniform mat4 transform;
 in vec3 vertex;
 in vec3 normal;
@@ -484,8 +485,8 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.point = vertex;
-  vs_out.normal = mat3(transform) * normal;
+  vs_out.point = (pose * vec4(vertex, 1)).xyz;
+  vs_out.normal = mat3(pose) * normal;
   gl_Position = projection * transform * vec4(vertex, 1);
 }")
 
@@ -599,8 +600,9 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                                ray-sphere-mock attenuation-mock])
             opengl-scene (load-scene-into-opengl (constantly program) cube)
             origin       (vec3 0 0 5)
-            transform    (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5))
-            moved-scene  (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] transform)]
+            extrinsics   (transformation-matrix (eye 3) (vec3 1 0 0))
+            pose         (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
+            moved-scene  (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] pose)]
         (clear (vec3 0.5 0.5 0.5) 0.0)
         (use-program program)
         (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
@@ -615,7 +617,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
         (render-scene (constantly program) moved-scene
                       (fn [{:sfsim.model/keys [transform diffuse]}]
                           (uniform-vector3 program "origin" origin)
-                          (uniform-matrix4 program "transform" transform)
+                          (uniform-matrix4 program "pose" transform)
+                          (uniform-matrix4 program "transform" (mulm (inverse extrinsics) transform))
                           (uniform-vector3 program "diffuse_color" diffuse)))
         (unload-scene-from-opengl opengl-scene)
         (destroy-program program))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))

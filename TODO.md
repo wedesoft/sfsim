@@ -1,5 +1,5 @@
 # TODO
-* object pose relative to planet, object pose relative to camera, camera center relative to planet
+* object pose and fs\_in.point relative to planet (pose), object pose relative to camera (transform = inverse(extrinsics) * pose), camera center (origin) relative to planet
 * create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * render cube with fog (extrinsics relative to camera, pose relative to planet, origin relative to planet),
