@@ -100,14 +100,14 @@
 (defn render-tree
   "Call each tile in tree to be rendered"
   {:malli/schema [:=> [:cat :int [:maybe :map] :any [:vector :keyword]] :nil]}
-  [program node transform texture-keys]
+  [program node world-to-camera texture-keys]
   (when-not (empty? node)
             (if (is-leaf? node)
-              (render-tile program node transform texture-keys)
+              (render-tile program node world-to-camera texture-keys)
               (doseq [selector [:sfsim.quadtree/face0 :sfsim.quadtree/face1 :sfsim.quadtree/face2 :sfsim.quadtree/face3
                                 :sfsim.quadtree/face4 :sfsim.quadtree/face5
                                 :sfsim.quadtree/quad0 :sfsim.quadtree/quad1 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3]]
-                     (render-tree program (selector node) transform texture-keys)))))
+                     (render-tree program (selector node) world-to-camera texture-keys)))))
 
 (def planet-config (m/schema [:map [::radius :double] [::max-height :double] [::albedo :double] [::dawn-start :double]
                                    [::dawn-end :double] [::tilesize N] [::color-tilesize N] [::reflectivity :double]
@@ -202,12 +202,12 @@
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         cloud-data      (:sfsim.clouds/data other)
         render-config   (:sfsim.render/config other)
-        transform       (inverse (:sfsim.render/camera-to-world render-vars))]
+        world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
     (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-    (uniform-matrix4 program "transform" transform)
+    (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
@@ -221,7 +221,7 @@
                    7 (:sfsim.clouds/bluenoise cloud-data)})
     (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree transform [::surf-tex])))
+    (render-tree program tree world-to-camera [::surf-tex])))
 
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon (untested)"
@@ -271,13 +271,13 @@
         indices         [0 1 3 2]
         vertices        (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao             (make-vertex-array-object program indices vertices ["point" 3])
-        transform       (inverse (:sfsim.render/camera-to-world render-vars))]
+        world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
     (uniform-float program "lod_offset" (lod-offset render-config data render-vars))
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
-    (uniform-matrix4 program "transform" transform)
+    (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
@@ -343,11 +343,11 @@
   {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars texture-2d [:maybe :map]] :nil]}
   [{::keys [program] :as other} render-vars shadow-vars clouds tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
-        transform       (inverse (:sfsim.render/camera-to-world render-vars))]
+        world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-    (uniform-matrix4 program "transform" transform)
+    (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
@@ -361,7 +361,7 @@
                    7 (:sfsim.atmosphere/mie atmosphere-luts) 8 (:sfsim.atmosphere/surface-radiance atmosphere-luts) 9 clouds})
     (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                     (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree transform [::surf-tex ::day-tex ::night-tex ::normal-tex ::water-tex])))
+    (render-tree program tree world-to-camera [::surf-tex ::day-tex ::night-tex ::normal-tex ::water-tex])))
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program (untested)"

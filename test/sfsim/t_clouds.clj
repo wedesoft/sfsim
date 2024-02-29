@@ -281,7 +281,7 @@ void main()
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          transform       (transformation-matrix (eye 3) (vec3 0 0 shift-z))
+          world-to-camera (transformation-matrix (eye 3) (vec3 0 0 shift-z))
           program         (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                         :sfsim.render/fragment [(opacity-cascade-lookup-probe z)
                                                                 (opacity-cascade-lookup n "opacity_lookup")
@@ -292,7 +292,7 @@ void main()
                                opacities offsets)
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
-                                                (uniform-matrix4 program "transform" transform)
+                                                (uniform-matrix4 program "world_to_camera" world-to-camera)
                                                 (doseq [idx (range n)]
                                                        (uniform-sampler program (str "opacity" idx) idx)
                                                        (uniform-float program (str "depth" idx) 200.0))
@@ -1229,18 +1229,18 @@ float cloud_density(vec3 point, float lod)
 (def vertex-render-opacity
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 world_to_camera;
 in vec3 point;
 out vec4 pos;
 void main()
 {
   pos = vec4(point, 1);
-  gl_Position = projection * transform * pos;
+  gl_Position = projection * world_to_camera * pos;
 }")
 
 (def fragment-render-opacity
 "#version 410 core
-uniform mat4 transform;
+uniform mat4 world_to_camera;
 in vec4 pos;
 out vec4 fragColor;
 float opacity_cascade_lookup(vec4 point);
@@ -1295,7 +1295,7 @@ void main()
                                   (uniform-int program "shadow_size" shadow-size)
                                   (uniform-int program "num_opacity_layers" num-layers)
                                   (uniform-matrix4 program "projection" projection)
-                                  (uniform-matrix4 program "transform" (inverse camera-to-world))
+                                  (uniform-matrix4 program "world_to_camera" (inverse camera-to-world))
                                   (uniform-float program "split0" z-near)
                                   (uniform-float program "split1" z-far)
                                   (uniform-matrix4 program "shadow_map_matrix0" (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))

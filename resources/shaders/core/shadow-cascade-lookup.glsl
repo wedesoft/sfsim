@@ -1,6 +1,6 @@
 #version 410 core
 
-uniform mat4 transform;
+uniform mat4 world_to_camera;
 
 <% (doseq [i (range n)] %>
 uniform sampler2DShadow shadow_map<%= i %>;
@@ -14,7 +14,7 @@ float <%= base-function %>(sampler2DShadow shadow_map, vec4 shadow_pos);
 
 float shadow_cascade_lookup(vec4 point)
 {
-  float z = -(transform * point).z;
+  float z = -(world_to_camera * point).z;
 <% (doseq [i (range n)] %>
   if (z <= split<%= (inc i) %>) {
     vec4 shadow_pos = shadow_map_matrix<%= i %> * point;
