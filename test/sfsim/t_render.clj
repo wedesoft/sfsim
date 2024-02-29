@@ -769,12 +769,12 @@ void main()
 
 (def vertex-shadow
 "#version 410 core
-uniform mat4 transform;
+uniform mat4 shadow_ndc_matrix;
 in vec3 point;
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
-  gl_Position = shrink_shadow_index(transform * vec4(point, 1), 128, 128);
+  gl_Position = shrink_shadow_index(shadow_ndc_matrix * vec4(point, 1), 128, 128);
 }")
 
 (def fragment-shadow
@@ -814,25 +814,25 @@ void main(void)
 
 (fact "Shadow mapping integration test"
       (with-invisible-window
-        (let [projection     (projection-matrix 320 240 2.0 5.0 (to-radians 90))
-              transform      (eye 4)
-              light-vector   (normalize (vec3 1 1 2))
-              shadow-mat     (shadow-matrices projection transform light-vector 1.0)
-              indices        [0 1 3 2 6 7 5 4 8 9 11 10]
-              vertices       [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
-                              -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
-                              -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
-              program-shadow (make-program :sfsim.render/vertex [vertex-shadow s/shrink-shadow-index]
-                                           :sfsim.render/fragment [fragment-shadow])
-              program-main   (make-program :sfsim.render/vertex [vertex-scene]
-                                           :sfsim.render/fragment [fragment-scene s/shadow-lookup])
-              vao            (make-vertex-array-object program-main indices vertices ["point" 3])
-              shadow-map     (texture-render-depth
-                               128 128
-                               (clear)
-                               (use-program program-shadow)
-                               (uniform-matrix4 program-shadow "transform" (:sfsim.matrix/shadow-ndc-matrix shadow-mat))
-                               (render-quads vao))]
+        (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
+              camera-to-world (eye 4)
+              light-vector    (normalize (vec3 1 1 2))
+              shadow-mat      (shadow-matrices projection camera-to-world light-vector 1.0)
+              indices         [0 1 3 2 6 7 5 4 8 9 11 10]
+              vertices        [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
+                               -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
+                               -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
+              program-shadow  (make-program :sfsim.render/vertex [vertex-shadow s/shrink-shadow-index]
+                                            :sfsim.render/fragment [fragment-shadow])
+              program-main    (make-program :sfsim.render/vertex [vertex-scene]
+                                            :sfsim.render/fragment [fragment-scene s/shadow-lookup])
+              vao             (make-vertex-array-object program-main indices vertices ["point" 3])
+              shadow-map      (texture-render-depth
+                                128 128
+                                (clear)
+                                (use-program program-shadow)
+                                (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:sfsim.matrix/shadow-ndc-matrix shadow-mat))
+                                (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
             (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
@@ -867,29 +867,29 @@ void main(void)
 
 (fact "Shadow cascade integration test"
       (with-invisible-window
-        (let [projection     (projection-matrix 320 240 2.0 5.0 (to-radians 90))
-              transform      (eye 4)
-              num-steps      1
-              light-vector   (normalize (vec3 1 1 2))
-              shadow-data    #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 1.0}
-              render-vars    #:sfsim.render{:projection projection :camera-to-world transform :light-direction light-vector
-                                            :z-near 2.0 :z-far 5.0}
-              shadow-mats    (shadow-matrix-cascade shadow-data render-vars)
-              indices        [0 1 3 2 6 7 5 4 8 9 11 10]
-              vertices       [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
-                              -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
-                              -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
-              program-shadow (make-program :sfsim.render/vertex [vertex-shadow s/shrink-shadow-index]
-                                           :sfsim.render/fragment [fragment-shadow])
-              program-main   (make-program :sfsim.render/vertex [vertex-scene]
-                                           :sfsim.render/fragment [fragment-scene-cascade
-                                                                   (s/shadow-cascade-lookup num-steps "shadow_lookup")
-                                                                   s/shadow-lookup])
-              vao            (make-vertex-array-object program-main indices vertices ["point" 3])
-              shadow-maps    (shadow-cascade 128 shadow-mats program-shadow
-                                             (fn [shadow-ndc-matrix]
-                                                 (uniform-matrix4 program-shadow "transform" shadow-ndc-matrix)
-                                                 (render-quads vao)))]
+        (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
+              camera-to-world (eye 4)
+              num-steps       1
+              light-vector    (normalize (vec3 1 1 2))
+              shadow-data     #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 1.0}
+              render-vars     #:sfsim.render{:projection projection :camera-to-world camera-to-world
+                                             :light-direction light-vector :z-near 2.0 :z-far 5.0}
+              shadow-mats     (shadow-matrix-cascade shadow-data render-vars)
+              indices         [0 1 3 2 6 7 5 4 8 9 11 10]
+              vertices        [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
+                               -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
+                               -1.0 -1.0 -2.9, 1.0 -1.0 -2.9, -1.0 1.0 -2.9, 1.0 1.0 -2.9]
+              program-shadow  (make-program :sfsim.render/vertex [vertex-shadow s/shrink-shadow-index]
+                                            :sfsim.render/fragment [fragment-shadow])
+              program-main    (make-program :sfsim.render/vertex [vertex-scene]
+                                            :sfsim.render/fragment [fragment-scene-cascade
+                                                                    (s/shadow-cascade-lookup num-steps "shadow_lookup")
+                                                                    s/shadow-lookup])
+              vao             (make-vertex-array-object program-main indices vertices ["point" 3])
+              shadow-maps     (shadow-cascade 128 shadow-mats program-shadow
+                                              (fn [shadow-ndc-matrix]
+                                                  (uniform-matrix4 program-shadow "shadow_ndc_matrix" shadow-ndc-matrix)
+                                                  (render-quads vao)))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
             (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
