@@ -140,17 +140,20 @@
 
 (defn shadow-box-to-map
   "Scale and translate light box coordinates to shadow map texture coordinates"
+  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fmat4]}
   [bounding-box]
   (fm/mulm (fm/mat4x4 0.5 0 0 0.5, 0 0.5 0 0.5, 0 0 1 0, 0 0 0 1) (shadow-box-to-ndc bounding-box)))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"
+  {:malli/schema [:=> [:cat fvec3] fvec3]}
   [n]
   (let [b (first (sort-by #(abs (fv/dot n %)) (fm/rows (fm/eye 3))))]
     (fv/normalize (fv/cross n b))))
 
 (defn oriented-matrix
   "Create a 3x3 isometry with given normal vector as first row"
+  {:malli/schema [:=> [:cat fvec3] fmat3]}
   [n]
   (let [o1 (orthogonal n)
         o2 (fv/cross n o1)]
@@ -158,6 +161,7 @@
 
 (defn orient-to-light
   "Return matrix to rotate points into coordinate system with z-axis pointing towards the light"
+  {:malli/schema [:=> [:cat fvec3] fmat4]}
   [light-vector]
   (let [o (oriented-matrix light-vector)]
     (fm/mat4x4 (o 1 0) (o 1 1) (o 1 2) 0
@@ -167,11 +171,13 @@
 
 (defn- transform-point-list
   "Apply transform to frustum corners"
+  {:malli/schema [:=> [:cat fmat4 [:vector fvec4]] [:vector fvec4]]}
   [matrix corners]
-  (map #(fm/mulv matrix %) corners))
+  (mapv #(fm/mulv matrix %) corners))
 
 (defn- span-of-box
   "Get vector of box dimensions"
+  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fvec3]}
   [bounding-box]
   (fv/sub (:toprightfar bounding-box) (:bottomleftnear bounding-box)))
 
