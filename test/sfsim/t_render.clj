@@ -900,7 +900,7 @@ void main(void)
                                 (uniform-float program-main "split1" 50.0)
                                 (uniform-int program-main "shadow_size" 128)
                                 (uniform-matrix4 program-main "projection" projection)
-                                (uniform-matrix4 program-main "transform" (eye 4))
+                                (uniform-matrix4 program-main "world_to_camera" (eye 4))
                                 (uniform-matrix4 program-main "shadow_map_matrix0"
                                                  (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))
                                 (use-textures (zipmap (range) shadow-maps))
