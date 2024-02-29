@@ -872,7 +872,7 @@ void main(void)
               num-steps      1
               light-vector   (normalize (vec3 1 1 2))
               shadow-data    #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 1.0}
-              render-vars    #:sfsim.render{:projection projection :extrinsics transform :light-direction light-vector
+              render-vars    #:sfsim.render{:projection projection :camera-to-world transform :light-direction light-vector
                                             :z-near 2.0 :z-far 5.0}
               shadow-mats    (shadow-matrix-cascade shadow-data render-vars)
               indices        [0 1 3 2 6 7 5 4 8 9 11 10]
@@ -1014,7 +1014,7 @@ void main()
            (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (roughly 47.549 1e-3)
            (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => (roughly 0.951 1e-3)
            (:sfsim.render/z-far (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 300.0
-           (:sfsim.render/extrinsics (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (eye 4)
+           (:sfsim.render/camera-to-world (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (eye 4)
            (:sfsim.render/projection (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (diagonal 1 2 3 4)
            (:sfsim.render/light-direction (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => light)))
 

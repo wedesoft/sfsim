@@ -1154,59 +1154,59 @@ void main()
 
 (fact "Test rendering of cloud overlay image"
   (with-invisible-window
-    (let [width       160
-          height      120
-          fov         (to-radians 60.0)
-          z-near      1.0
-          z-far       100.0
-          tilesize    33
-          data        (flatten (for [y (range -1.0 1.0625 0.0625) x (range -1.0 1.0625 0.0625)] [x y 5.0]))
-          surface     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width tilesize :height tilesize :data (float-array data)})
-          projection  (projection-matrix width height z-near (+ z-far 1) fov)
-          origin      (vec3 0 0 10)
-          extrinsics  (transformation-matrix (eye 3) origin)
-          planet      (make-program :sfsim.render/vertex [vertex-planet]
-                                    :sfsim.render/tess-control [tess-control-planet]
-                                    :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                    :sfsim.render/geometry [geometry-planet]
-                                    :sfsim.render/fragment [fragment-planet-clouds (last (cloud-planet 3 [] []))])
-          indices     [0 1 3 2]
-          vertices    [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
-          tile        (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-          atmosphere  (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                    :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-atmosphere 3 [] []))])
-          indices     [0 1 3 2]
-          vertices    (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-          vao         (make-vertex-array-object atmosphere indices vertices ["point" 3])
-          tex         (texture-render-color-depth width height true
-                                                  (clear (vec3 0 0 0) 0)
-                                                  (use-program planet)
-                                                  (uniform-sampler planet "surface" 0)
-                                                  (uniform-matrix4 planet "projection" projection)
-                                                  (uniform-vector3 planet "tile_center" (vec3 0 0 0))
-                                                  (uniform-matrix4 planet "tile_to_camera" (inverse extrinsics))
-                                                  (uniform-vector3 planet "origin" origin)
-                                                  (uniform-vector3 planet "light_direction" (vec3 1 0 0))
-                                                  (uniform-float planet "radius" 5)
-                                                  (uniform-float planet "max_height" 4)
-                                                  (uniform-float planet "cloud_bottom" 1)
-                                                  (uniform-float planet "cloud_top" 2)
-                                                  (uniform-float planet "depth" 3)
-                                                  (uniform-int planet "neighbours" 15)
-                                                  (uniform-int planet "high_detail" (dec tilesize))
-                                                  (uniform-int planet "low_detail" (quot (dec tilesize) 2))
-                                                  (use-textures {0 surface})
-                                                  (render-patches tile)
-                                                  (use-program atmosphere)
-                                                  (uniform-matrix4 atmosphere "projection" projection)
-                                                  (uniform-matrix4 atmosphere "extrinsics" extrinsics)
-                                                  (uniform-vector3 atmosphere "origin" origin)
-                                                  (uniform-float atmosphere "radius" 5)
-                                                  (uniform-float atmosphere "max_height" 4)
-                                                  (uniform-float atmosphere "cloud_bottom" 1)
-                                                  (uniform-float atmosphere "cloud_top" 2)
-                                                  (render-quads vao))
+    (let [width           160
+          height          120
+          fov             (to-radians 60.0)
+          z-near          1.0
+          z-far           100.0
+          tilesize        33
+          data            (flatten (for [y (range -1.0 1.0625 0.0625) x (range -1.0 1.0625 0.0625)] [x y 5.0]))
+          surface         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                  #:sfsim.image{:width tilesize :height tilesize :data (float-array data)})
+          projection      (projection-matrix width height z-near (+ z-far 1) fov)
+          origin          (vec3 0 0 10)
+          camera-to-world (transformation-matrix (eye 3) origin)
+          planet          (make-program :sfsim.render/vertex [vertex-planet]
+                                        :sfsim.render/tess-control [tess-control-planet]
+                                        :sfsim.render/tess-evaluation [tess-evaluation-planet]
+                                        :sfsim.render/geometry [geometry-planet]
+                                        :sfsim.render/fragment [fragment-planet-clouds (last (cloud-planet 3 [] []))])
+          indices         [0 1 3 2]
+          vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
+          tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+          atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
+                                        :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-atmosphere 3 [] []))])
+          indices         [0 1 3 2]
+          vertices        (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+          vao             (make-vertex-array-object atmosphere indices vertices ["point" 3])
+          tex             (texture-render-color-depth width height true
+                                                      (clear (vec3 0 0 0) 0)
+                                                      (use-program planet)
+                                                      (uniform-sampler planet "surface" 0)
+                                                      (uniform-matrix4 planet "projection" projection)
+                                                      (uniform-vector3 planet "tile_center" (vec3 0 0 0))
+                                                      (uniform-matrix4 planet "tile_to_camera" (inverse camera-to-world))
+                                                      (uniform-vector3 planet "origin" origin)
+                                                      (uniform-vector3 planet "light_direction" (vec3 1 0 0))
+                                                      (uniform-float planet "radius" 5)
+                                                      (uniform-float planet "max_height" 4)
+                                                      (uniform-float planet "cloud_bottom" 1)
+                                                      (uniform-float planet "cloud_top" 2)
+                                                      (uniform-float planet "depth" 3)
+                                                      (uniform-int planet "neighbours" 15)
+                                                      (uniform-int planet "high_detail" (dec tilesize))
+                                                      (uniform-int planet "low_detail" (quot (dec tilesize) 2))
+                                                      (use-textures {0 surface})
+                                                      (render-patches tile)
+                                                      (use-program atmosphere)
+                                                      (uniform-matrix4 atmosphere "projection" projection)
+                                                      (uniform-matrix4 atmosphere "camera_to_world" camera-to-world)
+                                                      (uniform-vector3 atmosphere "origin" origin)
+                                                      (uniform-float atmosphere "radius" 5)
+                                                      (uniform-float atmosphere "max_height" 4)
+                                                      (uniform-float atmosphere "cloud_bottom" 1)
+                                                      (uniform-float atmosphere "cloud_top" 2)
+                                                      (render-quads vao))
           img        (texture->image tex)]
       (destroy-texture tex)
       (destroy-vertex-array-object vao)
@@ -1252,58 +1252,58 @@ void main()
 
 (fact "Render cascade of deep opacity maps"
       (with-invisible-window
-        (let [indices      [0 1 3 2]
-              vertices     [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-              num-steps    1
-              num-layers   7
-              shadow-size  128
-              z-near       1.0
-              z-far        6.0
-              projection   (projection-matrix 320 240 z-near z-far (to-radians 45))
-              extrinsics   (transformation-matrix (eye 3) (vec3 0 0 4))
-              light        (vec3 0 0 1)
-              shadow-data  #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 5.0}
-              render-vars  #:sfsim.render{:projection projection :extrinsics extrinsics :light-direction light
-                                            :z-near z-near :z-far z-far}
-              shadow-mats  (shadow-matrix-cascade shadow-data render-vars)
-              program-opac (make-program :sfsim.render/vertex [opacity-vertex shaders/grow-shadow-index]
-                                         :sfsim.render/fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
-                                                                 shaders/ray-sphere linear-sampling opacity-cascade-mocks])
-              vao          (make-vertex-array-object program-opac indices vertices ["point" 2])
-              opacity-maps (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
-                                            (uniform-vector3 program-opac "light_direction" light)
-                                            (uniform-float program-opac "radius" 0.25)
-                                            (uniform-float program-opac "cloud_bottom" 0.25)
-                                            (uniform-float program-opac "cloud_top" 0.75)
-                                            (uniform-float program-opac "cloud_max_step" 0.05)
-                                            (uniform-float program-opac "opacity_step" 0.1)
-                                            (uniform-float program-opac "scatter_amount" 0.5)
-                                            (render-quads vao))
-              tex          (texture-render-color-depth 320 240 false
-                             (let [indices   [0 1 3 2]
-                                   vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
-                                   program   (make-program :sfsim.render/vertex [vertex-render-opacity]
-                                                           :sfsim.render/fragment [fragment-render-opacity
-                                                                                   (opacity-cascade-lookup num-steps
-                                                                                                           "opacity_lookup")
-                                                                                   opacity-lookup])
-                                   vao       (make-vertex-array-object program indices vertices ["point" 3])]
-                               (clear (vec3 0 0 0) 0)
-                               (use-program program)
-                               (uniform-sampler program "opacity0" 0)
-                               (uniform-float program "opacity_step" 0.1)
-                               (uniform-int program "shadow_size" shadow-size)
-                               (uniform-int program "num_opacity_layers" num-layers)
-                               (uniform-matrix4 program "projection" projection)
-                               (uniform-matrix4 program "transform" (inverse extrinsics))
-                               (uniform-float program "split0" z-near)
-                               (uniform-float program "split1" z-far)
-                               (uniform-matrix4 program "shadow_map_matrix0" (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))
-                               (uniform-float program "depth0" (:sfsim.matrix/depth (shadow-mats 0)))
-                               (use-textures (zipmap (range) opacity-maps))
-                               (render-quads vao)
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program)))]
+        (let [indices         [0 1 3 2]
+              vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+              num-steps       1
+              num-layers      7
+              shadow-size     128
+              z-near          1.0
+              z-far           6.0
+              projection      (projection-matrix 320 240 z-near z-far (to-radians 45))
+              camera-to-world (transformation-matrix (eye 3) (vec3 0 0 4))
+              light           (vec3 0 0 1)
+              shadow-data     #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 5.0}
+              render-vars     #:sfsim.render{:projection projection :camera-to-world camera-to-world :light-direction light
+                                               :z-near z-near :z-far z-far}
+              shadow-mats     (shadow-matrix-cascade shadow-data render-vars)
+              program-opac    (make-program :sfsim.render/vertex [opacity-vertex shaders/grow-shadow-index]
+                                            :sfsim.render/fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
+                                                                    shaders/ray-sphere linear-sampling opacity-cascade-mocks])
+              vao             (make-vertex-array-object program-opac indices vertices ["point" 2])
+              opacity-maps    (opacity-cascade shadow-size num-layers shadow-mats 1.0 program-opac
+                                               (uniform-vector3 program-opac "light_direction" light)
+                                               (uniform-float program-opac "radius" 0.25)
+                                               (uniform-float program-opac "cloud_bottom" 0.25)
+                                               (uniform-float program-opac "cloud_top" 0.75)
+                                               (uniform-float program-opac "cloud_max_step" 0.05)
+                                               (uniform-float program-opac "opacity_step" 0.1)
+                                               (uniform-float program-opac "scatter_amount" 0.5)
+                                               (render-quads vao))
+              tex             (texture-render-color-depth 320 240 false
+                                (let [indices   [0 1 3 2]
+                                      vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
+                                      program   (make-program :sfsim.render/vertex [vertex-render-opacity]
+                                                              :sfsim.render/fragment [fragment-render-opacity
+                                                                                      (opacity-cascade-lookup num-steps
+                                                                                                              "opacity_lookup")
+                                                                                      opacity-lookup])
+                                      vao       (make-vertex-array-object program indices vertices ["point" 3])]
+                                  (clear (vec3 0 0 0) 0)
+                                  (use-program program)
+                                  (uniform-sampler program "opacity0" 0)
+                                  (uniform-float program "opacity_step" 0.1)
+                                  (uniform-int program "shadow_size" shadow-size)
+                                  (uniform-int program "num_opacity_layers" num-layers)
+                                  (uniform-matrix4 program "projection" projection)
+                                  (uniform-matrix4 program "transform" (inverse camera-to-world))
+                                  (uniform-float program "split0" z-near)
+                                  (uniform-float program "split1" z-far)
+                                  (uniform-matrix4 program "shadow_map_matrix0" (:sfsim.matrix/shadow-map-matrix (shadow-mats 0)))
+                                  (uniform-float program "depth0" (:sfsim.matrix/depth (shadow-mats 0)))
+                                  (use-textures (zipmap (range) opacity-maps))
+                                  (render-quads vao)
+                                  (destroy-vertex-array-object vao)
+                                  (destroy-program program)))]
           (texture->image tex) => (is-image "test/sfsim/fixtures/clouds/cascade.png" 0.0)
           (destroy-texture tex)
           (doseq [opacity-map opacity-maps]

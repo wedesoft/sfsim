@@ -594,15 +594,15 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 (tabular "Render red cube with fog and atmosphere"
   (fact
     (offscreen-render 160 120
-      (let [program      (make-program :sfsim.render/vertex [vertex-cube-fog]
-                                       :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
-                                                               above-horizon-mock surface-radiance-mock overall-shadow-mock
-                                                               ray-sphere-mock attenuation-mock])
-            opengl-scene (load-scene-into-opengl (constantly program) cube)
-            origin       (vec3 0 0 5)
-            extrinsics   (transformation-matrix (eye 3) (vec3 1 0 0))
-            pose         (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
-            moved-scene  (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] pose)]
+      (let [program         (make-program :sfsim.render/vertex [vertex-cube-fog]
+                                          :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
+                                                                  above-horizon-mock surface-radiance-mock overall-shadow-mock
+                                                                  ray-sphere-mock attenuation-mock])
+            opengl-scene    (load-scene-into-opengl (constantly program) cube)
+            origin          (vec3 0 0 5)
+            camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
+            pose            (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
+            moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] pose)]
         (clear (vec3 0.5 0.5 0.5) 0.0)
         (use-program program)
         (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
@@ -618,7 +618,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                       (fn [{:sfsim.model/keys [transform diffuse]}]
                           (uniform-vector3 program "origin" origin)
                           (uniform-matrix4 program "pose" transform)
-                          (uniform-matrix4 program "transform" (mulm (inverse extrinsics) transform))
+                          (uniform-matrix4 program "transform" (mulm (inverse camera-to-world) transform))
                           (uniform-vector3 program "diffuse_color" diffuse)))
         (unload-scene-from-opengl opengl-scene)
         (destroy-program program))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))

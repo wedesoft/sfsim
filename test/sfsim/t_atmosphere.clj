@@ -692,7 +692,7 @@ void main()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
-                               (uniform-matrix4 program "extrinsics" ?matrix)
+                               (uniform-matrix4 program "camera_to_world" ?matrix)
                                (uniform-float program "z_far" 1.0)
                                (uniform-float program "z_near" 0.5)
                                (render-quads vao)
@@ -716,25 +716,25 @@ vec4 cloud_overlay()
 (tabular "Fragment shader for rendering atmosphere and sun"
          (fact
            (offscreen-render 256 256
-                             (let [indices       [0 1 3 2]
-                                   vertices      [-0.5 -0.5 -1
-                                                   0.5 -0.5 -1
-                                                  -0.5  0.5 -1
-                                                   0.5  0.5 -1]
-                                   origin        (vec3 ?x ?y ?z)
-                                   extrinsics    (transformation-matrix (rotation-x ?rotation) origin)
-                                   program       (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                                               :sfsim.render/fragment [(last fragment-atmosphere)
-                                                                                       shaders/ray-sphere attenuation-outer
-                                                                                       (cloud-overlay-mock ?cloud)])
-                                   variables     ["point" 3]
-                                   transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                 #:sfsim.image{:width size :height size :data T})
-                                   ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                   #:sfsim.image{:width (* size size) :height (* size size) :data S})
-                                   mie-strength  (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                   #:sfsim.image{:width (* size size) :height (* size size) :data M})
-                                   vao           (make-vertex-array-object program indices vertices variables)]
+                             (let [indices         [0 1 3 2]
+                                   vertices        [-0.5 -0.5 -1
+                                                     0.5 -0.5 -1
+                                                    -0.5  0.5 -1
+                                                     0.5  0.5 -1]
+                                   origin          (vec3 ?x ?y ?z)
+                                   camera-to-world (transformation-matrix (rotation-x ?rotation) origin)
+                                   program         (make-program :sfsim.render/vertex [vertex-atmosphere]
+                                                                 :sfsim.render/fragment [(last fragment-atmosphere)
+                                                                                         shaders/ray-sphere attenuation-outer
+                                                                                         (cloud-overlay-mock ?cloud)])
+                                   variables       ["point" 3]
+                                   transmittance   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                   #:sfsim.image{:width size :height size :data T})
+                                   ray-scatter     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                     #:sfsim.image{:width (* size size) :height (* size size) :data S})
+                                   mie-strength    (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                     #:sfsim.image{:width (* size size) :height (* size size) :data M})
+                                   vao             (make-vertex-array-object program indices vertices variables)]
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "transmittance" 0)
@@ -743,7 +743,7 @@ vec4 cloud_overlay()
                                (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
                                (uniform-float program "z_near" 0.0)
                                (uniform-float program "z_far" 1.0)
-                               (uniform-matrix4 program "extrinsics" extrinsics)
+                               (uniform-matrix4 program "camera_to_world" camera-to-world)
                                (uniform-vector3 program "origin" origin)
                                (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
                                (uniform-float program "radius" radius)

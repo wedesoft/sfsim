@@ -126,36 +126,36 @@
          (fm/det m) => (roughly 1.0 1e-6)))
 
 (facts "Choose NDC and texture coordinate matrices for shadow mapping"
-       (let [projection      (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
-             extrinsics1     (fm/eye 4)
-             extrinsics2     (transformation-matrix (rotation-x (/ PI 2)) (fv/vec3 0 0 0))
-             light-direction (fv/vec3 0 1 0)]
-         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0))
+      (let [projection         (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
+             camera-to-world-1 (fm/eye 4)
+             camera-to-world-2 (transformation-matrix (rotation-x (/ PI 2)) (fv/vec3 0 0 0))
+             light-direction   (fv/vec3 0 1 0)]
+         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection camera-to-world-1 light-direction 0.0))
                   (fv/vec4 0 750 -1000 1)) => (roughly-vector (fv/vec4 1 0 1 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0))
+         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection camera-to-world-1 light-direction 0.0))
                   (fv/vec4 0 -750 -1000 1)) => (roughly-vector (fv/vec4 1 0 0 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection extrinsics2 light-direction 0.0))
+         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection camera-to-world-2 light-direction 0.0))
                   (fv/vec4 0 1000 0 1)) => (roughly-vector (fv/vec4 0 0 1 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection extrinsics2 light-direction 0.0))
+         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection camera-to-world-2 light-direction 0.0))
                   (fv/vec4 0 5 0 1)) => (roughly-vector (fv/vec4 0 0 0 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection extrinsics1 light-direction 0.0))
+         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection camera-to-world-1 light-direction 0.0))
                   (fv/vec4 0 -750 -1000 1)) => (roughly-vector (fv/vec4 1 0.5 0 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection extrinsics1 light-direction 0.0))
+         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection camera-to-world-1 light-direction 0.0))
                   (fv/vec4 0 750 -1000 1)) => (roughly-vector (fv/vec4 1 0.5 1 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection extrinsics2 light-direction 0.0))
+         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection camera-to-world-2 light-direction 0.0))
                   (fv/vec4 0 1000 0 1)) => (roughly-vector (fv/vec4 0.5 0.5 1 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection extrinsics2 light-direction 500.0))
+         (fm/mulv (:sfsim.matrix/shadow-map-matrix (shadow-matrices projection camera-to-world-2 light-direction 500.0))
                   (fv/vec4 0 1500 0 1)) => (roughly-vector (fv/vec4 0.5 0.5 1 1) 1e-6)
-         (:sfsim.matrix/depth (shadow-matrices projection extrinsics1 light-direction 0.0))
+         (:sfsim.matrix/depth (shadow-matrices projection camera-to-world-1 light-direction 0.0))
          => (roughly 1500 1e-6)
-         (:sfsim.matrix/depth (shadow-matrices projection extrinsics1 light-direction 1000.0))
+         (:sfsim.matrix/depth (shadow-matrices projection camera-to-world-1 light-direction 1000.0))
          => (roughly 2500 1e-6)
-         (:sfsim.matrix/scale (shadow-matrices projection extrinsics1 light-direction 0.0))
+         (:sfsim.matrix/scale (shadow-matrices projection camera-to-world-1 light-direction 0.0))
          => (roughly 1497.5 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0 (/ 99.0 199)
+         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection camera-to-world-1 light-direction 0.0 (/ 99.0 199)
                                                                     (/ 9.0 199))) (fv/vec4 0 0 -10 1))
          => (roughly-vector (fv/vec4 -1 0 0.5 1) 1e-6)
-         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection extrinsics1 light-direction 0.0 (/ 99.0 199)
+         (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-matrices projection camera-to-world-1 light-direction 0.0 (/ 99.0 199)
                                                                     (/ 9.0 199))) (fv/vec4 0 0 -100 1))
          => (roughly-vector (fv/vec4 1 0 0.5 1) 1e-6)))
 
@@ -180,9 +180,9 @@
        (let [z-near          10.0
              z-far           40.0
              projection      (projection-matrix 640 480 z-near z-far (* 0.5 PI))
-             extrinsics      (fm/eye 4)
+             camera-to-world      (fm/eye 4)
              light-direction (fv/vec3 0 1 0)
-             render-vars     #:sfsim.render{:projection projection :extrinsics extrinsics :light-direction light-direction
+             render-vars     #:sfsim.render{:projection projection :camera-to-world camera-to-world :light-direction light-direction
                                             :z-near z-near :z-far z-far}
              shadow-data     (fn [depth mix num-steps] #:sfsim.opacity{:depth depth :mix mix :num-steps num-steps})]
          (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (nth (shadow-matrix-cascade (shadow-data 0.0 0.0 2) render-vars) 0))

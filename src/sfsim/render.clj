@@ -408,25 +408,25 @@
 (def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double]]))
 
 (def render-vars (m/schema [:map [::origin fvec3] [::height :double] [::z-near :double] [::z-far :double] [::window-width N]
-                                 [::window-height N] [::light-direction fvec3] [::extrinsics fmat4] [::projection fmat4]]))
+                                 [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]]))
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame"
   {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]] [:map [::fov :double]]
                             N N fvec3 quaternion fvec3 :double] render-vars]}
   [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
-  (let [distance     (mag position)
-        radius       (:sfsim.planet/radius planet-config)
-        cloud-top    (:sfsim.clouds/cloud-top cloud-data)
-        fov          (::fov render-config)
-        height       (- distance radius)
-        diagonal-fov (diagonal-field-of-view window-width window-height fov)
-        z-near       (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
-        z-far        (render-depth radius height cloud-top)
-        rotation     (quaternion->matrix orientation)
-        extrinsics   (transformation-matrix rotation position)
-        z-offset     1.0
-        projection   (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+  (let [distance        (mag position)
+        radius          (:sfsim.planet/radius planet-config)
+        cloud-top       (:sfsim.clouds/cloud-top cloud-data)
+        fov             (::fov render-config)
+        height          (- distance radius)
+        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
+        z-near          (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
+        z-far           (render-depth radius height cloud-top)
+        rotation        (quaternion->matrix orientation)
+        camera-to-world (transformation-matrix rotation position)
+        z-offset        1.0
+        projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
     {::origin position
      ::height height
      ::z-near z-near
@@ -434,7 +434,7 @@
      ::window-width window-width
      ::window-height window-height
      ::light-direction light-direction
-     ::extrinsics extrinsics
+     ::camera-to-world camera-to-world
      ::projection projection}))
 
 (defn setup-shadow-and-opacity-maps

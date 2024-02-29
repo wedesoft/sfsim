@@ -1,5 +1,5 @@
 # TODO
-* rotation, transform, extrinsics (camera-to-world), projection, recenter\_and\_transform, pose
+* rotation, transform, projection, recenter\_and\_transform, pose
 * rename shhadow\_map\_matrix and ndc\_to\_shadow?
 * object pose and fs\_in.point relative to planet (pose), object pose relative to camera (transform = inverse(extrinsics) * pose), camera center (origin) relative to planet
 * create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?

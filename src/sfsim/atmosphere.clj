@@ -510,7 +510,7 @@
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
-    (uniform-matrix4 program "extrinsics" (:sfsim.render/extrinsics render-vars))
+    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))

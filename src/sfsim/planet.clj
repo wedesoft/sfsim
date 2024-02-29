@@ -202,7 +202,7 @@
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         cloud-data      (:sfsim.clouds/data other)
         render-config   (:sfsim.render/config other)
-        transform       (inverse (:sfsim.render/extrinsics render-vars))]
+        transform       (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
     (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
@@ -271,12 +271,12 @@
         indices         [0 1 3 2]
         vertices        (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao             (make-vertex-array-object program indices vertices ["point" 3])
-        transform       (inverse (:sfsim.render/extrinsics render-vars))]
+        transform       (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
     (uniform-float program "lod_offset" (lod-offset render-config data render-vars))
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-    (uniform-matrix4 program "extrinsics" (:sfsim.render/extrinsics render-vars))
+    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
     (uniform-matrix4 program "transform" transform)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
@@ -343,7 +343,7 @@
   {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars texture-2d [:maybe :map]] :nil]}
   [{::keys [program] :as other} render-vars shadow-vars clouds tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
-        transform       (inverse (:sfsim.render/extrinsics render-vars))]
+        transform       (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
