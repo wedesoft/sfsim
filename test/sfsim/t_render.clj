@@ -228,10 +228,10 @@ void main()
 (def vertex-transform3
 "#version 410 core
 in vec3 point;
-uniform mat3 transform;
+uniform mat3 world_to_camera;
 void main()
 {
-  gl_Position = vec4(transform * point, 1);
+  gl_Position = vec4(world_to_camera * point, 1);
 }")
 
 (fact "Set uniform 3x3 matrix"
@@ -242,7 +242,7 @@ void main()
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
-      (uniform-matrix3 program "transform" (eye 3))
+      (uniform-matrix3 program "world_to_camera" (eye 3))
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim/fixtures/render/quad.png" 0.0))
@@ -250,10 +250,10 @@ void main()
 (def vertex-transform4
 "#version 410 core
 in vec3 point;
-uniform mat4 transform;
+uniform mat4 world_to_camera;
 void main()
 {
-  gl_Position = transform * vec4(point, 1);
+  gl_Position = world_to_camera * vec4(point, 1);
 }")
 
 (fact "Set uniform 4x4 matrix"
@@ -264,7 +264,7 @@ void main()
           vao      (make-vertex-array-object program indices vertices ["point" 3])]
       (clear (vec3 0.0 0.0 0.0))
       (use-program program)
-      (uniform-matrix4 program "transform" (eye 4))
+      (uniform-matrix4 program "world_to_camera" (eye 4))
       (render-quads vao)
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim/fixtures/render/quad.png" 0.0))

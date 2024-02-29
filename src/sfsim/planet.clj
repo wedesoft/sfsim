@@ -85,7 +85,7 @@
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
   {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector :keyword]] :nil]}
-  [program tile transform ^clojure.lang.PersistentVector texture-keys]
+  [program tile world-to-camera ^clojure.lang.PersistentVector texture-keys]
   (let [neighbours  (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
                             (if (:sfsim.quadtree/left  tile) 2 0)
                             (if (:sfsim.quadtree/down  tile) 4 0)
@@ -93,7 +93,7 @@
         tile-center (:sfsim.quadtree/center tile)]
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
-    (uniform-matrix4 program "tile_to_camera" (mulm transform (transformation-matrix (eye 3) tile-center)))
+    (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera (transformation-matrix (eye 3) tile-center)))
     (use-textures (zipmap (range) (map tile texture-keys)))
     (render-patches (::vao tile))))
 
@@ -139,7 +139,7 @@
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{::keys [program] :as other} & {:keys [tree] :as data}]
   (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
-                  (fn render-planet-shadow [transform] (render-tree program tree transform [::surf-tex]))))
+                  (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [::surf-tex]))))
 
 (defn destroy-shadow-cascade
   "Destroy cascade of shadow maps (untested)"
