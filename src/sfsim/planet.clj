@@ -93,7 +93,7 @@
         tile-center (:sfsim.quadtree/center tile)]
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
-    (uniform-matrix4 program "recenter_and_transform" (mulm transform (transformation-matrix (eye 3) tile-center)))
+    (uniform-matrix4 program "tile_to_camera" (mulm transform (transformation-matrix (eye 3) tile-center)))
     (use-textures (zipmap (range) (map tile texture-keys)))
     (render-patches (::vao tile))))
 
