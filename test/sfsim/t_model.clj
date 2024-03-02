@@ -83,7 +83,7 @@
 (def vertex-cube
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 object_to_camera;
 in vec3 vertex;
 in vec3 normal;
 out VS_OUT
@@ -92,8 +92,8 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.normal = mat3(transform) * normal;
-  gl_Position = projection * transform * vec4(vertex, 1);
+  vs_out.normal = mat3(object_to_camera) * normal;
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
 
 (def fragment-cube
@@ -122,7 +122,7 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform diffuse]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cube.png" 0.0))
@@ -150,7 +150,7 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform diffuse]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cubes.png" 0.01))
@@ -189,7 +189,7 @@ void main()
 (def vertex-dice
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 object_to_camera;
 in vec3 vertex;
 in vec3 normal;
 in vec2 texcoord;
@@ -200,9 +200,9 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.normal = mat3(transform) * normal;
+  vs_out.normal = mat3(object_to_camera) * normal;
   vs_out.texcoord = texcoord;
-  gl_Position = projection * transform * vec4(vertex, 1);
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
 
 (def fragment-dice
@@ -234,7 +234,7 @@ void main()
           (uniform-sampler program "colors" 0)
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform colors]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (use-textures {0 colors})))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/dice.png" 0.01))
@@ -250,7 +250,7 @@ void main()
 (def vertex-bricks
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 object_to_camera;
 in vec3 vertex;
 in vec3 tangent;
 in vec3 bitangent;
@@ -263,9 +263,9 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.surface = mat3(transform) * mat3(tangent, bitangent, normal);
+  vs_out.surface = mat3(object_to_camera) * mat3(tangent, bitangent, normal);
   vs_out.texcoord = texcoord;
-  gl_Position = projection * transform * vec4(vertex, 1);
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
 
 (def fragment-bricks
@@ -301,7 +301,7 @@ void main()
           (uniform-sampler program "normals" 1)
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform colors normals]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (use-textures {0 colors 1 normals})))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/bricks.png" 0.01))
@@ -310,12 +310,12 @@ void main()
 
 (defmethod render-model nil [{:sfsim.model/keys [program transform diffuse]}]
   (use-program program)
-  (uniform-matrix4 program "transform" transform)
+  (uniform-matrix4 program "object_to_camera" transform)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-model Number [{:sfsim.model/keys [program transform colors]}]
   (use-program program)
-  (uniform-matrix4 program "transform" transform)
+  (uniform-matrix4 program "object_to_camera" transform)
   (use-textures {0 colors}))
 
 (def cube-and-dice (read-gltf "test/sfsim/fixtures/model/cube-and-dice.gltf"))
@@ -474,8 +474,8 @@ void main()
 (def vertex-cube-fog
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 pose;
-uniform mat4 transform;
+uniform mat4 object_to_world;
+uniform mat4 object_to_camera;
 in vec3 vertex;
 in vec3 normal;
 out VS_OUT
@@ -485,9 +485,9 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.point = (pose * vec4(vertex, 1)).xyz;
-  vs_out.normal = mat3(pose) * normal;
-  gl_Position = projection * transform * vec4(vertex, 1);
+  vs_out.point = (object_to_world * vec4(vertex, 1)).xyz;
+  vs_out.normal = mat3(object_to_world) * normal;
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
 
 (def fragment-cube-fog
@@ -601,8 +601,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
             opengl-scene    (load-scene-into-opengl (constantly program) cube)
             origin          (vec3 0 0 5)
             camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
-            pose            (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
-            moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] pose)]
+            object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
+            moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
         (clear (vec3 0.5 0.5 0.5) 0.0)
         (use-program program)
         (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
@@ -617,8 +617,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
         (render-scene (constantly program) moved-scene
                       (fn [{:sfsim.model/keys [transform diffuse]}]
                           (uniform-vector3 program "origin" origin)
-                          (uniform-matrix4 program "pose" transform)
-                          (uniform-matrix4 program "transform" (mulm (inverse camera-to-world) transform))
+                          (uniform-matrix4 program "object_to_world" transform)
+                          (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                           (uniform-vector3 program "diffuse_color" diffuse)))
         (unload-scene-from-opengl opengl-scene)
         (destroy-program program))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
