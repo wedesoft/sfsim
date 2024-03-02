@@ -195,7 +195,7 @@
                                    [:sfsim.opacity/shadow-bias :double]]))
 (def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
 
-(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::shadow-map-matrix fmat4] [::scale :double] [::depth :double]]))
+(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
@@ -211,7 +211,7 @@
          scale        (* 0.5 (+ (span 0) (span 1)))
          depth        (- (span 2))]
      {::shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
-      ::shadow-map-matrix (fm/mulm shadow-map light-matrix)
+      ::world-to-shadow-map (fm/mulm shadow-map light-matrix)
       ::scale scale
       ::depth depth})))
 

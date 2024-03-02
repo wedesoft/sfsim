@@ -4,7 +4,7 @@ uniform mat4 world_to_camera;
 
 <% (doseq [i (range n)] %>
 uniform sampler3D opacity<%= i %>;
-uniform mat4 shadow_map_matrix<%= i %>;
+uniform mat4 world_to_shadow_map<%= i %>;
 uniform float depth<%= i %>;
 <% ) %>
 <% (doseq [i (range (inc n))] %>
@@ -17,7 +17,7 @@ float opacity_cascade_lookup(vec4 point)
   float z = -(world_to_camera * point).z;
 <% (doseq [i (range n)] %>
   if (z <= split<%= (inc i) %>) {
-    vec4 map_coords = shadow_map_matrix<%= i %> * point;
+    vec4 map_coords = world_to_shadow_map<%= i %> * point;
     return <%= base-function %>(opacity<%= i %>, depth<%= i %>, map_coords);
   };
 <% ) %>

@@ -270,7 +270,7 @@ void main()
                                                 (uniform-int program "selector" selector)
                                                 (doseq [idx (range n)]
                                                        (uniform-sampler program (str "shadow_map" idx) idx)
-                                                       (uniform-matrix4 program (str "shadow_map_matrix" idx)
+                                                       (uniform-matrix4 program (str "world_to_shadow_map" idx)
                                                                         (transformation-matrix (eye 3)
                                                                                                (vec3 (inc idx) 0 0))))
                                                 (doseq [idx (range (inc n))]
