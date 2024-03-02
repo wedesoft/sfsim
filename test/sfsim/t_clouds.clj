@@ -143,9 +143,9 @@ float cloud_density(vec3 point, float lod)
   (uniform-float program "cloud_bottom" 100)
   (uniform-float program "cloud_top" 200))
 
-(defn setup-opacity-fragment-dynamic-uniforms [program ndc-to-shadow light-direction shells multiplier scatter
+(defn setup-opacity-fragment-dynamic-uniforms [program shadow-ndc-to-world light-direction shells multiplier scatter
                                                depth cloudstep opacitystep start lod]
-  (uniform-matrix4 program "ndc_to_shadow" ndc-to-shadow)
+  (uniform-matrix4 program "shadow_ndc_to_world" shadow-ndc-to-world)
   (uniform-vector3 program "light_direction" light-direction)
   (uniform-int program "num_shell_intersections" shells)
   (uniform-float program "cloud_multiplier" multiplier)
@@ -161,7 +161,7 @@ float cloud_density(vec3 point, float lod)
     (with-invisible-window
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-            ndc-to-shadow   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
+            shadow-ndc-to-world   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
             light-direction (vec3 0 0 1)
             program         (make-program :sfsim.render/vertex [opacity-vertex]
                                           :sfsim.render/fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock
@@ -172,8 +172,8 @@ float cloud_density(vec3 point, float lod)
         (framebuffer-render 3 3 :sfsim.render/cullback nil [opacity-layers]
                             (use-program program)
                             (setup-opacity-fragment-static-uniforms program)
-                            (setup-opacity-fragment-dynamic-uniforms program ndc-to-shadow light-direction ?shells ?multiplier
-                                                                     ?scatter ?depth ?cloudstep ?opacitystep ?start
+                            (setup-opacity-fragment-dynamic-uniforms program shadow-ndc-to-world light-direction ?shells
+                                                                     ?multiplier ?scatter ?depth ?cloudstep ?opacitystep ?start
                                                                      ?lod)
                             (render-quads vao))
         (get-float-3d (float-texture-3d->floats opacity-layers) index 1 ?px) => (roughly ?result 1e-6)
