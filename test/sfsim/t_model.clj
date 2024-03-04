@@ -9,6 +9,7 @@
               [sfsim.matrix :refer :all]
               [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
+              [sfsim.clouds :as clouds]
               [sfsim.model :refer :all :as model]
               [sfsim.quaternion :refer (->Quaternion)])
     (:import [org.lwjgl.glfw GLFW]))
@@ -504,27 +505,16 @@ in VS_OUT
 } fs_in;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-bool is_above_horizon(vec3 point, vec3 direction);
-vec3 transmittance_outer(vec3 point, vec3 direction);
+vec3 direct_light(vec3 point);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 vec4 cloud_planet(vec3 point);
-float overall_shadow(vec4 point);
 void main()
 {
-  vec3 direct_light;
-  float incidence_fraction;
-  if (is_above_horizon(fs_in.point, light_direction)) {
-    float cos_incidence = max(dot(light_direction, fs_in.normal), 0);
-    float shadow = overall_shadow(vec4(fs_in.point, 1));
-    incidence_fraction = cos_incidence * shadow;
-    direct_light = transmittance_outer(fs_in.point, light_direction);
-  } else {
-    direct_light = vec3(0, 0, 0);
-    incidence_fraction = 0.0;
-  }
+  float cos_incidence = max(dot(light_direction, fs_in.normal), 0);
+  vec3 light = direct_light(fs_in.point);
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
-  vec3 object_color = diffuse_color * (incidence_fraction * direct_light + ambient_light);
+  vec3 object_color = diffuse_color * (cos_incidence * light + ambient_light);
   vec4 fog = cloud_planet(fs_in.point);
   vec3 incoming = object_color * (1 - fog.a) + fog.rgb * fog.a;
   vec3 direction = normalize(fs_in.point - origin);
@@ -597,7 +587,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
       (let [program         (make-program :sfsim.render/vertex [vertex-cube-fog]
                                           :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
                                                                   above-horizon-mock surface-radiance-mock overall-shadow-mock
-                                                                  ray-sphere-mock attenuation-mock])
+                                                                  ray-sphere-mock attenuation-mock (last clouds/direct-light)])
             opengl-scene    (load-scene-into-opengl (constantly program) cube)
             origin          (vec3 0 0 5)
             camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
