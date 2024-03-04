@@ -1,5 +1,7 @@
 #version 410 core
 
+float M_PI = 3.14159265358;
+
 uniform sampler2D day;
 uniform sampler2D night;
 uniform sampler2D normals;
@@ -10,6 +12,11 @@ uniform float max_height;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform vec3 origin;
+uniform float albedo;
+uniform float amplification;
+uniform float reflectivity;
+uniform float dawn_start;
+uniform float dawn_end;
 
 in GEO_OUT
 {
@@ -19,9 +26,11 @@ in GEO_OUT
 
 out vec4 fragColor;
 
+bool is_above_horizon(vec3 point, vec3 direction);
+vec3 transmittance_outer(vec3 point, vec3 direction);
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+float remap(float value, float original_min, float original_max, float new_min, float new_max);
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float cos_normal,
-                     float highlight, vec3 land_color, vec3 night_color, vec3 water_color);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec4 cloud_overlay();
 float overall_shadow(vec4 point);
@@ -49,8 +58,17 @@ void main()
     highlight = 0.0;
   };
   float cos_normal = dot(light_direction, water_normal);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, cos_normal, highlight,
-                                  day_color, night_color, water_color);
+  vec3 direct_light;
+  if (is_above_horizon(fs_in.point, light_direction))
+    direct_light = transmittance_outer(fs_in.point, light_direction);
+  else
+    direct_light = vec3(0, 0, 0);
+  vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
+  vec3 color = day_color * (1 - wet) + water_color * wet;
+  vec3 diffuse = (albedo / M_PI) * color * (incidence_fraction * direct_light + ambient_light);
+  vec3 specular = (wet * reflectivity * highlight) * direct_light;
+  vec3 night_lights = clamp(remap(cos_normal, dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
+  vec3 incoming = (diffuse + specular) * amplification + night_lights;
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);

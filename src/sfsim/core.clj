@@ -16,6 +16,9 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+; (require '[nrepl.server :refer [start-server stop-server]])
+; (defonce server (start-server :port 7888))
+
 ; (require '[malli.dev :as dev])
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})

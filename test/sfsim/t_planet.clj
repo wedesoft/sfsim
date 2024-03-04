@@ -333,64 +333,6 @@ void main()
          0  0  radius          1   0   0   0.095782
          0  0  (+ radius 1000) 0   0   1   0.639491)
 
-(def ground-radiance-probe
-  (template/fn [x y z incidence-frac cos-normal highlight lx ly lz water cr cg cb]
-"#version 410 core
-out vec3 fragColor;
-vec3 surface_radiance_function(vec3 point, vec3 light_direction)
-{
-  return vec3(0, 0, 1);
-}
-vec3 transmittance_outer(vec3 point, vec3 direction)
-{
-  return vec3(1, 0, 0);
-}
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float cos_normal,
-                     float highlight, vec3 land_color, vec3 night_color, vec3 water_color);
-void main()
-{
-  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
-  vec3 light_direction = vec3(<%= lx %>, <%= ly %>, <%= lz %>);
-  vec3 land_color = vec3(<%= cr %>, <%= cg %>, <%= cb %>);
-  vec3 water_color = vec3(0.1, 0.2, 0.4);
-  vec3 night_color = vec3(0.0, 1.0, 0.0);
-  fragColor = ground_radiance(point, light_direction, <%= water %>, <%= incidence-frac %>, <%= cos-normal %>, <%= highlight %>,
-                              land_color, night_color, water_color);
-}"))
-
-(def ground-radiance-test
-  (shader-test
-    (fn [program radius max-height elevation-size height-size albedo reflectivity amplification dawn-start dawn-end]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height)
-        (uniform-int program "elevation_size" elevation-size)
-        (uniform-int program "height_size" height-size)
-        (uniform-float program "albedo" albedo)
-        (uniform-float program "reflectivity" reflectivity)
-        (uniform-float program "amplification" amplification)
-        (uniform-float program "dawn_start" dawn-start)
-        (uniform-float program "dawn_end" dawn-end))
-    ground-radiance-probe (last ground-radiance) shaders/elevation-to-index shaders/interpolate-2d
-    shaders/convert-2d-index shaders/is-above-horizon shaders/height-to-index shaders/sun-elevation-to-index shaders/remap))
-
-(tabular "Shader function to compute light emitted from ground"
-         (fact (mult (ground-radiance-test [6378000.0 100000.0 17 17 ?albedo 0.5 ?ampl -0.05 0.05]
-                                           [?x ?y ?z ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb]) PI)
-               => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
-         ?albedo ?ampl ?x ?y ?z       ?incidence ?cnormal ?highlight ?lx ?ly ?lz ?water ?cr ?cg ?cb ?r          ?g         ?b
-         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   0      0   0   0   0           0          0
-         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
-         1.0     2.0   0  0  6378000  1          1.0      0          0   0   1   0      0.2 0.5 0.8 0.4         0          1.6
-         0.9     1.0   0  0  6378000  1          1.0      0          0   0   1   0      1   1   1   0.9         0          0.9
-         1.0     1.0   0  0  6378000  0          1.0      0          1   0   0   0      1   1   1   0           0          1.0
-         1.0     1.0   0  0  6378000  1          1.0      0          0   0   1   1      0.2 0.5 0.8 0.1         0          0.4
-         1.0     1.0   0  0  6378000  0          1.0      0.5        0   0   1   1      0.2 0.5 0.8 (* 0.25 PI) 0          0.4
-         1.0     1.0   0  0  6378000  1          1.0      0.5        0   0   1   0      0.2 0.5 0.8 0.2         0          0.8
-         1.0     1.0   0  0  6378000  1          1.0      0          0   0  -1   0      1   1   1   0           0          1.0
-         1.0     1.0   0  0  6378000  0         -0.05     0          0   0   1   0      0   0   0   0           PI         0.0
-         1.0     1.0   0  0  6378000  0          0.0      0          0   0   1   0      0   0   0   0           (* 0.5 PI) 0.0
-         1.0     1.0   0  0  6378000  0         -1.0      0          0   0   1   0      0   0   0   0           PI         0.0)
-
 (def vertex-planet-probe "#version 410 core
 in vec3 point;
 in vec2 colorcoord;
@@ -456,7 +398,9 @@ float overall_shadow(vec4 point)
 (defn make-planet-program []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
-                                        overall-shadow-mock fake-transmittance fake-ray-scatter ground-radiance shaders/ray-shell
+                                        overall-shadow-mock fake-transmittance fake-ray-scatter shaders/ray-shell
+                                        shaders/is-above-horizon atmosphere/transmittance-outer surface-radiance-function
+                                        shaders/remap
                                         (last atmosphere/attenuation-track)]))
 
 (defn setup-static-uniforms [program]

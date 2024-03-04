@@ -60,17 +60,12 @@
   "Shader function to determine ambient light scattered by the atmosphere"
   [shaders/surface-radiance-forward shaders/interpolate-2d (slurp "resources/shaders/planet/surface-radiance.glsl")])
 
-(def ground-radiance
-  "Shader function to compute light emitted from ground"
-  [shaders/is-above-horizon transmittance-outer surface-radiance-function shaders/remap
-   (slurp "resources/shaders/planet/ground-radiance.glsl")])
-
 (defn fragment-planet
   "Fragment shader to render planetary surface"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [shaders/ray-sphere ground-radiance attenuation-track cloud-overlay (overall-shadow num-steps)
-   (slurp "resources/shaders/planet/fragment.glsl")])
+  [shaders/ray-sphere shaders/is-above-horizon transmittance-outer surface-radiance-function shaders/remap attenuation-track
+   cloud-overlay (overall-shadow num-steps) (slurp "resources/shaders/planet/fragment.glsl")])
 
 (def fragment-planet-shadow
   "Fragment shader to render planetary shadow map"
