@@ -12,11 +12,11 @@
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                                     setup-shadow-and-opacity-maps use-textures render-quads render-config render-vars)
                               :as render]
-              [sfsim.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms
-                                        vertex-atmosphere atmosphere-luts)]
+              [sfsim.atmosphere :refer (attenuation-track cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
+                                        atmosphere-luts)]
               [sfsim.util :refer (N N0)]
-              [sfsim.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-render-uniforms
-                                      setup-cloud-sampling-uniforms fragment-atmosphere-clouds cloud-data direct-light)]
+              [sfsim.clouds :refer (cloud-planet lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
+                                    fragment-atmosphere-clouds cloud-data direct-light)]
               [sfsim.shaders :as shaders]))
 
 (set! *unchecked-math* true)
