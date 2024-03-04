@@ -16,7 +16,7 @@
                                         vertex-atmosphere atmosphere-luts)]
               [sfsim.util :refer (N N0)]
               [sfsim.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-render-uniforms
-                                      setup-cloud-sampling-uniforms fragment-atmosphere-clouds cloud-data)]
+                                      setup-cloud-sampling-uniforms fragment-atmosphere-clouds cloud-data direct-light)]
               [sfsim.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -64,8 +64,8 @@
   "Fragment shader to render planetary surface"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [shaders/ray-sphere shaders/is-above-horizon transmittance-outer surface-radiance-function shaders/remap attenuation-track
-   cloud-overlay (overall-shadow num-steps) (slurp "resources/shaders/planet/fragment.glsl")])
+  [shaders/ray-sphere (direct-light num-steps) surface-radiance-function shaders/remap attenuation-track cloud-overlay
+   (slurp "resources/shaders/planet/fragment.glsl")])
 
 (def fragment-planet-shadow
   "Fragment shader to render planetary shadow map"

@@ -587,7 +587,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
       (let [program         (make-program :sfsim.render/vertex [vertex-cube-fog]
                                           :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
                                                                   above-horizon-mock surface-radiance-mock overall-shadow-mock
-                                                                  ray-sphere-mock attenuation-mock (last clouds/direct-light)])
+                                                                  ray-sphere-mock attenuation-mock
+                                                                  (last (clouds/direct-light 3))])
             opengl-scene    (load-scene-into-opengl (constantly program) cube)
             origin          (vec3 0 0 5)
             camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
