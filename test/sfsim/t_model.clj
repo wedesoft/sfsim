@@ -503,7 +503,7 @@ in VS_OUT
   vec3 point;
   vec3 normal;
 } fs_in;
-out vec3 fragColor;
+out vec4 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 direct_light(vec3 point);
 vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
@@ -514,14 +514,13 @@ void main()
   float cos_incidence = max(dot(light_direction, fs_in.normal), 0);
   vec3 light = direct_light(fs_in.point);
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
-  vec3 object_color = diffuse_color * (cos_incidence * light + ambient_light);
-  vec4 fog = cloud_planet(fs_in.point);
-  vec3 incoming = object_color * (1 - fog.a) + fog.rgb * fog.a;
+  vec3 incoming = diffuse_color * (cos_incidence * light + ambient_light);
   vec3 direction = normalize(fs_in.point - origin);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
   incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
-  fragColor = incoming;
+  vec4 cloud_scatter = cloud_planet(fs_in.point);
+  fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
 }");
 
 (def cloud-planet-mock
@@ -530,7 +529,7 @@ uniform vec3 origin;
 vec4 cloud_planet(vec3 point)
 {
   float dist = distance(origin, point);
-  float transparency = exp(-dist / 5.0);
+  float transparency = exp(-dist / 10.0);
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
 }")
 
