@@ -9,6 +9,7 @@
               [sfsim.matrix :refer :all]
               [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
+              [sfsim.atmosphere :as atmosphere]
               [sfsim.clouds :as clouds]
               [sfsim.model :refer :all :as model]
               [sfsim.quaternion :refer (->Quaternion)])
@@ -504,9 +505,8 @@ in VS_OUT
   vec3 normal;
 } fs_in;
 out vec4 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec3 attenuation_point(vec3 point, vec3 incoming);
 vec3 direct_light(vec3 point);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 vec4 cloud_planet(vec3 point);
 void main()
@@ -515,10 +515,7 @@ void main()
   vec3 light = direct_light(fs_in.point);
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
   vec3 incoming = diffuse_color * (cos_incidence * light + ambient_light);
-  vec3 direction = normalize(fs_in.point - origin);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
-  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  incoming = attenuation_point(fs_in.point, incoming);
   vec4 cloud_scatter = cloud_planet(fs_in.point);
   fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
 }");
@@ -587,6 +584,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                           :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
                                                                   above-horizon-mock surface-radiance-mock overall-shadow-mock
                                                                   ray-sphere-mock attenuation-mock
+                                                                  (last atmosphere/attenuation-point)
                                                                   (last (clouds/direct-light 3))])
             opengl-scene    (load-scene-into-opengl (constantly program) cube)
             origin          (vec3 0 0 5)

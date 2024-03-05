@@ -12,7 +12,7 @@
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                                     setup-shadow-and-opacity-maps use-textures render-quads render-config render-vars)
                               :as render]
-              [sfsim.atmosphere :refer (attenuation-track cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
+              [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                         atmosphere-luts)]
               [sfsim.util :refer (N N0)]
               [sfsim.clouds :refer (cloud-planet lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
@@ -64,7 +64,7 @@
   "Fragment shader to render planetary surface"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [shaders/ray-sphere (direct-light num-steps) surface-radiance-function shaders/remap attenuation-track cloud-overlay
+  [(direct-light num-steps) surface-radiance-function shaders/remap attenuation-point cloud-overlay
    (slurp "resources/shaders/planet/fragment.glsl")])
 
 (def fragment-planet-shadow
