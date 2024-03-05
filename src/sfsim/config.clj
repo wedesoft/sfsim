@@ -25,14 +25,14 @@
 
 (def cloud-config #:sfsim.clouds{:cloud-octaves (octaves 4 0.7)
                                  :perlin-octaves (octaves 4 0.7)
-                                 :cloud-bottom 2000.0
-                                 :cloud-top 5000.0
-                                 :detail-scale 4000.0
-                                 :cloud-scale 100000.0
+                                 :cloud-bottom 1500.0
+                                 :cloud-top 3000.0
+                                 :detail-scale 2000.0
+                                 :cloud-scale 50000.0
                                  :cloud-multiplier 10.0
                                  :cover-multiplier 26.0
                                  :threshold 18.2
-                                 :cap 0.007
+                                 :cap 0.01
                                  :anisotropic 0.25
                                  :cloud-step 400.0
                                  :opacity-cutoff 0.01})
