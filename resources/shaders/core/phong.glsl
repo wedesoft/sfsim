@@ -13,7 +13,7 @@ vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float 
   float cos_incidence = dot(light_direction, normal);
   float highlight;
   if (cos_incidence > 0.0) {
-    if (reflectivity > 0) {
+    if (reflectivity > 0.0) {
       vec3 direction = normalize(point - origin);
       highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular);
     };

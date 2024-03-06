@@ -11,6 +11,7 @@
               [sfsim.render :refer :all]
               [sfsim.atmosphere :as atmosphere]
               [sfsim.clouds :as clouds]
+              [sfsim.shaders :as shaders]
               [sfsim.model :refer :all :as model]
               [sfsim.quaternion :refer (->Quaternion)])
     (:import [org.lwjgl.glfw GLFW]))
@@ -494,7 +495,6 @@ void main()
 
 (def fragment-cube-fog
 "#version 410 core
-uniform vec3 origin;
 uniform float radius;
 uniform float max_height;
 uniform vec3 light_direction;
@@ -505,16 +505,16 @@ in VS_OUT
   vec3 normal;
 } fs_in;
 out vec4 fragColor;
-vec3 attenuation_point(vec3 point, vec3 incoming);
 vec3 direct_light(vec3 point);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec3 attenuation_point(vec3 point, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 vec4 cloud_planet(vec3 point);
 void main()
 {
-  float cos_incidence = max(dot(light_direction, fs_in.normal), 0);
   vec3 light = direct_light(fs_in.point);
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
-  vec3 incoming = diffuse_color * (cos_incidence * light + ambient_light);
+  vec3 incoming = phong(ambient_light, light, fs_in.point, fs_in.normal, diffuse_color, 0.0);
   incoming = attenuation_point(fs_in.point, incoming);
   vec4 cloud_scatter = cloud_planet(fs_in.point);
   fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
@@ -583,7 +583,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
       (let [program         (make-program :sfsim.render/vertex [vertex-cube-fog]
                                           :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
                                                                   above-horizon-mock surface-radiance-mock overall-shadow-mock
-                                                                  ray-sphere-mock attenuation-mock
+                                                                  ray-sphere-mock attenuation-mock shaders/phong
                                                                   (last atmosphere/attenuation-point)
                                                                   (last (clouds/direct-light 3))])
             opengl-scene    (load-scene-into-opengl (constantly program) cube)
@@ -593,6 +593,10 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
             moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
         (clear (vec3 0.5 0.5 0.5) 0.0)
         (use-program program)
+        (uniform-float program "albedo" 3.14159265358)
+        (uniform-float program "amplification" 1.0)
+        (uniform-float program "specular" 1.0)
+        (uniform-vector3 program "origin" origin)
         (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
         (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
         (uniform-float program "transmittance" ?transmittance)
@@ -604,7 +608,6 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
         (uniform-int program "above" ?above)
         (render-scene (constantly program) moved-scene
                       (fn [{:sfsim.model/keys [transform diffuse]}]
-                          (uniform-vector3 program "origin" origin)
                           (uniform-matrix4 program "object_to_world" transform)
                           (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                           (uniform-vector3 program "diffuse_color" diffuse)))
