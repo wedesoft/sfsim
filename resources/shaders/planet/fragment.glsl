@@ -39,6 +39,10 @@ void main()
   vec3 night_color = max(texture(night, fs_in.colorcoord).rgb - 0.3, 0.0) / 0.7;
   float wet = texture(water, fs_in.colorcoord).r;
   vec3 normal = mix(land_normal, water_normal, wet);
+  float cos_normal = dot(light_direction, water_normal);
+  vec3 light = direct_light(fs_in.point);
+  vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
+  vec3 color = day_color * (1 - wet) + water_color * wet;
   float cos_incidence = dot(light_direction, normal);
   float highlight;
   if (cos_incidence > 0) {
@@ -48,10 +52,6 @@ void main()
     cos_incidence = 0.0;
     highlight = 0.0;
   };
-  float cos_normal = dot(light_direction, water_normal);
-  vec3 light = direct_light(fs_in.point);
-  vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
-  vec3 color = day_color * (1 - wet) + water_color * wet;
   vec3 diffuse = (albedo / M_PI) * color * (cos_incidence * light + ambient_light);
   vec3 specular = wet * reflectivity * highlight * light;
   vec3 night_lights = clamp(remap(cos_normal, dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
