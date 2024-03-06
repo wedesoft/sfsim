@@ -190,3 +190,7 @@
   [num-steps]
   [(shadow-cascade-lookup num-steps "average_shadow") shadow-lookup convert-shadow-index
    (percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])])
+
+(def phong
+  "Shader for phong shading (ambient, diffuse, and specular lighting)"
+  (slurp "resources/shaders/core/phong.glsl"))

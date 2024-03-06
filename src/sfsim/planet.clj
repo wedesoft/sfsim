@@ -64,7 +64,7 @@
   "Fragment shader to render planetary surface"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [(direct-light num-steps) surface-radiance-function shaders/remap attenuation-point cloud-overlay
+  [(direct-light num-steps) surface-radiance-function shaders/remap shaders/phong attenuation-point cloud-overlay
    (slurp "resources/shaders/planet/fragment.glsl")])
 
 (def fragment-planet-shadow

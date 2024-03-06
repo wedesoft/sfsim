@@ -1,7 +1,7 @@
 # TODO
 * 55ms start frame (did inlining or reducing variables make it faster?)
 * refactor model rendering and ground radiance and planet rendering
-* tests for direct\_light, attenuation\_point
+* tests for direct\_light, attenuation\_point, phong
 * use multi schema for multi-methods
 * object pose and fs\_in.point relative to planet (pose), object pose relative to camera (transform = inverse(extrinsics) * pose), camera center (origin) relative to planet
 * create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?
