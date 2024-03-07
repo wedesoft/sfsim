@@ -1215,4 +1215,45 @@ void main()
          0.5  0.0       1.0       0.0      0.4      0.2
          0.5  0.0       1.0       0.2      0.4      0.3)
 
+(def phong-probe
+  (template/fn [ambient light color reflectivity]
+"#version 410 core
+out vec3 fragColor;
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+void main()
+{
+  vec3 ambient = vec3(<%= ambient %>, <%= ambient %>, <%= ambient %>);
+  vec3 light = vec3(<%= light %>, <%= light %>, <%= light %>);
+  vec3 point = vec3(0, 0, 0);
+  vec3 normal = vec3(0, 0, 1);
+  vec3 color = vec3(<%= color %>, <%= color %>, <%= color %>);
+  float reflectivity = <%= reflectivity %>;
+  fragColor = phong(ambient, light, point, normal, color, reflectivity);
+}"))
+
+(def phong-test
+  (shader-test
+    (fn [program albedo specular origin light-direction amplification]
+        (uniform-float program "albedo" albedo)
+        (uniform-float program "specular" specular)
+        (uniform-vector3 program "origin" origin)
+        (uniform-vector3 program "light_direction" light-direction)
+        (uniform-float program "amplification" amplification))
+    phong-probe phong))
+
+(tabular "Shader for phong shading (ambient, diffuse, and specular lighting)"
+         (fact ((phong-test [?albedo ?specular ?origin ?light-dir ?amplification] [?ambient ?light ?color ?reflect]) 0)
+               => (roughly ?result 1e-6))
+         ?albedo ?specular ?origin      ?light-dir      ?amplification ?ambient ?light ?color   ?reflect ?result
+         0.0      1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 0.0            0.0      0.0    0.0      0.0      0.0
+         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 2.0            0.5      0.0    0.75     0.0      0.75
+         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 1.0            0.0      1.0    0.75     0.0      0.75
+         PI       1.0      (vec3 0  0   1  ) (vec3 1 0   0  ) 1.0            0.0      1.0    0.75     0.0      0.0
+         PI       1.0      (vec3 0  0   1  ) (vec3 0 0  -1  ) 1.0            0.0      1.0    0.75     0.0      0.0
+         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 1.0            0.0      1.0    0.0      0.25     0.25
+         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 1.0            0.0      0.0    0.0      0.25     0.0
+         PI       1.0      (vec3 0  0   1  ) (vec3 0 0.6 0.8) 1.0            0.0      1.0    0.0      0.25     0.2
+         PI      10.0      (vec3 0  0   1  ) (vec3 0 0.6 0.8) 1.0            0.0      1.0    0.0      0.25     0.026844
+         PI      10.0      (vec3 0 -0.6 0.8) (vec3 0 0.6 0.8) 1.0            0.0      1.0    0.0      0.25     0.25)
+
 (GLFW/glfwTerminate)
