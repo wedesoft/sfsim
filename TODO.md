@@ -1,4 +1,5 @@
 # TODO
+* use mix in planet fragment shader
 * 55ms start frame (did inlining or reducing variables make it faster?)
 * refactor model rendering and ground radiance and planet rendering
 * tests for direct\_light, attenuation\_point, phong
