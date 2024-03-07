@@ -16,9 +16,28 @@
 (def float-image-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
 (def float-image-3d (m/schema [:map [::width N] [::height N] [::depth N] [::data seqable?]]))
 (def float-image-4d (m/schema [:map [::width N] [::height N] [::depth N] [::hyperdepth N] [::data seqable?]]))
+(def field-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
+
+(defn make-image
+  "Create an empty RGBA image"
+  {:malli/schema [:=> [:cat N N] image]}
+  [width height]
+  {::width width ::height height ::channels 4 ::data (byte-array (* width height 4))})
+
+(defn make-byte-image
+  "Create an empty byte image"
+  {:malli/schema [:=> [:cat N N] byte-image]}
+  [width height]
+  {::width width ::height height ::data (byte-array (* width height))})
+
+(defn make-vector-image
+  "Create an empty vector image"
+  {:malli/schema [:=> [:cat N N] field-2d]}
+  [width height]
+  {::width width ::height height ::data (float-array (* width height 3))})
 
 (defn slurp-image
-  "Load an RGB image"
+  "Load an RGBA image"
   {:malli/schema [:=> [:cat non-empty-string] image]}
   [path]
   (let [width (int-array 1)
@@ -34,7 +53,7 @@
     {::data data ::width width ::height height ::channels (aget channels 0)}))
 
 (defn spit-png
-  "Save RGB image as PNG file"
+  "Save RGBA image as PNG file"
   {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]]] image]}
   [path {::keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
@@ -44,7 +63,7 @@
     img))
 
 (defn spit-jpg
-  "Save RGB image as JPEG file"
+  "Save RGBA image as JPEG file"
   {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]]] image]}
   [path {::keys [width height data] :as img}]
   (let [buffer (BufferUtils/createByteBuffer (count data))]
@@ -105,8 +124,6 @@
     (aset-byte data (inc (inc offset)) (ubyte->byte (long (c 2))))
     (aset-byte data (inc (inc (inc offset))) -1)
     c))
-
-(def field-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
 
 (defn get-short
   "Read value from a short integer tile"

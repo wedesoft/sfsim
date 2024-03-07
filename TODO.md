@@ -1,8 +1,13 @@
 # TODO
-* test for scale-elevation
-* schemas for main render function arguments
-* methods to create empty images for globe.clj
-* NVidia fails test with two programs
+* refactor model rendering and ground radiance and planet rendering
+* object pose and fs\_in.point relative to planet (pose), object pose relative to camera (transform = inverse(extrinsics) * pose), camera center (origin) relative to planet
+* create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?
+* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
+* render cube with fog (extrinsics relative to camera, pose relative to planet, origin relative to planet),
+  integration test rendering of brick wall segment,
+  use atmosphere intersection and cloud layer intersection to render foreground (see cloud\_planet),
+  low-res blue noise?
+* concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
 * use add-watch?

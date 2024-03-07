@@ -48,7 +48,7 @@
               opacity-renderer          (opacity/make-opacity-renderer data)
               planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
               cloud-planet-renderer     (planet/make-cloud-planet-renderer data)
-              cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer data)
+              cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data)
               planet-renderer           (planet/make-planet-renderer data)
               atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
               tree                      (load-tile-tree planet-renderer {} width ?position level)
@@ -60,7 +60,7 @@
               clouds                    (texture-render-color-depth width height true
                                                                     (clear (vec3 0 0 0) 0.0)
                                                                     (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
-                                                                    (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
+                                                                    (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
               tex                       (texture-render-color-depth width height true
                                                                     (clear (vec3 0 1 0) 0.0)
                                                                     (planet/render-planet planet-renderer render-vars shadow-vars clouds tree)
@@ -72,7 +72,7 @@
           ; TODO: unload tile tree
           (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
           (planet/destroy-planet-renderer planet-renderer)
-          (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
+          (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
           (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
           (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
           (opacity/destroy-opacity-renderer opacity-renderer)

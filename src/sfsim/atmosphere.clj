@@ -11,7 +11,7 @@
                                      texture-2d texture-4d)]
               [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                     uniform-vector3 destroy-program make-vertex-array-object use-textures
-                                    destroy-vertex-array-object render-quads )]
+                                    destroy-vertex-array-object render-quads render-config render-vars)]
               [sfsim.shaders :as shaders]
               [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats)]))
 
@@ -415,12 +415,12 @@
 (def surface-sun-elevation-size 63)
 (def surface-height-size 16)
 
+(def atmosphere-luts (m/schema [:map [::transmittance texture-2d] [::scatter texture-4d] [::mie texture-2d]
+                                     [::surface-radiance texture-2d]]))
+
 (defn make-atmosphere-luts
   "Load atmosphere lookup tables"
-  {:malli/schema [:=> [:cat [:* :any]] [:map [::transmittance texture-2d]
-                                             [::scatter texture-4d]
-                                             [::mie texture-2d]
-                                             [::surface-radiance texture-2d]]]}
+  {:malli/schema [:=> [:cat :double] atmosphere-luts]}
   [max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
@@ -454,6 +454,7 @@
 
 (defn destroy-atmosphere-luts
   "Destroy atmosphere lookup tables"
+  {:malli/schema [:=> [:cat atmosphere-luts] :nil]}
   [{::keys [transmittance scatter mie surface-radiance]}]
   (destroy-texture transmittance)
   (destroy-texture scatter)
@@ -480,9 +481,12 @@
     (uniform-int program "surface_sun_elevation_size" (:sfsim.texture/width (::surface-radiance atmosphere-luts))))
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
+(def atmosphere-renderer (m/schema [:map [::program :int] [::luts atmosphere-luts]]))
+
 (defn make-atmosphere-renderer
   "Initialise atmosphere rendering program (untested)"
-  {:malli/schema [:=> [:cat :map] :map]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::luts atmosphere-luts]
+                                  [:sfsim.planet/config [:map [:sfsim.planet/radius :double]]]]] atmosphere-renderer]}
   [{::keys [luts] :as other}]
   (let [render-config (:sfsim.render/config other)
         planet-config (:sfsim.planet/config other)
@@ -499,14 +503,14 @@
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay (untested)"
-  {:malli/schema [:=> [:cat :map [:* :any]] :nil]}
+  {:malli/schema [:=> [:cat atmosphere-renderer render-vars texture-2d] :nil]}
   [{::keys [program luts]} render-vars clouds]
   (let [indices    [0 1 3 2]
         vertices   (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
         vao        (make-vertex-array-object program indices vertices ["point" 3])]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
-    (uniform-matrix4 program "extrinsics" (:sfsim.render/extrinsics render-vars))
+    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
@@ -517,7 +521,7 @@
 
 (defn destroy-atmosphere-renderer
   "Destroy atmosphere renderer (untested)"
-  {:malli/schema [:=> [:cat :map] :nil]}
+  {:malli/schema [:=> [:cat atmosphere-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
 

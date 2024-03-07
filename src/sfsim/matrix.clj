@@ -140,17 +140,20 @@
 
 (defn shadow-box-to-map
   "Scale and translate light box coordinates to shadow map texture coordinates"
+  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fmat4]}
   [bounding-box]
   (fm/mulm (fm/mat4x4 0.5 0 0 0.5, 0 0.5 0 0.5, 0 0 1 0, 0 0 0 1) (shadow-box-to-ndc bounding-box)))
 
 (defn orthogonal
   "Create orthogonal vector to specified 3D vector"
+  {:malli/schema [:=> [:cat fvec3] fvec3]}
   [n]
   (let [b (first (sort-by #(abs (fv/dot n %)) (fm/rows (fm/eye 3))))]
     (fv/normalize (fv/cross n b))))
 
 (defn oriented-matrix
   "Create a 3x3 isometry with given normal vector as first row"
+  {:malli/schema [:=> [:cat fvec3] fmat3]}
   [n]
   (let [o1 (orthogonal n)
         o2 (fv/cross n o1)]
@@ -158,6 +161,7 @@
 
 (defn orient-to-light
   "Return matrix to rotate points into coordinate system with z-axis pointing towards the light"
+  {:malli/schema [:=> [:cat fvec3] fmat4]}
   [light-vector]
   (let [o (oriented-matrix light-vector)]
     (fm/mat4x4 (o 1 0) (o 1 1) (o 1 2) 0
@@ -167,40 +171,47 @@
 
 (defn- transform-point-list
   "Apply transform to frustum corners"
+  {:malli/schema [:=> [:cat fmat4 [:vector fvec4]] [:vector fvec4]]}
   [matrix corners]
-  (map #(fm/mulv matrix %) corners))
+  (mapv #(fm/mulv matrix %) corners))
 
 (defn- span-of-box
   "Get vector of box dimensions"
+  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fvec3]}
   [bounding-box]
   (fv/sub (:toprightfar bounding-box) (:bottomleftnear bounding-box)))
 
 (defn- bounding-box-for-rotated-frustum
   "Determine bounding box for rotated frustum"
   {:malli/schema [:=> [:cat fmat4 fmat4 fmat4 :double :double :double]]}
-  [extrinsics light-matrix projection-matrix longest-shadow ndc1 ndc2]
+  [camera-to-world light-matrix projection-matrix longest-shadow ndc1 ndc2]
   (let [corners         (frustum-corners projection-matrix ndc1 ndc2)
-        rotated-corners (transform-point-list extrinsics corners)
+        rotated-corners (transform-point-list camera-to-world corners)
         light-corners   (transform-point-list light-matrix rotated-corners)]
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
-(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::shadow-map-matrix fmat4] [::scale :double] [::depth :double]]))
+(def shadow-config (m/schema [:map [:sfsim.opacity/num-opacity-layers N] [:sfsim.opacity/shadow-size N]
+                                   [:sfsim.opacity/num-steps N] [:sfsim.opacity/mix :double]
+                                   [:sfsim.opacity/shadow-bias :double]]))
+(def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
+
+(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping"
   {:malli/schema [:=> [:cat fmat4 fmat4 fvec3 :double [:? [:cat :double :double]]] shadow-box]}
-  ([projection-matrix extrinsics light-vector longest-shadow]
-   (shadow-matrices projection-matrix extrinsics light-vector longest-shadow 1.0 0.0))
-  ([projection-matrix extrinsics light-vector longest-shadow ndc1 ndc2]
+  ([projection-matrix camera-to-world light-vector longest-shadow]
+   (shadow-matrices projection-matrix camera-to-world light-vector longest-shadow 1.0 0.0))
+  ([projection-matrix camera-to-world light-vector longest-shadow ndc1 ndc2]
    (let [light-matrix (orient-to-light light-vector)
-         bounding-box (bounding-box-for-rotated-frustum extrinsics light-matrix projection-matrix longest-shadow ndc1 ndc2)
+         bounding-box (bounding-box-for-rotated-frustum camera-to-world light-matrix projection-matrix longest-shadow ndc1 ndc2)
          shadow-ndc   (shadow-box-to-ndc bounding-box)
          shadow-map   (shadow-box-to-map bounding-box)
          span         (span-of-box bounding-box)
          scale        (* 0.5 (+ (span 0) (span 1)))
          depth        (- (span 2))]
      {::shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
-      ::shadow-map-matrix (fm/mulm shadow-map light-matrix)
+      ::world-to-shadow-map (fm/mulm shadow-map light-matrix)
       ::scale scale
       ::depth depth})))
 
@@ -231,11 +242,11 @@
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices"
   {:malli/schema [:=> [:cat :map :map] [:vector shadow-box]]}
-  [{:sfsim.opacity/keys [num-steps mix depth]} {:sfsim.render/keys [projection extrinsics light-direction z-near z-far]}]
+  [{:sfsim.opacity/keys [num-steps mix depth]} {:sfsim.render/keys [projection camera-to-world light-direction z-near z-far]}]
   (mapv (fn shadow-matrices-for-segment [idx]
             (let [ndc1 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps idx))
                   ndc2 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps (inc idx)))]
-              (shadow-matrices projection extrinsics light-direction depth ndc1 ndc2)))
+              (shadow-matrices projection camera-to-world light-direction depth ndc1 ndc2)))
         (range num-steps)))
 
 (set! *warn-on-reflection* false)

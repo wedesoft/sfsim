@@ -51,7 +51,7 @@
 (def cloud-planet-renderer (planet/make-cloud-planet-renderer data))
 
 ; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def cloud-atmosphere-renderer (clouds/make-cloud-atmosphere-renderer data))
+(def cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data))
 
 ; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer (planet/make-planet-renderer data))
@@ -110,7 +110,7 @@
                                   (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars
                                                               (planet/get-current-tree tile-tree))
                                   ; Render clouds above the horizon
-                                  (clouds/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
+                                  (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render planet with cloud overlay
@@ -129,7 +129,7 @@
   ; TODO: unload all planet tiles (vaos and textures)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)
-  (clouds/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
+  (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)

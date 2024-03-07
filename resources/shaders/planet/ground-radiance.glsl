@@ -16,9 +16,8 @@ float remap(float value, float original_min, float original_max, float new_min, 
 vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float cos_normal,
                      float highlight, vec3 land_color, vec3 night_color, vec3 water_color)
 {
-  bool above = is_above_horizon(point, light_direction);
   vec3 direct_light;
-  if (above)
+  if (is_above_horizon(point, light_direction))
     direct_light = transmittance_outer(point, light_direction);
   else
     direct_light = vec3(0, 0, 0);

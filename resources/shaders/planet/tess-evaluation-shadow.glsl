@@ -4,7 +4,7 @@ layout(quads, equal_spacing, ccw) in;
 
 uniform sampler2D surface;
 uniform vec3 tile_center;
-uniform mat4 recenter_and_transform;
+uniform mat4 tile_to_camera;
 uniform int shadow_size;
 
 in TCS_OUT
@@ -32,6 +32,6 @@ void main()
   vec2 surfacecoord = mix(surfacecoord_a, surfacecoord_b, gl_TessCoord.y);
   vec3 vector = texture(surface, surfacecoord).xyz;
   tes_out.point = tile_center + vector;
-  vec4 transformed_point = recenter_and_transform * vec4(vector, 1);
+  vec4 transformed_point = tile_to_camera * vec4(vector, 1);
   gl_Position = shrink_shadow_index(transformed_point, shadow_size, shadow_size);
 }

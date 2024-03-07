@@ -7,8 +7,33 @@
             [sfsim.image :refer :all])
   (:import [java.io File]))
 
-(mi/collect! {:ns ['sfsim.util]})
+(mi/collect! {:ns ['sfsim.image]})
 (mi/instrument! {:report (pretty/thrower)})
+
+(facts "Create empty RGBA color image"
+       (:sfsim.image/width (make-image 3 2)) => 3
+       (:sfsim.image/height (make-image 3 2)) => 2
+       (:sfsim.image/channels (make-image 3 2)) => 4
+       (:sfsim.image/data (make-image 3 2)) => bytes?
+       (count (:sfsim.image/data (make-image 3 2))) => (* 3 2 4))
+
+(facts "Create empty byte image"
+       (:sfsim.image/width (make-byte-image 3 2)) => 3
+       (:sfsim.image/height (make-byte-image 3 2)) => 2
+       (:sfsim.image/data (make-byte-image 3 2)) => bytes?
+       (count (:sfsim.image/data (make-byte-image 3 2))) => (* 3 2))
+
+(facts "Create empty vector image"
+       (:sfsim.image/width (make-vector-image 3 2)) => 3
+       (:sfsim.image/height (make-vector-image 3 2)) => 2
+       (:sfsim.image/data (make-vector-image 3 2)) => seqable?
+       (count (:sfsim.image/data (make-vector-image 3 2))) => (* 3 2 3))
+
+(facts "Create empty RGBA color image"
+       (:sfsim.image/width (make-image 3 2)) => 3
+       (:sfsim.image/height (make-image 3 2)) => 2
+       (:sfsim.image/channels (make-image 3 2)) => 4
+       (count (:sfsim.image/data (make-image 3 2))) => (* 3 2 4))
 
 (facts "Saving and loading of PNG image"
   (let [file-name (.getPath (File/createTempFile "spit" ".png"))

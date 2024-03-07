@@ -4,7 +4,7 @@
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (to-radians sqrt PI)]
               [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-              [fastmath.matrix :refer (eye mulm mat4x4)]
+              [fastmath.matrix :refer (eye mulm inverse mat4x4)]
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim.matrix :refer :all]
               [sfsim.texture :refer :all]
@@ -83,7 +83,7 @@
 (def vertex-cube
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 object_to_camera;
 in vec3 vertex;
 in vec3 normal;
 out VS_OUT
@@ -92,8 +92,8 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.normal = mat3(transform) * normal;
-  gl_Position = projection * transform * vec4(vertex, 1);
+  vs_out.normal = mat3(object_to_camera) * normal;
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
 
 (def fragment-cube
@@ -122,7 +122,7 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform diffuse]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cube.png" 0.0))
@@ -150,7 +150,7 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform diffuse]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cubes.png" 0.01))
@@ -189,7 +189,7 @@ void main()
 (def vertex-dice
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 object_to_camera;
 in vec3 vertex;
 in vec3 normal;
 in vec2 texcoord;
@@ -200,9 +200,9 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.normal = mat3(transform) * normal;
+  vs_out.normal = mat3(object_to_camera) * normal;
   vs_out.texcoord = texcoord;
-  gl_Position = projection * transform * vec4(vertex, 1);
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
 
 (def fragment-dice
@@ -234,7 +234,7 @@ void main()
           (uniform-sampler program "colors" 0)
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform colors]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (use-textures {0 colors})))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/dice.png" 0.01))
@@ -250,7 +250,7 @@ void main()
 (def vertex-bricks
 "#version 410 core
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 object_to_camera;
 in vec3 vertex;
 in vec3 tangent;
 in vec3 bitangent;
@@ -263,9 +263,9 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.surface = mat3(transform) * mat3(tangent, bitangent, normal);
+  vs_out.surface = mat3(object_to_camera) * mat3(tangent, bitangent, normal);
   vs_out.texcoord = texcoord;
-  gl_Position = projection * transform * vec4(vertex, 1);
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
 
 (def fragment-bricks
@@ -301,7 +301,7 @@ void main()
           (uniform-sampler program "normals" 1)
           (render-scene (constantly program) moved-scene
                         (fn [{:sfsim.model/keys [transform colors normals]}]
-                            (uniform-matrix4 program "transform" transform)
+                            (uniform-matrix4 program "object_to_camera" transform)
                             (use-textures {0 colors 1 normals})))
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/bricks.png" 0.01))
@@ -310,12 +310,12 @@ void main()
 
 (defmethod render-model nil [{:sfsim.model/keys [program transform diffuse]}]
   (use-program program)
-  (uniform-matrix4 program "transform" transform)
+  (uniform-matrix4 program "object_to_camera" transform)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-model Number [{:sfsim.model/keys [program transform colors]}]
   (use-program program)
-  (uniform-matrix4 program "transform" transform)
+  (uniform-matrix4 program "object_to_camera" transform)
   (use-textures {0 colors}))
 
 (def cube-and-dice (read-gltf "test/sfsim/fixtures/model/cube-and-dice.gltf"))
@@ -470,5 +470,164 @@ void main()
                          {"Cube" :mock-changed})
        => {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform :mock :sfsim.model/children
                               [{:sfsim.model/name "Cube" :sfsim.model/transform :mock-changed :sfsim.model/children []}]}})
+
+(def vertex-cube-fog
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 object_to_world;
+uniform mat4 object_to_camera;
+in vec3 vertex;
+in vec3 normal;
+out VS_OUT
+{
+  vec3 point;
+  vec3 normal;
+} vs_out;
+void main()
+{
+  vs_out.point = (object_to_world * vec4(vertex, 1)).xyz;
+  vs_out.normal = mat3(object_to_world) * normal;
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
+}")
+
+(def fragment-cube-fog
+"#version 410 core
+uniform vec3 origin;
+uniform float radius;
+uniform float max_height;
+uniform vec3 light_direction;
+uniform vec3 diffuse_color;
+in VS_OUT
+{
+  vec3 point;
+  vec3 normal;
+} fs_in;
+out vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+bool is_above_horizon(vec3 point, vec3 direction);
+vec3 transmittance_outer(vec3 point, vec3 direction);
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+vec4 cloud_planet(vec3 point);
+float overall_shadow(vec4 point);
+void main()
+{
+  vec3 direct_light;
+  float incidence_fraction;
+  if (is_above_horizon(fs_in.point, light_direction)) {
+    float cos_incidence = max(dot(light_direction, fs_in.normal), 0);
+    float shadow = overall_shadow(vec4(fs_in.point, 1));
+    incidence_fraction = cos_incidence * shadow;
+    direct_light = transmittance_outer(fs_in.point, light_direction);
+  } else {
+    direct_light = vec3(0, 0, 0);
+    incidence_fraction = 0.0;
+  }
+  vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
+  vec3 object_color = diffuse_color * (incidence_fraction * direct_light + ambient_light);
+  vec4 fog = cloud_planet(fs_in.point);
+  vec3 incoming = object_color * (1 - fog.a) + fog.rgb * fog.a;
+  vec3 direction = normalize(fs_in.point - origin);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
+  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  fragColor = incoming;
+}");
+
+(def cloud-planet-mock
+"#version 410 core
+uniform vec3 origin;
+vec4 cloud_planet(vec3 point)
+{
+  float dist = distance(origin, point);
+  float transparency = exp(-dist / 5.0);
+  return vec4(0.5, 0.5, 0.5, 1 - transparency);
+}")
+
+(def transmittance-outer-mock
+"#version 410 core
+uniform float transmittance;
+vec3 transmittance_outer(vec3 point, vec3 direction)
+{
+  return vec3(transmittance, transmittance, transmittance);
+}")
+
+(def above-horizon-mock
+"#version 410 core
+uniform int above;
+bool is_above_horizon(vec3 point, vec3 direction)
+{
+  return above > 0;
+}")
+
+(def surface-radiance-mock
+"#version 410 core
+uniform float ambient;
+vec3 surface_radiance_function(vec3 point, vec3 light_direction)
+{
+  return vec3(ambient, ambient, ambient);
+}")
+
+(def overall-shadow-mock
+"#version 410 core
+uniform float shadow;
+float overall_shadow(vec4 point)
+{
+  return shadow;
+}")
+
+(def ray-sphere-mock
+"#version 410 core
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  return vec2(0, 10);
+}")
+
+(def attenuation-mock
+"#version 410 core
+uniform float attenuation;
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+{
+  return incoming * attenuation;
+}")
+
+(tabular "Render red cube with fog and atmosphere"
+  (fact
+    (offscreen-render 160 120
+      (let [program         (make-program :sfsim.render/vertex [vertex-cube-fog]
+                                          :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
+                                                                  above-horizon-mock surface-radiance-mock overall-shadow-mock
+                                                                  ray-sphere-mock attenuation-mock])
+            opengl-scene    (load-scene-into-opengl (constantly program) cube)
+            origin          (vec3 0 0 5)
+            camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
+            object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
+            moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
+        (clear (vec3 0.5 0.5 0.5) 0.0)
+        (use-program program)
+        (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+        (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
+        (uniform-float program "transmittance" ?transmittance)
+        (uniform-float program "ambient" ?ambient)
+        (uniform-float program "shadow" ?shadow)
+        (uniform-float program "attenuation" ?attenuation)
+        (uniform-float program "radius" 1000.0)
+        (uniform-float program "max_height" 100.0)
+        (uniform-int program "above" ?above)
+        (render-scene (constantly program) moved-scene
+                      (fn [{:sfsim.model/keys [transform diffuse]}]
+                          (uniform-vector3 program "origin" origin)
+                          (uniform-matrix4 program "object_to_world" transform)
+                          (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+                          (uniform-vector3 program "diffuse_color" diffuse)))
+        (unload-scene-from-opengl opengl-scene)
+        (destroy-program program))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
+  ?transmittance ?above ?ambient ?shadow ?attenuation ?result
+  1.0            1      0.0      1.0     1.0          "cube-fog.png"
+  0.5            1      0.0      1.0     1.0          "cube-dark.png"
+  1.0            0      0.0      1.0     1.0          "cube-sunset.png"
+  1.0            0      1.0      1.0     1.0          "cube-ambient.png"
+  1.0            1      0.0      0.5     1.0          "cube-shadow.png"
+  1.0            1      0.0      1.0     0.5          "cube-attenuation.png")
 
 (GLFW/glfwTerminate)

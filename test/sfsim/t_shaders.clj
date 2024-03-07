@@ -254,30 +254,31 @@ void main()
 
 (defn shadow-cascade-lookup-test [n z shift-z shadows selector]
   (with-invisible-window
-    (let [indices       [0 1 3 2]
-          vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-          transform     (transformation-matrix (eye 3) (vec3 0 0 shift-z))
-          program       (make-program :sfsim.render/vertex [vertex-passthrough]
-                                      :sfsim.render/fragment [(shadow-cascade-lookup-probe z)
-                                                              (shadow-cascade-lookup n "shadow_lookup") shadow-lookup-mock])
-          vao              (make-vertex-array-object program indices vertices ["point" 3])
-          shadow-texs   (map #(make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 1 :height 1 :data (float-array [%])})
-                             shadows)
-          tex           (texture-render-color 1 1 true
-                                              (use-program program)
-                                              (uniform-matrix4 program "transform" transform)
-                                              (uniform-int program "selector" selector)
-                                              (doseq [idx (range n)]
-                                                     (uniform-sampler program (str "shadow_map" idx) idx)
-                                                     (uniform-matrix4 program (str "shadow_map_matrix" idx)
-                                                                      (transformation-matrix (eye 3)
-                                                                                             (vec3 (inc idx) 0 0))))
-                                              (doseq [idx (range (inc n))]
-                                                     (uniform-float program (str "split" idx)
-                                                                    (+ 10.0 (/ (* 30.0 idx) n))))
-                                              (use-textures (zipmap (range) shadow-texs))
-                                              (render-quads vao))
-          img           (rgb-texture->vectors3 tex)]
+    (let [indices         [0 1 3 2]
+          vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          world-to-camera (transformation-matrix (eye 3) (vec3 0 0 shift-z))
+          program         (make-program :sfsim.render/vertex [vertex-passthrough]
+                                        :sfsim.render/fragment [(shadow-cascade-lookup-probe z)
+                                                                (shadow-cascade-lookup n "shadow_lookup") shadow-lookup-mock])
+          vao                (make-vertex-array-object program indices vertices ["point" 3])
+          shadow-texs     (map #(make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp
+                                                    #:sfsim.image{:width 1 :height 1 :data (float-array [%])})
+                               shadows)
+          tex             (texture-render-color 1 1 true
+                                                (use-program program)
+                                                (uniform-matrix4 program "world_to_camera" world-to-camera)
+                                                (uniform-int program "selector" selector)
+                                                (doseq [idx (range n)]
+                                                       (uniform-sampler program (str "shadow_map" idx) idx)
+                                                       (uniform-matrix4 program (str "world_to_shadow_map" idx)
+                                                                        (transformation-matrix (eye 3)
+                                                                                               (vec3 (inc idx) 0 0))))
+                                                (doseq [idx (range (inc n))]
+                                                       (uniform-float program (str "split" idx)
+                                                                      (+ 10.0 (/ (* 30.0 idx) n))))
+                                                (use-textures (zipmap (range) shadow-texs))
+                                                (render-quads vao))
+          img             (rgb-texture->vectors3 tex)]
       (destroy-texture tex)
       (doseq [tex shadow-texs] (destroy-texture tex))
       (destroy-vertex-array-object vao)

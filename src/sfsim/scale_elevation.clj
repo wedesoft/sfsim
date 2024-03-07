@@ -3,6 +3,9 @@
   (:require [clojure.math :refer (sqrt round)]
             [sfsim.util :refer (slurp-shorts spit-shorts)]))
 
+(set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
+
 (defn scale-elevation
   "Program to scale elevation images"
   [input-data output-data]
@@ -19,3 +22,6 @@
             x4 (aget ^shorts data (+ offset w 1))]
         (aset ^shorts result (+ (* j size) i) (short (/ (+ x1 x2 x3 x4) 4)))))
     (spit-shorts output-data result)))
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)
