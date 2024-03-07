@@ -11,7 +11,7 @@ in VS_OUT
   vec3 direction;
 } fs_in;
 
-out vec4 fragColor;
+out vec3 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
@@ -34,6 +34,5 @@ void main()
     vec4 cloud_scatter = cloud_overlay();
     incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
   };
-  fragColor.rgb = incoming;
-  fragColor.a = 1.0;
+  fragColor = incoming;
 }
