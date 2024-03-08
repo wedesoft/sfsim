@@ -23,7 +23,8 @@
                                         ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
                                         sun-elevation-to-index surface-intersection surface-point? surface-radiance
                                         surface-radiance-base surface-radiance-space transmittance transmittance-outer
-                                        transmittance-space transmittance-track vertex-atmosphere extinction) :as atmosphere])
+                                        transmittance-space transmittance-track vertex-atmosphere extinction attenuation-point)
+               :as atmosphere])
     (:import [fastmath.vector Vec3]
              [org.lwjgl.glfw GLFW]))
 
@@ -825,5 +826,44 @@ void main()
           (destroy-vertex-array-object vao)
           (destroy-program program)
           (destroy-texture clouds))) => (is-image "test/sfsim/fixtures/clouds/lookup.png" 0.0))
+
+(def attenuation-point-probe
+  (template/fn [x incoming attenuate]
+"#version 410 core
+out vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+{
+  return incoming * (1.0 - <%= attenuate %> * (b - a));
+}
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  return vec2(<%= x %> - radius, 100.0);
+}
+vec3 attenuation_point(vec3 point, vec3 incoming);
+void main()
+{
+  vec3 point = vec3(<%= x %>, 0, 0);
+  vec3 incoming = vec3(<%= incoming %>, <%= incoming %>, <%= incoming %>);
+  fragColor = attenuation_point(point, incoming);
+}"))
+
+(def attenuation-point-test
+  (shader-test
+    (fn [program radius max-height]
+        (uniform-vector3 program "origin" (vec3 0.0 0.0 0.0))
+        (uniform-vector3 program "light_direction" (vec3 0.0 0.0 1.0))
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height))
+    attenuation-point-probe (last attenuation-point)))
+
+(tabular "Shader determining atmospheric attenuation between a point and the camera origin"
+  (fact ((attenuation-point-test [?radius ?max-height] [?x ?incoming ?attenuate]) 0) => (roughly ?result 1e-5))
+  ?x  ?incoming ?attenuate ?radius ?max-height ?result
+  5.0 0.0       0.0        0.0     0.0         0.0
+  5.0 1.0       0.0        0.0     0.0         1.0
+  5.0 1.0       0.1        5.0     0.0         0.5
+  5.0 1.0       0.1        4.0     1.0         0.5
+  5.0 1.0       0.1        0.0     0.0         1.0)
 
 (GLFW/glfwTerminate)
