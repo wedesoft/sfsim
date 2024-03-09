@@ -332,7 +332,7 @@ void main()
       (offscreen-render 160 120
         (let [program-cube      (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
               program-dice      (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
-              program-selection #(-> % cube-material-type {:colored program-cube :textured program-dice})
+              program-selection (comp {:colored program-cube :textured program-dice} cube-material-type)
               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
               transform         (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))
               moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] transform)]
@@ -536,16 +536,15 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   return incoming * attenuation;
 }")
 
+(def model-shader-mocks [cloud-planet-mock transmittance-outer-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
+                         ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
+                         (last (clouds/direct-light 3))])
+
 (tabular "Render red cube with fog and atmosphere"
   (fact
     (offscreen-render 160 120
       (let [program         (make-program :sfsim.render/vertex [vertex-colored]
-                                          :sfsim.render/fragment [(last (fragment-colored 3 [] [])) cloud-planet-mock
-                                                                  transmittance-outer-mock above-horizon-mock
-                                                                  surface-radiance-mock overall-shadow-mock ray-sphere-mock
-                                                                  attenuation-mock shaders/phong
-                                                                  (last atmosphere/attenuation-point)
-                                                                  (last (clouds/direct-light 3))])
+                                          :sfsim.render/fragment [(last (fragment-colored 3 [] [])) model-shader-mocks])
             opengl-scene    (load-scene-into-opengl (constantly program) ?model)
             origin          (vec3 0 0 5)
             camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
