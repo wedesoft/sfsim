@@ -479,52 +479,6 @@ void main()
        => {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform :mock :sfsim.model/children
                               [{:sfsim.model/name "Cube" :sfsim.model/transform :mock-changed :sfsim.model/children []}]}})
 
-(def vertex-cube-fog
-"#version 410 core
-uniform mat4 projection;
-uniform mat4 object_to_world;
-uniform mat4 object_to_camera;
-in vec3 vertex;
-in vec3 normal;
-out VS_OUT
-{
-  vec3 point;
-  vec3 normal;
-} vs_out;
-void main()
-{
-  vs_out.point = (object_to_world * vec4(vertex, 1)).xyz;
-  vs_out.normal = mat3(object_to_world) * normal;
-  gl_Position = projection * object_to_camera * vec4(vertex, 1);
-}")
-
-(def fragment-cube-fog
-"#version 410 core
-uniform float radius;
-uniform float max_height;
-uniform vec3 light_direction;
-uniform vec3 diffuse_color;
-in VS_OUT
-{
-  vec3 point;
-  vec3 normal;
-} fs_in;
-out vec4 fragColor;
-vec3 direct_light(vec3 point);
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
-vec3 attenuation_point(vec3 point, vec3 incoming);
-vec3 surface_radiance_function(vec3 point, vec3 light_direction);
-vec4 cloud_planet(vec3 point);
-void main()
-{
-  vec3 light = direct_light(fs_in.point);
-  vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
-  vec3 incoming = phong(ambient_light, light, fs_in.point, fs_in.normal, diffuse_color, 0.0);
-  incoming = attenuation_point(fs_in.point, incoming);
-  vec4 cloud_scatter = cloud_planet(fs_in.point);
-  fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
-}");
-
 (def cloud-planet-mock
 "#version 410 core
 uniform vec3 origin;
@@ -585,10 +539,11 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 (tabular "Render red cube with fog and atmosphere"
   (fact
     (offscreen-render 160 120
-      (let [program         (make-program :sfsim.render/vertex [vertex-cube-fog]
-                                          :sfsim.render/fragment [fragment-cube-fog cloud-planet-mock transmittance-outer-mock
-                                                                  above-horizon-mock surface-radiance-mock overall-shadow-mock
-                                                                  ray-sphere-mock attenuation-mock shaders/phong
+      (let [program         (make-program :sfsim.render/vertex [vertex-colored]
+                                          :sfsim.render/fragment [(last (fragment-colored 3 [] [])) cloud-planet-mock
+                                                                  transmittance-outer-mock above-horizon-mock
+                                                                  surface-radiance-mock overall-shadow-mock ray-sphere-mock
+                                                                  attenuation-mock shaders/phong
                                                                   (last atmosphere/attenuation-point)
                                                                   (last (clouds/direct-light 3))])
             opengl-scene    (load-scene-into-opengl (constantly program) ?model)

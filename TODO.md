@@ -1,6 +1,7 @@
 # TODO
 * create resources/shaders/model directory and put first shader in there
 * integration test rendering of brick wall segment,
+* integration test rendering of bump map with uniform color
 * low-res blue noise for model rendering?
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * concept for bundling shaders with uniform setting methods?

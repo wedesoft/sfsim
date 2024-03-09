@@ -4,12 +4,18 @@
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
               [fastmath.vector :refer (vec3 mult add)]
-              [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
-              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object)]
               [sfsim.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
+              [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
+              [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
+              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object)
+                            :as render]
+              [sfsim.clouds :refer (direct-light)]
+              [sfsim.atmosphere :refer (attenuation-point)]
+              [sfsim.planet :refer (surface-radiance-function)]
+              [sfsim.clouds :refer (cloud-planet)]
+              [sfsim.shaders :refer (phong)]
               [sfsim.image :refer (image)]
-              [sfsim.util :refer (N0)]
-              [sfsim.quaternion :refer (->Quaternion quaternion) :as q])
+              [sfsim.util :refer (N0 N)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
               AINodeAnim AIMatrix4x4 AIFace AIVector3D AIScene AIVectorKey AIQuatKey]
              [org.lwjgl.stb STBImage]))
@@ -385,6 +391,15 @@
   {:malli/schema [:=> [:cat [:map [::root :map]] [:map-of :string :some]] [:map [::root :map]]]}
   [model transforms]
   (assoc model ::root (apply-transforms-node (::root model) transforms)))
+
+(def vertex-colored
+  (slurp "resources/shaders/model/vertex-colored.glsl"))
+
+(defn fragment-colored
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
+  [num-steps perlin-octaves cloud-octaves]
+  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+   (slurp "resources/shaders/model/fragment-colored.glsl")])
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
