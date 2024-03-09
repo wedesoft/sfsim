@@ -1,6 +1,5 @@
 # TODO
-* tests for direct\_light, attenuation\_point
-* use multi schema for multi-methods
+* use multi schema for multi-methods, use enums instead of or
 * object pose and fs\_in.point relative to planet (pose), object pose relative to camera (transform = inverse(extrinsics) * pose), camera center (origin) relative to planet
 * create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
