@@ -586,7 +586,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                                   ray-sphere-mock attenuation-mock shaders/phong
                                                                   (last atmosphere/attenuation-point)
                                                                   (last (clouds/direct-light 3))])
-            opengl-scene    (load-scene-into-opengl (constantly program) cube)
+            opengl-scene    (load-scene-into-opengl (constantly program) ?model)
             origin          (vec3 0 0 5)
             camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
             object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
@@ -613,12 +613,12 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                           (uniform-vector3 program "diffuse_color" diffuse)))
         (unload-scene-from-opengl opengl-scene)
         (destroy-program program))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
-  ?transmittance ?above ?ambient ?shadow ?attenuation ?result
-  1.0            1      0.0      1.0     1.0          "cube-fog.png"
-  0.5            1      0.0      1.0     1.0          "cube-dark.png"
-  1.0            0      0.0      1.0     1.0          "cube-sunset.png"
-  1.0            0      1.0      1.0     1.0          "cube-ambient.png"
-  1.0            1      0.0      0.5     1.0          "cube-shadow.png"
-  1.0            1      0.0      1.0     0.5          "cube-attenuation.png")
+  ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
+  cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
+  cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
+  cube   1.0            0      0.0      1.0     1.0          "cube-sunset.png"
+  cube   1.0            0      1.0      1.0     1.0          "cube-ambient.png"
+  cube   1.0            1      0.0      0.5     1.0          "cube-shadow.png"
+  cube   1.0            1      0.0      1.0     0.5          "cube-attenuation.png")
 
 (GLFW/glfwTerminate)
