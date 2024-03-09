@@ -1,5 +1,5 @@
 # TODO
-* create resources/shaders/model directory and put first shader in there
+* add camera-to-world matrix to render-scene?
 * integration test rendering of brick wall segment,
 * integration test rendering of bump map with uniform color
 * low-res blue noise for model rendering?
