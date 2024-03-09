@@ -309,14 +309,19 @@ void main()
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/bricks.png" 0.01))
 
-(defmulti render-model (fn [{:sfsim.model/keys [color-texture-index]}] (type color-texture-index)))
+(defn cube-material-type [{:sfsim.model/keys [color-texture-index]}]
+  (if color-texture-index
+    :textured
+    :colored))
 
-(defmethod render-model nil [{:sfsim.model/keys [program transform diffuse]}]
+(defmulti render-cube cube-material-type)
+
+(defmethod render-cube :colored [{:sfsim.model/keys [program transform diffuse]}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" transform)
   (uniform-vector3 program "diffuse_color" diffuse))
 
-(defmethod render-model Number [{:sfsim.model/keys [program transform colors]}]
+(defmethod render-cube :textured [{:sfsim.model/keys [program transform colors]}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" transform)
   (use-textures {0 colors}))
@@ -327,7 +332,7 @@ void main()
       (offscreen-render 160 120
         (let [program-cube      (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
               program-dice      (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
-              program-selection (fn [material] (if (:sfsim.model/color-texture-index material) program-dice program-cube))
+              program-selection #(-> % cube-material-type {:colored program-cube :textured program-dice})
               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
               transform         (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7))
               moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] transform)]
@@ -337,7 +342,7 @@ void main()
                  (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                  (uniform-vector3 program "light" (normalize (vec3 1 2 3))))
           (uniform-sampler program-dice "colors" 0)
-          (render-scene program-selection moved-scene render-model)
+          (render-scene program-selection moved-scene render-cube)
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program-dice)
           (destroy-program program-cube))) => (is-image "test/sfsim/fixtures/model/cube-and-dice.png" 0.01))
