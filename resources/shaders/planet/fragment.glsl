@@ -16,7 +16,7 @@ in GEO_OUT
   vec3 point;
 } fs_in;
 
-out vec3 fragColor;
+out vec4 fragColor;
 
 vec3 direct_light(vec3 point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
@@ -41,5 +41,5 @@ void main()
   vec3 phong = phong(ambient_light, light, fs_in.point, normal, color, wet * reflectivity);
   vec3 incoming = attenuation_point(fs_in.point, phong + emissive);
   vec4 cloud_scatter = cloud_overlay();
-  fragColor = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
+  fragColor = vec4(incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
 }
