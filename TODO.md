@@ -1,10 +1,8 @@
 # TODO
-* create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?
+* create resources/shaders/model directory and put first shader in there
+* integration test rendering of brick wall segment,
+* low-res blue noise for model rendering?
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
-* render cube with fog (extrinsics relative to camera, pose relative to planet, origin relative to planet),
-  integration test rendering of brick wall segment,
-  use atmosphere intersection and cloud layer intersection to render foreground (see cloud\_planet),
-  low-res blue noise?
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
