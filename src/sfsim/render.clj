@@ -21,7 +21,7 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
-  {:malli/schema [:=> [:cat N N [:or [:= ::cullfront] [:= ::cullback]]] :nil]}
+  {:malli/schema [:=> [:cat N N [:enum ::cullfront ::cullback]] :nil]}
   [width height culling]
   (GL11/glViewport 0 0 width height)
   (GL11/glEnable GL11/GL_DEPTH_TEST)

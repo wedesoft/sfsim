@@ -62,7 +62,7 @@
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target))))
 
-(def interpolation (m/schema [:or [:= ::nearest] [:= ::linear]]))
+(def interpolation (m/schema [:enum ::nearest ::linear]))
 
 (defmulti setup-interpolation (comp second vector))
 (m/=> setup-interpolation [:=> [:cat :int interpolation] :nil])
@@ -77,7 +77,7 @@
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
-(def boundary (m/schema [:or [:= ::clamp] [:= ::repeat]]))
+(def boundary (m/schema [:enum ::clamp ::repeat]))
 
 (defmulti setup-boundary-1d identity)
 (m/=> setup-boundary-1d [:=> [:cat boundary] :nil])
