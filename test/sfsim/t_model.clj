@@ -543,35 +543,40 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 (tabular "Render red cube with fog and atmosphere"
   (fact
     (offscreen-render 160 120
-      (let [program         (make-program :sfsim.render/vertex [vertex-colored]
-                                          :sfsim.render/fragment [(last (fragment-colored 3 [] [])) model-shader-mocks])
-            opengl-scene    (load-scene-into-opengl (constantly program) ?model)
-            origin          (vec3 0 0 5)
-            camera-to-world (transformation-matrix (eye 3) (vec3 1 0 0))
-            object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
-            moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
+      (let [program-colored  (make-program :sfsim.render/vertex [vertex-colored]
+                                           :sfsim.render/fragment [(last (fragment-colored 3 [] [])) model-shader-mocks])
+            program-textured (make-program :sfsim.render/vertex [vertex-textured]
+                                           :sfsim.render/fragment [(last (fragment-textured 3 [] [])) model-shader-mocks])
+            opengl-scene     (load-scene-into-opengl (constantly program-colored) ?model)
+            origin           (vec3 0 0 5)
+            camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
+            object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
+            moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
         (clear (vec3 0.5 0.5 0.5) 0.0)
-        (use-program program)
-        (uniform-float program "albedo" 3.14159265358)
-        (uniform-float program "amplification" 1.0)
-        (uniform-float program "specular" 1.0)
-        (uniform-vector3 program "origin" origin)
-        (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-        (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
-        (uniform-float program "transmittance" ?transmittance)
-        (uniform-float program "ambient" ?ambient)
-        (uniform-float program "shadow" ?shadow)
-        (uniform-float program "attenuation" ?attenuation)
-        (uniform-float program "radius" 1000.0)
-        (uniform-float program "max_height" 100.0)
-        (uniform-int program "above" ?above)
-        (render-scene (constantly program) moved-scene
-                      (fn [{:sfsim.model/keys [transform diffuse]}]
-                          (uniform-matrix4 program "object_to_world" transform)
-                          (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                          (uniform-vector3 program "diffuse_color" diffuse)))
+        (doseq [program [program-colored program-textured]]
+               (use-program program)
+               (uniform-float program "albedo" 3.14159265358)
+               (uniform-float program "amplification" 1.0)
+               (uniform-float program "specular" 1.0)
+               (uniform-vector3 program "origin" origin)
+               (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+               (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
+               (uniform-float program "transmittance" ?transmittance)
+               (uniform-float program "ambient" ?ambient)
+               (uniform-float program "shadow" ?shadow)
+               (uniform-float program "attenuation" ?attenuation)
+               (uniform-float program "radius" 1000.0)
+               (uniform-float program "max_height" 100.0)
+               (uniform-int program "above" ?above))
+               (render-scene (constantly program-colored) moved-scene
+                             (fn [{:sfsim.model/keys [program transform diffuse]}]
+                                 (use-program program)
+                                 (uniform-matrix4 program "object_to_world" transform)
+                                 (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+                                 (uniform-vector3 program "diffuse_color" diffuse)))
         (unload-scene-from-opengl opengl-scene)
-        (destroy-program program))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
+        (destroy-program program-colored)
+        (destroy-program program-textured))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
   cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
   cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
