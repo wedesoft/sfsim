@@ -1,4 +1,5 @@
 # TODO
+* test rendering of dice
 * rename transform to object-to-world
 * integration test rendering of brick wall segment,
 * integration test rendering of bump map with uniform color
