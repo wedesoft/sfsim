@@ -124,7 +124,7 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
-                        (fn [{:sfsim.model/keys [transform diffuse]}]
+                        (fn [{:sfsim.model/keys [program transform diffuse]}]
                             (uniform-matrix4 program "object_to_camera" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
@@ -152,7 +152,7 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) moved-scene
-                        (fn [{:sfsim.model/keys [transform diffuse]}]
+                        (fn [{:sfsim.model/keys [program transform diffuse]}]
                             (uniform-matrix4 program "object_to_camera" transform)
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (unload-scene-from-opengl opengl-scene)
@@ -236,7 +236,7 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (uniform-sampler program "colors" 0)
           (render-scene (constantly program) moved-scene
-                        (fn [{:sfsim.model/keys [transform colors]}]
+                        (fn [{:sfsim.model/keys [program transform colors]}]
                             (uniform-matrix4 program "object_to_camera" transform)
                             (use-textures {0 colors})))
           (unload-scene-from-opengl opengl-scene)
@@ -303,7 +303,7 @@ void main()
           (uniform-sampler program "colors" 0)
           (uniform-sampler program "normals" 1)
           (render-scene (constantly program) moved-scene
-                        (fn [{:sfsim.model/keys [transform colors normals]}]
+                        (fn [{:sfsim.model/keys [program transform colors normals]}]
                             (uniform-matrix4 program "object_to_camera" transform)
                             (use-textures {0 colors 1 normals})))
           (unload-scene-from-opengl opengl-scene)
