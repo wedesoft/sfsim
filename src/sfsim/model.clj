@@ -296,20 +296,23 @@
   (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
+(def render-vars-camera (m/schema [:map [:sfsim.render/camera-to-world fmat4]]))
+
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat fn? [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
-  ([program-selection scene callback]
-   (render-scene program-selection scene callback (eye 4) (::root scene)))
-  ([program-selection scene callback transform node]
+  {:malli/schema [:=> [:cat fn? render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  ([program-selection render-vars scene callback]
+   (render-scene program-selection render-vars scene callback (eye 4) (::root scene)))
+  ([program-selection render-vars scene callback transform node]
    (let [transform (mulm transform (::transform node))]
      (doseq [child-node (::children node)]
-            (render-scene program-selection scene callback transform child-node))
+            (render-scene program-selection render-vars scene callback transform child-node))
      (doseq [mesh-index (::mesh-indices node)]
             (let [mesh                (nth (::meshes scene) mesh-index)
                   material            (::material mesh)
+                  camera-to-world     (:sfsim.render/camera-to-world render-vars)
                   program             (program-selection material)]
-              (callback (merge material {::program program ::transform transform}))
+              (callback (merge material {::program program ::camera-to-world camera-to-world ::transform transform}))
               (render-triangles (::vao mesh)))))))
 
 (defn- interpolate-frame
