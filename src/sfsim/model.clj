@@ -2,12 +2,13 @@
     "Import glTF models into Clojure"
     (:require [clojure.math :refer (floor)]
               [malli.core :as m]
-              [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
+              [fastmath.matrix :refer (mat4x4 mulm eye diagonal inverse)]
               [fastmath.vector :refer (vec3 mult add)]
               [sfsim.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
-              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object)
+              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
+                                    make-program destroy-program use-program uniform-matrix4 uniform-vector3)
                             :as render]
               [sfsim.clouds :refer (direct-light)]
               [sfsim.atmosphere :refer (attenuation-point)]
@@ -395,6 +396,12 @@
   [model transforms]
   (assoc model ::root (apply-transforms-node (::root model) transforms)))
 
+(defn material-type [{:sfsim.model/keys [color-texture-index]}]
+  "Determine information for dispatching to correct shader or render method"
+  (if color-texture-index
+    ::program-textured
+    ::program-colored))
+
 (def vertex-colored
   (slurp "resources/shaders/model/vertex-colored.glsl"))
 
@@ -412,6 +419,31 @@
   [num-steps perlin-octaves cloud-octaves]
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
    (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured.glsl")])
+
+(defn make-model-renderer
+  "Create set of programs for rendering different materials"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] :map]}
+  [num-steps perlin-octaves cloud-octaves]
+  (let [program-colored  (make-program :sfsim.render/vertex [vertex-colored]
+                                       :sfsim.render/fragment (fragment-colored num-steps perlin-octaves cloud-octaves))
+        program-textured (make-program :sfsim.render/vertex [vertex-textured]
+                                       :sfsim.render/fragment (fragment-textured num-steps perlin-octaves cloud-octaves))]
+    {::program-colored  program-colored
+     ::program-textured program-textured}))
+
+(defmulti render-mesh material-type)
+
+(defmethod render-mesh ::program-colored
+  [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+(defn destroy-model-renderer
+  [{::keys [program-colored program-textured]}]
+  (destroy-program program-colored)
+  (destroy-program program-textured))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
