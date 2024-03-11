@@ -724,10 +724,10 @@ void main()
 (tabular "Shader for converting height to index"
          (fact ((height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
          ?radius ?max-height ?x    ?y ?z  ?result
-         4       1           4     0  0   0.0
-         4       1           5     0  0   1.0
-         4       1           4.5   0  0   0.687184
-         4       1           3.999 0  0   0.0)
+         4.0     1.0         4     0  0   0.0
+         4.0     1.0         5     0  0   1.0
+         4.0     1.0         4.5   0  0   0.687184
+         4.0     1.0         3.999 0  0   0.0)
 
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
@@ -804,16 +804,16 @@ void main()
          (fact ((elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
                => (roughly ?result 2e-4))
          ?radius ?max-height ?x ?y ?z  ?dx            ?dy        ?dz            ?above-horizon ?result
-         4       1           4  0  0  -1              0          0              false          0.5
-         4       1           5  0  0  -1              0          0              false          (/ 1 3)
-         4       1           5  0  0   (- (sqrt 0.5)) (sqrt 0.5) 0              false          0.222549
-         4       1           5  0  0  -0.6            0.8        0              false          0.0
-         4       1           4  0  0   1              0          0              true           (/ 2 3)
-         4       1           5  0  0   0              1          0              true           0.5
-         4       1           5  0  0  -0.6            0.8        0              true           1.0
-         4       1           4  0  0   0              1          0              true           1.0
-         4       1           5  0  0  -1              0          0              true           1.0
-         4       1           4  0  0   1              0          0              false          0.5)
+         4.0     1.0         4  0  0  -1              0          0              false          0.5
+         4.0     1.0         5  0  0  -1              0          0              false          (/ 1 3)
+         4.0     1.0         5  0  0   (- (sqrt 0.5)) (sqrt 0.5) 0              false          0.222549
+         4.0     1.0         5  0  0  -0.6            0.8        0              false          0.0
+         4.0     1.0         4  0  0   1              0          0              true           (/ 2 3)
+         4.0     1.0         5  0  0   0              1          0              true           0.5
+         4.0     1.0         5  0  0  -0.6            0.8        0              true           1.0
+         4.0     1.0         4  0  0   0              1          0              true           1.0
+         4.0     1.0         5  0  0  -1              0          0              true           1.0
+         4.0     1.0         4  0  0   1              0          0              false          0.5)
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz above]
@@ -897,7 +897,7 @@ void main()
     ray-scatter-forward-probe ray-scatter-forward))
 
 (tabular "Get 4D lookup index for ray scattering"
-         (fact ((ray-scatter-forward-test [6378000 100000] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
+         (fact ((ray-scatter-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
                => (roughly ?result 1e-3))
          ?x      ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector ?result
          6378000 0  0  1   0   0   1   0   0   true   "w"       0.0
@@ -1189,8 +1189,8 @@ void main()
 (tabular "Shader for calling a noise function with a scaled vector"
          (fact ((scale-noise-test [?scale] [?x ?y ?z]) 0) => ?result)
          ?scale ?x ?y ?z ?result
-         1      2  3  5  2.0
-         3      2  3  5  6.0)
+         1.0    2  3  5  2.0
+         3.0    2  3  5  6.0)
 
 (def remap-probe
   (template/fn [value original-min original-max new-min new-max]
