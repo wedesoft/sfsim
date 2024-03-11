@@ -569,6 +569,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                  (uniform-float program "radius" 1000.0)
                                  (uniform-float program "max_height" 100.0)
                                  (uniform-int program "above" ?above))
+                          (uniform-sampler (:sfsim.model/program-textured renderer) "colors" 0)
                           (render-scene (comp renderer material-type) {:sfsim.render/camera-to-world camera-to-world} moved-scene
                                         render-mesh)
                           (unload-scene-from-opengl opengl-scene)
@@ -579,6 +580,12 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   cube   1.0            0      0.0      1.0     1.0          "cube-sunset.png"
   cube   1.0            0      1.0      1.0     1.0          "cube-ambient.png"
   cube   1.0            1      0.0      0.5     1.0          "cube-shadow.png"
-  cube   1.0            1      0.0      1.0     0.5          "cube-attenuation.png")
+  cube   1.0            1      0.0      1.0     0.5          "cube-attenuation.png"
+  dice   1.0            1      0.0      1.0     1.0          "dice-fog.png"
+  dice   0.5            1      0.0      1.0     1.0          "dice-dark.png"
+  dice   1.0            0      0.0      1.0     1.0          "dice-sunset.png"
+  dice   1.0            0      1.0      1.0     1.0          "dice-ambient.png"
+  dice   1.0            1      0.0      0.5     1.0          "dice-shadow.png"
+  dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png")
 
 (GLFW/glfwTerminate)

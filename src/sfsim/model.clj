@@ -8,12 +8,11 @@
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
-                                    make-program destroy-program use-program uniform-matrix4 uniform-vector3)
+                                    make-program destroy-program use-program uniform-matrix4 uniform-vector3 use-textures)
                             :as render]
-              [sfsim.clouds :refer (direct-light)]
+              [sfsim.clouds :refer (direct-light cloud-planet)]
               [sfsim.atmosphere :refer (attenuation-point)]
               [sfsim.planet :refer (surface-radiance-function)]
-              [sfsim.clouds :refer (cloud-planet)]
               [sfsim.shaders :refer (phong)]
               [sfsim.image :refer (image)]
               [sfsim.util :refer (N0 N)])
@@ -396,8 +395,9 @@
   [model transforms]
   (assoc model ::root (apply-transforms-node (::root model) transforms)))
 
-(defn material-type [{:sfsim.model/keys [color-texture-index]}]
+(defn material-type
   "Determine information for dispatching to correct shader or render method"
+  [{:sfsim.model/keys [color-texture-index]}]
   (if color-texture-index
     ::program-textured
     ::program-colored))
@@ -439,6 +439,13 @@
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (uniform-vector3 program "diffuse_color" diffuse))
+
+(defmethod render-mesh ::program-textured
+  [{:sfsim.model/keys [program camera-to-world transform colors]}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (use-textures {0 colors}))
 
 (defn destroy-model-renderer
   [{::keys [program-colored program-textured]}]
