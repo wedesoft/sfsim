@@ -217,8 +217,8 @@
     (aset-float data (+ offset 3) (value 3))
     value))
 
-(def array-2d [:vector [:vector number?]])
-(def array-4d [:vector [:vector [:vector [:vector number?]]]])
+(def array-2d [:vector [:vector :any]])
+(def array-4d [:vector [:vector [:vector [:vector :any]]]])
 
 (defn convert-4d-to-2d
   "Take tiles from 4D array and arrange in a 2D array"
