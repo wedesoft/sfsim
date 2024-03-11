@@ -4,12 +4,11 @@ uniform sampler2D day;
 uniform sampler2D night;
 uniform sampler2D normals;
 uniform sampler2D water;
-uniform float specular;
-uniform float radius;
-uniform float max_height;
 uniform vec3 water_color;
 uniform vec3 light_direction;
-uniform vec3 origin;
+uniform float reflectivity;
+uniform float dawn_start;
+uniform float dawn_end;
 
 in GEO_OUT
 {
@@ -19,41 +18,28 @@ in GEO_OUT
 
 out vec4 fragColor;
 
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 ground_radiance(vec3 point, vec3 light_direction, float water, float incidence_fraction, float cos_normal,
-                     float highlight, vec3 land_color, vec3 night_color, vec3 water_color);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming);
+vec3 direct_light(vec3 point);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec3 attenuation_point(vec3 point, vec3 incoming);
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+float remap(float value, float original_min, float original_max, float new_min, float new_max);
 vec4 cloud_overlay();
-float overall_shadow(vec4 point);
 
 // Render planet surface as seen through the atmosphere.
 void main()
 {
+  float wet = texture(water, fs_in.colorcoord).r;
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 water_normal = normalize(fs_in.point);
-  vec3 direction = normalize(fs_in.point - origin);
-  vec3 day_color = texture(day, fs_in.colorcoord).rgb;
-  vec3 night_color = max(texture(night, fs_in.colorcoord).rgb - 0.3, 0.0) / 0.7;
-  float wet = texture(water, fs_in.colorcoord).r;
   vec3 normal = mix(land_normal, water_normal, wet);
-  float cos_incidence = dot(light_direction, normal);
-  float incidence_fraction;
-  float highlight;
-  if (cos_incidence > 0) {
-    float shadow = overall_shadow(vec4(fs_in.point, 1));
-    incidence_fraction = cos_incidence * shadow;
-    highlight = pow(max(dot(reflect(light_direction, normal), direction), 0), specular) * shadow;
-  } else {
-    cos_incidence = 0.0;
-    incidence_fraction = 0.0;
-    highlight = 0.0;
-  };
-  float cos_normal = dot(light_direction, water_normal);
-  vec3 incoming = ground_radiance(fs_in.point, light_direction, wet, incidence_fraction, cos_normal, highlight,
-                                  day_color, night_color, water_color);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = distance(origin, fs_in.point) - atmosphere.x;
-  incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  vec3 light = direct_light(fs_in.point);
+  vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
+  vec3 day_color = texture(day, fs_in.colorcoord).rgb;
+  vec3 color = mix(day_color, water_color, wet);
+  vec3 night_color = max(texture(night, fs_in.colorcoord).rgb - 0.3, 0.0) / 0.7;
+  vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
+  vec3 phong = phong(ambient_light, light, fs_in.point, normal, color, wet * reflectivity);
+  vec3 incoming = attenuation_point(fs_in.point, phong + emissive);
   vec4 cloud_scatter = cloud_overlay();
-  fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
+  fragColor = vec4(incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
 }

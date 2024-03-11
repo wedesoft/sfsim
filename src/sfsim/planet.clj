@@ -12,11 +12,11 @@
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                                     setup-shadow-and-opacity-maps use-textures render-quads render-config render-vars)
                               :as render]
-              [sfsim.atmosphere :refer (transmittance-outer attenuation-track cloud-overlay setup-atmosphere-uniforms
-                                        vertex-atmosphere atmosphere-luts)]
+              [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
+                                        atmosphere-luts)]
               [sfsim.util :refer (N N0)]
-              [sfsim.clouds :refer (overall-shadow cloud-planet lod-offset setup-cloud-render-uniforms
-                                      setup-cloud-sampling-uniforms fragment-atmosphere-clouds cloud-data)]
+              [sfsim.clouds :refer (cloud-planet lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
+                                    fragment-atmosphere-clouds cloud-data direct-light)]
               [sfsim.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -60,16 +60,11 @@
   "Shader function to determine ambient light scattered by the atmosphere"
   [shaders/surface-radiance-forward shaders/interpolate-2d (slurp "resources/shaders/planet/surface-radiance.glsl")])
 
-(def ground-radiance
-  "Shader function to compute light emitted from ground"
-  [shaders/is-above-horizon transmittance-outer surface-radiance-function shaders/remap
-   (slurp "resources/shaders/planet/ground-radiance.glsl")])
-
 (defn fragment-planet
   "Fragment shader to render planetary surface"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [shaders/ray-sphere ground-radiance attenuation-track cloud-overlay (overall-shadow num-steps)
+  [(direct-light num-steps) surface-radiance-function shaders/remap shaders/phong attenuation-point cloud-overlay
    (slurp "resources/shaders/planet/fragment.glsl")])
 
 (def fragment-planet-shadow

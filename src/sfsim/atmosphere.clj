@@ -394,6 +394,10 @@
   "Shader function combining transmittance and in-scattered light between two points in the atmosphere"
   [transmittance-track ray-scatter-track (slurp "resources/shaders/atmosphere/attenuation-track.glsl")])
 
+(def attenuation-point
+  "Shader determining atmospheric attenuation between a point and the camera origin"
+  [shaders/ray-sphere attenuation-track (slurp "resources/shaders/atmosphere/attenuation-point.glsl")])
+
 (def vertex-atmosphere
   "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
   (slurp "resources/shaders/atmosphere/vertex.glsl"))

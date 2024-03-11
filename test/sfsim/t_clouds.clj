@@ -1355,4 +1355,42 @@ void main()
                    {:sfsim.render/window-width 1})
        => (roughly 2.0 1e-5))
 
+(def direct-light-probe
+  (template/fn [z]
+"#version 410 core
+out vec3 fragColor;
+bool is_above_horizon(vec3 point, vec3 direction)
+{
+  return direction.z > 0.0;
+}
+float overall_shadow(vec4 point)
+{
+  return point.z >= 1.0 ? 1.0 : 0.0;
+}
+vec3 transmittance_outer(vec3 point, vec3 direction)
+{
+  float result = point.z >= 3.0 ? 1.0 : 0.5;
+  return vec3(result, result, result);
+}
+vec3 direct_light(vec3 point);
+void main()
+{
+  vec3 point = vec3(0, 0, <%= z %>);
+  fragColor = direct_light(point);
+}"))
+
+(def direct-light-test
+  (shader-test
+    (fn [program light-dir]
+        (uniform-vector3 program "light_direction" (vec3 0 0 light-dir)))
+    direct-light-probe (last (direct-light 3))))
+
+(tabular "Shader function for determining direct light left after atmospheric scattering and shadows"
+  (fact ((direct-light-test [?light-dir] [?z]) 0) => (roughly ?result 1e-5))
+  ?z  ?light-dir ?result
+  0.0  1.0       0.0
+  5.0  1.0       1.0
+  2.0  1.0       0.5
+  5.0 -1.0       0.0)
+
 (GLFW/glfwTerminate)

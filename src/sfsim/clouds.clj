@@ -218,6 +218,13 @@
    (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])
    (slurp "resources/shaders/clouds/overall-shadow.glsl")])
 
+(defn direct-light
+  "Shader function for determining direct light left after atmospheric scattering and shadows"
+  {:malli/schema [:=> [:cat N] render/shaders]}
+  [num-steps]
+  [shaders/is-above-horizon atmosphere/transmittance-outer (overall-shadow num-steps)
+   (slurp "resources/shaders/clouds/direct-light.glsl")])
+
 (defn cloud-transfer
   "Single cloud scattering update step"
   {:malli/schema [:=> [:cat N] render/shaders]}

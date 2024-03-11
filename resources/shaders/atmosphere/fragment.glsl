@@ -34,6 +34,5 @@ void main()
     vec4 cloud_scatter = cloud_overlay();
     incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
   };
-  fragColor.rgb = incoming;
-  fragColor.a = 1.0;
+  fragColor = vec4(incoming, 1.0);
 }

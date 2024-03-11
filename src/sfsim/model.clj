@@ -2,14 +2,20 @@
     "Import glTF models into Clojure"
     (:require [clojure.math :refer (floor)]
               [malli.core :as m]
-              [fastmath.matrix :refer (mat4x4 mulm eye diagonal)]
+              [fastmath.matrix :refer (mat4x4 mulm eye diagonal inverse)]
               [fastmath.vector :refer (vec3 mult add)]
-              [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
-              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object)]
               [sfsim.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
+              [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
+              [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
+              [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
+                                    make-program destroy-program use-program uniform-matrix4 uniform-vector3 use-textures)
+                            :as render]
+              [sfsim.clouds :refer (direct-light cloud-planet)]
+              [sfsim.atmosphere :refer (attenuation-point)]
+              [sfsim.planet :refer (surface-radiance-function)]
+              [sfsim.shaders :refer (phong)]
               [sfsim.image :refer (image)]
-              [sfsim.util :refer (N0)]
-              [sfsim.quaternion :refer (->Quaternion quaternion) :as q])
+              [sfsim.util :refer (N0 N)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
               AINodeAnim AIMatrix4x4 AIFace AIVector3D AIScene AIVectorKey AIQuatKey]
              [org.lwjgl.stb STBImage]))
@@ -290,20 +296,23 @@
   (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
+(def render-vars-camera (m/schema [:map [:sfsim.render/camera-to-world fmat4]]))
+
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat fn? [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
-  ([program-selection scene callback]
-   (render-scene program-selection scene callback (eye 4) (::root scene)))
-  ([program-selection scene callback transform node]
+  {:malli/schema [:=> [:cat fn? render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  ([program-selection render-vars scene callback]
+   (render-scene program-selection render-vars scene callback (eye 4) (::root scene)))
+  ([program-selection render-vars scene callback transform node]
    (let [transform (mulm transform (::transform node))]
      (doseq [child-node (::children node)]
-            (render-scene program-selection scene callback transform child-node))
+            (render-scene program-selection render-vars scene callback transform child-node))
      (doseq [mesh-index (::mesh-indices node)]
             (let [mesh                (nth (::meshes scene) mesh-index)
                   material            (::material mesh)
+                  camera-to-world     (:sfsim.render/camera-to-world render-vars)
                   program             (program-selection material)]
-              (callback (merge material {::program program ::transform transform}))
+              (callback (merge material {::program program ::camera-to-world camera-to-world ::transform transform}))
               (render-triangles (::vao mesh)))))))
 
 (defn- interpolate-frame
@@ -385,6 +394,63 @@
   {:malli/schema [:=> [:cat [:map [::root :map]] [:map-of :string :some]] [:map [::root :map]]]}
   [model transforms]
   (assoc model ::root (apply-transforms-node (::root model) transforms)))
+
+(defn material-type
+  "Determine information for dispatching to correct shader or render method"
+  [{:sfsim.model/keys [color-texture-index]}]
+  (if color-texture-index
+    ::program-textured
+    ::program-colored))
+
+(def vertex-colored
+  (slurp "resources/shaders/model/vertex-colored.glsl"))
+
+(defn fragment-colored
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
+  [num-steps perlin-octaves cloud-octaves]
+  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored.glsl")])
+
+(def vertex-textured
+  (slurp "resources/shaders/model/vertex-textured.glsl"))
+
+(defn fragment-textured
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
+  [num-steps perlin-octaves cloud-octaves]
+  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured.glsl")])
+
+(defn make-model-renderer
+  "Create set of programs for rendering different materials"
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] :map]}
+  [num-steps perlin-octaves cloud-octaves]
+  (let [program-colored  (make-program :sfsim.render/vertex [vertex-colored]
+                                       :sfsim.render/fragment (fragment-colored num-steps perlin-octaves cloud-octaves))
+        program-textured (make-program :sfsim.render/vertex [vertex-textured]
+                                       :sfsim.render/fragment (fragment-textured num-steps perlin-octaves cloud-octaves))]
+    {::program-colored  program-colored
+     ::program-textured program-textured}))
+
+(defmulti render-mesh material-type)
+
+(defmethod render-mesh ::program-colored
+  [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+(defmethod render-mesh ::program-textured
+  [{:sfsim.model/keys [program camera-to-world transform colors]}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (use-textures {0 colors}))
+
+(defn destroy-model-renderer
+  [{::keys [program-colored program-textured]}]
+  (destroy-program program-colored)
+  (destroy-program program-textured))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

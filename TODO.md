@@ -1,12 +1,10 @@
 # TODO
-* refactor model rendering and ground radiance and planet rendering
-* object pose and fs\_in.point relative to planet (pose), object pose relative to camera (transform = inverse(extrinsics) * pose), camera center (origin) relative to planet
-* create resources/shaders/model directory and put first shader in there, refactor with ground-radiance and planet fragment shader?
+* test rendering of dice
+* rename transform to object-to-world
+* integration test rendering of brick wall segment,
+* integration test rendering of bump map with uniform color
+* low-res blue noise for model rendering?
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
-* render cube with fog (extrinsics relative to camera, pose relative to planet, origin relative to planet),
-  integration test rendering of brick wall segment,
-  use atmosphere intersection and cloud layer intersection to render foreground (see cloud\_planet),
-  low-res blue noise?
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
