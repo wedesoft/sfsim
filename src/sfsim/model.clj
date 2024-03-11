@@ -401,7 +401,7 @@
 (defn fragment-colored
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+  [(direct-light num-steps) phong attenuation-point surface-radiance-function (cloud-planet perlin-octaves cloud-octaves)
    (slurp "resources/shaders/model/fragment-colored.glsl")])
 
 (def vertex-textured
@@ -410,7 +410,7 @@
 (defn fragment-textured
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+  [(direct-light num-steps) phong attenuation-point surface-radiance-function (cloud-planet perlin-octaves cloud-octaves)
    (slurp "resources/shaders/model/fragment-textured.glsl")])
 
 (set! *warn-on-reflection* false)
