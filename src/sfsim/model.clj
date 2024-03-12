@@ -424,6 +424,15 @@
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
    (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-flat.glsl")])
 
+(def vertex-textured-bump
+  (slurp "resources/shaders/model/vertex-textured-bump.glsl"))
+
+(defn fragment-textured-bump
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
+  [num-steps perlin-octaves cloud-octaves]
+  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-bump.glsl")])
+
 (defn make-model-renderer
   "Create set of programs for rendering different materials"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] :map]}
@@ -431,9 +440,12 @@
   (let [program-colored-flat  (make-program :sfsim.render/vertex [vertex-colored-flat]
                                             :sfsim.render/fragment (fragment-colored-flat num-steps perlin-octaves cloud-octaves))
         program-textured-flat (make-program :sfsim.render/vertex [vertex-textured-flat]
-                                            :sfsim.render/fragment (fragment-textured-flat num-steps perlin-octaves cloud-octaves))]
+                                            :sfsim.render/fragment (fragment-textured-flat num-steps perlin-octaves cloud-octaves))
+        program-textured-bump (make-program :sfsim.render/vertex [vertex-textured-bump]
+                                            :sfsim.render/fragment (fragment-textured-bump num-steps perlin-octaves cloud-octaves))]
     {::program-colored-flat  program-colored-flat
-     ::program-textured-flat program-textured-flat}))
+     ::program-textured-flat program-textured-flat
+     ::program-textured-bump program-textured-bump}))
 
 (defmulti render-mesh material-type)
 
@@ -451,10 +463,18 @@
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (use-textures {0 colors}))
 
+(defmethod render-mesh ::program-textured-bump
+  [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (use-textures {0 colors 1 normals}))
+
 (defn destroy-model-renderer
-  [{::keys [program-colored-flat program-textured-flat]}]
+  [{::keys [program-colored-flat program-textured-flat program-textured-bump]}]
   (destroy-program program-colored-flat)
-  (destroy-program program-textured-flat))
+  (destroy-program program-textured-flat)
+  (destroy-program program-textured-bump))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

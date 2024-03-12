@@ -546,7 +546,10 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                       (slurp "resources/shaders/model/fragment-colored-flat.glsl")))
                 model/fragment-textured-flat (fn [num-steps perlin-octaves cloud-octaves]
                                                  (conj model-shader-mocks
-                                                       (slurp "resources/shaders/model/fragment-textured-flat.glsl")))]
+                                                       (slurp "resources/shaders/model/fragment-textured-flat.glsl")))
+                model/fragment-textured-bump (fn [num-steps perlin-octaves cloud-octaves]
+                                                 (conj model-shader-mocks
+                                                       (slurp "resources/shaders/model/fragment-textured-bump.glsl")))]
     (fact
       (offscreen-render 160 120
                         (let [renderer         (make-model-renderer 3 [] [])
@@ -556,7 +559,9 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                               object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
                               moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
                           (clear (vec3 0.5 0.5 0.5) 0.0)
-                          (doseq [program [(:sfsim.model/program-colored-flat renderer) (:sfsim.model/program-textured-flat renderer)]]
+                          (doseq [program [(:sfsim.model/program-colored-flat renderer)
+                                           (:sfsim.model/program-textured-flat renderer)
+                                           (:sfsim.model/program-textured-bump renderer)]]
                                  (use-program program)
                                  (uniform-float program "albedo" 3.14159265358)
                                  (uniform-float program "amplification" 1.0)
@@ -571,7 +576,11 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                  (uniform-float program "radius" 1000.0)
                                  (uniform-float program "max_height" 100.0)
                                  (uniform-int program "above" ?above))
+                          (use-program (:sfsim.model/program-textured-flat renderer))
                           (uniform-sampler (:sfsim.model/program-textured-flat renderer) "colors" 0)
+                          (use-program (:sfsim.model/program-textured-bump renderer))
+                          (uniform-sampler (:sfsim.model/program-textured-bump renderer) "colors" 0)
+                          (uniform-sampler (:sfsim.model/program-textured-bump renderer) "normals" 1)
                           (render-scene (comp renderer material-type) {:sfsim.render/camera-to-world camera-to-world} moved-scene
                                         render-mesh)
                           (unload-scene-from-opengl opengl-scene)
