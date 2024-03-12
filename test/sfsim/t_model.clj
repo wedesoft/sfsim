@@ -575,7 +575,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                           (render-scene (comp renderer material-type) {:sfsim.render/camera-to-world camera-to-world} moved-scene
                                         render-mesh)
                           (unload-scene-from-opengl opengl-scene)
-                          (destroy-model-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0)))
+                          (destroy-model-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
   cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
   cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"

@@ -362,7 +362,7 @@
           data (byte-array size)]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE buf)
       (.get buf data)
-      #:sfsim.image{:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data data :channels 4})))
 
 (defmacro create-cubemap
   "Macro to initialise cubemap"
