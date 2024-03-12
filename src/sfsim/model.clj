@@ -397,50 +397,54 @@
 
 (defn material-type
   "Determine information for dispatching to correct shader or render method"
-  [{:sfsim.model/keys [color-texture-index]}]
+  [{:sfsim.model/keys [color-texture-index normal-texture-index]}]
   (if color-texture-index
-    ::program-textured
-    ::program-colored))
+    (if normal-texture-index
+      ::program-textured-bump
+      ::program-textured-flat)
+    (if normal-texture-index
+      ::program-colored-bump
+      ::program-colored-flat)))
 
-(def vertex-colored
-  (slurp "resources/shaders/model/vertex-colored.glsl"))
+(def vertex-colored-flat
+  (slurp "resources/shaders/model/vertex-colored-flat.glsl"))
 
-(defn fragment-colored
+(defn fragment-colored-flat
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored.glsl")])
+   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored-flat.glsl")])
 
-(def vertex-textured
-  (slurp "resources/shaders/model/vertex-textured.glsl"))
+(def vertex-textured-flat
+  (slurp "resources/shaders/model/vertex-textured-flat.glsl"))
 
-(defn fragment-textured
+(defn fragment-textured-flat
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured.glsl")])
+   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-flat.glsl")])
 
 (defn make-model-renderer
   "Create set of programs for rendering different materials"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] :map]}
   [num-steps perlin-octaves cloud-octaves]
-  (let [program-colored  (make-program :sfsim.render/vertex [vertex-colored]
-                                       :sfsim.render/fragment (fragment-colored num-steps perlin-octaves cloud-octaves))
-        program-textured (make-program :sfsim.render/vertex [vertex-textured]
-                                       :sfsim.render/fragment (fragment-textured num-steps perlin-octaves cloud-octaves))]
-    {::program-colored  program-colored
-     ::program-textured program-textured}))
+  (let [program-colored-flat  (make-program :sfsim.render/vertex [vertex-colored-flat]
+                                            :sfsim.render/fragment (fragment-colored-flat num-steps perlin-octaves cloud-octaves))
+        program-textured-flat (make-program :sfsim.render/vertex [vertex-textured-flat]
+                                            :sfsim.render/fragment (fragment-textured-flat num-steps perlin-octaves cloud-octaves))]
+    {::program-colored-flat  program-colored-flat
+     ::program-textured-flat program-textured-flat}))
 
 (defmulti render-mesh material-type)
 
-(defmethod render-mesh ::program-colored
+(defmethod render-mesh ::program-colored-flat
   [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
   (use-program program)
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (uniform-vector3 program "diffuse_color" diffuse))
 
-(defmethod render-mesh ::program-textured
+(defmethod render-mesh ::program-textured-flat
   [{:sfsim.model/keys [program camera-to-world transform colors]}]
   (use-program program)
   (uniform-matrix4 program "object_to_world" transform)
@@ -448,9 +452,9 @@
   (use-textures {0 colors}))
 
 (defn destroy-model-renderer
-  [{::keys [program-colored program-textured]}]
-  (destroy-program program-colored)
-  (destroy-program program-textured))
+  [{::keys [program-colored-flat program-textured-flat]}]
+  (destroy-program program-colored-flat)
+  (destroy-program program-textured-flat))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
