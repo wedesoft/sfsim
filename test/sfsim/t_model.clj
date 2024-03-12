@@ -588,6 +588,12 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   dice   1.0            0      0.0      1.0     1.0          "dice-sunset.png"
   dice   1.0            0      1.0      1.0     1.0          "dice-ambient.png"
   dice   1.0            1      0.0      0.5     1.0          "dice-shadow.png"
-  dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png")
+  dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png"
+  bricks 1.0            1      0.0      1.0     1.0          "bricks-fog.png"
+  bricks 0.5            1      0.0      1.0     1.0          "bricks-dark.png"
+  bricks 1.0            0      0.0      1.0     1.0          "bricks-sunset.png"
+  bricks 1.0            0      1.0      1.0     1.0          "bricks-ambient.png"
+  bricks 1.0            1      0.0      0.5     1.0          "bricks-shadow.png"
+  bricks 1.0            1      0.0      1.0     0.5          "bricks-attenuation.png")
 
 (GLFW/glfwTerminate)
