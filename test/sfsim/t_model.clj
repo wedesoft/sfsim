@@ -479,6 +479,8 @@ void main()
        => {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform :mock :sfsim.model/children
                               [{:sfsim.model/name "Cube" :sfsim.model/transform :mock-changed :sfsim.model/children []}]}})
 
+(def bump (read-gltf "test/sfsim/fixtures/model/bump.gltf"))
+
 (def cloud-planet-mock
 "#version 410 core
 uniform vec3 origin;
@@ -547,6 +549,9 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                 model/fragment-textured-flat (fn [num-steps perlin-octaves cloud-octaves]
                                                  (conj model-shader-mocks
                                                        (slurp "resources/shaders/model/fragment-textured-flat.glsl")))
+                model/fragment-colored-bump (fn [num-steps perlin-octaves cloud-octaves]
+                                                (conj model-shader-mocks
+                                                      (slurp "resources/shaders/model/fragment-colored-bump.glsl")))
                 model/fragment-textured-bump (fn [num-steps perlin-octaves cloud-octaves]
                                                  (conj model-shader-mocks
                                                        (slurp "resources/shaders/model/fragment-textured-bump.glsl")))]
@@ -561,6 +566,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                           (clear (vec3 0.5 0.5 0.5) 0.0)
                           (doseq [program [(:sfsim.model/program-colored-flat renderer)
                                            (:sfsim.model/program-textured-flat renderer)
+                                           (:sfsim.model/program-colored-bump renderer)
                                            (:sfsim.model/program-textured-bump renderer)]]
                                  (use-program program)
                                  (uniform-float program "albedo" 3.14159265358)
@@ -578,6 +584,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                  (uniform-int program "above" ?above))
                           (use-program (:sfsim.model/program-textured-flat renderer))
                           (uniform-sampler (:sfsim.model/program-textured-flat renderer) "colors" 0)
+                          (use-program (:sfsim.model/program-colored-bump renderer))
+                          (uniform-sampler (:sfsim.model/program-colored-bump renderer) "normals" 0)
                           (use-program (:sfsim.model/program-textured-bump renderer))
                           (uniform-sampler (:sfsim.model/program-textured-bump renderer) "colors" 0)
                           (uniform-sampler (:sfsim.model/program-textured-bump renderer) "normals" 1)
@@ -598,6 +606,12 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   dice   1.0            0      1.0      1.0     1.0          "dice-ambient.png"
   dice   1.0            1      0.0      0.5     1.0          "dice-shadow.png"
   dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png"
+  bump   1.0            1      0.0      1.0     1.0          "bump-fog.png"
+  bump   0.5            1      0.0      1.0     1.0          "bump-dark.png"
+  bump   1.0            0      0.0      1.0     1.0          "bump-sunset.png"
+  bump   1.0            0      1.0      1.0     1.0          "bump-ambient.png"
+  bump   1.0            1      0.0      0.5     1.0          "bump-shadow.png"
+  bump   1.0            1      0.0      1.0     0.5          "bump-attenuation.png"
   bricks 1.0            1      0.0      1.0     1.0          "bricks-fog.png"
   bricks 0.5            1      0.0      1.0     1.0          "bricks-dark.png"
   bricks 1.0            0      0.0      1.0     1.0          "bricks-sunset.png"

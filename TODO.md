@@ -1,5 +1,5 @@
 # TODO
-* test rendering of dice
+* refactor different material programs
 * rename transform to object-to-world
 * integration test rendering of brick wall segment,
 * integration test rendering of bump map with uniform color
@@ -187,3 +187,4 @@
 * fluid dynamics on GPU: https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu
 * introduction to fluid dynamics: https://shahriyarshahrabi.medium.com/gentle-introduction-to-fluid-simulation-for-programmers-and-technical-artists-7c0045c40bac
 * fluid dynamics tutorial: http://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf
+* bake normal maps: https://www.youtube.com/watch?v=dPbrhqqrZck

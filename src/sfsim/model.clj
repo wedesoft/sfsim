@@ -141,11 +141,11 @@
         has-normal-texture  (::normal-texture-index material)]
     {::indices             (decode-indices mesh)
      ::vertices            (decode-vertices mesh has-color-texture has-normal-texture)
-     ::attributes          (if has-color-texture
-                             (if has-normal-texture
-                               ["vertex" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]
-                               ["vertex" 3 "normal" 3 "texcoord" 2])
-                             ["vertex" 3 "normal" 3])
+     ::attributes          (if has-normal-texture
+                             ["vertex" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]
+                             (if has-color-texture
+                               ["vertex" 3 "normal" 3 "texcoord" 2]
+                               ["vertex" 3 "normal" 3]))
      ::material-index      material-index}))
 
 (defn- decode-texture
@@ -424,6 +424,15 @@
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
    (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-flat.glsl")])
 
+(def vertex-colored-bump
+  (slurp "resources/shaders/model/vertex-colored-bump.glsl"))
+
+(defn fragment-colored-bump
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
+  [num-steps perlin-octaves cloud-octaves]
+  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored-bump.glsl")])
+
 (def vertex-textured-bump
   (slurp "resources/shaders/model/vertex-textured-bump.glsl"))
 
@@ -441,10 +450,13 @@
                                             :sfsim.render/fragment (fragment-colored-flat num-steps perlin-octaves cloud-octaves))
         program-textured-flat (make-program :sfsim.render/vertex [vertex-textured-flat]
                                             :sfsim.render/fragment (fragment-textured-flat num-steps perlin-octaves cloud-octaves))
+        program-colored-bump (make-program :sfsim.render/vertex [vertex-colored-bump]
+                                           :sfsim.render/fragment (fragment-colored-bump num-steps perlin-octaves cloud-octaves))
         program-textured-bump (make-program :sfsim.render/vertex [vertex-textured-bump]
                                             :sfsim.render/fragment (fragment-textured-bump num-steps perlin-octaves cloud-octaves))]
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
+     ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump}))
 
 (defmulti render-mesh material-type)
@@ -463,6 +475,14 @@
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (use-textures {0 colors}))
 
+(defmethod render-mesh ::program-colored-bump
+  [{:sfsim.model/keys [program camera-to-world transform diffuse normals]}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (uniform-vector3 program "diffuse_color" diffuse)
+  (use-textures {0 normals}))
+
 (defmethod render-mesh ::program-textured-bump
   [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
   (use-program program)
@@ -471,9 +491,10 @@
   (use-textures {0 colors 1 normals}))
 
 (defn destroy-model-renderer
-  [{::keys [program-colored-flat program-textured-flat program-textured-bump]}]
+  [{::keys [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]}]
   (destroy-program program-colored-flat)
   (destroy-program program-textured-flat)
+  (destroy-program program-colored-bump)
   (destroy-program program-textured-bump))
 
 (set! *warn-on-reflection* false)
