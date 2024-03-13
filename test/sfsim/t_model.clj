@@ -479,6 +479,8 @@ void main()
        => {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform :mock :sfsim.model/children
                               [{:sfsim.model/name "Cube" :sfsim.model/transform :mock-changed :sfsim.model/children []}]}})
 
+(def bump (read-gltf "test/sfsim/fixtures/model/bump.gltf"))
+
 (def cloud-planet-mock
 "#version 410 core
 uniform vec3 origin;
@@ -541,10 +543,18 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                          (last (clouds/direct-light 3))])
 
 (tabular "Render red cube with fog and atmosphere"
-  (with-redefs [model/fragment-colored (fn [num-steps perlin-octaves cloud-octaves]
-                                           (conj model-shader-mocks (slurp "resources/shaders/model/fragment-colored.glsl")))
-                model/fragment-textured (fn [num-steps perlin-octaves cloud-octaves]
-                                            (conj model-shader-mocks (slurp "resources/shaders/model/fragment-textured.glsl")))]
+  (with-redefs [model/fragment-colored-flat (fn [num-steps perlin-octaves cloud-octaves]
+                                                (conj model-shader-mocks
+                                                      (slurp "resources/shaders/model/fragment-colored-flat.glsl")))
+                model/fragment-textured-flat (fn [num-steps perlin-octaves cloud-octaves]
+                                                 (conj model-shader-mocks
+                                                       (slurp "resources/shaders/model/fragment-textured-flat.glsl")))
+                model/fragment-colored-bump (fn [num-steps perlin-octaves cloud-octaves]
+                                                (conj model-shader-mocks
+                                                      (slurp "resources/shaders/model/fragment-colored-bump.glsl")))
+                model/fragment-textured-bump (fn [num-steps perlin-octaves cloud-octaves]
+                                                 (conj model-shader-mocks
+                                                       (slurp "resources/shaders/model/fragment-textured-bump.glsl")))]
     (fact
       (offscreen-render 160 120
                         (let [renderer         (make-model-renderer 3 [] [])
@@ -554,7 +564,10 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                               object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
                               moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
                           (clear (vec3 0.5 0.5 0.5) 0.0)
-                          (doseq [program [(:sfsim.model/program-colored renderer) (:sfsim.model/program-textured renderer)]]
+                          (doseq [program [(:sfsim.model/program-colored-flat renderer)
+                                           (:sfsim.model/program-textured-flat renderer)
+                                           (:sfsim.model/program-colored-bump renderer)
+                                           (:sfsim.model/program-textured-bump renderer)]]
                                  (use-program program)
                                  (uniform-float program "albedo" 3.14159265358)
                                  (uniform-float program "amplification" 1.0)
@@ -569,7 +582,13 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                  (uniform-float program "radius" 1000.0)
                                  (uniform-float program "max_height" 100.0)
                                  (uniform-int program "above" ?above))
-                          (uniform-sampler (:sfsim.model/program-textured renderer) "colors" 0)
+                          (use-program (:sfsim.model/program-textured-flat renderer))
+                          (uniform-sampler (:sfsim.model/program-textured-flat renderer) "colors" 0)
+                          (use-program (:sfsim.model/program-colored-bump renderer))
+                          (uniform-sampler (:sfsim.model/program-colored-bump renderer) "normals" 0)
+                          (use-program (:sfsim.model/program-textured-bump renderer))
+                          (uniform-sampler (:sfsim.model/program-textured-bump renderer) "colors" 0)
+                          (uniform-sampler (:sfsim.model/program-textured-bump renderer) "normals" 1)
                           (render-scene (comp renderer material-type) {:sfsim.render/camera-to-world camera-to-world} moved-scene
                                         render-mesh)
                           (unload-scene-from-opengl opengl-scene)
@@ -586,6 +605,18 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   dice   1.0            0      0.0      1.0     1.0          "dice-sunset.png"
   dice   1.0            0      1.0      1.0     1.0          "dice-ambient.png"
   dice   1.0            1      0.0      0.5     1.0          "dice-shadow.png"
-  dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png")
+  dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png"
+  bump   1.0            1      0.0      1.0     1.0          "bump-fog.png"
+  bump   0.5            1      0.0      1.0     1.0          "bump-dark.png"
+  bump   1.0            0      0.0      1.0     1.0          "bump-sunset.png"
+  bump   1.0            0      1.0      1.0     1.0          "bump-ambient.png"
+  bump   1.0            1      0.0      0.5     1.0          "bump-shadow.png"
+  bump   1.0            1      0.0      1.0     0.5          "bump-attenuation.png"
+  bricks 1.0            1      0.0      1.0     1.0          "bricks-fog.png"
+  bricks 0.5            1      0.0      1.0     1.0          "bricks-dark.png"
+  bricks 1.0            0      0.0      1.0     1.0          "bricks-sunset.png"
+  bricks 1.0            0      1.0      1.0     1.0          "bricks-ambient.png"
+  bricks 1.0            1      0.0      0.5     1.0          "bricks-shadow.png"
+  bricks 1.0            1      0.0      1.0     0.5          "bricks-attenuation.png")
 
 (GLFW/glfwTerminate)
