@@ -407,8 +407,9 @@
       ::program-colored-bump
       ::program-colored-flat)))
 
-(def vertex-colored-flat
-  (slurp "resources/shaders/model/vertex-colored-flat.glsl"))
+(def vertex-model
+  "Vertex shader for rendering model"
+  (template/fn [textured bump] (slurp "resources/shaders/model/vertex.glsl")))
 
 (def fragment-model
   "Fragment shader for rendering model in atmosphere"
@@ -420,29 +421,28 @@
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
    (cloud-planet num-steps perlin-octaves cloud-octaves)])
 
+(def vertex-colored-flat (vertex-model false false))
+
 (defn fragment-colored-flat
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model false false)))
 
-(def vertex-textured-flat
-  (slurp "resources/shaders/model/vertex-textured-flat.glsl"))
+(def vertex-textured-flat (vertex-model true false))
 
 (defn fragment-textured-flat
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model true false)))
 
-(def vertex-colored-bump
-  (slurp "resources/shaders/model/vertex-colored-bump.glsl"))
+(def vertex-colored-bump (vertex-model false true))
 
 (defn fragment-colored-bump
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model false true)))
 
-(def vertex-textured-bump
-  (slurp "resources/shaders/model/vertex-textured-bump.glsl"))
+(def vertex-textured-bump (vertex-model true true))
 
 (defn fragment-textured-bump
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
