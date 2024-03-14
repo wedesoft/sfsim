@@ -3,6 +3,7 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (to-radians sqrt PI)]
+              [comb.template :as template]
               [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
               [fastmath.matrix :refer (eye mulm inverse mat4x4)]
               [fastmath.vector :refer (vec3 normalize)]
@@ -543,14 +544,9 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                          (last (clouds/direct-light 3))])
 
 (tabular "Render red cube with fog and atmosphere"
-  (with-redefs [model/fragment-colored-flat (fn [num-steps perlin-octaves cloud-octaves]
-                                                (conj model-shader-mocks (fragment-model false false)))
-                model/fragment-textured-flat (fn [num-steps perlin-octaves cloud-octaves]
-                                                 (conj model-shader-mocks (fragment-model true false)))
-                model/fragment-colored-bump (fn [num-steps perlin-octaves cloud-octaves]
-                                                (conj model-shader-mocks (fragment-model false true)))
-                model/fragment-textured-bump (fn [num-steps perlin-octaves cloud-octaves]
-                                                 (conj model-shader-mocks (fragment-model true true)))]
+  (with-redefs [model/fragment-model (fn [textured bump num-steps perlin-octaves cloud-octaves]
+                                         (conj model-shader-mocks (template/eval (slurp "resources/shaders/model/fragment.glsl")
+                                                                                 {:textured textured :bump bump})))]
     (fact
       (offscreen-render 160 120
                         (let [renderer         (make-model-renderer 3 [] [])
