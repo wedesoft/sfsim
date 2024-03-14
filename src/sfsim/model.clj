@@ -438,33 +438,35 @@
 
 (defmulti render-mesh material-type)
 
+(defn setup-camera-and-world-matrix
+  {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
+  [program transform camera-to-world]
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
+
 (defmethod render-mesh ::program-colored-flat
   [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
   (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
   [{:sfsim.model/keys [program camera-to-world transform colors]}]
   (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {0 colors}))
 
 (defmethod render-mesh ::program-colored-bump
   [{:sfsim.model/keys [program camera-to-world transform diffuse normals]}]
   (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {0 normals}))
 
 (defmethod render-mesh ::program-textured-bump
   [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
   (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {0 colors 1 normals}))
 
 (defn destroy-model-renderer
