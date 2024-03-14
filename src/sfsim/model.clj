@@ -407,9 +407,10 @@
       ::program-colored-bump
       ::program-colored-flat)))
 
-(def vertex-model
+(defn vertex-model
   "Vertex shader for rendering model"
-  (template/fn [textured bump] (slurp "resources/shaders/model/vertex.glsl")))
+  [textured bump]
+  (template/eval (slurp "resources/shaders/model/vertex.glsl") {:textured textured :bump bump}))
 
 (def fragment-model
   "Fragment shader for rendering model in atmosphere"
@@ -421,28 +422,20 @@
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
    (cloud-planet num-steps perlin-octaves cloud-octaves)])
 
-(def vertex-colored-flat (vertex-model false false))
-
 (defn fragment-colored-flat
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model false false)))
-
-(def vertex-textured-flat (vertex-model true false))
 
 (defn fragment-textured-flat
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model true false)))
 
-(def vertex-colored-bump (vertex-model false true))
-
 (defn fragment-colored-bump
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model false true)))
-
-(def vertex-textured-bump (vertex-model true true))
 
 (defn fragment-textured-bump
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
@@ -453,13 +446,13 @@
   "Create set of programs for rendering different materials"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] :map]}
   [num-steps perlin-octaves cloud-octaves]
-  (let [program-colored-flat  (make-program :sfsim.render/vertex [vertex-colored-flat]
+  (let [program-colored-flat  (make-program :sfsim.render/vertex [(vertex-model false false)]
                                             :sfsim.render/fragment (fragment-colored-flat num-steps perlin-octaves cloud-octaves))
-        program-textured-flat (make-program :sfsim.render/vertex [vertex-textured-flat]
+        program-textured-flat (make-program :sfsim.render/vertex [(vertex-model true false)]
                                             :sfsim.render/fragment (fragment-textured-flat num-steps perlin-octaves cloud-octaves))
-        program-colored-bump (make-program :sfsim.render/vertex [vertex-colored-bump]
+        program-colored-bump (make-program :sfsim.render/vertex [(vertex-model false true)]
                                            :sfsim.render/fragment (fragment-colored-bump num-steps perlin-octaves cloud-octaves))
-        program-textured-bump (make-program :sfsim.render/vertex [vertex-textured-bump]
+        program-textured-bump (make-program :sfsim.render/vertex [(vertex-model true true)]
                                             :sfsim.render/fragment (fragment-textured-bump num-steps perlin-octaves cloud-octaves))]
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
