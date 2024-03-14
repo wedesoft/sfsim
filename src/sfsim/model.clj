@@ -114,7 +114,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def material (m/schema [:map [:diffuse fvec3] [:color-texture-index [:maybe N0]] [:normal-texture-index [:maybe N0]]]))
+(def material (m/schema [:map [::diffuse fvec3] [::color-texture-index [:maybe N0]] [::normal-texture-index [:maybe N0]]]))
 
 (defn- decode-material
   "Fetch material data for material with given index"
@@ -298,10 +298,16 @@
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
 (def render-vars-camera (m/schema [:map [:sfsim.render/camera-to-world fmat4]]))
+(def mesh-params (m/schema [:map [::program :int]
+                                 [::camera-to-world fmat4]
+                                 [::transform fmat4]
+                                 [::diffuse fvec3]
+                                 [::colors [:maybe texture-2d]]
+                                 [::normals [:maybe texture-2d]]]))
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat fn? render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
   ([program-selection render-vars scene callback]
    (render-scene program-selection render-vars scene callback (eye 4) (::root scene)))
   ([program-selection render-vars scene callback transform node]
@@ -423,9 +429,14 @@
   (make-program :sfsim.render/vertex [(vertex-model textured bump)]
                 :sfsim.render/fragment (fragment-model textured bump num-steps perlin-octaves cloud-octaves)))
 
+(def model-renderer (m/schema [:map [::program-colored-flat  :int]
+                                    [::program-textured-flat :int]
+                                    [::program-colored-bump  :int]
+                                    [::program-textured-bump :int]]))
+
 (defn make-model-renderer
   "Create set of programs for rendering different materials"
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] :map]}
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] model-renderer]}
   [num-steps perlin-octaves cloud-octaves]
   (let [program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
         program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
@@ -436,13 +447,14 @@
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump}))
 
-(defmulti render-mesh material-type)
-
 (defn setup-camera-and-world-matrix
   {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
   [program transform camera-to-world]
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
+
+(defmulti render-mesh material-type)
+(m/=> render-mesh [:=> [:cat mesh-params] :nil])
 
 (defmethod render-mesh ::program-colored-flat
   [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
