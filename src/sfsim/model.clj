@@ -302,6 +302,8 @@
                                  [::camera-to-world fmat4]
                                  [::transform fmat4]
                                  [::diffuse fvec3]
+                                 [::color-texture-index [:maybe :int]]
+                                 [::normal-texture-index [:maybe :int]]
                                  [::colors [:maybe texture-2d]]
                                  [::normals [:maybe texture-2d]]]))
 
