@@ -1,6 +1,7 @@
 (ns sfsim.model
     "Import glTF models into Clojure"
     (:require [clojure.math :refer (floor)]
+              [comb.template :as template]
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm eye diagonal inverse)]
               [fastmath.vector :refer (vec3 mult add)]
@@ -409,11 +410,20 @@
 (def vertex-colored-flat
   (slurp "resources/shaders/model/vertex-colored-flat.glsl"))
 
-(defn fragment-colored-flat
+(def fragment-model
+  "Fragment shader for rendering model in atmosphere"
+  (template/fn [textured bump] (slurp "resources/shaders/model/fragment.glsl")))
+
+(defn fragment-model-dependencies
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored-flat.glsl")])
+   (cloud-planet num-steps perlin-octaves cloud-octaves)])
+
+(defn fragment-colored-flat
+  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
+  [num-steps perlin-octaves cloud-octaves]
+  (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model false false)))
 
 (def vertex-textured-flat
   (slurp "resources/shaders/model/vertex-textured-flat.glsl"))
@@ -421,8 +431,7 @@
 (defn fragment-textured-flat
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-flat.glsl")])
+  (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model true false)))
 
 (def vertex-colored-bump
   (slurp "resources/shaders/model/vertex-colored-bump.glsl"))
@@ -430,8 +439,7 @@
 (defn fragment-colored-bump
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored-bump.glsl")])
+  (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model false true)))
 
 (def vertex-textured-bump
   (slurp "resources/shaders/model/vertex-textured-bump.glsl"))
@@ -439,8 +447,7 @@
 (defn fragment-textured-bump
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-bump.glsl")])
+  (conj (fragment-model-dependencies num-steps perlin-octaves cloud-octaves) (fragment-model true true)))
 
 (defn make-model-renderer
   "Create set of programs for rendering different materials"

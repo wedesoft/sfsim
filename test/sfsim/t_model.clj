@@ -544,17 +544,13 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 (tabular "Render red cube with fog and atmosphere"
   (with-redefs [model/fragment-colored-flat (fn [num-steps perlin-octaves cloud-octaves]
-                                                (conj model-shader-mocks
-                                                      (slurp "resources/shaders/model/fragment-colored-flat.glsl")))
+                                                (conj model-shader-mocks (fragment-model false false)))
                 model/fragment-textured-flat (fn [num-steps perlin-octaves cloud-octaves]
-                                                 (conj model-shader-mocks
-                                                       (slurp "resources/shaders/model/fragment-textured-flat.glsl")))
+                                                 (conj model-shader-mocks (fragment-model true false)))
                 model/fragment-colored-bump (fn [num-steps perlin-octaves cloud-octaves]
-                                                (conj model-shader-mocks
-                                                      (slurp "resources/shaders/model/fragment-colored-bump.glsl")))
+                                                (conj model-shader-mocks (fragment-model false true)))
                 model/fragment-textured-bump (fn [num-steps perlin-octaves cloud-octaves]
-                                                 (conj model-shader-mocks
-                                                       (slurp "resources/shaders/model/fragment-textured-bump.glsl")))]
+                                                 (conj model-shader-mocks (fragment-model true true)))]
     (fact
       (offscreen-render 160 120
                         (let [renderer         (make-model-renderer 3 [] [])
