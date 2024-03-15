@@ -58,13 +58,13 @@
                                                                             cloud-data render-vars tree opacity-base)
 
               clouds                    (texture-render-color-depth width height true
-                                                                    (clear (vec3 0 0 0) 0.0)
-                                                                    (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
-                                                                    (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
+                                          (clear (vec3 0 0 0) 0.0)
+                                          (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
+                                          (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
               tex                       (texture-render-color-depth width height true
-                                                                    (clear (vec3 0 1 0) 0.0)
-                                                                    (planet/render-planet planet-renderer render-vars shadow-vars clouds tree)
-                                                                    (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
+                                          (clear (vec3 0 1 0) 0.0)
+                                          (planet/render-planet planet-renderer render-vars shadow-vars clouds tree)
+                                          (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
           (texture->image tex) => (is-image (str "test/sfsim/fixtures/integration/" ?result) 0.0)
           (destroy-texture tex)
           (destroy-texture clouds)
