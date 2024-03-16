@@ -120,12 +120,12 @@
                    object-position @position
                    render-vars  (make-render-vars config/planet-config cloud-data config/render-config (aget w 0) (aget h 0)
                                                   origin @orientation (vec3 (cos @light) (sin @light) 0) 1.0)
+                   shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
+                                                                    render-vars (planet/get-current-tree tile-tree) @opacity-base)
                    object-to-world (transformation-matrix (eye 3) object-position)
                    camera-to-world (:sfsim.render/camera-to-world render-vars)
                    world-to-camera (inverse camera-to-world)
                    moved-model     (assoc-in cube-model [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                   shadow-vars  (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data cloud-data
-                                                                    render-vars (planet/get-current-tree tile-tree) @opacity-base)
                    _ (let [program (:sfsim.model/program-colored-flat model-renderer)]
                      (use-program program)
                      (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
@@ -139,11 +139,12 @@
                      (uniform-float program "lod_offset" (clouds/lod-offset config/render-config cloud-data render-vars))
                      (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
                      (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-                     (uniform-matrix4 program "camera_to_world" camera-to-world)
+                     (uniform-matrix4 program "camera_to_world" camera-to-world)  ; TODO: remove?
                      (uniform-matrix4 program "world_to_camera" world-to-camera)
                      (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
                      (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-
+                     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))  ; TODO: remove
+                     (uniform-int program "window_height" (:sfsim.render/window-height render-vars))  ; TODO: remove
                      (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
                             (uniform-float program (str "split" idx) item))
                      (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
