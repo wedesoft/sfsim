@@ -88,7 +88,7 @@
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
-(def dist (atom 10.0))
+(def dist (atom 30.0))
 
 (defn -main
   "Space flight simulator main function"
@@ -126,36 +126,6 @@
                    camera-to-world (:sfsim.render/camera-to-world render-vars)
                    world-to-camera (inverse camera-to-world)
                    moved-model     (assoc-in cube-model [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                   _ (let [program (:sfsim.model/program-colored-flat model-renderer)]
-                     (use-program program)
-                     (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
-                     (clouds/setup-cloud-render-uniforms program cloud-data 4)
-                     (clouds/setup-cloud-sampling-uniforms program cloud-data 7)
-                     (setup-shadow-and-opacity-maps program shadow-data 8)
-                     (uniform-float program "specular" (:sfsim.render/specular config/render-config))
-                     (uniform-float program "radius" (:sfsim.planet/radius config/planet-config))
-                     (uniform-float program "albedo" (:sfsim.planet/albedo config/planet-config))
-                     (uniform-float program "amplification" (:sfsim.render/amplification config/render-config))
-                     (uniform-float program "lod_offset" (clouds/lod-offset config/render-config cloud-data render-vars))
-                     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
-                     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-                     (uniform-matrix4 program "camera_to_world" camera-to-world)  ; TODO: remove?
-                     (uniform-matrix4 program "world_to_camera" world-to-camera)
-                     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-                     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-                     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))  ; TODO: remove
-                     (uniform-int program "window_height" (:sfsim.render/window-height render-vars))  ; TODO: remove
-                     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
-                            (uniform-float program (str "split" idx) item))
-                     (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-                            (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
-                            (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
-                     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                                    4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
-                                    6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
-                     (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                                    (:sfsim.opacity/opacities shadow-vars)))))
                    w2           (quot (:sfsim.render/window-width render-vars) 2)
                    h2           (quot (:sfsim.render/window-height render-vars) 2)
                    clouds       (texture-render-color-depth
@@ -166,6 +136,36 @@
                                                               (planet/get-current-tree tile-tree))
                                   ; Render clouds above the horizon
                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
+               (let [program (:sfsim.model/program-colored-flat model-renderer)]
+                 (use-program program)
+                 (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
+                 (clouds/setup-cloud-render-uniforms program cloud-data 4)
+                 (clouds/setup-cloud-sampling-uniforms program cloud-data 7)
+                 (setup-shadow-and-opacity-maps program shadow-data 8)
+                 (uniform-float program "specular" (:sfsim.render/specular config/render-config))
+                 (uniform-float program "radius" (:sfsim.planet/radius config/planet-config))
+                 (uniform-float program "albedo" (:sfsim.planet/albedo config/planet-config))
+                 (uniform-float program "amplification" (:sfsim.render/amplification config/render-config))
+                 (uniform-float program "lod_offset" (clouds/lod-offset config/render-config cloud-data render-vars))
+                 (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
+                 (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
+                 (uniform-matrix4 program "camera_to_world" camera-to-world)  ; TODO: remove?
+                 (uniform-matrix4 program "world_to_camera" world-to-camera)
+                 (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
+                 (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
+                 (uniform-int program "window_width" (:sfsim.render/window-width render-vars))  ; TODO: remove
+                 (uniform-int program "window_height" (:sfsim.render/window-height render-vars))  ; TODO: remove
+                 (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
+                        (uniform-float program (str "split" idx) item))
+                 (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
+                        (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
+                        (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
+                 (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
+                                2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
+                                4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
+                                6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
+                 (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
+                                                                (:sfsim.opacity/opacities shadow-vars)))))
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render cube model
