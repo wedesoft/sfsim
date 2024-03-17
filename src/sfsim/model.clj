@@ -436,11 +436,18 @@
                                     [::program-colored-bump  :int]
                                     [::program-textured-bump :int]]))
 
+(def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]]]
+                          [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
+                                                     [:sfsim.clouds/cloud-octaves [:vector :double]]]]]))
+
 (defn make-model-renderer
   "Create set of programs for rendering different materials"
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] model-renderer]}
-  [num-steps perlin-octaves cloud-octaves]
-  (let [program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
+  {:malli/schema [:=> [:cat data] model-renderer]}
+  [data]
+  (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
+        perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
+        cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
+        program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
         program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
         program-colored-bump  (make-model-program false true  num-steps perlin-octaves cloud-octaves)
         program-textured-bump (make-model-program true  true  num-steps perlin-octaves cloud-octaves)]

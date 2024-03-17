@@ -68,9 +68,7 @@
 
 (def cube (assoc-in (model/read-gltf "test/sfsim/fixtures/model/cube.gltf") [:sfsim.model/materials 0 :sfsim.model/diffuse] (vec3 1 1 1)))
 
-(def model-renderer (model/make-model-renderer (:sfsim.opacity/num-steps config/shadow-config)
-                                               (:sfsim.clouds/perlin-octaves config/cloud-config)
-                                               (:sfsim.clouds/cloud-octaves config/cloud-config)))
+(def model-renderer (model/make-model-renderer data))
 
 (def cube-model (model/load-scene-into-opengl (comp model-renderer model/material-type) cube))
 
