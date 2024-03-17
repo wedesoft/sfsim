@@ -147,12 +147,9 @@
                  (uniform-float program "lod_offset" (clouds/lod-offset config/render-config cloud-data render-vars))
                  (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
                  (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-                 (uniform-matrix4 program "camera_to_world" camera-to-world)  ; TODO: remove?
                  (uniform-matrix4 program "world_to_camera" world-to-camera)
                  (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
                  (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-                 (uniform-int program "window_width" (:sfsim.render/window-width render-vars))  ; TODO: remove
-                 (uniform-int program "window_height" (:sfsim.render/window-height render-vars))  ; TODO: remove
                  (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
                         (uniform-float program (str "split" idx) item))
                  (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
