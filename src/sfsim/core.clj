@@ -32,7 +32,7 @@
 (def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
 (def orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
-(def speed (atom 50.0))
+(def speed (atom 10.0))
 
 (GLFW/glfwInit)
 
