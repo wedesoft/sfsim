@@ -6,7 +6,7 @@
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth make-render-vars
                                   use-program uniform-matrix4 uniform-vector3 uniform-float uniform-int use-textures
-                                  setup-shadow-and-opacity-maps)]
+                                  setup-shadow-and-opacity-maps setup-shadow-matrices)]
             [sfsim.atmosphere :as atmosphere]
             [sfsim.matrix :refer (transformation-matrix)]
             [sfsim.planet :as planet]
@@ -142,11 +142,7 @@
                  (uniform-matrix4 program "world_to_camera" world-to-camera)
                  (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
                  (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-                 (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
-                        (uniform-float program (str "split" idx) item))
-                 (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-                        (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
-                        (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
+                 (setup-shadow-matrices program shadow-vars)
                  (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                                 2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
                                 4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)

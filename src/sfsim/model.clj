@@ -441,6 +441,23 @@
                           [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
                                                      [:sfsim.clouds/cloud-octaves [:vector :double]]]]]))
 
+(defn setup-model-static-uniforms
+  [program data]
+  (let [render-config   (:sfsim.render/config data)
+        planet-config   (:sfsim.planet/config data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        cloud-data      (:sfsim.clouds/data data)
+        shadow-data     (:sfsim.opacity/data data)]
+    (use-program program)
+    (setup-atmosphere-uniforms program atmosphere-luts 0 true)
+    (setup-cloud-render-uniforms program cloud-data 4)
+    (setup-cloud-sampling-uniforms program cloud-data 7)
+    (setup-shadow-and-opacity-maps program shadow-data 8)
+    (uniform-float program "specular" (:sfsim.render/specular render-config))
+    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
+    (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
+    (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
+
 (defn make-model-renderer
   "Create set of programs for rendering different materials"
   {:malli/schema [:=> [:cat data] model-renderer]}
@@ -448,26 +465,13 @@
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
         perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
         cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
-        render-config         (:sfsim.render/config data)
-        planet-config         (:sfsim.planet/config data)
-        atmosphere-luts       (:sfsim.atmosphere/luts data)
-        cloud-data            (:sfsim.clouds/data data)
-        shadow-data           (:sfsim.opacity/data data)
         program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
         program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
         program-colored-bump  (make-model-program false true  num-steps perlin-octaves cloud-octaves)
         program-textured-bump (make-model-program true  true  num-steps perlin-octaves cloud-octaves)
         programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
     (doseq [program programs]
-           (use-program program)
-           (setup-atmosphere-uniforms program atmosphere-luts 0 true)
-           (setup-cloud-render-uniforms program cloud-data 4)
-           (setup-cloud-sampling-uniforms program cloud-data 7)
-           (setup-shadow-and-opacity-maps program shadow-data 8)
-           (uniform-float program "specular" (:sfsim.render/specular render-config))
-           (uniform-float program "radius" (:sfsim.planet/radius planet-config))
-           (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
-           (uniform-float program "amplification" (:sfsim.render/amplification render-config)))
+           (setup-model-static-uniforms program data))
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump

@@ -450,5 +450,19 @@
   (uniform-float program "depth" (:sfsim.opacity/depth shadow-data))
   (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data)))
 
+(def shadow-matrix-vars (m/schema [:map [:sfsim.opacity/splits [:vector :double]]
+                                        [:sfsim.opacity/matrix-cascade [:vector [:map [:sfsim.matrix/world-to-shadow-map fmat4]
+                                                                                      [:sfsim.matrix/depth :double]]]]]))
+
+(defn setup-shadow-matrices
+  "Set up cascade of shadow matrices for rendering"
+  {:malli/schema [:=> [:cat :int shadow-matrix-vars] :nil]}
+  [program shadow-vars]
+  (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
+         (uniform-float program (str "split" idx) item))
+  (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
+         (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
+         (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

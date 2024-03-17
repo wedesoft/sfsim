@@ -10,7 +10,8 @@
               [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                                     uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
-                                    setup-shadow-and-opacity-maps use-textures render-quads render-config render-vars)
+                                    setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
+                                    render-vars)
                               :as render]
               [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                         atmosphere-luts)]
@@ -205,11 +206,7 @@
     (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-    (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
-           (uniform-float program (str "split" idx) item))
-    (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-           (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
-           (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
+    (setup-shadow-matrices program shadow-vars)
     (use-textures {1 (:sfsim.atmosphere/transmittance atmosphere-luts) 2 (:sfsim.atmosphere/scatter atmosphere-luts)
                    3 (:sfsim.atmosphere/mie atmosphere-luts) 4 (:sfsim.clouds/worley cloud-data)
                    5 (:sfsim.clouds/perlin-worley cloud-data) 6 (:sfsim.clouds/cloud-cover cloud-data)
@@ -275,11 +272,7 @@
     (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-    (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
-           (uniform-float program (str "split" idx) item))
-    (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-           (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
-           (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
+    (setup-shadow-matrices program shadow-vars)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.clouds/worley data) 4 (:sfsim.clouds/perlin-worley data)
                    5 (:sfsim.clouds/cloud-cover data) 6 (:sfsim.clouds/bluenoise data)})
@@ -347,11 +340,7 @@
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
     (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
-    (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
-           (uniform-float program (str "split" idx) item))
-    (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
-           (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
-           (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item)))
+    (setup-shadow-matrices program shadow-vars)
     (use-textures {5 (:sfsim.atmosphere/transmittance atmosphere-luts) 6 (:sfsim.atmosphere/scatter atmosphere-luts)
                    7 (:sfsim.atmosphere/mie atmosphere-luts) 8 (:sfsim.atmosphere/surface-radiance atmosphere-luts) 9 clouds})
     (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
