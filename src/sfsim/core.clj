@@ -66,7 +66,7 @@
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
-(def cube (assoc-in (model/read-gltf "test/sfsim/fixtures/model/cube.gltf") [:sfsim.model/materials 0 :sfsim.model/diffuse] (vec3 1 1 1)))
+(def cube (model/read-gltf "test/sfsim/fixtures/model/cube.gltf"))
 
 (def model-renderer (model/make-model-renderer data))
 
