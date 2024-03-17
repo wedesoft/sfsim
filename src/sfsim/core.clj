@@ -136,14 +136,6 @@
                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
                (let [program (:sfsim.model/program-colored-flat model-renderer)]
                  (use-program program)
-                 (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
-                 (clouds/setup-cloud-render-uniforms program cloud-data 4)
-                 (clouds/setup-cloud-sampling-uniforms program cloud-data 7)
-                 (setup-shadow-and-opacity-maps program shadow-data 8)
-                 (uniform-float program "specular" (:sfsim.render/specular config/render-config))
-                 (uniform-float program "radius" (:sfsim.planet/radius config/planet-config))
-                 (uniform-float program "albedo" (:sfsim.planet/albedo config/planet-config))
-                 (uniform-float program "amplification" (:sfsim.render/amplification config/render-config))
                  (uniform-float program "lod_offset" (clouds/lod-offset config/render-config cloud-data render-vars))
                  (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
                  (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
