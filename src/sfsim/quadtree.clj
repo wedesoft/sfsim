@@ -118,6 +118,16 @@
      (and (is-flat? tree) (not (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree)))) (sub-paths path)
      :else (mapcat #(tiles-to-drop (% tree) increase-level-fun? (conj path %)) [::quad0 ::quad1 ::quad2 ::quad3]))))
 
+(defn tiles-path-list
+  "Get a list with a path to every quad tree tile"
+  {:malli/schema [:=> [:cat [:maybe :map] [:? [:vector :keyword]]] [:sequential [:vector :keyword]]]}
+  ([tree] (tiles-path-list tree []))
+  ([tree path]
+   (let [nodes       (filter (partial contains? tree) [::face0 ::face1 ::face2 ::face3 ::face4 ::face5
+                                                       ::quad0 ::quad1 ::quad2 ::quad3])
+         child-paths (mapcat #(tiles-path-list (get tree %) (conj path %)) nodes)]
+     (concat child-paths (map #(conj path %) nodes)))))
+
 (defn tiles-to-load
   "Determine which tiles to load into the quad tree"
   {:malli/schema [:=> [:cat [:maybe :map] fn? [:? [:vector :keyword]]] [:sequential [:vector :keyword]]]}

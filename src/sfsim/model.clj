@@ -1,6 +1,7 @@
 (ns sfsim.model
     "Import glTF models into Clojure"
     (:require [clojure.math :refer (floor)]
+              [comb.template :as template]
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm eye diagonal inverse)]
               [fastmath.vector :refer (vec3 mult add)]
@@ -8,10 +9,11 @@
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
-                                    make-program destroy-program use-program uniform-matrix4 uniform-vector3 use-textures)
+                                    make-program destroy-program use-program uniform-float uniform-matrix4 uniform-vector3
+                                    use-textures setup-shadow-and-opacity-maps)
                             :as render]
-              [sfsim.clouds :refer (direct-light cloud-planet)]
-              [sfsim.atmosphere :refer (attenuation-point)]
+              [sfsim.clouds :refer (direct-light cloud-planet setup-cloud-render-uniforms setup-cloud-sampling-uniforms)]
+              [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function)]
               [sfsim.shaders :refer (phong)]
               [sfsim.image :refer (image)]
@@ -113,7 +115,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def material (m/schema [:map [:diffuse fvec3] [:color-texture-index [:maybe N0]] [:normal-texture-index [:maybe N0]]]))
+(def material (m/schema [:map [::diffuse fvec3] [::color-texture-index [:maybe N0]] [::normal-texture-index [:maybe N0]]]))
 
 (defn- decode-material
   "Fetch material data for material with given index"
@@ -297,10 +299,18 @@
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
 (def render-vars-camera (m/schema [:map [:sfsim.render/camera-to-world fmat4]]))
+(def mesh-params (m/schema [:map [::program :int]
+                                 [::camera-to-world fmat4]
+                                 [::transform fmat4]
+                                 [::diffuse fvec3]
+                                 [::color-texture-index [:maybe :int]]
+                                 [::normal-texture-index [:maybe :int]]
+                                 [::colors [:maybe texture-2d]]
+                                 [::normals [:maybe texture-2d]]]))
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat fn? render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
   ([program-selection render-vars scene callback]
    (render-scene program-selection render-vars scene callback (eye 4) (::root scene)))
   ([program-selection render-vars scene callback transform node]
@@ -406,88 +416,96 @@
       ::program-colored-bump
       ::program-colored-flat)))
 
-(def vertex-colored-flat
-  (slurp "resources/shaders/model/vertex-colored-flat.glsl"))
+(def vertex-model (template/fn [textured bump] (slurp "resources/shaders/model/vertex.glsl")))
 
-(defn fragment-colored-flat
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
-  [num-steps perlin-octaves cloud-octaves]
+(defn fragment-model
+  "Fragment shader for rendering model in atmosphere"
+  {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] render/shaders]}
+  [textured bump num-steps perlin-octaves cloud-octaves]
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored-flat.glsl")])
+   (cloud-planet num-steps perlin-octaves cloud-octaves)
+   (template/eval (slurp "resources/shaders/model/fragment.glsl") {:textured textured :bump bump})])
 
-(def vertex-textured-flat
-  (slurp "resources/shaders/model/vertex-textured-flat.glsl"))
+(defn make-model-program
+  {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] :int]}
+  [textured bump num-steps perlin-octaves cloud-octaves]
+  (make-program :sfsim.render/vertex [(vertex-model textured bump)]
+                :sfsim.render/fragment (fragment-model textured bump num-steps perlin-octaves cloud-octaves)))
 
-(defn fragment-textured-flat
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
-  [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-flat.glsl")])
+(def model-renderer (m/schema [:map [::program-colored-flat  :int]
+                                    [::program-textured-flat :int]
+                                    [::program-colored-bump  :int]
+                                    [::program-textured-bump :int]]))
 
-(def vertex-colored-bump
-  (slurp "resources/shaders/model/vertex-colored-bump.glsl"))
+(def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]]]
+                          [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
+                                                     [:sfsim.clouds/cloud-octaves [:vector :double]]]]]))
 
-(defn fragment-colored-bump
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
-  [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-colored-bump.glsl")])
-
-(def vertex-textured-bump
-  (slurp "resources/shaders/model/vertex-textured-bump.glsl"))
-
-(defn fragment-textured-bump
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
-  [num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/model/fragment-textured-bump.glsl")])
+(defn setup-model-static-uniforms
+  [program data]
+  (let [render-config   (:sfsim.render/config data)
+        planet-config   (:sfsim.planet/config data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        cloud-data      (:sfsim.clouds/data data)
+        shadow-data     (:sfsim.opacity/data data)]
+    (use-program program)
+    (setup-atmosphere-uniforms program atmosphere-luts 0 true)
+    (setup-cloud-render-uniforms program cloud-data 4)
+    (setup-cloud-sampling-uniforms program cloud-data 7)
+    (setup-shadow-and-opacity-maps program shadow-data 8)
+    (uniform-float program "specular" (:sfsim.render/specular render-config))
+    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
+    (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
+    (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
 (defn make-model-renderer
   "Create set of programs for rendering different materials"
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] :map]}
-  [num-steps perlin-octaves cloud-octaves]
-  (let [program-colored-flat  (make-program :sfsim.render/vertex [vertex-colored-flat]
-                                            :sfsim.render/fragment (fragment-colored-flat num-steps perlin-octaves cloud-octaves))
-        program-textured-flat (make-program :sfsim.render/vertex [vertex-textured-flat]
-                                            :sfsim.render/fragment (fragment-textured-flat num-steps perlin-octaves cloud-octaves))
-        program-colored-bump (make-program :sfsim.render/vertex [vertex-colored-bump]
-                                           :sfsim.render/fragment (fragment-colored-bump num-steps perlin-octaves cloud-octaves))
-        program-textured-bump (make-program :sfsim.render/vertex [vertex-textured-bump]
-                                            :sfsim.render/fragment (fragment-textured-bump num-steps perlin-octaves cloud-octaves))]
+  {:malli/schema [:=> [:cat data] model-renderer]}
+  [data]
+  (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
+        perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
+        cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
+        program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
+        program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
+        program-colored-bump  (make-model-program false true  num-steps perlin-octaves cloud-octaves)
+        program-textured-bump (make-model-program true  true  num-steps perlin-octaves cloud-octaves)
+        programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
+    (doseq [program programs]
+           (setup-model-static-uniforms program data))
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump}))
 
+(defn setup-camera-and-world-matrix
+  {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
+  [program transform camera-to-world]
+  (use-program program)
+  (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
+
 (defmulti render-mesh material-type)
+(m/=> render-mesh [:=> [:cat mesh-params] :nil])
 
 (defmethod render-mesh ::program-colored-flat
   [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
   [{:sfsim.model/keys [program camera-to-world transform colors]}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {0 colors}))
 
 (defmethod render-mesh ::program-colored-bump
   [{:sfsim.model/keys [program camera-to-world transform diffuse normals]}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {0 normals}))
 
 (defmethod render-mesh ::program-textured-bump
   [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {0 colors 1 normals}))
 
 (defn destroy-model-renderer

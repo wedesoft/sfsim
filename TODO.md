@@ -1,8 +1,7 @@
 # TODO
-* refactor different material programs
-* rename transform to object-to-world
-* integration test rendering of brick wall segment,
-* integration test rendering of bump map with uniform color
+* integration test rendering objects with different materials
+* rendering outside atmosphere
+* object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
 * low-res blue noise for model rendering?
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * concept for bundling shaders with uniform setting methods?
