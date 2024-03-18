@@ -4,7 +4,8 @@
               [malli.core :as m]
               [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box)]
               [sfsim.cubemap :refer (cube-map-corners)]
-              [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info)]
+              [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
+                                      quadtree-drop quadtree-extract)]
               [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d
                                      texture-3d)]
               [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
@@ -422,6 +423,14 @@
       (unload-tiles-from-opengl (:drop data))
       (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
       (reset! changes (future (background-tree-update planet-renderer @tree width position))))))
+
+(defn unload-tile-tree
+  "Unload all tiles from opengl"
+  {:malli/schema [:=> [:cat tree] :nil]}
+  [tile-tree]
+  (let [tree      @(:tree tile-tree)
+        drop-list (tiles-path-list tree)]
+    (unload-tiles-from-opengl (quadtree-extract tree drop-list))))
 
 (defn get-current-tree
   "Get current state of tile tree (untested)"

@@ -167,7 +167,7 @@
                (print (format "\ro.-step (w/s) %.0f, dist (q/a) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
                (flush))
              (swap! t0 + dt))))
-  ; TODO: unload all planet tiles (vaos and textures)
+  (planet/unload-tile-tree tile-tree)
   (model/unload-scene-from-opengl cube-model)
   (model/destroy-model-renderer model-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)

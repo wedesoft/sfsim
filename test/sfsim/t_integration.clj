@@ -7,6 +7,7 @@
               [sfsim.conftest :refer (is-image)]
               [fastmath.vector :refer (vec3)]
               [sfsim.quaternion :as q]
+              [sfsim.quadtree :refer :all]
               [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
               [sfsim.atmosphere :as atmosphere]
@@ -69,7 +70,7 @@
           (destroy-texture tex)
           (destroy-texture clouds)
           (opacity/destroy-opacity-and-shadow shadow-vars)
-          ; TODO: unload tile tree
+          (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
           (planet/destroy-planet-renderer planet-renderer)
           (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)

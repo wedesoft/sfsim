@@ -1,5 +1,4 @@
 # TODO
-* unload tile tree
 * integration test rendering objects with different materials
 * rendering outside atmosphere
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?

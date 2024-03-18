@@ -95,6 +95,20 @@
     => [[face5 quad2 quad0] [face5 quad2 quad1] [face5 quad2 quad2] [face5 quad2 quad3]]
     (tiles-to-drop basic (fn [face level y x] false)) => []))
 
+(facts "Get list of tile paths"
+       (tiles-path-list {}) => []
+       (tiles-path-list {face0 {}}) => [[face0]]
+       (tiles-path-list {face1 {}}) => [[face1]]
+       (tiles-path-list {face2 {}}) => [[face2]]
+       (tiles-path-list {face3 {}}) => [[face3]]
+       (tiles-path-list {face4 {}}) => [[face4]]
+       (tiles-path-list {face5 {}}) => [[face5]]
+       (tiles-path-list {face5 {quad0 {}}}) => [[face5 quad0] [face5]]
+       (tiles-path-list {face5 {quad1 {}}}) => [[face5 quad1] [face5]]
+       (tiles-path-list {face5 {quad2 {}}}) => [[face5 quad2] [face5]]
+       (tiles-path-list {face5 {quad3 {quad1 {}}}}) => [[face5 quad3 quad1] [face5 quad3] [face5]]
+       (tiles-path-list {face5 {quad3 {}}}) => [[face5 quad3] [face5]])
+
 (facts "Determine list of tiles to load"
   (let [basic    {face0 {} face1 {} face2 {} face3 {} face4 {}
                   face5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0}}
