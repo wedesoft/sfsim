@@ -311,19 +311,22 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
-  ([program-selection render-vars scene callback]
-   (render-scene program-selection render-vars scene callback (eye 4) (::root scene)))
-  ([program-selection render-vars scene callback transform node]
+  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] :int render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  ([program-selection texture-offset render-vars scene callback]
+   (render-scene program-selection texture-offset render-vars scene callback (eye 4) (::root scene)))
+  ([program-selection texture-offset render-vars scene callback transform node]
    (let [transform (mulm transform (::transform node))]
      (doseq [child-node (::children node)]
-            (render-scene program-selection render-vars scene callback transform child-node))
+            (render-scene program-selection texture-offset render-vars scene callback transform child-node))
      (doseq [mesh-index (::mesh-indices node)]
             (let [mesh                (nth (::meshes scene) mesh-index)
                   material            (::material mesh)
                   camera-to-world     (:sfsim.render/camera-to-world render-vars)
                   program             (program-selection material)]
-              (callback (merge material {::program program ::camera-to-world camera-to-world ::transform transform}))
+              (callback (merge material {::program program
+                                         ::texture-offset texture-offset
+                                         ::camera-to-world camera-to-world
+                                         ::transform transform}))
               (render-triangles (::vao mesh)))))))
 
 (defn- interpolate-frame
@@ -526,6 +529,7 @@
         cloud-data      (:sfsim.clouds/data model-renderer)
         atmosphere-luts (:sfsim.atmosphere/luts model-renderer)
         camera-to-world (:sfsim.render/camera-to-world render-vars)
+        texture-offset  (::texture-offset model-renderer)
         world-to-camera (inverse camera-to-world)]
     (doseq [program (::programs model-renderer)]
            (use-program program)
@@ -543,7 +547,7 @@
     (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
     (doseq [model models]
-           (render-scene (comp model-renderer material-type) render-vars model render-mesh))))
+           (render-scene (comp model-renderer material-type) texture-offset render-vars model render-mesh))))
 
 (defn destroy-model-renderer
   {:malli/schema [:=> [:cat model-renderer] :nil]}

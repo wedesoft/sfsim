@@ -124,7 +124,7 @@ void main()
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-          (render-scene (constantly program) {:sfsim.render/camera-to-world camera-to-world} moved-scene
+          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
                         (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (uniform-vector3 program "diffuse_color" diffuse)))
@@ -152,7 +152,7 @@ void main()
           (use-program program)
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-          (render-scene (constantly program) {:sfsim.render/camera-to-world camera-to-world} moved-scene
+          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
                         (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (uniform-vector3 program "diffuse_color" diffuse)))
@@ -236,7 +236,7 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (uniform-sampler program "colors" 0)
-          (render-scene (constantly program) {:sfsim.render/camera-to-world camera-to-world} moved-scene
+          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
                         (fn [{:sfsim.model/keys [program camera-to-world transform colors]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (use-textures {0 colors})))
@@ -303,7 +303,7 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
           (uniform-sampler program "colors" 0)
           (uniform-sampler program "normals" 1)
-          (render-scene (constantly program) {:sfsim.render/camera-to-world camera-to-world} moved-scene
+          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
                         (fn [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (use-textures {0 colors 1 normals})))
@@ -343,7 +343,7 @@ void main()
                  (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                  (uniform-vector3 program "light" (normalize (vec3 1 2 3))))
           (uniform-sampler program-dice "colors" 0)
-          (render-scene program-selection {:sfsim.render/camera-to-world camera-to-world} moved-scene render-cube)
+          (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene render-cube)
           (unload-scene-from-opengl opengl-scene)
           (destroy-program program-dice)
           (destroy-program program-cube))) => (is-image "test/sfsim/fixtures/model/cube-and-dice.png" 0.01))
@@ -581,8 +581,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                           (use-program (:sfsim.model/program-textured-bump renderer))
                           (uniform-sampler (:sfsim.model/program-textured-bump renderer) "colors" 0)
                           (uniform-sampler (:sfsim.model/program-textured-bump renderer) "normals" 1)
-                          (render-scene (comp renderer material-type) {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                                        render-mesh)
+                          (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
+                                        moved-scene render-mesh)
                           (unload-scene-from-opengl opengl-scene)
                           (destroy-model-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
