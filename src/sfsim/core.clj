@@ -133,14 +133,6 @@
                                                                  (planet/get-current-tree tile-tree))
                                      ; Render clouds above the horizon
                                      (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
-               (let [program (:sfsim.model/program-colored-flat model-renderer)]
-                 (use-program program)
-                 (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                                2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                                4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
-                                6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
-                 (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                                (:sfsim.opacity/opacities shadow-vars)))))
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render cube model

@@ -469,6 +469,7 @@
         cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
         cloud-data            (:sfsim.clouds/data data)
         render-config         (:sfsim.render/config data)
+        atmosphere-luts       (:sfsim.atmosphere/luts data)
         program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
         program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
         program-colored-bump  (make-model-program false true  num-steps perlin-octaves cloud-octaves)
@@ -482,7 +483,8 @@
      ::program-textured-bump program-textured-bump
      ::programs              programs
      :sfsim.clouds/data      cloud-data
-     :sfsim.render/config    render-config}))
+     :sfsim.render/config    render-config
+     :sfsim.atmosphere/luts  atmosphere-luts}))
 
 (defn setup-camera-and-world-matrix
   {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
@@ -521,6 +523,7 @@
   [model-renderer render-vars shadow-vars models]
   (let [render-config   (:sfsim.render/config model-renderer)
         cloud-data      (:sfsim.clouds/data model-renderer)
+        atmosphere-luts (:sfsim.atmosphere/luts model-renderer)
         camera-to-world (:sfsim.render/camera-to-world render-vars)
         world-to-camera (inverse camera-to-world)]
     (doseq [program (::programs model-renderer)]
@@ -532,6 +535,12 @@
            (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
            (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
            (setup-shadow-matrices program shadow-vars))
+    (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
+                   4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
+                   6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
+    (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
+                                                   (:sfsim.opacity/opacities shadow-vars))))
     (doseq [model models]
            (render-scene (comp model-renderer material-type) render-vars model render-mesh))))
 
