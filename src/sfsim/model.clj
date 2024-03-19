@@ -10,11 +10,12 @@
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                                     make-program destroy-program use-program uniform-float uniform-matrix4 uniform-vector3
-                                    use-textures setup-shadow-and-opacity-maps)
+                                    use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars)
                             :as render]
-              [sfsim.clouds :refer (direct-light cloud-planet setup-cloud-render-uniforms setup-cloud-sampling-uniforms)]
+              [sfsim.clouds :refer (direct-light cloud-planet setup-cloud-render-uniforms setup-cloud-sampling-uniforms
+                                    lod-offset)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
-              [sfsim.planet :refer (surface-radiance-function)]
+              [sfsim.planet :refer (surface-radiance-function shadow-vars)]
               [sfsim.shaders :refer (phong)]
               [sfsim.image :refer (image)]
               [sfsim.util :refer (N0 N)])
@@ -466,6 +467,8 @@
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
         perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
         cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
+        cloud-data            (:sfsim.clouds/data data)
+        render-config         (:sfsim.render/config data)
         program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
         program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
         program-colored-bump  (make-model-program false true  num-steps perlin-octaves cloud-octaves)
@@ -477,7 +480,9 @@
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump
-     ::programs              programs}))
+     ::programs              programs
+     :sfsim.clouds/data      cloud-data
+     :sfsim.render/config    render-config}))
 
 (defn setup-camera-and-world-matrix
   {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
@@ -509,6 +514,26 @@
   [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {0 colors 1 normals}))
+
+(defn render-models
+  "Render a list of models"
+  {:malli/schema [:=> [:cat model-renderer render-vars shadow-vars [:vector [:map [::root node]]]] :nil]}
+  [model-renderer render-vars shadow-vars models]
+  (let [render-config   (:sfsim.render/config model-renderer)
+        cloud-data      (:sfsim.clouds/data model-renderer)
+        camera-to-world (:sfsim.render/camera-to-world render-vars)
+        world-to-camera (inverse camera-to-world)]
+    (doseq [program (::programs model-renderer)]
+           (use-program program)
+           (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
+           (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
+           (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
+           (uniform-matrix4 program "world_to_camera" world-to-camera)
+           (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
+           (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
+           (setup-shadow-matrices program shadow-vars))
+    (doseq [model models]
+           (render-scene (comp model-renderer material-type) render-vars model render-mesh))))
 
 (defn destroy-model-renderer
   {:malli/schema [:=> [:cat model-renderer] :nil]}
