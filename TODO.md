@@ -1,6 +1,7 @@
 # TODO
 * render method to render a scene with multiple models
 * integration test rendering objects with different materials
+* ambient phong lighting seems to be too dark
 * render space ship and allow indipendent directions of travel and camera viewing angle
 * rendering outside atmosphere
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?

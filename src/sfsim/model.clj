@@ -482,6 +482,7 @@
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump
      ::programs              programs
+     ::texture-offset        (+ 8 (* num-steps))
      :sfsim.clouds/data      cloud-data
      :sfsim.render/config    render-config
      :sfsim.atmosphere/luts  atmosphere-luts}))
