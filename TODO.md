@@ -1,5 +1,7 @@
 # TODO
-* integration test rendering objects with different materials, render method to render a scene with multiple models
+* render method to render a scene with multiple models
+* integration test rendering objects with different materials
+* render space ship and allow indipendent directions of travel and camera viewing angle
 * rendering outside atmosphere
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
 * low-res blue noise for model rendering?

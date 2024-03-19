@@ -435,7 +435,8 @@
 (def model-renderer (m/schema [:map [::program-colored-flat  :int]
                                     [::program-textured-flat :int]
                                     [::program-colored-bump  :int]
-                                    [::program-textured-bump :int]]))
+                                    [::program-textured-bump :int]
+                                    [::programs [:vector :int]]]))
 
 (def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]]]
                           [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
@@ -475,7 +476,8 @@
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump
-     ::program-textured-bump program-textured-bump}))
+     ::program-textured-bump program-textured-bump
+     ::programs              programs}))
 
 (defn setup-camera-and-world-matrix
   {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
@@ -509,11 +511,9 @@
   (use-textures {0 colors 1 normals}))
 
 (defn destroy-model-renderer
-  [{::keys [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]}]
-  (destroy-program program-colored-flat)
-  (destroy-program program-textured-flat)
-  (destroy-program program-colored-bump)
-  (destroy-program program-textured-bump))
+  {:malli/schema [:=> [:cat model-renderer] :nil]}
+  [{::keys [programs]}]
+  (doseq [program programs] (destroy-program program)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
