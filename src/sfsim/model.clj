@@ -10,7 +10,7 @@
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                                     make-program destroy-program use-program uniform-float uniform-matrix4 uniform-vector3
-                                    use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars)
+                                    uniform-sampler use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars)
                             :as render]
               [sfsim.clouds :refer (direct-light cloud-planet setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     lod-offset)]
@@ -446,8 +446,20 @@
                           [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
                                                      [:sfsim.clouds/cloud-octaves [:vector :double]]]]]))
 
+(defn setup-model-samplers
+  "Set up uniform samplers for model rendering program"
+  {:malli/schema [:=> [:cat :int :int :boolean :boolean] :nil]}
+  [program texture-offset textured bump]
+  (if textured
+    (do
+      (uniform-sampler program "colors" texture-offset)
+      (when bump (uniform-sampler program "normals" (inc texture-offset))))
+    (when bump (uniform-sampler program "normals" texture-offset))))
+
 (defn setup-model-static-uniforms
-  [program data]
+  "Set up static uniforms of model rendering program"
+  {:malli/schema [:=> [:cat :int :int :boolean :boolean data] :nil]}
+  [program texture-offset textured bump data]
   (let [render-config   (:sfsim.render/config data)
         planet-config   (:sfsim.planet/config data)
         atmosphere-luts (:sfsim.atmosphere/luts data)
@@ -458,6 +470,7 @@
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
     (setup-shadow-and-opacity-maps program shadow-data 8)
+    (setup-model-samplers program texture-offset textured bump)
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
@@ -473,19 +486,22 @@
         cloud-data            (:sfsim.clouds/data data)
         render-config         (:sfsim.render/config data)
         atmosphere-luts       (:sfsim.atmosphere/luts data)
+        texture-offset        (+ 8 (* num-steps))
         program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
         program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
         program-colored-bump  (make-model-program false true  num-steps perlin-octaves cloud-octaves)
         program-textured-bump (make-model-program true  true  num-steps perlin-octaves cloud-octaves)
         programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
-    (doseq [program programs]
-           (setup-model-static-uniforms program data))
+    (setup-model-static-uniforms program-colored-flat  texture-offset false false data)
+    (setup-model-static-uniforms program-textured-flat texture-offset true  false data)
+    (setup-model-static-uniforms program-colored-bump  texture-offset false true  data)
+    (setup-model-static-uniforms program-textured-bump texture-offset true  true  data)
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump
      ::programs              programs
-     ::texture-offset        (+ 8 (* num-steps))
+     ::texture-offset        texture-offset
      :sfsim.clouds/data      cloud-data
      :sfsim.render/config    render-config
      :sfsim.atmosphere/luts  atmosphere-luts}))
