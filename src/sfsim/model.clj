@@ -486,7 +486,7 @@
         cloud-data            (:sfsim.clouds/data data)
         render-config         (:sfsim.render/config data)
         atmosphere-luts       (:sfsim.atmosphere/luts data)
-        texture-offset        (+ 8 (* num-steps))
+        texture-offset        (+ 8 (* 2 num-steps))
         program-colored-flat  (make-model-program false false num-steps perlin-octaves cloud-octaves)
         program-textured-flat (make-model-program true  false num-steps perlin-octaves cloud-octaves)
         program-colored-bump  (make-model-program false true  num-steps perlin-octaves cloud-octaves)
@@ -522,20 +522,20 @@
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
-  [{:sfsim.model/keys [program camera-to-world transform colors]}]
+  [{:sfsim.model/keys [program texture-offset camera-to-world transform colors]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
-  (use-textures {0 colors}))
+  (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
-  [{:sfsim.model/keys [program camera-to-world transform diffuse normals]}]
+  [{:sfsim.model/keys [program texture-offset camera-to-world transform diffuse normals]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse)
-  (use-textures {0 normals}))
+  (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
-  [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
+  [{:sfsim.model/keys [program texture-offset camera-to-world transform colors normals]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
-  (use-textures {0 colors 1 normals}))
+  (use-textures {texture-offset colors (inc texture-offset) normals}))
 
 (defn render-models
   "Render a list of models"
