@@ -424,7 +424,7 @@
       (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
       (reset! changes (future (background-tree-update planet-renderer @tree width position))))))
 
-(defn unload-tile-tree
+(defn destroy-tile-tree
   "Unload all tiles from opengl"
   {:malli/schema [:=> [:cat tree] :nil]}
   [tile-tree]
