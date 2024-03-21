@@ -1,7 +1,5 @@
 # TODO
-* change api of load scene into opengl?
-* rename unload-tile-tree to destroy-tile-tree
-* rename scene to?
+* rename scene to object?
 * rendering outside atmosphere
 * add amplifier for ambient phong lighting which seems to be too dark
 * render space ship and allow indipendent directions of travel and camera viewing angle
