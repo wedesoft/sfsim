@@ -112,10 +112,8 @@
               planet-renderer           (planet/make-planet-renderer data)
               atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
               model-renderer            (model/make-model-renderer data)
-              object                    (model/load-scene-into-opengl
-                                          (comp model-renderer model/material-type)
-                                          (assoc-in (model/read-gltf (str "test/sfsim/fixtures/model/" ?model))
-                                                    [:sfsim.model/root :sfsim.model/transform] object-to-world))
+              object                    (assoc-in (model/load-scene model-renderer (str "test/sfsim/fixtures/model/" ?model))
+                                                  [:sfsim.model/root :sfsim.model/transform] object-to-world)
               tree                      (load-tile-tree planet-renderer {} width ?position level)
               render-vars               (make-render-vars config/planet-config cloud-data config/render-config width height
                                                           ?position ?orientation (vec3 1 0 0) 1.0)
@@ -136,7 +134,7 @@
           (destroy-texture clouds)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-          (model/unload-scene-from-opengl object)
+          (model/destroy-scene object)
           (model/destroy-model-renderer model-renderer)
           (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
           (planet/destroy-planet-renderer planet-renderer)

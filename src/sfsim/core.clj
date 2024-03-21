@@ -66,11 +66,9 @@
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
-(def cube (model/read-gltf "test/sfsim/fixtures/model/dice.gltf"))
-
 (def model-renderer (model/make-model-renderer data))
 
-(def cube-model (model/load-scene-into-opengl (comp model-renderer model/material-type) cube))
+(def cube-model (model/load-scene model-renderer "test/sfsim/fixtures/model/dice.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -151,7 +149,7 @@
                (flush))
              (swap! t0 + dt))))
   (planet/unload-tile-tree tile-tree)
-  (model/unload-scene-from-opengl cube-model)
+  (model/destroy-scene cube-model)
   (model/destroy-model-renderer model-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)

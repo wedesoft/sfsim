@@ -128,7 +128,7 @@ void main()
                         (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (uniform-vector3 program "diffuse_color" diffuse)))
-          (unload-scene-from-opengl opengl-scene)
+          (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cube.png" 0.0))
 
 (def cubes (read-gltf "test/sfsim/fixtures/model/cubes.gltf"))
@@ -156,7 +156,7 @@ void main()
                         (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (uniform-vector3 program "diffuse_color" diffuse)))
-          (unload-scene-from-opengl opengl-scene)
+          (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cubes.png" 0.01))
 
 (def dice (read-gltf "test/sfsim/fixtures/model/dice.gltf"))
@@ -240,7 +240,7 @@ void main()
                         (fn [{:sfsim.model/keys [program camera-to-world transform colors]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (use-textures {0 colors})))
-          (unload-scene-from-opengl opengl-scene)
+          (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/dice.png" 0.01))
 
 (def bricks (read-gltf "test/sfsim/fixtures/model/bricks.gltf"))
@@ -307,7 +307,7 @@ void main()
                         (fn [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (use-textures {0 colors 1 normals})))
-          (unload-scene-from-opengl opengl-scene)
+          (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/bricks.png" 0.01))
 
 (defn cube-material-type [{:sfsim.model/keys [color-texture-index]}]
@@ -344,7 +344,7 @@ void main()
                  (uniform-vector3 program "light" (normalize (vec3 1 2 3))))
           (uniform-sampler program-dice "colors" 0)
           (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene render-cube)
-          (unload-scene-from-opengl opengl-scene)
+          (destroy-scene opengl-scene)
           (destroy-program program-dice)
           (destroy-program program-cube))) => (is-image "test/sfsim/fixtures/model/cube-and-dice.png" 0.01))
 
@@ -577,7 +577,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                           (clear (vec3 0.5 0.5 0.5) 0.0)
                           (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
                                         moved-scene render-mesh)
-                          (unload-scene-from-opengl opengl-scene)
+                          (destroy-scene opengl-scene)
                           (destroy-model-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
   cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"

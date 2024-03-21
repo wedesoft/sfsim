@@ -292,7 +292,7 @@
       propagate-textures
       propagate-materials))
 
-(defn unload-scene-from-opengl
+(defn destroy-scene
   "Destroy vertex array objects of scene"
   {:malli/schema [:=> [:cat [:map [::root node]]] :nil]}
   [scene]
@@ -505,6 +505,14 @@
      :sfsim.clouds/data      cloud-data
      :sfsim.render/config    render-config
      :sfsim.atmosphere/luts  atmosphere-luts}))
+
+(defn load-scene
+  "Load glTF model and load it into OpenGL"
+  {:malli/schema [:=> [:cat model-renderer :string] [:map [::root node]]]}
+  [model-renderer filename]
+  (let [gltf-object   (read-gltf filename)
+        opengl-object (load-scene-into-opengl (comp model-renderer material-type) gltf-object)]
+    opengl-object))
 
 (defn setup-camera-and-world-matrix
   {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
