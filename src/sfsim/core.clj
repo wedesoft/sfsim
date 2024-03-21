@@ -68,7 +68,7 @@
 
 (def model-renderer (model/make-model-renderer data))
 
-(def cube-model (model/load-scene model-renderer "test/sfsim/fixtures/model/dice.gltf"))
+(def object (model/load-scene model-renderer "test/sfsim/fixtures/model/bricks.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -120,7 +120,7 @@
                                                                        cloud-data render-vars (planet/get-current-tree tile-tree)
                                                                        @opacity-base)
                    object-to-world (transformation-matrix (eye 3) object-position)
-                   moved-model     (assoc-in cube-model [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                   moved-object    (assoc-in object [:sfsim.model/root :sfsim.model/transform] object-to-world)
                    w2              (quot (:sfsim.render/window-width render-vars) 2)
                    h2              (quot (:sfsim.render/window-height render-vars) 2)
                    clouds          (texture-render-color-depth
@@ -134,7 +134,7 @@
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render cube model
-                                (model/render-models model-renderer render-vars shadow-vars [moved-model])
+                                (model/render-models model-renderer render-vars shadow-vars [moved-object])
                                 ; Render planet with cloud overlay
                                 (planet/render-planet planet-renderer render-vars shadow-vars clouds
                                                       (planet/get-current-tree tile-tree))
@@ -149,7 +149,7 @@
                (flush))
              (swap! t0 + dt))))
   (planet/destroy-tile-tree tile-tree)
-  (model/destroy-scene cube-model)
+  (model/destroy-scene object)
   (model/destroy-model-renderer model-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)
