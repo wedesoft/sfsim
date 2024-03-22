@@ -545,7 +545,7 @@
   (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
-(defn render-models
+(defn render-scenes
   "Render a list of models"
   {:malli/schema [:=> [:cat model-renderer render-vars shadow-vars [:vector [:map [::root node]]]] :nil]}
   [model-renderer render-vars shadow-vars models]
