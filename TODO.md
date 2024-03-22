@@ -1,5 +1,7 @@
 # TODO
 * rendering outside atmosphere
+  * direct\_light mode for outside atmosphere using ray\_sphere, transmittance\_outer, and overall\_shadow
+  * no attenuation
 * add amplifier for ambient phong lighting which seems to be too dark
 * render space ship and allow indipendent directions of travel and camera viewing angle
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
