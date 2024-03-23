@@ -12,6 +12,8 @@ vec3 attenuation_point(vec3 point, vec3 incoming)
 {
   vec3 direction = normalize(point - origin);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = distance(origin, point) - atmosphere.x;
-  return attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  atmosphere.y = min(atmosphere.y, distance(origin, point) - atmosphere.x);
+  if (atmosphere.y > 0)
+    incoming = attenuation_track(light_direction, origin, direction, atmosphere.x, atmosphere.x + atmosphere.y, incoming);
+  return incoming;
 }

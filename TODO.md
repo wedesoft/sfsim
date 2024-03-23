@@ -1,12 +1,12 @@
 # TODO
 * rendering outside atmosphere
-  * direct\_light mode for outside atmosphere using ray\_sphere, transmittance\_outer, and overall\_shadow
-  * no attenuation
+  * make attenuation\_point and direct\_light (transmittance\_outer call) work outside atmosphere
+  * no attenuation in fragment shader
+* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * add amplifier for ambient phong lighting which seems to be too dark
 * render space ship and allow indipendent directions of travel and camera viewing angle
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
 * low-res blue noise for model rendering?
-* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
