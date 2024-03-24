@@ -492,10 +492,10 @@ vec4 cloud_planet(vec3 point)
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
 }")
 
-(def transmittance-outer-mock
+(def transmittance-point-mock
 "#version 410 core
 uniform float transmittance;
-vec3 transmittance_outer(vec3 point, vec3 direction)
+vec3 transmittance_point(vec3 point)
 {
   return vec3(transmittance, transmittance, transmittance);
 }")
@@ -539,7 +539,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   return incoming * attenuation;
 }")
 
-(def model-shader-mocks [cloud-planet-mock transmittance-outer-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
+(def model-shader-mocks [cloud-planet-mock transmittance-point-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
                          ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
                          (last (clouds/direct-light 3))])
 

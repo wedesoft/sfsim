@@ -23,7 +23,8 @@
                                         ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
                                         sun-elevation-to-index surface-intersection surface-point? surface-radiance
                                         surface-radiance-base surface-radiance-space transmittance transmittance-outer
-                                        transmittance-space transmittance-track vertex-atmosphere extinction attenuation-point)
+                                        transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
+                                        attenuation-point)
                :as atmosphere])
     (:import [fastmath.vector Vec3]
              [org.lwjgl.glfw GLFW]))
@@ -571,7 +572,8 @@ void main()
          6378000 0   0       6378000 0   100000  0.079658)
 
 (def transmittance-outer-probe
-  (template/fn [px py pz dx dy dz] "#version 410 core
+  (template/fn [px py pz dx dy dz]
+"#version 410 core
 out vec3 fragColor;
 vec3 transmittance_outer(vec3 point, vec3 direction);
 void main()
@@ -597,6 +599,41 @@ void main()
          0   0    6478000 0   0   1   0.976359
          0   0    6378000 0   0   1   0.953463
          0   0    6378000 1   0   0   0.016916)
+
+(def transmittance-point-probe
+  (template/fn [px offset distance]
+"#version 410 core
+out vec3 fragColor;
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  return vec2(<%= offset %>, <%= distance %>);
+}
+vec3 transmittance_outer(vec3 point, vec3 direction)
+{
+  float t = 1.0 - 0.1 * abs(point.x);
+  return vec3(t, t, t);
+}
+vec3 transmittance_point(vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= px %>, 0, 0);
+  fragColor = transmittance_point(point);
+}"))
+
+(def transmittance-point-test
+  (transmittance-shader-test
+    (fn [program radius max-height]
+        (uniform-float program "radius" radius)
+        (uniform-float program "max_height" max-height)
+        (uniform-vector3 program "light_direction" (vec3 1.0 0.0 0.0)))
+    transmittance-point-probe (last transmittance-point)))
+
+(tabular "Shader function to compute transmittance from a point to the light source assuming it is over the horizon"
+         (fact ((transmittance-point-test [radius max-height] [?px ?offset ?distance]) 0) => (roughly ?result 1e-6))
+         ?px     ?offset ?distance ?result
+         -5.0    0.0     10.0      0.5
+         -5.0    1.0      8.0      0.6
+         -5.0    0.0      0.0      1.0)
 
 (defn ray-scatter-shader-test [setup probe & shaders]
   (fn [uniforms args]

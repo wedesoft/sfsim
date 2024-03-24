@@ -376,6 +376,10 @@
   [shaders/transmittance-forward shaders/interpolate-2d shaders/is-above-horizon
    (slurp "resources/shaders/atmosphere/transmittance-track.glsl")])
 
+(def transmittance-point
+  "Shader function to compute transmittance from a point to the light source assuming it is over the horizon"
+  [shaders/ray-sphere transmittance-outer (slurp "resources/shaders/atmosphere/transmittance-point.glsl")])
+
 (def ray-scatter-outer
   "Shader function to determine in-scattered light between point in the atmosphere and space"
   [shaders/ray-scatter-forward shaders/interpolate-4d phase-function

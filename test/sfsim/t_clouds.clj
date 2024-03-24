@@ -1367,7 +1367,7 @@ float overall_shadow(vec4 point)
 {
   return point.z >= 1.0 ? 1.0 : 0.0;
 }
-vec3 transmittance_outer(vec3 point, vec3 direction)
+vec3 transmittance_point(vec3 point)
 {
   float result = point.z >= 3.0 ? 1.0 : 0.5;
   return vec3(result, result, result);
