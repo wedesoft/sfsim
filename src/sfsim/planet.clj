@@ -16,7 +16,7 @@
                                     uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                                     setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                                    render-vars diagonal-field-of-view)
+                                    render-vars diagonal-field-of-view make-render-vars)
                               :as render]
               [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                         atmosphere-luts)]
@@ -450,7 +450,7 @@
      (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
 
 (defn make-planet-render-vars
-  "Create hash map with render variables for rendering current frame"
+  "Create hash map with render variables for rendering current frame of planet"
   {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
                             [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 :double] render-vars]}
   [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
@@ -461,19 +461,8 @@
         height          (- distance radius)
         diagonal-fov    (diagonal-field-of-view window-width window-height fov)
         z-near          (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
-        z-far           (render-depth radius height cloud-top)
-        rotation        (quaternion->matrix orientation)
-        camera-to-world (transformation-matrix rotation position)
-        z-offset        1.0
-        projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
-    {:sfsim.render/origin position
-     :sfsim.render/z-near z-near
-     :sfsim.render/z-far z-far
-     :sfsim.render/window-width window-width
-     :sfsim.render/window-height window-height
-     :sfsim.render/light-direction light-direction
-     :sfsim.render/camera-to-world camera-to-world
-     :sfsim.render/projection projection}))
+        z-far           (render-depth radius height cloud-top)]
+    (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

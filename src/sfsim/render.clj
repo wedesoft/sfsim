@@ -3,7 +3,8 @@
   (:require [clojure.math :refer (sin asin hypot)]
             [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
-            [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box)]
+            [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix)]
+            [sfsim.quaternion :refer (quaternion)]
             [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
@@ -400,6 +401,25 @@
 
 (def render-vars (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
                                  [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]]))
+
+(defn make-render-vars
+  "Create hash map with render variables for rendering current frame with specified depth range"
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 :double :double] render-vars]}
+  [render-config window-width window-height position orientation light-direction z-near z-far]
+  (let [fov             (:sfsim.render/fov render-config)
+        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
+        rotation        (quaternion->matrix orientation)
+        camera-to-world (transformation-matrix rotation position)
+        z-offset        1.0
+        projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+    {:sfsim.render/origin position
+     :sfsim.render/z-near z-near
+     :sfsim.render/z-far z-far
+     :sfsim.render/window-width window-width
+     :sfsim.render/window-height window-height
+     :sfsim.render/light-direction light-direction
+     :sfsim.render/camera-to-world camera-to-world
+     :sfsim.render/projection projection}))
 
 (defn setup-shadow-and-opacity-maps
   "Set up cascade of deep opacity maps and cascade of shadow maps"
