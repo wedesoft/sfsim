@@ -1,12 +1,10 @@
 (ns sfsim.core
   "Space flight simulator main program."
   (:require [clojure.math :refer (cos sin to-radians exp)]
-            [fastmath.matrix :refer (eye inverse)]
+            [fastmath.matrix :refer (eye)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
-            [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth make-render-vars
-                                  use-program uniform-matrix4 uniform-vector3 uniform-float uniform-int use-textures
-                                  setup-shadow-and-opacity-maps setup-shadow-matrices)]
+            [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth)]
             [sfsim.atmosphere :as atmosphere]
             [sfsim.matrix :refer (transformation-matrix)]
             [sfsim.planet :as planet]
@@ -112,34 +110,35 @@
              (swap! light + (* l 0.1 dt))
              (swap! opacity-base + (* dt to))
              (swap! dist * (exp d))
-             (let [origin          (add @position (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* -1.0 @dist)))
-                   object-position @position
-                   render-vars     (make-render-vars config/planet-config cloud-data config/render-config (aget w 0) (aget h 0)
-                                                     origin @orientation (vec3 (cos @light) (sin @light) 0) 1.0)
-                   shadow-vars     (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
-                                                                       cloud-data render-vars (planet/get-current-tree tile-tree)
-                                                                       @opacity-base)
-                   object-to-world (transformation-matrix (eye 3) object-position)
-                   moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                   w2              (quot (:sfsim.render/window-width render-vars) 2)
-                   h2              (quot (:sfsim.render/window-height render-vars) 2)
-                   clouds          (texture-render-color-depth
-                                     w2 h2 true
-                                     (clear (vec3 0 0 0) 0.0)
-                                     ; Render clouds in front of planet
-                                     (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars
-                                                                 (planet/get-current-tree tile-tree))
-                                     ; Render clouds above the horizon
-                                     (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))]
+             (let [origin             (add @position (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* -1.0 @dist)))
+                   object-position    @position
+                   planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
+                                                                      (aget w 0) (aget h 0) origin @orientation
+                                                                      (vec3 (cos @light) (sin @light) 0) 1.0)
+                   shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
+                                                                          cloud-data planet-render-vars
+                                                                          (planet/get-current-tree tile-tree) @opacity-base)
+                   object-to-world    (transformation-matrix (eye 3) object-position)
+                   moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                   w2                 (quot (:sfsim.render/window-width planet-render-vars) 2)
+                   h2                 (quot (:sfsim.render/window-height planet-render-vars) 2)
+                   clouds             (texture-render-color-depth
+                                        w2 h2 true
+                                        (clear (vec3 0 0 0) 0.0)
+                                        ; Render clouds in front of planet
+                                        (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
+                                                                    (planet/get-current-tree tile-tree))
+                                        ; Render clouds above the horizon
+                                        (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
                (onscreen-render window
                                 (clear (vec3 0 1 0) 0.0)
                                 ; Render cube model
-                                (model/render-scenes model-renderer render-vars shadow-vars [moved-scene])
+                                (model/render-scenes model-renderer planet-render-vars shadow-vars [moved-scene])
                                 ; Render planet with cloud overlay
-                                (planet/render-planet planet-renderer render-vars shadow-vars clouds
+                                (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
                                                       (planet/get-current-tree tile-tree))
                                 ; Render atmosphere with cloud overlay
-                                (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))
+                                (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
                (destroy-texture clouds)
                (opacity/destroy-opacity-and-shadow shadow-vars))
              (GLFW/glfwPollEvents)

@@ -1,8 +1,6 @@
 # TODO
 * rendering outside atmosphere (model fragment shader)
-  * surface radiance outside atmosphere is zero
-  * no attenuation in fragment shader when outside atmosphere
-  * add amplifier for ambient phong lighting which seems to be too dark
+* add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
 * render space ship and allow indipendent directions of travel and camera viewing angle
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?

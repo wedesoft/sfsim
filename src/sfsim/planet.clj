@@ -1,22 +1,26 @@
 (ns sfsim.planet
     "Module with functionality to render a planet"
-    (:require [fastmath.matrix :refer (mulm eye inverse)]
+    (:require [clojure.math :refer (sqrt cos)]
+              [fastmath.vector :refer (mag)]
+              [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
-              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box)]
+              [sfsim.quaternion :refer (quaternion)]
+              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box quaternion->matrix
+                                    projection-matrix)]
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
-                                      quadtree-drop quadtree-extract)]
+                                      quadtree-extract)]
               [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d
                                      texture-3d)]
               [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                                     uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                                     setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                                    render-vars)
+                                    render-vars diagonal-field-of-view)
                               :as render]
               [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                         atmosphere-luts)]
-              [sfsim.util :refer (N N0)]
+              [sfsim.util :refer (N N0 sqr)]
               [sfsim.clouds :refer (cloud-planet lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     fragment-atmosphere-clouds cloud-data direct-light)]
               [sfsim.shaders :as shaders]))
@@ -437,6 +441,39 @@
   {:malli/schema [:=> [:cat tree] :map]}
   [{:keys [tree]}]
   @tree)
+
+(defn render-depth
+  "Determine maximum shadow depth for cloud shadows"
+  {:malli/schema [:=> [:cat :double :double :double] :double]}
+  [radius max-height cloud-top]
+  (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
+     (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
+
+(defn make-planet-render-vars
+  "Create hash map with render variables for rendering current frame"
+  {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
+                            [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 :double] render-vars]}
+  [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
+  (let [distance        (mag position)
+        radius          (:sfsim.planet/radius planet-config)
+        cloud-top       (:sfsim.clouds/cloud-top cloud-data)
+        fov             (:sfsim.render/fov render-config)
+        height          (- distance radius)
+        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
+        z-near          (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
+        z-far           (render-depth radius height cloud-top)
+        rotation        (quaternion->matrix orientation)
+        camera-to-world (transformation-matrix rotation position)
+        z-offset        1.0
+        projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+    {:sfsim.render/origin position
+     :sfsim.render/z-near z-near
+     :sfsim.render/z-far z-far
+     :sfsim.render/window-width window-width
+     :sfsim.render/window-height window-height
+     :sfsim.render/light-direction light-direction
+     :sfsim.render/camera-to-world camera-to-world
+     :sfsim.render/projection projection}))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -986,36 +986,9 @@ void main()
           (destroy-program program)
           (GL30/glDeleteFramebuffers stb))))) => (is-image "test/sfsim/fixtures/render/stencil.png" 0.0))
 
-(facts "Maximum shadow depth for cloud shadows"
-       (render-depth 4.0 1.0 0.0) => 3.0
-       (render-depth 3.0 2.0 0.0) => 4.0
-       (render-depth 4.0 0.0 1.0) => 3.0
-       (render-depth 4.0 1.0 1.0) => 6.0)
-
 (facts "Diagonal field of view"
        (diagonal-field-of-view 320   0 (* 0.25 PI)) => (roughly (* 0.25 PI) 1e-6)
        (diagonal-field-of-view 320 320 (* 0.25 PI)) => (roughly (* 2 (asin (* (sqrt 2.0) (sin (* 0.125 PI))))) 1e-6)
        (diagonal-field-of-view 320 240 (* 0.25 PI)) => (roughly 0.997559 1e-6))
-
-(facts "Create hashmap with render variables for rendering current frame"
-       (let [planet {:sfsim.planet/radius 1000.0}
-             cloud  {:sfsim.clouds/cloud-top 100.0}
-             render {:sfsim.render/fov 0.5}
-             pos1   (vec3 (+ 1000 150) 0 0)
-             pos2   (vec3 (+ 1000 75) 0 0)
-             o      (q/rotation 0.0 (vec3 0 0 1))
-             light  (vec3 1 0 0)]
-         (with-redefs [render/render-depth (fn [radius height cloud-top] (fact [radius cloud-top] => [1000.0 100.0]) 300.0)
-                       matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
-                       matrix/transformation-matrix (fn [rot pos] (fact rot => :rotation-matrix) (eye 4))
-                       matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
-           (:sfsim.render/origin (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => pos1
-           (:sfsim.render/height (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 150.0
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (roughly 47.549 1e-3)
-           (:sfsim.render/z-near (make-render-vars planet cloud render 640 480 pos2 o light 1.0)) => (roughly 0.951 1e-3)
-           (:sfsim.render/z-far (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => 300.0
-           (:sfsim.render/camera-to-world (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (eye 4)
-           (:sfsim.render/projection (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => (diagonal 1 2 3 4)
-           (:sfsim.render/light-direction (make-render-vars planet cloud render 640 480 pos1 o light 1.0)) => light)))
 
 (GLFW/glfwTerminate)

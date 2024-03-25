@@ -6,12 +6,12 @@
               [sfsim.matrix :refer (split-list shadow-matrix-cascade shadow-config shadow-data)]
               [sfsim.texture :refer (destroy-texture)]
               [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
-                                    use-program uniform-int uniform-float uniform-vector3 render-quads render-depth
-                                    use-textures render-config vertex-array-object render-vars)]
+                                    use-program uniform-int uniform-float uniform-vector3 render-quads use-textures render-config
+                                    vertex-array-object render-vars)]
               [sfsim.worley :refer (worley-size)]
               [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
               [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config planet-shadow-renderer
-                                    shadow-vars)]
+                                    shadow-vars render-depth)]
               [sfsim.atmosphere :refer (phase)]
               [sfsim.util :refer (sqr)]))
 
