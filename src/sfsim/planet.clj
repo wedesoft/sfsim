@@ -5,8 +5,7 @@
               [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
               [sfsim.quaternion :refer (quaternion)]
-              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box quaternion->matrix
-                                    projection-matrix)]
+              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box)]
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
                                       quadtree-extract)]
@@ -452,15 +451,16 @@
 (defn make-planet-render-vars
   "Create hash map with render variables for rendering current frame of planet"
   {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
-                            [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 :double] render-vars]}
-  [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
+                            [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3] render-vars]}
+  [planet-config cloud-data render-config window-width window-height position orientation light-direction]
   (let [distance        (mag position)
         radius          (:sfsim.planet/radius planet-config)
         cloud-top       (:sfsim.clouds/cloud-top cloud-data)
         fov             (:sfsim.render/fov render-config)
+        min-z-near      (:sfsim.render/min-z-near render-config)
         height          (- distance radius)
         diagonal-fov    (diagonal-field-of-view window-width window-height fov)
-        z-near          (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
+        z-near          (max (* (- height cloud-top) (cos (* 0.5 diagonal-fov))) min-z-near)
         z-far           (render-depth radius height cloud-top)]
     (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
 

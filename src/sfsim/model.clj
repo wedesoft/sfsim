@@ -3,14 +3,15 @@
     (:require [clojure.math :refer (floor)]
               [comb.template :as template]
               [malli.core :as m]
-              [fastmath.matrix :refer (mat4x4 mulm eye diagonal inverse)]
-              [fastmath.vector :refer (vec3 mult add)]
+              [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
+              [fastmath.vector :refer (vec3 vec4 mult add)]
               [sfsim.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                                     make-program destroy-program use-program uniform-float uniform-matrix4 uniform-vector3
-                                    uniform-sampler use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars)
+                                    uniform-sampler use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars
+                                    make-render-vars)
                             :as render]
               [sfsim.clouds :refer (direct-light cloud-planet setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     lod-offset)]
@@ -577,6 +578,20 @@
   {:malli/schema [:=> [:cat model-renderer] :nil]}
   [{::keys [programs]}]
   (doseq [program programs] (destroy-program program)))
+
+(defn make-scene-render-vars
+  "Create hashmap with render variables for rendering a model outside the atmosphere"
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 :double] render-vars]}
+  [render-config window-width window-height position orientation light-direction object-position object-radius]
+  (let [min-z-near           (:sfsim.render/min-z-near render-config)
+        rotation             (quaternion->matrix orientation)
+        camera-to-world      (transformation-matrix rotation position)
+        world-to-camera      (inverse camera-to-world)
+        object-camera-vector (mulv world-to-camera (vec4 (object-position 0) (object-position 1) (object-position 2) 1.0))
+        object-depth         (- (object-camera-vector 2))
+        z-near               (max (- object-depth object-radius) min-z-near)
+        z-far                (+ z-near object-radius object-radius)]
+    (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

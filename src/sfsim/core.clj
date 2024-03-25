@@ -112,9 +112,11 @@
              (swap! dist * (exp d))
              (let [origin             (add @position (mult (q/rotate-vector @orientation (vec3 0 0 -1)) (* -1.0 @dist)))
                    object-position    @position
+                   light-direction    (vec3 (cos @light) (sin @light) 0)
                    planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                      (aget w 0) (aget h 0) origin @orientation
-                                                                      (vec3 (cos @light) (sin @light) 0) 1.0)
+                                                                      (aget w 0) (aget h 0) origin @orientation light-direction)
+                   scene-render-vars  (model/make-scene-render-vars config/render-config (aget w 0) (aget h 0) origin
+                                                                    @orientation light-direction object-position 1.5)
                    shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                           cloud-data planet-render-vars
                                                                           (planet/get-current-tree tile-tree) @opacity-base)

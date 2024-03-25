@@ -397,7 +397,7 @@
         dxy (hypot dx dy)]
     (* 2.0 (asin dxy))))
 
-(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double]]))
+(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double] [::min-z-near :double]]))
 
 (def render-vars (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
                                  [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]]))
@@ -407,7 +407,6 @@
   {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 :double :double] render-vars]}
   [render-config window-width window-height position orientation light-direction z-near z-far]
   (let [fov             (:sfsim.render/fov render-config)
-        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
         rotation        (quaternion->matrix orientation)
         camera-to-world (transformation-matrix rotation position)
         z-offset        1.0
