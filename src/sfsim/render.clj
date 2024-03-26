@@ -56,6 +56,7 @@
   {:malli/schema [:=> [:cat :string N N] :int]}
   [title width height]
   (GLFW/glfwDefaultWindowHints)
+  (GLFW/glfwWindowHint GLFW/GLFW_STENCIL_BITS 8)
   (let [window (GLFW/glfwCreateWindow ^long width ^long height ^String title 0 0)]
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
@@ -93,6 +94,7 @@
   ([color alpha stencil]
    (GL11/glClearColor (color 0) (color 1) (color 2) alpha)
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
+   (GL11/glStencilMask 0xff)
    (GL11/glClearStencil stencil)
    (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT GL11/GL_STENCIL_BUFFER_BIT))))
 

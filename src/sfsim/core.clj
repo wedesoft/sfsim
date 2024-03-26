@@ -4,7 +4,7 @@
             [fastmath.matrix :refer (eye)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
-            [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth)]
+            [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils)]
             [sfsim.atmosphere :as atmosphere]
             [sfsim.matrix :refer (transformation-matrix)]
             [sfsim.planet :as planet]
@@ -13,7 +13,8 @@
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.config :as config])
-  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback])
+  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback]
+           [org.lwjgl.opengl GL11 GL12 GL30])
   (:gen-class))
 
 (set! *unchecked-math* true)
@@ -127,21 +128,39 @@
                    h2                 (quot (:sfsim.render/window-height planet-render-vars) 2)
                    clouds             (texture-render-color-depth
                                         w2 h2 true
-                                        (clear (vec3 0 0 0) 0.0)
+                                        (clear (vec3 0 0 0) 1.0)
                                         ; Render clouds in front of planet
                                         (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
                                                                     (planet/get-current-tree tile-tree))
                                         ; Render clouds above the horizon
                                         (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
                (onscreen-render window
-                                (clear (vec3 0 1 0) 0.0)
-                                ; Render cube model
-                                (model/render-scenes model-renderer planet-render-vars shadow-vars [moved-scene])
-                                ; Render planet with cloud overlay
-                                (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
-                                                      (planet/get-current-tree tile-tree))
-                                ; Render atmosphere with cloud overlay
-                                (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
+                                (if (< (:sfsim.render/z-near scene-render-vars) (:sfsim.render/z-near planet-render-vars))
+                                  (with-stencils
+                                    (clear (vec3 0 1 0) 1.0 0)
+                                    ; Render model
+                                    (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
+                                    (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+                                    (GL11/glStencilMask 0xff)
+                                    (model/render-scenes model-renderer scene-render-vars shadow-vars [moved-scene])
+                                    (clear)
+                                    ;; Render planet with cloud overlay
+                                    (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
+                                    (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+                                    (GL11/glStencilMask 0)
+                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
+                                                          (planet/get-current-tree tile-tree))
+                                    ;; Render atmosphere with cloud overlay
+                                    (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
+                                  (do
+                                    (clear (vec3 0 1 0) 1.0)
+                                    ; Render model
+                                    (model/render-scenes model-renderer planet-render-vars shadow-vars [moved-scene])
+                                    ; Render planet with cloud overlay
+                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
+                                                          (planet/get-current-tree tile-tree))
+                                    ; Render atmosphere with cloud overlay
+                                    (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))))
                (destroy-texture clouds)
                (opacity/destroy-opacity-and-shadow shadow-vars))
              (GLFW/glfwPollEvents)
