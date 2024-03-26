@@ -1,5 +1,4 @@
 # TODO
-* render variables for model (use position of object-to-camera)
 * rendering outside atmosphere with stencil
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
