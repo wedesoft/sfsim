@@ -231,15 +231,15 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [:sfsim.atmosphere/luts atmosphere-luts]
-                                  [:sfsim.planet/config planet-config] [:sfsim.opacity/data shadow-data]
+                                  [::config planet-config] [:sfsim.opacity/data shadow-data]
                                   [:sfsim.clouds/data cloud-data]]] cloud-atmosphere-renderer]}
   [other]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
-        planet-config   (:sfsim.planet/config other)
+        planet-config   (::config other)
         shadow-data     (:sfsim.opacity/data other)
         data            (:sfsim.clouds/data other)
-        tilesize        (:sfsim.planet/tilesize planet-config)
+        tilesize        (::tilesize planet-config)
         program         (make-program :sfsim.render/vertex [vertex-atmosphere]
                                       :sfsim.render/fragment [(fragment-atmosphere-clouds (:sfsim.opacity/num-steps shadow-data)
                                                                                           (:sfsim.clouds/perlin-octaves data)
@@ -249,7 +249,7 @@
     (setup-cloud-render-uniforms program data 3)
     (setup-cloud-sampling-uniforms program data 6)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
-    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
+    (uniform-float program "radius" (::radius planet-config))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
@@ -450,11 +450,11 @@
 
 (defn make-planet-render-vars
   "Create hash map with render variables for rendering current frame of planet"
-  {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
+  {:malli/schema [:=> [:cat [:map [::radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
                             [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3] render-vars]}
   [planet-config cloud-data render-config window-width window-height position orientation light-direction]
   (let [distance        (mag position)
-        radius          (:sfsim.planet/radius planet-config)
+        radius          (::radius planet-config)
         cloud-top       (:sfsim.clouds/cloud-top cloud-data)
         fov             (:sfsim.render/fov render-config)
         min-z-near      (:sfsim.render/min-z-near render-config)

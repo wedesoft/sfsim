@@ -404,21 +404,21 @@
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 :double :double] render-vars]}
+  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 :double :double] render-vars]}
   [render-config window-width window-height position orientation light-direction z-near z-far]
-  (let [fov             (:sfsim.render/fov render-config)
+  (let [fov             (::fov render-config)
         rotation        (quaternion->matrix orientation)
         camera-to-world (transformation-matrix rotation position)
         z-offset        1.0
         projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
-    {:sfsim.render/origin position
-     :sfsim.render/z-near z-near
-     :sfsim.render/z-far z-far
-     :sfsim.render/window-width window-width
-     :sfsim.render/window-height window-height
-     :sfsim.render/light-direction light-direction
-     :sfsim.render/camera-to-world camera-to-world
-     :sfsim.render/projection projection}))
+    {::origin position
+     ::z-near z-near
+     ::z-far z-far
+     ::window-width window-width
+     ::window-height window-height
+     ::light-direction light-direction
+     ::camera-to-world camera-to-world
+     ::projection projection}))
 
 (defn setup-shadow-and-opacity-maps
   "Set up cascade of deep opacity maps and cascade of shadow maps"

@@ -116,7 +116,8 @@
                    planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                       (aget w 0) (aget h 0) origin @orientation light-direction)
                    scene-render-vars  (model/make-scene-render-vars config/render-config (aget w 0) (aget h 0) origin
-                                                                    @orientation light-direction object-position 1.5)
+                                                                    @orientation light-direction object-position
+                                                                    config/object-radius)
                    shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                           cloud-data planet-render-vars
                                                                           (planet/get-current-tree tile-tree) @opacity-base)
