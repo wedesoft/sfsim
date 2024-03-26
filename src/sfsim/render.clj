@@ -8,7 +8,7 @@
             [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
-  (:import [org.lwjgl.opengl GL GL11 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
+  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)
@@ -37,6 +37,20 @@
      (let [result# (do ~@body)]
        (GL11/glDisable GL11/GL_STENCIL_TEST)
        result#)))
+
+(defn write-to-stencil-buffer
+  "Write to stencil buffer when rendering"
+  []
+  (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
+  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+  (GL11/glStencilMask 0xff))
+
+(defn mask-with-stencil-buffer
+  "Only render where stencil buffer is not set"
+  []
+  (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
+  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+  (GL11/glStencilMask 0))
 
 (defmacro with-invisible-window
   "Macro to create temporary invisible window to provide context"

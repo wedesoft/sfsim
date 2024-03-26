@@ -4,7 +4,8 @@
             [fastmath.matrix :refer (eye)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
-            [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils)]
+            [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
+                                  write-to-stencil-buffer mask-with-stencil-buffer)]
             [sfsim.atmosphere :as atmosphere]
             [sfsim.matrix :refer (transformation-matrix)]
             [sfsim.planet :as planet]
@@ -139,15 +140,11 @@
                                   (with-stencils
                                     (clear (vec3 0 1 0) 1.0 0)
                                     ; Render model
-                                    (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
-                                    (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
-                                    (GL11/glStencilMask 0xff)
+                                    (write-to-stencil-buffer)
                                     (model/render-scenes model-renderer scene-render-vars shadow-vars [moved-scene])
                                     (clear)
                                     ;; Render planet with cloud overlay
-                                    (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
-                                    (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
-                                    (GL11/glStencilMask 0)
+                                    (mask-with-stencil-buffer)
                                     (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
                                                           (planet/get-current-tree tile-tree))
                                     ;; Render atmosphere with cloud overlay
