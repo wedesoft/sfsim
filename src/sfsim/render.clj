@@ -52,12 +52,19 @@
   (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
   (GL11/glStencilMask 0))
 
+(defn setup-window-hints
+  "Set GLFW window hints"
+  [visible]
+  (GLFW/glfwDefaultWindowHints)
+  (GLFW/glfwWindowHint GLFW/GLFW_DEPTH_BITS 24)
+  (GLFW/glfwWindowHint GLFW/GLFW_STENCIL_BITS 8)
+  (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE (if visible GLFW/GLFW_TRUE GLFW/GLFW_FALSE)))
+
 (defmacro with-invisible-window
   "Macro to create temporary invisible window to provide context"
   [& body]
   `(do
-     (GLFW/glfwDefaultWindowHints)
-     (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE GLFW/GLFW_FALSE)
+     (setup-window-hints false)
      (let [window# (GLFW/glfwCreateWindow 8 2 "sfsim" 0 0)]
        (GLFW/glfwMakeContextCurrent window#)
        (GL/createCapabilities)
@@ -69,8 +76,7 @@
   "Method to create a window and make the context current and create the capabilities"
   {:malli/schema [:=> [:cat :string N N] :int]}
   [title width height]
-  (GLFW/glfwDefaultWindowHints)
-  (GLFW/glfwWindowHint GLFW/GLFW_STENCIL_BITS 8)
+  (setup-window-hints true)
   (let [window (GLFW/glfwCreateWindow ^long width ^long height ^String title 0 0)]
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
