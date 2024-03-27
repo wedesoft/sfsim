@@ -7,9 +7,9 @@ in VS_OUT
 
 out vec4 fragColor;
 
-vec4 cloud_atmosphere(vec3 fs_in_direction);
+vec4 cloud_outer(vec3 fs_in_direction);
 
 void main()
 {
-  fragColor = cloud_atmosphere(fs_in.direction);
+  fragColor = cloud_outer(fs_in.direction);
 }

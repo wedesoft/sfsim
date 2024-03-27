@@ -1,9 +1,7 @@
 # TODO
-* rendering outside atmosphere with stencil
-* add amplifier for ambient phong lighting which seems to be too dark, add earth light
-* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
-* render space ship and allow indipendent directions of travel and camera viewing angle
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
+* add amplifier for ambient phong lighting which seems to be too dark, add earth light
+* rename cloud-planet to cloud-point
 * low-res blue noise for model rendering?
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
