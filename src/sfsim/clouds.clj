@@ -239,12 +239,12 @@
   [linear-sampling bluenoise/sampling-offset atmosphere/phase-function (cloud-density perlin-octaves cloud-octaves)
    (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
-(defn cloud-planet
+(defn cloud-point
   "Shader to compute pixel of cloud foreground overlay for planet"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
-   (slurp "resources/shaders/clouds/cloud-planet.glsl")])
+   (slurp "resources/shaders/clouds/cloud-point.glsl")])
 
 (defn cloud-outer
   "Shader to compute pixel of cloud foreground overlay for atmosphere"

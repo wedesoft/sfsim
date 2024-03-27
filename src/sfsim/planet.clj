@@ -20,7 +20,7 @@
               [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                         atmosphere-luts)]
               [sfsim.util :refer (N N0 sqr)]
-              [sfsim.clouds :refer (cloud-planet lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
+              [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     fragment-atmosphere-clouds cloud-data direct-light)]
               [sfsim.shaders :as shaders]))
 
@@ -80,7 +80,7 @@
   "Fragment shader to render clouds below horizon"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/planet/fragment-clouds.glsl")])
+  [(cloud-point num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/planet/fragment-clouds.glsl")])
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"

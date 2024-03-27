@@ -13,7 +13,7 @@
                                     uniform-sampler use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars
                                     make-render-vars)
                             :as render]
-              [sfsim.clouds :refer (direct-light cloud-planet setup-cloud-render-uniforms setup-cloud-sampling-uniforms
+              [sfsim.clouds :refer (direct-light cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     lod-offset)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
@@ -428,7 +428,7 @@
   {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] render/shaders]}
   [textured bump num-steps perlin-octaves cloud-octaves]
   [(direct-light num-steps) phong attenuation-point surface-radiance-function
-   (cloud-planet num-steps perlin-octaves cloud-octaves)
+   (cloud-point num-steps perlin-octaves cloud-octaves)
    (template/eval (slurp "resources/shaders/model/fragment.glsl") {:textured textured :bump bump})])
 
 (defn make-model-program

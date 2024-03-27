@@ -971,7 +971,7 @@ void main()
          2.0    1.0     1.0   0.0      0.0  1.0    "a"       0.0     1.0
          2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.5     0.5)
 
-(def cloud-planet-probe
+(def cloud-point-probe
   (template/fn [z selector]
 "#version 410 core
 uniform float radius;
@@ -996,15 +996,15 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_planet(vec3 point);
+vec4 cloud_point(vec3 point);
 void main()
 {
   vec3 point = vec3(0, 0, <%= z %>);
-  vec4 result = cloud_planet(point);
+  vec4 result = cloud_point(point);
   fragColor.r = result.<%= selector %>;
 }"))
 
-(def cloud-planet-test
+(def cloud-point-test
   (shader-test
     (fn [program origin depth]
         (uniform-float program "radius" 10)
@@ -1013,11 +1013,11 @@ void main()
         (uniform-float program "cloud_top" 2)
         (uniform-float program "depth" depth)
         (uniform-vector3 program "origin" (vec3 0 0 origin)))
-    cloud-planet-probe
-    (last (cloud-planet 3 [] []))))
+    cloud-point-probe
+    (last (cloud-point 3 [] []))))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
-         (fact ((cloud-planet-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
+         (fact ((cloud-point-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
          ?origin ?z ?depth ?selector ?result
          11      10 100    "g"        0.0
          11      10 100    "a"        0.0
@@ -1118,10 +1118,10 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(cloud_shell.y, 0, 0, 0.25);
 }
-vec4 cloud_planet(vec3 point);
+vec4 cloud_point(vec3 point);
 void main()
 {
-  fragColor = cloud_planet(fs_in.point);
+  fragColor = cloud_point(fs_in.point);
 }")
 
 (def fragment-atmosphere-clouds-mock
@@ -1170,7 +1170,7 @@ void main()
                                         :sfsim.render/tess-control [tess-control-planet]
                                         :sfsim.render/tess-evaluation [tess-evaluation-planet]
                                         :sfsim.render/geometry [geometry-planet]
-                                        :sfsim.render/fragment [fragment-planet-clouds (last (cloud-planet 3 [] []))])
+                                        :sfsim.render/fragment [fragment-planet-clouds (last (cloud-point 3 [] []))])
           indices         [0 1 3 2]
           vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
