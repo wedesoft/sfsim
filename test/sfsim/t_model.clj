@@ -14,7 +14,7 @@
               [sfsim.clouds :as clouds]
               [sfsim.shaders :as shaders]
               [sfsim.model :refer :all :as model]
-              [sfsim.quaternion :refer (->Quaternion)])
+              [sfsim.quaternion :refer (->Quaternion) :as q])
     (:import [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim.model]})
@@ -482,20 +482,20 @@ void main()
 
 (def bump (read-gltf "test/sfsim/fixtures/model/bump.gltf"))
 
-(def cloud-planet-mock
+(def cloud-point-mock
 "#version 410 core
 uniform vec3 origin;
-vec4 cloud_planet(vec3 point)
+vec4 cloud_point(vec3 point)
 {
   float dist = distance(origin, point);
   float transparency = exp(-dist / 10.0);
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
 }")
 
-(def transmittance-outer-mock
+(def transmittance-point-mock
 "#version 410 core
 uniform float transmittance;
-vec3 transmittance_outer(vec3 point, vec3 direction)
+vec3 transmittance_point(vec3 point)
 {
   return vec3(transmittance, transmittance, transmittance);
 }")
@@ -539,7 +539,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   return incoming * attenuation;
 }")
 
-(def model-shader-mocks [cloud-planet-mock transmittance-outer-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
+(def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
                          ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
                          (last (clouds/direct-light 3))])
 
@@ -604,5 +604,26 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   bricks 1.0            0      1.0      1.0     1.0          "bricks-ambient.png"
   bricks 1.0            1      0.0      0.5     1.0          "bricks-shadow.png"
   bricks 1.0            1      0.0      1.0     0.5          "bricks-attenuation.png")
+
+(facts "Create hashmap with render variables for rendering a model outside the atmosphere"
+       (let [render          {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
+             pos1            (vec3 0 0 0)
+             pos2            (vec3 0 0 -20)
+             pos3            (vec3 0 0 -100)
+             orientation1    (q/rotation 0.0 (vec3 0 0 1))
+             light-direction (vec3 1 0 0)
+             object-pos      (vec3 0 0 -100)
+             object-radius   10.0
+             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction object-pos object-radius)
+             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation1 light-direction object-pos object-radius)
+             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation1 light-direction object-pos object-radius)]
+         (:sfsim.render/origin render-vars1) => pos1
+         (:sfsim.render/camera-to-world render-vars1) => (eye 4)
+         (:sfsim.render/z-near render-vars1) => 90.0
+         (:sfsim.render/z-far render-vars1) => 110.0
+         (:sfsim.render/z-near render-vars2) => 70.0
+         (:sfsim.render/z-far render-vars2) => 90.0
+         (:sfsim.render/z-near render-vars3) => 1.0
+         (:sfsim.render/z-far render-vars3) => 21.0))
 
 (GLFW/glfwTerminate)

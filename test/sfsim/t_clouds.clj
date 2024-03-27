@@ -971,7 +971,7 @@ void main()
          2.0    1.0     1.0   0.0      0.0  1.0    "a"       0.0     1.0
          2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.5     0.5)
 
-(def cloud-planet-probe
+(def cloud-point-probe
   (template/fn [z selector]
 "#version 410 core
 uniform float radius;
@@ -996,15 +996,15 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_planet(vec3 point);
+vec4 cloud_point(vec3 point);
 void main()
 {
   vec3 point = vec3(0, 0, <%= z %>);
-  vec4 result = cloud_planet(point);
+  vec4 result = cloud_point(point);
   fragColor.r = result.<%= selector %>;
 }"))
 
-(def cloud-planet-test
+(def cloud-point-test
   (shader-test
     (fn [program origin depth]
         (uniform-float program "radius" 10)
@@ -1013,11 +1013,11 @@ void main()
         (uniform-float program "cloud_top" 2)
         (uniform-float program "depth" depth)
         (uniform-vector3 program "origin" (vec3 0 0 origin)))
-    cloud-planet-probe
-    (last (cloud-planet 3 [] []))))
+    cloud-point-probe
+    (last (cloud-point 3 [] []))))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
-         (fact ((cloud-planet-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
+         (fact ((cloud-point-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
          ?origin ?z ?depth ?selector ?result
          11      10 100    "g"        0.0
          11      10 100    "a"        0.0
@@ -1028,7 +1028,7 @@ void main()
          13      10 100    "a"        1.0
          13      10   1.5  "a"        0.5)
 
-(def cloud-atmosphere-probe
+(def cloud-outer-probe
   (template/fn [dz selector]
 "#version 410 core
 out vec3 fragColor;
@@ -1062,15 +1062,15 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_scatter.g + cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_atmosphere(vec3 fs_in_direction);
+vec4 cloud_outer(vec3 fs_in_direction);
 void main()
 {
   vec3 direction = vec3(0, 0, <%= dz %>);
-  vec4 result = cloud_atmosphere(direction);
+  vec4 result = cloud_outer(direction);
   fragColor.r = result.<%= selector %>;
 }"))
 
-(def cloud-atmosphere-test
+(def cloud-outer-test
   (shader-test
     (fn [program z]
         (uniform-float program "radius" 10)
@@ -1078,11 +1078,11 @@ void main()
         (uniform-float program "cloud_bottom" 1)
         (uniform-float program "cloud_top" 2)
         (uniform-vector3 program "origin" (vec3 0 0 z)))
-    cloud-atmosphere-probe
-    (last (cloud-atmosphere 3 [] []))))
+    cloud-outer-probe
+    (last (cloud-outer 3 [] []))))
 
 (tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
-         (fact ((cloud-atmosphere-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
+         (fact ((cloud-outer-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
          ?z   ?dz ?selector ?result
          14    1  "g"        0.0
          14    1  "a"        0.0
@@ -1118,10 +1118,10 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(cloud_shell.y, 0, 0, 0.25);
 }
-vec4 cloud_planet(vec3 point);
+vec4 cloud_point(vec3 point);
 void main()
 {
-  fragColor = cloud_planet(fs_in.point);
+  fragColor = cloud_point(fs_in.point);
 }")
 
 (def fragment-atmosphere-clouds-mock
@@ -1146,10 +1146,10 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
-vec4 cloud_atmosphere(vec3 fs_in_direction);
+vec4 cloud_outer(vec3 fs_in_direction);
 void main()
 {
-  fragColor = cloud_atmosphere(fs_in.direction);
+  fragColor = cloud_outer(fs_in.direction);
 }")
 
 (fact "Test rendering of cloud overlay image"
@@ -1170,12 +1170,12 @@ void main()
                                         :sfsim.render/tess-control [tess-control-planet]
                                         :sfsim.render/tess-evaluation [tess-evaluation-planet]
                                         :sfsim.render/geometry [geometry-planet]
-                                        :sfsim.render/fragment [fragment-planet-clouds (last (cloud-planet 3 [] []))])
+                                        :sfsim.render/fragment [fragment-planet-clouds (last (cloud-point 3 [] []))])
           indices         [0 1 3 2]
           vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
           tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
           atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                        :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-atmosphere 3 [] []))])
+                                        :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-outer 3 [] []))])
           indices         [0 1 3 2]
           vertices        (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao             (make-vertex-array-object atmosphere indices vertices ["point" 3])
@@ -1367,7 +1367,7 @@ float overall_shadow(vec4 point)
 {
   return point.z >= 1.0 ? 1.0 : 0.0;
 }
-vec3 transmittance_outer(vec3 point, vec3 direction)
+vec3 transmittance_point(vec3 point)
 {
   float result = point.z >= 3.0 ? 1.0 : 0.5;
   return vec3(result, result, result);

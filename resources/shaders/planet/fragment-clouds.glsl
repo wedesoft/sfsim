@@ -8,9 +8,9 @@ in GEO_OUT
 
 out vec4 fragColor;
 
-vec4 cloud_planet(vec3 point);
+vec4 cloud_point(vec3 point);
 
 void main()
 {
-  fragColor = cloud_planet(fs_in.point);
+  fragColor = cloud_point(fs_in.point);
 }

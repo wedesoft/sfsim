@@ -11,7 +11,8 @@
 
 (def render-config #:sfsim.render{:amplification 6.0
                                   :specular 1000.0
-                                  :fov (to-radians 60.0)})
+                                  :fov (to-radians 60.0)
+                                  :min-z-near 1.0})
 
 (def planet-config #:sfsim.planet{:radius 6378000.0
                                   :max-height 8000.0
@@ -42,6 +43,8 @@
                                    :num-steps 3
                                    :mix 0.8
                                    :shadow-bias 1e-6})
+
+(def object-radius 1.5)
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

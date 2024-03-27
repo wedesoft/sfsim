@@ -1,15 +1,14 @@
 (ns sfsim.render
   "Functions for doing OpenGL rendering"
-  (:require [clojure.math :refer (sqrt cos sin asin hypot)]
-            [fastmath.vector :refer (mag)]
+  (:require [clojure.math :refer (sin asin hypot)]
             [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
-            [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box quaternion->matrix transformation-matrix projection-matrix)]
-            [sfsim.quaternion :refer (quaternion) :as q]
-            [sfsim.util :refer (sqr N)]
+            [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix)]
+            [sfsim.quaternion :refer (quaternion)]
+            [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
-  (:import [org.lwjgl.opengl GL GL11 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
+  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)
@@ -39,12 +38,33 @@
        (GL11/glDisable GL11/GL_STENCIL_TEST)
        result#)))
 
+(defn write-to-stencil-buffer
+  "Write to stencil buffer when rendering"
+  []
+  (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
+  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+  (GL11/glStencilMask 0xff))
+
+(defn mask-with-stencil-buffer
+  "Only render where stencil buffer is not set"
+  []
+  (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
+  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+  (GL11/glStencilMask 0))
+
+(defn setup-window-hints
+  "Set GLFW window hints"
+  [visible]
+  (GLFW/glfwDefaultWindowHints)
+  (GLFW/glfwWindowHint GLFW/GLFW_DEPTH_BITS 24)
+  (GLFW/glfwWindowHint GLFW/GLFW_STENCIL_BITS 8)
+  (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE (if visible GLFW/GLFW_TRUE GLFW/GLFW_FALSE)))
+
 (defmacro with-invisible-window
   "Macro to create temporary invisible window to provide context"
   [& body]
   `(do
-     (GLFW/glfwDefaultWindowHints)
-     (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE GLFW/GLFW_FALSE)
+     (setup-window-hints false)
      (let [window# (GLFW/glfwCreateWindow 8 2 "sfsim" 0 0)]
        (GLFW/glfwMakeContextCurrent window#)
        (GL/createCapabilities)
@@ -56,7 +76,7 @@
   "Method to create a window and make the context current and create the capabilities"
   {:malli/schema [:=> [:cat :string N N] :int]}
   [title width height]
-  (GLFW/glfwDefaultWindowHints)
+  (setup-window-hints true)
   (let [window (GLFW/glfwCreateWindow ^long width ^long height ^String title 0 0)]
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
@@ -94,6 +114,7 @@
   ([color alpha stencil]
    (GL11/glClearColor (color 0) (color 1) (color 2) alpha)
    (GL11/glClearDepth 0.0) ; Reversed-z rendering requires initial depth to be zero.
+   (GL11/glStencilMask 0xff)
    (GL11/glClearStencil stencil)
    (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT GL11/GL_STENCIL_BUFFER_BIT))))
 
@@ -389,13 +410,6 @@
          (destroy-texture depth#)
          img#))))
 
-(defn render-depth
-  "Determine maximum shadow depth for cloud shadows"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [radius max-height cloud-top]
-  (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
-     (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
-
 (defn diagonal-field-of-view
   "Compute diagonal field of view angle"
   {:malli/schema [:=> [:cat :int :int :double] :double]}
@@ -405,30 +419,21 @@
         dxy (hypot dx dy)]
     (* 2.0 (asin dxy))))
 
-(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double]]))
+(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double] [::min-z-near :double]]))
 
-(def render-vars (m/schema [:map [::origin fvec3] [::height :double] [::z-near :double] [::z-far :double] [::window-width N]
+(def render-vars (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
                                  [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]]))
 
 (defn make-render-vars
-  "Create hash map with render variables for rendering current frame"
-  {:malli/schema [:=> [:cat [:map [:sfsim.planet/radius :double]] [:map [:sfsim.clouds/cloud-top :double]] [:map [::fov :double]]
-                            N N fvec3 quaternion fvec3 :double] render-vars]}
-  [planet-config cloud-data render-config window-width window-height position orientation light-direction min-z-near]
-  (let [distance        (mag position)
-        radius          (:sfsim.planet/radius planet-config)
-        cloud-top       (:sfsim.clouds/cloud-top cloud-data)
-        fov             (::fov render-config)
-        height          (- distance radius)
-        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
-        z-near          (* (max (- height cloud-top) min-z-near) (cos (* 0.5 diagonal-fov)))
-        z-far           (render-depth radius height cloud-top)
+  "Create hash map with render variables for rendering current frame with specified depth range"
+  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 :double :double] render-vars]}
+  [render-config window-width window-height position orientation light-direction z-near z-far]
+  (let [fov             (::fov render-config)
         rotation        (quaternion->matrix orientation)
         camera-to-world (transformation-matrix rotation position)
         z-offset        1.0
         projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
     {::origin position
-     ::height height
      ::z-near z-near
      ::z-far z-far
      ::window-width window-width

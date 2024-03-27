@@ -12,7 +12,7 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 
-vec4 cloud_planet(vec3 point)
+vec4 cloud_point(vec3 point)
 {
   vec3 direction = normalize(point - origin);
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);

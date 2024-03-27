@@ -1,23 +1,26 @@
 (ns sfsim.planet
     "Module with functionality to render a planet"
-    (:require [fastmath.matrix :refer (mulm eye inverse)]
+    (:require [clojure.math :refer (sqrt cos)]
+              [fastmath.vector :refer (mag)]
+              [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
+              [sfsim.quaternion :refer (quaternion)]
               [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box)]
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
-                                      quadtree-drop quadtree-extract)]
+                                      quadtree-extract)]
               [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d
                                      texture-3d)]
               [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                                     uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                                     setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                                    render-vars)
+                                    render-vars diagonal-field-of-view make-render-vars)
                               :as render]
               [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                         atmosphere-luts)]
-              [sfsim.util :refer (N N0)]
-              [sfsim.clouds :refer (cloud-planet lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
+              [sfsim.util :refer (N N0 sqr)]
+              [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     fragment-atmosphere-clouds cloud-data direct-light)]
               [sfsim.shaders :as shaders]))
 
@@ -77,7 +80,7 @@
   "Fragment shader to render clouds below horizon"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(cloud-planet num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/planet/fragment-clouds.glsl")])
+  [(cloud-point num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/planet/fragment-clouds.glsl")])
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
@@ -228,15 +231,15 @@
 (defn make-cloud-atmosphere-renderer
   "Make renderer to render clouds above horizon (not tested)"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [:sfsim.atmosphere/luts atmosphere-luts]
-                                  [:sfsim.planet/config planet-config] [:sfsim.opacity/data shadow-data]
+                                  [::config planet-config] [:sfsim.opacity/data shadow-data]
                                   [:sfsim.clouds/data cloud-data]]] cloud-atmosphere-renderer]}
   [other]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
-        planet-config   (:sfsim.planet/config other)
+        planet-config   (::config other)
         shadow-data     (:sfsim.opacity/data other)
         data            (:sfsim.clouds/data other)
-        tilesize        (:sfsim.planet/tilesize planet-config)
+        tilesize        (::tilesize planet-config)
         program         (make-program :sfsim.render/vertex [vertex-atmosphere]
                                       :sfsim.render/fragment [(fragment-atmosphere-clouds (:sfsim.opacity/num-steps shadow-data)
                                                                                           (:sfsim.clouds/perlin-octaves data)
@@ -246,7 +249,7 @@
     (setup-cloud-render-uniforms program data 3)
     (setup-cloud-sampling-uniforms program data 6)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
-    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
+    (uniform-float program "radius" (::radius planet-config))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
@@ -437,6 +440,29 @@
   {:malli/schema [:=> [:cat tree] :map]}
   [{:keys [tree]}]
   @tree)
+
+(defn render-depth
+  "Determine maximum shadow depth for cloud shadows"
+  {:malli/schema [:=> [:cat :double :double :double] :double]}
+  [radius max-height cloud-top]
+  (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
+     (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
+
+(defn make-planet-render-vars
+  "Create hash map with render variables for rendering current frame of planet"
+  {:malli/schema [:=> [:cat [:map [::radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
+                            [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3] render-vars]}
+  [planet-config cloud-data render-config window-width window-height position orientation light-direction]
+  (let [distance        (mag position)
+        radius          (::radius planet-config)
+        cloud-top       (:sfsim.clouds/cloud-top cloud-data)
+        fov             (:sfsim.render/fov render-config)
+        min-z-near      (:sfsim.render/min-z-near render-config)
+        height          (- distance radius)
+        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
+        z-near          (max (* (- height cloud-top) (cos (* 0.5 diagonal-fov))) min-z-near)
+        z-far           (render-depth radius height cloud-top)]
+    (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -1,11 +1,6 @@
 # TODO
-* rename scene to object?
-* rendering outside atmosphere
-* add amplifier for ambient phong lighting which seems to be too dark
-* render space ship and allow indipendent directions of travel and camera viewing angle
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
-* low-res blue noise for model rendering?
-* rename cloud-planet to cloud-track and cloud-atmosphere to cloud-outer
+* add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils

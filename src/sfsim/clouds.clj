@@ -222,7 +222,7 @@
   "Shader function for determining direct light left after atmospheric scattering and shadows"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [shaders/is-above-horizon atmosphere/transmittance-outer (overall-shadow num-steps)
+  [shaders/is-above-horizon atmosphere/transmittance-point (overall-shadow num-steps)
    (slurp "resources/shaders/clouds/direct-light.glsl")])
 
 (defn cloud-transfer
@@ -239,19 +239,19 @@
   [linear-sampling bluenoise/sampling-offset atmosphere/phase-function (cloud-density perlin-octaves cloud-octaves)
    (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
-(defn cloud-planet
+(defn cloud-point
   "Shader to compute pixel of cloud foreground overlay for planet"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
-   (slurp "resources/shaders/clouds/cloud-planet.glsl")])
+   (slurp "resources/shaders/clouds/cloud-point.glsl")])
 
-(defn cloud-atmosphere
+(defn cloud-outer
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
   [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves)
-   (slurp "resources/shaders/clouds/cloud-atmosphere.glsl")])
+   (slurp "resources/shaders/clouds/cloud-outer.glsl")])
 
 (defmacro opacity-cascade
   "Render cascade of deep opacity maps"
@@ -290,7 +290,7 @@
   "Shader for rendering clouds above horizon"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(cloud-atmosphere num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
+  [(cloud-outer num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
 
 (defn lod-offset
   "Compute level of detail offset for sampling cloud textures"
