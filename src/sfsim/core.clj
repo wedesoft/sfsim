@@ -101,7 +101,7 @@
                  dt (- t1 @t0)
                  u  (if (@keystates GLFW/GLFW_KEY_S) 0.001 (if (@keystates GLFW/GLFW_KEY_W) -0.001 0.0))
                  r  (if (@keystates GLFW/GLFW_KEY_A) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0.0))
-                 t  (if (@keystates GLFW/GLFW_KEY_C) 0.001 (if (@keystates GLFW/GLFW_KEY_Z) -0.001 0.0))
+                 t  (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_Q) -0.001 0.0))
                  ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
                  rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
