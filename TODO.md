@@ -1,8 +1,6 @@
 # TODO
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
-* rename cloud-planet to cloud-point
-* low-res blue noise for model rendering?
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
