@@ -69,7 +69,7 @@
 
 (def model-renderer (model/make-model-renderer data))
 
-(def scene (model/load-scene model-renderer "test/sfsim/fixtures/model/bricks.gltf"))
+(def scene (model/load-scene model-renderer "venturestar.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -85,7 +85,7 @@
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
-(def dist (atom 30.0))
+(def dist (atom 100.0))
 
 (defn -main
   "Space flight simulator main function"
