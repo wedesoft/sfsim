@@ -1,5 +1,7 @@
 # TODO
 * object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
+  use object coordinates? rotate light using world to object
+  object to shadow map: object point -> world oriented -> light oriented (only rotations and final texture map adaption)
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
