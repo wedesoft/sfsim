@@ -1,7 +1,6 @@
 (ns sfsim.core
   "Space flight simulator main program."
   (:require [clojure.math :refer (cos sin to-radians exp)]
-            [fastmath.matrix :refer (eye)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
@@ -14,8 +13,7 @@
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.config :as config])
-  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback]
-           [org.lwjgl.opengl GL11 GL12 GL30])
+  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback])
   (:gen-class))
 
 (set! *unchecked-math* true)

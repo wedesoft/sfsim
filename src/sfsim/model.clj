@@ -4,7 +4,7 @@
               [comb.template :as template]
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
-              [fastmath.vector :refer (vec3 vec4 mult add)]
+              [fastmath.vector :refer (vec3 mult add)]
               [sfsim.matrix :refer (transformation-matrix quaternion->matrix vec3->vec4 fvec3 fmat4)]
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
