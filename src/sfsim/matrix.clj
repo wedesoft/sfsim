@@ -15,6 +15,18 @@
 (def fvec3 (m/schema [:tuple :double :double :double]))
 (def fvec4 (m/schema [:tuple :double :double :double :double]))
 
+(defn vec3->vec4
+  "Create 4D vector from 3D vector and a scalar"
+  {:malli/schema [:=> [:cat fvec3 :double] fvec4]}
+  [v l]
+  (fv/vec4 (v 0) (v 1) (v 2) l))
+
+(defn vec4->vec3
+  "Drop last component of 4D vector to get a 3D vector"
+  {:malli/schema [:=> [:cat fvec4] fvec3]}
+  [v]
+  (fv/vec3 (v 0) (v 1) (v 2)))
+
 (defn rotation-x
   "Rotation matrix around x-axis"
   {:malli/schema [:=> [:cat :double] fmat3]}
@@ -106,9 +118,11 @@
             (fv/vec4 -1.0  1.0 ndc2 1.0)
             (fv/vec4  1.0  1.0 ndc2 1.0)]))))
 
+(def bbox (m/schema [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]))
+
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
-  {:malli/schema [:=> [:cat [:sequential fvec4]] [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]]}
+  {:malli/schema [:=> [:cat [:sequential fvec4]] bbox]}
   [points]
   (let [x (map #(/ (% 0) (% 3)) points)
         y (map #(/ (% 1) (% 3)) points)
@@ -118,14 +132,13 @@
 
 (defn expand-bounding-box-near
   "Enlarge bounding box towards positive z (near)"
-  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]] :double]
-                      [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]]}
-  [bbox z-expand]
-  (update bbox :bottomleftnear fv/add (fv/vec3 0 0 z-expand)))
+  {:malli/schema [:=> [:cat bbox :double] bbox]}
+  [bounding-box z-expand]
+  (update bounding-box :bottomleftnear fv/add (fv/vec3 0 0 z-expand)))
 
 (defn shadow-box-to-ndc
   "Scale and translate light box coordinates to normalized device coordinates"
-  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fmat4]}
+  {:malli/schema [:=> [:cat bbox] fmat4]}
   [{:keys [bottomleftnear toprightfar]}]
   (let [left   (bottomleftnear 0)
         right  (toprightfar 0)
@@ -140,7 +153,7 @@
 
 (defn shadow-box-to-map
   "Scale and translate light box coordinates to shadow map texture coordinates"
-  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fmat4]}
+  {:malli/schema [:=> [:cat bbox] fmat4]}
   [bounding-box]
   (fm/mulm (fm/mat4x4 0.5 0 0 0.5, 0 0.5 0 0.5, 0 0 1 0, 0 0 0 1) (shadow-box-to-ndc bounding-box)))
 
@@ -177,7 +190,7 @@
 
 (defn- span-of-box
   "Get vector of box dimensions"
-  {:malli/schema [:=> [:cat [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]] fvec3]}
+  {:malli/schema [:=> [:cat bbox] fvec3]}
   [bounding-box]
   (fv/sub (:toprightfar bounding-box) (:bottomleftnear bounding-box)))
 
@@ -198,7 +211,7 @@
 (def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices
-  "Choose NDC and texture coordinate matrices for shadow mapping"
+  "Choose NDC and texture coordinate matrices for shadow mapping of view frustum or part of frustum"
   {:malli/schema [:=> [:cat fmat4 fmat4 fvec3 :double [:? [:cat :double :double]]] shadow-box]}
   ([projection-matrix camera-to-world light-vector longest-shadow]
    (shadow-matrices projection-matrix camera-to-world light-vector longest-shadow 1.0 0.0))
@@ -240,7 +253,7 @@
   (mapv (partial split-mixed mix z-near z-far num-steps) (range (inc num-steps))))
 
 (defn shadow-matrix-cascade
-  "Compute cascade of shadow matrices"
+  "Compute cascade of shadow matrices for view frustum"
   {:malli/schema [:=> [:cat :map :map] [:vector shadow-box]]}
   [{:sfsim.opacity/keys [num-steps mix depth]} {:sfsim.render/keys [projection camera-to-world light-direction z-near z-far]}]
   (mapv (fn shadow-matrices-for-segment [idx]
@@ -248,6 +261,21 @@
                   ndc2 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps (inc idx)))]
               (shadow-matrices projection camera-to-world light-direction depth ndc1 ndc2)))
         (range num-steps)))
+
+(defn shadow-patch-matrices
+  "Shadow matrices for an object mapping object coordinates to shadow coordinates"
+  [object-to-world light-vector object-radius]
+  (let [a               (- object-radius)
+        b               (+ object-radius)
+        bounding-box    {:bottomleftnear (fv/vec3 a a b) :toprightfar (fv/vec3 b b a)}
+        shadow-ndc      (shadow-box-to-ndc bounding-box)
+        shadow-map      (shadow-box-to-map bounding-box)
+        world-to-object (fm/inverse object-to-world)
+        light-matrix    (orient-to-light (vec4->vec3 (fm/mulv world-to-object (vec3->vec4 light-vector 0.0))))]
+    {::shadow-ndc-matrix    (fm/mulm shadow-ndc light-matrix)
+     ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
+     ::scale                (* 2.0 object-radius)
+     ::depth                (* 2.0 object-radius)}))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

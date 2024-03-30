@@ -5,7 +5,7 @@
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
               [fastmath.vector :refer (vec3 vec4 mult add)]
-              [sfsim.matrix :refer (transformation-matrix quaternion->matrix fvec3 fmat4)]
+              [sfsim.matrix :refer (transformation-matrix quaternion->matrix vec3->vec4 fvec3 fmat4)]
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
@@ -587,7 +587,7 @@
         rotation             (quaternion->matrix orientation)
         camera-to-world      (transformation-matrix rotation position)
         world-to-camera      (inverse camera-to-world)
-        object-camera-vector (mulv world-to-camera (vec4 (object-position 0) (object-position 1) (object-position 2) 1.0))
+        object-camera-vector (mulv world-to-camera (vec3->vec4 object-position 1.0))
         object-depth         (- (object-camera-vector 2))
         z-near               (max (- object-depth object-radius) min-z-near)
         z-far                (+ z-near object-radius object-radius)]
