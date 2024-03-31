@@ -17,7 +17,7 @@
                                     lod-offset)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
-              [sfsim.shaders :refer (phong)]
+              [sfsim.shaders :refer (phong shrink-shadow-index)]
               [sfsim.image :refer (image)]
               [sfsim.util :refer (N0 N)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
@@ -592,6 +592,19 @@
         z-near               (max (- object-depth object-radius) min-z-near)
         z-far                (+ z-near object-radius object-radius)]
     (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
+
+(defn vertex-shadow-model
+  "Vertex shader for rendering model shadow maps"
+  [textured bump]
+  [shrink-shadow-index (template/eval (slurp "resources/shaders/model/vertex-shadow.glsl") {:textured textured :bump bump})])
+
+(def fragment-shadow-model (slurp "resources/shaders/model/fragment-shadow.glsl"))
+
+(defn make-model-shadow-program
+  {:malli/schema [:=> [:cat :boolean :boolean] :int]}
+  [textured bump]
+  (make-program :sfsim.render/vertex [(vertex-shadow-model textured bump)]
+                :sfsim.render/fragment [fragment-shadow-model]))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
