@@ -9,9 +9,9 @@
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
-                                    make-program destroy-program use-program uniform-float uniform-matrix4 uniform-vector3
-                                    uniform-sampler use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars
-                                    make-render-vars texture-render-depth clear) :as render]
+                                    make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
+                                    uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
+                                    setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
               [sfsim.clouds :refer (direct-light cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     lod-offset)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
@@ -411,7 +411,7 @@
 
 (defn material-type
   "Determine information for dispatching to correct shader or render method"
-  [{:sfsim.model/keys [color-texture-index normal-texture-index]}]
+  [{::keys [color-texture-index normal-texture-index]}]
   (if color-texture-index
     (if normal-texture-index
       ::program-textured-bump
@@ -525,23 +525,23 @@
 (m/=> render-mesh [:=> [:cat mesh-params] :nil])
 
 (defmethod render-mesh ::program-colored-flat
-  [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
+  [{::keys [program camera-to-world transform diffuse]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
-  [{:sfsim.model/keys [program texture-offset camera-to-world transform colors]}]
+  [{::keys [program texture-offset camera-to-world transform colors]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
-  [{:sfsim.model/keys [program texture-offset camera-to-world transform diffuse normals]}]
+  [{::keys [program texture-offset camera-to-world transform diffuse normals]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
-  [{:sfsim.model/keys [program texture-offset camera-to-world transform colors normals]}]
+  [{::keys [program texture-offset camera-to-world transform colors normals]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
@@ -619,12 +619,23 @@
      ::program-textured-bump program-textured-bump
      ::programs              programs}))
 
+(defn render-depth
+  [{::keys [program camera-to-world transform]}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_light" (mulm camera-to-world transform)))  ; TODO: rename camera-to-world
+
 (defn object-shadow-map  ; TODO: implement this
   "Render shadow map for an object"
-  [renderer size model]
-  (texture-render-depth size size
-                        (clear)
-                        (use-program (::program-colored-flat renderer))))
+  [renderer shadow-vars size model]
+  (let [shadow-ndc-matrix (:sfsim.matrix/shadow-ndc-matrix shadow-vars)
+        render-vars       {:sfsim.render/camera-to-world shadow-ndc-matrix}
+        centered-model    (assoc-in model [::root ::transform] (eye 4))]
+    (doseq [program (::programs renderer)]
+           (use-program program)
+           (uniform-int program "shadow_size" size))
+    (texture-render-depth size size
+                          (clear)
+                          (render-scene (comp renderer material-type) 0 render-vars centered-model render-depth))))
 
 (defn destroy-model-shadow-renderer
   [{::keys [programs]}]
