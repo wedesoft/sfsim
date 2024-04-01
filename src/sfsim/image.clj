@@ -242,5 +242,14 @@
                   (range c)))
         (range d)))
 
+(defn floats->image
+  "Convert floating point image to RGBA"
+  {:malli/schema [:=> [:cat float-image-2d] image]}
+  [{::keys [width height data]}]
+  {::width width
+   ::height height
+   ::channels 4
+   ::data (byte-array (mapcat (fn [scalar] (let [b (int (* 255.0 scalar))] [b b b -1])) data))})
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
