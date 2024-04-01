@@ -9,6 +9,7 @@
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim.matrix :refer :all]
               [sfsim.texture :refer :all]
+              [sfsim.image :refer (floats->image)]
               [sfsim.render :refer :all]
               [sfsim.atmosphere :as atmosphere]
               [sfsim.clouds :as clouds]
@@ -625,5 +626,20 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
          (:sfsim.render/z-far render-vars2) => 90.0
          (:sfsim.render/z-near render-vars3) => 1.0
          (:sfsim.render/z-far render-vars3) => 21.0))
+
+(tabular "Render shadow map for an object"
+  (fact  ; TODO: finish this test
+    (with-invisible-window
+      (let [renderer      (make-model-shadow-renderer)
+            scene         (load-scene-into-opengl (comp renderer material-type) ?model)
+            object-shadow (object-shadow-map renderer 256 ?model)
+            depth         (depth-texture->floats object-shadow)
+            img           (floats->image depth)]
+        (destroy-texture object-shadow)
+        (destroy-scene scene)
+        (destroy-model-shadow-renderer renderer)
+        img)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))
+  ?model ?result
+  cube   "shadow-map-cube.png")
 
 (GLFW/glfwTerminate)

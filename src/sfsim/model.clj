@@ -11,8 +11,7 @@
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                                     make-program destroy-program use-program uniform-float uniform-matrix4 uniform-vector3
                                     uniform-sampler use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars
-                                    make-render-vars)
-                            :as render]
+                                    make-render-vars texture-render-depth clear) :as render]
               [sfsim.clouds :refer (direct-light cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     lod-offset)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
@@ -605,6 +604,31 @@
   [textured bump]
   (make-program :sfsim.render/vertex [(vertex-shadow-model textured bump)]
                 :sfsim.render/fragment [fragment-shadow-model]))
+
+(defn make-model-shadow-renderer
+  "Create renderer for rendering model-shadows"
+  []
+  (let [program-colored-flat  (make-model-shadow-program false false)
+        program-textured-flat (make-model-shadow-program true  false)
+        program-colored-bump  (make-model-shadow-program false true )
+        program-textured-bump (make-model-shadow-program true  true )
+        programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
+    {::program-colored-flat  program-colored-flat
+     ::program-textured-flat program-textured-flat
+     ::program-colored-bump  program-colored-bump
+     ::program-textured-bump program-textured-bump
+     ::programs              programs}))
+
+(defn object-shadow-map  ; TODO: implement this
+  "Render shadow map for an object"
+  [renderer size model]
+  (texture-render-depth size size
+                        (clear)
+                        (use-program (::program-colored-flat renderer))))
+
+(defn destroy-model-shadow-renderer
+  [{::keys [programs]}]
+  (doseq [program programs] (destroy-program program)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
