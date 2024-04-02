@@ -299,9 +299,7 @@
   (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
-(def render-vars-camera (m/schema [:map [:sfsim.render/camera-to-world fmat4]]))
 (def mesh-params (m/schema [:map [::program :int]
-                                 [::camera-to-world fmat4]
                                  [::transform fmat4]
                                  [::diffuse fvec3]
                                  [::color-texture-index [:maybe :int]]
@@ -311,7 +309,7 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] :int render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] :int :map [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
   ([program-selection texture-offset render-vars scene callback]
    (render-scene program-selection texture-offset render-vars scene callback (eye 4) (::root scene)))
   ([program-selection texture-offset render-vars scene callback transform node]
@@ -321,12 +319,8 @@
      (doseq [mesh-index (::mesh-indices node)]
             (let [mesh                (nth (::meshes scene) mesh-index)
                   material            (::material mesh)
-                  camera-to-world     (:sfsim.render/camera-to-world render-vars)
                   program             (program-selection material)]
-              (callback (merge material {::program program
-                                         ::texture-offset texture-offset
-                                         ::camera-to-world camera-to-world
-                                         ::transform transform}))
+              (callback (assoc material ::program program ::texture-offset texture-offset ::transform transform) render-vars)
               (render-triangles (::vao mesh)))))))
 
 (defn- interpolate-frame
@@ -521,27 +515,27 @@
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
 
-(defmulti render-mesh material-type)
-(m/=> render-mesh [:=> [:cat mesh-params] :nil])
+(defmulti render-mesh (fn [material render-vars] (material-type material)))
+(m/=> render-mesh [:=> [:cat mesh-params :map] :nil])
 
 (defmethod render-mesh ::program-colored-flat
-  [{::keys [program camera-to-world transform diffuse]}]
+  [{::keys [program camera-to-world transform diffuse]} {:sfsim.render/keys [camera-to-world]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
-  [{::keys [program texture-offset camera-to-world transform colors]}]
+  [{::keys [program texture-offset transform colors]} {:sfsim.render/keys [camera-to-world]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
-  [{::keys [program texture-offset camera-to-world transform diffuse normals]}]
+  [{::keys [program texture-offset transform diffuse normals]} {:sfsim.render/keys [camera-to-world]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
-  [{::keys [program texture-offset camera-to-world transform colors normals]}]
+  [{::keys [program texture-offset transform colors normals]} {:sfsim.render/keys [camera-to-world]}]
   (setup-camera-and-world-matrix program transform camera-to-world)
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
@@ -620,22 +614,20 @@
      ::programs              programs}))
 
 (defn render-depth
-  [{::keys [program camera-to-world transform]}]
+  [{::keys [program camera-to-world transform]} {:sfsim.matrix/keys [shadow-ndc-matrix]}]
   (use-program program)
-  (uniform-matrix4 program "object_to_light" (mulm camera-to-world transform)))  ; TODO: rename camera-to-world
+  (uniform-matrix4 program "object_to_light" (mulm shadow-ndc-matrix transform)))
 
-(defn object-shadow-map  ; TODO: implement this
+(defn object-shadow-map
   "Render shadow map for an object"
   [renderer shadow-vars size model]
-  (let [shadow-ndc-matrix (:sfsim.matrix/shadow-ndc-matrix shadow-vars)
-        render-vars       {:sfsim.render/camera-to-world shadow-ndc-matrix}
-        centered-model    (assoc-in model [::root ::transform] (eye 4))]
+  (let [centered-model    (assoc-in model [::root ::transform] (eye 4))]
     (doseq [program (::programs renderer)]
            (use-program program)
            (uniform-int program "shadow_size" size))
     (texture-render-depth size size
                           (clear)
-                          (render-scene (comp renderer material-type) 0 render-vars centered-model render-depth))))
+                          (render-scene (comp renderer material-type) 0 shadow-vars centered-model render-depth))))
 
 (defn destroy-model-shadow-renderer
   [{::keys [programs]}]

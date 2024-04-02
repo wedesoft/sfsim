@@ -126,7 +126,7 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
+                        (fn [{:sfsim.model/keys [program transform diffuse]} {:sfsim.render/keys [camera-to-world]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (destroy-scene opengl-scene)
@@ -154,7 +154,7 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
+                        (fn [{:sfsim.model/keys [program transform diffuse]} {:sfsim.render/keys [camera-to-world]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (uniform-vector3 program "diffuse_color" diffuse)))
           (destroy-scene opengl-scene)
@@ -238,7 +238,7 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (uniform-sampler program "colors" 0)
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform colors]}]
+                        (fn [{:sfsim.model/keys [program transform colors]} {:sfsim.render/keys [camera-to-world]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (use-textures {0 colors})))
           (destroy-scene opengl-scene)
@@ -305,7 +305,7 @@ void main()
           (uniform-sampler program "colors" 0)
           (uniform-sampler program "normals" 1)
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
+                        (fn [{:sfsim.model/keys [program transform colors normals]} {:sfsim.render/keys [camera-to-world]}]
                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                             (use-textures {0 colors 1 normals})))
           (destroy-scene opengl-scene)
@@ -316,14 +316,14 @@ void main()
     :textured
     :colored))
 
-(defmulti render-cube cube-material-type)
+(defmulti render-cube (fn [material render-vars] (cube-material-type material)))
 
-(defmethod render-cube :colored [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
+(defmethod render-cube :colored [{:sfsim.model/keys [program transform diffuse]} {:sfsim.render/keys [camera-to-world]}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (uniform-vector3 program "diffuse_color" diffuse))
 
-(defmethod render-cube :textured [{:sfsim.model/keys [program camera-to-world transform colors]}]
+(defmethod render-cube :textured [{:sfsim.model/keys [program transform colors]} {:sfsim.render/keys [camera-to-world]}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (use-textures {0 colors}))
