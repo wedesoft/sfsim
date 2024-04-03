@@ -632,7 +632,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
          (:sfsim.render/z-far render-vars3) => 21.0))
 
 (tabular "Render shadow map for an object"
-  (fact  ; TODO: finish this test
+  (fact
     (with-invisible-window
       (let [renderer        (make-model-shadow-renderer)
             scene           (load-scene-into-opengl (comp renderer material-type) ?model)
@@ -650,6 +650,9 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
         (destroy-model-shadow-renderer renderer)
         img)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))
   ?model ?result
-  cube   "shadow-map-cube.png")
+  cube   "shadow-map-cube.png"
+  dice   "shadow-map-dice.png"
+  bump   "shadow-map-bump.png"
+  bricks "shadow-map-bricks.png")
 
 (GLFW/glfwTerminate)
