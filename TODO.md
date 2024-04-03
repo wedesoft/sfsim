@@ -1,9 +1,7 @@
 # TODO
-* put program texture-offset and transform into separate hashmap?
-* test depth map rendering of back faces, convert float depth map to greyscale image?
-  object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
-  use object coordinates? rotate light using world to object
-  object to shadow map: object point -> world oriented -> light oriented (only rotations and final texture map adaption)
+* object shadows on itself, PCF, use multiplication of local shadow map and planet+cloud shadows?
+* adapt shadow map size to object distance
+* object shadows on planet
 * light-vector -> light-direction
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * concept for bundling shaders with uniform setting methods?

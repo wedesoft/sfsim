@@ -116,7 +116,11 @@
 
 (set! *warn-on-reflection* true)
 
-(def material (m/schema [:map [::diffuse fvec3] [::color-texture-index [:maybe N0]] [::normal-texture-index [:maybe N0]]]))
+(def material (m/schema [:map [::diffuse fvec3]
+                              [::color-texture-index [:maybe :int]]
+                              [::normal-texture-index [:maybe :int]]
+                              [::colors [:maybe texture-2d]]
+                              [::normals [:maybe texture-2d]]]))
 
 (defn- decode-material
   "Fetch material data for material with given index"
@@ -299,19 +303,13 @@
   (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
-(def mesh-params (m/schema [:map [::diffuse fvec3]
-                                 [::color-texture-index [:maybe :int]]
-                                 [::normal-texture-index [:maybe :int]]
-                                 [::colors [:maybe texture-2d]]
-                                 [::normals [:maybe texture-2d]]]))
-
 (def mesh-vars (m/schema [:map [::program :int]
                                [::transform fmat4]
                                [::texture-offset :int]]))
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] :int :map [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
   ([program-selection texture-offset render-vars scene callback]
    (render-scene program-selection texture-offset render-vars scene callback (eye 4) (::root scene)))
   ([program-selection texture-offset render-vars scene callback transform node]
@@ -436,7 +434,8 @@
                                     [::program-textured-flat :int]
                                     [::program-colored-bump  :int]
                                     [::program-textured-bump :int]
-                                    [::programs [:vector :int]]]))
+                                    [::programs [:vector :int]]
+                                    [::texture-offset :int]]))
 
 (def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]]]
                           [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
@@ -518,7 +517,7 @@
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
 
 (defmulti render-mesh (fn [material render-vars] (material-type material)))
-(m/=> render-mesh [:=> [:cat mesh-params mesh-vars] :nil])
+(m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 (defmethod render-mesh ::program-colored-flat
   [{::keys [diffuse]} {::keys [program transform] :as render-vars}]
@@ -601,9 +600,18 @@
   (make-program :sfsim.render/vertex [(vertex-shadow-model textured bump)]
                 :sfsim.render/fragment [fragment-shadow-model]))
 
+(def model-shadow-renderer (m/schema [:map [::program-colored-flat  :int]
+                                           [::program-textured-flat :int]
+                                           [::program-colored-bump  :int]
+                                           [::program-textured-bump :int]
+                                           [::programs [:vector :int]]
+                                           [::size N]
+                                           [::object-radius :double]]))
+
 (defn make-model-shadow-renderer
   "Create renderer for rendering model-shadows"
-  []
+  {:malli/schema [:=> [:cat N :double] model-shadow-renderer]}
+  [size object-radius]
   (let [program-colored-flat  (make-model-shadow-program false false)
         program-textured-flat (make-model-shadow-program true  false)
         program-colored-bump  (make-model-shadow-program false true )
@@ -613,17 +621,21 @@
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump
-     ::programs              programs}))
+     ::programs              programs
+     ::size                  size
+     ::object-radius         object-radius}))
 
 (defn render-depth
+  {:malli/schema [:=> [:cat material mesh-vars] :nil]}
   [material {::keys [program transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/shadow-ndc-matrix render-vars) transform)))
 
 (defn object-shadow-map
   "Render shadow map for an object"
-  [renderer shadow-vars size model]
-  (let [centered-model    (assoc-in model [::root ::transform] (eye 4))]
+  [renderer shadow-vars model]
+  (let [size           (::size renderer)
+        centered-model (assoc-in model [::root ::transform] (eye 4))]
     (doseq [program (::programs renderer)]
            (use-program program)
            (uniform-int program "shadow_size" size))
