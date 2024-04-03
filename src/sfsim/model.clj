@@ -299,13 +299,15 @@
   (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
-(def mesh-params (m/schema [:map [::program :int]
-                                 [::transform fmat4]
-                                 [::diffuse fvec3]
+(def mesh-params (m/schema [:map [::diffuse fvec3]
                                  [::color-texture-index [:maybe :int]]
                                  [::normal-texture-index [:maybe :int]]
                                  [::colors [:maybe texture-2d]]
                                  [::normals [:maybe texture-2d]]]))
+
+(def mesh-vars (m/schema [:map [::program :int]
+                               [::transform fmat4]
+                               [::texture-offset :int]]))
 
 (defn render-scene
   "Render meshes of specified scene"
@@ -320,7 +322,7 @@
             (let [mesh                (nth (::meshes scene) mesh-index)
                   material            (::material mesh)
                   program             (program-selection material)]
-              (callback (assoc material ::program program ::texture-offset texture-offset ::transform transform) render-vars)
+              (callback material (assoc render-vars ::program program ::texture-offset texture-offset ::transform transform))
               (render-triangles (::vao mesh)))))))
 
 (defn- interpolate-frame
@@ -516,27 +518,27 @@
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
 
 (defmulti render-mesh (fn [material render-vars] (material-type material)))
-(m/=> render-mesh [:=> [:cat mesh-params :map] :nil])
+(m/=> render-mesh [:=> [:cat mesh-params mesh-vars] :nil])
 
 (defmethod render-mesh ::program-colored-flat
-  [{::keys [program camera-to-world transform diffuse]} {:sfsim.render/keys [camera-to-world]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [diffuse]} {::keys [program transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
-  [{::keys [program texture-offset transform colors]} {:sfsim.render/keys [camera-to-world]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [colors]} {::keys [program texture-offset transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
-  [{::keys [program texture-offset transform diffuse normals]} {:sfsim.render/keys [camera-to-world]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [diffuse normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
-  [{::keys [program texture-offset transform colors normals]} {:sfsim.render/keys [camera-to-world]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [colors normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
 (defn render-scenes
@@ -614,9 +616,9 @@
      ::programs              programs}))
 
 (defn render-depth
-  [{::keys [program camera-to-world transform]} {:sfsim.matrix/keys [shadow-ndc-matrix]}]
+  [material {::keys [program transform] :as render-vars}]
   (use-program program)
-  (uniform-matrix4 program "object_to_light" (mulm shadow-ndc-matrix transform)))
+  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/shadow-ndc-matrix render-vars) transform)))
 
 (defn object-shadow-map
   "Render shadow map for an object"

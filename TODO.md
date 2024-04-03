@@ -1,4 +1,5 @@
 # TODO
+* put program texture-offset and transform into separate hashmap?
 * test depth map rendering of back faces, convert float depth map to greyscale image?
   object shadows on itself and planet, use logical combination of local shadow map and planet+cloud shadows?
   use object coordinates? rotate light using world to object
