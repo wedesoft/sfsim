@@ -197,3 +197,28 @@
          => (roughly 47.5 1e-6)
          (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (nth (shadow-matrix-cascade (shadow-data 0.0 0.0 2) render-vars) 1))
                   (fv/vec4 0 0 -25 1)) => (roughly-vector (fv/vec4 -1 0 0.5 1) 1e-6)))
+
+(facts "Shadow matrices for an object mapping object coordinates to shadow coordinates"
+       (let [unrotated (shadow-patch-matrices (fm/eye 4) (fv/vec3 0 0 1) 1.0)
+             rotation  (transformation-matrix (rotation-x (/ PI 2)) (fv/vec3 0 0 0))
+             rotated   (shadow-patch-matrices rotation (fv/vec3 0 0 1) 1.0)]
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix unrotated) (fv/vec4 0 0 1 0))
+       => (fv/vec4 0 0 0.5 0)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix rotated) (fv/vec4 0 0 1 0))
+       => (roughly-vector (fv/vec4 -1.0 0 0 0) 1e-6)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix (shadow-patch-matrices (fm/eye 4) (fv/vec3 1 0 0) 1.0)) (fv/vec4 1 0 0 0))
+       => (fv/vec4 0 0 0.5 0)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix unrotated) (fv/vec4 1 0 0 1)) => (fv/vec4 0 -1 0.5 1)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix unrotated) (fv/vec4 -1 0 0 1)) => (fv/vec4 0 1 0.5 1)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix unrotated) (fv/vec4 0 1 0 1)) => (fv/vec4 1 0 0.5 1)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix unrotated) (fv/vec4 0 -1 0 1)) => (fv/vec4 -1 0 0.5 1)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix unrotated) (fv/vec4 0 0 1 1)) => (fv/vec4 0 0 1 1)
+       (fm/mulv (:sfsim.matrix/shadow-ndc-matrix unrotated) (fv/vec4 0 0 -1 1)) => (fv/vec4 0 0 0 1)
+       (fm/mulv (:sfsim.matrix/object-to-shadow-map unrotated) (fv/vec4 1 0 0 1)) => (fv/vec4 0.5 0.0 0.5 1)
+       (fm/mulv (:sfsim.matrix/object-to-shadow-map unrotated) (fv/vec4 -1 0 0 1)) => (fv/vec4 0.5 1 0.5 1)
+       (fm/mulv (:sfsim.matrix/object-to-shadow-map unrotated) (fv/vec4 0 1 0 1)) => (fv/vec4 1 0.5 0.5 1)
+       (fm/mulv (:sfsim.matrix/object-to-shadow-map unrotated) (fv/vec4 0 -1 0 1)) => (fv/vec4 0 0.5 0.5 1)
+       (fm/mulv (:sfsim.matrix/object-to-shadow-map unrotated) (fv/vec4 0 0 1 1)) => (fv/vec4 0.5 0.5 1 1)
+       (fm/mulv (:sfsim.matrix/object-to-shadow-map unrotated) (fv/vec4 0 0 -1 1)) => (fv/vec4 0.5 0.5 0 1)
+       (:sfsim.matrix/depth unrotated) => 2.0
+       (:sfsim.matrix/scale unrotated) => 2.0))
