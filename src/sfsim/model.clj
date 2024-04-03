@@ -516,7 +516,7 @@
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
 
-(defmulti render-mesh (fn [material render-vars] (material-type material)))
+(defmulti render-mesh (fn [material _render-vars] (material-type material)))
 (m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 (defmethod render-mesh ::program-colored-flat
@@ -627,7 +627,7 @@
 
 (defn render-depth
   {:malli/schema [:=> [:cat material mesh-vars] :nil]}
-  [material {::keys [program transform] :as render-vars}]
+  [_material {::keys [program transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/shadow-ndc-matrix render-vars) transform)))
 
