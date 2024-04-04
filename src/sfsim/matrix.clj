@@ -264,6 +264,7 @@
 
 (defn shadow-patch-matrices
   "Shadow matrices for an object mapping object coordinates to shadow coordinates"
+  {:malli/schema [:=> [:cat fmat4 fvec3 :double] :map]}
   [object-to-world light-vector object-radius]
   (let [a               (- object-radius)
         b               (+ object-radius)

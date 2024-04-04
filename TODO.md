@@ -1,8 +1,14 @@
 # TODO
+* malli schemas for model-shadow-map, shadow-patch-matrices, model-shadow-map, and destroy-model-shadow-map
+* put model-shadow-map and keywords in returned hashmap into opacity module?
+* add object radius to object?
+* rename model to scene
+* light-vector -> light-direction
+* combine with object-shadow-map similar as opacity-and-shadow-cascade and use renderer as parameter
 * object shadows on itself, PCF, use multiplication of local shadow map and planet+cloud shadows?
+* shadow mistakes when above clouds
 * adapt shadow map size to object distance
 * object shadows on planet
-* light-vector -> light-direction
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship

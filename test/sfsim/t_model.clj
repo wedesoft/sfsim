@@ -636,15 +636,14 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
     (with-invisible-window
       (let [object-radius   1.75
             renderer        (make-model-shadow-renderer 256 object-radius)
+            light-vector    (vec3 0 0 1)
             scene           (load-scene-into-opengl (comp renderer material-type) ?model)
             object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 100 200 300))
-            light-vector    (vec3 0 0 1)
-            shadow-vars     (shadow-patch-matrices object-to-world light-vector object-radius)
             moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-            object-shadow   (object-shadow-map renderer shadow-vars moved-scene)
-            depth           (depth-texture->floats object-shadow)
+            object-shadow   (model-shadow-map renderer light-vector moved-scene)
+            depth           (depth-texture->floats (:sfsim.model/shadows object-shadow))
             img             (floats->image depth)]
-        (destroy-texture object-shadow)
+        (destroy-model-shadow-map object-shadow)
         (destroy-scene scene)
         (destroy-model-shadow-renderer renderer)
         img)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))

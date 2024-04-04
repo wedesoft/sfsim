@@ -5,7 +5,7 @@
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
               [fastmath.vector :refer (vec3 mult add)]
-              [sfsim.matrix :refer (transformation-matrix quaternion->matrix vec3->vec4 fvec3 fmat4)]
+              [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices vec3->vec4 fvec3 fmat4)]
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
@@ -631,8 +631,9 @@
   (use-program program)
   (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/shadow-ndc-matrix render-vars) transform)))
 
-(defn object-shadow-map
+(defn render-shadow-map
   "Render shadow map for an object"
+  {:malli/schema [:=> [:cat model-shadow-renderer :map [:map [::root node]]] :map]}
   [renderer shadow-vars model]
   (let [size           (::size renderer)
         centered-model (assoc-in model [::root ::transform] (eye 4))]
@@ -642,6 +643,21 @@
     (texture-render-depth size size
                           (clear)
                           (render-scene (comp renderer material-type) 0 shadow-vars centered-model render-depth))))
+
+(defn model-shadow-map
+  "Determine shadow matrices and render shadow map for object"
+  {:malli/schema [:=> [:cat model-shadow-renderer fvec3 [:map [::root node]]] :map]}
+  [renderer light-vector scene]
+  (let [object-to-world (get-in scene [:sfsim.model/root :sfsim.model/transform])
+        object-radius   (::object-radius renderer)
+        shadow-matrices (shadow-patch-matrices object-to-world light-vector object-radius)
+        shadow-map      (render-shadow-map renderer shadow-matrices scene)]
+    {::matrices shadow-matrices
+     ::shadows  shadow-map}))
+
+(defn destroy-model-shadow-map
+  [{::keys [shadows]}]
+  (destroy-texture shadows))
 
 (defn destroy-model-shadow-renderer
   [{::keys [programs]}]
