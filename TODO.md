@@ -1,5 +1,9 @@
 # TODO
+* consider object internal transforms when determining object points (test with two cubes and shadows)
+* object to shadow map coordinate conversion in vertex shader?
 * malli schemas for model-shadow-map, shadow-patch-matrices, model-shadow-map, and destroy-model-shadow-map
+* rename direct\_light to something else (environmental\_shading)
+* point -> world\_point in model shaders
 * put model-shadow-map and keywords in returned hashmap into opacity module?
 * add object radius to object?
 * rename model to scene
