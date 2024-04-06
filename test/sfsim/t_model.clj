@@ -657,36 +657,18 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 (def vertex-torus
 "#version 410 core
+uniform int shadow_size;
 uniform mat4 projection;
 uniform mat4 object_to_world;
 uniform mat4 object_to_camera;
+uniform mat4 object_to_shadow_map;
 in vec3 vertex;
 in vec3 normal;
 out VS_OUT
 {
-  vec3 object_point;
+  vec4 shadow_index;
   vec3 normal;
 } vs_out;
-void main()
-{
-  vs_out.object_point = vertex;
-  vs_out.normal = mat3(object_to_world) * normal;
-  gl_Position = projection * object_to_camera * vec4(vertex, 1);
-}")
-
-(def fragment-torus
-"#version 410 core
-uniform sampler2DShadow shadow_map;
-uniform int shadow_size;
-uniform vec3 light_direction;
-uniform vec3 diffuse_color;
-uniform mat4 object_to_shadow_map;
-in VS_OUT
-{
-  vec3 object_point;
-  vec3 normal;
-} fs_in;
-out vec4 fragColor;
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x)
 {
   vec2 pixel = idx.xy * (vec2(size_x, size_y) - 1);
@@ -694,9 +676,26 @@ vec4 convert_shadow_index(vec4 idx, int size_y, int size_x)
 }
 void main()
 {
-  vec4 shadow_pos = object_to_shadow_map * vec4(fs_in.object_point, 1);
-  vec4 shadow_index = convert_shadow_index(shadow_pos, shadow_size, shadow_size);
-  float shadow = textureProj(shadow_map, shadow_index);
+  vec4 shadow_pos = object_to_shadow_map * vec4(vertex, 1);
+  vs_out.shadow_index = convert_shadow_index(shadow_pos, shadow_size, shadow_size);
+  vs_out.normal = mat3(object_to_world) * normal;
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
+}")
+
+(def fragment-torus
+"#version 410 core
+uniform sampler2DShadow shadow_map;
+uniform vec3 light_direction;
+uniform vec3 diffuse_color;
+in VS_OUT
+{
+  vec4 shadow_index;
+  vec3 normal;
+} fs_in;
+out vec4 fragColor;
+void main()
+{
+  float shadow = textureProj(shadow_map, fs_in.shadow_index);
   float cos_incidence = dot(light_direction, fs_in.normal);
   fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
 }")
