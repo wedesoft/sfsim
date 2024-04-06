@@ -16,7 +16,7 @@ in vec2 texcoord;
 
 out VS_OUT
 {
-  vec3 point;
+  vec3 world_point;
 <% (if bump %>
   mat3 surface;
 <% %>
@@ -29,7 +29,7 @@ out VS_OUT
 
 void main()
 {
-  vs_out.point = (object_to_world * vec4(vertex, 1)).xyz;
+  vs_out.world_point = (object_to_world * vec4(vertex, 1)).xyz;
 <% (if bump %>
   vs_out.surface = mat3(object_to_world) * mat3(tangent, bitangent, normal);
 <% %>
