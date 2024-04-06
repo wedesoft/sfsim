@@ -187,5 +187,4 @@
   (opacity/destroy-opacity-renderer opacity-renderer)
   (destroy-window window)
   (GLFW/glfwTerminate)
-  (prof/serve-files 8080)
-  (System/exit 0))
+  (prof/serve-files 8080))
