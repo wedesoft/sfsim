@@ -1,5 +1,4 @@
 # TODO
-* object to shadow map coordinate conversion in vertex shader?
 * consider object internal transforms when determining object points (test with two cubes and shadows)
 * rename model to scene
 * put model-shadow-map and keywords in returned hashmap into opacity module?
