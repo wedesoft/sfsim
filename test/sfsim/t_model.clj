@@ -9,6 +9,7 @@
               [fastmath.vector :refer (vec3 normalize)]
               [sfsim.matrix :refer :all]
               [sfsim.texture :refer :all]
+              [sfsim.image :refer (floats->image)]
               [sfsim.render :refer :all]
               [sfsim.atmosphere :as atmosphere]
               [sfsim.clouds :as clouds]
@@ -125,9 +126,10 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
-                            (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                            (uniform-vector3 program "diffuse_color" diffuse)))
+                        (fn [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
+                            (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                              (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+                              (uniform-vector3 program "diffuse_color" diffuse))))
           (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cube.png" 0.0))
 
@@ -153,9 +155,10 @@ void main()
           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
-                            (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                            (uniform-vector3 program "diffuse_color" diffuse)))
+                        (fn [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
+                            (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                              (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+                              (uniform-vector3 program "diffuse_color" diffuse))))
           (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cubes.png" 0.01))
 
@@ -237,9 +240,10 @@ void main()
           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
           (uniform-sampler program "colors" 0)
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform colors]}]
-                            (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                            (use-textures {0 colors})))
+                        (fn [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program transform] :as render-vars}]
+                            (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                              (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+                              (use-textures {0 colors}))))
           (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/dice.png" 0.01))
 
@@ -304,9 +308,10 @@ void main()
           (uniform-sampler program "colors" 0)
           (uniform-sampler program "normals" 1)
           (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene
-                        (fn [{:sfsim.model/keys [program camera-to-world transform colors normals]}]
-                            (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                            (use-textures {0 colors 1 normals})))
+                        (fn [{:sfsim.model/keys [colors normals]} {:sfsim.model/keys [program transform] :as render-vars}]
+                            (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                              (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+                              (use-textures {0 colors 1 normals}))))
           (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/bricks.png" 0.01))
 
@@ -315,16 +320,16 @@ void main()
     :textured
     :colored))
 
-(defmulti render-cube cube-material-type)
+(defmulti render-cube (fn [material render-vars] (cube-material-type material)))
 
-(defmethod render-cube :colored [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
+(defmethod render-cube :colored [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
   (use-program program)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-vector3 program "diffuse_color" diffuse))
 
-(defmethod render-cube :textured [{:sfsim.model/keys [program camera-to-world transform colors]}]
+(defmethod render-cube :textured [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program transform] :as render-vars}]
   (use-program program)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (use-textures {0 colors}))
 
 (def cube-and-dice (read-gltf "test/sfsim/fixtures/model/cube-and-dice.gltf"))
@@ -625,5 +630,111 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
          (:sfsim.render/z-far render-vars2) => 90.0
          (:sfsim.render/z-near render-vars3) => 1.0
          (:sfsim.render/z-far render-vars3) => 21.0))
+
+(tabular "Render shadow map for an object"
+  (fact
+    (with-invisible-window
+      (let [object-radius   1.75
+            renderer        (make-model-shadow-renderer 256 object-radius)
+            light-vector    (vec3 0 0 1)
+            scene           (load-scene-into-opengl (comp renderer material-type) ?model)
+            object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 100 200 300))
+            moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+            object-shadow   (model-shadow-map renderer light-vector moved-scene)
+            depth           (depth-texture->floats (:sfsim.model/shadows object-shadow))
+            img             (floats->image depth)]
+        (destroy-model-shadow-map object-shadow)
+        (destroy-scene scene)
+        (destroy-model-shadow-renderer renderer)
+        img)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))
+  ?model ?result
+  cube   "shadow-map-cube.png"
+  dice   "shadow-map-dice.png"
+  bump   "shadow-map-bump.png"
+  bricks "shadow-map-bricks.png")
+
+(def torus (read-gltf "test/sfsim/fixtures/model/torus.gltf"))
+
+(def vertex-torus
+"#version 410 core
+uniform mat4 projection;
+uniform mat4 object_to_world;
+uniform mat4 object_to_camera;
+in vec3 vertex;
+in vec3 normal;
+out VS_OUT
+{
+  vec3 object_point;
+  vec3 normal;
+} vs_out;
+void main()
+{
+  vs_out.object_point = vertex;
+  vs_out.normal = mat3(object_to_world) * normal;
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
+}")
+
+(def fragment-torus
+"#version 410 core
+uniform sampler2DShadow shadow_map;
+uniform int shadow_size;
+uniform vec3 light_direction;
+uniform vec3 diffuse_color;
+uniform mat4 object_to_shadow_map;
+in VS_OUT
+{
+  vec3 object_point;
+  vec3 normal;
+} fs_in;
+out vec4 fragColor;
+vec4 convert_shadow_index(vec4 idx, int size_y, int size_x)
+{
+  vec2 pixel = idx.xy * (vec2(size_x, size_y) - 1);
+  return vec4((pixel + 0.5) / vec2(size_x, size_y), idx.z, idx.w);
+}
+void main()
+{
+  vec4 shadow_pos = object_to_shadow_map * vec4(fs_in.object_point, 1);
+  vec4 shadow_index = convert_shadow_index(shadow_pos, shadow_size, shadow_size);
+  float shadow = textureProj(shadow_map, shadow_index);
+  float cos_incidence = dot(light_direction, fs_in.normal);
+  fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
+}")
+
+(fact "Render torus with shadow"
+  (with-invisible-window
+    (let [program         (make-program :sfsim.render/vertex [vertex-torus] :sfsim.render/fragment [fragment-torus])
+          opengl-scene    (load-scene-into-opengl (constantly program) torus)
+          object-radius   1.5
+          light-vector    (normalize (vec3 5 2 1))
+          shadow-size     256
+          camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -3)))
+          shadow-renderer (make-model-shadow-renderer shadow-size object-radius)
+          object-shadow   (model-shadow-map shadow-renderer light-vector opengl-scene)
+          result          (texture-render-color-depth 160 120 false
+                            (clear (vec3 0 0 0) 0.0)
+                            (use-program program)
+                            (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                            (uniform-matrix4 program "object_to_world" (eye 4))
+                            (uniform-vector3 program "light_direction" light-vector)
+                            (uniform-matrix4 program "object_to_shadow_map" (-> object-shadow
+                                                                                :sfsim.model/matrices
+                                                                                :sfsim.matrix/object-to-shadow-map))
+                            (uniform-int program "shadow_size" shadow-size)
+                            (uniform-sampler program "shadow_map" 0)
+                            (use-textures {0 (:sfsim.model/shadows object-shadow)})
+                            (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} opengl-scene
+                                          (fn [{:sfsim.model/keys [diffuse]}
+                                               {:sfsim.model/keys [program transform] :as render-vars}]
+                                              (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                                (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                                  transform))
+                                                (uniform-vector3 program "diffuse_color" diffuse)))))]
+      (texture->image result) => (is-image "test/sfsim/fixtures/model/torus.png" 0.0)
+      (destroy-texture result)
+      (destroy-model-shadow-map object-shadow)
+      (destroy-model-shadow-renderer shadow-renderer)
+      (destroy-scene opengl-scene)
+      (destroy-program program))))
 
 (GLFW/glfwTerminate)

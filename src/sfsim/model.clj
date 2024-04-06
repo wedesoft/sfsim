@@ -5,19 +5,18 @@
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
               [fastmath.vector :refer (vec3 mult add)]
-              [sfsim.matrix :refer (transformation-matrix quaternion->matrix vec3->vec4 fvec3 fmat4)]
+              [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices vec3->vec4 fvec3 fmat4)]
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
-                                    make-program destroy-program use-program uniform-float uniform-matrix4 uniform-vector3
-                                    uniform-sampler use-textures setup-shadow-and-opacity-maps setup-shadow-matrices render-vars
-                                    make-render-vars)
-                            :as render]
+                                    make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
+                                    uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
+                                    setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
               [sfsim.clouds :refer (direct-light cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     lod-offset)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
-              [sfsim.shaders :refer (phong)]
+              [sfsim.shaders :refer (phong shrink-shadow-index)]
               [sfsim.image :refer (image)]
               [sfsim.util :refer (N0 N)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
@@ -117,7 +116,11 @@
 
 (set! *warn-on-reflection* true)
 
-(def material (m/schema [:map [::diffuse fvec3] [::color-texture-index [:maybe N0]] [::normal-texture-index [:maybe N0]]]))
+(def material (m/schema [:map [::diffuse fvec3]
+                              [::color-texture-index [:maybe :int]]
+                              [::normal-texture-index [:maybe :int]]
+                              [::colors [:maybe texture-2d]]
+                              [::normals [:maybe texture-2d]]]))
 
 (defn- decode-material
   "Fetch material data for material with given index"
@@ -300,19 +303,13 @@
   (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
   (doseq [texture (::textures scene)] (destroy-texture texture)))
 
-(def render-vars-camera (m/schema [:map [:sfsim.render/camera-to-world fmat4]]))
-(def mesh-params (m/schema [:map [::program :int]
-                                 [::camera-to-world fmat4]
-                                 [::transform fmat4]
-                                 [::diffuse fvec3]
-                                 [::color-texture-index [:maybe :int]]
-                                 [::normal-texture-index [:maybe :int]]
-                                 [::colors [:maybe texture-2d]]
-                                 [::normals [:maybe texture-2d]]]))
+(def mesh-vars (m/schema [:map [::program :int]
+                               [::transform fmat4]
+                               [::texture-offset :int]]))
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat mesh-params] :nil] :int render-vars-camera [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
+  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
   ([program-selection texture-offset render-vars scene callback]
    (render-scene program-selection texture-offset render-vars scene callback (eye 4) (::root scene)))
   ([program-selection texture-offset render-vars scene callback transform node]
@@ -322,12 +319,8 @@
      (doseq [mesh-index (::mesh-indices node)]
             (let [mesh                (nth (::meshes scene) mesh-index)
                   material            (::material mesh)
-                  camera-to-world     (:sfsim.render/camera-to-world render-vars)
                   program             (program-selection material)]
-              (callback (merge material {::program program
-                                         ::texture-offset texture-offset
-                                         ::camera-to-world camera-to-world
-                                         ::transform transform}))
+              (callback material (assoc render-vars ::program program ::texture-offset texture-offset ::transform transform))
               (render-triangles (::vao mesh)))))))
 
 (defn- interpolate-frame
@@ -412,7 +405,7 @@
 
 (defn material-type
   "Determine information for dispatching to correct shader or render method"
-  [{:sfsim.model/keys [color-texture-index normal-texture-index]}]
+  [{::keys [color-texture-index normal-texture-index]}]
   (if color-texture-index
     (if normal-texture-index
       ::program-textured-bump
@@ -441,7 +434,8 @@
                                     [::program-textured-flat :int]
                                     [::program-colored-bump  :int]
                                     [::program-textured-bump :int]
-                                    [::programs [:vector :int]]]))
+                                    [::programs [:vector :int]]
+                                    [::texture-offset :int]]))
 
 (def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]]]
                           [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
@@ -522,28 +516,28 @@
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
 
-(defmulti render-mesh material-type)
-(m/=> render-mesh [:=> [:cat mesh-params] :nil])
+(defmulti render-mesh (fn [material _render-vars] (material-type material)))
+(m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 (defmethod render-mesh ::program-colored-flat
-  [{:sfsim.model/keys [program camera-to-world transform diffuse]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [diffuse]} {::keys [program transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
-  [{:sfsim.model/keys [program texture-offset camera-to-world transform colors]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [colors]} {::keys [program texture-offset transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
-  [{:sfsim.model/keys [program texture-offset camera-to-world transform diffuse normals]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [diffuse normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
-  [{:sfsim.model/keys [program texture-offset camera-to-world transform colors normals]}]
-  (setup-camera-and-world-matrix program transform camera-to-world)
+  [{::keys [colors normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
 (defn render-scenes
@@ -592,6 +586,82 @@
         z-near               (max (- object-depth object-radius) min-z-near)
         z-far                (+ z-near object-radius object-radius)]
     (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
+
+(defn vertex-shadow-model
+  "Vertex shader for rendering model shadow maps"
+  [textured bump]
+  [shrink-shadow-index (template/eval (slurp "resources/shaders/model/vertex-shadow.glsl") {:textured textured :bump bump})])
+
+(def fragment-shadow-model (slurp "resources/shaders/model/fragment-shadow.glsl"))
+
+(defn make-model-shadow-program
+  {:malli/schema [:=> [:cat :boolean :boolean] :int]}
+  [textured bump]
+  (make-program :sfsim.render/vertex [(vertex-shadow-model textured bump)]
+                :sfsim.render/fragment [fragment-shadow-model]))
+
+(def model-shadow-renderer (m/schema [:map [::program-colored-flat  :int]
+                                           [::program-textured-flat :int]
+                                           [::program-colored-bump  :int]
+                                           [::program-textured-bump :int]
+                                           [::programs [:vector :int]]
+                                           [::size N]
+                                           [::object-radius :double]]))
+
+(defn make-model-shadow-renderer
+  "Create renderer for rendering model-shadows"
+  {:malli/schema [:=> [:cat N :double] model-shadow-renderer]}
+  [size object-radius]
+  (let [program-colored-flat  (make-model-shadow-program false false)
+        program-textured-flat (make-model-shadow-program true  false)
+        program-colored-bump  (make-model-shadow-program false true )
+        program-textured-bump (make-model-shadow-program true  true )
+        programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
+    {::program-colored-flat  program-colored-flat
+     ::program-textured-flat program-textured-flat
+     ::program-colored-bump  program-colored-bump
+     ::program-textured-bump program-textured-bump
+     ::programs              programs
+     ::size                  size
+     ::object-radius         object-radius}))
+
+(defn render-depth
+  {:malli/schema [:=> [:cat material mesh-vars] :nil]}
+  [_material {::keys [program transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/shadow-ndc-matrix render-vars) transform)))
+
+(defn render-shadow-map
+  "Render shadow map for an object"
+  {:malli/schema [:=> [:cat model-shadow-renderer :map [:map [::root node]]] :map]}
+  [renderer shadow-vars model]
+  (let [size           (::size renderer)
+        centered-model (assoc-in model [::root ::transform] (eye 4))]
+    (doseq [program (::programs renderer)]
+           (use-program program)
+           (uniform-int program "shadow_size" size))
+    (texture-render-depth size size
+                          (clear)
+                          (render-scene (comp renderer material-type) 0 shadow-vars centered-model render-depth))))
+
+(defn model-shadow-map
+  "Determine shadow matrices and render shadow map for object"
+  {:malli/schema [:=> [:cat model-shadow-renderer fvec3 [:map [::root node]]] :map]}
+  [renderer light-vector scene]
+  (let [object-to-world (get-in scene [:sfsim.model/root :sfsim.model/transform])
+        object-radius   (::object-radius renderer)
+        shadow-matrices (shadow-patch-matrices object-to-world light-vector object-radius)
+        shadow-map      (render-shadow-map renderer shadow-matrices scene)]
+    {::matrices shadow-matrices
+     ::shadows  shadow-map}))
+
+(defn destroy-model-shadow-map
+  [{::keys [shadows]}]
+  (destroy-texture shadows))
+
+(defn destroy-model-shadow-renderer
+  [{::keys [programs]}]
+  (doseq [program programs] (destroy-program program)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

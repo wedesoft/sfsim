@@ -124,3 +124,12 @@
       => [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
       (convert-2d-to-4d [[1 2 3 4 13 14 15 16] [5 6 7 8 17 18 19 20] [9 10 11 12 21 22 23 24]] 1 2 3 4)
       => [[[[1 2 3 4] [5 6 7 8] [9 10 11 12]] [[13 14 15 16] [17 18 19 20] [21 22 23 24]]]])
+
+(facts "Convert floating point image to RGBA"
+       (let [arr    #:sfsim.image{:width 3 :height 1 :data (float-array [0.25 0.5 0.75])}
+             result (floats->image arr)]
+         (:sfsim.image/width result) => 3
+         (:sfsim.image/height result) => 1
+         (:sfsim.image/channels result) => 4
+         (get-pixel result 0 0) => (vec3 63 63 63)
+         (get-pixel result 0 1) => (vec3 127 127 127)))
