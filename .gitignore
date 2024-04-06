@@ -7,9 +7,10 @@ world.*.png
 BlackMarble_2016_*.jpg
 blackmarble.*.png
 elevation.*.raw
-.clj-kondo
+.cache
 .cpcache
 .eastwood
+.integration
 .lein-*
 .nrepl-port
 *.class

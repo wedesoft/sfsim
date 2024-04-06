@@ -1,19 +1,73 @@
 # TODO
-* naming for transform and inverse transform
-* opacity cascade as higher level function (same as shadow-cascade)?
-* use png for water
-* heightcoord -> surfacecoord
-* .jpg -> .day.jpg
-* elevation-tilesize -> surface-tilesize
-* inverse\_transform -> patch\_transform, compute on CPU with double precision: inverse camera transform times translation of patch
-* use tile-center with double accuracy to offset tiles
-* store water in png format
-* find fix for accuracy problems with ground
-  https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
-* render object in a second pass if z-near for planet is too big
-* render shadow of cube
-* problem with shadow mapping creating dark bar at bottom for nearby terrain
-* ground collisions
+* rename direct\_light to something else (environmental\_shading)
+* malli schemas for model-shadow-map, shadow-patch-matrices, model-shadow-map, and destroy-model-shadow-map
+* consider object internal transforms when determining object points (test with two cubes and shadows)
+* object to shadow map coordinate conversion in vertex shader?
+* put model-shadow-map and keywords in returned hashmap into opacity module?
+* add object radius to object?
+* rename model to scene
+* light-vector -> light-direction
+* combine with object-shadow-map similar as opacity-and-shadow-cascade and use renderer as parameter
+* object shadows on itself, PCF, use multiplication of local shadow map and planet+cloud shadows?
+* shadow mistakes when above clouds
+* adapt shadow map size to object distance
+* object shadows on planet
+* add amplifier for ambient phong lighting which seems to be too dark, add earth light
+* concept for bundling shaders with uniform setting methods?
+* shadow and opacity map with different resolution for spaceship
+* render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
+* use add-watch?
+* cockpit
+  * top:
+    warnings (status display)
+    autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
+    autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
+    rcs mode (off, rotation, translation)
+    aircraft flight control surfaces: off/pitch/on
+  * main:
+    cabin light, panel light
+    2 mfds
+    apu on/off
+    airlock doors (three state), chamber pressure, bay door (open, close, stop)
+    light switch: nav, beacon, strobe
+    engine, thrust (main/hover), rcs
+    undock
+    fuel display (main, rcs, apu), oxygen display
+    hover doors switch + status
+    gear up/down switch + status
+    spoilers
+    radiator deploy + status
+    coolant temperature
+    no flaps
+  * mfd:
+    yaw, bank, pitch acceleration and velocity indicators
+    horizon hsi, height, heading, variometer, speed, ils height, nominal speed
+    vor (use heading)
+    nav frequencies, dock, vtol freq
+    dock (angles, offset to path, distance, approach speed, x/y speed)
+    camera
+    map of earth/moon
+    hull temperature
+    align orbit plane
+    orbit
+    transfer: encounter, translunar orbit, insertion
+    ascent profile
+    reentry profile
+  * engine thrust lever (main, hover)
+    hover door
+  * bottom
+    flightstick (yaw/pitch/roll), trim wheel
+    fuel lines open/close (lox, main), external pressure online
+    life support
+* https://blog.kuula.co/virtual-tour-space-shuttle
+* cockpit and scene rendering looking downward so that horizon is in upper half of screen
+* make model with rigged gear
+* simplify dispatch and program selection?
+* how to render with shadow and cloud textures
+* make spaceplane with Blender
+* make cockpit with Blender
+* spaceplane windows?
+* test for render-triangles
 * spacecraft rendering
   * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
   * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
@@ -21,8 +75,16 @@
   * http://www.ioaircraft.com/hypersonic/ranger.php
   * http://www.ioaircraft.com/hypersonic/raven.php
   * https://www.russianspaceweb.com/spiral\_orbiter\_design.html
+* render shadow of cube
+* .jpg -> .day.jpg
+* find fix for accuracy problems with ground
+  https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
+* render object in a second pass if z-near for planet is too big
+* problem with shadow mapping creating dark bar at bottom for nearby terrain
+* ground collisions
 * deferred decals for rendering runway
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
+* use 1-channel png for water?
 * constant texel size across opacity cascade to prevent step in opacity?
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
@@ -113,7 +175,6 @@
 * music player, mp3 player
 * video communication with screen in 3D cockpit
 * autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
-* on board displays, cameras, MFDs (horizon with height/vario and scrolling scales)
 * no need to adjust MFDs during critical parts of the mission
 * https://github.com/HappyEnte/DreamChaser
 * HDR bloom (separable convolution)
@@ -126,8 +187,6 @@
 * multiple rigid or flexible objects
 * thrusters
 * proper lift/drag ratio for high Reynolds numbers
-* draw points, lines, triangle strips, mfd for reentry and orbital mechanics
-* detailed onboard systems (e.g. airlock, life support, auxiliary power units)
 * threads for rendering, simulation, and loading of data
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
@@ -136,3 +195,4 @@
 * fluid dynamics on GPU: https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu
 * introduction to fluid dynamics: https://shahriyarshahrabi.medium.com/gentle-introduction-to-fluid-simulation-for-programmers-and-technical-artists-7c0045c40bac
 * fluid dynamics tutorial: http://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf
+* bake normal maps: https://www.youtube.com/watch?v=dPbrhqqrZck

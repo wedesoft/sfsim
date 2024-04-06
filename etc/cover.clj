@@ -1,12 +1,13 @@
 (require '[clojure.math :refer (sin cos PI sqrt exp log pow)]
          '[fastmath.vector :refer (vec3)]
          '[fastmath.matrix :refer (mulm)]
-         '[sfsim25.render :refer :all]
-         '[sfsim25.matrix :refer :all]
-         '[sfsim25.worley :refer :all]
-         '[sfsim25.shaders :as shaders]
-         '[sfsim25.clouds :refer :all]
-         '[sfsim25.util :refer :all])
+         '[sfsim.render :refer :all]
+         '[sfsim.texture :refer :all]
+         '[sfsim.matrix :refer :all]
+         '[sfsim.worley :refer :all]
+         '[sfsim.shaders :as shaders]
+         '[sfsim.clouds :refer :all]
+         '[sfsim.util :refer :all])
 
 (import '[org.lwjgl.opengl GL]
         '[org.lwjgl.glfw GLFW GLFWKeyCallback])
@@ -24,14 +25,12 @@
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
 
-(def worley-size 64)
-
 (def data (slurp-floats "data/clouds/worley-north.raw"))
-(def worley-north (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def worley-north (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data data}))
 (def data (slurp-floats "data/clouds/worley-south.raw"))
-(def worley-south (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def worley-south (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data data}))
 (def data (slurp-floats "data/clouds/worley-cover.raw"))
-(def worley-cover (make-float-texture-3d :linear :repeat {:width worley-size :height worley-size :depth worley-size :data data}))
+(def worley-cover (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data data}))
 
 (def cloud-cover-tex (atom nil))
 
@@ -72,10 +71,10 @@ void main()
     fragColor = vec3(0, 0, 0);
 }")
 
-(def program (make-program :vertex [vertex-shader] :fragment [fragment-shader shaders/ray-sphere]))
+(def program (make-program :sfsim.render/vertex [vertex-shader] :sfsim.render/fragment [fragment-shader shaders/ray-sphere]))
 (def indices [0 1 3 2])
 (def vertices [-1 -1 0, 1 -1 0, -1 1 0, 1  1 0])
-(def vao (make-vertex-array-object program indices vertices [:point 3]))
+(def vao (make-vertex-array-object program indices vertices ["point" 3]))
 
 (def alpha (atom 0))
 (def beta (atom 0))
@@ -122,19 +121,19 @@ void main()
            (when-not (nil? @cloud-cover-tex)
                      (destroy-texture @cloud-cover-tex))
            (reset! cloud-cover-tex
-             (cloud-cover-cubemap :size 512
-                                  :worley-size worley-size
-                                  :worley-south worley-south
-                                  :worley-north worley-north
-                                  :worley-cover worley-cover
-                                  :flow-octaves [0.5 0.25 0.125]
-                                  :cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
-                                  :whirl @whirl
-                                  :prevailing @prevailing
-                                  :curl-scale (exp @curl-scale-exp)
-                                  :cover-scale (exp @cloud-scale-exp)
-                                  :num-iterations 50
-                                  :flow-scale (* 1.5e-3 (exp @curl-scale-exp)))))
+             (cloud-cover-cubemap :sfsim.clouds/size 512
+                                  :sfsim.clouds/worley-size worley-size
+                                  :sfsim.clouds/worley-south worley-south
+                                  :sfsim.clouds/worley-north worley-north
+                                  :sfsim.clouds/worley-cover worley-cover
+                                  :sfsim.clouds/flow-octaves [0.5 0.25 0.125]
+                                  :sfsim.clouds/cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                  :sfsim.clouds/whirl @whirl
+                                  :sfsim.clouds/prevailing @prevailing
+                                  :sfsim.clouds/curl-scale (exp @curl-scale-exp)
+                                  :sfsim.clouds/cover-scale (exp @cloud-scale-exp)
+                                  :sfsim.clouds/num-iterations 50
+                                  :sfsim.clouds/flow-scale (* 1.5e-3 (exp @curl-scale-exp)))))
          (let [mat (mulm (rotation-y @beta) (rotation-x @alpha))]
            (onscreen-render window
                             (clear (vec3 0 0 0))
@@ -143,7 +142,7 @@ void main()
                             (uniform-matrix3 program "rotation" mat)
                             (uniform-float program "threshold" @threshold)
                             (uniform-float program "multiplier" @multiplier)
-                            (use-textures @cloud-cover-tex)
+                            (use-textures {0 @cloud-cover-tex})
                             (render-quads vao)))
          (GLFW/glfwPollEvents)
          (print (format "\rthreshold = %.3f, multiplier = %.3f, curlscale = %.3f, cloudscale = %.3f, whirl = %.3f, prevailing = %.3f"
