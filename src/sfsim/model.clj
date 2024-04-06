@@ -5,14 +5,15 @@
               [malli.core :as m]
               [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
               [fastmath.vector :refer (vec3 mult add)]
-              [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices vec3->vec4 fvec3 fmat4)]
+              [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
+                                    fmat4)]
               [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
               [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
               [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                                     make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
                                     uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
                                     setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
-              [sfsim.clouds :refer (direct-light cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
+              [sfsim.clouds :refer (environmental-shading cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                                     lod-offset)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
@@ -420,7 +421,7 @@
   "Fragment shader for rendering model in atmosphere"
   {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] render/shaders]}
   [textured bump num-steps perlin-octaves cloud-octaves]
-  [(direct-light num-steps) phong attenuation-point surface-radiance-function
+  [(environmental-shading num-steps) phong attenuation-point surface-radiance-function
    (cloud-point num-steps perlin-octaves cloud-octaves)
    (template/eval (slurp "resources/shaders/model/fragment.glsl") {:textured textured :bump bump})])
 
@@ -633,7 +634,7 @@
 
 (defn render-shadow-map
   "Render shadow map for an object"
-  {:malli/schema [:=> [:cat model-shadow-renderer :map [:map [::root node]]] :map]}
+  {:malli/schema [:=> [:cat model-shadow-renderer :map [:map [::root node]]] texture-2d]}
   [renderer shadow-vars model]
   (let [size           (::size renderer)
         centered-model (assoc-in model [::root ::transform] (eye 4))]
@@ -644,9 +645,11 @@
                           (clear)
                           (render-scene (comp renderer material-type) 0 shadow-vars centered-model render-depth))))
 
+(def model-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
+
 (defn model-shadow-map
   "Determine shadow matrices and render shadow map for object"
-  {:malli/schema [:=> [:cat model-shadow-renderer fvec3 [:map [::root node]]] :map]}
+  {:malli/schema [:=> [:cat model-shadow-renderer fvec3 [:map [::root node]]] model-shadow]}
   [renderer light-vector scene]
   (let [object-to-world (get-in scene [:sfsim.model/root :sfsim.model/transform])
         object-radius   (::object-radius renderer)
@@ -656,6 +659,8 @@
      ::shadows  shadow-map}))
 
 (defn destroy-model-shadow-map
+  "Delete model shadow map texture"
+  {:malli/schema [:=> [:cat model-shadow] :nil]}
   [{::keys [shadows]}]
   (destroy-texture shadows))
 

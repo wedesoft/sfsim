@@ -262,9 +262,14 @@
               (shadow-matrices projection camera-to-world light-direction depth ndc1 ndc2)))
         (range num-steps)))
 
+(def shadow-patch (m/schema [:map [::shadow-ndc-matrix fmat4]
+                                  [::object-to-shadow-map fmat4]
+                                  [::scale :double]
+                                  [::depth :double]]))
+
 (defn shadow-patch-matrices
   "Shadow matrices for an object mapping object coordinates to shadow coordinates"
-  {:malli/schema [:=> [:cat fmat4 fvec3 :double] :map]}
+  {:malli/schema [:=> [:cat fmat4 fvec3 :double] shadow-patch]}
   [object-to-world light-vector object-radius]
   (let [a               (- object-radius)
         b               (+ object-radius)

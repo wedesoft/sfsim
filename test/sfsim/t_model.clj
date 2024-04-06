@@ -546,7 +546,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 (def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
                          ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
-                         (last (clouds/direct-light 3))])
+                         (last (clouds/environmental-shading 3))])
 
 (tabular "Render red cube with fog and atmosphere"
   (with-redefs [model/fragment-model (fn [textured bump num-steps perlin-octaves cloud-octaves]

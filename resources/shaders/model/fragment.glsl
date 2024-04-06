@@ -27,7 +27,7 @@ in VS_OUT
 
 out vec4 fragColor;
 
-vec3 direct_light(vec3 point);
+vec3 environmental_shading(vec3 point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec3 attenuation_point(vec3 point, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
@@ -35,7 +35,7 @@ vec4 cloud_point(vec3 point);
 
 void main()
 {
-  vec3 light = direct_light(fs_in.world_point);
+  vec3 light = environmental_shading(fs_in.world_point);
   vec3 ambient_light = surface_radiance_function(fs_in.world_point, light_direction);
 <% (if bump %>
   vec3 normal = fs_in.surface * (2.0 * texture(normals, fs_in.texcoord).xyz - 1.0);
