@@ -175,8 +175,8 @@
 (defn orient-to-light
   "Return matrix to rotate points into coordinate system with z-axis pointing towards the light"
   {:malli/schema [:=> [:cat fvec3] fmat4]}
-  [light-vector]
-  (let [o (oriented-matrix light-vector)]
+  [light-direction]
+  (let [o (oriented-matrix light-direction)]
     (fm/mat4x4 (o 1 0) (o 1 1) (o 1 2) 0
                (o 2 0) (o 2 1) (o 2 2) 0
                (o 0 0) (o 0 1) (o 0 2) 0
@@ -213,10 +213,10 @@
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping of view frustum or part of frustum"
   {:malli/schema [:=> [:cat fmat4 fmat4 fvec3 :double [:? [:cat :double :double]]] shadow-box]}
-  ([projection-matrix camera-to-world light-vector longest-shadow]
-   (shadow-matrices projection-matrix camera-to-world light-vector longest-shadow 1.0 0.0))
-  ([projection-matrix camera-to-world light-vector longest-shadow ndc1 ndc2]
-   (let [light-matrix (orient-to-light light-vector)
+  ([projection-matrix camera-to-world light-direction longest-shadow]
+   (shadow-matrices projection-matrix camera-to-world light-direction longest-shadow 1.0 0.0))
+  ([projection-matrix camera-to-world light-direction longest-shadow ndc1 ndc2]
+   (let [light-matrix (orient-to-light light-direction)
          bounding-box (bounding-box-for-rotated-frustum camera-to-world light-matrix projection-matrix longest-shadow ndc1 ndc2)
          shadow-ndc   (shadow-box-to-ndc bounding-box)
          shadow-map   (shadow-box-to-map bounding-box)
@@ -270,14 +270,14 @@
 (defn shadow-patch-matrices
   "Shadow matrices for an object mapping object coordinates to shadow coordinates"
   {:malli/schema [:=> [:cat fmat4 fvec3 :double] shadow-patch]}
-  [object-to-world light-vector object-radius]
+  [object-to-world light-direction object-radius]
   (let [a               (- object-radius)
         b               (+ object-radius)
         bounding-box    {:bottomleftnear (fv/vec3 a a b) :toprightfar (fv/vec3 b b a)}
         shadow-ndc      (shadow-box-to-ndc bounding-box)
         shadow-map      (shadow-box-to-map bounding-box)
         world-to-object (fm/inverse object-to-world)
-        light-matrix    (orient-to-light (vec4->vec3 (fm/mulv world-to-object (vec3->vec4 light-vector 0.0))))]
+        light-matrix    (orient-to-light (vec4->vec3 (fm/mulv world-to-object (vec3->vec4 light-direction 0.0))))]
     {::shadow-ndc-matrix    (fm/mulm shadow-ndc light-matrix)
      ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
      ::scale                (* 2.0 object-radius)

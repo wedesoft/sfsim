@@ -816,8 +816,8 @@ void main(void)
       (with-invisible-window
         (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
               camera-to-world (eye 4)
-              light-vector    (normalize (vec3 1 1 2))
-              shadow-mat      (shadow-matrices projection camera-to-world light-vector 1.0)
+              light-direction (normalize (vec3 1 1 2))
+              shadow-mat      (shadow-matrices projection camera-to-world light-direction 1.0)
               indices         [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices        [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
                                -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
@@ -870,10 +870,10 @@ void main(void)
         (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
               camera-to-world (eye 4)
               num-steps       1
-              light-vector    (normalize (vec3 1 1 2))
+              light-direction (normalize (vec3 1 1 2))
               shadow-data     #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 1.0}
               render-vars     #:sfsim.render{:projection projection :camera-to-world camera-to-world
-                                             :light-direction light-vector :z-near 2.0 :z-far 5.0}
+                                             :light-direction light-direction :z-near 2.0 :z-far 5.0}
               shadow-mats     (shadow-matrix-cascade shadow-data render-vars)
               indices         [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices        [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,

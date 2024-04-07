@@ -650,10 +650,10 @@
 (defn model-shadow-map
   "Determine shadow matrices and render shadow map for object"
   {:malli/schema [:=> [:cat model-shadow-renderer fvec3 [:map [::root node]]] model-shadow]}
-  [renderer light-vector scene]
+  [renderer light-direction scene]
   (let [object-to-world (get-in scene [:sfsim.model/root :sfsim.model/transform])
         object-radius   (::object-radius renderer)
-        shadow-matrices (shadow-patch-matrices object-to-world light-vector object-radius)
+        shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
         shadow-map      (render-shadow-map renderer shadow-matrices scene)]
     {::matrices shadow-matrices
      ::shadows  shadow-map}))

@@ -636,11 +636,11 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
     (with-invisible-window
       (let [object-radius   1.75
             renderer        (make-model-shadow-renderer 256 object-radius)
-            light-vector    (vec3 0 0 1)
+            light-direction (vec3 0 0 1)
             scene           (load-scene-into-opengl (comp renderer material-type) ?model)
             object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 100 200 300))
             moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-            object-shadow   (model-shadow-map renderer light-vector moved-scene)
+            object-shadow   (model-shadow-map renderer light-direction moved-scene)
             depth           (depth-texture->floats (:sfsim.model/shadows object-shadow))
             img             (floats->image depth)]
         (destroy-model-shadow-map object-shadow)
@@ -705,17 +705,17 @@ void main()
     (let [program         (make-program :sfsim.render/vertex [vertex-torus] :sfsim.render/fragment [fragment-torus])
           opengl-scene    (load-scene-into-opengl (constantly program) torus)
           object-radius   1.5
-          light-vector    (normalize (vec3 5 2 1))
+          light-direction (normalize (vec3 5 2 1))
           shadow-size     256
           camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -3)))
           shadow-renderer (make-model-shadow-renderer shadow-size object-radius)
-          object-shadow   (model-shadow-map shadow-renderer light-vector opengl-scene)
+          object-shadow   (model-shadow-map shadow-renderer light-direction opengl-scene)
           result          (texture-render-color-depth 160 120 false
                             (clear (vec3 0 0 0) 0.0)
                             (use-program program)
                             (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                             (uniform-matrix4 program "object_to_world" (eye 4))
-                            (uniform-vector3 program "light_direction" light-vector)
+                            (uniform-vector3 program "light_direction" light-direction)
                             (uniform-matrix4 program "object_to_shadow_map" (-> object-shadow
                                                                                 :sfsim.model/matrices
                                                                                 :sfsim.matrix/object-to-shadow-map))

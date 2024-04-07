@@ -1,12 +1,12 @@
 # TODO
-* light-vector -> light-direction
+* flip test images
+* shadow mistakes when above clouds
 * consider object internal transforms when determining object points (test with two cubes and shadows)
 * rename model to scene
 * put model-shadow-map and keywords in returned hashmap into opacity module?
 * add object radius to object?
 * combine with object-shadow-map similar as opacity-and-shadow-cascade and use renderer as parameter
 * object shadows on itself, PCF, use multiplication of local shadow map and planet+cloud shadows?
-* shadow mistakes when above clouds
 * adapt shadow map size to object distance
 * object shadows on planet
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
