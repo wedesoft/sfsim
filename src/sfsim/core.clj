@@ -4,7 +4,7 @@
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                                  write-to-stencil-buffer mask-with-stencil-buffer)]
+                                  write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars)]
             [sfsim.atmosphere :as atmosphere]
             [sfsim.matrix :refer (transformation-matrix quaternion->matrix)]
             [sfsim.planet :as planet]
@@ -126,8 +126,9 @@
                    scene-render-vars  (model/make-scene-render-vars config/render-config (aget w 0) (aget h 0) origin
                                                                     @camera-orientation light-direction object-position
                                                                     config/object-radius)
+                   shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
                    shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
-                                                                          cloud-data planet-render-vars
+                                                                          cloud-data shadow-render-vars
                                                                           (planet/get-current-tree tile-tree) @opacity-base)
                    object-to-world    (transformation-matrix (quaternion->matrix @object-orientation) object-position)
                    moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
