@@ -700,40 +700,46 @@ void main()
   fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
 }")
 
-(fact "Render torus with shadow"
-  (with-invisible-window
-    (let [program         (make-program :sfsim.render/vertex [vertex-torus] :sfsim.render/fragment [fragment-torus])
-          opengl-scene    (load-scene-into-opengl (constantly program) torus)
-          object-radius   1.5
-          light-direction (normalize (vec3 5 2 1))
-          shadow-size     256
-          camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -3)))
-          shadow-renderer (make-model-shadow-renderer shadow-size object-radius)
-          object-shadow   (model-shadow-map shadow-renderer light-direction opengl-scene)
-          result          (texture-render-color-depth 160 120 false
-                            (clear (vec3 0 0 0) 0.0)
-                            (use-program program)
-                            (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                            (uniform-matrix4 program "object_to_world" (eye 4))
-                            (uniform-vector3 program "light_direction" light-direction)
-                            (uniform-matrix4 program "object_to_shadow_map" (-> object-shadow
-                                                                                :sfsim.model/matrices
-                                                                                :sfsim.matrix/object-to-shadow-map))
-                            (uniform-int program "shadow_size" shadow-size)
-                            (uniform-sampler program "shadow_map" 0)
-                            (use-textures {0 (:sfsim.model/shadows object-shadow)})
-                            (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} opengl-scene
-                                          (fn [{:sfsim.model/keys [diffuse]}
-                                               {:sfsim.model/keys [program transform] :as render-vars}]
-                                              (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                                (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                  transform))
-                                                (uniform-vector3 program "diffuse_color" diffuse)))))]
-      (texture->image result) => (is-image "test/sfsim/fixtures/model/torus.png" 0.0)
-      (destroy-texture result)
-      (destroy-model-shadow-map object-shadow)
-      (destroy-model-shadow-renderer shadow-renderer)
-      (destroy-scene opengl-scene)
-      (destroy-program program))))
+(tabular "Render objects with self-shadowing"
+  (fact
+    (with-invisible-window
+      (let [program         (make-program :sfsim.render/vertex [vertex-torus] :sfsim.render/fragment [fragment-torus])
+            opengl-scene    (load-scene-into-opengl (constantly program) ?model)
+            light-direction (normalize (vec3 5 2 1))
+            shadow-size     256
+            camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 (- ?distance))))
+            shadow-renderer (make-model-shadow-renderer shadow-size ?object-radius)
+            object-shadow   (model-shadow-map shadow-renderer light-direction opengl-scene)
+            tex             (texture-render-color-depth 160 120 false
+                              (clear (vec3 0 0 0) 0.0)
+                              (use-program program)
+                              (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                              (uniform-matrix4 program "object_to_world" (eye 4))
+                              (uniform-vector3 program "light_direction" light-direction)
+                              (uniform-int program "shadow_size" shadow-size)
+                              (uniform-sampler program "shadow_map" 0)
+                              (use-textures {0 (:sfsim.model/shadows object-shadow)})
+                              (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} opengl-scene
+                                (fn [{:sfsim.model/keys [diffuse]}
+                                     {:sfsim.model/keys [program transform] :as render-vars}]
+                                    (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                      (uniform-matrix4 program "object_to_shadow_map"
+                                                       (mulm (-> object-shadow
+                                                                 :sfsim.model/matrices
+                                                                 :sfsim.matrix/object-to-shadow-map)
+                                                             transform))
+                                      (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                        transform))
+                                      (uniform-vector3 program "diffuse_color" diffuse)))))
+            result            (texture->image tex)]
+        (destroy-texture tex)
+        (destroy-model-shadow-map object-shadow)
+        (destroy-model-shadow-renderer shadow-renderer)
+        (destroy-scene opengl-scene)
+        (destroy-program program)
+        result)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
+  ?model ?object-radius ?distance ?result
+  torus  1.5            3         "torus-shadow.png"
+  cubes  4.0            7         "cubes-shadow.png")
 
 (GLFW/glfwTerminate)
