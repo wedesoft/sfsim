@@ -111,8 +111,8 @@
               cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data)
               planet-renderer           (planet/make-planet-renderer data)
               atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
-              model-renderer            (model/make-model-renderer data)
-              object                    (assoc-in (model/load-scene model-renderer (str "test/sfsim/fixtures/model/" ?model))
+              scene-renderer            (model/make-scene-renderer data)
+              object                    (assoc-in (model/load-scene scene-renderer (str "test/sfsim/fixtures/model/" ?model))
                                                   [:sfsim.model/root :sfsim.model/transform] object-to-world)
               tree                      (load-tile-tree planet-renderer {} width ?position level)
               render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
@@ -126,7 +126,7 @@
                                           (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
               tex                       (texture-render-color-depth width height true
                                           (clear (vec3 0 1 0) 0.0)
-                                          (model/render-scenes model-renderer render-vars shadow-vars [object])
+                                          (model/render-scenes scene-renderer render-vars shadow-vars [object])
                                           (planet/render-planet planet-renderer render-vars shadow-vars clouds tree)
                                           (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
           (texture->image tex) => (is-image (str "test/sfsim/fixtures/integration/" ?result) 0.0)
@@ -135,7 +135,7 @@
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (model/destroy-scene object)
-          (model/destroy-model-renderer model-renderer)
+          (model/destroy-scene-renderer scene-renderer)
           (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
           (planet/destroy-planet-renderer planet-renderer)
           (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)

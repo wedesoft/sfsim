@@ -992,8 +992,8 @@ void main()
              orientation   (q/->Quaternion 1 0 0 0)
              light-dir     (vec3 0 0 1)
              planet-vars   (make-render-vars render-config 320 240 origin orientation light-dir 1000.0 10000.0)
-             model-vars    (make-render-vars render-config 320 240 origin orientation light-dir 10.0 100.0)
-             joined-vars   (joined-render-vars planet-vars model-vars)]
+             scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir 10.0 100.0)
+             joined-vars   (joined-render-vars planet-vars scene-vars)]
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240

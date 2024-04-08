@@ -25,7 +25,7 @@
 
 (def cube (read-gltf "test/sfsim/fixtures/model/cube.gltf"))
 
-(fact "Root of cube model"
+(fact "Root of cube scene"
       (:sfsim.model/name (:sfsim.model/root cube)) => "Cube")
 
 (fact "Transformation of root node"
@@ -466,14 +466,14 @@ void main()
                                     :sfsim.model/scaling-keys [{:sfsim.model/time 0.0 :sfsim.model/scaling (vec3 2 3 5)}]} 0.0)
        => (roughly-matrix (mat4x4 2 0 0 0, 0 0 -5 0, 0 3 0 0, 0 0 0 1) 1e-6))
 
-(facts "Determine updates for model"
+(facts "Determine updates for scene"
        (animations-frame {:sfsim.model/animations {}} {}) => {}
        (with-redefs [model/interpolate-transformation
                      (fn [channel t] (facts channel => :mock-channel-data t => 1.0) :mock-transform)]
          (animations-frame {:sfsim.model/animations {"Animation" {:sfsim.model/channels {"Object" :mock-channel-data}}}} {"Animation" 1.0}))
        => {"Object" :mock-transform})
 
-(facts "Apply transformation updates to model"
+(facts "Apply transformation updates to scene"
        (apply-transforms {:sfsim.model/root {:sfsim.model/name "Cube" :sfsim.model/transform :mock :sfsim.model/children []}} {})
        => {:sfsim.model/root {:sfsim.model/name "Cube" :sfsim.model/transform :mock :sfsim.model/children []}}
        (apply-transforms {:sfsim.model/root {:sfsim.model/name "Cube" :sfsim.model/transform :mock :sfsim.model/children []}}
@@ -549,12 +549,12 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                          (last (clouds/environmental-shading 3))])
 
 (tabular "Render red cube with fog and atmosphere"
-  (with-redefs [model/fragment-model (fn [textured bump num-steps perlin-octaves cloud-octaves]
+  (with-redefs [model/fragment-scene (fn [textured bump num-steps perlin-octaves cloud-octaves]
                                          (conj model-shader-mocks (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                                  {:textured textured :bump bump})))
-                model/setup-model-static-uniforms (fn [program texture-offset textured bump data]
+                model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
                                                       (use-program program)
-                                                      (setup-model-samplers program 0 textured bump)
+                                                      (setup-scene-samplers program 0 textured bump)
                                                       (uniform-float program "albedo" 3.14159265358)
                                                       (uniform-float program "amplification" 1.0)
                                                       (uniform-float program "specular" 1.0)
@@ -574,7 +574,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                         (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3}
                                                 :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
                                                                     :sfsim.clouds/cloud-octaves []}}
-                              renderer         (make-model-renderer data)
+                              renderer         (make-scene-renderer data)
                               opengl-scene     (load-scene-into-opengl (comp renderer material-type) ?model)
                               camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
                               object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
@@ -583,7 +583,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                           (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
                                         moved-scene render-mesh)
                           (destroy-scene opengl-scene)
-                          (destroy-model-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
+                          (destroy-scene-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
   cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
   cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
@@ -610,7 +610,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   bricks 1.0            1      0.0      0.5     1.0          "bricks-shadow.png"
   bricks 1.0            1      0.0      1.0     0.5          "bricks-attenuation.png")
 
-(facts "Create hashmap with render variables for rendering a model outside the atmosphere"
+(facts "Create hashmap with render variables for rendering a scene outside the atmosphere"
        (let [render          {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
              pos1            (vec3 0 0 0)
              pos2            (vec3 0 0 -20)
@@ -634,17 +634,17 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 (tabular "Render shadow map for an object"
   (fact
     (with-invisible-window
-      (let [renderer        (make-model-shadow-renderer 256 ?object-radius)
+      (let [renderer        (make-scene-shadow-renderer 256 ?object-radius)
             light-direction (vec3 0 0 1)
             scene           (load-scene-into-opengl (comp renderer material-type) ?model)
             object-to-world (transformation-matrix (mulm (rotation-x ?angle-x) (rotation-y ?angle-y)) (vec3 100 200 300))
             moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-            object-shadow   (model-shadow-map renderer light-direction moved-scene)
+            object-shadow   (scene-shadow-map renderer light-direction moved-scene)
             depth           (depth-texture->floats (:sfsim.model/shadows object-shadow))
             img             (floats->image depth)]
-        (destroy-model-shadow-map object-shadow)
+        (destroy-scene-shadow-map object-shadow)
         (destroy-scene scene)
-        (destroy-model-shadow-renderer renderer)
+        (destroy-scene-shadow-renderer renderer)
         img)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))
   ?model ?object-radius ?angle-x ?angle-y ?result
   cube   1.75           0.5      -0.4     "shadow-map-cube.png"
@@ -708,8 +708,8 @@ void main()
             light-direction (normalize (vec3 5 2 1))
             shadow-size     256
             camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 (- ?distance))))
-            shadow-renderer (make-model-shadow-renderer shadow-size ?object-radius)
-            object-shadow   (model-shadow-map shadow-renderer light-direction opengl-scene)
+            shadow-renderer (make-scene-shadow-renderer shadow-size ?object-radius)
+            object-shadow   (scene-shadow-map shadow-renderer light-direction opengl-scene)
             tex             (texture-render-color-depth 160 120 false
                               (clear (vec3 0 0 0) 0.0)
                               (use-program program)
@@ -733,8 +733,8 @@ void main()
                                       (uniform-vector3 program "diffuse_color" diffuse)))))
             result            (texture->image tex)]
         (destroy-texture tex)
-        (destroy-model-shadow-map object-shadow)
-        (destroy-model-shadow-renderer shadow-renderer)
+        (destroy-scene-shadow-map object-shadow)
+        (destroy-scene-shadow-renderer shadow-renderer)
         (destroy-scene opengl-scene)
         (destroy-program program)
         result)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))

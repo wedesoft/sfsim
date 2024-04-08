@@ -1,6 +1,5 @@
 # TODO
 * flip test images
-* rename model to scene
 * put model-shadow-map and keywords in returned hashmap into opacity module?
 * add object radius to object?
 * combine with object-shadow-map similar as opacity-and-shadow-cascade and use renderer as parameter

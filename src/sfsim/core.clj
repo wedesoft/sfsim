@@ -65,9 +65,9 @@
 ; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
-(def model-renderer (model/make-model-renderer data))
+(def scene-renderer (model/make-scene-renderer data))
 
-(def scene (model/load-scene model-renderer "venturestar.gltf"))
+(def scene (model/load-scene scene-renderer "venturestar.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -148,7 +148,7 @@
                                     (clear (vec3 0 1 0) 1.0 0)
                                     ; Render model
                                     (write-to-stencil-buffer)
-                                    (model/render-scenes model-renderer scene-render-vars shadow-vars [moved-scene])
+                                    (model/render-scenes scene-renderer scene-render-vars shadow-vars [moved-scene])
                                     (clear)
                                     ;; Render planet with cloud overlay
                                     (mask-with-stencil-buffer)
@@ -159,7 +159,7 @@
                                   (do
                                     (clear (vec3 0 1 0) 1.0)
                                     ; Render model
-                                    (model/render-scenes model-renderer planet-render-vars shadow-vars [moved-scene])
+                                    (model/render-scenes scene-renderer planet-render-vars shadow-vars [moved-scene])
                                     ; Render planet with cloud overlay
                                     (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
                                                           (planet/get-current-tree tile-tree))
@@ -175,7 +175,7 @@
              (swap! t0 + dt))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
-  (model/destroy-model-renderer model-renderer)
+  (model/destroy-scene-renderer scene-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)
   (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
