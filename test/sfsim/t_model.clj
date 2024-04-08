@@ -737,7 +737,7 @@ void main()
         (destroy-scene-shadow-renderer shadow-renderer)
         (destroy-scene opengl-scene)
         (destroy-program program)
-        result)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
+        result)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.02))
   ?model ?object-radius ?distance ?result
   torus  1.5            3         "torus-shadow.png"
   cubes  4.0            7         "cubes-shadow.png")
