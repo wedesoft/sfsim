@@ -18,7 +18,7 @@ in GEO_OUT
 
 out vec4 fragColor;
 
-vec3 direct_light(vec3 point);
+vec3 environmental_shading(vec3 point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec3 attenuation_point(vec3 point, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
@@ -32,7 +32,7 @@ void main()
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 water_normal = normalize(fs_in.point);
   vec3 normal = mix(land_normal, water_normal, wet);
-  vec3 light = direct_light(fs_in.point);
+  vec3 light = environmental_shading(fs_in.point);
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
   vec3 day_color = texture(day, fs_in.colorcoord).rgb;
   vec3 color = mix(day_color, water_color, wet);

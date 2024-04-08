@@ -6,7 +6,7 @@ bool is_above_horizon(vec3 point, vec3 direction);
 vec3 transmittance_point(vec3 point);
 float overall_shadow(vec4 point);
 
-vec3 direct_light(vec3 point)
+vec3 environmental_shading(vec3 point)
 {
   if (is_above_horizon(point, light_direction)) {
     float shadow = overall_shadow(vec4(point, 1));
