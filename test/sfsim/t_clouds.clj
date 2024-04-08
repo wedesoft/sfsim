@@ -1355,7 +1355,7 @@ void main()
                    {:sfsim.render/window-width 1})
        => (roughly 2.0 1e-5))
 
-(def direct-light-probe
+(def environmental-shading-probe
   (template/fn [z]
 "#version 410 core
 out vec3 fragColor;
@@ -1372,21 +1372,21 @@ vec3 transmittance_point(vec3 point)
   float result = point.z >= 3.0 ? 1.0 : 0.5;
   return vec3(result, result, result);
 }
-vec3 direct_light(vec3 point);
+vec3 environmental_shading(vec3 point);
 void main()
 {
   vec3 point = vec3(0, 0, <%= z %>);
-  fragColor = direct_light(point);
+  fragColor = environmental_shading(point);
 }"))
 
-(def direct-light-test
+(def environmental-shading-test
   (shader-test
     (fn [program light-dir]
         (uniform-vector3 program "light_direction" (vec3 0 0 light-dir)))
-    direct-light-probe (last (direct-light 3))))
+    environmental-shading-probe (last (environmental-shading 3))))
 
 (tabular "Shader function for determining direct light left after atmospheric scattering and shadows"
-  (fact ((direct-light-test [?light-dir] [?z]) 0) => (roughly ?result 1e-5))
+  (fact ((environmental-shading-test [?light-dir] [?z]) 0) => (roughly ?result 1e-5))
   ?z  ?light-dir ?result
   0.0  1.0       0.0
   5.0  1.0       1.0

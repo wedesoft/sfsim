@@ -10,6 +10,7 @@
             [sfsim.util :refer :all]
             [sfsim.image :refer :all]
             [sfsim.matrix :refer :all :as matrix]
+            [sfsim.quaternion :as q]
             [sfsim.shaders :as s]
             [sfsim.quaternion :as q]
             [sfsim.texture :refer :all]
@@ -816,8 +817,8 @@ void main(void)
       (with-invisible-window
         (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
               camera-to-world (eye 4)
-              light-vector    (normalize (vec3 1 1 2))
-              shadow-mat      (shadow-matrices projection camera-to-world light-vector 1.0)
+              light-direction (normalize (vec3 1 1 2))
+              shadow-mat      (shadow-matrices projection camera-to-world light-direction 1.0)
               indices         [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices        [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
                                -1.0 -1.0 -3.0, 1.0 -1.0 -3.0, -1.0 1.0 -3.0, 1.0 1.0 -3.0
@@ -870,10 +871,10 @@ void main(void)
         (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
               camera-to-world (eye 4)
               num-steps       1
-              light-vector    (normalize (vec3 1 1 2))
+              light-direction (normalize (vec3 1 1 2))
               shadow-data     #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 1.0}
               render-vars     #:sfsim.render{:projection projection :camera-to-world camera-to-world
-                                             :light-direction light-vector :z-near 2.0 :z-far 5.0}
+                                             :light-direction light-direction :z-near 2.0 :z-far 5.0}
               shadow-mats     (shadow-matrix-cascade shadow-data render-vars)
               indices         [0 1 3 2 6 7 5 4 8 9 11 10]
               vertices        [-2.0 -2.0 -4.0, 2.0 -2.0 -4.0, -2.0 2.0 -4.0, 2.0 2.0 -4.0,
@@ -984,5 +985,22 @@ void main()
        (diagonal-field-of-view 320   0 (* 0.25 PI)) => (roughly (* 0.25 PI) 1e-6)
        (diagonal-field-of-view 320 320 (* 0.25 PI)) => (roughly (* 2 (asin (* (sqrt 2.0) (sin (* 0.125 PI))))) 1e-6)
        (diagonal-field-of-view 320 240 (* 0.25 PI)) => (roughly 0.997559 1e-6))
+
+(facts "Join z-ranges and projection matrices of two render variable hashmaps"
+       (let [render-config {:sfsim.render/fov (to-radians 60.0)}
+             origin        (vec3 1 2 3)
+             orientation   (q/->Quaternion 1 0 0 0)
+             light-dir     (vec3 0 0 1)
+             planet-vars   (make-render-vars render-config 320 240 origin orientation light-dir 1000.0 10000.0)
+             scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir 10.0 100.0)
+             joined-vars   (joined-render-vars planet-vars scene-vars)]
+         (:sfsim.render/origin joined-vars) => origin
+         (:sfsim.render/window-width joined-vars) => 320
+         (:sfsim.render/window-height joined-vars) => 240
+         (:sfsim.render/origin joined-vars) => origin
+         (:sfsim.render/z-near joined-vars) => 10.0
+         (:sfsim.render/z-far joined-vars) => 10000.0
+         (:sfsim.render/light-direction joined-vars) => light-dir
+         (:sfsim.render/camera-to-world joined-vars) => (:sfsim.render/camera-to-world planet-vars)))
 
 (GLFW/glfwTerminate)

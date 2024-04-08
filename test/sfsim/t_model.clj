@@ -25,7 +25,7 @@
 
 (def cube (read-gltf "test/sfsim/fixtures/model/cube.gltf"))
 
-(fact "Root of cube model"
+(fact "Root of cube scene"
       (:sfsim.model/name (:sfsim.model/root cube)) => "Cube")
 
 (fact "Transformation of root node"
@@ -466,14 +466,14 @@ void main()
                                     :sfsim.model/scaling-keys [{:sfsim.model/time 0.0 :sfsim.model/scaling (vec3 2 3 5)}]} 0.0)
        => (roughly-matrix (mat4x4 2 0 0 0, 0 0 -5 0, 0 3 0 0, 0 0 0 1) 1e-6))
 
-(facts "Determine updates for model"
+(facts "Determine updates for scene"
        (animations-frame {:sfsim.model/animations {}} {}) => {}
        (with-redefs [model/interpolate-transformation
                      (fn [channel t] (facts channel => :mock-channel-data t => 1.0) :mock-transform)]
          (animations-frame {:sfsim.model/animations {"Animation" {:sfsim.model/channels {"Object" :mock-channel-data}}}} {"Animation" 1.0}))
        => {"Object" :mock-transform})
 
-(facts "Apply transformation updates to model"
+(facts "Apply transformation updates to scene"
        (apply-transforms {:sfsim.model/root {:sfsim.model/name "Cube" :sfsim.model/transform :mock :sfsim.model/children []}} {})
        => {:sfsim.model/root {:sfsim.model/name "Cube" :sfsim.model/transform :mock :sfsim.model/children []}}
        (apply-transforms {:sfsim.model/root {:sfsim.model/name "Cube" :sfsim.model/transform :mock :sfsim.model/children []}}
@@ -546,15 +546,15 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 (def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
                          ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
-                         (last (clouds/direct-light 3))])
+                         (last (clouds/environmental-shading 3))])
 
 (tabular "Render red cube with fog and atmosphere"
-  (with-redefs [model/fragment-model (fn [textured bump num-steps perlin-octaves cloud-octaves]
+  (with-redefs [model/fragment-scene (fn [textured bump num-steps perlin-octaves cloud-octaves]
                                          (conj model-shader-mocks (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                                  {:textured textured :bump bump})))
-                model/setup-model-static-uniforms (fn [program texture-offset textured bump data]
+                model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
                                                       (use-program program)
-                                                      (setup-model-samplers program 0 textured bump)
+                                                      (setup-scene-samplers program 0 textured bump)
                                                       (uniform-float program "albedo" 3.14159265358)
                                                       (uniform-float program "amplification" 1.0)
                                                       (uniform-float program "specular" 1.0)
@@ -574,7 +574,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                         (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3}
                                                 :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
                                                                     :sfsim.clouds/cloud-octaves []}}
-                              renderer         (make-model-renderer data)
+                              renderer         (make-scene-renderer data)
                               opengl-scene     (load-scene-into-opengl (comp renderer material-type) ?model)
                               camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
                               object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
@@ -583,7 +583,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                           (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
                                         moved-scene render-mesh)
                           (destroy-scene opengl-scene)
-                          (destroy-model-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
+                          (destroy-scene-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
   cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
   cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
@@ -610,7 +610,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   bricks 1.0            1      0.0      0.5     1.0          "bricks-shadow.png"
   bricks 1.0            1      0.0      1.0     0.5          "bricks-attenuation.png")
 
-(facts "Create hashmap with render variables for rendering a model outside the atmosphere"
+(facts "Create hashmap with render variables for rendering a scene outside the atmosphere"
        (let [render          {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
              pos1            (vec3 0 0 0)
              pos2            (vec3 0 0 -20)
@@ -634,59 +634,41 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 (tabular "Render shadow map for an object"
   (fact
     (with-invisible-window
-      (let [object-radius   1.75
-            renderer        (make-model-shadow-renderer 256 object-radius)
-            light-vector    (vec3 0 0 1)
+      (let [renderer        (make-scene-shadow-renderer 256 ?object-radius)
+            light-direction (vec3 0 0 1)
             scene           (load-scene-into-opengl (comp renderer material-type) ?model)
-            object-to-world (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 100 200 300))
+            object-to-world (transformation-matrix (mulm (rotation-x ?angle-x) (rotation-y ?angle-y)) (vec3 100 200 300))
             moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-            object-shadow   (model-shadow-map renderer light-vector moved-scene)
+            object-shadow   (scene-shadow-map renderer light-direction moved-scene)
             depth           (depth-texture->floats (:sfsim.model/shadows object-shadow))
             img             (floats->image depth)]
-        (destroy-model-shadow-map object-shadow)
+        (destroy-scene-shadow-map object-shadow)
         (destroy-scene scene)
-        (destroy-model-shadow-renderer renderer)
+        (destroy-scene-shadow-renderer renderer)
         img)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))
-  ?model ?result
-  cube   "shadow-map-cube.png"
-  dice   "shadow-map-dice.png"
-  bump   "shadow-map-bump.png"
-  bricks "shadow-map-bricks.png")
+  ?model ?object-radius ?angle-x ?angle-y ?result
+  cube   1.75           0.5      -0.4     "shadow-map-cube.png"
+  dice   1.75           0.5      -0.4     "shadow-map-dice.png"
+  bump   1.75           0.5      -0.4     "shadow-map-bump.png"
+  bricks 1.75           0.5      -0.4     "shadow-map-bricks.png"
+  cubes  4.0            0.1      -1.0     "shadow-map-cubes.png")
 
 (def torus (read-gltf "test/sfsim/fixtures/model/torus.gltf"))
 
 (def vertex-torus
 "#version 410 core
+uniform int shadow_size;
 uniform mat4 projection;
 uniform mat4 object_to_world;
 uniform mat4 object_to_camera;
+uniform mat4 object_to_shadow_map;
 in vec3 vertex;
 in vec3 normal;
 out VS_OUT
 {
-  vec3 object_point;
+  vec4 shadow_index;
   vec3 normal;
 } vs_out;
-void main()
-{
-  vs_out.object_point = vertex;
-  vs_out.normal = mat3(object_to_world) * normal;
-  gl_Position = projection * object_to_camera * vec4(vertex, 1);
-}")
-
-(def fragment-torus
-"#version 410 core
-uniform sampler2DShadow shadow_map;
-uniform int shadow_size;
-uniform vec3 light_direction;
-uniform vec3 diffuse_color;
-uniform mat4 object_to_shadow_map;
-in VS_OUT
-{
-  vec3 object_point;
-  vec3 normal;
-} fs_in;
-out vec4 fragColor;
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x)
 {
   vec2 pixel = idx.xy * (vec2(size_x, size_y) - 1);
@@ -694,47 +676,70 @@ vec4 convert_shadow_index(vec4 idx, int size_y, int size_x)
 }
 void main()
 {
-  vec4 shadow_pos = object_to_shadow_map * vec4(fs_in.object_point, 1);
-  vec4 shadow_index = convert_shadow_index(shadow_pos, shadow_size, shadow_size);
-  float shadow = textureProj(shadow_map, shadow_index);
+  vec4 shadow_pos = object_to_shadow_map * vec4(vertex, 1);
+  vs_out.shadow_index = convert_shadow_index(shadow_pos, shadow_size, shadow_size);
+  vs_out.normal = mat3(object_to_world) * normal;
+  gl_Position = projection * object_to_camera * vec4(vertex, 1);
+}")
+
+(def fragment-torus
+"#version 410 core
+uniform sampler2DShadow shadow_map;
+uniform vec3 light_direction;
+uniform vec3 diffuse_color;
+in VS_OUT
+{
+  vec4 shadow_index;
+  vec3 normal;
+} fs_in;
+out vec4 fragColor;
+void main()
+{
+  float shadow = textureProj(shadow_map, fs_in.shadow_index);
   float cos_incidence = dot(light_direction, fs_in.normal);
   fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
 }")
 
-(fact "Render torus with shadow"
-  (with-invisible-window
-    (let [program         (make-program :sfsim.render/vertex [vertex-torus] :sfsim.render/fragment [fragment-torus])
-          opengl-scene    (load-scene-into-opengl (constantly program) torus)
-          object-radius   1.5
-          light-vector    (normalize (vec3 5 2 1))
-          shadow-size     256
-          camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -3)))
-          shadow-renderer (make-model-shadow-renderer shadow-size object-radius)
-          object-shadow   (model-shadow-map shadow-renderer light-vector opengl-scene)
-          result          (texture-render-color-depth 160 120 false
-                            (clear (vec3 0 0 0) 0.0)
-                            (use-program program)
-                            (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                            (uniform-matrix4 program "object_to_world" (eye 4))
-                            (uniform-vector3 program "light_direction" light-vector)
-                            (uniform-matrix4 program "object_to_shadow_map" (-> object-shadow
-                                                                                :sfsim.model/matrices
-                                                                                :sfsim.matrix/object-to-shadow-map))
-                            (uniform-int program "shadow_size" shadow-size)
-                            (uniform-sampler program "shadow_map" 0)
-                            (use-textures {0 (:sfsim.model/shadows object-shadow)})
-                            (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} opengl-scene
-                                          (fn [{:sfsim.model/keys [diffuse]}
-                                               {:sfsim.model/keys [program transform] :as render-vars}]
-                                              (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                                (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                  transform))
-                                                (uniform-vector3 program "diffuse_color" diffuse)))))]
-      (texture->image result) => (is-image "test/sfsim/fixtures/model/torus.png" 0.0)
-      (destroy-texture result)
-      (destroy-model-shadow-map object-shadow)
-      (destroy-model-shadow-renderer shadow-renderer)
-      (destroy-scene opengl-scene)
-      (destroy-program program))))
+(tabular "Render objects with self-shadowing"
+  (fact
+    (with-invisible-window
+      (let [program         (make-program :sfsim.render/vertex [vertex-torus] :sfsim.render/fragment [fragment-torus])
+            opengl-scene    (load-scene-into-opengl (constantly program) ?model)
+            light-direction (normalize (vec3 5 2 1))
+            shadow-size     256
+            camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 (- ?distance))))
+            shadow-renderer (make-scene-shadow-renderer shadow-size ?object-radius)
+            object-shadow   (scene-shadow-map shadow-renderer light-direction opengl-scene)
+            tex             (texture-render-color-depth 160 120 false
+                              (clear (vec3 0 0 0) 0.0)
+                              (use-program program)
+                              (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                              (uniform-matrix4 program "object_to_world" (eye 4))
+                              (uniform-vector3 program "light_direction" light-direction)
+                              (uniform-int program "shadow_size" shadow-size)
+                              (uniform-sampler program "shadow_map" 0)
+                              (use-textures {0 (:sfsim.model/shadows object-shadow)})
+                              (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} opengl-scene
+                                (fn [{:sfsim.model/keys [diffuse]}
+                                     {:sfsim.model/keys [program transform] :as render-vars}]
+                                    (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                      (uniform-matrix4 program "object_to_shadow_map"
+                                                       (mulm (-> object-shadow
+                                                                 :sfsim.model/matrices
+                                                                 :sfsim.matrix/object-to-shadow-map)
+                                                             transform))
+                                      (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                        transform))
+                                      (uniform-vector3 program "diffuse_color" diffuse)))))
+            result            (texture->image tex)]
+        (destroy-texture tex)
+        (destroy-scene-shadow-map object-shadow)
+        (destroy-scene-shadow-renderer shadow-renderer)
+        (destroy-scene opengl-scene)
+        (destroy-program program)
+        result)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.0))
+  ?model ?object-radius ?distance ?result
+  torus  1.5            3         "torus-shadow.png"
+  cubes  4.0            7         "cubes-shadow.png")
 
 (GLFW/glfwTerminate)
