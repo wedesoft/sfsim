@@ -1,7 +1,5 @@
 # TODO
-* consider object internal transforms when determining object points (test with two cubes and shadows)
 * flip test images
-* shadow mistakes when above clouds
 * rename model to scene
 * put model-shadow-map and keywords in returned hashmap into opacity module?
 * add object radius to object?
