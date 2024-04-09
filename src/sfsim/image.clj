@@ -38,39 +38,48 @@
 
 (defn slurp-image
   "Load an RGBA image"
-  {:malli/schema [:=> [:cat non-empty-string] image]}
-  [path]
-  (let [width (int-array 1)
-        height (int-array 1)
-        channels (int-array 1)
-        buffer (STBImage/stbi_load ^String path width height channels 4)
-        width  (aget width 0)
-        height (aget height 0)
-        data   (byte-array (* width height 4))]
-    (.get ^DirectByteBuffer buffer ^bytes data)
-    (.flip ^DirectByteBuffer buffer)
-    (STBImage/stbi_image_free ^DirectByteBuffer buffer)
-    {::data data ::width width ::height height ::channels (aget channels 0)}))
+  {:malli/schema [:=> [:cat non-empty-string [:? :boolean]] image]}
+  ([path] (slurp-image path false))
+  ([path flip]
+   (STBImage/stbi_set_flip_vertically_on_load flip)
+   (let [width (int-array 1)
+         height (int-array 1)
+         channels (int-array 1)
+         buffer (STBImage/stbi_load ^String path width height channels 4)
+         width  (aget width 0)
+         height (aget height 0)
+         data   (byte-array (* width height 4))]
+     (.get ^DirectByteBuffer buffer ^bytes data)
+     (.flip ^DirectByteBuffer buffer)
+     (STBImage/stbi_image_free ^DirectByteBuffer buffer)
+     (STBImage/stbi_set_flip_vertically_on_load false)
+     {::data data ::width width ::height height ::channels (aget channels 0)})))
 
 (defn spit-png
   "Save RGBA image as PNG file"
-  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]]] image]}
-  [path {::keys [width height data] :as img}]
-  (let [buffer (BufferUtils/createByteBuffer (count data))]
-    (.put ^DirectByteBuffer buffer ^bytes data)
-    (.flip buffer)
-    (STBImageWrite/stbi_write_png ^String path ^long width ^long height 4 ^DirectByteBuffer buffer ^long (* 4 width))
-    img))
+  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]] [:? :boolean]] image]}
+  ([path img] (spit-png path img false))
+  ([path {::keys [width height data] :as img} flip]
+   (let [buffer (BufferUtils/createByteBuffer (count data))]
+     (.put ^DirectByteBuffer buffer ^bytes data)
+     (.flip buffer)
+     (STBImageWrite/stbi_flip_vertically_on_write flip)
+     (STBImageWrite/stbi_write_png ^String path ^long width ^long height 4 ^DirectByteBuffer buffer ^long (* 4 width))
+     (STBImageWrite/stbi_flip_vertically_on_write false)
+     img)))
 
 (defn spit-jpg
   "Save RGBA image as JPEG file"
-  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]]] image]}
-  [path {::keys [width height data] :as img}]
-  (let [buffer (BufferUtils/createByteBuffer (count data))]
-    (.put ^DirectByteBuffer buffer ^bytes data)
-    (.flip buffer)
-    (STBImageWrite/stbi_write_jpg ^String path ^long width ^long height 4 ^DirectByteBuffer buffer ^long (* 4 width))
-    img))
+  {:malli/schema [:=> [:cat non-empty-string [:and image [:map [::channels [:= 4]]]] [:? :boolean]] image]}
+  ([path img] (spit-jpg path img false))
+  ([path {::keys [width height data] :as img} flip]
+   (let [buffer (BufferUtils/createByteBuffer (count data))]
+     (.put ^DirectByteBuffer buffer ^bytes data)
+     (.flip buffer)
+     (STBImageWrite/stbi_flip_vertically_on_write flip)
+     (STBImageWrite/stbi_write_jpg ^String path ^long width ^long height 4 ^DirectByteBuffer buffer ^long (* 4 width))
+     (STBImageWrite/stbi_flip_vertically_on_write false)
+     img)))
 
 (def normals (m/schema [:map [::width N] [::height N] [::data seqable?]]))
 

@@ -37,20 +37,21 @@
 
 (defn is-image
   "Compare RGB components of image and ignore alpha values."
-  [filename tolerance]
-  (fn [other]
-      (if (.exists (io/file filename))
-        (let [{:sfsim.image/keys [width height data]} (slurp-image filename)]
-          (and (== (:sfsim.image/width other) width)
-               (== (:sfsim.image/height other) height)
-               (let [avg-dist (average-rgba-dist (:sfsim.image/data other) data)]
-                 (or (<= avg-dist tolerance)
-                     (do
-                       (println (format "Average deviation from %s averages %5.2f > %5.2f." filename avg-dist tolerance))
-                       false)))))
-        (do
-          (println (format "Recording image fixture %s." filename))
-          (spit-png filename other)))))
+  ([filename tolerance] (is-image filename tolerance true))
+  ([filename tolerance flip]
+   (fn [other]
+       (if (.exists (io/file filename))
+         (let [{:sfsim.image/keys [width height data]} (slurp-image filename flip)]
+           (and (== (:sfsim.image/width other) width)
+                (== (:sfsim.image/height other) height)
+                (let [avg-dist (average-rgba-dist (:sfsim.image/data other) data)]
+                  (or (<= avg-dist tolerance)
+                      (do
+                        (println (format "Average deviation from %s averages %5.2f > %5.2f." filename avg-dist tolerance))
+                        false)))))
+         (do
+           (println (format "Recording image fixture %s." filename))
+           (spit-png filename other flip))))))
 
 (defn shader-test [setup probe & shaders]
   (fn [uniforms args]
