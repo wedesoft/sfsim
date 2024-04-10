@@ -1,4 +1,5 @@
 # TODO
+* use convert index method in tests
 * integrate object shadows into direct light shader and maybe make template function for shadows which can be composed
 * http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
 * percentage closer filtering for object shadows (also make shadow method names and shadow size configurable)

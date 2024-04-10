@@ -657,27 +657,19 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 (def vertex-torus
 "#version 410 core
-uniform int shadow_size;
 uniform mat4 projection;
 uniform mat4 object_to_world;
 uniform mat4 object_to_camera;
-uniform mat4 object_to_shadow_map;
 in vec3 vertex;
 in vec3 normal;
 out VS_OUT
 {
-  vec4 shadow_index;
+  vec3 object_point;
   vec3 normal;
 } vs_out;
-vec4 convert_shadow_index(vec4 idx, int size_y, int size_x)
-{
-  vec2 pixel = idx.xy * (vec2(size_x, size_y) - 1);
-  return vec4((pixel + 0.5) / vec2(size_x, size_y), idx.z, idx.w);
-}
 void main()
 {
-  vec4 shadow_pos = object_to_shadow_map * vec4(vertex, 1);
-  vs_out.shadow_index = convert_shadow_index(shadow_pos, shadow_size, shadow_size);
+  vs_out.object_point = vertex;
   vs_out.normal = mat3(object_to_world) * normal;
   gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }")
@@ -685,17 +677,20 @@ void main()
 (def fragment-torus
 "#version 410 core
 uniform sampler2DShadow shadow_map;
+uniform mat4 object_to_shadow_map;
 uniform vec3 light_direction;
 uniform vec3 diffuse_color;
 in VS_OUT
 {
-  vec4 shadow_index;
+  vec3 object_point;
   vec3 normal;
 } fs_in;
 out vec4 fragColor;
+float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
 void main()
 {
-  float shadow = textureProj(shadow_map, fs_in.shadow_index);
+  vec4 shadow_pos = object_to_shadow_map * vec4(fs_in.object_point, 1);
+  float shadow = shadow_lookup(shadow_map, shadow_pos);
   float cos_incidence = dot(light_direction, fs_in.normal);
   fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
 }")
@@ -703,7 +698,8 @@ void main()
 (tabular "Render objects with self-shadowing"
   (fact
     (with-invisible-window
-      (let [program         (make-program :sfsim.render/vertex [vertex-torus] :sfsim.render/fragment [fragment-torus])
+      (let [program         (make-program :sfsim.render/vertex [vertex-torus]
+                                          :sfsim.render/fragment [fragment-torus shaders/shadow-lookup])
             opengl-scene    (load-scene-into-opengl (constantly program) ?model)
             light-direction (normalize (vec3 5 2 1))
             shadow-size     256
@@ -717,6 +713,7 @@ void main()
                               (uniform-matrix4 program "object_to_world" (eye 4))
                               (uniform-vector3 program "light_direction" light-direction)
                               (uniform-int program "shadow_size" shadow-size)
+                              (uniform-float program "shadow_bias" 1e-6)
                               (uniform-sampler program "shadow_map" 0)
                               (use-textures {0 (:sfsim.model/shadows object-shadow)})
                               (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} opengl-scene
