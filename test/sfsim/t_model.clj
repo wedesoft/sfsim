@@ -686,11 +686,11 @@ in VS_OUT
   vec3 normal;
 } fs_in;
 out vec4 fragColor;
-float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
+float average_shadow(sampler2DShadow shadow_map, vec4 shadow_pos);
 void main()
 {
   vec4 shadow_pos = object_to_shadow_map * vec4(fs_in.object_point, 1);
-  float shadow = shadow_lookup(shadow_map, shadow_pos);
+  float shadow = average_shadow(shadow_map, shadow_pos);
   float cos_incidence = dot(light_direction, fs_in.normal);
   fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
 }")
@@ -699,10 +699,15 @@ void main()
   (fact
     (with-invisible-window
       (let [program         (make-program :sfsim.render/vertex [vertex-torus]
-                                          :sfsim.render/fragment [fragment-torus shaders/shadow-lookup])
+                                          :sfsim.render/fragment [fragment-torus
+                                                                  (shaders/percentage-closer-filtering "average_shadow"
+                                                                                                       "shadow_lookup"
+                                                                                                       [["sampler2DShadow"
+                                                                                                         "shadow_map"]])
+                                                                  shaders/shadow-lookup])
             opengl-scene    (load-scene-into-opengl (constantly program) ?model)
             light-direction (normalize (vec3 5 2 1))
-            shadow-size     256
+            shadow-size     64
             camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 (- ?distance))))
             shadow-renderer (make-scene-shadow-renderer shadow-size ?object-radius)
             object-shadow   (scene-shadow-map shadow-renderer light-direction opengl-scene)
