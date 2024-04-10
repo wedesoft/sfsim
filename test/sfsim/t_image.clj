@@ -51,6 +51,18 @@
       (:sfsim.image/height (slurp-image file-name)) => 2
       (take 4 (:sfsim.image/data (slurp-image file-name))) => value))
 
+(facts "Try flipping an image when loading"
+  (let [file-name (.getPath (File/createTempFile "spit" ".png"))
+        values    [1 2 3 -1 4 5 6 -1]]
+    (spit-png file-name #:sfsim.image{:width 1 :height 2 :data (byte-array values) :channels 4})
+    (seq (:sfsim.image/data (slurp-image file-name true))) => [4 5 6 -1 1 2 3 -1]))
+
+(facts "Try flipping an image when saving as PNG"
+  (let [file-name (.getPath (File/createTempFile "spit" ".png"))
+        values    [1 2 3 -1 4 5 6 -1]]
+    (spit-png file-name #:sfsim.image{:width 1 :height 2 :data (byte-array values) :channels 4} true)
+    (seq (:sfsim.image/data (slurp-image file-name))) => [4 5 6 -1 1 2 3 -1]))
+
 (fact "Save normal vectors"
       (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
         (spit-normals file-name #:sfsim.image{:width 2 :height 1 :data (float-array [1.0 0.0 0.0 0.0 -1.0 0.0])}) => anything

@@ -1,5 +1,7 @@
 # TODO
-* flip test images
+* make shadow method names and shadow size configurable
+* integrate object shadows into direct light shader and maybe make template function for shadows which can be composed
+* http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
 * put model-shadow-map and keywords in returned hashmap into opacity module?
 * add object radius to object?
 * combine with object-shadow-map similar as opacity-and-shadow-cascade and use renderer as parameter
