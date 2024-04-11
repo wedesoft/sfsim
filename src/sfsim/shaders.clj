@@ -34,9 +34,12 @@
   "Grow sampling index to cover full NDC space"
   (slurp "resources/shaders/core/grow-shadow-index.glsl"))
 
-(def shadow-lookup
+(defn shadow-lookup
   "Perform lookup in a shadow map including moving shadow index out of clamping region"
-  [convert-shadow-index (slurp "resources/shaders/core/shadow-lookup.glsl")])
+  {:malli/schema [:=> [:cat :string :string] [:vector :string]]}
+  [method-name shadow-size]
+  [convert-shadow-index
+   (template/eval (slurp "resources/shaders/core/shadow-lookup.glsl") {:method-name method-name :shadow-size shadow-size})])
 
 (def shadow-cascade-lookup
   "Perform shadow lookup in cascade of shadow maps"
@@ -188,7 +191,7 @@
   "Shaders for performing lookups in the cascaded shadow map"
   {:malli/schema [:=> [:cat :int] [:vector :string]]}
   [num-steps]
-  [(shadow-cascade-lookup num-steps "average_shadow") shadow-lookup convert-shadow-index
+  [(shadow-cascade-lookup num-steps "average_shadow") (shadow-lookup "shadow_lookup" "shadow_size") convert-shadow-index
    (percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])])
 
 (def phong

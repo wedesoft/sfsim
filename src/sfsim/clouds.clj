@@ -214,7 +214,7 @@
   [num-steps]
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
    (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
-   (shaders/shadow-cascade-lookup num-steps "average_shadow") shaders/shadow-lookup
+   (shaders/shadow-cascade-lookup num-steps "average_shadow") (shaders/shadow-lookup "shadow_lookup" "shadow_size")
    (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])
    (slurp "resources/shaders/clouds/overall-shadow.glsl")])
 
