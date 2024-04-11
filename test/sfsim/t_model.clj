@@ -701,11 +701,12 @@ void main()
       (let [program         (make-program :sfsim.render/vertex [vertex-torus]
                                           :sfsim.render/fragment [fragment-torus
                                                                   (shaders/percentage-closer-filtering "average_scene_shadow"
-                                                                                                       "shadow_lookup"
+                                                                                                       "scene_shadow_lookup"
+                                                                                                       "scene_shadow_size"
                                                                                                        [["sampler2DShadow"
                                                                                                          "shadow_map"]])
-                                                                  (shaders/shadow-lookup "shadow_lookup"
-                                                                                         "shadow_size")])
+                                                                  (shaders/shadow-lookup "scene_shadow_lookup"
+                                                                                         "scene_shadow_size")])
             opengl-scene    (load-scene-into-opengl (constantly program) ?model)
             light-direction (normalize (vec3 5 2 1))
             shadow-size     64
@@ -718,7 +719,7 @@ void main()
                               (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                               (uniform-matrix4 program "object_to_world" (eye 4))
                               (uniform-vector3 program "light_direction" light-direction)
-                              (uniform-int program "shadow_size" shadow-size)
+                              (uniform-int program "scene_shadow_size" shadow-size)
                               (uniform-float program "shadow_bias" 1e-6)
                               (uniform-sampler program "shadow_map" 0)
                               (use-textures {0 (:sfsim.model/shadows object-shadow)})

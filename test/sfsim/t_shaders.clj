@@ -322,7 +322,7 @@ void main()
   (shader-test
     (fn [program shadow-size]
         (uniform-int program "shadow_size" shadow-size))
-    percentage-closer-filtering-probe (percentage-closer-filtering "averaged" "f" [["float" "scale"]])))
+    percentage-closer-filtering-probe (percentage-closer-filtering "averaged" "f" "shadow_size" [["float" "scale"]])))
 
 (tabular "Local averaging of shadow to reduce aliasing"
          (fact ((percentage-closer-filtering-test [?size] [?x]) 0) => (roughly ?result 1e-6))

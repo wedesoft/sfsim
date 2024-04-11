@@ -1,12 +1,12 @@
 #version 410 core
 
-uniform int shadow_size;
+uniform int <%= shadow-size %>;
 
 float <%= base-function-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") parameters)) %>vec4 point);
 
 float <%= method-name %>(<%= (apply str (map #(str (% 0) " " (% 1) ", ") parameters)) %>vec4 point)
 {
-  float texel_size = 1.0 / (shadow_size - 1);
+  float texel_size = 1.0 / (<%= shadow-size %> - 1);
   float result = 0.0;
   for (int y=-1; y<=1; y++)
     for (int x=-1; x<=1; x++) {

@@ -47,7 +47,7 @@
 
 (def percentage-closer-filtering
   "Local averaging of shadow to reduce aliasing"
-  (template/fn [method-name base-function-name parameters]
+  (template/fn [method-name base-function-name shadow-size parameters]
                (slurp "resources/shaders/core/percentage-closer-filtering.glsl")))
 
 (def make-2d-index-from-4d
@@ -192,7 +192,7 @@
   {:malli/schema [:=> [:cat :int] [:vector :string]]}
   [num-steps]
   [(shadow-cascade-lookup num-steps "average_shadow") (shadow-lookup "shadow_lookup" "shadow_size") convert-shadow-index
-   (percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])])
+   (percentage-closer-filtering "average_shadow" "shadow_lookup" "shadow_size" [["sampler2DShadow" "shadow_map"]])])
 
 (def phong
   "Shader for phong shading (ambient, diffuse, and specular lighting)"
