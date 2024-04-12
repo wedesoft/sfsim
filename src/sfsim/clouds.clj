@@ -374,3 +374,6 @@
  (uniform-float program "anisotropic" (::anisotropic cloud-data))
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
  (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
+
+(def overall-shading
+  (template/fn [parameters] (slurp "resources/shaders/clouds/overall-shading.glsl")))
