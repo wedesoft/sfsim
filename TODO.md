@@ -1,5 +1,7 @@
 # TODO
 * use overall\_shading in model fragment shader (parametrise model vertex and fragment shader)
+* put shadow maps into array texture
+* use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
 * rename overall-shadow
 * rename environment shadow method and shadow size
 * integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
