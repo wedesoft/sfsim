@@ -745,4 +745,52 @@ void main()
   torus  1.5            3         "torus-shadow.png"
   cubes  4.0            7         "cubes-shadow.png")
 
+(def model-shadow-mocks
+"#version 410 core
+vec3 environmental_shading(vec3 point)
+{
+  return vec3(1, 1, 1);
+}
+vec3 attenuation_point(vec3 point, vec3 incoming)
+{
+  return incoming;
+}
+vec3 surface_radiance_function(vec3 point, vec3 light_direction)
+{
+  return vec3(0.2, 0.2, 0.2);
+}
+vec4 cloud_point(vec3 point)
+{
+  return vec4(0, 0, 0, 0);
+}")
+
+(fact "Integration of model's self-shading"
+  (with-redefs [model/fragment-scene (fn [textured bump num-steps perlin-octaves cloud-octaves]
+                                         (conj [model-shadow-mocks shaders/phong]
+                                               (template/eval (slurp "resources/shaders/model/fragment.glsl")
+                                                              {:textured textured :bump bump})))
+                model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
+                                                      (use-program program)
+                                                      (setup-scene-samplers program 0 textured bump)
+                                                      (uniform-float program "albedo" 3.14159265358)
+                                                      (uniform-float program "amplification" 1.0)
+                                                      (uniform-float program "specular" 1.0)
+                                                      (uniform-matrix4 program "projection"
+                                                                       (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                                                      (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3))))]
+    (offscreen-render 160 120
+      (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3}
+                              :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
+                                                  :sfsim.clouds/cloud-octaves []}}
+            renderer         (make-scene-renderer data)
+            opengl-scene     (load-scene-into-opengl (comp renderer material-type) torus)
+            camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
+            object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -3))
+            moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
+        (clear (vec3 0.5 0.5 0.5) 0.0)
+        (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
+                      moved-scene render-mesh)
+        (destroy-scene opengl-scene)
+        (destroy-scene-renderer renderer))) => (is-image "test/sfsim/fixtures/model/torus.png" 0.01)))
+
 (GLFW/glfwTerminate)
