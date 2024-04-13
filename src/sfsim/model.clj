@@ -419,17 +419,17 @@
 
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"
-  {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] render/shaders]}
-  [textured bump num-steps perlin-octaves cloud-octaves]
+  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] render/shaders]}
+  [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
   [(environmental-shading num-steps) phong attenuation-point surface-radiance-function
    (cloud-point num-steps perlin-octaves cloud-octaves)
    (template/eval (slurp "resources/shaders/model/fragment.glsl") {:textured textured :bump bump})])
 
 (defn make-scene-program
-  {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] :int]}
-  [textured bump num-steps perlin-octaves cloud-octaves]
+  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] :int]}
+  [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
   (make-program :sfsim.render/vertex [(vertex-scene textured bump)]
-                :sfsim.render/fragment (fragment-scene textured bump num-steps perlin-octaves cloud-octaves)))
+                :sfsim.render/fragment (fragment-scene textured bump num-steps num-object-shadows perlin-octaves cloud-octaves)))
 
 (def scene-renderer (m/schema [:map [::program-colored-flat  :int]
                                     [::program-textured-flat :int]
@@ -438,7 +438,7 @@
                                     [::programs [:vector :int]]
                                     [::texture-offset :int]]))
 
-(def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]]]
+(def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N] [:sfsim.opacity/num-object-shadows N0]]]
                           [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
                                                      [:sfsim.clouds/cloud-octaves [:vector :double]]]]]))
 
@@ -477,16 +477,17 @@
   {:malli/schema [:=> [:cat data] scene-renderer]}
   [data]
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
+        num-object-shadows    (-> data :sfsim.opacity/data :sfsim.opacity/num-object-shadows)
         perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
         cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
         cloud-data            (:sfsim.clouds/data data)
         render-config         (:sfsim.render/config data)
         atmosphere-luts       (:sfsim.atmosphere/luts data)
         texture-offset        (+ 8 (* 2 num-steps))
-        program-colored-flat  (make-scene-program false false num-steps perlin-octaves cloud-octaves)
-        program-textured-flat (make-scene-program true  false num-steps perlin-octaves cloud-octaves)
-        program-colored-bump  (make-scene-program false true  num-steps perlin-octaves cloud-octaves)
-        program-textured-bump (make-scene-program true  true  num-steps perlin-octaves cloud-octaves)
+        program-colored-flat  (make-scene-program false false num-steps num-object-shadows perlin-octaves cloud-octaves)
+        program-textured-flat (make-scene-program true  false num-steps num-object-shadows perlin-octaves cloud-octaves)
+        program-colored-bump  (make-scene-program false true  num-steps num-object-shadows perlin-octaves cloud-octaves)
+        program-textured-bump (make-scene-program true  true  num-steps num-object-shadows perlin-octaves cloud-octaves)
         programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
     (setup-scene-static-uniforms program-colored-flat  texture-offset false false data)
     (setup-scene-static-uniforms program-textured-flat texture-offset true  false data)

@@ -549,7 +549,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                          (last (clouds/environmental-shading 3))])
 
 (tabular "Render red cube with fog and atmosphere"
-  (with-redefs [model/fragment-scene (fn [textured bump num-steps perlin-octaves cloud-octaves]
+  (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
                                          (conj model-shader-mocks (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                                  {:textured textured :bump bump})))
                 model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
@@ -571,19 +571,17 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                       (uniform-int program "above" ?above))]
     (fact
       (offscreen-render 160 120
-                        (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3}
-                                                :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
-                                                                    :sfsim.clouds/cloud-octaves []}}
-                              renderer         (make-scene-renderer data)
-                              opengl-scene     (load-scene-into-opengl (comp renderer material-type) ?model)
-                              camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
-                              object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
-                              moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
-                          (clear (vec3 0.5 0.5 0.5) 0.0)
-                          (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
-                                        moved-scene render-mesh)
-                          (destroy-scene opengl-scene)
-                          (destroy-scene-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
+        (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/num-object-shadows 0}
+                                :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
+              renderer         (make-scene-renderer data)
+              opengl-scene     (load-scene-into-opengl (comp renderer material-type) ?model)
+              camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
+              object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
+              moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
+          (clear (vec3 0.5 0.5 0.5) 0.0)
+          (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world} moved-scene render-mesh)
+          (destroy-scene opengl-scene)
+          (destroy-scene-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
   cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
   cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
@@ -766,7 +764,7 @@ vec4 cloud_point(vec3 point)
 
 (fact "Integration of model's self-shading"
   (with-invisible-window
-    (with-redefs [model/fragment-scene (fn [textured bump num-steps perlin-octaves cloud-octaves]
+    (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
                                            (conj [model-shadow-mocks shaders/phong]
                                                  (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                 {:textured textured :bump bump})))
@@ -779,7 +777,7 @@ vec4 cloud_point(vec3 point)
                                                         (uniform-matrix4 program "projection"
                                                                          (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                                         (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3))))]
-      (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3}
+      (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/num-object-shadows 1}
                               :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
                                                   :sfsim.clouds/cloud-octaves []}}
             renderer         (make-scene-renderer data)
