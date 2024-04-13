@@ -1,7 +1,5 @@
 #version 410 core
 
-uniform float radius;
-uniform float max_height;
 uniform vec3 light_direction;
 <% (if textured %>
 uniform sampler2D colors;
