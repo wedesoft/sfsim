@@ -1,6 +1,7 @@
 # TODO
+* integration test for torus with model shadow
 * use overall\_shading in model fragment shader (parametrise model vertex and fragment shader)
-* put shadow maps into array texture
+* put day and night textures into texture array (water as well?)
 * use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
 * rename overall-shadow
 * rename environment shadow method and shadow size
