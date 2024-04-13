@@ -737,8 +737,8 @@ void main()
             result            (texture->image tex)]
         (destroy-texture tex)
         (destroy-scene-shadow-map object-shadow)
-        (destroy-scene-shadow-renderer shadow-renderer)
         (destroy-scene opengl-scene)
+        (destroy-scene-shadow-renderer shadow-renderer)
         (destroy-program program)
         result)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.02))
   ?model ?object-radius ?distance ?result
@@ -765,32 +765,43 @@ vec4 cloud_point(vec3 point)
 }")
 
 (fact "Integration of model's self-shading"
-  (with-redefs [model/fragment-scene (fn [textured bump num-steps perlin-octaves cloud-octaves]
-                                         (conj [model-shadow-mocks shaders/phong]
-                                               (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                                                              {:textured textured :bump bump})))
-                model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
-                                                      (use-program program)
-                                                      (setup-scene-samplers program 0 textured bump)
-                                                      (uniform-float program "albedo" 3.14159265358)
-                                                      (uniform-float program "amplification" 1.0)
-                                                      (uniform-float program "specular" 1.0)
-                                                      (uniform-matrix4 program "projection"
-                                                                       (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                                                      (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3))))]
-    (offscreen-render 160 120
+  (with-invisible-window
+    (with-redefs [model/fragment-scene (fn [textured bump num-steps perlin-octaves cloud-octaves]
+                                           (conj [model-shadow-mocks shaders/phong]
+                                                 (template/eval (slurp "resources/shaders/model/fragment.glsl")
+                                                                {:textured textured :bump bump})))
+                  model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
+                                                        (use-program program)
+                                                        (setup-scene-samplers program 0 textured bump)
+                                                        (uniform-float program "albedo" 3.14159265358)
+                                                        (uniform-float program "amplification" 1.0)
+                                                        (uniform-float program "specular" 1.0)
+                                                        (uniform-matrix4 program "projection"
+                                                                         (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                                                        (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3))))]
       (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3}
                               :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
                                                   :sfsim.clouds/cloud-octaves []}}
             renderer         (make-scene-renderer data)
+            shadow-size      64
+            object-radius    4.0
+            light-direction  (normalize (vec3 1 2 3))
+            shadow-renderer  (make-scene-shadow-renderer shadow-size object-radius)
             opengl-scene     (load-scene-into-opengl (comp renderer material-type) torus)
             camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
             object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -3))
-            moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
-        (clear (vec3 0.5 0.5 0.5) 0.0)
-        (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
-                      moved-scene render-mesh)
+            moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+            object-shadow    (scene-shadow-map shadow-renderer light-direction opengl-scene)
+            tex              (texture-render-color-depth 160 120 false
+                               (clear (vec3 0.5 0.5 0.5) 0.0)
+                               (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
+                                             moved-scene render-mesh))
+            result           (texture->image tex)]
+        (destroy-texture tex)
+        (destroy-scene-shadow-map object-shadow)
         (destroy-scene opengl-scene)
-        (destroy-scene-renderer renderer))) => (is-image "test/sfsim/fixtures/model/torus.png" 0.01)))
+        (destroy-scene-shadow-renderer shadow-renderer)
+        (destroy-scene-renderer renderer)
+        result) => (is-image "test/sfsim/fixtures/model/torus.png" 0.01))))
 
 (GLFW/glfwTerminate)
