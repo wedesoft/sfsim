@@ -1414,7 +1414,7 @@ void main()
 }"))
 
 (def overall-shading-test
-  (shader-test (fn [program]) overall-shading-probe (overall-shading [["test_shadow" "shadow_map"]])))
+  (shader-test (fn [program]) overall-shading-probe (last (overall-shading 3 [["test_shadow" "shadow_map"]]))))
 
 (tabular "Overall shadow composed of environmental and scene shadows"
   (fact ((overall-shading-test [] [?x ?y ?z ?sx ?sy ?sz]) 0) => (roughly ?result 1e-5))

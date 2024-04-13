@@ -14,7 +14,7 @@
                                     uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
                                     setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
               [sfsim.clouds :refer (environmental-shading cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                                    lod-offset)]
+                                    lod-offset overall-shading)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
               [sfsim.shaders :refer (phong shrink-shadow-index)]

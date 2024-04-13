@@ -375,5 +375,8 @@
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
  (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
 
-(def overall-shading
-  (template/fn [parameters] (slurp "resources/shaders/clouds/overall-shading.glsl")))
+(defn overall-shading
+  {:malli/schema [:=> [:cat :int [:vector [:tuple :string :string]]] render/shaders]}
+  [num-steps parameters]
+  [(environmental-shading num-steps)
+   (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])
