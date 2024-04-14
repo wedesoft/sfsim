@@ -773,6 +773,7 @@ vec4 cloud_point(vec3 point)
                   model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
                                                         (use-program program)
                                                         (setup-scene-samplers program 0 textured bump)
+                                                        (uniform-sampler program "scene_shadow_map_1" 0)
                                                         (uniform-float program "albedo" 3.14159265358)
                                                         (uniform-float program "amplification" 1.0)
                                                         (uniform-float program "specular" 1.0)

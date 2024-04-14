@@ -423,11 +423,16 @@
 
 (def vertex-scene (template/fn [textured bump num-object-shadows] (slurp "resources/shaders/model/vertex.glsl")))
 
+(defn overall-shading-parameters
+  {:malli/schema [:=> [:cat N0] [:vector [:tuple :string :string]]]}
+  [n]
+  (mapv (fn [i] ["average_scene_shadow" (str "scene_shadow_map_" (inc i))]) (range n)))
+
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"
   {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] render/shaders]}
   [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
-  [(environmental-shading num-steps) phong attenuation-point surface-radiance-function
+  [(overall-shading num-steps (overall-shading-parameters num-object-shadows)) phong attenuation-point surface-radiance-function
    (cloud-point num-steps perlin-octaves cloud-octaves)
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-object-shadows num-object-shadows})])
