@@ -530,7 +530,9 @@
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (doseq [i (range (count scene-shadow-matrices))]
-         (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) transform))))
+         (println (mulm (nth scene-shadow-matrices i) transform))
+         ; (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) transform))
+         (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (nth scene-shadow-matrices i))))
 
 (defmulti render-mesh (fn [material _render-vars] (material-type material)))
 (m/=> render-mesh [:=> [:cat material mesh-vars] :nil])

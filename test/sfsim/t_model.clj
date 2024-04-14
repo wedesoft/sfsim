@@ -546,7 +546,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 (def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
                          ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
-                         (last (clouds/environmental-shading 3))])
+                         (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))])
 
 (tabular "Render red cube with fog and atmosphere"
   (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
@@ -767,7 +767,15 @@ vec4 cloud_point(vec3 point)
 (fact "Integration of model's self-shading"
   (with-invisible-window
     (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
-                                           (conj [model-shadow-mocks shaders/phong]
+                                           (conj [model-shadow-mocks shaders/phong
+                                                  (last (clouds/overall-shading 3 [["average_scene_shadow"
+                                                                                    "scene_shadow_map_1"]]))
+                                                  (shaders/percentage-closer-filtering "average_scene_shadow"
+                                                                                       "scene_shadow_lookup"
+                                                                                       "scene_shadow_size"
+                                                                                       [["sampler2DShadow"
+                                                                                         "shadow_map"]])
+                                                  (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")]
                                                  (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                 {:textured textured :bump bump :num-object-shadows 1})))
                   model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
@@ -777,16 +785,17 @@ vec4 cloud_point(vec3 point)
                                                         (uniform-float program "albedo" 3.14159265358)
                                                         (uniform-float program "amplification" 1.0)
                                                         (uniform-float program "specular" 1.0)
+                                                        (uniform-int program "scene_shadow_size" 256)
                                                         (uniform-matrix4 program "projection"
                                                                          (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                                                        (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3))))]
+                                                        (uniform-vector3 program "light_direction" (normalize (vec3 5 2 1))))]
       (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/num-object-shadows 1}
                               :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
                                                   :sfsim.clouds/cloud-octaves []}}
             renderer         (make-scene-renderer data)
-            shadow-size      64
+            shadow-size      256
             object-radius    4.0
-            light-direction  (normalize (vec3 1 2 3))
+            light-direction  (normalize (vec3 5 2 1))
             shadow-renderer  (make-scene-shadow-renderer shadow-size object-radius)
             opengl-scene     (load-scene-into-opengl (comp renderer material-type) torus)
             camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
