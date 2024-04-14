@@ -415,7 +415,7 @@
       ::program-colored-bump
       ::program-colored-flat)))
 
-(def vertex-scene (template/fn [textured bump] (slurp "resources/shaders/model/vertex.glsl")))
+(def vertex-scene (template/fn [textured bump num-object-shadows] (slurp "resources/shaders/model/vertex.glsl")))
 
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"
@@ -423,12 +423,13 @@
   [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
   [(environmental-shading num-steps) phong attenuation-point surface-radiance-function
    (cloud-point num-steps perlin-octaves cloud-octaves)
-   (template/eval (slurp "resources/shaders/model/fragment.glsl") {:textured textured :bump bump})])
+   (template/eval (slurp "resources/shaders/model/fragment.glsl")
+                  {:textured textured :bump bump :num-object-shadows num-object-shadows})])
 
 (defn make-scene-program
   {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] :int]}
   [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
-  (make-program :sfsim.render/vertex [(vertex-scene textured bump)]
+  (make-program :sfsim.render/vertex [(vertex-scene textured bump num-object-shadows)]
                 :sfsim.render/fragment (fragment-scene textured bump num-steps num-object-shadows perlin-octaves cloud-octaves)))
 
 (def scene-renderer (m/schema [:map [::program-colored-flat  :int]

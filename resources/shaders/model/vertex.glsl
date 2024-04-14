@@ -3,6 +3,9 @@
 uniform mat4 projection;
 uniform mat4 object_to_world;
 uniform mat4 object_to_camera;
+<% (doseq [i (range num-object-shadows)] %>
+uniform mat4 object_to_shadow_map_<%= (inc i) %>;
+<% ) %>
 
 in vec3 vertex;
 <% (if bump %>
@@ -25,6 +28,9 @@ out VS_OUT
 <% (if (or textured bump) %>
   vec2 texcoord;
 <% ) %>
+<% (doseq [i (range num-object-shadows)] %>
+  vec4 object_shadow_pos_<%= (inc i) %>;
+<% ) %>
 } vs_out;
 
 void main()
@@ -37,6 +43,9 @@ void main()
 <% ) %>
 <% (if (or textured bump) %>
   vs_out.texcoord = texcoord;
+<% ) %>
+<% (doseq [i (range num-object-shadows)] %>
+  vs_out.object_shadow_pos_<%= (inc i) %> = object_to_shadow_map_<%= (inc i) %> * vec4(vertex, 1);
 <% ) %>
   gl_Position = projection * object_to_camera * vec4(vertex, 1);
 }

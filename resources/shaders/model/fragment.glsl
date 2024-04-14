@@ -21,6 +21,9 @@ in VS_OUT
 <% (if (or textured bump) %>
   vec2 texcoord;
 <% ) %>
+<% (doseq [i (range num-object-shadows)] %>
+  vec4 object_shadow_pos_<%= (inc i) %>;
+<% ) %>
 } fs_in;
 
 out vec4 fragColor;

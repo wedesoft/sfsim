@@ -550,8 +550,9 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 (tabular "Render red cube with fog and atmosphere"
   (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
-                                         (conj model-shader-mocks (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                                                                                 {:textured textured :bump bump})))
+                                         (conj model-shader-mocks
+                                               (template/eval (slurp "resources/shaders/model/fragment.glsl")
+                                                              {:textured textured :bump bump :num-object-shadows 0})))
                 model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
                                                       (use-program program)
                                                       (setup-scene-samplers program 0 textured bump)
@@ -767,7 +768,7 @@ vec4 cloud_point(vec3 point)
     (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
                                            (conj [model-shadow-mocks shaders/phong]
                                                  (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                                                                {:textured textured :bump bump})))
+                                                                {:textured textured :bump bump :num-object-shadows 1})))
                   model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
                                                         (use-program program)
                                                         (setup-scene-samplers program 0 textured bump)
@@ -792,7 +793,8 @@ vec4 cloud_point(vec3 point)
             object-shadow    (scene-shadow-map shadow-renderer light-direction opengl-scene)
             tex              (texture-render-color-depth 160 120 false
                                (clear (vec3 0.5 0.5 0.5) 0.0)
-                               (render-scene (comp renderer material-type) 0 {:sfsim.render/camera-to-world camera-to-world}
+                               (use-textures {0 (:sfsim.model/shadows object-shadow)})
+                               (render-scene (comp renderer material-type) 1 {:sfsim.render/camera-to-world camera-to-world}
                                              moved-scene render-mesh))
             result           (texture->image tex)]
         (destroy-texture tex)
