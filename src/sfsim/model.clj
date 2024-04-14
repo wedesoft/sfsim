@@ -518,35 +518,37 @@
         opengl-object (load-scene-into-opengl (comp scene-renderer material-type) gltf-object)]
     opengl-object))
 
-(defn setup-camera-and-world-matrix
+(defn setup-camera-world-and-shadow-matrices
   {:malli/schema [:=> [:cat :int fmat4 fmat4 [:vector fmat4]] :nil]}
   [program transform camera-to-world scene-shadow-matrices]
   (use-program program)
   (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (doseq [i (range (count scene-shadow-matrices))]
+         (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) transform))))
 
 (defmulti render-mesh (fn [material _render-vars] (material-type material)))
 (m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 (defmethod render-mesh ::program-colored-flat
   [{::keys [diffuse]} {::keys [program transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
   [{::keys [colors]} {::keys [program texture-offset transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
   (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
   [{::keys [diffuse normals]} {::keys [program texture-offset transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
   [{::keys [colors normals]} {::keys [program texture-offset transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
 (defn render-scenes
