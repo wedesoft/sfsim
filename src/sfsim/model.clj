@@ -310,13 +310,14 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
-  ([program-selection texture-offset render-vars scene callback]
-   (render-scene program-selection texture-offset render-vars scene callback (eye 4) (::root scene)))
-  ([program-selection texture-offset render-vars scene callback transform node]
+  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:vector fmat4] [:map [::root node]] :any
+                       [:? [:cat fmat4 node]]] :nil]}
+  ([program-selection texture-offset render-vars scene-shadow-matrices scene callback]
+   (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback (eye 4) (::root scene)))
+  ([program-selection texture-offset render-vars scene-shadow-matrices scene callback transform node]
    (let [transform (mulm transform (::transform node))]
      (doseq [child-node (::children node)]
-            (render-scene program-selection texture-offset render-vars scene callback transform child-node))
+            (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback transform child-node))
      (doseq [mesh-index (::mesh-indices node)]
             (let [mesh                (nth (::meshes scene) mesh-index)
                   material            (::material mesh)
@@ -569,7 +570,7 @@
     (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
-           (render-scene (comp scene-renderer material-type) texture-offset render-vars scene render-mesh))))
+           (render-scene (comp scene-renderer material-type) texture-offset render-vars [] scene render-mesh))))
 
 (defn destroy-scene-renderer
   {:malli/schema [:=> [:cat scene-renderer] :nil]}
@@ -645,7 +646,7 @@
            (uniform-int program "shadow_size" size))
     (texture-render-depth size size
                           (clear)
-                          (render-scene (comp renderer material-type) 0 shadow-vars centered-scene render-depth))))
+                          (render-scene (comp renderer material-type) 0 shadow-vars [] centered-scene render-depth))))
 
 (def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
 
