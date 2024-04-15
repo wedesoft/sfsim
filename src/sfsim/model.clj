@@ -17,7 +17,7 @@
                                     lod-offset overall-shading)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
-              [sfsim.shaders :refer (phong shrink-shadow-index)]
+              [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
               [sfsim.image :refer (image)]
               [sfsim.util :refer (N0 N)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
@@ -436,7 +436,9 @@
   "Fragment shader for rendering scene in atmosphere"
   {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] render/shaders]}
   [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
-  [(overall-shading num-steps (overall-shading-parameters num-object-shadows)) phong attenuation-point surface-radiance-function
+  [(overall-shading num-steps (overall-shading-parameters num-object-shadows))
+   (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "shadow_size" [["sampler2DShadow" "shadow_map"]])
+   (shadow-lookup "scene_shadow_lookup" "shadow_size") phong attenuation-point surface-radiance-function
    (cloud-point num-steps perlin-octaves cloud-octaves)
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-object-shadows num-object-shadows})])
@@ -481,6 +483,7 @@
     (setup-atmosphere-uniforms program atmosphere-luts 0 true)
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
+    (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
     (doseq [i (range num-object-shadows)]
            (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 8)))
     (setup-shadow-and-opacity-maps program shadow-data (+ 8 num-object-shadows))
