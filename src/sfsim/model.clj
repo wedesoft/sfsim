@@ -470,8 +470,8 @@
 
 (defn setup-scene-static-uniforms
   "Set up static uniforms of scene rendering program"
-  {:malli/schema [:=> [:cat :int :int :boolean :boolean data] :nil]}
-  [program texture-offset textured bump data]
+  {:malli/schema [:=> [:cat :int :int :int :boolean :boolean data] :nil]}
+  [program num-object-shadows texture-offset textured bump data]
   (let [render-config   (:sfsim.render/config data)
         planet-config   (:sfsim.planet/config data)
         atmosphere-luts (:sfsim.atmosphere/luts data)
@@ -481,7 +481,9 @@
     (setup-atmosphere-uniforms program atmosphere-luts 0 true)
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
-    (setup-shadow-and-opacity-maps program shadow-data 8)
+    (doseq [i (range num-object-shadows)]
+           (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 8)))
+    (setup-shadow-and-opacity-maps program shadow-data (+ 8 num-object-shadows))
     (setup-scene-samplers program texture-offset textured bump)
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
@@ -499,22 +501,23 @@
         cloud-data            (:sfsim.clouds/data data)
         render-config         (:sfsim.render/config data)
         atmosphere-luts       (:sfsim.atmosphere/luts data)
-        texture-offset        (+ 8 (* 2 num-steps))
+        texture-offset        (+ 8 num-object-shadows (* 2 num-steps))
         program-colored-flat  (make-scene-program false false num-steps num-object-shadows perlin-octaves cloud-octaves)
         program-textured-flat (make-scene-program true  false num-steps num-object-shadows perlin-octaves cloud-octaves)
         program-colored-bump  (make-scene-program false true  num-steps num-object-shadows perlin-octaves cloud-octaves)
         program-textured-bump (make-scene-program true  true  num-steps num-object-shadows perlin-octaves cloud-octaves)
         programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
-    (setup-scene-static-uniforms program-colored-flat  texture-offset false false data)
-    (setup-scene-static-uniforms program-textured-flat texture-offset true  false data)
-    (setup-scene-static-uniforms program-colored-bump  texture-offset false true  data)
-    (setup-scene-static-uniforms program-textured-bump texture-offset true  true  data)
+    (setup-scene-static-uniforms program-colored-flat  num-object-shadows texture-offset false false data)
+    (setup-scene-static-uniforms program-textured-flat num-object-shadows texture-offset true  false data)
+    (setup-scene-static-uniforms program-colored-bump  num-object-shadows texture-offset false true  data)
+    (setup-scene-static-uniforms program-textured-bump num-object-shadows texture-offset true  true  data)
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump
      ::programs              programs
      ::texture-offset        texture-offset
+     ::num-object-shadows    num-object-shadows
      :sfsim.clouds/data      cloud-data
      :sfsim.render/config    render-config
      :sfsim.atmosphere/luts  atmosphere-luts}))
@@ -570,12 +573,13 @@
   "Render a list of scenes"
   {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow] [:vector [:map [::root node]]]] :nil]}
   [scene-renderer render-vars shadow-vars scene-shadows scenes]
-  (let [render-config   (:sfsim.render/config scene-renderer)
-        cloud-data      (:sfsim.clouds/data scene-renderer)
-        atmosphere-luts (:sfsim.atmosphere/luts scene-renderer)
-        camera-to-world (:sfsim.render/camera-to-world render-vars)
-        texture-offset  (::texture-offset scene-renderer)
-        world-to-camera (inverse camera-to-world)]
+  (let [render-config      (:sfsim.render/config scene-renderer)
+        cloud-data         (:sfsim.clouds/data scene-renderer)
+        atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
+        camera-to-world    (:sfsim.render/camera-to-world render-vars)
+        texture-offset     (::texture-offset scene-renderer)
+        num-object-shadows (::num-object-shadows scene-renderer)
+        world-to-camera    (inverse camera-to-world)]
     (doseq [program (::programs scene-renderer)]
            (use-program program)
            (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
@@ -589,10 +593,13 @@
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
                    4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
                    6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
-    (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                   (:sfsim.opacity/opacities shadow-vars))))
+    (doseq [i (range num-object-shadows)]
+           (use-textures {(+ i 8) (::shadows (nth scene-shadows i))}))
+    (use-textures (zipmap (drop (+ 8 num-object-shadows) (range))
+                          (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
-           (render-scene (comp scene-renderer material-type) texture-offset render-vars [] scene render-mesh))))
+           (render-scene (comp scene-renderer material-type) texture-offset render-vars
+                         (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows) scene render-mesh))))
 
 (defn destroy-scene-renderer
   {:malli/schema [:=> [:cat scene-renderer] :nil]}

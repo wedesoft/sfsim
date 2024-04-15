@@ -553,7 +553,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                          (conj model-shader-mocks
                                                (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                               {:textured textured :bump bump :num-object-shadows 0})))
-                model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
+                model/setup-scene-static-uniforms (fn [program num-object-shadows texture-offset textured bump data]
                                                       (use-program program)
                                                       (setup-scene-samplers program 0 textured bump)
                                                       (uniform-float program "albedo" 3.14159265358)
@@ -779,7 +779,7 @@ vec4 cloud_point(vec3 point)
                                                     (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")]
                                                    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                   {:textured textured :bump bump :num-object-shadows 1})))
-                    model/setup-scene-static-uniforms (fn [program texture-offset textured bump data]
+                    model/setup-scene-static-uniforms (fn [program num-object-shadows texture-offset textured bump data]
                                                           (use-program program)
                                                           (setup-scene-samplers program 0 textured bump)
                                                           (uniform-sampler program "scene_shadow_map_1" 0)
@@ -791,8 +791,7 @@ vec4 cloud_point(vec3 point)
                                                                            (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                                           (uniform-vector3 program "light_direction" (normalize (vec3 5 2 1))))]
         (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/num-object-shadows 1}
-                                :sfsim.clouds/data {:sfsim.clouds/perlin-octaves []
-                                                    :sfsim.clouds/cloud-octaves []}}
+                                :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
               renderer         (make-scene-renderer data)
               shadow-size      256
               object-radius    4.0
