@@ -564,10 +564,12 @@
                                           scene-shadow-matrices)
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
+(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
+
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector [:map [::root node]]]] :nil]}
-  [scene-renderer render-vars shadow-vars scenes]
+  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow] [:vector [:map [::root node]]]] :nil]}
+  [scene-renderer render-vars shadow-vars scene-shadows scenes]
   (let [render-config   (:sfsim.render/config scene-renderer)
         cloud-data      (:sfsim.clouds/data scene-renderer)
         atmosphere-luts (:sfsim.atmosphere/luts scene-renderer)
@@ -667,8 +669,6 @@
     (texture-render-depth size size
                           (clear)
                           (render-scene (comp renderer material-type) 0 shadow-vars [] centered-scene render-depth))))
-
-(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"
