@@ -306,29 +306,33 @@
 
 (def mesh-vars (m/schema [:map [::program :int]
                                [::transform fmat4]
+                               [::internal-transform fmat4]
                                [::texture-offset :int]
                                [::scene-shadow-matrices [:vector fmat4]]]))
 
 (defn render-scene
   "Render meshes of specified scene"
   {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:vector fmat4] [:map [::root node]] :any
-                       [:? [:cat fmat4 node]]] :nil]}
+                       [:? [:cat fmat4 fmat4 node]]] :nil]}
   ([program-selection texture-offset render-vars scene-shadow-matrices scene callback]
-   (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback (eye 4) (::root scene)))
-  ([program-selection texture-offset render-vars scene-shadow-matrices scene callback transform node]
-   (let [transform (mulm transform (::transform node))]
-     (doseq [child-node (::children node)]
-            (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback transform child-node))
-     (doseq [mesh-index (::mesh-indices node)]
-            (let [mesh                (nth (::meshes scene) mesh-index)
-                  material            (::material mesh)
-                  program             (program-selection material)]
-              (callback material (assoc render-vars
-                                        ::program program
-                                        ::texture-offset texture-offset
-                                        ::transform transform
-                                        ::scene-shadow-matrices scene-shadow-matrices))
-              (render-triangles (::vao mesh)))))))
+   (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback (::transform (::root scene))
+                 (eye 4) (::root scene)))
+  ([program-selection texture-offset render-vars scene-shadow-matrices scene callback transform internal-transform node]
+   (doseq [child-node (::children node)]
+          (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback
+                        (mulm transform (::transform child-node)) (mulm internal-transform (::transform child-node))
+                        child-node))
+   (doseq [mesh-index (::mesh-indices node)]
+          (let [mesh                (nth (::meshes scene) mesh-index)
+                material            (::material mesh)
+                program             (program-selection material)]
+            (callback material (assoc render-vars
+                                      ::program program
+                                      ::texture-offset texture-offset
+                                      ::transform transform
+                                      ::internal-transform internal-transform
+                                      ::scene-shadow-matrices scene-shadow-matrices))
+            (render-triangles (::vao mesh))))))
 
 (defn- interpolate-frame
   "Interpolate between pose frames"
@@ -524,38 +528,40 @@
     opengl-object))
 
 (defn setup-camera-world-and-shadow-matrices
-  {:malli/schema [:=> [:cat :int fmat4 fmat4 [:vector fmat4]] :nil]}
-  [program transform camera-to-world scene-shadow-matrices]
+  {:malli/schema [:=> [:cat :int fmat4 fmat4 fmat4 [:vector fmat4]] :nil]}
+  [program transform internal-transform camera-to-world scene-shadow-matrices]
   (use-program program)
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (doseq [i (range (count scene-shadow-matrices))]
-         (println (mulm (nth scene-shadow-matrices i) transform))
-         ; (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) transform))
-         (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (nth scene-shadow-matrices i))))
+         (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) internal-transform))))
 
 (defmulti render-mesh (fn [material _render-vars] (material-type material)))
 (m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 (defmethod render-mesh ::program-colored-flat
-  [{::keys [diffuse]} {::keys [program transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  [{::keys [diffuse]} {::keys [program transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
-  [{::keys [colors]} {::keys [program texture-offset transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  [{::keys [colors]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
-  [{::keys [diffuse normals]} {::keys [program texture-offset transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  [{::keys [diffuse normals]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
-  [{::keys [colors normals]} {::keys [program texture-offset transform scene-shadow-matrices] :as render-vars}]
-  (setup-camera-world-and-shadow-matrices program transform (:sfsim.render/camera-to-world render-vars) scene-shadow-matrices)
+  [{::keys [colors normals]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (use-textures {texture-offset colors (inc texture-offset) normals}))
 
 (defn render-scenes
