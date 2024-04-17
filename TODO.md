@@ -1,6 +1,4 @@
 # TODO
-* integration test for torus with model shadow, integration test for two cubes
-* integration test for torus with model shadow, clouds, and atmosphere
 * separate atmosphere from environmental shadow, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only
 * hashmap with different render programs for number of shading objects, surface texture, normal texture
