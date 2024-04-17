@@ -45,7 +45,7 @@
                                    :mix 0.8
                                    :shadow-bias 1e-6})
 
-(def object-radius 20.0)
+(def object-radius 30.0)
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
