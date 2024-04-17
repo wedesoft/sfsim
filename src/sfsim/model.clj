@@ -437,12 +437,6 @@
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-object-shadows num-object-shadows})])
 
-(defn make-scene-program
-  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] :int]}
-  [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
-  (make-program :sfsim.render/vertex [(vertex-scene textured bump num-object-shadows)]
-                :sfsim.render/fragment (fragment-scene textured bump num-steps num-object-shadows perlin-octaves cloud-octaves)))
-
 (def scene-renderer (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]
                                     [::texture-offset :int]]))
 
@@ -483,31 +477,33 @@
     (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
+(defn make-scene-program
+  "Create and setup scene rendering program"
+  {:malli/schema [:=> [:cat :boolean :boolean N0 data] :int]}
+  [textured bump texture-offset data]
+  (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
+        num-object-shadows    (-> data :sfsim.opacity/data :sfsim.opacity/num-object-shadows)
+        perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
+        cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
+        fragment-shader       (fragment-scene textured bump num-steps num-object-shadows perlin-octaves cloud-octaves)
+        program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-object-shadows)]
+                                            :sfsim.render/fragment fragment-shader)]
+    (setup-scene-static-uniforms program num-object-shadows texture-offset textured bump data)
+    program))
+
 (defn make-scene-renderer
   "Create set of programs for rendering different materials"
   {:malli/schema [:=> [:cat data] scene-renderer]}
   [data]
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
         num-object-shadows    (-> data :sfsim.opacity/data :sfsim.opacity/num-object-shadows)
-        perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
-        cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
         cloud-data            (:sfsim.clouds/data data)
         render-config         (:sfsim.render/config data)
         atmosphere-luts       (:sfsim.atmosphere/luts data)
         texture-offset        (+ 8 num-object-shadows (* 2 num-steps))
-        program-colored-flat  (make-scene-program false false num-steps num-object-shadows perlin-octaves cloud-octaves)
-        program-textured-flat (make-scene-program true  false num-steps num-object-shadows perlin-octaves cloud-octaves)
-        program-colored-bump  (make-scene-program false true  num-steps num-object-shadows perlin-octaves cloud-octaves)
-        program-textured-bump (make-scene-program true  true  num-steps num-object-shadows perlin-octaves cloud-octaves)
-        programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
-    (setup-scene-static-uniforms program-colored-flat  num-object-shadows texture-offset false false data)
-    (setup-scene-static-uniforms program-textured-flat num-object-shadows texture-offset true  false data)
-    (setup-scene-static-uniforms program-colored-bump  num-object-shadows texture-offset false true  data)
-    (setup-scene-static-uniforms program-textured-bump num-object-shadows texture-offset true  true  data)
-    {::programs              {[false false] program-colored-flat
-                              [true  false] program-textured-flat
-                              [false true ] program-colored-bump
-                              [true  true ] program-textured-bump}
+        variations            (for [textured [false true] bump [false true]] [textured bump])
+        programs              (map (fn [[textured bump]] (make-scene-program textured bump texture-offset data)) variations)]
+    {::programs              (zipmap variations programs)
      ::texture-offset        texture-offset
      ::num-object-shadows    num-object-shadows
      :sfsim.clouds/data      cloud-data
