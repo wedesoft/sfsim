@@ -1,4 +1,5 @@
 # TODO
+* make number of object shadows dynamic (max number of object shadows)
 * separate atmosphere from environmental shadow, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only
 * hashmap with different render programs for number of shading objects, surface texture, normal texture
