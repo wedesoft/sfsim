@@ -1393,4 +1393,35 @@ void main()
   2.0  1.0       0.5
   5.0 -1.0       0.0)
 
+(def overall-shading-probe
+  (template/fn [x y z sx sy sz]
+"#version 410 core
+out vec3 fragColor;
+vec3 environmental_shading(vec3 point)
+{
+  return point.xxx;
+}
+float test_shadow(sampler2DShadow shadow_map, vec4 shadow_pos)
+{
+  return shadow_pos.x;
+}
+vec3 overall_shading(vec3 point, vec4 object_shadow_pos_1);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec4 shadow_pos = vec4(<%= sx %>, <%= sy %>, <%= sz %>, 1.0);
+  fragColor = overall_shading(point, shadow_pos);
+}"))
+
+(def overall-shading-test
+  (shader-test (fn [program]) overall-shading-probe (last (overall-shading 3 [["test_shadow" "shadow_map"]]))))
+
+(tabular "Overall shadow composed of environmental and scene shadows"
+  (fact ((overall-shading-test [] [?x ?y ?z ?sx ?sy ?sz]) 0) => (roughly ?result 1e-5))
+        ?x  ?y ?z ?sx ?sy ?sz ?result
+        1   0  0  1   0   0   1.0
+        0   0  0  1   0   0   0.0
+        1   0  0  0   0   0   0.0
+        0.5 0  0  0.5 0   0   0.25)
+
 (GLFW/glfwTerminate)

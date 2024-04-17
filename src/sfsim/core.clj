@@ -67,6 +67,8 @@
 
 (def scene-renderer (model/make-scene-renderer data))
 
+(def scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/shadow-size config/shadow-config) config/object-radius))
+
 (def scene (model/load-scene scene-renderer "venturestar.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
@@ -132,6 +134,7 @@
                                                                           (planet/get-current-tree tile-tree) @opacity-base)
                    object-to-world    (transformation-matrix (quaternion->matrix @object-orientation) object-position)
                    moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                   object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
                    w2                 (quot (:sfsim.render/window-width planet-render-vars) 2)
                    h2                 (quot (:sfsim.render/window-height planet-render-vars) 2)
                    clouds             (texture-render-color-depth
@@ -148,7 +151,7 @@
                                     (clear (vec3 0 1 0) 1.0 0)
                                     ; Render model
                                     (write-to-stencil-buffer)
-                                    (model/render-scenes scene-renderer scene-render-vars shadow-vars [moved-scene])
+                                    (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
                                     (clear)
                                     ;; Render planet with cloud overlay
                                     (mask-with-stencil-buffer)
@@ -159,13 +162,14 @@
                                   (do
                                     (clear (vec3 0 1 0) 1.0)
                                     ; Render model
-                                    (model/render-scenes scene-renderer planet-render-vars shadow-vars [moved-scene])
+                                    (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
                                     ; Render planet with cloud overlay
                                     (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
                                                           (planet/get-current-tree tile-tree))
                                     ; Render atmosphere with cloud overlay
                                     (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))))
                (destroy-texture clouds)
+               (model/destroy-scene-shadow-map object-shadow)
                (opacity/destroy-opacity-and-shadow shadow-vars))
              (GLFW/glfwPollEvents)
              (swap! n inc)
@@ -175,6 +179,7 @@
              (swap! t0 + dt))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
+  (model/destroy-scene-shadow-renderer scene-shadow-renderer)
   (model/destroy-scene-renderer scene-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)

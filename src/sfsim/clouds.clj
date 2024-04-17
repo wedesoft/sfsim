@@ -213,9 +213,11 @@
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
-   (shaders/shadow-cascade-lookup num-steps "average_shadow") shaders/shadow-lookup
-   (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup" [["sampler2DShadow" "shadow_map"]])
+   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" "shadow_size"
+                                        [["sampler3D" "layers"] ["float" "depth"]])
+   (shaders/shadow-cascade-lookup num-steps "average_shadow") (shaders/shadow-lookup "shadow_lookup" "shadow_size")
+   (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup" "shadow_size"
+                                        [["sampler2DShadow" "shadow_map"]])
    (slurp "resources/shaders/clouds/overall-shadow.glsl")])
 
 (defn environmental-shading
@@ -283,7 +285,8 @@
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" [["sampler3D" "layers"] ["float" "depth"]])
+   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" "shadow_size"
+                                        [["sampler3D" "layers"] ["float" "depth"]])
    shaders/convert-2d-index shaders/convert-3d-index])
 
 (defn fragment-atmosphere-clouds
@@ -371,3 +374,9 @@
  (uniform-float program "anisotropic" (::anisotropic cloud-data))
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
  (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
+
+(defn overall-shading
+  {:malli/schema [:=> [:cat N [:vector [:tuple :string :string]]] render/shaders]}
+  [num-steps parameters]
+  [(environmental-shading num-steps)
+   (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])

@@ -14,10 +14,10 @@
                                     uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
                                     setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
               [sfsim.clouds :refer (environmental-shading cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                                    lod-offset)]
+                                    lod-offset overall-shading)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
-              [sfsim.shaders :refer (phong shrink-shadow-index)]
+              [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
               [sfsim.image :refer (image)]
               [sfsim.util :refer (N0 N)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
@@ -306,23 +306,33 @@
 
 (def mesh-vars (m/schema [:map [::program :int]
                                [::transform fmat4]
-                               [::texture-offset :int]]))
+                               [::internal-transform fmat4]
+                               [::texture-offset :int]
+                               [::scene-shadow-matrices [:vector fmat4]]]))
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:map [::root node]] :any [:? [:cat fmat4 node]]] :nil]}
-  ([program-selection texture-offset render-vars scene callback]
-   (render-scene program-selection texture-offset render-vars scene callback (eye 4) (::root scene)))
-  ([program-selection texture-offset render-vars scene callback transform node]
-   (let [transform (mulm transform (::transform node))]
-     (doseq [child-node (::children node)]
-            (render-scene program-selection texture-offset render-vars scene callback transform child-node))
-     (doseq [mesh-index (::mesh-indices node)]
-            (let [mesh                (nth (::meshes scene) mesh-index)
-                  material            (::material mesh)
-                  program             (program-selection material)]
-              (callback material (assoc render-vars ::program program ::texture-offset texture-offset ::transform transform))
-              (render-triangles (::vao mesh)))))))
+  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:vector fmat4] [:map [::root node]] :any
+                       [:? [:cat fmat4 fmat4 node]]] :nil]}
+  ([program-selection texture-offset render-vars scene-shadow-matrices scene callback]
+   (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback (::transform (::root scene))
+                 (eye 4) (::root scene)))
+  ([program-selection texture-offset render-vars scene-shadow-matrices scene callback transform internal-transform node]
+   (doseq [child-node (::children node)]
+          (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback
+                        (mulm transform (::transform child-node)) (mulm internal-transform (::transform child-node))
+                        child-node))
+   (doseq [mesh-index (::mesh-indices node)]
+          (let [mesh                (nth (::meshes scene) mesh-index)
+                material            (::material mesh)
+                program             (program-selection material)]
+            (callback material (assoc render-vars
+                                      ::program program
+                                      ::texture-offset texture-offset
+                                      ::transform transform
+                                      ::internal-transform internal-transform
+                                      ::scene-shadow-matrices scene-shadow-matrices))
+            (render-triangles (::vao mesh))))))
 
 (defn- interpolate-frame
   "Interpolate between pose frames"
@@ -415,21 +425,29 @@
       ::program-colored-bump
       ::program-colored-flat)))
 
-(def vertex-scene (template/fn [textured bump] (slurp "resources/shaders/model/vertex.glsl")))
+(def vertex-scene (template/fn [textured bump num-object-shadows] (slurp "resources/shaders/model/vertex.glsl")))
+
+(defn overall-shading-parameters
+  {:malli/schema [:=> [:cat N0] [:vector [:tuple :string :string]]]}
+  [n]
+  (mapv (fn [i] ["average_scene_shadow" (str "scene_shadow_map_" (inc i))]) (range n)))
 
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"
-  {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] render/shaders]}
-  [textured bump num-steps perlin-octaves cloud-octaves]
-  [(environmental-shading num-steps) phong attenuation-point surface-radiance-function
+  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] render/shaders]}
+  [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
+  [(overall-shading num-steps (overall-shading-parameters num-object-shadows))
+   (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "shadow_size" [["sampler2DShadow" "shadow_map"]])
+   (shadow-lookup "scene_shadow_lookup" "shadow_size") phong attenuation-point surface-radiance-function
    (cloud-point num-steps perlin-octaves cloud-octaves)
-   (template/eval (slurp "resources/shaders/model/fragment.glsl") {:textured textured :bump bump})])
+   (template/eval (slurp "resources/shaders/model/fragment.glsl")
+                  {:textured textured :bump bump :num-object-shadows num-object-shadows})])
 
 (defn make-scene-program
-  {:malli/schema [:=> [:cat :boolean :boolean N [:vector :double] [:vector :double]] :int]}
-  [textured bump num-steps perlin-octaves cloud-octaves]
-  (make-program :sfsim.render/vertex [(vertex-scene textured bump)]
-                :sfsim.render/fragment (fragment-scene textured bump num-steps perlin-octaves cloud-octaves)))
+  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] :int]}
+  [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
+  (make-program :sfsim.render/vertex [(vertex-scene textured bump num-object-shadows)]
+                :sfsim.render/fragment (fragment-scene textured bump num-steps num-object-shadows perlin-octaves cloud-octaves)))
 
 (def scene-renderer (m/schema [:map [::program-colored-flat  :int]
                                     [::program-textured-flat :int]
@@ -438,7 +456,7 @@
                                     [::programs [:vector :int]]
                                     [::texture-offset :int]]))
 
-(def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]]]
+(def data (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N] [:sfsim.opacity/num-object-shadows N0]]]
                           [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
                                                      [:sfsim.clouds/cloud-octaves [:vector :double]]]]]))
 
@@ -454,8 +472,8 @@
 
 (defn setup-scene-static-uniforms
   "Set up static uniforms of scene rendering program"
-  {:malli/schema [:=> [:cat :int :int :boolean :boolean data] :nil]}
-  [program texture-offset textured bump data]
+  {:malli/schema [:=> [:cat :int :int :int :boolean :boolean data] :nil]}
+  [program num-object-shadows texture-offset textured bump data]
   (let [render-config   (:sfsim.render/config data)
         planet-config   (:sfsim.planet/config data)
         atmosphere-luts (:sfsim.atmosphere/luts data)
@@ -465,7 +483,10 @@
     (setup-atmosphere-uniforms program atmosphere-luts 0 true)
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
-    (setup-shadow-and-opacity-maps program shadow-data 8)
+    (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
+    (doseq [i (range num-object-shadows)]
+           (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 8)))
+    (setup-shadow-and-opacity-maps program shadow-data (+ 8 num-object-shadows))
     (setup-scene-samplers program texture-offset textured bump)
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
@@ -477,27 +498,29 @@
   {:malli/schema [:=> [:cat data] scene-renderer]}
   [data]
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
+        num-object-shadows    (-> data :sfsim.opacity/data :sfsim.opacity/num-object-shadows)
         perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
         cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
         cloud-data            (:sfsim.clouds/data data)
         render-config         (:sfsim.render/config data)
         atmosphere-luts       (:sfsim.atmosphere/luts data)
-        texture-offset        (+ 8 (* 2 num-steps))
-        program-colored-flat  (make-scene-program false false num-steps perlin-octaves cloud-octaves)
-        program-textured-flat (make-scene-program true  false num-steps perlin-octaves cloud-octaves)
-        program-colored-bump  (make-scene-program false true  num-steps perlin-octaves cloud-octaves)
-        program-textured-bump (make-scene-program true  true  num-steps perlin-octaves cloud-octaves)
+        texture-offset        (+ 8 num-object-shadows (* 2 num-steps))
+        program-colored-flat  (make-scene-program false false num-steps num-object-shadows perlin-octaves cloud-octaves)
+        program-textured-flat (make-scene-program true  false num-steps num-object-shadows perlin-octaves cloud-octaves)
+        program-colored-bump  (make-scene-program false true  num-steps num-object-shadows perlin-octaves cloud-octaves)
+        program-textured-bump (make-scene-program true  true  num-steps num-object-shadows perlin-octaves cloud-octaves)
         programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
-    (setup-scene-static-uniforms program-colored-flat  texture-offset false false data)
-    (setup-scene-static-uniforms program-textured-flat texture-offset true  false data)
-    (setup-scene-static-uniforms program-colored-bump  texture-offset false true  data)
-    (setup-scene-static-uniforms program-textured-bump texture-offset true  true  data)
+    (setup-scene-static-uniforms program-colored-flat  num-object-shadows texture-offset false false data)
+    (setup-scene-static-uniforms program-textured-flat num-object-shadows texture-offset true  false data)
+    (setup-scene-static-uniforms program-colored-bump  num-object-shadows texture-offset false true  data)
+    (setup-scene-static-uniforms program-textured-bump num-object-shadows texture-offset true  true  data)
     {::program-colored-flat  program-colored-flat
      ::program-textured-flat program-textured-flat
      ::program-colored-bump  program-colored-bump
      ::program-textured-bump program-textured-bump
      ::programs              programs
      ::texture-offset        texture-offset
+     ::num-object-shadows    num-object-shadows
      :sfsim.clouds/data      cloud-data
      :sfsim.render/config    render-config
      :sfsim.atmosphere/luts  atmosphere-luts}))
@@ -510,47 +533,56 @@
         opengl-object (load-scene-into-opengl (comp scene-renderer material-type) gltf-object)]
     opengl-object))
 
-(defn setup-camera-and-world-matrix
-  {:malli/schema [:=> [:cat :int fmat4 fmat4] :nil]}
-  [program transform camera-to-world]
+(defn setup-camera-world-and-shadow-matrices
+  {:malli/schema [:=> [:cat :int fmat4 fmat4 fmat4 [:vector fmat4]] :nil]}
+  [program transform internal-transform camera-to-world scene-shadow-matrices]
   (use-program program)
   (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  (doseq [i (range (count scene-shadow-matrices))]
+         (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) internal-transform))))
 
 (defmulti render-mesh (fn [material _render-vars] (material-type material)))
 (m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 (defmethod render-mesh ::program-colored-flat
-  [{::keys [diffuse]} {::keys [program transform] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
+  [{::keys [diffuse]} {::keys [program transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse))
 
 (defmethod render-mesh ::program-textured-flat
-  [{::keys [colors]} {::keys [program texture-offset transform] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
+  [{::keys [colors]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (use-textures {texture-offset colors}))
 
 (defmethod render-mesh ::program-colored-bump
-  [{::keys [diffuse normals]} {::keys [program texture-offset transform] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
+  [{::keys [diffuse normals]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse)
   (use-textures {texture-offset normals}))
 
 (defmethod render-mesh ::program-textured-bump
-  [{::keys [colors normals]} {::keys [program texture-offset transform] :as render-vars}]
-  (setup-camera-and-world-matrix program transform (:sfsim.render/camera-to-world render-vars))
+  [{::keys [colors normals]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
+                                          scene-shadow-matrices)
   (use-textures {texture-offset colors (inc texture-offset) normals}))
+
+(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
 
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector [:map [::root node]]]] :nil]}
-  [scene-renderer render-vars shadow-vars scenes]
-  (let [render-config   (:sfsim.render/config scene-renderer)
-        cloud-data      (:sfsim.clouds/data scene-renderer)
-        atmosphere-luts (:sfsim.atmosphere/luts scene-renderer)
-        camera-to-world (:sfsim.render/camera-to-world render-vars)
-        texture-offset  (::texture-offset scene-renderer)
-        world-to-camera (inverse camera-to-world)]
+  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow] [:vector [:map [::root node]]]] :nil]}
+  [scene-renderer render-vars shadow-vars scene-shadows scenes]
+  (let [render-config      (:sfsim.render/config scene-renderer)
+        cloud-data         (:sfsim.clouds/data scene-renderer)
+        atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
+        camera-to-world    (:sfsim.render/camera-to-world render-vars)
+        texture-offset     (::texture-offset scene-renderer)
+        num-object-shadows (::num-object-shadows scene-renderer)
+        world-to-camera    (inverse camera-to-world)]
     (doseq [program (::programs scene-renderer)]
            (use-program program)
            (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
@@ -564,10 +596,13 @@
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
                    4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
                    6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
-    (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                   (:sfsim.opacity/opacities shadow-vars))))
+    (doseq [i (range num-object-shadows)]
+           (use-textures {(+ i 8) (::shadows (nth scene-shadows i))}))
+    (use-textures (zipmap (drop (+ 8 num-object-shadows) (range))
+                          (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
-           (render-scene (comp scene-renderer material-type) texture-offset render-vars scene render-mesh))))
+           (render-scene (comp scene-renderer material-type) texture-offset render-vars
+                         (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows) scene render-mesh))))
 
 (defn destroy-scene-renderer
   {:malli/schema [:=> [:cat scene-renderer] :nil]}
@@ -643,9 +678,7 @@
            (uniform-int program "shadow_size" size))
     (texture-render-depth size size
                           (clear)
-                          (render-scene (comp renderer material-type) 0 shadow-vars centered-scene render-depth))))
-
-(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
+                          (render-scene (comp renderer material-type) 0 shadow-vars [] centered-scene render-depth))))
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"

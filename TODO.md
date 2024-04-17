@@ -1,13 +1,18 @@
 # TODO
-* make shadow method names and shadow size configurable
-* integrate object shadows into direct light shader and maybe make template function for shadows which can be composed
-* http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
+* separate atmosphere from environmental shadow, setup-shadow-matrices support for no environmental shadow,
+  overall-shading with object shadows only
+* hashmap with different render programs for number of shading objects, surface texture, normal texture
+* use overall\_shading in model fragment shader (parametrise model vertex and fragment shader)
+* put day and night textures into texture array (water as well?)
+* use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
+* rename overall-shadow
+* rename environment shadow method and shadow size
+* integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
+  use multiplication of local shadow map and planet+cloud shadows?
 * put model-shadow-map and keywords in returned hashmap into opacity module?
 * add object radius to object?
-* combine with object-shadow-map similar as opacity-and-shadow-cascade and use renderer as parameter
-* object shadows on itself, PCF, use multiplication of local shadow map and planet+cloud shadows?
-* adapt shadow map size to object distance
 * object shadows on planet
+* adapt shadow map size to object distance
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
