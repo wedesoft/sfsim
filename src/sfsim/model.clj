@@ -312,7 +312,7 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:vector fmat4] [:map [::root node]] :any
+  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:vector fmat4] [:map [::root node]] ifn?
                        [:? [:cat fmat4 fmat4 node]]] :nil]}
   ([program-selection texture-offset render-vars scene-shadow-matrices scene callback]
    (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback (::transform (::root scene))

@@ -1,6 +1,5 @@
 # TODO
-* compact generation of programs for scene shadow renderer
-* replace :any with fn? for render-scene schema
+* compact generation of programs for scene shadow renderer, stick number of object shadows in a dictionary?
 * make number of object shadows dynamic (max number of object shadows)
 * separate atmosphere from environmental shadow, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only
