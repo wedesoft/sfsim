@@ -1,9 +1,6 @@
 # TODO
-* make number of object shadows dynamic (max number of object shadows)
 * separate atmosphere from environmental shadow, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only
-* hashmap with different render programs for number of shading objects, surface texture, normal texture
-* use overall\_shading in model fragment shader (parametrise model vertex and fragment shader)
 * put day and night textures into texture array (water as well?)
 * use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
 * rename overall-shadow

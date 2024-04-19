@@ -25,8 +25,6 @@
 
 (GLFW/glfwInit)
 
-(def shadow-config (assoc config/shadow-config :sfsim.opacity/num-object-shadows 0))
-
 (defn load-tile-tree
   [planet-renderer tree width position n]
   (if (zero? n)
@@ -45,7 +43,7 @@
               opacity-base              250.0
               cloud-data                (clouds/make-cloud-data config/cloud-config)
               atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
-              shadow-data               (opacity/make-shadow-data shadow-config config/planet-config cloud-data)
+              shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
               data                      {:sfsim.render/config config/render-config
                                          :sfsim.planet/config config/planet-config
                                          :sfsim.opacity/data shadow-data
@@ -99,7 +97,7 @@
                      opacity-base              250.0
                      cloud-data                (clouds/make-cloud-data config/cloud-config)
                      atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
-                     shadow-data               (opacity/make-shadow-data shadow-config config/planet-config cloud-data)
+                     shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
                      data                      {:sfsim.render/config config/render-config
                                                 :sfsim.planet/config config/planet-config
                                                 :sfsim.opacity/data shadow-data
