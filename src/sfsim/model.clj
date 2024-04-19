@@ -19,7 +19,7 @@
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
               [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
               [sfsim.image :refer (image)]
-              [sfsim.util :refer (N0 N)])
+              [sfsim.util :refer (N0 N third)])
     (:import [org.lwjgl.assimp Assimp AIMesh AIMaterial AIColor4D AINode AITexture AIString AIVector3D$Buffer AIAnimation
               AINodeAnim AIMatrix4x4 AIFace AIVector3D AIScene AIVectorKey AIQuatKey]
              [org.lwjgl.stb STBImage]))
@@ -249,7 +249,7 @@
   "Load index and vertex data into OpenGL buffer"
   {:malli/schema [:=> [:cat fn? mesh material] [:map [:vao vertex-array-object]]]}
   [program-selection mesh material]
-  (assoc mesh ::vao (make-vertex-array-object (program-selection material 0) (::indices mesh) (::vertices mesh)
+  (assoc mesh ::vao (make-vertex-array-object (program-selection material) (::indices mesh) (::vertices mesh)
                                               (::attributes mesh))))
 
 (defn- load-meshes-into-opengl
@@ -324,9 +324,8 @@
                         child-node))
    (doseq [mesh-index (::mesh-indices node)]
           (let [mesh                (nth (::meshes scene) mesh-index)
-                material            (::material mesh)
-                num-object-shadows  (count scene-shadow-matrices)
-                program             (program-selection material num-object-shadows)]
+                material            (assoc (::material mesh) ::num-object-shadows (count scene-shadow-matrices))
+                program             (program-selection material)]
             (callback material (assoc render-vars
                                       ::program program
                                       ::texture-offset texture-offset
@@ -415,15 +414,15 @@
   [scene transforms]
   (assoc scene ::root (apply-transforms-node (::root scene) transforms)))
 
-(defn render-method-type
+(defn material-type
   "Determine information for dispatching to correct render method"
   [{::keys [color-texture-index normal-texture-index]}]
   [(boolean color-texture-index) (boolean normal-texture-index)])
 
-(defn shader-program-type
+(defn material-and-shadow-type
   "Determine information for selecting correct shader program"
-  [{::keys [color-texture-index normal-texture-index]} num-object-shadows]
-  [(boolean color-texture-index) (boolean normal-texture-index) num-object-shadows])
+  [{::keys [color-texture-index normal-texture-index num-object-shadows]}]
+  [(boolean color-texture-index) (boolean normal-texture-index) (or num-object-shadows 0)])
 
 (def vertex-scene (template/fn [textured bump num-object-shadows] (slurp "resources/shaders/model/vertex.glsl")))
 
@@ -501,17 +500,15 @@
   "Create set of programs for rendering different materials"
   {:malli/schema [:=> [:cat data] scene-renderer]}
   [data]
-  (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        object-shadow-counts  (-> data :sfsim.opacity/data :sfsim.opacity/object-shadow-counts)
-        cloud-data            (:sfsim.clouds/data data)
-        render-config         (:sfsim.render/config data)
-        atmosphere-luts       (:sfsim.atmosphere/luts data)
-        texture-offset        (+ 8 (* 2 num-steps))
-        variations            (for [textured [false true] bump [false true] num-object-shadows object-shadow-counts]
-                                   [textured bump num-object-shadows])
-        programs              (map (fn [[textured bump num-object-shadows]]
-                                       (make-scene-program textured bump texture-offset num-object-shadows data))
-                                   variations)]
+  (let [num-steps            (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
+        object-shadow-counts (-> data :sfsim.opacity/data :sfsim.opacity/object-shadow-counts)
+        cloud-data           (:sfsim.clouds/data data)
+        render-config        (:sfsim.render/config data)
+        atmosphere-luts      (:sfsim.atmosphere/luts data)
+        texture-offset       (+ 8 (* 2 num-steps))
+        variations           (for [textured [false true] bump [false true] num-object-shadows object-shadow-counts]
+                                  [textured bump num-object-shadows])
+        programs             (map #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
     {::programs              (zipmap variations programs)
      ::texture-offset        texture-offset
      :sfsim.clouds/data      cloud-data
@@ -523,7 +520,7 @@
   {:malli/schema [:=> [:cat scene-renderer :string] [:map [::root node]]]}
   [scene-renderer filename]
   (let [gltf-object   (read-gltf filename)
-        opengl-object (load-scene-into-opengl (comp (::programs scene-renderer) shader-program-type) gltf-object)]
+        opengl-object (load-scene-into-opengl (comp (::programs scene-renderer) material-and-shadow-type) gltf-object)]
     opengl-object))
 
 (defn setup-camera-world-and-shadow-matrices
@@ -535,7 +532,7 @@
   (doseq [i (range (count scene-shadow-matrices))]
          (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) internal-transform))))
 
-(defmulti render-mesh (fn [material _render-vars] (render-method-type material)))
+(defmulti render-mesh (fn [material _render-vars] (material-type material)))
 (m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 (defmethod render-mesh [false false]
@@ -594,7 +591,7 @@
     (use-textures (zipmap (drop (+ 8 num-object-shadows) (range))
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
-           (render-scene (comp (::programs scene-renderer) shader-program-type) texture-offset render-vars
+           (render-scene (comp (::programs scene-renderer) material-and-shadow-type) texture-offset render-vars
                          (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows) scene render-mesh))))
 
 (defn destroy-scene-renderer
@@ -629,7 +626,7 @@
   (make-program :sfsim.render/vertex [(vertex-shadow-scene textured bump)]
                 :sfsim.render/fragment [fragment-shadow-scene]))
 
-(def scene-shadow-renderer (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :int] :int]]
+(def scene-shadow-renderer (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]
                                            [::size N]
                                            [::object-radius :double]]))
 
@@ -637,17 +634,11 @@
   "Create renderer for rendering scene-shadows"
   {:malli/schema [:=> [:cat N :double] scene-shadow-renderer]}
   [size object-radius]
-  (let [program-colored-flat  (make-scene-shadow-program false false)
-        program-textured-flat (make-scene-shadow-program true  false)
-        program-colored-bump  (make-scene-shadow-program false true )
-        program-textured-bump (make-scene-shadow-program true  true )
-        programs              [program-colored-flat program-textured-flat program-colored-bump program-textured-bump]]
-    {::programs              {[false false 0] program-colored-flat
-                              [true  false 0] program-textured-flat
-                              [false true  0] program-colored-bump
-                              [true  true  0] program-textured-bump}
-     ::size                  size
-     ::object-radius         object-radius}))
+  (let [variations (for [textured [false true] bump [false true]] [textured bump])
+        programs   (map #(make-scene-shadow-program (first %) (second %)) variations)]
+    {::programs      (zipmap variations programs)
+     ::size          size
+     ::object-radius object-radius}))
 
 (defn render-depth
   {:malli/schema [:=> [:cat material mesh-vars] :nil]}
@@ -666,7 +657,7 @@
            (uniform-int program "shadow_size" size))
     (texture-render-depth size size
                           (clear)
-                          (render-scene (comp (::programs renderer) shader-program-type) 0 shadow-vars [] centered-scene
+                          (render-scene (comp (::programs renderer) material-type) 0 shadow-vars [] centered-scene
                                         render-depth))))
 
 (defn scene-shadow-map

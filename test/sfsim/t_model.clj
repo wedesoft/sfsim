@@ -315,15 +315,12 @@ void main()
           (destroy-scene opengl-scene)
           (destroy-program program))) => (is-image "test/sfsim/fixtures/model/bricks.png" 0.01))
 
-(defn cube-render-method-type [{:sfsim.model/keys [color-texture-index]}]
+(defn cube-material-type [{:sfsim.model/keys [color-texture-index]}]
   (if color-texture-index
     :textured
     :colored))
 
-(defn cube-shader-program-type [material num-object-shadows]
-  (cube-render-method-type material))
-
-(defmulti render-cube (fn [material render-vars] (cube-render-method-type material)))
+(defmulti render-cube (fn [material render-vars] (cube-material-type material)))
 
 (defmethod render-cube :colored [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
   (use-program program)
@@ -341,7 +338,7 @@ void main()
       (offscreen-render 160 120
         (let [program-cube      (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
               program-dice      (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
-              program-selection (comp {:colored program-cube :textured program-dice} cube-shader-program-type)
+              program-selection (comp {:colored program-cube :textured program-dice} cube-material-type)
               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
               camera-to-world   (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))
               moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
@@ -578,13 +575,17 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
         (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/object-shadow-counts [0]}
                                 :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
               renderer         (make-scene-renderer data)
-              opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) shader-program-type) ?model)
+              opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
               camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
               object-to-world  (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 1 0 -5))
               moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
           (clear (vec3 0.5 0.5 0.5) 0.0)
-          (render-scene (comp (:sfsim.model/programs renderer) shader-program-type) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                        moved-scene render-mesh)
+          (render-scene (comp (:sfsim.model/programs renderer) material-and-shadow-type)
+                        0
+                        {:sfsim.render/camera-to-world camera-to-world}
+                        []
+                        moved-scene
+                        render-mesh)
           (destroy-scene opengl-scene)
           (destroy-scene-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
@@ -639,7 +640,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
     (with-invisible-window
       (let [renderer        (make-scene-shadow-renderer 256 ?object-radius)
             light-direction (vec3 0 0 1)
-            scene           (load-scene-into-opengl (comp (:sfsim.model/programs renderer) shader-program-type) ?model)
+            scene           (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) ?model)
             object-to-world (transformation-matrix (mulm (rotation-x ?angle-x) (rotation-y ?angle-y)) (vec3 100 200 300))
             moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
             object-shadow   (scene-shadow-map renderer light-direction moved-scene)
@@ -803,18 +804,18 @@ vec4 cloud_point(vec3 point)
               object-radius    4.0
               light-direction  (normalize (vec3 5 2 1))
               shadow-renderer  (make-scene-shadow-renderer shadow-size object-radius)
-              opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) shader-program-type) ?model)
+              opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
               camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
               object-to-world  (transformation-matrix (mulm (rotation-x ?angle-x) (rotation-y ?angle-y)) (vec3 1 0 (- ?dist)))
               moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
               object-shadow    (scene-shadow-map shadow-renderer light-direction opengl-scene)
               tex              (texture-render-color-depth 160 120 false
-                                                           (clear (vec3 0.5 0.5 0.5) 0.0)
-                                                           (use-textures {0 (:sfsim.model/shadows object-shadow)})
-                                                           (render-scene (comp (:sfsim.model/programs renderer) shader-program-type) 1
-                                                                         {:sfsim.render/camera-to-world camera-to-world}
-                                                                         [(:sfsim.matrix/object-to-shadow-map (:sfsim.model/matrices object-shadow))]
-                                                                         moved-scene render-mesh))
+                                 (clear (vec3 0.5 0.5 0.5) 0.0)
+                                 (use-textures {0 (:sfsim.model/shadows object-shadow)})
+                                 (render-scene (comp (:sfsim.model/programs renderer) material-and-shadow-type) 1
+                                               {:sfsim.render/camera-to-world camera-to-world}
+                                               [(:sfsim.matrix/object-to-shadow-map (:sfsim.model/matrices object-shadow))]
+                                               moved-scene render-mesh))
               result           (texture->image tex)]
           (destroy-texture tex)
           (destroy-scene-shadow-map object-shadow)

@@ -1,5 +1,4 @@
 # TODO
-* compact generation of programs for scene shadow renderer, stick number of object shadows in a dictionary?
 * separate atmosphere from environmental shadow, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only
 * put day and night textures into texture array (water as well?)
