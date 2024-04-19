@@ -474,6 +474,7 @@
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
+    (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
     (doseq [i (range num-object-shadows)]
            (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 8)))
     (setup-shadow-and-opacity-maps program shadow-data (+ 8 num-object-shadows))
