@@ -1,7 +1,5 @@
 #version 410 core
 
-uniform float radius;
-uniform float max_height;
 uniform vec3 light_direction;
 <% (if textured %>
 uniform sampler2D colors;
@@ -23,11 +21,14 @@ in VS_OUT
 <% (if (or textured bump) %>
   vec2 texcoord;
 <% ) %>
+<% (doseq [i (range num-object-shadows)] %>
+  vec4 object_shadow_pos_<%= (inc i) %>;
+<% ) %>
 } fs_in;
 
 out vec4 fragColor;
 
-vec3 environmental_shading(vec3 point);
+vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc %)) (range num-object-shadows))) %>);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec3 attenuation_point(vec3 point, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
@@ -35,7 +36,7 @@ vec4 cloud_point(vec3 point);
 
 void main()
 {
-  vec3 light = environmental_shading(fs_in.world_point);
+  vec3 light = overall_shading(fs_in.world_point<%= (apply str (map #(str ", fs_in.object_shadow_pos_" (inc %)) (range num-object-shadows))) %>);
   vec3 ambient_light = surface_radiance_function(fs_in.world_point, light_direction);
 <% (if bump %>
   vec3 normal = fs_in.surface * (2.0 * texture(normals, fs_in.texcoord).xyz - 1.0);

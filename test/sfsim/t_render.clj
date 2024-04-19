@@ -826,7 +826,8 @@ void main(void)
               program-shadow  (make-program :sfsim.render/vertex [vertex-shadow s/shrink-shadow-index]
                                             :sfsim.render/fragment [fragment-shadow])
               program-main    (make-program :sfsim.render/vertex [vertex-scene]
-                                            :sfsim.render/fragment [fragment-scene s/shadow-lookup])
+                                            :sfsim.render/fragment [fragment-scene
+                                                                    (s/shadow-lookup "shadow_lookup" "shadow_size")])
               vao             (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-map      (texture-render-depth
                                 128 128
@@ -885,7 +886,7 @@ void main(void)
               program-main    (make-program :sfsim.render/vertex [vertex-scene]
                                             :sfsim.render/fragment [fragment-scene-cascade
                                                                     (s/shadow-cascade-lookup num-steps "shadow_lookup")
-                                                                    s/shadow-lookup])
+                                                                    (s/shadow-lookup "shadow_lookup" "shadow_size")])
               vao             (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-maps     (shadow-cascade 128 shadow-mats program-shadow
                                               (fn [shadow-ndc-matrix]

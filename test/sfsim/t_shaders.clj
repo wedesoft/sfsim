@@ -205,7 +205,8 @@ void main()
           data      (repeat 4 shadow-depth)
           shadows   (make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 2 :height 2 :data (float-array data)})
           program   (make-program :sfsim.render/vertex [vertex-passthrough]
-                                  :sfsim.render/fragment [(shadow-lookup-probe lookup-depth) shadow-lookup])
+                                  :sfsim.render/fragment [(shadow-lookup-probe lookup-depth)
+                                                          (shadow-lookup "shadow_lookup" "shadow_size")])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
           tex       (texture-render-color
                       1 1 true
@@ -321,7 +322,7 @@ void main()
   (shader-test
     (fn [program shadow-size]
         (uniform-int program "shadow_size" shadow-size))
-    percentage-closer-filtering-probe (percentage-closer-filtering "averaged" "f" [["float" "scale"]])))
+    percentage-closer-filtering-probe (percentage-closer-filtering "averaged" "f" "shadow_size" [["float" "scale"]])))
 
 (tabular "Local averaging of shadow to reduce aliasing"
          (fact ((percentage-closer-filtering-test [?size] [?x]) 0) => (roughly ?result 1e-6))
