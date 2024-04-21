@@ -2,7 +2,7 @@
     (:require [malli.core :as m]
               [sfsim.image :refer (image byte-image float-image-2d float-image-3d float-image-4d)]
               [sfsim.util :refer (N)])
-    (:import [org.lwjgl.opengl GL11 GL12 GL13 GL14 GL30 GL42]
+    (:import [org.lwjgl.opengl GL11 GL12 GL13 GL14 GL30 GL31 GL42]
              [org.lwjgl BufferUtils]))
 
 (set! *unchecked-math* true)
@@ -246,6 +246,35 @@
   [interpolation boundary image]
   (make-byte-texture-2d-base image interpolation boundary GL11/GL_RED GL11/GL_RED GL11/GL_UNSIGNED_BYTE))
 
+(defmacro create-texture-2d-array
+  "Macro to initialise cubemap"
+  [interpolation boundary width height depth & body]
+  `(create-texture GL30/GL_TEXTURE_2D_ARRAY texture#
+                   (setup-interpolation GL30/GL_TEXTURE_2D_ARRAY ~interpolation)
+                   (setup-boundary-3d GL30/GL_TEXTURE_2D_ARRAY ~boundary)
+                   ~@body
+                   {::width ~width ::height ~height ::depth ~depth ::target GL30/GL_TEXTURE_2D_ARRAY ::texture texture#}))
+
+(defn- make-byte-texture-2d-array
+  "Initialise a 2D byte texture"
+  {:malli/schema [:=> [:cat [:vector image] interpolation boundary :int :int :int] texture-3d]}
+  [images interpolation boundary internalformat format_ type_]
+  (let [width  (:sfsim.image/width (first images))
+        height (:sfsim.image/height (first images))
+        depth  (count images)]
+    (create-texture-2d-array interpolation boundary width height depth
+      (GL12/glTexImage3D GL30/GL_TEXTURE_2D_ARRAY 0 ^long internalformat ^long width ^long height depth 0 ^long format_
+                         ^long type_ ^java.nio.DirectByteBuffer (java.nio.ByteBuffer/allocateDirect 0))
+      (doseq [[index image] (map-indexed vector images)]
+             (let [buffer (make-byte-buffer (:sfsim.image/data image))]
+               (GL31/glTexSubImage3D GL30/GL_TEXTURE_2D_ARRAY 0 0 0 ^long index ^long width ^long height 1 ^long format_
+                                     ^long type_ ^java.nio.DirectByteBuffer buffer))))))
+
+(defn make-rgb-texture-array
+  "Create 2D RGB texture array"
+  [interpolation boundary images]
+  (make-byte-texture-2d-array images interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
+
 (defn make-vector-texture-2d
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   {:malli/schema [:=> [:cat interpolation boundary float-image-2d] texture-2d]}
@@ -372,7 +401,6 @@
                    (setup-boundary-3d GL13/GL_TEXTURE_CUBE_MAP ~boundary)
                    ~@body
                    {::width ~size ::height ~size ::depth 6 ::target GL13/GL_TEXTURE_CUBE_MAP ::texture texture#}))
-
 
 (defn- make-cubemap
   "Initialise a cubemap"
