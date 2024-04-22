@@ -1,5 +1,4 @@
 # TODO
-* rename overall-shadow -> composed-shadows
 * rename environment shadow method and shadow size
 * separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only

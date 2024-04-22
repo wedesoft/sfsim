@@ -521,10 +521,10 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
   return vec3(ambient, ambient, ambient);
 }")
 
-(def overall-shadow-mock
+(def planet-and-cloud-shadows-mock
 "#version 410 core
 uniform float shadow;
-float overall_shadow(vec4 point)
+float planet_and_cloud_shadows(vec4 point)
 {
   return shadow;
 }")
@@ -544,9 +544,10 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   return incoming * attenuation;
 }")
 
-(def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
-                         ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
-                         (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))])
+(def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
+                         planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong
+                         (last atmosphere/attenuation-point) (last (clouds/environmental-shading 3))
+                         (last (clouds/overall-shading 3 []))])
 
 (tabular "Render red cube with fog and atmosphere"
   (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]

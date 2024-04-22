@@ -388,10 +388,10 @@ vec4 cloud_overlay()
   return vec4(clouds, clouds, clouds, clouds);
 }")
 
-(def overall-shadow-mock
+(def planet-and-cloud-shadows-mock
 "#version 410 core
 uniform float shadow;
-float overall_shadow(vec4 point)
+float planet_and_cloud_shadows(vec4 point)
 {
   return shadow;
 }")
@@ -399,7 +399,7 @@ float overall_shadow(vec4 point)
 (defn make-planet-program []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
-                                        overall-shadow-mock fake-transmittance fake-ray-scatter shaders/ray-shell
+                                        planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
                                         shaders/is-above-horizon atmosphere/transmittance-point surface-radiance-function
                                         shaders/remap (last (clouds/environmental-shading 3)) (last atmosphere/attenuation-track)
                                         shaders/phong (last atmosphere/attenuation-point)]))
