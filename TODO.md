@@ -1,5 +1,4 @@
 # TODO
-* rename environment shadow method and shadow size
 * separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
