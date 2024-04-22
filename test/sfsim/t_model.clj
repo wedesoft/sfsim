@@ -521,10 +521,10 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
   return vec3(ambient, ambient, ambient);
 }")
 
-(def overall-shadow-mock
+(def planet-and-cloud-shadows-mock
 "#version 410 core
 uniform float shadow;
-float overall_shadow(vec4 point)
+float planet_and_cloud_shadows(vec4 point)
 {
   return shadow;
 }")
@@ -544,16 +544,17 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   return incoming * attenuation;
 }")
 
-(def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock overall-shadow-mock
-                         ray-sphere-mock attenuation-mock shaders/phong (last atmosphere/attenuation-point)
-                         (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))])
+(def model-shader-mocks [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
+                         planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong
+                         (last atmosphere/attenuation-point) (last (clouds/environmental-shading 3))
+                         (last (clouds/overall-shading 3 []))])
 
 (tabular "Render red cube with fog and atmosphere"
-  (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
+  (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
                                          (conj model-shader-mocks
                                                (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                                                              {:textured textured :bump bump :num-object-shadows 0})))
-                model/setup-scene-static-uniforms (fn [program texture-offset num-object-shadows textured bump data]
+                                                              {:textured textured :bump bump :num-scene-shadows 0})))
+                model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                       (use-program program)
                                                       (setup-scene-samplers program 0 0 textured bump)
                                                       (uniform-float program "albedo" 3.14159265358)
@@ -572,7 +573,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                       (uniform-int program "above" ?above))]
     (fact
       (offscreen-render 160 120
-        (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/object-shadow-counts [0]}
+        (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0]}
                                 :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
               renderer         (make-scene-renderer data)
               opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
@@ -771,9 +772,9 @@ vec4 cloud_point(vec3 point)
 (tabular "Integration of model's self-shading"
   (fact
     (with-invisible-window
-      (with-redefs [model/fragment-scene (fn [textured bump num-steps num-object-shadows perlin-octaves cloud-octaves]
+      (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
                                              (conj [model-shadow-mocks shaders/phong
-                                                    (last (clouds/overall-shading 3 (repeat num-object-shadows
+                                                    (last (clouds/overall-shading 3 (repeat num-scene-shadows
                                                                                             ["average_scene_shadow"
                                                                                              "scene_shadow_map_1"])))
                                                     (shaders/percentage-closer-filtering "average_scene_shadow"
@@ -785,8 +786,8 @@ vec4 cloud_point(vec3 point)
                                                    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                   {:textured textured
                                                                    :bump bump
-                                                                   :num-object-shadows num-object-shadows})))
-                    model/setup-scene-static-uniforms (fn [program texture-offset num-object-shadows textured bump data]
+                                                                   :num-scene-shadows num-scene-shadows})))
+                    model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                           (use-program program)
                                                           (setup-scene-samplers program 0 0 textured bump)
                                                           (uniform-sampler program "scene_shadow_map_1" 0)
@@ -797,7 +798,7 @@ vec4 cloud_point(vec3 point)
                                                           (uniform-matrix4 program "projection"
                                                                            (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                                           (uniform-vector3 program "light_direction" (normalize (vec3 5 2 1))))]
-        (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/object-shadow-counts [0 1]}
+        (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0 1]}
                                 :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
               renderer         (make-scene-renderer data)
               shadow-size      256

@@ -67,7 +67,8 @@
 
 (def scene-renderer (model/make-scene-renderer data))
 
-(def scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/shadow-size config/shadow-config) config/object-radius))
+(def scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
+                                                             config/object-radius))
 
 (def scene (model/load-scene scene-renderer "venturestar.gltf"))
 

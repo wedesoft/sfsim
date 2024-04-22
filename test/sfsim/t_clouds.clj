@@ -852,7 +852,7 @@ uniform float shadow;
 uniform float transmittance;
 uniform float atmosphere;
 uniform float in_scatter;
-float overall_shadow(vec4 point)
+float planet_and_cloud_shadows(vec4 point)
 {
   return shadow;
 }
@@ -1311,7 +1311,7 @@ void main()
           (destroy-vertex-array-object vao)
           (destroy-program program-opac))))
 
-(def overall-shadow-probe
+(def planet-and-cloud-shadows-probe
   (template/fn []
 "#version 410 core
 uniform float opacity;
@@ -1325,23 +1325,23 @@ float shadow_cascade_lookup(vec4 point)
 {
   return shadow;
 }
-float overall_shadow(vec4 point);
+float planet_and_cloud_shadows(vec4 point);
 void main()
 {
-  float result = overall_shadow(vec4(1, 2, 4, 1));
+  float result = planet_and_cloud_shadows(vec4(1, 2, 4, 1));
   fragColor = vec3(result, result, result);
 }"))
 
-(def overall-shadow-test
+(def planet-and-cloud-shadows-test
   (shader-test
     (fn [program opacity shadow]
         (uniform-float program "opacity" opacity)
         (uniform-float program "shadow" shadow))
-    overall-shadow-probe
-    (last (overall-shadow 3))))
+    planet-and-cloud-shadows-probe
+    (last (planet-and-cloud-shadows 3))))
 
 (fact "Multiply shadows to get overall shadow"
-      ((overall-shadow-test [2.0 3.0] []) 0) => 6.0)
+      ((planet-and-cloud-shadows-test [2.0 3.0] []) 0) => 6.0)
 
 (facts "Test level-of-detail offset computation"
        (lod-offset {:sfsim.render/fov (/ PI 2)} {:sfsim.clouds/detail-scale worley-size} {:sfsim.render/window-width 1})
@@ -1363,7 +1363,7 @@ bool is_above_horizon(vec3 point, vec3 direction)
 {
   return direction.z > 0.0;
 }
-float overall_shadow(vec4 point)
+float planet_and_cloud_shadows(vec4 point)
 {
   return point.z >= 1.0 ? 1.0 : 0.0;
 }

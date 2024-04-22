@@ -177,7 +177,7 @@
             planet-renderer           (planet/make-planet-renderer data)
             atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
             scene-renderer            (model/make-scene-renderer data)
-            scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/shadow-size config/shadow-config)
+            scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
                                                                         config/object-radius)
             object                    (assoc-in (model/load-scene scene-renderer "test/sfsim/fixtures/model/torus.gltf")
                                                 [:sfsim.model/root :sfsim.model/transform] object-to-world)

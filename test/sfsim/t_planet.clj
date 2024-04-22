@@ -388,10 +388,10 @@ vec4 cloud_overlay()
   return vec4(clouds, clouds, clouds, clouds);
 }")
 
-(def overall-shadow-mock
+(def planet-and-cloud-shadows-mock
 "#version 410 core
 uniform float shadow;
-float overall_shadow(vec4 point)
+float planet_and_cloud_shadows(vec4 point)
 {
   return shadow;
 }")
@@ -399,7 +399,7 @@ float overall_shadow(vec4 point)
 (defn make-planet-program []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
-                                        overall-shadow-mock fake-transmittance fake-ray-scatter shaders/ray-shell
+                                        planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
                                         shaders/is-above-horizon atmosphere/transmittance-point surface-radiance-function
                                         shaders/remap (last (clouds/environmental-shading 3)) (last atmosphere/attenuation-track)
                                         shaders/phong (last atmosphere/attenuation-point)]))
@@ -407,15 +407,14 @@ float overall_shadow(vec4 point)
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
   (use-program program)
-  (uniform-sampler program "day" 0)
-  (uniform-sampler program "night" 1)
-  (uniform-sampler program "normals" 2)
-  (uniform-sampler program "transmittance" 3)
-  (uniform-sampler program "ray_scatter" 4)
-  (uniform-sampler program "mie_strength" 5)
-  (uniform-sampler program "surface_radiance" 6)
-  (uniform-sampler program "water" 7)
-  (uniform-sampler program "worley" 8)
+  (uniform-sampler program "day_night" 0)
+  (uniform-sampler program "normals" 1)
+  (uniform-sampler program "transmittance" 2)
+  (uniform-sampler program "ray_scatter" 3)
+  (uniform-sampler program "mie_strength" 4)
+  (uniform-sampler program "surface_radiance" 5)
+  (uniform-sampler program "water" 6)
+  (uniform-sampler program "worley" 7)
   (uniform-float program "specular" 100.0)
   (uniform-float program "max_height" 100000.0)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
@@ -452,10 +451,9 @@ float overall_shadow(vec4 point)
 
 (defn planet-textures
   [colors nx ny nz tr tg tb s ar ag ab water size]
-  (let [day           (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
-                                        (slurp-image (str "test/sfsim/fixtures/planet/" colors ".png")))
-        night         (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
-                                        (slurp-image (str "test/sfsim/fixtures/planet/night.png")))
+  (let [day-night     (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
+                                              [(slurp-image (str "test/sfsim/fixtures/planet/" colors ".png"))
+                                               (slurp-image (str "test/sfsim/fixtures/planet/night.png"))])
         normals       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width 2 :height 2
                                                             :data (float-array (flatten (repeat 4 [nx ny nz])))})
@@ -476,17 +474,17 @@ float overall_shadow(vec4 point)
         worley-data   (float-array (repeat (* 2 2 2) 1.0))
         worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                              #:sfsim.image{:width 2 :height 2 :depth 2 :data worley-data})]
-    [day night normals transmittance ray-scatter mie-strength radiance water worley]))
+    [day-night normals transmittance ray-scatter mie-strength radiance water worley]))
 
 (tabular "Fragment shader to render planetary surface"
          (fact
            (offscreen-render 256 256
-                             (let [program       (make-planet-program)
-                                   variables     ["point" 3 "colorcoord" 2 "surfacecoord" 2]
-                                   vao           (make-vertex-array-object program planet-indices planet-vertices variables)
-                                   radius        6378000
-                                   size          7
-                                   textures      (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
+                             (let [program   (make-planet-program)
+                                   variables ["point" 3 "colorcoord" 2 "surfacecoord" 2]
+                                   vao       (make-vertex-array-object program planet-indices planet-vertices variables)
+                                   radius    6378000
+                                   size      7
+                                   textures  (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
                                (clear (vec3 0 0 0))
                                (setup-static-uniforms program)
                                (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
