@@ -261,10 +261,11 @@
   [images interpolation boundary internalformat format_ type_]
   (let [width  (:sfsim.image/width (first images))
         height (:sfsim.image/height (first images))
-        depth  (count images)]
+        depth  (count images)
+        size   (* depth (count (:sfsim.image/data (first images))))]
     (create-texture-2d-array interpolation boundary width height depth
       (GL12/glTexImage3D GL30/GL_TEXTURE_2D_ARRAY 0 ^long internalformat ^long width ^long height depth 0 ^long format_
-                         ^long type_ ^java.nio.DirectByteBuffer (java.nio.ByteBuffer/allocateDirect 0))
+                         ^long type_ ^java.nio.DirectByteBuffer (java.nio.ByteBuffer/allocateDirect size))
       (doseq [[index image] (map-indexed vector images)]
              (let [buffer (make-byte-buffer (:sfsim.image/data image))]
                (GL31/glTexSubImage3D GL30/GL_TEXTURE_2D_ARRAY 0 0 0 ^long index ^long width ^long height 1 ^long format_

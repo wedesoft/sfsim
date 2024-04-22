@@ -9,8 +9,8 @@
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
                                       quadtree-extract)]
-              [sfsim.texture :refer (make-rgb-texture make-vector-texture-2d make-ubyte-texture-2d destroy-texture texture-2d
-                                     texture-3d)]
+              [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
+                                     texture-2d texture-3d)]
               [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                                     uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                                     destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
@@ -177,7 +177,7 @@
                                                                                       (:sfsim.clouds/perlin-octaves cloud-data)
                                                                                       (:sfsim.clouds/cloud-octaves cloud-data))])]
     (use-program program)
-    (uniform-sampler program "surface"          0)
+    (uniform-sampler program "surface" 0)
     (setup-shadow-and-opacity-maps program shadow-data 8)
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
@@ -215,8 +215,7 @@
                    3 (:sfsim.atmosphere/mie atmosphere-luts) 4 (:sfsim.clouds/worley cloud-data)
                    5 (:sfsim.clouds/perlin-worley cloud-data) 6 (:sfsim.clouds/cloud-cover cloud-data)
                    7 (:sfsim.clouds/bluenoise cloud-data)})
-    (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                   (:sfsim.opacity/opacities shadow-vars))))
+    (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (render-tree program tree world-to-camera [::surf-tex])))
 
 (defn destroy-cloud-planet-renderer
@@ -280,8 +279,7 @@
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.clouds/worley data) 4 (:sfsim.clouds/perlin-worley data)
                    5 (:sfsim.clouds/cloud-cover data) 6 (:sfsim.clouds/bluenoise data)})
-    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                   (:sfsim.opacity/opacities shadow-vars))))
+    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (render-quads vao)
     (destroy-vertex-array-object vao)))
 
@@ -309,13 +307,12 @@
                                       :sfsim.render/fragment [(fragment-planet (:sfsim.opacity/num-steps shadow-data))])]
     (use-program program)
     (uniform-sampler program "surface"          0)
-    (uniform-sampler program "day"              1)
-    (uniform-sampler program "night"            2)
-    (uniform-sampler program "normals"          3)
-    (uniform-sampler program "water"            4)
-    (uniform-sampler program "clouds"           9)
-    (setup-shadow-and-opacity-maps program shadow-data 10)
-    (setup-atmosphere-uniforms program atmosphere-luts 5 true)
+    (uniform-sampler program "day_night"        1)
+    (uniform-sampler program "normals"          2)
+    (uniform-sampler program "water"            3)
+    (uniform-sampler program "clouds"           8)
+    (setup-shadow-and-opacity-maps program shadow-data 9)
+    (setup-atmosphere-uniforms program atmosphere-luts 4 true)
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "dawn_start" (::dawn-start config))
@@ -345,11 +342,12 @@
     (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
     (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
     (setup-shadow-matrices program shadow-vars)
-    (use-textures {5 (:sfsim.atmosphere/transmittance atmosphere-luts) 6 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   7 (:sfsim.atmosphere/mie atmosphere-luts) 8 (:sfsim.atmosphere/surface-radiance atmosphere-luts) 9 clouds})
-    (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                    (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree world-to-camera [::surf-tex ::day-tex ::night-tex ::normal-tex ::water-tex])))
+    (use-textures {4 (:sfsim.atmosphere/transmittance atmosphere-luts) 5 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   6 (:sfsim.atmosphere/mie atmosphere-luts) 7 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
+                   8 clouds})
+    (use-textures (zipmap (drop 9 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
+                                                   (:sfsim.opacity/opacities shadow-vars))))
+    (render-tree program tree world-to-camera [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program (untested)"
@@ -367,15 +365,14 @@
         vertices       (make-cube-map-tile-vertices (:sfsim.quadtree/face tile) (:sfsim.quadtree/level tile)
                                                     (:sfsim.quadtree/y tile) (:sfsim.quadtree/x tile) tilesize color-tilesize)
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-        day-tex        (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (::day tile))
-        night-tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp (::night tile))
+        day-night-tex  (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp [(::day tile) (::night tile)])
         surf-tex       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                #:sfsim.image{:width tilesize :height tilesize :data (::surface tile)})
         normal-tex     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp (::normals tile))
         water-tex      (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width color-tilesize :height color-tilesize :data (::water tile)})]
     (assoc (dissoc tile ::day ::night ::surface ::normals ::water)
-           ::vao vao ::day-tex day-tex ::night-tex night-tex ::surf-tex surf-tex ::normal-tex normal-tex ::water-tex water-tex)))
+           ::vao vao ::day-night-tex day-night-tex ::surf-tex surf-tex ::normal-tex normal-tex ::water-tex water-tex)))
 
 (defn load-tiles-into-opengl
   "Load tiles into OpenGL (untested)"
@@ -387,8 +384,7 @@
   "Remove textures of single tile from OpenGL (untested)"
   {:malli/schema [:=> [:cat tile-info] :nil]}
   [tile]
-  (destroy-texture (::day-tex tile))
-  (destroy-texture (::night-tex tile))
+  (destroy-texture (::day-night-tex tile))
   (destroy-texture (::surf-tex tile))
   (destroy-texture (::normal-tex tile))
   (destroy-texture (::water-tex tile))
