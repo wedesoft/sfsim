@@ -1,7 +1,8 @@
 # TODO
-* separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
-  overall-shading with object shadows only
+* dynamic number of programs for planet rendering
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
+* separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
+  overall-shading with object shadows only, aggregate shadow-vars?
 * integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
   use multiplication of local shadow map and planet+cloud shadows?
 * https://lup.lub.lu.se/student-papers/search/publication/8893256
