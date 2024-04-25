@@ -1,6 +1,7 @@
 (ns sfsim.planet
     "Module with functionality to render a planet"
     (:require [clojure.math :refer (sqrt cos)]
+              [comb.template :as template]
               [fastmath.vector :refer (mag)]
               [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
@@ -49,17 +50,21 @@
   "Tessellation control shader to control outer tessellation of quad using a uniform integer"
   (slurp "resources/shaders/planet/tess-control.glsl"))
 
-(def tess-evaluation-planet
+(defn tess-evaluation-planet
   "Tessellation evaluation shader to generate output points of tessellated quads"
-  (slurp "resources/shaders/planet/tess-evaluation.glsl"))
+  {:malli/schema [:=> [:cat N0] render/shaders]}
+  [num-scene-shadows]
+  [(template/eval (slurp "resources/shaders/planet/tess-evaluation.glsl") {:num-scene-shadows num-scene-shadows})])
 
 (def tess-evaluation-planet-shadow
   "Tessellation evaluation shader to output shadow map points of tessellated quads"
   [shaders/shrink-shadow-index (slurp "resources/shaders/planet/tess-evaluation-shadow.glsl")])
 
-(def geometry-planet
+(defn geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
-  (slurp "resources/shaders/planet/geometry.glsl"))
+  {:malli/schema [:=> [:cat N0] render/shaders]}
+  [num-scene-shadows]
+  [(template/eval (slurp "resources/shaders/planet/geometry.glsl") {:num-scene-shadows num-scene-shadows})])
 
 (def surface-radiance-function
   "Shader function to determine ambient light scattered by the atmosphere"
@@ -67,10 +72,10 @@
 
 (defn fragment-planet
   "Fragment shader to render planetary surface"
-  {:malli/schema [:=> [:cat N] render/shaders]}
-  [num-steps]
+  {:malli/schema [:=> [:cat N N0] render/shaders]}
+  [num-steps num-scene-shadows]
   [(environmental-shading num-steps) surface-radiance-function shaders/remap shaders/phong attenuation-point cloud-overlay
-   (slurp "resources/shaders/planet/fragment.glsl")])
+   (template/eval (slurp "resources/shaders/planet/fragment.glsl") {:num-scene-shadows num-scene-shadows})])
 
 (def fragment-planet-shadow
   "Fragment shader to render planetary shadow map"
@@ -124,7 +129,7 @@
         program     (make-program :sfsim.render/vertex [vertex-planet]
                                   :sfsim.render/tess-control [tess-control-planet]
                                   :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
-                                  :sfsim.render/geometry [geometry-planet]
+                                  :sfsim.render/geometry [(geometry-planet 0)]
                                   :sfsim.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
@@ -171,8 +176,8 @@
         tilesize        (::tilesize planet-config)
         program         (make-program :sfsim.render/vertex [vertex-planet]
                                       :sfsim.render/tess-control [tess-control-planet]
-                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                      :sfsim.render/geometry [geometry-planet]
+                                      :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                      :sfsim.render/geometry [(geometry-planet 0)]
                                       :sfsim.render/fragment [(fragment-planet-clouds (:sfsim.opacity/num-steps shadow-data)
                                                                                       (:sfsim.clouds/perlin-octaves cloud-data)
                                                                                       (:sfsim.clouds/cloud-octaves cloud-data))])]
@@ -291,13 +296,13 @@
 
 (defn make-planet-program
   "Make program to render planet"
-  {:malli/schema [:=> [:cat :int] :int]}
-  [num-steps]
+  {:malli/schema [:=> [:cat :int :int] :int]}
+  [num-steps num-scene-shadows]
   (make-program :sfsim.render/vertex [vertex-planet]
                                       :sfsim.render/tess-control [tess-control-planet]
-                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                      :sfsim.render/geometry [geometry-planet]
-                                      :sfsim.render/fragment [(fragment-planet num-steps)]))
+                                      :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
+                                      :sfsim.render/geometry [(geometry-planet num-scene-shadows)]
+                                      :sfsim.render/fragment [(fragment-planet num-steps num-scene-shadows)]))
 
 (def planet-renderer (m/schema [:map [::program :int] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
 
@@ -312,7 +317,7 @@
         shadow-data     (:sfsim.opacity/data other)
         variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
         num-steps       (:sfsim.opacity/num-steps shadow-data)
-        program         (make-planet-program num-steps)]
+        program         (make-planet-program num-steps 0)]
     (use-program program)
     (uniform-sampler program "surface"   0)
     (uniform-sampler program "day_night" 1)

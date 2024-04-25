@@ -1168,8 +1168,8 @@ void main()
           camera-to-world (transformation-matrix (eye 3) origin)
           planet          (make-program :sfsim.render/vertex [vertex-planet]
                                         :sfsim.render/tess-control [tess-control-planet]
-                                        :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                        :sfsim.render/geometry [geometry-planet]
+                                        :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                        :sfsim.render/geometry [(geometry-planet 0)]
                                         :sfsim.render/fragment [fragment-planet-clouds (last (cloud-point 3 [] []))])
           indices         [0 1 3 2]
           vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
