@@ -396,7 +396,7 @@ float planet_and_cloud_shadows(vec4 point)
   return shadow;
 }")
 
-(defn make-planet-program []
+(defn make-mocked-planet-program []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
                                         planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
@@ -479,7 +479,7 @@ float planet_and_cloud_shadows(vec4 point)
 (tabular "Fragment shader to render planetary surface"
          (fact
            (offscreen-render 256 256
-                             (let [program   (make-planet-program)
+                             (let [program   (make-mocked-planet-program)
                                    variables ["point" 3 "colorcoord" 2 "surfacecoord" 2]
                                    vao       (make-vertex-array-object program planet-indices planet-vertices variables)
                                    radius    6378000

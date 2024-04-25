@@ -1,6 +1,7 @@
 # TODO
 * dynamic number of programs for planet rendering, add object pose to shadow information
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
+* direct light integrates atmosphere and overall shadow, overall shadow integrates cascade, opacity cascade, and model list
 * pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
 * separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?

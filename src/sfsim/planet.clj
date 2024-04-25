@@ -289,6 +289,16 @@
   [{:sfsim.clouds/keys [program]}]
   (destroy-program program))
 
+(defn make-planet-program
+  "Make program to render planet"
+  {:malli/schema [:=> [:cat :int] :int]}
+  [num-steps]
+  (make-program :sfsim.render/vertex [vertex-planet]
+                                      :sfsim.render/tess-control [tess-control-planet]
+                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
+                                      :sfsim.render/geometry [geometry-planet]
+                                      :sfsim.render/fragment [(fragment-planet num-steps)]))
+
 (def planet-renderer (m/schema [:map [::program :int] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
 
 (defn make-planet-renderer
@@ -300,17 +310,15 @@
         render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
         shadow-data     (:sfsim.opacity/data other)
-        program         (make-program :sfsim.render/vertex [vertex-planet]
-                                      :sfsim.render/tess-control [tess-control-planet]
-                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                      :sfsim.render/geometry [geometry-planet]
-                                      :sfsim.render/fragment [(fragment-planet (:sfsim.opacity/num-steps shadow-data))])]
+        variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
+        num-steps       (:sfsim.opacity/num-steps shadow-data)
+        program         (make-planet-program num-steps)]
     (use-program program)
-    (uniform-sampler program "surface"          0)
-    (uniform-sampler program "day_night"        1)
-    (uniform-sampler program "normals"          2)
-    (uniform-sampler program "water"            3)
-    (uniform-sampler program "clouds"           8)
+    (uniform-sampler program "surface"   0)
+    (uniform-sampler program "day_night" 1)
+    (uniform-sampler program "normals"   2)
+    (uniform-sampler program "water"     3)
+    (uniform-sampler program "clouds"    8)
     (setup-shadow-and-opacity-maps program shadow-data 9)
     (setup-atmosphere-uniforms program atmosphere-luts 4 true)
     (uniform-int program "high_detail" (dec tilesize))
