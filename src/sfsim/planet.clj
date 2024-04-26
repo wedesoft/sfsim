@@ -93,14 +93,23 @@
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
   {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector scene-shadow] [:vector :keyword]] :nil]}
   [program tile world-to-camera scene-shadows texture-keys]
-  (let [neighbours  (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
-                            (if (:sfsim.quadtree/left  tile) 2 0)
-                            (if (:sfsim.quadtree/down  tile) 4 0)
-                            (if (:sfsim.quadtree/right tile) 8 0))
-        tile-center (:sfsim.quadtree/center tile)]
+  (let [neighbours    (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
+                              (if (:sfsim.quadtree/left  tile) 2 0)
+                              (if (:sfsim.quadtree/down  tile) 4 0)
+                              (if (:sfsim.quadtree/right tile) 8 0))
+        tile-center   (:sfsim.quadtree/center tile)
+        tile-to-world (transformation-matrix (eye 3) tile-center)
+        ]
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
-    (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera (transformation-matrix (eye 3) tile-center)))
+    (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera tile-to-world))
+    (doseq [i (range (count scene-shadows))]
+           (let [matrices             (:sfsim.model/matrices (nth scene-shadows i))
+                 object-to-world      (:sfsim.matrix/object-to-world matrices)
+                 world-to-object      (inverse object-to-world)
+                 object-to-shadow-map (:sfsim.matrix/object-to-shadow-map matrices)]
+             (uniform-matrix4 program (str "tile_to_shadow_map_" (inc i))
+                              (mulm object-to-shadow-map (mulm world-to-object tile-to-world)))))
     (use-textures (zipmap (range) (map tile texture-keys)))
     (render-patches (::vao tile))))
 
