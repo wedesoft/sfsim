@@ -13,6 +13,9 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+<% (doseq [i (range num-scene-shadows)] %>
+  vec4 object_shadow_pos_<%= (inc i) %>;
+<% ) %>
 } fs_in;
 
 out vec4 fragColor;
