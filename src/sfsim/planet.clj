@@ -91,8 +91,8 @@
 
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
-  {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector :keyword]] :nil]}
-  [program tile world-to-camera texture-keys]
+  {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector scene-shadow] [:vector :keyword]] :nil]}
+  [program tile world-to-camera scene-shadows texture-keys]
   (let [neighbours  (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
                             (if (:sfsim.quadtree/left  tile) 2 0)
                             (if (:sfsim.quadtree/down  tile) 4 0)
@@ -110,7 +110,7 @@
   [program node world-to-camera scene-shadows texture-keys]
   (when-not (empty? node)
             (if (is-leaf? node)
-              (render-tile program node world-to-camera texture-keys)
+              (render-tile program node world-to-camera scene-shadows texture-keys)
               (doseq [selector [:sfsim.quadtree/face0 :sfsim.quadtree/face1 :sfsim.quadtree/face2 :sfsim.quadtree/face3
                                 :sfsim.quadtree/face4 :sfsim.quadtree/face5
                                 :sfsim.quadtree/quad0 :sfsim.quadtree/quad1 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3]]

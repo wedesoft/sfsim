@@ -557,7 +557,7 @@ void main()
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "projection" projection)
-                               (raster-lines (render-tile program tile (inverse transform) [:sfsim.planet/surf-tex]))
+                               (raster-lines (render-tile program tile (inverse transform) [] [:sfsim.planet/surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim/fixtures/planet/" ?result) 0.01))
@@ -568,28 +568,28 @@ void main()
          true  true  false true   "tile-down.png"
          true  true  true  false  "tile-right.png")
 
-(defn render-tile-calls [program node transform texture-keys]
+(defn render-tile-calls [program node transform scene-shadows texture-keys]
   (let [calls (atom [])]
-    (with-redefs [render-tile (fn [^long program ^clojure.lang.IPersistentMap tile ^Mat4x4 transform
-                                   ^clojure.lang.PersistentVector texture-keys]
-                                  (swap! calls conj [program tile transform texture-keys])
+    (with-redefs [render-tile (fn [program tile transform scene-shadows texture-keys]
+                                  (swap! calls conj [program tile transform scene-shadows texture-keys])
                                   nil)]
-      (render-tree program node transform [] texture-keys)
+      (render-tree program node transform scene-shadows texture-keys)
       @calls)))
 
 (let [vao :sfsim.planet/vao]
   (tabular "Call each tile in tree to be rendered"
-    (fact (render-tile-calls ?program ?node ?transform [:sfsim.planet/surf-tex]) => ?result)
+    (fact (render-tile-calls ?program ?node ?transform [] [:sfsim.planet/surf-tex]) => ?result)
     ?program ?transform ?node                                ?result
     1234 :transform {}                                       []
-    1234 :transform {vao 42}                                  [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face0 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face1 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face2 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face3 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face4 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face5 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face3 {:sfsim.quadtree/quad2 {vao 42}}} [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]))
+    1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face3 {:sfsim.quadtree/quad2 {vao 42}}}
+                                                             [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
 
 (facts "Maximum shadow depth for cloud shadows"
        (render-depth 4.0 1.0 0.0) => 3.0

@@ -1,5 +1,5 @@
 # TODO
-* add scene shadow variables to render-tile
+* set scene shadow matrices in render-tile
 * setup scene shadow maps for all planet programs in render-planet
 * dynamic number of programs for planet rendering, add object pose to shadow information
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
