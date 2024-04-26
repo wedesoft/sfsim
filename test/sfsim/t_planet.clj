@@ -574,7 +574,7 @@ void main()
                                    ^clojure.lang.PersistentVector texture-keys]
                                   (swap! calls conj [program tile transform texture-keys])
                                   nil)]
-      (render-tree program node transform texture-keys)
+      (render-tree program node transform [] texture-keys)
       @calls)))
 
 (let [vao :sfsim.planet/vao]

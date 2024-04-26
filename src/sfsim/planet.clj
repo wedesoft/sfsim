@@ -87,10 +87,12 @@
   [num-steps perlin-octaves cloud-octaves]
   [(cloud-point num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/planet/fragment-clouds.glsl")])
 
+(def scene-shadow (m/schema [:map [:sfsim.model/matrices shadow-patch] [:sfsim.model/shadows texture-2d]]))
+
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
   {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector :keyword]] :nil]}
-  [program tile world-to-camera ^clojure.lang.PersistentVector texture-keys]
+  [program tile world-to-camera texture-keys]
   (let [neighbours  (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
                             (if (:sfsim.quadtree/left  tile) 2 0)
                             (if (:sfsim.quadtree/down  tile) 4 0)
@@ -104,15 +106,15 @@
 
 (defn render-tree
   "Call each tile in tree to be rendered"
-  {:malli/schema [:=> [:cat :int [:maybe :map] :any [:vector :keyword]] :nil]}
-  [program node world-to-camera texture-keys]
+  {:malli/schema [:=> [:cat :int [:maybe :map] :any [:vector scene-shadow] [:vector :keyword]] :nil]}
+  [program node world-to-camera scene-shadows texture-keys]
   (when-not (empty? node)
             (if (is-leaf? node)
               (render-tile program node world-to-camera texture-keys)
               (doseq [selector [:sfsim.quadtree/face0 :sfsim.quadtree/face1 :sfsim.quadtree/face2 :sfsim.quadtree/face3
                                 :sfsim.quadtree/face4 :sfsim.quadtree/face5
                                 :sfsim.quadtree/quad0 :sfsim.quadtree/quad1 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3]]
-                     (render-tree program (selector node) world-to-camera texture-keys)))))
+                     (render-tree program (selector node) world-to-camera scene-shadows texture-keys)))))
 
 (def planet-config (m/schema [:map [::radius :double] [::max-height :double] [::albedo :double] [::dawn-start :double]
                                    [::dawn-end :double] [::tilesize N] [::color-tilesize N] [::reflectivity :double]
@@ -144,7 +146,7 @@
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{::keys [program] :as other} & {:keys [tree] :as data}]
   (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
-                  (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [::surf-tex]))))
+                  (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [] [::surf-tex]))))
 
 (defn destroy-shadow-cascade
   "Destroy cascade of shadow maps"
@@ -221,7 +223,7 @@
                    5 (:sfsim.clouds/perlin-worley cloud-data) 6 (:sfsim.clouds/cloud-cover cloud-data)
                    7 (:sfsim.clouds/bluenoise cloud-data)})
     (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree world-to-camera [::surf-tex])))
+    (render-tree program tree world-to-camera [] [::surf-tex])))
 
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon"
@@ -340,8 +342,6 @@
      :sfsim.atmosphere/luts atmosphere-luts
      ::config config}))
 
-(def scene-shadow (m/schema [:map [:sfsim.model/matrices shadow-patch] [:sfsim.model/shadows texture-2d]]))
-
 (defn render-planet
   "Render planet"
   {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] texture-2d [:maybe :map]] :nil]}
@@ -362,7 +362,7 @@
                    8 clouds})
     (use-textures (zipmap (drop 9 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree world-to-camera [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
+    (render-tree program tree world-to-camera scene-shadows [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program"
