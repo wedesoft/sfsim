@@ -311,7 +311,7 @@
 
 (defn make-planet-program
   "Make program to render planet"
-  {:malli/schema [:=> [:cat :int :int] :int]}
+  {:malli/schema [:=> [:cat :map :int] :int]}
   [data num-scene-shadows]
   (let [config          (::config data)
         tilesize        (::tilesize config)

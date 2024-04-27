@@ -1,7 +1,5 @@
 # TODO
-* instantiate planet program variations, only use one to render
-* set scene\_shadow\_size and shadow maps
-* lint
+* test shadow-pos trick
 * setup scene shadow maps for all planet programs in render-planet
 * store world-to-object instead of object-to-world in shadow patch structure
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
