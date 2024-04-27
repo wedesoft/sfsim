@@ -14,7 +14,7 @@
               [sfsim.worley :refer (worley-size)]
               [sfsim.bluenoise :refer (noise-size) :as bluenoise]
               [sfsim.atmosphere :as atmosphere]
-              [sfsim.util :refer (slurp-floats N)]))
+              [sfsim.util :refer (slurp-floats N N0)]))
 
 (def cover-size 512)
 
@@ -374,6 +374,11 @@
  (uniform-float program "anisotropic" (::anisotropic cloud-data))
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
  (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
+
+(defn overall-shading-parameters
+  {:malli/schema [:=> [:cat N0] [:vector [:tuple :string :string]]]}
+  [n]
+  (mapv (fn [i] ["average_scene_shadow" (str "scene_shadow_map_" (inc i))]) (range n)))
 
 (defn overall-shading
   {:malli/schema [:=> [:cat N [:sequential [:tuple :string :string]]] render/shaders]}

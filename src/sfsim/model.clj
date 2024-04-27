@@ -13,8 +13,8 @@
                                     make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
                                     uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
                                     setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
-              [sfsim.clouds :refer (environmental-shading cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                                    lod-offset overall-shading)]
+              [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
+                                    overall-shading overall-shading-parameters)]
               [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
               [sfsim.planet :refer (surface-radiance-function shadow-vars)]
               [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
@@ -425,11 +425,6 @@
   [(boolean color-texture-index) (boolean normal-texture-index) (or num-scene-shadows 0)])
 
 (def vertex-scene (template/fn [textured bump num-scene-shadows] (slurp "resources/shaders/model/vertex.glsl")))
-
-(defn overall-shading-parameters
-  {:malli/schema [:=> [:cat N0] [:vector [:tuple :string :string]]]}
-  [n]
-  (mapv (fn [i] ["average_scene_shadow" (str "scene_shadow_map_" (inc i))]) (range n)))
 
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"

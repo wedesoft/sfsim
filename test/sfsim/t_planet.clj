@@ -401,8 +401,8 @@ float planet_and_cloud_shadows(vec4 point)
                 :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
                                         planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
                                         shaders/is-above-horizon atmosphere/transmittance-point surface-radiance-function
-                                        shaders/remap (last (clouds/environmental-shading 3)) (last atmosphere/attenuation-track)
-                                        shaders/phong (last atmosphere/attenuation-point)]))
+                                        shaders/remap (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
+                                        (last atmosphere/attenuation-track) shaders/phong (last atmosphere/attenuation-point)]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large

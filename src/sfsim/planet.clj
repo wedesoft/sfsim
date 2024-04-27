@@ -22,7 +22,7 @@
                                         atmosphere-luts)]
               [sfsim.util :refer (N N0 sqr)]
               [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                                    fragment-atmosphere-clouds cloud-data environmental-shading)]
+                                    fragment-atmosphere-clouds cloud-data overall-shading overall-shading-parameters)]
               [sfsim.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -74,7 +74,11 @@
   "Fragment shader to render planetary surface"
   {:malli/schema [:=> [:cat N N0] render/shaders]}
   [num-steps num-scene-shadows]
-  [(environmental-shading num-steps) surface-radiance-function shaders/remap shaders/phong attenuation-point cloud-overlay
+  [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
+   (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size"
+                                        [["sampler2DShadow" "shadow_map"]])
+   (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size") surface-radiance-function shaders/remap shaders/phong
+   attenuation-point cloud-overlay
    (template/eval (slurp "resources/shaders/planet/fragment.glsl") {:num-scene-shadows num-scene-shadows})])
 
 (def fragment-planet-shadow
@@ -326,7 +330,7 @@
         render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
         shadow-data     (:sfsim.opacity/data other)
-        variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
+        ; variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
         num-steps       (:sfsim.opacity/num-steps shadow-data)
         program         (make-planet-program num-steps 0)]
     (use-program program)
