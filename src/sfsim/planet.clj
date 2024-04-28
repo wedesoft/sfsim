@@ -5,7 +5,7 @@
               [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
               [sfsim.quaternion :refer (quaternion)]
-              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box)]
+              [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
               [sfsim.cubemap :refer (cube-map-corners)]
               [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
                                       quadtree-extract)]
@@ -116,7 +116,7 @@
 (def planet-shadow-renderer (m/schema [:map [::program :int] [:sfsim.opacity/data shadow-data]]))
 
 (defn make-planet-shadow-renderer
-  "Create program for rendering cascaded shadow maps of planet (untested)"
+  "Create program for rendering cascaded shadow maps of planet"
   {:malli/schema [:=> [:cat [:map [:sfsim.opacity/data shadow-data] [::config planet-config]]] planet-shadow-renderer]}
   [data]
   (let [shadow-data (:sfsim.opacity/data data)
@@ -135,21 +135,21 @@
      :sfsim.opacity/data shadow-data}))
 
 (defn render-shadow-cascade
-  "Render planetary shadow cascade (untested)"
+  "Render planetary shadow cascade"
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{::keys [program] :as other} & {:keys [tree] :as data}]
   (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
                   (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [::surf-tex]))))
 
 (defn destroy-shadow-cascade
-  "Destroy cascade of shadow maps (untested)"
+  "Destroy cascade of shadow maps"
   {:malli/schema [:=> [:cat [:vector texture-2d]] :nil]}
   [shadows]
   (doseq [shadow shadows]
          (destroy-texture shadow)))
 
 (defn destroy-planet-shadow-renderer
-  "Destroy renderer for planet shadow (untested)"
+  "Destroy renderer for planet shadow"
   {:malli/schema [:=> [:cat planet-shadow-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
@@ -158,7 +158,7 @@
                                            [:sfsim.clouds/data cloud-data] [:sfsim.render/config render-config]]))
 
 (defn make-cloud-planet-renderer
-  "Make a renderer to render clouds below horizon (untested)"
+  "Make a renderer to render clouds below horizon"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::config planet-config]
                                   [:sfsim.atmosphere/luts atmosphere-luts] [:sfsim.opacity/data shadow-data]
                                   [:sfsim.clouds/data cloud-data]]] cloud-planet-renderer]}
@@ -196,7 +196,7 @@
                                  [:sfsim.opacity/shadows [:vector texture-2d]] [:sfsim.opacity/opacities [:vector texture-3d]]]))
 
 (defn render-cloud-planet
-  "Render clouds below horizon (untested)"
+  "Render clouds below horizon"
   {:malli/schema [:=> [:cat cloud-planet-renderer render-vars shadow-vars [:maybe :map]] :nil]}
   [{::keys [program] :as other} render-vars shadow-vars tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
@@ -219,7 +219,7 @@
     (render-tree program tree world-to-camera [::surf-tex])))
 
 (defn destroy-cloud-planet-renderer
-  "Destroy program for rendering clouds below horizon (untested)"
+  "Destroy program for rendering clouds below horizon"
   {:malli/schema [:=> [:cat cloud-planet-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
@@ -292,7 +292,7 @@
 (def planet-renderer (m/schema [:map [::program :int] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
 
 (defn make-planet-renderer
-  "Program to render planet with cloud overlay (untested)"
+  "Program to render planet with cloud overlay"
   {:malli/schema [:=> [:cat [:map [::config planet-config] [:sfsim.render/config render-config]
                                   [:sfsim.atmosphere/luts atmosphere-luts] [:sfsim.opacity/data shadow-data]]] planet-renderer]}
   [{::keys [config] :as other}]
@@ -327,10 +327,12 @@
      :sfsim.atmosphere/luts atmosphere-luts
      ::config config}))
 
+(def scene-shadow (m/schema [:map [:sfsim.model/matrices shadow-patch] [:sfsim.model/shadows texture-2d]]))
+
 (defn render-planet
-  "Render planet (untested)"
-  {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars texture-2d [:maybe :map]] :nil]}
-  [{::keys [program] :as other} render-vars shadow-vars clouds tree]
+  "Render planet"
+  {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] texture-2d [:maybe :map]] :nil]}
+  [{::keys [program] :as other} render-vars shadow-vars scene-shadows clouds tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
@@ -350,13 +352,13 @@
     (render-tree program tree world-to-camera [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
 
 (defn destroy-planet-renderer
-  "Destroy planet rendering program (untested)"
+  "Destroy planet rendering program"
   {:malli/schema [:=> [:cat planet-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))
 
 (defn load-tile-into-opengl
-  "Load textures of single tile into OpenGL (untested)"
+  "Load textures of single tile into OpenGL"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}
   [{::keys [program config]} tile]
   (let [tilesize       (::tilesize config)
@@ -375,13 +377,13 @@
            ::vao vao ::day-night-tex day-night-tex ::surf-tex surf-tex ::normal-tex normal-tex ::water-tex water-tex)))
 
 (defn load-tiles-into-opengl
-  "Load tiles into OpenGL (untested)"
+  "Load tiles into OpenGL"
   {:malli/schema [:=> [:cat :map :map [:sequential [:vector :keyword]]] :map]}
   [planet-renderer tree paths]
   (quadtree-update tree paths (partial load-tile-into-opengl planet-renderer)))
 
 (defn unload-tile-from-opengl
-  "Remove textures of single tile from OpenGL (untested)"
+  "Remove textures of single tile from OpenGL"
   {:malli/schema [:=> [:cat tile-info] :nil]}
   [tile]
   (destroy-texture (::day-night-tex tile))
@@ -391,13 +393,13 @@
   (destroy-vertex-array-object (::vao tile)))
 
 (defn unload-tiles-from-opengl
-  "Remove tile textures from OpenGL (untested)"
+  "Remove tile textures from OpenGL"
   {:malli/schema [:=> [:cat [:sequential tile-info]] :nil]}
   [tiles]
   (doseq [tile tiles] (unload-tile-from-opengl tile)))
 
 (defn background-tree-update
-  "Method to call in a backround thread for loading tiles (untested)"
+  "Method to call in a backround thread for loading tiles"
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
@@ -407,14 +409,14 @@
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))
 
 (defn make-tile-tree
-  "Create empty tile tree and empty change object (untested)"
+  "Create empty tile tree and empty change object"
   {:malli/schema [:=> :cat tree]}
   []
   {:tree    (atom {})
    :changes (atom (future {:tree {} :drop [] :load []}))})
 
 (defn update-tile-tree
-  "Schedule background tile tree updates (untested)"
+  "Schedule background tile tree updates"
   {:malli/schema [:=> [:cat :map tree N fvec3] :any]}
   [planet-renderer {:keys [tree changes]} width position]
   (when (realized? @changes)
@@ -432,7 +434,7 @@
     (unload-tiles-from-opengl (quadtree-extract tree drop-list))))
 
 (defn get-current-tree
-  "Get current state of tile tree (untested)"
+  "Get current state of tile tree"
   {:malli/schema [:=> [:cat tree] :map]}
   [{:keys [tree]}]
   @tree)

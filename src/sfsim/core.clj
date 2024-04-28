@@ -156,7 +156,7 @@
                                     (clear)
                                     ;; Render planet with cloud overlay
                                     (mask-with-stencil-buffer)
-                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
+                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
                                                           (planet/get-current-tree tile-tree))
                                     ;; Render atmosphere with cloud overlay
                                     (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
@@ -165,7 +165,7 @@
                                     ; Render model
                                     (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
                                     ; Render planet with cloud overlay
-                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
+                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
                                                           (planet/get-current-tree tile-tree))
                                     ; Render atmosphere with cloud overlay
                                     (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))))
