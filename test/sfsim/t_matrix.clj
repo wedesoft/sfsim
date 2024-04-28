@@ -222,4 +222,4 @@
        (fm/mulv (:sfsim.matrix/object-to-shadow-map unrotated) (fv/vec4 0 0 -1 1)) => (fv/vec4 0.5 0.5 0 1)
        (:sfsim.matrix/depth unrotated) => 2.0
        (:sfsim.matrix/scale unrotated) => 2.0
-       (:sfsim.matrix/object-to-world rotated) => rotation))
+       (:sfsim.matrix/world-to-object rotated) => (fm/inverse rotation)))

@@ -1,7 +1,5 @@
 # TODO
-* test shadow-pos trick
-* setup scene shadow maps for all planet programs in render-planet
-* store world-to-object instead of object-to-world in shadow patch structure
+* shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
 * direct light integrates atmosphere and overall shadow, overall shadow integrates cascade, opacity cascade, and model list
 * pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
