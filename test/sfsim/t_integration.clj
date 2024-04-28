@@ -166,7 +166,8 @@
                                        :sfsim.atmosphere/luts atmosphere-luts}
             light-direction           (vec3 1 0 0)
             orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
-            position                  (vec3 (+ 300.0 6378000.0) 0 0)
+            position                  (vec3 (+ 1.5 6378000.0) 0 0)
+            object-radius             1.4
             object-position           (add position (q/rotate-vector orientation (vec3 0 0 -5)))
             object-to-world           (transformation-matrix (mulm (rotation-y (/ PI 6)) (rotation-x (/ PI 6))) object-position)
             opacity-renderer          (opacity/make-opacity-renderer data)
@@ -177,7 +178,7 @@
             atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
             scene-renderer            (model/make-scene-renderer data)
             scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
-                                                                        config/object-radius)
+                                                                        object-radius)
             object                    (assoc-in (model/load-scene scene-renderer "test/sfsim/fixtures/model/torus.gltf")
                                                 [:sfsim.model/root :sfsim.model/transform] object-to-world)
             tree                      (load-tile-tree planet-renderer {} width position level)
