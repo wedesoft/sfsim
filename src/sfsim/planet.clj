@@ -1,6 +1,7 @@
 (ns sfsim.planet
     "Module with functionality to render a planet"
     (:require [clojure.math :refer (sqrt cos)]
+              [comb.template :as template]
               [fastmath.vector :refer (mag)]
               [fastmath.matrix :refer (mulm eye inverse)]
               [malli.core :as m]
@@ -21,7 +22,7 @@
                                         atmosphere-luts)]
               [sfsim.util :refer (N N0 sqr)]
               [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                                    fragment-atmosphere-clouds cloud-data environmental-shading)]
+                                    fragment-atmosphere-clouds cloud-data overall-shading overall-shading-parameters)]
               [sfsim.shaders :as shaders]))
 
 (set! *unchecked-math* true)
@@ -49,17 +50,21 @@
   "Tessellation control shader to control outer tessellation of quad using a uniform integer"
   (slurp "resources/shaders/planet/tess-control.glsl"))
 
-(def tess-evaluation-planet
+(defn tess-evaluation-planet
   "Tessellation evaluation shader to generate output points of tessellated quads"
-  (slurp "resources/shaders/planet/tess-evaluation.glsl"))
+  {:malli/schema [:=> [:cat N0] render/shaders]}
+  [num-scene-shadows]
+  [(template/eval (slurp "resources/shaders/planet/tess-evaluation.glsl") {:num-scene-shadows num-scene-shadows})])
 
 (def tess-evaluation-planet-shadow
   "Tessellation evaluation shader to output shadow map points of tessellated quads"
   [shaders/shrink-shadow-index (slurp "resources/shaders/planet/tess-evaluation-shadow.glsl")])
 
-(def geometry-planet
+(defn geometry-planet
   "Geometry shader outputting triangles with color texture coordinates and 3D points"
-  (slurp "resources/shaders/planet/geometry.glsl"))
+  {:malli/schema [:=> [:cat N0] render/shaders]}
+  [num-scene-shadows]
+  [(template/eval (slurp "resources/shaders/planet/geometry.glsl") {:num-scene-shadows num-scene-shadows})])
 
 (def surface-radiance-function
   "Shader function to determine ambient light scattered by the atmosphere"
@@ -67,10 +72,14 @@
 
 (defn fragment-planet
   "Fragment shader to render planetary surface"
-  {:malli/schema [:=> [:cat N] render/shaders]}
-  [num-steps]
-  [(environmental-shading num-steps) surface-radiance-function shaders/remap shaders/phong attenuation-point cloud-overlay
-   (slurp "resources/shaders/planet/fragment.glsl")])
+  {:malli/schema [:=> [:cat N N0] render/shaders]}
+  [num-steps num-scene-shadows]
+  [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
+   (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size"
+                                        [["sampler2DShadow" "shadow_map"]])
+   (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size") surface-radiance-function shaders/remap shaders/phong
+   attenuation-point cloud-overlay
+   (template/eval (slurp "resources/shaders/planet/fragment.glsl") {:num-scene-shadows num-scene-shadows})])
 
 (def fragment-planet-shadow
   "Fragment shader to render planetary shadow map"
@@ -82,32 +91,43 @@
   [num-steps perlin-octaves cloud-octaves]
   [(cloud-point num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/planet/fragment-clouds.glsl")])
 
+(def scene-shadow (m/schema [:map [:sfsim.model/matrices shadow-patch] [:sfsim.model/shadows texture-2d]]))
+
 (defn render-tile
   "Render a planetary tile using the specified texture keys and neighbour tessellation"
-  {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector :keyword]] :nil]}
-  [program tile world-to-camera ^clojure.lang.PersistentVector texture-keys]
-  (let [neighbours  (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
-                            (if (:sfsim.quadtree/left  tile) 2 0)
-                            (if (:sfsim.quadtree/down  tile) 4 0)
-                            (if (:sfsim.quadtree/right tile) 8 0))
-        tile-center (:sfsim.quadtree/center tile)]
+  {:malli/schema [:=> [:cat :int [:map [::vao vertex-array-object]] fmat4 [:vector scene-shadow] [:vector :keyword]] :nil]}
+  [program tile world-to-camera scene-shadows texture-keys]
+  (let [neighbours    (bit-or (if (:sfsim.quadtree/up    tile) 1 0)
+                              (if (:sfsim.quadtree/left  tile) 2 0)
+                              (if (:sfsim.quadtree/down  tile) 4 0)
+                              (if (:sfsim.quadtree/right tile) 8 0))
+        tile-center   (:sfsim.quadtree/center tile)
+        tile-to-world (transformation-matrix (eye 3) tile-center)
+        ]
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
-    (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera (transformation-matrix (eye 3) tile-center)))
+    (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera tile-to-world))
+    (doseq [i (range (count scene-shadows))]
+           (let [matrices             (:sfsim.model/matrices (nth scene-shadows i))
+                 object-to-world      (:sfsim.matrix/object-to-world matrices)
+                 world-to-object      (inverse object-to-world)
+                 object-to-shadow-map (:sfsim.matrix/object-to-shadow-map matrices)]
+             (uniform-matrix4 program (str "tile_to_shadow_map_" (inc i))
+                              (mulm object-to-shadow-map (mulm world-to-object tile-to-world)))))
     (use-textures (zipmap (range) (map tile texture-keys)))
     (render-patches (::vao tile))))
 
 (defn render-tree
   "Call each tile in tree to be rendered"
-  {:malli/schema [:=> [:cat :int [:maybe :map] :any [:vector :keyword]] :nil]}
-  [program node world-to-camera texture-keys]
+  {:malli/schema [:=> [:cat :int [:maybe :map] :any [:vector scene-shadow] [:vector :keyword]] :nil]}
+  [program node world-to-camera scene-shadows texture-keys]
   (when-not (empty? node)
             (if (is-leaf? node)
-              (render-tile program node world-to-camera texture-keys)
+              (render-tile program node world-to-camera scene-shadows texture-keys)
               (doseq [selector [:sfsim.quadtree/face0 :sfsim.quadtree/face1 :sfsim.quadtree/face2 :sfsim.quadtree/face3
                                 :sfsim.quadtree/face4 :sfsim.quadtree/face5
                                 :sfsim.quadtree/quad0 :sfsim.quadtree/quad1 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3]]
-                     (render-tree program (selector node) world-to-camera texture-keys)))))
+                     (render-tree program (selector node) world-to-camera scene-shadows texture-keys)))))
 
 (def planet-config (m/schema [:map [::radius :double] [::max-height :double] [::albedo :double] [::dawn-start :double]
                                    [::dawn-end :double] [::tilesize N] [::color-tilesize N] [::reflectivity :double]
@@ -124,7 +144,7 @@
         program     (make-program :sfsim.render/vertex [vertex-planet]
                                   :sfsim.render/tess-control [tess-control-planet]
                                   :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
-                                  :sfsim.render/geometry [geometry-planet]
+                                  :sfsim.render/geometry [(geometry-planet 0)]
                                   :sfsim.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
@@ -139,7 +159,7 @@
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{::keys [program] :as other} & {:keys [tree] :as data}]
   (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
-                  (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [::surf-tex]))))
+                  (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [] [::surf-tex]))))
 
 (defn destroy-shadow-cascade
   "Destroy cascade of shadow maps"
@@ -171,8 +191,8 @@
         tilesize        (::tilesize planet-config)
         program         (make-program :sfsim.render/vertex [vertex-planet]
                                       :sfsim.render/tess-control [tess-control-planet]
-                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                      :sfsim.render/geometry [geometry-planet]
+                                      :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                      :sfsim.render/geometry [(geometry-planet 0)]
                                       :sfsim.render/fragment [(fragment-planet-clouds (:sfsim.opacity/num-steps shadow-data)
                                                                                       (:sfsim.clouds/perlin-octaves cloud-data)
                                                                                       (:sfsim.clouds/cloud-octaves cloud-data))])]
@@ -216,7 +236,7 @@
                    5 (:sfsim.clouds/perlin-worley cloud-data) 6 (:sfsim.clouds/cloud-cover cloud-data)
                    7 (:sfsim.clouds/bluenoise cloud-data)})
     (use-textures (zipmap (drop 8 (range)) (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree world-to-camera [::surf-tex])))
+    (render-tree program tree world-to-camera [] [::surf-tex])))
 
 (defn destroy-cloud-planet-renderer
   "Destroy program for rendering clouds below horizon"
@@ -289,30 +309,33 @@
   [{:sfsim.clouds/keys [program]}]
   (destroy-program program))
 
-(def planet-renderer (m/schema [:map [::program :int] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
-
-(defn make-planet-renderer
-  "Program to render planet with cloud overlay"
-  {:malli/schema [:=> [:cat [:map [::config planet-config] [:sfsim.render/config render-config]
-                                  [:sfsim.atmosphere/luts atmosphere-luts] [:sfsim.opacity/data shadow-data]]] planet-renderer]}
-  [{::keys [config] :as other}]
-  (let [tilesize        (::tilesize config)
-        render-config   (:sfsim.render/config other)
-        atmosphere-luts (:sfsim.atmosphere/luts other)
-        shadow-data     (:sfsim.opacity/data other)
+(defn make-planet-program
+  "Make program to render planet"
+  {:malli/schema [:=> [:cat :map :int] :int]}
+  [data num-scene-shadows]
+  (let [config          (::config data)
+        tilesize        (::tilesize config)
+        render-config   (:sfsim.render/config data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        shadow-data     (:sfsim.opacity/data data)
+        num-steps       (:sfsim.opacity/num-steps shadow-data)
         program         (make-program :sfsim.render/vertex [vertex-planet]
                                       :sfsim.render/tess-control [tess-control-planet]
-                                      :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                      :sfsim.render/geometry [geometry-planet]
-                                      :sfsim.render/fragment [(fragment-planet (:sfsim.opacity/num-steps shadow-data))])]
+                                      :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
+                                      :sfsim.render/geometry [(geometry-planet num-scene-shadows)]
+                                      :sfsim.render/fragment [(fragment-planet num-steps num-scene-shadows)])]
     (use-program program)
-    (uniform-sampler program "surface"          0)
-    (uniform-sampler program "day_night"        1)
-    (uniform-sampler program "normals"          2)
-    (uniform-sampler program "water"            3)
-    (uniform-sampler program "clouds"           8)
-    (setup-shadow-and-opacity-maps program shadow-data 9)
+    (uniform-sampler program "surface"   0)
+    (uniform-sampler program "day_night" 1)
+    (uniform-sampler program "normals"   2)
+    (uniform-sampler program "water"     3)
+    (uniform-sampler program "clouds"    8)
     (setup-atmosphere-uniforms program atmosphere-luts 4 true)
+    (setup-shadow-and-opacity-maps program shadow-data 9)
+    (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
+    (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
+    (doseq [i (range num-scene-shadows)]
+           (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 9 (* 2 num-steps))))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "dawn_start" (::dawn-start config))
@@ -323,18 +346,33 @@
     (uniform-float program "reflectivity" (::reflectivity config))
     (uniform-vector3 program "water_color" (::water-color config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {::program program
+    program))
+
+(def planet-renderer (m/schema [:map [::programs [:map-of :int :int]] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
+
+(defn make-planet-renderer
+  "Program to render planet with cloud overlay"
+  {:malli/schema [:=> [:cat [:map [::config planet-config] [:sfsim.render/config render-config]
+                                  [:sfsim.atmosphere/luts atmosphere-luts] [:sfsim.opacity/data shadow-data]]] planet-renderer]}
+  [data]
+  (let [config          (::config data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        shadow-data     (:sfsim.opacity/data data)
+        variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
+        programs        (map #(make-planet-program data %) variations)]
+    {::programs (zipmap variations programs)
      :sfsim.atmosphere/luts atmosphere-luts
      ::config config}))
-
-(def scene-shadow (m/schema [:map [:sfsim.model/matrices shadow-patch] [:sfsim.model/shadows texture-2d]]))
 
 (defn render-planet
   "Render planet"
   {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] texture-2d [:maybe :map]] :nil]}
-  [{::keys [program] :as other} render-vars shadow-vars scene-shadows clouds tree]
-  (let [atmosphere-luts (:sfsim.atmosphere/luts other)
-        world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
+  [{::keys [programs] :as other} render-vars shadow-vars scene-shadows clouds tree]
+  (let [atmosphere-luts   (:sfsim.atmosphere/luts other)
+        world-to-camera   (inverse (:sfsim.render/camera-to-world render-vars))
+        num-steps         (count (:sfsim.opacity/shadows shadow-vars))
+        num-scene-shadows (count scene-shadows)
+        program           (programs num-scene-shadows)]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
@@ -349,19 +387,22 @@
                    8 clouds})
     (use-textures (zipmap (drop 9 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
-    (render-tree program tree world-to-camera [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
+    (doseq [i (range num-scene-shadows)]
+           (use-textures {(+ i 9 (* 2 num-steps)) (:sfsim.model/shadows (nth scene-shadows i))}))
+    (render-tree program tree world-to-camera scene-shadows [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program"
   {:malli/schema [:=> [:cat planet-renderer] :nil]}
-  [{::keys [program]}]
-  (destroy-program program))
+  [{::keys [programs]}]
+  (doseq [program (vals programs)] (destroy-program program)))
 
 (defn load-tile-into-opengl
   "Load textures of single tile into OpenGL"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}
-  [{::keys [program config]} tile]
-  (let [tilesize       (::tilesize config)
+  [{::keys [programs config]} tile]
+  (let [program        (programs 0)
+        tilesize       (::tilesize config)
         color-tilesize (::color-tilesize config)
         indices        [0 2 3 1]
         vertices       (make-cube-map-tile-vertices (:sfsim.quadtree/face tile) (:sfsim.quadtree/level tile)

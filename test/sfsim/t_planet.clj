@@ -93,8 +93,8 @@ void main()
                                                  0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                                    program     (make-program :sfsim.render/vertex [vertex-planet]
                                                              :sfsim.render/tess-control [tess-control-planet]
-                                                             :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                                             :sfsim.render/geometry [geometry-planet]
+                                                             :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                                             :sfsim.render/geometry [(geometry-planet 0)]
                                                              :sfsim.render/fragment [fragment-white])
                                    variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
@@ -146,8 +146,8 @@ void main()
                                                  0.5  0.5 0.5 0.75 0.75 0.75 0.75]
                                    program     (make-program :sfsim.render/vertex [vertex-planet]
                                                              :sfsim.render/tess-control [tess-control-planet]
-                                                             :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                                             :sfsim.render/geometry [geometry-planet]
+                                                             :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                                             :sfsim.render/geometry [(geometry-planet 0)]
                                                              :sfsim.render/fragment [(texture-coordinates-probe ?selector)])
                                    variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
@@ -183,8 +183,8 @@ void main()
                                             0.4  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
-                                                        :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                                        :sfsim.render/geometry [geometry-planet]
+                                                        :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                                        :sfsim.render/geometry [(geometry-planet 0)]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               data        [-0.6 -0.5 0.5, 0.4 -0.5 0.5, -0.6  0.5 0.5, 0.4  0.5 0.5]
@@ -216,8 +216,8 @@ void main()
                                             0.5  0.5 0.0 0.75 0.75 0.0 0.0]
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
-                                                        :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                                        :sfsim.render/geometry [geometry-planet]
+                                                        :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                                        :sfsim.render/geometry [(geometry-planet 0)]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
@@ -250,8 +250,8 @@ void main()
                                             0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
-                                                        :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                                        :sfsim.render/geometry [geometry-planet]
+                                                        :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                                        :sfsim.render/geometry [(geometry-planet 0)]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
@@ -396,13 +396,13 @@ float planet_and_cloud_shadows(vec4 point)
   return shadow;
 }")
 
-(defn make-planet-program []
+(defn make-mocked-planet-program []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
-                :sfsim.render/fragment [(last (fragment-planet 3)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
+                :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
                                         planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
                                         shaders/is-above-horizon atmosphere/transmittance-point surface-radiance-function
-                                        shaders/remap (last (clouds/environmental-shading 3)) (last atmosphere/attenuation-track)
-                                        shaders/phong (last atmosphere/attenuation-point)]))
+                                        shaders/remap (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
+                                        (last atmosphere/attenuation-track) shaders/phong (last atmosphere/attenuation-point)]))
 
 (defn setup-static-uniforms [program]
   ; Moved this code out of the test below, otherwise method is too large
@@ -479,7 +479,7 @@ float planet_and_cloud_shadows(vec4 point)
 (tabular "Fragment shader to render planetary surface"
          (fact
            (offscreen-render 256 256
-                             (let [program   (make-planet-program)
+                             (let [program   (make-mocked-planet-program)
                                    variables ["point" 3 "colorcoord" 2 "surfacecoord" 2]
                                    vao       (make-vertex-array-object program planet-indices planet-vertices variables)
                                    radius    6378000
@@ -530,8 +530,8 @@ void main()
            (offscreen-render 256 256
                              (let [program    (make-program :sfsim.render/vertex [vertex-planet]
                                                             :sfsim.render/tess-control [tess-control-planet]
-                                                            :sfsim.render/tess-evaluation [tess-evaluation-planet]
-                                                            :sfsim.render/geometry [geometry-planet]
+                                                            :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                                            :sfsim.render/geometry [(geometry-planet 0)]
                                                             :sfsim.render/fragment [fragment-white-tree])
                                    indices    [0 2 3 1]
                                    face       0
@@ -557,7 +557,7 @@ void main()
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "projection" projection)
-                               (raster-lines (render-tile program tile (inverse transform) [:sfsim.planet/surf-tex]))
+                               (raster-lines (render-tile program tile (inverse transform) [] [:sfsim.planet/surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/sfsim/fixtures/planet/" ?result) 0.01))
@@ -568,28 +568,28 @@ void main()
          true  true  false true   "tile-down.png"
          true  true  true  false  "tile-right.png")
 
-(defn render-tile-calls [program node transform texture-keys]
+(defn render-tile-calls [program node transform scene-shadows texture-keys]
   (let [calls (atom [])]
-    (with-redefs [render-tile (fn [^long program ^clojure.lang.IPersistentMap tile ^Mat4x4 transform
-                                   ^clojure.lang.PersistentVector texture-keys]
-                                  (swap! calls conj [program tile transform texture-keys])
+    (with-redefs [render-tile (fn [program tile transform scene-shadows texture-keys]
+                                  (swap! calls conj [program tile transform scene-shadows texture-keys])
                                   nil)]
-      (render-tree program node transform texture-keys)
+      (render-tree program node transform scene-shadows texture-keys)
       @calls)))
 
 (let [vao :sfsim.planet/vao]
   (tabular "Call each tile in tree to be rendered"
-    (fact (render-tile-calls ?program ?node ?transform [:sfsim.planet/surf-tex]) => ?result)
+    (fact (render-tile-calls ?program ?node ?transform [] [:sfsim.planet/surf-tex]) => ?result)
     ?program ?transform ?node                                ?result
     1234 :transform {}                                       []
-    1234 :transform {vao 42}                                  [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face0 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face1 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face2 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face3 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face4 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face5 {vao 42}}          [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face3 {:sfsim.quadtree/quad2 {vao 42}}} [[1234 {vao 42} :transform [:sfsim.planet/surf-tex]]]))
+    1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.quadtree/face3 {:sfsim.quadtree/quad2 {vao 42}}}
+                                                             [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
 
 (facts "Maximum shadow depth for cloud shadows"
        (render-depth 4.0 1.0 0.0) => 3.0
