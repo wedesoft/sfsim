@@ -13,7 +13,7 @@
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.config :as config])
-  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback])
+  (:import [org.lwjgl.glfw GLFW GLFWKeyCallbackI])
   (:gen-class))
 
 (set! *unchecked-math* true)
@@ -82,8 +82,8 @@
 (def keystates (atom {}))
 
 (def keyboard-callback
-  (proxy [GLFWKeyCallback] []
-         (invoke [window k scancode action mods]
+  (reify GLFWKeyCallbackI
+         (invoke [this window k scancode action mods]
            (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)
