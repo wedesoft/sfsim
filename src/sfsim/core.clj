@@ -13,7 +13,7 @@
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.config :as config])
-  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback])
+  (:import [org.lwjgl.glfw GLFW GLFWKeyCallbackI])
   (:gen-class))
 
 (set! *unchecked-math* true)
@@ -27,11 +27,16 @@
 ; (dev/start! {:report (pretty/thrower)})
 
 (def opacity-base (atom 250.0))
-(def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
+(def longitude (to-radians -1.3747))
+(def latitude (to-radians 50.9672))
+(def radius (+ 30.0 6378000.0))
+(def position (atom (vec3 (* (cos longitude) (cos latitude) radius)
+                          (* (sin longitude) (cos latitude) radius)
+                          (* (sin latitude) radius))))
 (def camera-orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def object-orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
-(def speed (atom 0.3))
+(def speed (atom (/ 7800 1000.0)))
 
 (GLFW/glfwInit)
 
@@ -77,8 +82,8 @@
 (def keystates (atom {}))
 
 (def keyboard-callback
-  (proxy [GLFWKeyCallback] []
-         (invoke [window k scancode action mods]
+  (reify GLFWKeyCallbackI
+         (invoke [this window k scancode action mods]
            (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)

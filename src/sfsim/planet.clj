@@ -109,8 +109,7 @@
     (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera tile-to-world))
     (doseq [i (range (count scene-shadows))]
            (let [matrices             (:sfsim.model/matrices (nth scene-shadows i))
-                 object-to-world      (:sfsim.matrix/object-to-world matrices)
-                 world-to-object      (inverse object-to-world)
+                 world-to-object      (:sfsim.matrix/world-to-object matrices)
                  object-to-shadow-map (:sfsim.matrix/object-to-shadow-map matrices)]
              (uniform-matrix4 program (str "tile_to_shadow_map_" (inc i))
                               (mulm object-to-shadow-map (mulm world-to-object tile-to-world)))))

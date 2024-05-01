@@ -1,7 +1,10 @@
 {:deps {org.clojure/clojure {:mvn/version "1.11.3"}
-        org.lwjgl/lwjgl {:mvn/version "3.3.2"}
-        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.2"}
-        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.2"}
-        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.2"}
-        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.2"}
-        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.2"}}}
+        org.lwjgl/lwjgl {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-nuklear {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.3"}}
+ :paths ["."]}

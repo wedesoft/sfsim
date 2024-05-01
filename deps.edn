@@ -1,6 +1,6 @@
 {:deps {org.clojure/clojure {:mvn/version "1.11.3"}
-        metosin/malli {:mvn/version "0.14.0"}
-        org.clojure/core.memoize {:mvn/version "1.0.257"}
+        metosin/malli {:mvn/version "0.16.0"}
+        org.clojure/core.memoize {:mvn/version "1.1.266"}
         comb/comb {:mvn/version "0.1.1"}
         progrock/progrock {:mvn/version "0.1.2"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
