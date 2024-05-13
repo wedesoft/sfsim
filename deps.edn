@@ -11,6 +11,8 @@
         org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.3"}
         org.lwjgl/lwjgl-glfw {:mvn/version "3.3.3"}
         org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-nuklear {:mvn/version "3.3.3"}
+        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.3.3"}
         org.lwjgl/lwjgl-stb {:mvn/version "3.3.3"}
         org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.3.3"}
         org.lwjgl/lwjgl-assimp {:mvn/version "3.3.3"}
