@@ -1,5 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
+* micro normal map, 2 more levels, higher res map
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
 * direct light integrates atmosphere and overall shadow, overall shadow integrates cascade, opacity cascade, and model list
