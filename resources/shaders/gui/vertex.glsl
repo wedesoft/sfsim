@@ -1,5 +1,7 @@
 #version 410 core
 
+uniform mat4 projection;
+
 in vec2 position;
 in vec2 texcoord;
 in vec4 color;
@@ -11,5 +13,5 @@ void main()
 {
   frag_uv = texcoord;
   frag_color = color;
-  gl_Position = vec4(position, 0, 1);
+  gl_Position = projection * vec4(position, 0, 1);
 }

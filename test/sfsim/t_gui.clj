@@ -3,7 +3,8 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [fastmath.vector :refer (vec4)]
-              [sfsim.conftest :refer (roughly-vector)]
+              [fastmath.matrix :refer (eye)]
+              [sfsim.conftest :refer (is-image roughly-vector)]
               [sfsim.render :refer :all]
               [sfsim.texture :refer :all]
               [sfsim.image :refer :all]
@@ -29,6 +30,7 @@
                                               #:sfsim.image{:width 1 :height 1 :data (byte-array [?r2 ?g2 ?b2 ?a2])})
                    output   (texture-render-color 1 1 true
                                                   (use-program program)
+                                                  (uniform-matrix4 program "projection" (eye 4))
                                                   (uniform-sampler program "tex" 0)
                                                   (use-textures {0 tex})
                                                   (render-quads vao))
@@ -42,5 +44,25 @@
          0.0 0.0 0.0 0.0  -1  -1  -1  -1 0.0 0.0 0.0 0.0
          1.0 1.0 1.0 1.0  -1  -1  -1  -1 1.0 1.0 1.0 1.0
          1.0 1.0 1.0 1.0   0   0   0   0 0.0 0.0 0.0 1.0)
+
+(fact "Test GUI transformation matrix"
+     (offscreen-render 160 120
+       (let [indices  [0 2 3 1]
+             vertices [  0   0 0.5 0.5 0 0 0 1
+                       160   0 0.5 0.5 1 0 0 1
+                         0 120 0.5 0.5 0 1 0 1
+                       160 120 0.5 0.5 0 0 1 1]
+             program  (make-gui-program)
+             vao      (make-vertex-array-object program indices vertices ["position" 2 "texcoord" 2 "color" 4])
+             tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
+                                        #:sfsim.image{:width 1 :height 1 :data (byte-array [-1 -1 -1 -1])})]
+         (use-program program)
+         (uniform-matrix4 program "projection" (gui-matrix 160 120))
+         (uniform-sampler program "tex" 0)
+         (use-textures {0 tex})
+         (render-quads vao)
+         (destroy-texture tex)
+         (destroy-vertex-array-object vao)
+         (destroy-program program))) => (is-image "test/sfsim/fixtures/gui/projection.png" 0.0))
 
 (GLFW/glfwTerminate)
