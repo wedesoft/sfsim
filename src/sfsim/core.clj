@@ -83,7 +83,7 @@
 
 (def keyboard-callback
   (reify GLFWKeyCallbackI
-         (invoke [this window k scancode action mods]
+         (invoke [_this _window k _scancode action _mods]
            (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)

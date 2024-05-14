@@ -4,7 +4,7 @@
               [sfsim.util :refer (N)]
               [sfsim.render :refer (make-program)]
               [sfsim.texture :refer (make-rgba-texture)])
-    (:import [org.lwjgl.opengl GL11 GL14]
+    (:import [org.lwjgl.opengl GL11]
              [org.lwjgl.nuklear NkDrawNullTexture]))
 
 (def vertex-gui
@@ -36,7 +36,7 @@
   "Make texture with single white pixel"
   {:malli/schema [:=> :cat :some]}
   []
-  (let [image   #:sfsim.image {:width 1 :height 1 :data (byte-array [-1 -1 -1 -1])}
+  (let [image   #:sfsim.image {:width 1 :height 1 :data (byte-array [-1 -1 -1 -1]) :channels 4}
         texture (make-rgba-texture :sfsim.texture/nearest :sfsim.texture/clamp image)
         result  (NkDrawNullTexture/create)]
     (.id (.texture result) (:sfsim.texture/texture texture))
@@ -47,12 +47,3 @@
   "Destroy single pixel texture"
   [null-texture]
   (GL11/glDeleteTextures ^long (.id (.texture null-texture))))
-
-(defn setup-gui-rendering
-  [width height]
-  (GL11/glViewport 0 0 width height)
-  (GL11/glEnable GL11/GL_BLEND)
-  (GL14/glBlendEquation GL14/GL_FUNC_ADD)
-  (GL14/glBlendFunc GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA)
-  (GL11/glDisable GL11/GL_CULL_FACE)
-  (GL11/glDisable GL11/GL_DEPTH_TEST))
