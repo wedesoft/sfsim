@@ -2,7 +2,10 @@
     (:require [fastmath.matrix :as fm]
               [sfsim.matrix :refer (fmat4)]
               [sfsim.util :refer (N)]
-              [sfsim.render :refer (make-program)]))
+              [sfsim.render :refer (make-program)]
+              [sfsim.texture :refer (make-rgba-texture)])
+    (:import [org.lwjgl.opengl GL11]
+             [org.lwjgl.nuklear NkDrawNullTexture]))
 
 (def vertex-gui
   "Vertex shader for rendering graphical user interfaces"
@@ -28,3 +31,19 @@
                0.0  h2  0.0  1.0
                0.0 0.0 -1.0  0.0
                0.0 0.0  0.0  1.0)))
+
+(defn make-null-texture
+  "Make texture with single white pixel"
+  {:malli/schema [:=> :cat :some]}
+  []
+  (let [image   #:sfsim.image {:width 1 :height 1 :data (byte-array [-1 -1 -1 -1])}
+        texture (make-rgba-texture :sfsim.texture/nearest :sfsim.texture/clamp image)
+        result  (NkDrawNullTexture/create)]
+    (.id (.texture result) (:sfsim.texture/texture texture))
+    (.set (.uv result) 0.5 0.5)
+    result))
+
+(defn destroy-null-texture
+  "Destroy single pixel texture"
+  [null-texture]
+  (GL11/glDeleteTextures ^long (.id (.texture null-texture))))

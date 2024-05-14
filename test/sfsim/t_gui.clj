@@ -9,7 +9,9 @@
               [sfsim.texture :refer :all]
               [sfsim.image :refer :all]
               [sfsim.gui :refer :all])
-    (:import [org.lwjgl.glfw GLFW]))
+    (:import [org.lwjgl BufferUtils]
+             [org.lwjgl.opengl GL11 GL12]
+             [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim.gui]})
 (mi/instrument! {:report (pretty/thrower)})
@@ -64,5 +66,16 @@
          (destroy-texture tex)
          (destroy-vertex-array-object vao)
          (destroy-program program))) => (is-image "test/sfsim/fixtures/gui/projection.png" 0.0))
+
+(facts "Create null texture"
+       (with-invisible-window
+         (let [null-texture (make-null-texture)
+               buffer       (BufferUtils/createByteBuffer 4)]
+           (with-texture GL11/GL_TEXTURE_2D (.id (.texture null-texture))
+             (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer))
+           (.x (.uv null-texture)) => 0.5
+           (.y (.uv null-texture)) => 0.5
+           (doseq [i (range 4)] (.get buffer i) => -1)
+           (destroy-null-texture null-texture))))
 
 (GLFW/glfwTerminate)
