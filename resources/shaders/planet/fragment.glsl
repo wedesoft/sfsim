@@ -1,7 +1,6 @@
 #version 410 core
 
-uniform sampler2D day;
-uniform sampler2D night;
+uniform sampler2DArray day_night;
 uniform sampler2D normals;
 uniform sampler2D water;
 uniform vec3 water_color;
@@ -14,10 +13,14 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+<% (doseq [i (range num-scene-shadows)] %>
+  vec4 object_shadow_pos_<%= (inc i) %>;
+<% ) %>
 } fs_in;
 
 out vec4 fragColor;
 
+vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc %)) (range num-scene-shadows))) %>);
 vec3 environmental_shading(vec3 point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec3 attenuation_point(vec3 point, vec3 incoming);
@@ -32,11 +35,11 @@ void main()
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 water_normal = normalize(fs_in.point);
   vec3 normal = mix(land_normal, water_normal, wet);
-  vec3 light = environmental_shading(fs_in.point);
+  vec3 light = overall_shading(fs_in.point<%= (apply str (map #(str ", fs_in.object_shadow_pos_" (inc %)) (range num-scene-shadows))) %>);
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
-  vec3 day_color = texture(day, fs_in.colorcoord).rgb;
+  vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb;
   vec3 color = mix(day_color, water_color, wet);
-  vec3 night_color = max(texture(night, fs_in.colorcoord).rgb - 0.3, 0.0) / 0.7;
+  vec3 night_color = max(texture(day_night, vec3(fs_in.colorcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
   vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
   vec3 phong = phong(ambient_light, light, fs_in.point, normal, color, wet * reflectivity);
   vec3 incoming = attenuation_point(fs_in.point, phong + emissive);

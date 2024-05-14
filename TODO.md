@@ -1,15 +1,29 @@
 # TODO
-* separate atmosphere from environmental shadow, setup-shadow-matrices support for no environmental shadow,
-  overall-shading with object shadows only
-* put day and night textures into texture array (water as well?)
-* use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
-* rename overall-shadow
-* rename environment shadow method and shadow size
+* create Nuklear GUI to set location and time
+  * create and destroy null texture
+  * tested rendering settings (alpha blending, ...)
+  * mixed type vertex array object
+  * integration test backend using a slider
+  * ...
+* try lower-res clouds with increased sampling rate
+* micro normal map, 2 more levels, higher res map
+* shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
+* object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
+* direct light integrates atmosphere and overall shadow, overall shadow integrates cascade, opacity cascade, and model list
+* pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
+* separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
+  overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
 * integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
   use multiplication of local shadow map and planet+cloud shadows?
-* put model-shadow-map and keywords in returned hashmap into opacity module?
+* https://lup.lub.lu.se/student-papers/search/publication/8893256
+  Gaussian towers for cloud height variation
+  Low-res cloud texture to increase sampling size
+  Scattering approximation function
 * add object radius to object?
-* object shadows on planet
+* bake gear animation and name actions the same
+* dted elevation data: https://gdal.org/drivers/raster/dted.html
+  gmted maybe: https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
+* read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
 * adapt shadow map size to object distance
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * concept for bundling shaders with uniform setting methods?
@@ -177,6 +191,12 @@
 * no need to adjust MFDs during critical parts of the mission
 * https://github.com/HappyEnte/DreamChaser
 * HDR bloom (separable convolution)
+  https://learnopengl.com/Advanced-Lighting/Bloom
+  https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
+  http://blog.chrismdp.com/2015/06/how-to-quickly-add-bloom-to-your-engine/
+  HDR rendering
+  Tone mapping L/(1+L)
+  Add blurred overflow
 * multisampling
 * windows (blending, reflections), greyscale cameras, MFDs
 * frame buffer objects for non-blocking data transfer

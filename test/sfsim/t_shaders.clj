@@ -137,15 +137,18 @@ void main()
   fragColor = convert_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 4, 6).rgb;
 }"))
 
-(def convert-shadow-index-test (shader-test (fn [program]) convert-shadow-index-probe convert-shadow-index))
+(def convert-shadow-index-test (shader-test (fn [program bias] (uniform-float program "shadow_bias" bias))
+                                            convert-shadow-index-probe convert-shadow-index))
 
 (tabular "Move shadow index out of clamping region"
-         (fact (convert-shadow-index-test [] [?x ?y ?z]) => (roughly-vector (ediv (vec3 ?r ?g ?b) (vec3 6 4 1)) 1e-6))
-         ?x  ?y  ?z  ?r   ?g   ?b
-          0   0   0  0.5  0.5  0.0
-          1   0   0  5.5  0.5  0.0
-          0   1   0  0.5  3.5  0.0
-          0   0   1  0.5  0.5  1.0)
+         (fact (convert-shadow-index-test [?bias] [?x ?y ?z]) => (roughly-vector (ediv (vec3 ?r ?g ?b) (vec3 6 4 1)) 1e-6))
+         ?x  ?y  ?z  ?bias ?r   ?g   ?b
+          0   0   0  0.0   0.5  0.5  0.0
+          1   0   0  0.0   5.5  0.5  0.0
+          0   1   0  0.0   0.5  3.5  0.0
+          0   0   1  0.0   0.5  0.5  1.0
+          0   0  -1  0.0   0.5  0.5  0.0
+          0   0  -1  0.1   0.5  0.5  0.2)
 
 (def shrink-shadow-index-probe
   (template/fn [x y z] "#version 410 core

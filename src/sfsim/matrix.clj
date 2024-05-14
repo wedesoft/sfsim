@@ -204,7 +204,7 @@
     (expand-bounding-box-near (bounding-box light-corners) longest-shadow)))
 
 (def shadow-config (m/schema [:map [:sfsim.opacity/num-opacity-layers N] [:sfsim.opacity/shadow-size N]
-                                   [:sfsim.opacity/num-steps N] [:sfsim.opacity/object-shadow-counts [:vector N0]]
+                                   [:sfsim.opacity/num-steps N] [:sfsim.opacity/scene-shadow-counts [:vector N0]]
                                    [:sfsim.opacity/mix :double] [:sfsim.opacity/shadow-bias :double]]))
 (def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
 
@@ -264,6 +264,7 @@
 
 (def shadow-patch (m/schema [:map [::shadow-ndc-matrix fmat4]
                                   [::object-to-shadow-map fmat4]
+                                  [::world-to-object fmat4]
                                   [::scale :double]
                                   [::depth :double]]))
 
@@ -280,6 +281,7 @@
         light-matrix    (orient-to-light (vec4->vec3 (fm/mulv world-to-object (vec3->vec4 light-direction 0.0))))]
     {::shadow-ndc-matrix    (fm/mulm shadow-ndc light-matrix)
      ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
+     ::world-to-object      world-to-object
      ::scale                (* 2.0 object-radius)
      ::depth                (* 2.0 object-radius)}))
 

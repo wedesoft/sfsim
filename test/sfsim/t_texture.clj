@@ -43,6 +43,15 @@
           (:sfsim.texture/depth tex) => 1
           (destroy-texture tex))))
 
+(fact "Size of texture array"
+      (with-invisible-window
+        (let [tex (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
+                                          (repeat 3 (slurp-image "test/sfsim/fixtures/render/pattern.png")))]
+          (:sfsim.texture/width tex) => 2
+          (:sfsim.texture/height tex) => 2
+          (:sfsim.texture/depth tex) => 3
+          (destroy-texture tex))))
+
 (fact "Size of 4D texture (represented using 2D texture)"
       (with-invisible-window
         (let [data (float-array (repeat (* 4 3 2 1 4) 0))

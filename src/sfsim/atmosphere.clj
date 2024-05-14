@@ -492,7 +492,7 @@
 (def atmosphere-renderer (m/schema [:map [::program :int] [::luts atmosphere-luts]]))
 
 (defn make-atmosphere-renderer
-  "Initialise atmosphere rendering program (untested)"
+  "Initialise atmosphere rendering program"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::luts atmosphere-luts]
                                   [:sfsim.planet/config [:map [:sfsim.planet/radius :double]]]]] atmosphere-renderer]}
   [{::keys [luts] :as other}]
@@ -510,7 +510,7 @@
      ::luts luts}))
 
 (defn render-atmosphere
-  "Render atmosphere with cloud overlay (untested)"
+  "Render atmosphere with cloud overlay"
   {:malli/schema [:=> [:cat atmosphere-renderer render-vars texture-2d] :nil]}
   [{::keys [program luts]} render-vars clouds]
   (let [indices    [0 1 3 2]
@@ -528,7 +528,7 @@
     (destroy-vertex-array-object vao)))
 
 (defn destroy-atmosphere-renderer
-  "Destroy atmosphere renderer (untested)"
+  "Destroy atmosphere renderer"
   {:malli/schema [:=> [:cat atmosphere-renderer] :nil]}
   [{::keys [program]}]
   (destroy-program program))

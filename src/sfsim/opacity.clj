@@ -31,7 +31,7 @@
                                (:sfsim.clouds/cloud-top cloud-data))))
 
 (defn make-opacity-renderer
-  "Initialise an opacity program (untested)"
+  "Initialise an opacity program"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [:sfsim.planet/config planet-config]
                                   [:sfsim.clouds/data cloud-data] [::data shadow-data]]] opacity-renderer]}
   [data]
@@ -55,7 +55,7 @@
      ::vao vao}))
 
 (defn render-opacity-cascade
-  "Render a cascade of opacity maps and return it as a list of 3D textures (untested)"
+  "Render a cascade of opacity maps and return it as a list of 3D textures"
   [{::keys [program vao data] :as other} matrix-cas light-direction scatter-amount opacity-step]
   (let [cloud-data (:sfsim.clouds/data other)]
     (use-textures {0 (:sfsim.clouds/worley cloud-data) 1 (:sfsim.clouds/perlin-worley cloud-data)
@@ -69,13 +69,13 @@
                      (render-quads vao))))
 
 (defn destroy-opacity-cascade
-  "Destroy cascade of opacity maps (untested)"
+  "Destroy cascade of opacity maps"
   [opacities]
   (doseq [layer opacities]
          (destroy-texture layer)))
 
 (defn destroy-opacity-renderer
-  "Delete opacity renderer objects (untested)"
+  "Delete opacity renderer objects"
   {:malli/schema [:=> [:cat opacity-renderer] :nil]}
   [{::keys [vao program]}]
   (destroy-vertex-array-object vao)

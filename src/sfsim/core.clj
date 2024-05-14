@@ -14,7 +14,7 @@
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.config :as config])
-  (:import [org.lwjgl.glfw GLFW GLFWKeyCallback])
+  (:import [org.lwjgl.glfw GLFW GLFWKeyCallbackI])
   (:gen-class))
 
 (set! *unchecked-math* true)
@@ -28,11 +28,16 @@
 ; (dev/start! {:report (pretty/thrower)})
 
 (def opacity-base (atom 250.0))
-(def position (atom (vec3 (+ 3.0 6378000.0) 0 0)))
+(def longitude (to-radians -1.3747))
+(def latitude (to-radians 50.9672))
+(def radius (+ 30.0 6378000.0))
+(def position (atom (vec3 (* (cos longitude) (cos latitude) radius)
+                          (* (sin longitude) (cos latitude) radius)
+                          (* (sin latitude) radius))))
 (def camera-orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def object-orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
 (def light (atom 0.0))
-(def speed (atom 0.3))
+(def speed (atom (/ 7800 1000.0)))
 
 (GLFW/glfwInit)
 
@@ -68,7 +73,8 @@
 
 (def scene-renderer (model/make-scene-renderer data))
 
-(def scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/shadow-size config/shadow-config) config/object-radius))
+(def scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
+                                                             config/object-radius))
 
 (def scene (model/load-scene scene-renderer "venturestar.gltf"))
 
@@ -77,8 +83,8 @@
 (def keystates (atom {}))
 
 (def keyboard-callback
-  (proxy [GLFWKeyCallback] []
-         (invoke [window k scancode action mods]
+  (reify GLFWKeyCallbackI
+         (invoke [this window k scancode action mods]
            (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)
@@ -157,7 +163,7 @@
                                     (clear)
                                     ;; Render planet with cloud overlay
                                     (mask-with-stencil-buffer)
-                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
+                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
                                                           (planet/get-current-tree tile-tree))
                                     ;; Render atmosphere with cloud overlay
                                     (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
@@ -166,7 +172,7 @@
                                     ; Render model
                                     (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
                                     ; Render planet with cloud overlay
-                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars clouds
+                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
                                                           (planet/get-current-tree tile-tree))
                                     ; Render atmosphere with cloud overlay
                                     (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))))

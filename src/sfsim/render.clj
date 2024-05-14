@@ -81,6 +81,7 @@
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
     (GL/createCapabilities)
+    (GLFW/glfwSwapInterval 1)
     window))
 
 (defn destroy-window

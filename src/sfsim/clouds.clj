@@ -14,7 +14,7 @@
               [sfsim.worley :refer (worley-size)]
               [sfsim.bluenoise :refer (noise-size) :as bluenoise]
               [sfsim.atmosphere :as atmosphere]
-              [sfsim.util :refer (slurp-floats N)]))
+              [sfsim.util :refer (slurp-floats N N0)]))
 
 (def cover-size 512)
 
@@ -208,7 +208,7 @@
   [shaders/ray-shell (cloud-density perlin-octaves cloud-octaves) linear-sampling
    (template/eval (slurp "resources/shaders/clouds/opacity-fragment.glsl") {:num-layers num-layers})])
 
-(defn overall-shadow
+(defn planet-and-cloud-shadows
   "Multiply shadows to get overall shadow"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
@@ -218,20 +218,20 @@
    (shaders/shadow-cascade-lookup num-steps "average_shadow") (shaders/shadow-lookup "shadow_lookup" "shadow_size")
    (shaders/percentage-closer-filtering "average_shadow" "shadow_lookup" "shadow_size"
                                         [["sampler2DShadow" "shadow_map"]])
-   (slurp "resources/shaders/clouds/overall-shadow.glsl")])
+   (slurp "resources/shaders/clouds/planet-and-cloud-shadows.glsl")])
 
 (defn environmental-shading
   "Shader function for determining direct light left after atmospheric scattering and shadows"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [shaders/is-above-horizon atmosphere/transmittance-point (overall-shadow num-steps)
+  [shaders/is-above-horizon atmosphere/transmittance-point (planet-and-cloud-shadows num-steps)
    (slurp "resources/shaders/clouds/environmental-shading.glsl")])
 
 (defn cloud-transfer
   "Single cloud scattering update step"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [(overall-shadow num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
+  [(planet-and-cloud-shadows num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
    (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 (defn sample-cloud
@@ -374,6 +374,11 @@
  (uniform-float program "anisotropic" (::anisotropic cloud-data))
  (uniform-float program "cloud_step" (::cloud-step cloud-data))
  (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
+
+(defn overall-shading-parameters
+  {:malli/schema [:=> [:cat N0] [:vector [:tuple :string :string]]]}
+  [n]
+  (mapv (fn [i] ["average_scene_shadow" (str "scene_shadow_map_" (inc i))]) (range n)))
 
 (defn overall-shading
   {:malli/schema [:=> [:cat N [:sequential [:tuple :string :string]]] render/shaders]}

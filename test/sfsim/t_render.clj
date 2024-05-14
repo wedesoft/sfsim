@@ -342,6 +342,34 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program))) => (is-image "test/sfsim/fixtures/render/texture.png" 0.0))
 
+(def fragment-texture-array
+"#version 410 core
+in vec2 uv_fragment;
+out vec3 fragColor;
+uniform sampler2DArray tex;
+void main()
+{
+  fragColor = texture(tex, uv_fragment.sts).rgb;
+}")
+
+(fact "Render 2D RGB texture array"
+  (offscreen-render 64 64
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+          program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-array])
+          vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
+          tex      (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
+                                           [(slurp-image "test/sfsim/fixtures/render/red.png")
+                                            (slurp-image "test/sfsim/fixtures/render/green.png")])]
+      (clear (vec3 0.0 0.0 0.0))
+      (use-program program)
+      (uniform-sampler program "tex" 0)
+      (use-textures {0 tex})
+      (render-quads vao)
+      (destroy-texture tex)
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim/fixtures/render/texture-array.png" 0.0))
+
 (tabular "Render 2D floating-point texture"
   (fact
     (offscreen-render 64 64
