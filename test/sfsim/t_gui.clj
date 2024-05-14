@@ -10,7 +10,7 @@
               [sfsim.image :refer :all]
               [sfsim.gui :refer :all])
     (:import [org.lwjgl BufferUtils]
-             [org.lwjgl.opengl GL11 GL12]
+             [org.lwjgl.opengl GL11 GL12 GL14]
              [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim.gui]})
@@ -32,6 +32,7 @@
                                               #:sfsim.image{:width 1 :height 1 :data (byte-array [?r2 ?g2 ?b2 ?a2])})
                    output   (texture-render-color 1 1 true
                                                   (use-program program)
+                                                  (setup-gui-rendering 160 120)
                                                   (uniform-matrix4 program "projection" (eye 4))
                                                   (uniform-sampler program "tex" 0)
                                                   (use-textures {0 tex})
@@ -59,6 +60,7 @@
              tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
                                         #:sfsim.image{:width 1 :height 1 :data (byte-array [-1 -1 -1 -1])})]
          (use-program program)
+         (setup-gui-rendering 160 120)
          (uniform-matrix4 program "projection" (gui-matrix 160 120))
          (uniform-sampler program "tex" 0)
          (use-textures {0 tex})
@@ -77,5 +79,30 @@
            (.y (.uv null-texture)) => 0.5
            (doseq [i (range 4)] (.get buffer i) => -1)
            (destroy-null-texture null-texture))))
+
+(facts "Set up rendering mode"
+       (offscreen-render 160 120
+                         (let [indices  [0 2 3 1 4 5 7 6]
+                               vertices [  0   0 0.5 0.5 1 0 0 1.0
+                                         100   0 0.5 0.5 1 0 0 1.0
+                                           0  80 0.5 0.5 1 0 0 1.0
+                                         100  80 0.5 0.5 1 0 0 1.0
+                                          60  40 0.5 0.5 0 1 0 0.5
+                                         160  40 0.5 0.5 0 1 0 0.5
+                                          60 120 0.5 0.5 0 1 0 0.5
+                                         160 120 0.5 0.5 0 1 0 0.5]
+                               program  (make-gui-program)
+                               vao      (make-vertex-array-object program indices vertices ["position" 2 "texcoord" 2 "color" 4])
+                               tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
+                                                          #:sfsim.image{:width 1 :height 1 :data (byte-array [-1 -1 -1 -1])})]
+                           (setup-gui-rendering 160 120)
+                           (use-program program)
+                           (uniform-matrix4 program "projection" (gui-matrix 160 120))
+                           (uniform-sampler program "tex" 0)
+                           (use-textures {0 tex})
+                           (render-quads vao)
+                           (destroy-texture tex)
+                           (destroy-vertex-array-object vao)
+                           (destroy-program program))) => (is-image "test/sfsim/fixtures/gui/mode.png" 0.0))
 
 (GLFW/glfwTerminate)
