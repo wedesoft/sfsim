@@ -1,7 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * create and destroy null texture
-  * tested rendering settings (alpha blending, ...)
+  * environment for scissor testing
   * mixed type vertex array object
   * integration test backend using a slider
   * ...

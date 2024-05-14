@@ -20,12 +20,17 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
-  {:malli/schema [:=> [:cat N N [:enum ::cullfront ::cullback]] :nil]}
-  [width height culling]
+  {:malli/schema [:=> [:cat N N [:enum ::cullfront ::cullback ::noculling] :boolean] :nil]}
+  [width height culling depth-test]
   (GL11/glViewport 0 0 width height)
-  (GL11/glEnable GL11/GL_DEPTH_TEST)
-  (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} culling))
+  (if (= culling ::noculling)
+    (GL11/glDisable GL11/GL_CULL_FACE)
+    (do
+      (GL11/glEnable GL11/GL_CULL_FACE)
+      (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} culling))))
+  (if depth-test
+    (GL11/glEnable GL11/GL_DEPTH_TEST)
+    (GL11/glDisable GL11/GL_DEPTH_TEST))
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
@@ -36,6 +41,17 @@
      (GL11/glEnable GL11/GL_STENCIL_TEST)
      (let [result# (do ~@body)]
        (GL11/glDisable GL11/GL_STENCIL_TEST)
+       result#)))
+
+(defmacro with-blending
+  "Enable alpha blending for the specified body of code"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_BLEND)
+     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     (GL14/glBlendFunc GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_BLEND)
        result#)))
 
 (defn write-to-stencil-buffer
@@ -96,7 +112,7 @@
   `(let [width#  (int-array 1)
          height# (int-array 1)]
      (GLFW/glfwGetWindowSize ~(vary-meta window assoc :tag 'long) width# height#)
-     (setup-rendering (aget width# 0) (aget height# 0) ::cullback)
+     (setup-rendering (aget width# 0) (aget height# 0) ::cullback true)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))
 
@@ -357,7 +373,7 @@
          (let [attachment-type# (if (:stencil ~depth-texture) GL30/GL_DEPTH_STENCIL_ATTACHMENT GL30/GL_DEPTH_ATTACHMENT)]
            (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:sfsim.texture/texture ~depth-texture) 0)))
        (setup-color-attachments ~color-textures)
-       (setup-rendering ~width ~height ~culling)
+       (setup-rendering ~width ~height ~culling (boolean ~depth-texture))
        ~@body
        (finally
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
