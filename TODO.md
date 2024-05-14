@@ -5,6 +5,7 @@
   * mixed type vertex array object
   * integration test backend using a slider
   * ...
+* try lower-res clouds with increased sampling rate
 * micro normal map, 2 more levels, higher res map
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
