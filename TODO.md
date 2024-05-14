@@ -1,5 +1,10 @@
 # TODO
 * create Nuklear GUI to set location and time
+  * create and destroy null texture
+  * tested rendering settings (alpha blending, ...)
+  * mixed type vertex array object
+  * integration test backend using a slider
+  * ...
 * micro normal map, 2 more levels, higher res map
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
