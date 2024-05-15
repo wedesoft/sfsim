@@ -216,13 +216,12 @@
       (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)))
       (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
       (let [attribute-pairs (partition 2 attributes)
-            sizes           (map second attribute-pairs)
+            sizes           (map (comp #(* % Float/BYTES) second) attribute-pairs)
             stride          (apply + sizes)
             offsets         (reductions + 0 (butlast sizes))
             attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
                                  (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
-                                   (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false
-                                                               ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
+                                   (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false ^long stride ^long offset)
                                    (GL20/glEnableVertexAttribArray location)
                                    location))]
         {::vertex-array-object vertex-array-object
