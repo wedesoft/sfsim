@@ -208,7 +208,7 @@
       (let [attribute-pairs (partition 2 attributes)
             sizes           (map second attribute-pairs)
             stride          (apply + sizes)
-            offsets         (reductions + (cons 0 (butlast sizes)))
+            offsets         (reductions + 0 (butlast sizes))
             attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
                                  (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
                                    (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false
