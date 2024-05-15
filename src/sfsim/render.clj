@@ -192,7 +192,7 @@
                   [::attribute-locations [:vector :int]]]))
 
 (defn make-vertex-array-object
-  "Create vertex array object and vertex buffer objects"
+  "Create vertex array object and vertex buffer objects using integers for indices and floating point numbers for vertex data"
   {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and vector? [:repeat [:cat :string N]]]] vertex-array-object]}
   [program indices vertices attributes]
   (let [vertex-array-object (GL30/glGenVertexArrays)]
