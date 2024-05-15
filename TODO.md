@@ -1,6 +1,7 @@
 # TODO
 * create Nuklear GUI to set location and time
   * mixed type vertex array object
+  * mapped vertex data
   * environment for scissor testing
   * integration test backend using a slider
   * ...

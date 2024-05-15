@@ -191,6 +191,18 @@
   (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int] [::nrows N]
                   [::attribute-locations [:vector :int]]]))
 
+(defn set-static-float-buffer-data
+  "Use glBufferData to set up static buffer data"
+  {:malli/schema [:=> [:cat :int :some] :nil]}
+  [target data]
+  (GL15/glBufferData ^int target ^java.nio.DirectFloatBufferU data GL15/GL_STATIC_DRAW))
+
+(defn set-static-int-buffer-data
+  "Use glBufferData to set up static buffer data"
+  {:malli/schema [:=> [:cat :int :some] :nil]}
+  [target data]
+  (GL15/glBufferData ^int target ^java.nio.DirectIntBufferU data GL15/GL_STATIC_DRAW))
+
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects using integers for indices and floating point numbers for vertex data"
   {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and vector? [:repeat [:cat :string N]]]] vertex-array-object]}
@@ -200,11 +212,9 @@
     (let [array-buffer (GL15/glGenBuffers)
           index-buffer (GL15/glGenBuffers)]
       (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-      (GL15/glBufferData GL15/GL_ARRAY_BUFFER ^java.nio.DirectFloatBufferU (make-float-buffer (float-array vertices))
-                         GL15/GL_STATIC_DRAW)
       (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER ^java.nio.DirectIntBufferU (make-int-buffer (int-array indices))
-                         GL15/GL_STATIC_DRAW)
+      (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)))
+      (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
       (let [attribute-pairs (partition 2 attributes)
             sizes           (map second attribute-pairs)
             stride          (apply + sizes)
