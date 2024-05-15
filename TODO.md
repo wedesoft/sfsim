@@ -1,7 +1,7 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * environment for scissor testing
   * mixed type vertex array object
+  * environment for scissor testing
   * integration test backend using a slider
   * ...
 * try lower-res clouds with increased sampling rate
