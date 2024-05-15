@@ -1,5 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
+  * separate method to set up vertex attrib pointers
   * mixed type vertex array object
   * mapped vertex data
   * environment for scissor testing
