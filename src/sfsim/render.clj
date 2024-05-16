@@ -249,7 +249,7 @@
   {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and sequential? [:repeat [:cat :string N]]]]
                       vertex-array-object]}
   [program indices vertices attributes]
-  (let [float-attributes    (mapcat (fn [[attribute size]] [GL11/GL_FLOAT attribute size]) (partition 2 attributes))
+  (let [float-attributes    (mapcat #(conj % GL11/GL_FLOAT) (partition 2 attributes))
         vertex-array-object (GL30/glGenVertexArrays)
         array-buffer        (GL15/glGenBuffers)
         index-buffer        (GL15/glGenBuffers)]
