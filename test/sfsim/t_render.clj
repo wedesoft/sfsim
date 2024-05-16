@@ -24,6 +24,13 @@
 
 (GLFW/glfwInit)
 
+(facts "Byte size of OpenGL types"
+       (opengl-type-size GL11/GL_UNSIGNED_BYTE) => 1
+       (opengl-type-size GL11/GL_UNSIGNED_SHORT) => 2
+       (opengl-type-size GL11/GL_UNSIGNED_INT) => 4
+       (opengl-type-size GL11/GL_FLOAT) => 4
+       (opengl-type-size GL11/GL_DOUBLE) => 8)
+
 (fact "Render background color"
   (offscreen-render 160 120 (clear (vec3 1.0 0.0 0.0)))
   => (is-image "test/sfsim/fixtures/render/red.png" 0.0))

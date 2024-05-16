@@ -203,24 +203,39 @@
   [target data]
   (GL15/glBufferData ^int target ^java.nio.DirectIntBufferU data GL15/GL_STATIC_DRAW))
 
+(defn opengl-type-size
+  "Get byte size of OpenGL type"
+  {:malli/schema [:=> [:cat :int] :int]}
+  [opengl-type]
+  (cond
+        (= opengl-type GL11/GL_UNSIGNED_BYTE)  Byte/BYTES
+        (= opengl-type GL11/GL_UNSIGNED_SHORT) Short/BYTES
+        (= opengl-type GL11/GL_UNSIGNED_INT)   Integer/BYTES
+        (= opengl-type GL11/GL_FLOAT)          Float/BYTES
+        (= opengl-type GL11/GL_DOUBLE)         Double/BYTES))
+
+
 (defn setup-vertex-attrib-pointers
+  "Set up mappings from vertex array buffer row to vertex shader attributes"
+  {:malli/schema [:=> [:cat :int [:and sequential? [:repeat [:cat :int :string N]]]] [:vector :int]]}
   [program attributes]
-  (let [attribute-pairs (partition 2 attributes)
-        sizes           (map (comp #(* % Float/BYTES) second) attribute-pairs)
+  (let [attribute-pairs (partition 3 attributes)
+        sizes           (map (fn [[opengl-type _name size]] (* (opengl-type-size opengl-type) size) ) attribute-pairs)
         stride          (apply + sizes)
         offsets         (reductions + 0 (butlast sizes))
-        attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
+        attr-locations  (for [[[opengl-type attribute size] offset] (map list attribute-pairs offsets)]
                              (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
-                               (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false ^long stride ^long offset)
+                               (GL20/glVertexAttribPointer location ^long size ^long opengl-type false ^long stride ^long offset)
                                (GL20/glEnableVertexAttribArray location)
                                location))]
     (vec attr-locations)))
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects using integers for indices and floating point numbers for vertex data"
-  {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and vector? [:repeat [:cat :string N]]]] vertex-array-object]}
+  {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and sequential? [:repeat [:cat :string N]]]] vertex-array-object]}
   [program indices vertices attributes]
-  (let [vertex-array-object (GL30/glGenVertexArrays)
+  (let [float-attributes    (mapcat (fn [attr] [GL11/GL_FLOAT (first attr) (second attr)]) (partition 2 attributes))
+        vertex-array-object (GL30/glGenVertexArrays)
         array-buffer        (GL15/glGenBuffers)
         index-buffer        (GL15/glGenBuffers)]
     (GL30/glBindVertexArray vertex-array-object)
@@ -231,7 +246,7 @@
     {::vertex-array-object vertex-array-object
      ::array-buffer        array-buffer
      ::index-buffer        index-buffer
-     ::attribute-locations (setup-vertex-attrib-pointers program attributes)
+     ::attribute-locations (setup-vertex-attrib-pointers program float-attributes)
      ::nrows               (count indices)}))
 
 (defn destroy-vertex-array-object
