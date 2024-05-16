@@ -203,32 +203,36 @@
   [target data]
   (GL15/glBufferData ^int target ^java.nio.DirectIntBufferU data GL15/GL_STATIC_DRAW))
 
+(defn setup-vertex-attrib-pointers
+  [program attributes]
+  (let [attribute-pairs (partition 2 attributes)
+        sizes           (map (comp #(* % Float/BYTES) second) attribute-pairs)
+        stride          (apply + sizes)
+        offsets         (reductions + 0 (butlast sizes))
+        attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
+                             (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
+                               (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false ^long stride ^long offset)
+                               (GL20/glEnableVertexAttribArray location)
+                               location))]
+    (vec attr-locations)))
+
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects using integers for indices and floating point numbers for vertex data"
   {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and vector? [:repeat [:cat :string N]]]] vertex-array-object]}
   [program indices vertices attributes]
-  (let [vertex-array-object (GL30/glGenVertexArrays)]
+  (let [vertex-array-object (GL30/glGenVertexArrays)
+        array-buffer        (GL15/glGenBuffers)
+        index-buffer        (GL15/glGenBuffers)]
     (GL30/glBindVertexArray vertex-array-object)
-    (let [array-buffer (GL15/glGenBuffers)
-          index-buffer (GL15/glGenBuffers)]
-      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-      (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)))
-      (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
-      (let [attribute-pairs (partition 2 attributes)
-            sizes           (map (comp #(* % Float/BYTES) second) attribute-pairs)
-            stride          (apply + sizes)
-            offsets         (reductions + 0 (butlast sizes))
-            attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
-                                 (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
-                                   (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false ^long stride ^long offset)
-                                   (GL20/glEnableVertexAttribArray location)
-                                   location))]
-        {::vertex-array-object vertex-array-object
-         ::array-buffer        array-buffer
-         ::index-buffer        index-buffer
-         ::attribute-locations (vec attr-locations)
-         ::nrows               (count indices)}))))
+    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
+    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
+    (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)))
+    (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
+    {::vertex-array-object vertex-array-object
+     ::array-buffer        array-buffer
+     ::index-buffer        index-buffer
+     ::attribute-locations (setup-vertex-attrib-pointers program attributes)
+     ::nrows               (count indices)}))
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
