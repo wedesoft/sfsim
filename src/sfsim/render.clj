@@ -43,17 +43,6 @@
        (GL11/glDisable GL11/GL_STENCIL_TEST)
        result#)))
 
-(defmacro with-blending
-  "Enable alpha blending for the specified body of code"
-  [& body]
-  `(do
-     (GL11/glEnable GL11/GL_BLEND)
-     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
-     (GL14/glBlendFunc GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA)
-     (let [result# (do ~@body)]
-       (GL11/glDisable GL11/GL_BLEND)
-       result#)))
-
 (defn write-to-stencil-buffer
   "Write to stencil buffer when rendering"
   []
@@ -67,6 +56,31 @@
   (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
   (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
   (GL11/glStencilMask 0))
+
+(defmacro with-blending
+  "Enable alpha blending for the specified body of code"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_BLEND)
+     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     (GL14/glBlendFunc GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_BLEND)
+       result#)))
+
+(defmacro with-scissor
+  "Enable scissor test for the specified body of code"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_SCISSOR_TEST)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_SCISSOR_TEST)
+       result#)))
+
+(defn set-scissor
+  {:malli/schema [:=> [:cat number? number? number? number?] :nil]}
+  [x y w h]
+  (GL11/glScissor (int x) (int y) (int w) (int h)))
 
 (defn setup-window-hints
   "Set GLFW window hints"
