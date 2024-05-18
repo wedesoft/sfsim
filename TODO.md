@@ -1,11 +1,11 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * environment for scissor testing
-  * mixed type vertex array object
+  * mapped vertex data (environment?)
   * integration test backend using a slider
   * ...
+* 2 more levels, higher res map
+* microtexture for normal map
 * try lower-res clouds with increased sampling rate
-* micro normal map, 2 more levels, higher res map
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 * object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
 * direct light integrates atmosphere and overall shadow, overall shadow integrates cascade, opacity cascade, and model list

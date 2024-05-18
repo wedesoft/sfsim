@@ -24,6 +24,13 @@
 
 (GLFW/glfwInit)
 
+(facts "Byte size of OpenGL types"
+       (opengl-type-size GL11/GL_UNSIGNED_BYTE) => 1
+       (opengl-type-size GL11/GL_UNSIGNED_SHORT) => 2
+       (opengl-type-size GL11/GL_UNSIGNED_INT) => 4
+       (opengl-type-size GL11/GL_FLOAT) => 4
+       (opengl-type-size GL11/GL_DOUBLE) => 8)
+
 (fact "Render background color"
   (offscreen-render 160 120 (clear (vec3 1.0 0.0 0.0)))
   => (is-image "test/sfsim/fixtures/render/red.png" 0.0))
@@ -989,7 +996,7 @@ void main()
                  (get-vector3 (vector-cubemap->vectors3 cubemap i) 0 0) => (apply vec3 (gen-vector i)))
           (destroy-texture cubemap))))
 
-(fact "Render two quads with depth testing"
+(fact "Render two quads with stencil test"
   (offscreen-render 160 120
     (let [indices1  [0 1 3 2]
           vertices1 [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0]
@@ -1009,6 +1016,20 @@ void main()
         (destroy-vertex-array-object vao2)
         (destroy-vertex-array-object vao1)
         (destroy-program program)))) => (is-image "test/sfsim/fixtures/render/stencil.png" 0.0))
+
+(fact "Render a quad with scissor test"
+  (offscreen-render 160 120
+    (let [indices  [0 1 3 2]
+          vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+          program  (make-program :sfsim.render/vertex [vertex-passthrough] :sfsim.render/fragment [fragment-blue])
+          vao      (make-vertex-array-object program indices vertices ["point" 3])]
+      (clear (vec3 0.0 0.0 0.0))
+      (with-scissor
+        (use-program program)
+        (set-scissor 20 10 100 90)
+        (render-quads vao))
+      (destroy-vertex-array-object vao)
+      (destroy-program program))) => (is-image "test/sfsim/fixtures/render/scissor.png" 0.0))
 
 (facts "Diagonal field of view"
        (diagonal-field-of-view 320   0 (* 0.25 PI)) => (roughly (* 0.25 PI) 1e-6)
