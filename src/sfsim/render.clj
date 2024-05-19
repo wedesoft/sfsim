@@ -267,7 +267,7 @@
 (defn make-vertex-array-stream
   "Create vertex array object using stream draw mode for integer index buffer and mixed type array buffer"
   {:malli/schema [:=> [:cat :int :int :int] vertex-array-object]}
-  [program max-index-buffer max-vertex-buffer]
+  [_program max-index-buffer max-vertex-buffer]
   (let [vertex-array-object (GL30/glGenVertexArrays)
         array-buffer        (GL15/glGenBuffers)
         index-buffer        (GL15/glGenBuffers)]

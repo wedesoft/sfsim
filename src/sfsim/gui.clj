@@ -4,8 +4,9 @@
               [sfsim.util :refer (N)]
               [sfsim.render :refer (make-program)]
               [sfsim.texture :refer (make-rgba-texture)])
-    (:import [org.lwjgl.opengl GL11]
-             [org.lwjgl.nuklear NkDrawNullTexture]))
+    (:import [org.lwjgl.system MemoryUtil]
+             [org.lwjgl.opengl GL11]
+             [org.lwjgl.nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -50,6 +51,20 @@
   "Destroy single pixel texture"
   [null-texture]
   (GL11/glDeleteTextures (.id (.texture ^NkDrawNullTexture null-texture))))
+
+(defn make-allocator
+  "Create Nuklear allocation object"
+  []
+  (let [result (NkAllocator/create)]
+    (.alloc result (reify NkPluginAllocI (invoke [_this _handle _old size] (MemoryUtil/nmemAllocChecked size))))
+    (.mfree result (reify NkPluginFreeI (invoke [_this _handle ptr] (MemoryUtil/nmemFree ptr))))
+    result))
+
+(defn destroy-allocator
+  "Destruct Nuklear allocation object"
+  [allocator]
+  (.free (.alloc ^NkAllocator allocator))
+  (.free (.mfree ^NkAllocator allocator)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
