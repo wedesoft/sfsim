@@ -7,6 +7,9 @@
     (:import [org.lwjgl.opengl GL11]
              [org.lwjgl.nuklear NkDrawNullTexture]))
 
+(set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
+
 (def vertex-gui
   "Vertex shader for rendering graphical user interfaces"
   (slurp "resources/shaders/gui/vertex.glsl"))
@@ -46,4 +49,7 @@
 (defn destroy-null-texture
   "Destroy single pixel texture"
   [null-texture]
-  (GL11/glDeleteTextures ^long (.id (.texture null-texture))))
+  (GL11/glDeleteTextures (.id (.texture ^NkDrawNullTexture null-texture))))
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)

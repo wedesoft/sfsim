@@ -118,12 +118,10 @@
        (gui-offscreen-render 160 32
          (let [buffer-initial-size (* 4 1024)
                max-vertex-buffer   (* 512 1024)
-               max-element-buffer  (* 128 1024)
+               max-index-buffer    (* 128 1024)
                program             (make-gui-program)
                null-texture        (make-null-texture)
-               vertex-array-object (GL30/glGenVertexArrays)
-               array-buffer        (GL15/glGenBuffers)
-               index-buffer        (GL15/glGenBuffers)
+               vao                 (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
                vertex-layout       (NkDrawVertexLayoutElement/malloc 4)
                stack               (MemoryStack/stackPush)
                allocator           (NkAllocator/create)
@@ -133,11 +131,6 @@
                config              (NkConvertConfig/calloc stack)
                rect                (NkRect/malloc stack)
                slider              (BufferUtils/createIntBuffer 1)]
-           (GL30/glBindVertexArray vertex-array-object)
-           (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-           (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-           (GL15/glBufferData GL15/GL_ARRAY_BUFFER max-vertex-buffer GL15/GL_STREAM_DRAW)
-           (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER max-element-buffer GL15/GL_STREAM_DRAW)
            (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
            (-> vertex-layout (.position 0) (.attribute Nuklear/NK_VERTEX_POSITION) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
            (-> vertex-layout (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 8))
@@ -166,15 +159,12 @@
            (GL11/glViewport 0 0 160 32)
            (use-program program)
            (uniform-matrix4 program "projection" (gui-matrix 160 32))
-           (let [vertices (GL15/glMapBuffer GL15/GL_ARRAY_BUFFER GL15/GL_WRITE_ONLY max-vertex-buffer nil)
-                 elements (GL15/glMapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER GL15/GL_WRITE_ONLY max-element-buffer nil)
-                 vbuf     (NkBuffer/malloc stack)
-                 ebuf     (NkBuffer/malloc stack)]
-             (Nuklear/nk_buffer_init_fixed vbuf vertices)
-             (Nuklear/nk_buffer_init_fixed ebuf elements)
-             (Nuklear/nk_convert context cmds vbuf ebuf config))
-           (GL15/glUnmapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER)
-           (GL15/glUnmapBuffer GL15/GL_ARRAY_BUFFER)
+           (with-mapped-vertex-arrays vao vertices elements
+             (let [vbuf (NkBuffer/malloc stack)
+                   ebuf (NkBuffer/malloc stack)]
+               (Nuklear/nk_buffer_init_fixed vbuf vertices)
+               (Nuklear/nk_buffer_init_fixed ebuf elements)
+               (Nuklear/nk_convert context cmds vbuf ebuf config)))
            (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
                  (when cmd
                    (when (not (zero? (.elem_count cmd)))
@@ -196,9 +186,7 @@
            (GL30/glBindVertexArray 0)
            (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
            (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
-           (GL15/glDeleteBuffers array-buffer)
-           (GL15/glDeleteBuffers index-buffer)
-           (GL30/glDeleteVertexArrays vertex-array-object)
+           (destroy-vertex-array-object vao)
            (destroy-program program))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
 (GLFW/glfwTerminate)
