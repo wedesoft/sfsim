@@ -137,28 +137,7 @@
            (when (Nuklear/nk_begin context "test slider" (Nuklear/nk_rect 0 0 160 32 rect) 0)
              (Nuklear/nk_layout_row_dynamic context 32 1)
              (Nuklear/nk_slider_int context 0 slider 100 1))
-           (GL11/glViewport 0 0 160 32)
-           (use-program program)
-           (uniform-matrix4 program "projection" (gui-matrix 160 32))
-           (with-mapped-vertex-arrays vao vertices elements
-             (let [vbuf (NkBuffer/malloc stack)
-                   ebuf (NkBuffer/malloc stack)]
-               (Nuklear/nk_buffer_init_fixed vbuf vertices)
-               (Nuklear/nk_buffer_init_fixed ebuf elements)
-               (Nuklear/nk_convert context cmds vbuf ebuf config)))
-           (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
-                 (when cmd
-                   (when (not (zero? (.elem_count cmd)))
-                     (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
-                     (let [clip-rect (.clip_rect cmd)]
-                       (GL11/glScissor (int (.x clip-rect))
-                                       (int (- 32 (int (+ (.y clip-rect) (.h clip-rect)))))
-                                       (int (.w clip-rect))
-                                       (int (.h clip-rect))))
-                     (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
-                   (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))
-           (Nuklear/nk_clear context)
-           (Nuklear/nk_buffer_clear cmds)
+           (render-gui context config cmds program vao 160 32)
            (GL30/glBindVertexArray 0)
            (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
            (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)

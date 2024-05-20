@@ -1,8 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * mapped vertex data (environment?)
-  * integration test backend using a slider
-  * ...
+  * test context switching between two guis (bindvertexarray, useprogram)
 * 2 more levels, higher res map
 * microtexture for normal map
 * try lower-res clouds with increased sampling rate
