@@ -12,7 +12,8 @@
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL12 GL14 GL15 GL30]
-             [org.lwjgl.nuklear Nuklear NkAllocator NkContext NkUserFont NkBuffer NkRect NkConvertConfig NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement]
+             [org.lwjgl.nuklear Nuklear NkAllocator NkContext NkUserFont NkBuffer NkRect NkConvertConfig NkPluginAllocI
+              NkPluginFreeI NkDrawVertexLayoutElement]
              [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim.gui]})
@@ -122,34 +123,18 @@
                program             (make-gui-program)
                null-texture        (make-null-texture)
                vao                 (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
-               vertex-layout       (NkDrawVertexLayoutElement/malloc 4)
+               vertex-layout       (make-vertex-layout)
+               config              (make-gui-config null-texture vertex-layout)
                stack               (MemoryStack/stackPush)
                allocator           (make-allocator)
                context             (NkContext/create)
                font                (NkUserFont/create)
                cmds                (NkBuffer/create)
-               config              (NkConvertConfig/calloc stack)
                rect                (NkRect/malloc stack)
                slider              (BufferUtils/createIntBuffer 1)]
            (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
-           (-> vertex-layout (.position 0) (.attribute Nuklear/NK_VERTEX_POSITION) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
-           (-> vertex-layout (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 8))
-           (-> vertex-layout (.position 2) (.attribute Nuklear/NK_VERTEX_COLOR) (.format Nuklear/NK_FORMAT_R8G8B8A8) (.offset 16))
-           (-> vertex-layout (.position 3) (.attribute Nuklear/NK_VERTEX_ATTRIBUTE_COUNT) (.format Nuklear/NK_FORMAT_COUNT) (.offset 0))
-           (.flip vertex-layout)
            (Nuklear/nk_init context allocator font)
            (Nuklear/nk_buffer_init cmds allocator buffer-initial-size)
-           (doto config
-                 (.vertex_layout vertex-layout)
-                 (.vertex_size 20)
-                 (.vertex_alignment 4)
-                 (.tex_null null-texture)
-                 (.circle_segment_count 22)
-                 (.curve_segment_count 22)
-                 (.arc_segment_count 22)
-                 (.global_alpha 1.0)
-                 (.shape_AA Nuklear/NK_ANTI_ALIASING_ON)
-                 (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
            (.put slider 0 50)
            (when (Nuklear/nk_begin context "test slider" (Nuklear/nk_rect 0 0 160 32 rect) 0)
              (Nuklear/nk_layout_row_dynamic context 32 1)
@@ -176,14 +161,16 @@
                    (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))
            (Nuklear/nk_clear context)
            (Nuklear/nk_buffer_clear cmds)
-           (destroy-null-texture null-texture)
-           (Nuklear/nk_free context)
-           (MemoryStack/stackPop)
-           (destroy-allocator allocator)
            (GL30/glBindVertexArray 0)
            (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
            (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
            (destroy-vertex-array-object vao)
-           (destroy-program program))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
+           (destroy-program program)
+           (Nuklear/nk_free context)
+           (destroy-null-texture null-texture)
+           (destroy-vertex-layout vertex-layout)
+           (destroy-gui-config config)
+           (MemoryStack/stackPop)
+           (destroy-allocator allocator))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
 (GLFW/glfwTerminate)

@@ -6,7 +6,8 @@
               [sfsim.texture :refer (make-rgba-texture)])
     (:import [org.lwjgl.system MemoryUtil]
              [org.lwjgl.opengl GL11]
-             [org.lwjgl.nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI]))
+             [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
+              NkDrawVertexLayoutElement$Buffer NkConvertConfig]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -64,7 +65,53 @@
   "Destruct Nuklear allocation object"
   [allocator]
   (.free (.alloc ^NkAllocator allocator))
-  (.free (.mfree ^NkAllocator allocator)))
+  (.free (.mfree ^NkAllocator allocator))
+  (.free ^NkAllocator allocator))
+
+(set! *warn-on-reflection* false)
+
+(defn make-vertex-layout
+  "Create Nuklear vertex layout object"
+  {:malli/schema [:=> :cat :some]}
+  []
+  (let [result (NkDrawVertexLayoutElement/malloc 4)]
+    (-> result (.position 0) (.attribute Nuklear/NK_VERTEX_POSITION) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
+    (-> result (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 8))
+    (-> result (.position 2) (.attribute Nuklear/NK_VERTEX_COLOR) (.format Nuklear/NK_FORMAT_R8G8B8A8) (.offset 16))
+    (-> result (.position 3) (.attribute Nuklear/NK_VERTEX_ATTRIBUTE_COUNT) (.format Nuklear/NK_FORMAT_COUNT) (.offset 0))
+    (.flip result)))
+
+(set! *warn-on-reflection* true)
+
+(defn destroy-vertex-layout
+  "Destructor for vertex layout object"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [vertex-layout]
+  (.free ^NkDrawVertexLayoutElement$Buffer vertex-layout))
+
+(defn make-gui-config
+  "Create and initialise Nuklear configuration"
+  {:malli/schema [:=> [:cat :some :some] :some]}
+  [null-texture vertex-layout]
+  (let [result (NkConvertConfig/calloc)]
+    (doto result
+          (.vertex_layout ^NkDrawVertexLayoutElement$Buffer vertex-layout)
+          (.vertex_size 20)
+          (.vertex_alignment 4)
+          (.tex_null ^NkDrawNullTexture null-texture)
+          (.circle_segment_count 22)
+          (.curve_segment_count 22)
+          (.arc_segment_count 22)
+          (.global_alpha 1.0)
+          (.shape_AA Nuklear/NK_ANTI_ALIASING_ON)
+          (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
+    result))
+
+(defn destroy-gui-config
+  "Destroy GUI configuration"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [config]
+  (.free ^NkConvertConfig config))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
