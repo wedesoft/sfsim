@@ -7,7 +7,7 @@
     (:import [org.lwjgl.system MemoryUtil]
              [org.lwjgl.opengl GL11]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
-              NkDrawVertexLayoutElement$Buffer NkConvertConfig]))
+              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -112,6 +112,19 @@
   {:malli/schema [:=> [:cat :some] :nil]}
   [config]
   (.free ^NkConvertConfig config))
+
+(defn make-gui-context
+  "Create Nuklear context object"
+  {:malli/schema [:=> [:cat :some :some] :some]}
+  [allocator font]
+  (let [result (NkContext/create)]
+    (Nuklear/nk_init result allocator font)
+    result))
+
+(defn destroy-gui-context
+  "Destroy Nuklear GUI context object"
+  [context]
+  (Nuklear/nk_free context))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
