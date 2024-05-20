@@ -2,10 +2,11 @@
     (:require [fastmath.matrix :as fm]
               [sfsim.matrix :refer (fmat4)]
               [sfsim.util :refer (N)]
-              [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays)]
+              [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
+                                    with-scissor set-scissor)]
               [sfsim.texture :refer (make-rgba-texture)])
     (:import [org.lwjgl.system MemoryUtil MemoryStack]
-             [org.lwjgl.opengl GL11]
+             [org.lwjgl.opengl GL11 GL14]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
               NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer]))
 
@@ -154,17 +155,16 @@
         (Nuklear/nk_buffer_init_fixed vbuf vertices)
         (Nuklear/nk_buffer_init_fixed ebuf elements)
         (Nuklear/nk_convert context cmds vbuf ebuf config)))
-    (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
-          (when cmd
-            (when (not (zero? (.elem_count cmd)))
-              (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
-              (let [clip-rect (.clip_rect cmd)]
-                (GL11/glScissor (int (.x clip-rect))
-                                (int (- 32 (int (+ (.y clip-rect) (.h clip-rect)))))
-                                (int (.w clip-rect))
-                                (int (.h clip-rect))))
-              (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
-            (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))
+    (with-blending
+      (with-scissor
+        (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
+              (when cmd
+                (when (not (zero? (.elem_count cmd)))
+                  (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
+                  (let [clip-rect (.clip_rect cmd)]
+                    (set-scissor (.x clip-rect) (- 32 (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
+                  (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
+                (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
     (Nuklear/nk_clear context)
     (Nuklear/nk_buffer_clear cmds)
     (MemoryStack/stackPop)))

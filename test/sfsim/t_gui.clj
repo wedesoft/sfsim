@@ -116,7 +116,7 @@
              (destroy-program program)))) => (is-image "test/sfsim/fixtures/gui/mode.png" 0.0))
 
 (facts "Render a slider"
-       (gui-offscreen-render 160 32
+       (gui-offscreen-render 160 40
          (let [buffer-initial-size (* 4 1024)
                max-vertex-buffer   (* 512 1024)
                max-index-buffer    (* 128 1024)
@@ -134,10 +134,10 @@
                slider              (BufferUtils/createIntBuffer 1)]
            (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
            (.put slider 0 50)
-           (when (Nuklear/nk_begin context "test slider" (Nuklear/nk_rect 0 0 160 32 rect) 0)
-             (Nuklear/nk_layout_row_dynamic context 32 1)
+           (when (Nuklear/nk_begin context "test slider" (Nuklear/nk_rect 0 0 160 40 rect) 0)
+             (Nuklear/nk_layout_row_dynamic context 40 1)
              (Nuklear/nk_slider_int context 0 slider 100 1))
-           (render-gui context config cmds program vao 160 32)
+           (render-gui context config cmds program vao 160 40)
            (GL30/glBindVertexArray 0)
            (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
            (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
