@@ -129,11 +129,10 @@
                allocator           (make-allocator)
                font                (NkUserFont/create)
                context             (make-gui-context allocator font)
-               cmds                (NkBuffer/create)
+               cmds                (make-gui-buffer allocator buffer-initial-size)
                rect                (NkRect/malloc stack)
                slider              (BufferUtils/createIntBuffer 1)]
            (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
-           (Nuklear/nk_buffer_init cmds allocator buffer-initial-size)
            (.put slider 0 50)
            (when (Nuklear/nk_begin context "test slider" (Nuklear/nk_rect 0 0 160 32 rect) 0)
              (Nuklear/nk_layout_row_dynamic context 32 1)
@@ -169,6 +168,7 @@
            (destroy-null-texture null-texture)
            (destroy-vertex-layout vertex-layout)
            (destroy-gui-config config)
+           (destroy-gui-buffer cmds)
            (MemoryStack/stackPop)
            (destroy-allocator allocator))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 

@@ -7,7 +7,7 @@
     (:import [org.lwjgl.system MemoryUtil]
              [org.lwjgl.opengl GL11]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
-              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext]))
+              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -123,8 +123,23 @@
 
 (defn destroy-gui-context
   "Destroy Nuklear GUI context object"
+  {:malli/schema [:=> [:cat :some] :nil]}
   [context]
   (Nuklear/nk_free context))
+
+(defn make-gui-buffer
+  "Create Nuklear render command buffer"
+  {:malli/schema [:=> [:cat :some :int] :some]}
+  [allocator initial-size]
+  (let [result (NkBuffer/create)]
+    (Nuklear/nk_buffer_init result allocator initial-size)
+    result))
+
+(defn destroy-gui-buffer
+  "Destroy Nuklear render command buffer"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [buffer]
+  (.free ^NkBuffer buffer))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
