@@ -3,7 +3,8 @@
               [sfsim.matrix :refer (fmat4)]
               [sfsim.util :refer (N)]
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
-                                    with-scissor set-scissor vertex-array-object destroy-program setup-vertex-attrib-pointers)]
+                                    with-scissor set-scissor vertex-array-object destroy-program setup-vertex-attrib-pointers
+                                    make-vertex-array-stream destroy-vertex-array-object)]
               [sfsim.texture :refer (make-rgba-texture)])
     (:import [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL14]
@@ -171,17 +172,23 @@
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
   []
-  (let [allocator    (make-allocator)
-        program      (make-gui-program)
-        null-texture (make-null-texture)]
+  (let [max-vertex-buffer (* 512 1024)
+        max-index-buffer  (* 128 1024)
+        allocator         (make-allocator)
+        program           (make-gui-program)
+        vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
+        null-texture      (make-null-texture)]
+    ; (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
     {::allocator allocator
      ::program   program
+     ::vao       vao
      ::null-tex  null-texture}))
 
 (defn destroy-nuklear-gui
   "Destruct GUI objects"
   [gui]
   (destroy-null-texture (::null-tex gui))
+  (destroy-vertex-array-object (::vao gui))
   (destroy-program (::program gui))
   (destroy-allocator (::allocator gui)))
 
