@@ -171,23 +171,27 @@
 
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
+  {:malli/schema [:=> [:cat] :some]}
   []
   (let [max-vertex-buffer (* 512 1024)
         max-index-buffer  (* 128 1024)
         allocator         (make-allocator)
         program           (make-gui-program)
         vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
+        vertex-layout     (make-vertex-layout)
         null-texture      (make-null-texture)]
-    ; (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
-    {::allocator allocator
-     ::program   program
-     ::vao       vao
-     ::null-tex  null-texture}))
+    (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
+    {::allocator     allocator
+     ::program       program
+     ::vao           vao
+     ::vertex-layout vertex-layout
+     ::null-tex      null-texture}))
 
 (defn destroy-nuklear-gui
   "Destruct GUI objects"
   [gui]
   (destroy-null-texture (::null-tex gui))
+  (destroy-vertex-layout (::vertex-layout gui))
   (destroy-vertex-array-object (::vao gui))
   (destroy-program (::program gui))
   (destroy-allocator (::allocator gui)))
