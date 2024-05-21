@@ -3,7 +3,7 @@
               [sfsim.matrix :refer (fmat4)]
               [sfsim.util :refer (N)]
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
-                                    with-scissor set-scissor)]
+                                    with-scissor set-scissor vertex-array-object)]
               [sfsim.texture :refer (make-rgba-texture)])
     (:import [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL14]
@@ -144,6 +144,7 @@
 
 (defn render-gui
   "Display the graphical user interface"
+  {:malli/schema [:=> [:cat :some :some :some :int vertex-array-object :int :int] :nil]}
   [context config cmds program vao width height]
   (let [stack (MemoryStack/stackPush)]
     (GL11/glViewport 0 0 width height)
@@ -167,7 +168,19 @@
                 (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
     (Nuklear/nk_clear context)
     (Nuklear/nk_buffer_clear cmds)
-    (MemoryStack/stackPop)))
+    (MemoryStack/stackPop)
+    nil))
+
+(defn make-nuklear-gui
+  "Create a hashmap with required GUI objects"
+  []
+  (let [allocator (make-allocator)]
+    {::allocator allocator}))
+
+(defn destroy-nuklear-gui
+  "Destruct GUI objects"
+  [gui]
+  (destroy-allocator (::allocator gui)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

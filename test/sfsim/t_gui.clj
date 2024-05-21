@@ -126,10 +126,10 @@
                vertex-layout       (make-vertex-layout)
                config              (make-gui-config null-texture vertex-layout)
                stack               (MemoryStack/stackPush)
-               allocator           (make-allocator)
+               gui                 (make-nuklear-gui)
                font                (NkUserFont/create)
-               context             (make-gui-context allocator font)
-               cmds                (make-gui-buffer allocator buffer-initial-size)
+               context             (make-gui-context (:sfsim.gui/allocator gui) font)
+               cmds                (make-gui-buffer (:sfsim.gui/allocator gui) buffer-initial-size)
                rect                (NkRect/malloc stack)
                slider              (BufferUtils/createIntBuffer 1)]
            (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
@@ -148,7 +148,7 @@
            (destroy-vertex-layout vertex-layout)
            (destroy-gui-config config)
            (destroy-gui-buffer cmds)
-           (MemoryStack/stackPop)
-           (destroy-allocator allocator))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
+           (destroy-nuklear-gui gui)
+           (MemoryStack/stackPop))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
 (GLFW/glfwTerminate)
