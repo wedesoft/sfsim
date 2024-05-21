@@ -3,7 +3,7 @@
               [sfsim.matrix :refer (fmat4)]
               [sfsim.util :refer (N)]
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
-                                    with-scissor set-scissor vertex-array-object)]
+                                    with-scissor set-scissor vertex-array-object destroy-program)]
               [sfsim.texture :refer (make-rgba-texture)])
     (:import [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL14]
@@ -174,12 +174,15 @@
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
   []
-  (let [allocator (make-allocator)]
-    {::allocator allocator}))
+  (let [allocator (make-allocator)
+        program   (make-gui-program)]
+    {::allocator allocator
+     ::program   program}))
 
 (defn destroy-nuklear-gui
   "Destruct GUI objects"
   [gui]
+  (destroy-program (::program gui))
   (destroy-allocator (::allocator gui)))
 
 (set! *warn-on-reflection* false)
