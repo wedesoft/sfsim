@@ -84,11 +84,6 @@
 
 (set! *warn-on-reflection* true)
 
-(defn destroy-vertex-layout
-  "Destructor for vertex layout object"
-  {:malli/schema [:=> [:cat :some] :nil]}
-  [vertex-layout])
-
 (defn make-gui-config
   "Create and initialise Nuklear configuration"
   {:malli/schema [:=> [:cat :some :some] :some]}
@@ -106,11 +101,6 @@
           (.shape_AA Nuklear/NK_ANTI_ALIASING_ON)
           (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
     result))
-
-(defn destroy-gui-config
-  "Destroy GUI configuration"
-  {:malli/schema [:=> [:cat :some] :nil]}
-  [config])
 
 (defn make-gui-context
   "Create Nuklear context object"
@@ -133,12 +123,6 @@
   (let [result (NkBuffer/create)]
     (Nuklear/nk_buffer_init result allocator initial-size)
     result))
-
-(defn destroy-gui-buffer
-  "Destroy Nuklear render command buffer"
-  {:malli/schema [:=> [:cat :some] :nil]}
-  [buffer]
-  (.free ^NkBuffer buffer))
 
 (defn render-gui
   "Display the graphical user interface"
@@ -179,19 +163,20 @@
         program           (make-gui-program)
         vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
         vertex-layout     (make-vertex-layout)
-        null-texture      (make-null-texture)]
+        null-texture      (make-null-texture)
+        config            (make-gui-config null-texture vertex-layout)]
     (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
     {::allocator     allocator
      ::program       program
      ::vao           vao
      ::vertex-layout vertex-layout
-     ::null-tex      null-texture}))
+     ::null-tex      null-texture
+     ::config        config}))
 
 (defn destroy-nuklear-gui
   "Destruct GUI objects"
   [gui]
   (destroy-null-texture (::null-tex gui))
-  (destroy-vertex-layout (::vertex-layout gui))
   (destroy-vertex-array-object (::vao gui))
   (destroy-program (::program gui))
   (destroy-allocator (::allocator gui)))
