@@ -3,7 +3,7 @@
               [sfsim.matrix :refer (fmat4)]
               [sfsim.util :refer (N)]
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
-                                    with-scissor set-scissor vertex-array-object destroy-program)]
+                                    with-scissor set-scissor vertex-array-object destroy-program setup-vertex-attrib-pointers)]
               [sfsim.texture :refer (make-rgba-texture)])
     (:import [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL14]
@@ -66,8 +66,7 @@
   "Destruct Nuklear allocation object"
   [allocator]
   (.free (.alloc ^NkAllocator allocator))
-  (.free (.mfree ^NkAllocator allocator))
-  (.free ^NkAllocator allocator))
+  (.free (.mfree ^NkAllocator allocator)))
 
 (set! *warn-on-reflection* false)
 
@@ -87,8 +86,7 @@
 (defn destroy-vertex-layout
   "Destructor for vertex layout object"
   {:malli/schema [:=> [:cat :some] :nil]}
-  [vertex-layout]
-  (.free ^NkDrawVertexLayoutElement$Buffer vertex-layout))
+  [vertex-layout])
 
 (defn make-gui-config
   "Create and initialise Nuklear configuration"
@@ -111,8 +109,7 @@
 (defn destroy-gui-config
   "Destroy GUI configuration"
   {:malli/schema [:=> [:cat :some] :nil]}
-  [config]
-  (.free ^NkConvertConfig config))
+  [config])
 
 (defn make-gui-context
   "Create Nuklear context object"
@@ -174,14 +171,17 @@
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
   []
-  (let [allocator (make-allocator)
-        program   (make-gui-program)]
+  (let [allocator    (make-allocator)
+        program      (make-gui-program)
+        null-texture (make-null-texture)]
     {::allocator allocator
-     ::program   program}))
+     ::program   program
+     ::null-tex  null-texture}))
 
 (defn destroy-nuklear-gui
   "Destruct GUI objects"
   [gui]
+  (destroy-null-texture (::null-tex gui))
   (destroy-program (::program gui))
   (destroy-allocator (::allocator gui)))
 
