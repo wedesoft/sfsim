@@ -175,6 +175,7 @@
 
 (defn destroy-nuklear-gui
   "Destruct GUI objects"
+  {:malli/schema [:=> [:cat :some] :nil]}
   [gui]
   (destroy-null-texture (::null-tex gui))
   (destroy-vertex-array-object (::vao gui))
