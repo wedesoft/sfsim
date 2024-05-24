@@ -124,10 +124,32 @@
     (Nuklear/nk_buffer_init result allocator initial-size)
     result))
 
-(defn render-gui
+(defn make-nuklear-gui
+  "Create a hashmap with required GUI objects"
+  {:malli/schema [:=> [:cat :some] :some]}
+  [font]
+  (let [max-vertex-buffer (* 512 1024)
+        max-index-buffer  (* 128 1024)
+        allocator         (make-allocator)
+        program           (make-gui-program)
+        vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
+        vertex-layout     (make-vertex-layout)
+        null-texture      (make-null-texture)
+        config            (make-gui-config null-texture vertex-layout)
+        context           (make-gui-context allocator font)]
+    (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
+    {::allocator     allocator
+     ::context       context
+     ::program       program
+     ::vao           vao
+     ::vertex-layout vertex-layout
+     ::null-tex      null-texture
+     ::config        config}))
+
+(defn render-nuklear-gui
   "Display the graphical user interface"
-  {:malli/schema [:=> [:cat :some :some :some :int vertex-array-object :int :int] :nil]}
-  [context config cmds program vao width height]
+  {:malli/schema [:=> [:cat :some :some :int :int] :nil]}
+  [{::keys [context config program vao]} cmds width height]
   (let [stack (MemoryStack/stackPush)]
     (GL11/glViewport 0 0 width height)
     (use-program program)
@@ -152,28 +174,6 @@
     (Nuklear/nk_buffer_clear cmds)
     (MemoryStack/stackPop)
     nil))
-
-(defn make-nuklear-gui
-  "Create a hashmap with required GUI objects"
-  {:malli/schema [:=> [:cat :some] :some]}
-  [font]
-  (let [max-vertex-buffer (* 512 1024)
-        max-index-buffer  (* 128 1024)
-        allocator         (make-allocator)
-        program           (make-gui-program)
-        vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
-        vertex-layout     (make-vertex-layout)
-        null-texture      (make-null-texture)
-        config            (make-gui-config null-texture vertex-layout)
-        context           (make-gui-context allocator font)]
-    (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
-    {::allocator     allocator
-     ::context       context
-     ::program       program
-     ::vao           vao
-     ::vertex-layout vertex-layout
-     ::null-tex      null-texture
-     ::config        config}))
 
 (defn destroy-nuklear-gui
   "Destruct GUI objects"

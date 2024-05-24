@@ -128,7 +128,7 @@
            (when (Nuklear/nk_begin (:sfsim.gui/context gui) "test slider" (Nuklear/nk_rect 0 0 160 40 rect) 0)
              (Nuklear/nk_layout_row_dynamic (:sfsim.gui/context gui) 40 1)
              (Nuklear/nk_slider_int (:sfsim.gui/context gui) 0 slider 100 1))
-           (render-gui (:sfsim.gui/context gui) (:sfsim.gui/config gui) cmds (:sfsim.gui/program gui) (:sfsim.gui/vao gui) 160 40)
+           (render-nuklear-gui gui cmds 160 40)
            (destroy-nuklear-gui gui)
            (MemoryStack/stackPop))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
