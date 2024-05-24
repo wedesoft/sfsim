@@ -155,8 +155,8 @@
 
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
-  {:malli/schema [:=> [:cat] :some]}
-  []
+  {:malli/schema [:=> [:cat :some] :some]}
+  [font]
   (let [max-vertex-buffer (* 512 1024)
         max-index-buffer  (* 128 1024)
         allocator         (make-allocator)
@@ -164,9 +164,11 @@
         vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
         vertex-layout     (make-vertex-layout)
         null-texture      (make-null-texture)
-        config            (make-gui-config null-texture vertex-layout)]
+        config            (make-gui-config null-texture vertex-layout)
+        context           (make-gui-context allocator font)]
     (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
     {::allocator     allocator
+     ::context       context
      ::program       program
      ::vao           vao
      ::vertex-layout vertex-layout
@@ -180,6 +182,7 @@
   (destroy-null-texture (::null-tex gui))
   (destroy-vertex-array-object (::vao gui))
   (destroy-program (::program gui))
+  (destroy-gui-context (::context gui))
   (destroy-allocator (::allocator gui)))
 
 (set! *warn-on-reflection* false)

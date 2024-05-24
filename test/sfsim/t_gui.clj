@@ -118,19 +118,17 @@
 (facts "Render a slider"
        (gui-offscreen-render 160 40
          (let [buffer-initial-size (* 4 1024)
-               gui                 (make-nuklear-gui)
-               stack               (MemoryStack/stackPush)
                font                (NkUserFont/create)
-               context             (make-gui-context (:sfsim.gui/allocator gui) font)
+               gui                 (make-nuklear-gui font)
+               stack               (MemoryStack/stackPush)
                cmds                (make-gui-buffer (:sfsim.gui/allocator gui) buffer-initial-size)
                rect                (NkRect/malloc stack)
                slider              (BufferUtils/createIntBuffer 1)]
            (.put slider 0 50)
-           (when (Nuklear/nk_begin context "test slider" (Nuklear/nk_rect 0 0 160 40 rect) 0)
-             (Nuklear/nk_layout_row_dynamic context 40 1)
-             (Nuklear/nk_slider_int context 0 slider 100 1))
-           (render-gui context (:sfsim.gui/config gui) cmds (:sfsim.gui/program gui) (:sfsim.gui/vao gui) 160 40)
-           (destroy-gui-context context)
+           (when (Nuklear/nk_begin (:sfsim.gui/context gui) "test slider" (Nuklear/nk_rect 0 0 160 40 rect) 0)
+             (Nuklear/nk_layout_row_dynamic (:sfsim.gui/context gui) 40 1)
+             (Nuklear/nk_slider_int (:sfsim.gui/context gui) 0 slider 100 1))
+           (render-gui (:sfsim.gui/context gui) (:sfsim.gui/config gui) cmds (:sfsim.gui/program gui) (:sfsim.gui/vao gui) 160 40)
            (destroy-nuklear-gui gui)
            (MemoryStack/stackPop))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
