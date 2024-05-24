@@ -124,10 +124,16 @@
     (Nuklear/nk_buffer_init result allocator initial-size)
     result))
 
+(defn destroy-gui-buffer
+  "Destroy Nuklear command buffer"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [buffer]
+  (Nuklear/nk_buffer_free buffer))
+
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
-  {:malli/schema [:=> [:cat :some] :some]}
-  [font]
+  {:malli/schema [:=> [:cat :some :int] :some]}
+  [font buffer-initial-size]
   (let [max-vertex-buffer (* 512 1024)
         max-index-buffer  (* 128 1024)
         allocator         (make-allocator)
@@ -136,7 +142,8 @@
         vertex-layout     (make-vertex-layout)
         null-texture      (make-null-texture)
         config            (make-gui-config null-texture vertex-layout)
-        context           (make-gui-context allocator font)]
+        context           (make-gui-context allocator font)
+        cmds              (make-gui-buffer allocator buffer-initial-size)]
     (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
     {::allocator     allocator
      ::context       context
@@ -144,12 +151,13 @@
      ::vao           vao
      ::vertex-layout vertex-layout
      ::null-tex      null-texture
-     ::config        config}))
+     ::config        config
+     ::cmds          cmds}))
 
 (defn render-nuklear-gui
   "Display the graphical user interface"
-  {:malli/schema [:=> [:cat :some :some :int :int] :nil]}
-  [{::keys [context config program vao]} cmds width height]
+  {:malli/schema [:=> [:cat :some :int :int] :nil]}
+  [{::keys [context config program vao cmds]} width height]
   (let [stack (MemoryStack/stackPush)]
     (GL11/glViewport 0 0 width height)
     (use-program program)
@@ -179,6 +187,7 @@
   "Destruct GUI objects"
   {:malli/schema [:=> [:cat :some] :nil]}
   [gui]
+  (destroy-gui-buffer (::cmds gui))
   (destroy-null-texture (::null-tex gui))
   (destroy-vertex-array-object (::vao gui))
   (destroy-program (::program gui))

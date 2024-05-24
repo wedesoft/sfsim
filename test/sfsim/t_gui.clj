@@ -119,16 +119,15 @@
        (gui-offscreen-render 160 40
          (let [buffer-initial-size (* 4 1024)
                font                (NkUserFont/create)
-               gui                 (make-nuklear-gui font)
+               gui                 (make-nuklear-gui font buffer-initial-size)
                stack               (MemoryStack/stackPush)
-               cmds                (make-gui-buffer (:sfsim.gui/allocator gui) buffer-initial-size)
                rect                (NkRect/malloc stack)
                slider              (BufferUtils/createIntBuffer 1)]
            (.put slider 0 50)
            (when (Nuklear/nk_begin (:sfsim.gui/context gui) "test slider" (Nuklear/nk_rect 0 0 160 40 rect) 0)
              (Nuklear/nk_layout_row_dynamic (:sfsim.gui/context gui) 40 1)
              (Nuklear/nk_slider_int (:sfsim.gui/context gui) 0 slider 100 1))
-           (render-nuklear-gui gui cmds 160 40)
+           (render-nuklear-gui gui 160 40)
            (destroy-nuklear-gui gui)
            (MemoryStack/stackPop))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
