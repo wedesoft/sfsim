@@ -194,5 +194,12 @@
   (destroy-gui-context (::context gui))
   (destroy-allocator (::allocator gui)))
 
+(defmacro nuklear-window [gui title width height & body]
+  `(let [stack# (MemoryStack/stackPush)
+         rect#  (NkRect/malloc stack#)]
+     (when (Nuklear/nk_begin (:sfsim.gui/context ~gui) ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) 0)
+       ~@body)
+     (MemoryStack/stackPop)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

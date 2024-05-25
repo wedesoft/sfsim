@@ -123,9 +123,9 @@
                stack               (MemoryStack/stackPush)
                rect                (NkRect/malloc stack)
                slider              (BufferUtils/createIntBuffer 1)]
-           (.put slider 0 50)
-           (when (Nuklear/nk_begin (:sfsim.gui/context gui) "test slider" (Nuklear/nk_rect 0 0 160 40 rect) 0)
+           (nuklear-window gui "test slider" 160 40
              (Nuklear/nk_layout_row_dynamic (:sfsim.gui/context gui) 40 1)
+             (.put slider 0 50)
              (Nuklear/nk_slider_int (:sfsim.gui/context gui) 0 slider 100 1))
            (render-nuklear-gui gui 160 40)
            (destroy-nuklear-gui gui)
