@@ -6,7 +6,8 @@
                                     with-scissor set-scissor vertex-array-object destroy-program setup-vertex-attrib-pointers
                                     make-vertex-array-stream destroy-vertex-array-object)]
               [sfsim.texture :refer (make-rgba-texture)])
-    (:import [org.lwjgl.system MemoryUtil MemoryStack]
+    (:import [org.lwjgl BufferUtils]
+             [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL14]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
               NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer]))
@@ -200,6 +201,19 @@
      (when (Nuklear/nk_begin (:sfsim.gui/context ~gui) ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) 0)
        ~@body)
      (MemoryStack/stackPop)))
+
+(defn layout-row-dynamic [gui height cols]
+  "Create dynamic layout with specified height and number of columns"
+  {:malli/schema [:=> [:cat :some :int :int] :nil]}
+  (Nuklear/nk_layout_row_dynamic (::context gui) height cols))
+
+(defn slider-int [gui minimum value maximum step]
+  "Create a slider with integer value"
+  {:malli/schema [:=> [:cat :some :int :int :int :int] :int]}
+  (let [buffer (BufferUtils/createIntBuffer 1)]
+    (.put buffer 0 ^int value)
+    (Nuklear/nk_slider_int ^NkContext (::context gui) ^int minimum buffer ^int maximum ^int step)
+    (.get buffer 0)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
