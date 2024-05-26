@@ -8,12 +8,14 @@
               [sfsim.render :refer :all]
               [sfsim.texture :refer :all]
               [sfsim.image :refer :all]
-              [sfsim.gui :refer :all])
+              [sfsim.gui :refer :all]
+              [sfsim.util :refer :all])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL12 GL14 GL15 GL30]
              [org.lwjgl.nuklear Nuklear NkAllocator NkContext NkUserFont NkBuffer NkRect NkConvertConfig NkPluginAllocI
               NkPluginFreeI NkDrawVertexLayoutElement]
+             [org.lwjgl.stb STBTTFontinfo STBTTPackedchar STBTruetype STBTTPackContext]
              [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim.gui]})
@@ -125,5 +127,38 @@
              (slider-int gui 0 50 100 1))
            (render-nuklear-gui gui 160 40)
            (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
+
+(fact "Render a button"
+  (let [buffer-initial-size (* 4 1024)
+        font-height         18
+        bitmap-w            512
+        bitmap-h            512
+        stack               (MemoryStack/stackPush)
+        font                (NkUserFont/create)
+        ttf                 (slurp-byte-buffer "resources/fonts/b612.ttf")
+        fontinfo            (STBTTFontinfo/create)
+        cdata               (STBTTPackedchar/calloc 95)
+        _                   (STBTruetype/stbtt_InitFont fontinfo ttf)
+        scale               (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
+        orig-descent        (.mallocInt stack 1)
+        _                   (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
+        descent             (* (.get orig-descent 0) scale)
+        bitmap              (MemoryUtil/memAlloc (* bitmap-w bitmap-h))
+        pc                  (STBTTPackContext/malloc stack)
+        _                   (STBTruetype/stbtt_PackBegin pc bitmap bitmap-w bitmap-h 0 1 0)
+        _                   (STBTruetype/stbtt_PackSetOversampling pc 4 4)
+        _                   (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
+        _                   (STBTruetype/stbtt_PackEnd pc)
+        byte-data           (byte-array (* bitmap-w bitmap-h))
+        _                   (.get bitmap byte-data)
+        int-data            (int-array (mapv #(bit-or (bit-shift-left % 24) 0x00FFFFFF) byte-data))
+        texture             (MemoryUtil/memAlloc (* bitmap-w bitmap-h 4))
+        texture-int         (.asIntBuffer texture)
+        _                   (.put texture-int int-data)
+        data                (byte-array (* bitmap-w bitmap-h 4))
+        _                   (.get texture data)]
+    (MemoryStack/stackPop)
+    #:sfsim.image{:width bitmap-w :height bitmap-h :data data :channels 4})
+  => (is-image "test/sfsim/fixtures/gui/font.png" 0.0 false))
 
 (GLFW/glfwTerminate)
