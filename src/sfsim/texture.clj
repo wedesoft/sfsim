@@ -327,60 +327,68 @@
   [texture]
   (GL11/glDeleteTextures ^long (::texture texture)))
 
+(defn byte-buffer->array
+  "Convert byte buffer to byte array"
+  {:malli/schema [:=> [:cat :some] bytes?]}
+  [buffer]
+  (let [result (byte-array (.limit ^java.nio.DirectByteBuffer buffer))]
+    (.get ^java.nio.DirectByteBuffer buffer result)
+    (.flip ^java.nio.DirectByteBuffer buffer)
+    result))
+
+(defn float-buffer->array
+  "Convert float buffer to flaot array"
+  {:malli/schema [:=> [:cat :some] seqable?]}
+  [buffer]
+  (let [result (float-array (.limit ^java.nio.DirectFloatBufferU buffer))]
+    (.get ^java.nio.DirectFloatBufferU buffer result)
+    (.flip ^java.nio.DirectFloatBufferU buffer)
+    result))
+
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{::keys [target texture width height]}]
   (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height))
-          data (float-array (* width height))]
+    (let [buf (BufferUtils/createFloatBuffer (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data (float-buffer->array buf)})))
 
 (defn float-texture-2d->floats
   "Extract floating-point floating-point data from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{::keys [target texture width height]}]
   (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height))
-          data (float-array (* width height))]
+    (let [buf (BufferUtils/createFloatBuffer (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data (float-buffer->array buf)})))
 
 (defn float-texture-3d->floats
   "Extract floating-point floating-point data from texture"
   {:malli/schema [:=> [:cat texture-3d] float-image-3d]}
   [{::keys [target texture width height depth]}]
   (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height depth))
-          data (float-array (* width height depth))]
+    (let [buf (BufferUtils/createFloatBuffer (* width height depth))]
       (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :depth depth :data data})))
+      #:sfsim.image{:width width :height height :depth depth :data (float-buffer->array buf)})))
 
 (defn rgb-texture->vectors3
   "Extract floating-point RGB vectors from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{::keys [target texture width height]}]
   (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
-          data (float-array (* width height 3))]
+    (let [buf (BufferUtils/createFloatBuffer (* width height 3))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGB GL11/GL_FLOAT buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data (float-buffer->array buf)})))
 
 (defn rgba-texture->vectors4
   "Extract floating-point RGBA vectors from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
   [{::keys [target texture width height]}]
   (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height 4))
-          data (float-array (* width height 4))]
+    (let [buf  (BufferUtils/createFloatBuffer (* width height 4))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_FLOAT buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data (float-buffer->array buf)})))
 
 (defn texture->image
   "Convert texture to RGB image"
@@ -388,11 +396,9 @@
   [{::keys [target texture width height]}]
   (with-texture target texture
     (let [size (* 4 width height)
-          buf  (BufferUtils/createByteBuffer size)
-          data (byte-array size)]
+          buf  (BufferUtils/createByteBuffer size)]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :data data :channels 4})))
+      #:sfsim.image{:width width :height height :data (byte-buffer->array buf) :channels 4})))
 
 (defmacro create-cubemap
   "Macro to initialise cubemap"
@@ -432,11 +438,9 @@
   {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
   [{::keys [target texture width height]} face]
   (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height))
-          data (float-array (* width height))]
+    (let [buf (BufferUtils/createFloatBuffer (* width height))]
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data (float-buffer->array buf)})))
 
 (defn make-vector-cubemap
   "Load vector 2D textures into an OpenGL cubemap"
@@ -456,11 +460,9 @@
   {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
   [{::keys [target texture width height]} face]
   (with-texture target texture
-    (let [buf  (BufferUtils/createFloatBuffer (* width height 3))
-          data (float-array (* width height 3))]
+    (let [buf (BufferUtils/createFloatBuffer (* width height 3))]
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
-      (.get buf data)
-      #:sfsim.image{:width width :height height :data data})))
+      #:sfsim.image{:width width :height height :data (float-buffer->array buf)})))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

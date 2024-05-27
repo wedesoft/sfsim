@@ -149,9 +149,7 @@
         _                   (STBTruetype/stbtt_PackSetOversampling pc 4 4)
         _                   (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
         _                   (STBTruetype/stbtt_PackEnd pc)
-        byte-data           (byte-array (* bitmap-w bitmap-h))
-        _                   (.get bitmap byte-data)
-        alpha               #:sfsim.image{:width bitmap-w :height bitmap-h :data byte-data :channels 1}]
+        alpha               #:sfsim.image{:width bitmap-w :height bitmap-h :data (byte-buffer->array bitmap) :channels 1}]
     (MemoryStack/stackPop)
     (white-image-with-alpha alpha))
   => (is-image "test/sfsim/fixtures/gui/font.png" 0.0 false))
