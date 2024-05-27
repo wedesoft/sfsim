@@ -151,14 +151,9 @@
         _                   (STBTruetype/stbtt_PackEnd pc)
         byte-data           (byte-array (* bitmap-w bitmap-h))
         _                   (.get bitmap byte-data)
-        int-data            (int-array (mapv #(bit-or (bit-shift-left % 24) 0x00FFFFFF) byte-data))
-        texture             (MemoryUtil/memAlloc (* bitmap-w bitmap-h 4))
-        texture-int         (.asIntBuffer texture)
-        _                   (.put texture-int int-data)
-        data                (byte-array (* bitmap-w bitmap-h 4))
-        _                   (.get texture data)]
+        alpha               #:sfsim.image{:width bitmap-w :height bitmap-h :data byte-data :channels 1}]
     (MemoryStack/stackPop)
-    #:sfsim.image{:width bitmap-w :height bitmap-h :data data :channels 4})
+    (white-image-with-alpha alpha))
   => (is-image "test/sfsim/fixtures/gui/font.png" 0.0 false))
 
 (GLFW/glfwTerminate)
