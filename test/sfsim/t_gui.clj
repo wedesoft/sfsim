@@ -8,11 +8,14 @@
               [sfsim.render :refer :all]
               [sfsim.texture :refer :all]
               [sfsim.image :refer :all]
-              [sfsim.gui :refer :all])
+              [sfsim.gui :refer :all]
+              [sfsim.util :refer :all])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL12 GL14 GL15 GL30]
-             [org.lwjgl.nuklear Nuklear NkAllocator NkContext NkUserFont NkBuffer NkRect NkConvertConfig NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement]
+             [org.lwjgl.nuklear Nuklear NkAllocator NkContext NkUserFont NkBuffer NkRect NkConvertConfig NkPluginAllocI
+              NkPluginFreeI NkDrawVertexLayoutElement]
+             [org.lwjgl.stb STBTTFontinfo STBTTPackedchar STBTruetype STBTTPackContext]
              [org.lwjgl.glfw GLFW]))
 
 (mi/collect! {:ns ['sfsim.gui]})
@@ -115,90 +118,29 @@
              (destroy-program program)))) => (is-image "test/sfsim/fixtures/gui/mode.png" 0.0))
 
 (facts "Render a slider"
-       (gui-offscreen-render 160 32
+       (gui-offscreen-render 160 40
          (let [buffer-initial-size (* 4 1024)
-               max-vertex-buffer   (* 512 1024)
-               max-element-buffer  (* 128 1024)
-               program             (make-gui-program)
-               null-texture        (make-null-texture)
-               vertex-array-object (GL30/glGenVertexArrays)
-               array-buffer        (GL15/glGenBuffers)
-               index-buffer        (GL15/glGenBuffers)
-               vertex-layout       (NkDrawVertexLayoutElement/malloc 4)
-               stack               (MemoryStack/stackPush)
-               allocator           (NkAllocator/create)
-               context             (NkContext/create)
                font                (NkUserFont/create)
-               cmds                (NkBuffer/create)
-               config              (NkConvertConfig/calloc stack)
-               rect                (NkRect/malloc stack)
-               slider              (BufferUtils/createIntBuffer 1)]
-           (GL30/glBindVertexArray vertex-array-object)
-           (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-           (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-           (GL15/glBufferData GL15/GL_ARRAY_BUFFER max-vertex-buffer GL15/GL_STREAM_DRAW)
-           (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER max-element-buffer GL15/GL_STREAM_DRAW)
-           (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
-           (-> vertex-layout (.position 0) (.attribute Nuklear/NK_VERTEX_POSITION) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
-           (-> vertex-layout (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 8))
-           (-> vertex-layout (.position 2) (.attribute Nuklear/NK_VERTEX_COLOR) (.format Nuklear/NK_FORMAT_R8G8B8A8) (.offset 16))
-           (-> vertex-layout (.position 3) (.attribute Nuklear/NK_VERTEX_ATTRIBUTE_COUNT) (.format Nuklear/NK_FORMAT_COUNT) (.offset 0))
-           (.flip vertex-layout)
-           (.alloc allocator (reify NkPluginAllocI (invoke [this handle old size] (MemoryUtil/nmemAllocChecked size))))
-           (.mfree allocator (reify NkPluginFreeI (invoke [this handle ptr] (MemoryUtil/nmemFree ptr))))
-           (Nuklear/nk_init context allocator font)
-           (Nuklear/nk_buffer_init cmds allocator buffer-initial-size)
-           (doto config
-                 (.vertex_layout vertex-layout)
-                 (.vertex_size 20)
-                 (.vertex_alignment 4)
-                 (.tex_null null-texture)
-                 (.circle_segment_count 22)
-                 (.curve_segment_count 22)
-                 (.arc_segment_count 22)
-                 (.global_alpha 1.0)
-                 (.shape_AA Nuklear/NK_ANTI_ALIASING_ON)
-                 (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
-           (.put slider 0 50)
-           (when (Nuklear/nk_begin context "test slider" (Nuklear/nk_rect 0 0 160 32 rect) 0)
-             (Nuklear/nk_layout_row_dynamic context 32 1)
-             (Nuklear/nk_slider_int context 0 slider 100 1))
-           (GL11/glViewport 0 0 160 32)
-           (use-program program)
-           (uniform-matrix4 program "projection" (gui-matrix 160 32))
-           (let [vertices (GL15/glMapBuffer GL15/GL_ARRAY_BUFFER GL15/GL_WRITE_ONLY max-vertex-buffer nil)
-                 elements (GL15/glMapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER GL15/GL_WRITE_ONLY max-element-buffer nil)
-                 vbuf     (NkBuffer/malloc stack)
-                 ebuf     (NkBuffer/malloc stack)]
-             (Nuklear/nk_buffer_init_fixed vbuf vertices)
-             (Nuklear/nk_buffer_init_fixed ebuf elements)
-             (Nuklear/nk_convert context cmds vbuf ebuf config))
-           (GL15/glUnmapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER)
-           (GL15/glUnmapBuffer GL15/GL_ARRAY_BUFFER)
-           (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
-                 (when cmd
-                   (when (not (zero? (.elem_count cmd)))
-                     (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
-                     (let [clip-rect (.clip_rect cmd)]
-                       (GL11/glScissor (int (.x clip-rect))
-                                       (int (- 32 (int (+ (.y clip-rect) (.h clip-rect)))))
-                                       (int (.w clip-rect))
-                                       (int (.h clip-rect))))
-                     (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
-                   (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))
-           (Nuklear/nk_clear context)
-           (Nuklear/nk_buffer_clear cmds)
-           (destroy-null-texture null-texture)
-           (Nuklear/nk_free context)
-           (MemoryStack/stackPop)
-           (.free (.alloc allocator))
-           (.free (.mfree allocator))
-           (GL30/glBindVertexArray 0)
-           (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
-           (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
-           (GL15/glDeleteBuffers array-buffer)
-           (GL15/glDeleteBuffers index-buffer)
-           (GL30/glDeleteVertexArrays vertex-array-object)
-           (destroy-program program))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
+               gui                 (make-nuklear-gui font buffer-initial-size)]
+           (nuklear-window gui "test slider" 160 40
+             (layout-row-dynamic gui 40 1)
+             (slider-int gui 0 50 100 1))
+           (render-nuklear-gui gui 160 40)
+           (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
+
+(fact "Render font to bitmap"
+  (let [buffer-initial-size (* 4 1024)
+        font-height         18
+        bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
+        cdata               (STBTTPackedchar/calloc 95)
+        bitmap              (MemoryUtil/memAlloc (* 512 512))
+        pc                  (STBTTPackContext/calloc)
+        _                   (STBTruetype/stbtt_PackBegin pc bitmap 512 512 0 1 0)
+        _                   (STBTruetype/stbtt_PackSetOversampling pc 4 4)
+        _                   (STBTruetype/stbtt_PackFontRange pc (:sfsim.gui/ttf bitmap-font) 0 font-height 32 cdata)
+        _                   (STBTruetype/stbtt_PackEnd pc)
+        alpha               #:sfsim.image{:width 512 :height 512 :data (byte-buffer->array bitmap) :channels 1}]
+    (white-image-with-alpha alpha))
+  => (is-image "test/sfsim/fixtures/gui/font.png" 0.0 false))
 
 (GLFW/glfwTerminate)

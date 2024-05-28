@@ -73,4 +73,9 @@
           (:sfsim.texture/height cubemap) => 1
           (destroy-texture cubemap))))
 
+(facts "Convert byte buffer to byte array"
+       (let [buffer (make-byte-buffer (byte-array [1 2 3 4]))]
+         (byte-buffer->array buffer) => bytes?
+         (seq (byte-buffer->array buffer)) => [1 2 3 4]))
+
 (GLFW/glfwTerminate)

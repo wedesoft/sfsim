@@ -260,5 +260,12 @@
    ::channels 4
    ::data (byte-array (mapcat (fn [scalar] (let [b (int (* 255.0 scalar))] [b b b -1])) data))})
 
+(defn white-image-with-alpha
+  "Convert alpha image to white image with alpha channel"
+  {:malli/schema [:=> [:cat [:and image [:map [::channels [:= 1]]]]] [:and image [:map [::channels [:= 4]]]]]}
+  [{::keys [width height data]}]
+  (let [result (byte-array (mapcat (fn [alpha] [-1 -1 -1 alpha]) data))]
+    {::width width ::height height ::data result ::channels 4}))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

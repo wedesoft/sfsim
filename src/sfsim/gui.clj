@@ -1,11 +1,20 @@
 (ns sfsim.gui
     (:require [fastmath.matrix :as fm]
               [sfsim.matrix :refer (fmat4)]
-              [sfsim.util :refer (N)]
-              [sfsim.render :refer (make-program)]
+              [sfsim.util :refer (N slurp-byte-buffer)]
+              [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
+                                    with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
+                                    destroy-vertex-array-object)]
               [sfsim.texture :refer (make-rgba-texture)])
-    (:import [org.lwjgl.opengl GL11]
-             [org.lwjgl.nuklear NkDrawNullTexture]))
+    (:import [org.lwjgl BufferUtils]
+             [org.lwjgl.system MemoryUtil MemoryStack]
+             [org.lwjgl.opengl GL11]
+             [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
+              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont]
+             [org.lwjgl.stb STBTTFontinfo STBTruetype]))
+
+(set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
 
 (def vertex-gui
   "Vertex shader for rendering graphical user interfaces"
@@ -46,4 +55,184 @@
 (defn destroy-null-texture
   "Destroy single pixel texture"
   [null-texture]
-  (GL11/glDeleteTextures ^long (.id (.texture null-texture))))
+  (GL11/glDeleteTextures (.id (.texture ^NkDrawNullTexture null-texture))))
+
+(defn make-allocator
+  "Create Nuklear allocation object"
+  []
+  (let [result (NkAllocator/create)]
+    (.alloc result (reify NkPluginAllocI (invoke [_this _handle _old size] (MemoryUtil/nmemAllocChecked size))))
+    (.mfree result (reify NkPluginFreeI (invoke [_this _handle ptr] (MemoryUtil/nmemFree ptr))))
+    result))
+
+(defn destroy-allocator
+  "Destruct Nuklear allocation object"
+  [allocator]
+  (.free (.alloc ^NkAllocator allocator))
+  (.free (.mfree ^NkAllocator allocator)))
+
+(set! *warn-on-reflection* false)
+
+(defn make-vertex-layout
+  "Create Nuklear vertex layout object"
+  {:malli/schema [:=> :cat :some]}
+  []
+  (let [result (NkDrawVertexLayoutElement/malloc 4)]
+    (-> result (.position 0) (.attribute Nuklear/NK_VERTEX_POSITION) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
+    (-> result (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 8))
+    (-> result (.position 2) (.attribute Nuklear/NK_VERTEX_COLOR) (.format Nuklear/NK_FORMAT_R8G8B8A8) (.offset 16))
+    (-> result (.position 3) (.attribute Nuklear/NK_VERTEX_ATTRIBUTE_COUNT) (.format Nuklear/NK_FORMAT_COUNT) (.offset 0))
+    (.flip result)))
+
+(set! *warn-on-reflection* true)
+
+(defn make-gui-config
+  "Create and initialise Nuklear configuration"
+  {:malli/schema [:=> [:cat :some :some] :some]}
+  [null-texture vertex-layout]
+  (let [result (NkConvertConfig/calloc)]
+    (doto result
+          (.vertex_layout ^NkDrawVertexLayoutElement$Buffer vertex-layout)
+          (.vertex_size 20)
+          (.vertex_alignment 4)
+          (.tex_null ^NkDrawNullTexture null-texture)
+          (.circle_segment_count 22)
+          (.curve_segment_count 22)
+          (.arc_segment_count 22)
+          (.global_alpha 1.0)
+          (.shape_AA Nuklear/NK_ANTI_ALIASING_ON)
+          (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
+    result))
+
+(defn make-gui-context
+  "Create Nuklear context object"
+  {:malli/schema [:=> [:cat :some :some] :some]}
+  [allocator font]
+  (let [result (NkContext/create)]
+    (Nuklear/nk_init result allocator font)
+    result))
+
+(defn destroy-gui-context
+  "Destroy Nuklear GUI context object"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [context]
+  (Nuklear/nk_free context))
+
+(defn make-gui-buffer
+  "Create Nuklear render command buffer"
+  {:malli/schema [:=> [:cat :some :int] :some]}
+  [allocator initial-size]
+  (let [result (NkBuffer/create)]
+    (Nuklear/nk_buffer_init result allocator initial-size)
+    result))
+
+(defn destroy-gui-buffer
+  "Destroy Nuklear command buffer"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [buffer]
+  (Nuklear/nk_buffer_free buffer))
+
+(defn make-nuklear-gui
+  "Create a hashmap with required GUI objects"
+  {:malli/schema [:=> [:cat :some :int] :some]}
+  [font buffer-initial-size]
+  (let [max-vertex-buffer (* 512 1024)
+        max-index-buffer  (* 128 1024)
+        allocator         (make-allocator)
+        program           (make-gui-program)
+        vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
+        vertex-layout     (make-vertex-layout)
+        null-texture      (make-null-texture)
+        config            (make-gui-config null-texture vertex-layout)
+        context           (make-gui-context allocator font)
+        cmds              (make-gui-buffer allocator buffer-initial-size)]
+    (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
+    {::allocator     allocator
+     ::context       context
+     ::program       program
+     ::vao           vao
+     ::vertex-layout vertex-layout
+     ::null-tex      null-texture
+     ::config        config
+     ::cmds          cmds}))
+
+(defn render-nuklear-gui
+  "Display the graphical user interface"
+  {:malli/schema [:=> [:cat :some :int :int] :nil]}
+  [{::keys [context config program vao cmds]} width height]
+  (let [stack (MemoryStack/stackPush)]
+    (GL11/glViewport 0 0 width height)
+    (use-program program)
+    (uniform-matrix4 program "projection" (gui-matrix width height))
+    (with-mapped-vertex-arrays vao vertices elements
+      (let [vbuf (NkBuffer/malloc stack)
+            ebuf (NkBuffer/malloc stack)]
+        (Nuklear/nk_buffer_init_fixed vbuf vertices)
+        (Nuklear/nk_buffer_init_fixed ebuf elements)
+        (Nuklear/nk_convert context cmds vbuf ebuf config)))
+    (with-blending
+      (with-scissor
+        (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
+              (when cmd
+                (when (not (zero? (.elem_count cmd)))
+                  (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
+                  (let [clip-rect (.clip_rect cmd)]
+                    (set-scissor (.x clip-rect) (- 32 (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
+                  (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
+                (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
+    (Nuklear/nk_clear context)
+    (Nuklear/nk_buffer_clear cmds)
+    (MemoryStack/stackPop)
+    nil))
+
+(defn destroy-nuklear-gui
+  "Destruct GUI objects"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [gui]
+  (destroy-gui-buffer (::cmds gui))
+  (destroy-null-texture (::null-tex gui))
+  (destroy-vertex-array-object (::vao gui))
+  (destroy-program (::program gui))
+  (destroy-gui-context (::context gui))
+  (destroy-allocator (::allocator gui)))
+
+(defmacro nuklear-window [gui title width height & body]
+  `(let [stack# (MemoryStack/stackPush)
+         rect#  (NkRect/malloc stack#)]
+     (when (Nuklear/nk_begin (:sfsim.gui/context ~gui) ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) 0)
+       ~@body)
+     (MemoryStack/stackPop)))
+
+(defn layout-row-dynamic
+  "Create dynamic layout with specified height and number of columns"
+  {:malli/schema [:=> [:cat :some :int :int] :nil]}
+  [gui height cols]
+  (Nuklear/nk_layout_row_dynamic (::context gui) height cols))
+
+(defn slider-int
+  "Create a slider with integer value"
+  {:malli/schema [:=> [:cat :some :int :int :int :int] :int]}
+  [gui minimum value maximum step]
+  (let [buffer (BufferUtils/createIntBuffer 1)]
+    (.put buffer 0 ^int value)
+    (Nuklear/nk_slider_int ^NkContext (::context gui) ^int minimum buffer ^int maximum ^int step)
+    (.get buffer 0)))
+
+(defn make-bitmap-font
+  "Create a bitmap font with character packing data"
+  [ttf-filename bitmap-width bitmap-height font-height]
+  (let [font         (NkUserFont/create)
+        fontinfo     (STBTTFontinfo/create)
+        ttf          (slurp-byte-buffer ttf-filename)
+        orig-descent (int-array 1)]
+    (STBTruetype/stbtt_InitFont fontinfo ttf)
+    (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
+    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)]
+      {::font font
+       ::fontinfo fontinfo
+       ::ttf ttf
+       ::scale scale
+       ::descent (* (aget orig-descent 0) scale)})))
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)

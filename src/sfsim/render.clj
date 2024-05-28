@@ -8,7 +8,7 @@
             [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
-  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
+  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)
@@ -202,7 +202,7 @@
   (GL20/glDeleteProgram program))
 
 (def vertex-array-object
-  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int] [::nrows N]
+  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int]
                   [::attribute-locations [:vector :int]]]))
 
 (defn set-static-float-buffer-data
@@ -263,6 +263,36 @@
      ::index-buffer        index-buffer
      ::attribute-locations (setup-vertex-attrib-pointers program float-attributes)
      ::nrows               (count indices)}))
+
+(defn make-vertex-array-stream
+  "Create vertex array object using stream draw mode for integer index buffer and mixed type array buffer"
+  {:malli/schema [:=> [:cat :int :int :int] vertex-array-object]}
+  [_program max-index-buffer max-vertex-buffer]
+  (let [vertex-array-object (GL30/glGenVertexArrays)
+        array-buffer        (GL15/glGenBuffers)
+        index-buffer        (GL15/glGenBuffers)]
+    (GL30/glBindVertexArray vertex-array-object)
+    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
+    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
+    (GL15/glBufferData GL15/GL_ARRAY_BUFFER ^long max-vertex-buffer GL15/GL_STREAM_DRAW)
+    (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER ^long max-index-buffer GL15/GL_STREAM_DRAW)
+    {::vertex-array-object vertex-array-object
+     ::array-buffer        array-buffer
+     ::index-buffer        index-buffer
+     ::attribute-locations []
+     ::max-vertex-buffer   max-vertex-buffer
+     ::max-index-buffer    max-index-buffer}))
+
+(defmacro with-mapped-vertex-arrays
+  "Perform memory mapping for specified block of code"
+  [vao vertices indices & body]
+  `(do
+     (setup-vertex-array-object ~vao)
+     (let [~vertices (GL15/glMapBuffer GL15/GL_ARRAY_BUFFER GL15/GL_WRITE_ONLY (::max-vertex-buffer ~vao) nil)
+           ~indices  (GL15/glMapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER GL15/GL_WRITE_ONLY (::max-index-buffer ~vao) nil)]
+       ~@body
+       (GL15/glUnmapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER)
+       (GL15/glUnmapBuffer GL15/GL_ARRAY_BUFFER))))
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
@@ -340,7 +370,7 @@
   [textures]
   (doseq [[index texture] textures] (use-texture index texture)))
 
-(defn- setup-vertex-array-object
+(defn setup-vertex-array-object
   "Initialise rendering of a vertex array object"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
