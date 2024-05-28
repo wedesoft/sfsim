@@ -5,13 +5,14 @@
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
                                     with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                                     destroy-vertex-array-object)]
-              [sfsim.texture :refer (make-rgba-texture)])
+              [sfsim.image :refer (white-image-with-alpha)]
+              [sfsim.texture :refer (make-rgba-texture byte-buffer->array)])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
               NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont]
-             [org.lwjgl.stb STBTTFontinfo STBTruetype]))
+             [org.lwjgl.stb STBTTFontinfo STBTruetype STBTTPackedchar STBTTPackContext]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -224,15 +225,27 @@
   (let [font         (NkUserFont/create)
         fontinfo     (STBTTFontinfo/create)
         ttf          (slurp-byte-buffer ttf-filename)
-        orig-descent (int-array 1)]
+        orig-descent (int-array 1)
+        cdata        (STBTTPackedchar/calloc 95)
+        pc           (STBTTPackContext/calloc)
+        bitmap       (MemoryUtil/memAlloc (* bitmap-width bitmap-height))]
     (STBTruetype/stbtt_InitFont fontinfo ttf)
     (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
-    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)]
+    (STBTruetype/stbtt_PackBegin pc bitmap bitmap-width bitmap-height 0 1 0)
+    (STBTruetype/stbtt_PackSetOversampling pc 4 4)
+    (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
+    (STBTruetype/stbtt_PackEnd pc)
+    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
+          data  (byte-buffer->array bitmap)
+          alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
+          image (white-image-with-alpha alpha)]
       {::font font
        ::fontinfo fontinfo
        ::ttf ttf
        ::scale scale
-       ::descent (* (aget orig-descent 0) scale)})))
+       ::descent (* (aget orig-descent 0) scale)
+       ::cdata cdata
+       ::image image})))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

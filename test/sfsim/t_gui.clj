@@ -129,18 +129,8 @@
            (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
 (fact "Render font to bitmap"
-  (let [buffer-initial-size (* 4 1024)
-        font-height         18
-        bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
-        cdata               (STBTTPackedchar/calloc 95)
-        bitmap              (MemoryUtil/memAlloc (* 512 512))
-        pc                  (STBTTPackContext/calloc)
-        _                   (STBTruetype/stbtt_PackBegin pc bitmap 512 512 0 1 0)
-        _                   (STBTruetype/stbtt_PackSetOversampling pc 4 4)
-        _                   (STBTruetype/stbtt_PackFontRange pc (:sfsim.gui/ttf bitmap-font) 0 font-height 32 cdata)
-        _                   (STBTruetype/stbtt_PackEnd pc)
-        alpha               #:sfsim.image{:width 512 :height 512 :data (byte-buffer->array bitmap) :channels 1}]
-    (white-image-with-alpha alpha))
+  (let [bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)]
+    (:sfsim.gui/image bitmap-font))
   => (is-image "test/sfsim/fixtures/gui/font.png" 0.0 false))
 
 (GLFW/glfwTerminate)
