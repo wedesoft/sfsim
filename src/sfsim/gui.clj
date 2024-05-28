@@ -1,16 +1,17 @@
 (ns sfsim.gui
     (:require [fastmath.matrix :as fm]
               [sfsim.matrix :refer (fmat4)]
-              [sfsim.util :refer (N)]
+              [sfsim.util :refer (N slurp-byte-buffer)]
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
-                                    with-scissor set-scissor vertex-array-object destroy-program setup-vertex-attrib-pointers
-                                    make-vertex-array-stream destroy-vertex-array-object)]
+                                    with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
+                                    destroy-vertex-array-object)]
               [sfsim.texture :refer (make-rgba-texture)])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
-             [org.lwjgl.opengl GL11 GL14]
+             [org.lwjgl.opengl GL11]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
-              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer]))
+              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont]
+             [org.lwjgl.stb STBTTFontinfo STBTruetype]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -202,18 +203,31 @@
        ~@body)
      (MemoryStack/stackPop)))
 
-(defn layout-row-dynamic [gui height cols]
+(defn layout-row-dynamic
   "Create dynamic layout with specified height and number of columns"
   {:malli/schema [:=> [:cat :some :int :int] :nil]}
+  [gui height cols]
   (Nuklear/nk_layout_row_dynamic (::context gui) height cols))
 
-(defn slider-int [gui minimum value maximum step]
+(defn slider-int
   "Create a slider with integer value"
   {:malli/schema [:=> [:cat :some :int :int :int :int] :int]}
+  [gui minimum value maximum step]
   (let [buffer (BufferUtils/createIntBuffer 1)]
     (.put buffer 0 ^int value)
     (Nuklear/nk_slider_int ^NkContext (::context gui) ^int minimum buffer ^int maximum ^int step)
     (.get buffer 0)))
+
+(defn make-bitmap-font
+  "Create a bitmap font with character packing data"
+  [ttf-filename bitmap-width bitmap-height font-height]
+  (let [font     (NkUserFont/create)
+        fontinfo (STBTTFontinfo/create)
+        ttf      (slurp-byte-buffer ttf-filename)]
+    (STBTruetype/stbtt_InitFont fontinfo ttf)
+    {::font font
+     ::fontinfo fontinfo
+     ::ttf ttf}))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

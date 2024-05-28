@@ -128,29 +128,22 @@
            (render-nuklear-gui gui 160 40)
            (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
 
-(fact "Render a button"
+(fact "Render font to bitmap"
   (let [buffer-initial-size (* 4 1024)
         font-height         18
-        bitmap-w            512
-        bitmap-h            512
-        stack               (MemoryStack/stackPush)
-        font                (NkUserFont/create)
-        ttf                 (slurp-byte-buffer "resources/fonts/b612.ttf")
-        fontinfo            (STBTTFontinfo/create)
+        bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
+        scale               (STBTruetype/stbtt_ScaleForPixelHeight (:sfsim.gui/fontinfo bitmap-font) font-height)
+        orig-descent        (int-array 1)
+        _                   (STBTruetype/stbtt_GetFontVMetrics (:sfsim.gui/fontinfo bitmap-font) nil orig-descent nil)
+        descent             (* (aget orig-descent 0) scale)
         cdata               (STBTTPackedchar/calloc 95)
-        _                   (STBTruetype/stbtt_InitFont fontinfo ttf)
-        scale               (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
-        orig-descent        (.mallocInt stack 1)
-        _                   (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
-        descent             (* (.get orig-descent 0) scale)
-        bitmap              (MemoryUtil/memAlloc (* bitmap-w bitmap-h))
-        pc                  (STBTTPackContext/malloc stack)
-        _                   (STBTruetype/stbtt_PackBegin pc bitmap bitmap-w bitmap-h 0 1 0)
+        bitmap              (MemoryUtil/memAlloc (* 512 512))
+        pc                  (STBTTPackContext/calloc)
+        _                   (STBTruetype/stbtt_PackBegin pc bitmap 512 512 0 1 0)
         _                   (STBTruetype/stbtt_PackSetOversampling pc 4 4)
-        _                   (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
+        _                   (STBTruetype/stbtt_PackFontRange pc (:sfsim.gui/ttf bitmap-font) 0 font-height 32 cdata)
         _                   (STBTruetype/stbtt_PackEnd pc)
-        alpha               #:sfsim.image{:width bitmap-w :height bitmap-h :data (byte-buffer->array bitmap) :channels 1}]
-    (MemoryStack/stackPop)
+        alpha               #:sfsim.image{:width 512 :height 512 :data (byte-buffer->array bitmap) :channels 1}]
     (white-image-with-alpha alpha))
   => (is-image "test/sfsim/fixtures/gui/font.png" 0.0 false))
 

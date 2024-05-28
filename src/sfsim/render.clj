@@ -8,7 +8,7 @@
             [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
-  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
+  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)
