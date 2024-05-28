@@ -132,10 +132,6 @@
   (let [buffer-initial-size (* 4 1024)
         font-height         18
         bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
-        scale               (STBTruetype/stbtt_ScaleForPixelHeight (:sfsim.gui/fontinfo bitmap-font) font-height)
-        orig-descent        (int-array 1)
-        _                   (STBTruetype/stbtt_GetFontVMetrics (:sfsim.gui/fontinfo bitmap-font) nil orig-descent nil)
-        descent             (* (aget orig-descent 0) scale)
         cdata               (STBTTPackedchar/calloc 95)
         bitmap              (MemoryUtil/memAlloc (* 512 512))
         pc                  (STBTTPackContext/calloc)

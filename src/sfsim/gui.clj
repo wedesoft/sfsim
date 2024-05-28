@@ -221,13 +221,18 @@
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
   [ttf-filename bitmap-width bitmap-height font-height]
-  (let [font     (NkUserFont/create)
-        fontinfo (STBTTFontinfo/create)
-        ttf      (slurp-byte-buffer ttf-filename)]
+  (let [font         (NkUserFont/create)
+        fontinfo     (STBTTFontinfo/create)
+        ttf          (slurp-byte-buffer ttf-filename)
+        orig-descent (int-array 1)]
     (STBTruetype/stbtt_InitFont fontinfo ttf)
-    {::font font
-     ::fontinfo fontinfo
-     ::ttf ttf}))
+    (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
+    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)]
+      {::font font
+       ::fontinfo fontinfo
+       ::ttf ttf
+       ::scale scale
+       ::descent (* (aget orig-descent 0) scale)})))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
