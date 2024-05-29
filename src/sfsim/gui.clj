@@ -5,13 +5,15 @@
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
                                     with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                                     destroy-vertex-array-object)]
-              [sfsim.texture :refer (make-rgba-texture)])
+              [sfsim.image :refer (white-image-with-alpha)]
+              [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture)])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
-              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont]
-             [org.lwjgl.stb STBTTFontinfo STBTruetype]))
+              NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont NkHandle NkTextWidthCallbackI
+              NkQueryFontGlyphCallbackI NkUserFontGlyph]
+             [org.lwjgl.stb STBTTFontinfo STBTruetype STBTTPackedchar STBTTPackContext STBTTAlignedQuad STBTTPackedchar$Buffer]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -177,7 +179,7 @@
                 (when (not (zero? (.elem_count cmd)))
                   (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
                   (let [clip-rect (.clip_rect cmd)]
-                    (set-scissor (.x clip-rect) (- 32 (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
+                    (set-scissor (.x clip-rect) (- height (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
                   (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
                 (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
     (Nuklear/nk_clear context)
@@ -197,10 +199,12 @@
   (destroy-allocator (::allocator gui)))
 
 (defmacro nuklear-window [gui title width height & body]
-  `(let [stack# (MemoryStack/stackPush)
-         rect#  (NkRect/malloc stack#)]
-     (when (Nuklear/nk_begin (:sfsim.gui/context ~gui) ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) 0)
-       ~@body)
+  `(let [stack#   (MemoryStack/stackPush)
+         rect#    (NkRect/malloc stack#)
+         context# (:sfsim.gui/context ~gui)]
+     (when (Nuklear/nk_begin context# ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) Nuklear/NK_WINDOW_NO_SCROLLBAR)
+       ~@body
+       (Nuklear/nk_end context#))
      (MemoryStack/stackPop)))
 
 (defn layout-row-dynamic
@@ -208,6 +212,98 @@
   {:malli/schema [:=> [:cat :some :int :int] :nil]}
   [gui height cols]
   (Nuklear/nk_layout_row_dynamic (::context gui) height cols))
+
+(defn make-bitmap-font
+  "Create a bitmap font with character packing data"
+  {:malli/schema [:=> [:cat :string :int :int :int] :some]}
+  [ttf-filename bitmap-width bitmap-height font-height]
+  (let [font         (NkUserFont/create)
+        fontinfo     (STBTTFontinfo/create)
+        ttf          (slurp-byte-buffer ttf-filename)
+        orig-descent (int-array 1)
+        cdata        (STBTTPackedchar/calloc 95)
+        pc           (STBTTPackContext/calloc)
+        bitmap       (MemoryUtil/memAlloc (* bitmap-width bitmap-height))]
+    (STBTruetype/stbtt_InitFont fontinfo ttf)
+    (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
+    (STBTruetype/stbtt_PackBegin pc bitmap bitmap-width bitmap-height 0 1 0)
+    (STBTruetype/stbtt_PackSetOversampling pc 4 4)
+    (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
+    (STBTruetype/stbtt_PackEnd pc)
+    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
+          data  (byte-buffer->array bitmap)
+          alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
+          image (white-image-with-alpha alpha)]
+      {::font font
+       ::fontinfo fontinfo
+       ::ttf ttf
+       ::font-height font-height
+       ::scale scale
+       ::descent (* (aget orig-descent 0) scale)
+       ::cdata cdata
+       ::image image})))
+
+(defn setup-font-texture
+  [bitmap-font]
+  (let [image         (::image bitmap-font)
+        font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)
+        handle        (NkHandle/create)
+        font          (::font bitmap-font)
+        fontinfo      (::fontinfo bitmap-font)
+        font-height   (::font-height bitmap-font)
+        scale         (::scale bitmap-font)
+        cdata         (::cdata bitmap-font)
+        bitmap-width  (:sfsim.image/width image)
+        bitmap-height (:sfsim.image/height image)
+        descent       (::descent bitmap-font)]
+    (.id ^NkHandle handle (:sfsim.texture/texture font-texture))
+    (.texture ^NkUserFont font handle)
+    (.width ^NkUserFont font
+            (reify NkTextWidthCallbackI
+                   (invoke [this handle h text len]
+                     (let [stack     (MemoryStack/stackPush)
+                           unicode   (.mallocInt stack 1)
+                           advance   (.mallocInt stack 1)
+                           glyph-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)
+                           result
+                           (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
+                                 (if (or (> text-len len)
+                                         (zero? glyph-len)
+                                         (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
+                                   text-width
+                                   (do
+                                     (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
+                                     (let [text-width (+ text-width (* (.get advance 0) scale))
+                                           glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
+                                                                              (MemoryUtil/memAddress unicode) (- len text-len))]
+                                       (recur (+ text-len glyph-len) glyph-len text-width)))))]
+                       (MemoryStack/stackPop)
+                       result))))
+    (.height ^NkUserFont font font-height)
+    (.query ^NkUserFont font
+            (reify NkQueryFontGlyphCallbackI
+                   (invoke [this handle font-height glyph codepoint next-codepoint]
+                     (let [stack   (MemoryStack/stackPush)
+                           x       (.floats stack 0.0)
+                           y       (.floats stack 0.0)
+                           q       (STBTTAlignedQuad/malloc stack)
+                           advance (.mallocInt stack 1)]
+                       (STBTruetype/stbtt_GetPackedQuad ^STBTTPackedchar$Buffer cdata ^long bitmap-width ^long bitmap-height
+                                                        (- codepoint 32) x y q false)
+                       (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo codepoint advance nil)
+                       (let [ufg (NkUserFontGlyph/create glyph)]
+                         (.width ufg (- (.x1 q) (.x0 q)))
+                         (.height ufg (- (.y1 q) (.y0 q)))
+                         (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height descent))
+                         (.xadvance ufg (* (.get advance 0) scale))
+                         (.set (.uv ufg 0) (.s0 q) (.t0 q))
+                         (.set (.uv ufg 1) (.s1 q) (.t1 q)))
+                       (MemoryStack/stackPop)))))
+    (assoc bitmap-font ::texture font-texture)))
+
+(defn destroy-font-texture
+  [bitmap-font]
+  (destroy-texture (::texture bitmap-font)))
 
 (defn slider-int
   "Create a slider with integer value"
@@ -218,21 +314,10 @@
     (Nuklear/nk_slider_int ^NkContext (::context gui) ^int minimum buffer ^int maximum ^int step)
     (.get buffer 0)))
 
-(defn make-bitmap-font
-  "Create a bitmap font with character packing data"
-  [ttf-filename bitmap-width bitmap-height font-height]
-  (let [font         (NkUserFont/create)
-        fontinfo     (STBTTFontinfo/create)
-        ttf          (slurp-byte-buffer ttf-filename)
-        orig-descent (int-array 1)]
-    (STBTruetype/stbtt_InitFont fontinfo ttf)
-    (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
-    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)]
-      {::font font
-       ::fontinfo fontinfo
-       ::ttf ttf
-       ::scale scale
-       ::descent (* (aget orig-descent 0) scale)})))
+(defn button-label
+  "Create a button with text label"
+  [gui label]
+  (Nuklear/nk_button_label ^NkContext (::context gui) ^String label))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
