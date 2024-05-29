@@ -130,18 +130,20 @@
            (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
 
 (fact "Render font to bitmap"
-  (let [buffer-initial-size (* 4 1024)
-        font-height         18
-        bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
-        cdata               (STBTTPackedchar/calloc 95)
-        bitmap              (MemoryUtil/memAlloc (* 512 512))
-        pc                  (STBTTPackContext/calloc)
-        _                   (STBTruetype/stbtt_PackBegin pc bitmap 512 512 0 1 0)
-        _                   (STBTruetype/stbtt_PackSetOversampling pc 4 4)
-        _                   (STBTruetype/stbtt_PackFontRange pc (:sfsim.gui/ttf bitmap-font) 0 font-height 32 cdata)
-        _                   (STBTruetype/stbtt_PackEnd pc)
-        alpha               #:sfsim.image{:width 512 :height 512 :data (byte-buffer->array bitmap) :channels 1}]
-    (white-image-with-alpha alpha))
-  => (is-image "test/sfsim/fixtures/gui/font.png" 7.22 false))
+  (let [bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)]
+    (:sfsim.gui/image bitmap-font)) => (is-image "test/sfsim/fixtures/gui/font.png" 7.22 false))
+
+(fact "Use font to render button"
+       (gui-offscreen-render 160 40
+         (let [buffer-initial-size (* 4 1024)
+               bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+               gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
+           (nuklear-window gui "test button" 160 40
+             (layout-row-dynamic gui 40 1)
+             (button-label gui "Test Button"))
+           (render-nuklear-gui gui 160 40)
+           (destroy-nuklear-gui gui)
+           (destroy-font-texture bitmap-font)))
+       => (is-image "test/sfsim/fixtures/gui/button.png" 0.0))
 
 (GLFW/glfwTerminate)

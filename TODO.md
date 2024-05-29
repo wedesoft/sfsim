@@ -1,8 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * refactor bitmap font creation code
-  * test code rendering a button
-  * put prototype code into test for font rendering
+  * test rendering of two buttons
   * test context switching between two guis (bindvertexarray, useprogram)
 * 2 more levels, higher res map
 * microtexture for normal map
