@@ -124,7 +124,7 @@
                font                (NkUserFont/create)
                gui                 (make-nuklear-gui font buffer-initial-size)]
            (nuklear-window gui "test slider" 160 40
-             (layout-row-dynamic gui 40 1)
+             (layout-row-dynamic gui 32 1)
              (slider-int gui 0 50 100 1))
            (render-nuklear-gui gui 160 40)
            (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
@@ -139,7 +139,7 @@
                bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
                gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
            (nuklear-window gui "test button" 160 40
-             (layout-row-dynamic gui 40 1)
+             (layout-row-dynamic gui 32 1)
              (button-label gui "Test Button"))
            (render-nuklear-gui gui 160 40)
            (destroy-nuklear-gui gui)

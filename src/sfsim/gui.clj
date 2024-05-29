@@ -179,7 +179,7 @@
                 (when (not (zero? (.elem_count cmd)))
                   (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
                   (let [clip-rect (.clip_rect cmd)]
-                    (set-scissor (.x clip-rect) (- 32 (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
+                    (set-scissor (.x clip-rect) (- height (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
                   (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
                 (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
     (Nuklear/nk_clear context)
@@ -202,7 +202,7 @@
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
-     (when (Nuklear/nk_begin context# ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) 0)
+     (when (Nuklear/nk_begin context# ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) Nuklear/NK_WINDOW_NO_SCROLLBAR)
        ~@body
        (Nuklear/nk_end context#))
      (MemoryStack/stackPop)))
