@@ -260,7 +260,7 @@
     (.texture ^NkUserFont font handle)
     (.width ^NkUserFont font
             (reify NkTextWidthCallbackI
-                   (invoke [this handle h text len]
+                   (invoke [_this _handle _h text len]
                      (let [stack     (MemoryStack/stackPush)
                            unicode   (.mallocInt stack 1)
                            advance   (.mallocInt stack 1)
@@ -282,7 +282,7 @@
     (.height ^NkUserFont font font-height)
     (.query ^NkUserFont font
             (reify NkQueryFontGlyphCallbackI
-                   (invoke [this handle font-height glyph codepoint next-codepoint]
+                   (invoke [_this _handle font-height glyph codepoint _next-codepoint]
                      (let [stack   (MemoryStack/stackPush)
                            x       (.floats stack 0.0)
                            y       (.floats stack 0.0)
