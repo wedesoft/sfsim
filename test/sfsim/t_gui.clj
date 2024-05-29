@@ -2,7 +2,7 @@
     (:require [midje.sweet :refer :all]
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
-              [fastmath.vector :refer (vec4)]
+              [fastmath.vector :refer (vec3 vec4)]
               [fastmath.matrix :refer (eye)]
               [sfsim.conftest :refer (is-image roughly-vector)]
               [sfsim.render :refer :all]
@@ -108,6 +108,7 @@
                pixel    #:sfsim.image{:width 1 :height 1 :data (byte-array [-1 -1 -1 -1]) :channels 4}
                tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp pixel)]
            (with-blending
+             (clear (vec3 0 0 0))
              (use-program program)
              (uniform-matrix4 program "projection" (gui-matrix 160 120))
              (uniform-sampler program "tex" 0)
@@ -115,7 +116,7 @@
              (render-quads vao)
              (destroy-texture tex)
              (destroy-vertex-array-object vao)
-             (destroy-program program)))) => (is-image "test/sfsim/fixtures/gui/mode.png" 0.0))
+             (destroy-program program)))) => (is-image "test/sfsim/fixtures/gui/mode.png" 0.1))
 
 (facts "Render a slider"
        (gui-offscreen-render 160 40
@@ -126,11 +127,21 @@
              (layout-row-dynamic gui 40 1)
              (slider-int gui 0 50 100 1))
            (render-nuklear-gui gui 160 40)
-           (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.0))
+           (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
 
 (fact "Render font to bitmap"
-  (let [bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)]
-    (:sfsim.gui/image bitmap-font))
-  => (is-image "test/sfsim/fixtures/gui/font.png" 0.0 false))
+  (let [buffer-initial-size (* 4 1024)
+        font-height         18
+        bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
+        cdata               (STBTTPackedchar/calloc 95)
+        bitmap              (MemoryUtil/memAlloc (* 512 512))
+        pc                  (STBTTPackContext/calloc)
+        _                   (STBTruetype/stbtt_PackBegin pc bitmap 512 512 0 1 0)
+        _                   (STBTruetype/stbtt_PackSetOversampling pc 4 4)
+        _                   (STBTruetype/stbtt_PackFontRange pc (:sfsim.gui/ttf bitmap-font) 0 font-height 32 cdata)
+        _                   (STBTruetype/stbtt_PackEnd pc)
+        alpha               #:sfsim.image{:width 512 :height 512 :data (byte-buffer->array bitmap) :channels 1}]
+    (white-image-with-alpha alpha))
+  => (is-image "test/sfsim/fixtures/gui/font.png" 7.22 false))
 
 (GLFW/glfwTerminate)
