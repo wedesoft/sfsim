@@ -23,14 +23,18 @@
 
 (GLFW/glfwInit)
 
+(defmacro gui-framebuffer-render
+  [width height & body]
+  `(let [tex# (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
+     (framebuffer-render ~width ~height :sfsim.render/noculling nil [tex#] ~@body)
+     (let [img# (texture->image tex#)]
+       (destroy-texture tex#)
+       img#)))
+
 (defmacro gui-offscreen-render
   [width height & body]
   `(with-invisible-window
-     (let [tex# (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
-       (framebuffer-render ~width ~height :sfsim.render/noculling nil [tex#] ~@body)
-       (let [img# (texture->image tex#)]
-         (destroy-texture tex#)
-         img#))))
+     (gui-framebuffer-render ~width ~height ~@body)))
 
 (tabular "Instantiate GUI program"
          (fact
@@ -145,5 +149,23 @@
            (destroy-nuklear-gui gui)
            (destroy-font-texture bitmap-font)))
        => (is-image "test/sfsim/fixtures/gui/button.png" 0.0))
+
+(facts "Test rendering two GUI windows"
+       (with-invisible-window
+         (let [buffer-initial-size (* 4 1024)
+               bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+               gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
+           (gui-framebuffer-render 160 40
+             (nuklear-window gui "window-1" 160 40
+               (layout-row-dynamic gui 32 1)
+               (button-label gui "Button A"))
+             (render-nuklear-gui gui 160 40)) => (is-image "test/sfsim/fixtures/gui/gui1.png" 0.0)
+           (gui-framebuffer-render 160 40
+             (nuklear-window gui "window-2" 160 40
+               (layout-row-dynamic gui 32 1)
+               (button-label gui "Button B"))
+             (render-nuklear-gui gui 160 40)) => (is-image "test/sfsim/fixtures/gui/gui2.png" 0.0)
+           (destroy-nuklear-gui gui)
+           (destroy-font-texture bitmap-font))))
 
 (GLFW/glfwTerminate)

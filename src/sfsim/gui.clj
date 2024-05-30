@@ -4,7 +4,7 @@
               [sfsim.util :refer (N slurp-byte-buffer)]
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
                                     with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
-                                    destroy-vertex-array-object)]
+                                    destroy-vertex-array-object setup-vertex-array-object)]
               [sfsim.image :refer (white-image-with-alpha)]
               [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)])
     (:import [org.lwjgl BufferUtils]
