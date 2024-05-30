@@ -6,7 +6,7 @@
                                     with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                                     destroy-vertex-array-object)]
               [sfsim.image :refer (white-image-with-alpha)]
-              [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture)])
+              [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11]
@@ -245,6 +245,7 @@
 
 (defn set-font-texture-id
   "Configure font texture"
+  {:malli/schema [:=> [:cat :some texture-2d] :any]}
   [font texture]
   (let [handle (NkHandle/create)]
     (.id ^NkHandle handle (:sfsim.texture/texture texture))
@@ -252,6 +253,7 @@
 
 (defn set-width-callback
   "Set callback function for computing width of text"
+  {:malli/schema [:=> [:cat :some :some] :any]}
   [{::keys [fontinfo scale]} font]
   (.width ^NkUserFont font
           (reify NkTextWidthCallbackI
@@ -277,19 +279,16 @@
 
 (defn set-height-callback
   "Set callback function for returning height of text"
+  {:malli/schema [:=> [:cat :some :some] :any]}
   [{::keys [font-height]} font]
   (.height ^NkUserFont font font-height))
 
-(defn setup-font-texture
-  "Create font texture and callbacks for text size and glyph information"
-  {:malli/schema [:=> [:cat :some] :some]}
-  [{::keys [image font fontinfo scale descent cdata] :as bitmap-font}]
-  (let [font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)
-        bitmap-width  (:sfsim.image/width image)
+(defn set-glyph-callback
+  "Set callback function for getting rectangle of glyph"
+  {:malli/schema [:=> [:cat :some :some] :any]}
+  [{::keys [fontinfo image cdata scale descent]} font]
+  (let [bitmap-width  (:sfsim.image/width image)
         bitmap-height (:sfsim.image/height image)]
-    (set-font-texture-id font font-texture)
-    (set-width-callback bitmap-font font)
-    (set-height-callback bitmap-font font)
     (.query ^NkUserFont font
             (reify NkQueryFontGlyphCallbackI
                    (invoke [_this _handle font-height glyph codepoint _next-codepoint]
@@ -308,7 +307,17 @@
                          (.xadvance ufg (* (.get advance 0) scale))
                          (.set (.uv ufg 0) (.s0 q) (.t0 q))
                          (.set (.uv ufg 1) (.s1 q) (.t1 q)))
-                       (MemoryStack/stackPop)))))
+                       (MemoryStack/stackPop)))))))
+
+(defn setup-font-texture
+  "Create font texture and callbacks for text size and glyph information"
+  {:malli/schema [:=> [:cat :some] :some]}
+  [{::keys [image font] :as bitmap-font}]
+  (let [font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)]
+    (set-font-texture-id font font-texture)
+    (set-width-callback bitmap-font font)
+    (set-height-callback bitmap-font font)
+    (set-glyph-callback bitmap-font font)
     (assoc bitmap-font ::texture font-texture)))
 
 (defn destroy-font-texture
