@@ -1,6 +1,5 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * render two windows next to each other?
   * add wrappers for more GUI elements
 * 2 more levels, higher res map
 * microtexture for normal map
