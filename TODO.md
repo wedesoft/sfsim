@@ -1,6 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * test context switching between two guis (bindvertexarray, useprogram)
+  * add wrappers for more GUI elements
 * 2 more levels, higher res map
 * microtexture for normal map
 * try lower-res clouds with increased sampling rate

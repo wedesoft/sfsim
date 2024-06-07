@@ -4,9 +4,9 @@
               [sfsim.util :refer (N slurp-byte-buffer)]
               [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
                                     with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
-                                    destroy-vertex-array-object)]
+                                    destroy-vertex-array-object setup-vertex-array-object)]
               [sfsim.image :refer (white-image-with-alpha)]
-              [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture)])
+              [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11]
@@ -198,11 +198,11 @@
   (destroy-gui-context (::context gui))
   (destroy-allocator (::allocator gui)))
 
-(defmacro nuklear-window [gui title width height & body]
+(defmacro nuklear-window [gui title x y width height & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
-     (when (Nuklear/nk_begin context# ~title (Nuklear/nk_rect 0 0 ~width ~height rect#) Nuklear/NK_WINDOW_NO_SCROLLBAR)
+     (when (Nuklear/nk_begin context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#) Nuklear/NK_WINDOW_NO_SCROLLBAR)
        ~@body
        (Nuklear/nk_end context#))
      (MemoryStack/stackPop)))
@@ -243,46 +243,55 @@
        ::cdata cdata
        ::image image})))
 
-(defn setup-font-texture
-  [bitmap-font]
-  (let [image         (::image bitmap-font)
-        font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)
-        handle        (NkHandle/create)
-        font          (::font bitmap-font)
-        fontinfo      (::fontinfo bitmap-font)
-        font-height   (::font-height bitmap-font)
-        scale         (::scale bitmap-font)
-        cdata         (::cdata bitmap-font)
-        bitmap-width  (:sfsim.image/width image)
-        bitmap-height (:sfsim.image/height image)
-        descent       (::descent bitmap-font)]
-    (.id ^NkHandle handle (:sfsim.texture/texture font-texture))
-    (.texture ^NkUserFont font handle)
-    (.width ^NkUserFont font
-            (reify NkTextWidthCallbackI
-                   (invoke [this handle h text len]
-                     (let [stack     (MemoryStack/stackPush)
-                           unicode   (.mallocInt stack 1)
-                           advance   (.mallocInt stack 1)
-                           glyph-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)
-                           result
-                           (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
-                                 (if (or (> text-len len)
-                                         (zero? glyph-len)
-                                         (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
-                                   text-width
-                                   (do
-                                     (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                                     (let [text-width (+ text-width (* (.get advance 0) scale))
-                                           glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
-                                                                              (MemoryUtil/memAddress unicode) (- len text-len))]
-                                       (recur (+ text-len glyph-len) glyph-len text-width)))))]
-                       (MemoryStack/stackPop)
-                       result))))
-    (.height ^NkUserFont font font-height)
+(defn set-font-texture-id
+  "Configure font texture"
+  {:malli/schema [:=> [:cat :some texture-2d] :any]}
+  [font texture]
+  (let [handle (NkHandle/create)]
+    (.id ^NkHandle handle (:sfsim.texture/texture texture))
+    (.texture ^NkUserFont font handle)))
+
+(defn set-width-callback
+  "Set callback function for computing width of text"
+  {:malli/schema [:=> [:cat :some :some] :any]}
+  [{::keys [fontinfo scale]} font]
+  (.width ^NkUserFont font
+          (reify NkTextWidthCallbackI
+                 (invoke [_this _handle _h text len]
+                   (let [stack     (MemoryStack/stackPush)
+                         unicode   (.mallocInt stack 1)
+                         advance   (.mallocInt stack 1)
+                         glyph-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)
+                         result
+                         (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
+                               (if (or (> text-len len)
+                                       (zero? glyph-len)
+                                       (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
+                                 text-width
+                                 (do
+                                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
+                                   (let [text-width (+ text-width (* (.get advance 0) scale))
+                                         glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
+                                                                            (MemoryUtil/memAddress unicode) (- len text-len))]
+                                     (recur (+ text-len glyph-len) glyph-len text-width)))))]
+                     (MemoryStack/stackPop)
+                     result)))))
+
+(defn set-height-callback
+  "Set callback function for returning height of text"
+  {:malli/schema [:=> [:cat :some :some] :any]}
+  [{::keys [font-height]} font]
+  (.height ^NkUserFont font font-height))
+
+(defn set-glyph-callback
+  "Set callback function for getting rectangle of glyph"
+  {:malli/schema [:=> [:cat :some :some] :any]}
+  [{::keys [fontinfo image cdata scale descent]} font]
+  (let [bitmap-width  (:sfsim.image/width image)
+        bitmap-height (:sfsim.image/height image)]
     (.query ^NkUserFont font
             (reify NkQueryFontGlyphCallbackI
-                   (invoke [this handle font-height glyph codepoint next-codepoint]
+                   (invoke [_this _handle font-height glyph codepoint _next-codepoint]
                      (let [stack   (MemoryStack/stackPush)
                            x       (.floats stack 0.0)
                            y       (.floats stack 0.0)
@@ -298,7 +307,17 @@
                          (.xadvance ufg (* (.get advance 0) scale))
                          (.set (.uv ufg 0) (.s0 q) (.t0 q))
                          (.set (.uv ufg 1) (.s1 q) (.t1 q)))
-                       (MemoryStack/stackPop)))))
+                       (MemoryStack/stackPop)))))))
+
+(defn setup-font-texture
+  "Create font texture and callbacks for text size and glyph information"
+  {:malli/schema [:=> [:cat :some] :some]}
+  [{::keys [image font] :as bitmap-font}]
+  (let [font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)]
+    (set-font-texture-id font font-texture)
+    (set-width-callback bitmap-font font)
+    (set-height-callback bitmap-font font)
+    (set-glyph-callback bitmap-font font)
     (assoc bitmap-font ::texture font-texture)))
 
 (defn destroy-font-texture
