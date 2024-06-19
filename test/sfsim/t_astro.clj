@@ -14,3 +14,9 @@
             b      (byte-array 4)]
         (.get buffer b)
         (String. b StandardCharsets/US_ASCII) => "Test"))
+
+(facts "Read header from SPK file"
+       (let [header (read-spk-header (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp"))]
+         (:magic header) => "DAF/SPK "
+         (:num-doubles header) => 2
+         (:num-integers header) => 6))
