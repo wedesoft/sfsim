@@ -6,6 +6,7 @@
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
         instaparse/instaparse {:mvn/version "1.5.0"}
+        org.clj-commons/gloss {:mvn/version "0.3.6"}
         org.lwjgl/lwjgl {:mvn/version "3.3.3"}
         org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.3"}
         org.lwjgl/lwjgl-opengl {:mvn/version "3.3.3"}
