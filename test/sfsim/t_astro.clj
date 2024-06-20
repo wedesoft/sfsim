@@ -17,6 +17,11 @@
 
 (facts "Read header from SPK file"
        (let [header (read-spk-header (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp"))]
-         (:magic header) => "DAF/SPK "
+         (:locidw header) => "DAF/SPK "
          (:num-doubles header) => 2
-         (:num-integers header) => 6))
+         (:num-integers header) => 6
+         (:forward header) => 53
+         (:backward header) => 53
+         (:free header) => 4089585
+         (:locfmt header) => "LTL-IEEE"
+         (:ftpstr header) => (map int "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")))

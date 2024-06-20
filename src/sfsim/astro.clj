@@ -1,7 +1,6 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
-    (:require [fastmath.vector :refer (vec3)]
-              [gloss.core :refer (compile-frame ordered-map string)]
+    (:require [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated)]
               [gloss.io :refer (decode)])
     (:import [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
@@ -22,9 +21,17 @@
 
 (def spk-header
   (compile-frame
-    (ordered-map :magic        (string :us-ascii :length 8)
+    (ordered-map :locidw       (string :us-ascii :length 8)
                  :num-doubles  :int32-le
-                 :num-integers :int32-le)))
+                 :num-integers :int32-le
+                 :locifn       (string :us-ascii :length 60)
+                 :forward      :int32-le
+                 :backward     :int32-le
+                 :free         :int32-le
+                 :locfmt       (string :us-ascii :length 8)
+                 :prenul       (finite-block 603)
+                 :ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none))
+                 :pstnul       (finite-block 297))))
 
 (defn read-spk-header
   "Read SPK header from byte buffer"
