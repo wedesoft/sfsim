@@ -19,7 +19,9 @@
         buffer      (.map channel FileChannel$MapMode/READ_ONLY 0 size)]
     buffer))
 
-(def spk-header
+(def record-size 1024)
+
+(def spk-header-frame
   (compile-frame
     (ordered-map :locidw       (string :us-ascii :length 8)
                  :num-doubles  :int32-le
@@ -33,11 +35,20 @@
                  :ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none))
                  :pstnul       (finite-block 297))))
 
+(defn spk-comment-frame
+  "Create comment frame consisting of multiple 1024 byte records"
+  {:malli/schema [:=> [:cat :int] :some]}
+  [forward]
+  (compile-frame
+    (finite-frame (* (- forward 2) record-size)
+                  (repeated (ordered-map :comment (string :us-ascii :length 1000) :padding (finite-block 24))
+                            :prefix :none))))
+
 (defn read-spk-header
   "Read SPK header from byte buffer"
   {:malli/schema [:=> [:cat :some] :map]}
   [buffer]
-  (decode spk-header [buffer] false))
+  (decode spk-header-frame [buffer] false))
 
 (defn check-endianness
   "Check endianness of SPK file"
@@ -52,6 +63,18 @@
   {:malli/schema [:=> [:cat :map] :boolean]}
   [header]
   (= (:ftpstr header) (map int ftp-str)))
+
+(defn read-spk-comment
+  "Read SPK comment"
+  {:malli/schema [:=> [:cat :map :some] :some]}
+  [header buffer]
+  (.position buffer record-size)
+  (let [comment-frame (spk-comment-frame (:forward header))
+        comment-lines (map :comment (decode comment-frame [buffer] false))
+        joined-lines  (clojure.string/join comment-lines)
+        delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
+        with-newlines (clojure.string/replace delimited \o000 \newline)]
+    with-newlines))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

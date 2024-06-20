@@ -33,3 +33,10 @@
 (facts "Check FTP string"
        (check-ftp-str {:ftpstr (map int "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")}) => true
        (check-ftp-str {:ftpstr (map int "unexpected text")}) => false)
+
+(facts "Extract comment"
+       (let [buffer  (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp")
+             header  (read-spk-header buffer)
+             comment (read-spk-comment header buffer)]
+         (subs comment 0 67) => "JPL planetary and lunar ephemeris DE430\n\nIntegrated 29 March 2013\n\n"
+         (count comment) => 50093))
