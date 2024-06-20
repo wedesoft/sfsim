@@ -25,3 +25,11 @@
          (:free header) => 4089585
          (:locfmt header) => "LTL-IEEE"
          (:ftpstr header) => (map int "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")))
+
+(facts "Check endianness"
+       (check-endianness {:locfmt "LTL-IEEE"}) => true
+       (check-endianness {:locfmt "BIG-IEEE"}) => false)
+
+(facts "Check FTP string"
+       (check-ftp-str {:ftpstr (map int "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")}) => true
+       (check-ftp-str {:ftpstr (map int "unexpected text")}) => false)

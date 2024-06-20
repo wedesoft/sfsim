@@ -35,8 +35,23 @@
 
 (defn read-spk-header
   "Read SPK header from byte buffer"
+  {:malli/schema [:=> [:cat :some] :map]}
   [buffer]
   (decode spk-header [buffer] false))
+
+(defn check-endianness
+  "Check endianness of SPK file"
+  {:malli/schema [:=> [:cat :map] :boolean]}
+  [header]
+  (= (:locfmt header) "LTL-IEEE"))
+
+(def ftp-str "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")
+
+(defn check-ftp-str
+  "Check FTP string of SPK file"
+  {:malli/schema [:=> [:cat :map] :boolean]}
+  [header]
+  (= (:ftpstr header) (map int ftp-str)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
