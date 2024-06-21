@@ -37,7 +37,7 @@
                  :pstnul       (finite-block 297))))
 
 (def spk-comment-frame
-  (compile-frame (string :us-ascii :length 1000)))
+  (compile-frame (ordered-map :comment (string :us-ascii :length 1000) :padding (finite-block 24))))
 
 (defn decode-record
   "Decode a record using the specified frame"
@@ -46,7 +46,7 @@
   (let [record (byte-array 1024)]
     (.position ^ByteBuffer buffer ^long (* (dec index) record-size))
     (.get buffer record)
-    (decode frame record false)))
+    (decode frame record)))
 
 (defn read-spk-header
   "Read SPK header from byte buffer"
@@ -73,7 +73,7 @@
   {:malli/schema [:=> [:cat :map :some] :some]}
   [header buffer]
   (let [comment-lines (mapv #(decode-record buffer spk-comment-frame %) (range 2 (:forward header)))
-        joined-lines  (clojure.string/join comment-lines)
+        joined-lines  (clojure.string/join (map :comment comment-lines))
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
