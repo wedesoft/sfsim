@@ -8,7 +8,7 @@
 (mi/collect! {:ns ['sfsim.astro]})
 (mi/instrument! {:report (pretty/thrower)})
 
-; Header test data cut from de430_1850-2150.bsp: dd if=de430_1850-2150.bsp of=pck-head.bsp bs=1024 count=52
+; Header test data cut from de430_1850-2150.bsp: dd if=de430_1850-2150.bsp of=pck-head.bsp bs=1024 count=80
 (fact "Map file to a read-only byte buffer"
       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/test.txt")
             b      (byte-array 4)]
