@@ -2,7 +2,8 @@
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
     (:require [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated)]
               [gloss.io :refer (decode)])
-    (:import [java.nio.file Paths StandardOpenOption]
+    (:import [java.nio ByteBuffer]
+             [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
 
 (set! *unchecked-math* true)
@@ -36,16 +37,16 @@
                  :pstnul       (finite-block 297))))
 
 (def spk-comment-frame
-  (compile-frame
-    (ordered-map :comment (string :us-ascii :length 1000)
-                 :padding (finite-block 24))))
+  (compile-frame (string :us-ascii :length 1000)))
 
 (defn decode-record
   "Decode a record using the specified frame"
   {:malli/schema [:=> [:cat :some :some :int] :some]}
   [buffer frame index]
-  (.position buffer (* (dec index) record-size))
-  (decode frame [buffer] false))
+  (let [record (byte-array 1024)]
+    (.position ^ByteBuffer buffer ^long (* (dec index) record-size))
+    (.get buffer record)
+    (decode frame record false)))
 
 (defn read-spk-header
   "Read SPK header from byte buffer"
@@ -71,8 +72,7 @@
   "Read SPK comment"
   {:malli/schema [:=> [:cat :map :some] :some]}
   [header buffer]
-  (let [decoded       (map #(decode-record buffer spk-comment-frame %) (range 2 (:forward header)))
-        comment-lines (map :comment decoded)
+  (let [comment-lines (mapv #(decode-record buffer spk-comment-frame %) (range 2 (:forward header)))
         joined-lines  (clojure.string/join comment-lines)
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
