@@ -2,7 +2,8 @@
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
     (:require [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated)]
               [gloss.io :refer (decode)])
-    (:import [java.nio.file Paths StandardOpenOption]
+    (:import [java.nio ByteBuffer]
+             [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
 
 (set! *unchecked-math* true)
@@ -35,20 +36,23 @@
                  :ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none))
                  :pstnul       (finite-block 297))))
 
-(defn spk-comment-frame
-  "Create comment frame consisting of multiple 1024 byte records"
-  {:malli/schema [:=> [:cat :int] :some]}
-  [forward]
-  (compile-frame
-    (finite-frame (* (- forward 2) record-size)
-                  (repeated (ordered-map :comment (string :us-ascii :length 1000) :padding (finite-block 24))
-                            :prefix :none))))
+(def spk-comment-frame
+  (compile-frame (ordered-map :comment (string :us-ascii :length 1000) :padding (finite-block 24))))
+
+(defn decode-record
+  "Decode a record using the specified frame"
+  {:malli/schema [:=> [:cat :some :some :int] :some]}
+  [buffer frame index]
+  (let [record (byte-array 1024)]
+    (.position ^ByteBuffer buffer ^long (* (dec index) record-size))
+    (.get buffer record)
+    (decode frame record)))
 
 (defn read-spk-header
   "Read SPK header from byte buffer"
   {:malli/schema [:=> [:cat :some] :map]}
   [buffer]
-  (decode spk-header-frame [buffer] false))
+  (decode-record buffer spk-header-frame 1))
 
 (defn check-endianness
   "Check endianness of SPK file"
@@ -68,10 +72,8 @@
   "Read SPK comment"
   {:malli/schema [:=> [:cat :map :some] :some]}
   [header buffer]
-  (.position buffer record-size)
-  (let [comment-frame (spk-comment-frame (:forward header))
-        comment-lines (map :comment (decode comment-frame [buffer] false))
-        joined-lines  (clojure.string/join comment-lines)
+  (let [comment-lines (mapv #(decode-record buffer spk-comment-frame %) (range 2 (:forward header)))
+        joined-lines  (clojure.string/join (map :comment comment-lines))
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
