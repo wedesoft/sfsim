@@ -64,7 +64,7 @@
   "Decode a record using the specified frame"
   {:malli/schema [:=> [:cat :some :some :int] :some]}
   [buffer frame index]
-  (let [record (byte-array 1024)]
+  (let [record (byte-array record-size)]
     (.position ^ByteBuffer buffer ^long (* (dec index) record-size))
     (.get ^ByteBuffer buffer record)
     (decode frame record false)))
