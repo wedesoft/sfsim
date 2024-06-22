@@ -16,8 +16,8 @@
         (.get buffer b)
         (String. b StandardCharsets/US_ASCII) => "Test"))
 
-(facts "Read header from SPK file"
-       (let [header (read-spk-header (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp"))]
+(facts "Read header from DAF file"
+       (let [header (read-daf-header (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp"))]
          (:locidw header) => "DAF/SPK "
          (:num-doubles header) => 2
          (:num-integers header) => 6
@@ -37,22 +37,22 @@
 
 (facts "Extract comment"
        (let [buffer  (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp")
-             header  (read-spk-header buffer)
-             cmt     (read-spk-comment header buffer)]
+             header  (read-daf-header buffer)
+             cmt     (read-daf-comment header buffer)]
          (subs cmt 0 67) => "JPL planetary and lunar ephemeris DE430\n\nIntegrated 29 March 2013\n\n"
          (count cmt) => 50093))
 
 (facts "Size of summary frame"
-       (sizeof (spk-summary-frame 1 0)) => 8
-       (sizeof (spk-summary-frame 2 0)) => 16
-       (sizeof (spk-summary-frame 0 2)) => 8
-       (sizeof (spk-summary-frame 0 4)) => 16
-       (sizeof (spk-summary-frame 0 3)) => 16)
+       (sizeof (daf-summary-frame 1 0)) => 8
+       (sizeof (daf-summary-frame 2 0)) => 16
+       (sizeof (daf-summary-frame 0 2)) => 8
+       (sizeof (daf-summary-frame 0 4)) => 16
+       (sizeof (daf-summary-frame 0 3)) => 16)
 
 (facts "Read summaries from a record"
        (let [buffer    (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp")
-             header    (read-spk-header buffer)
-             summaries (read-spk-summaries header (:forward header) buffer)]
+             header    (read-daf-header buffer)
+             summaries (read-daf-summaries header (:forward header) buffer)]
          (:next-number summaries) => 0.0
          (:previous-number summaries) => 0.0
          (count (:descriptors summaries)) => 14
@@ -61,6 +61,6 @@
 
 (fact "Read source names from record"
       (let [buffer  (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp")
-            header  (read-spk-header buffer)
+            header  (read-daf-header buffer)
             sources (read-source-names (inc (:forward header)) 14 buffer)]
         sources => (repeat 14 "DE-0430LE-0430")))

@@ -22,7 +22,7 @@
 
 (def record-size 1024)
 
-(def spk-header-frame
+(def daf-header-frame
   (compile-frame
     (ordered-map :locidw       (string :us-ascii :length 8)
                  :num-doubles  :int32-le
@@ -35,10 +35,10 @@
                  :prenul       (finite-block 603)
                  :ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none)))))
 
-(def spk-comment-frame
+(def daf-comment-frame
   (compile-frame (string :us-ascii :length 1000)))
 
-(defn spk-summary-frame
+(defn daf-summary-frame
   [num-doubles num-integers]
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
@@ -47,16 +47,16 @@
                    :integers (repeat num-integers :int32-le)
                    :padding  (finite-block padding)))))
 
-(defn spk-summaries-frame
+(defn daf-summaries-frame
   [num-doubles num-integers]
-  (let [summary-frame (spk-summary-frame num-doubles num-integers)]
+  (let [summary-frame (daf-summary-frame num-doubles num-integers)]
     (compile-frame
       (ordered-map :next-number     :float64-le
                    :previous-number :float64-le
                    :descriptors     (repeated summary-frame
                                               :prefix (prefix :float64-le long double))))))
 
-(defn spk-source-names-frame
+(defn daf-source-names-frame
   [n]
   (compile-frame (repeat n (string :us-ascii :length 40))))
 
@@ -69,14 +69,14 @@
     (.get ^ByteBuffer buffer record)
     (decode frame record false)))
 
-(defn read-spk-header
-  "Read SPK header from byte buffer"
+(defn read-daf-header
+  "Read DAF header from byte buffer"
   {:malli/schema [:=> [:cat :some] :map]}
   [buffer]
-  (decode-record buffer spk-header-frame 1))
+  (decode-record buffer daf-header-frame 1))
 
 (defn check-endianness
-  "Check endianness of SPK file"
+  "Check endianness of DAF file"
   {:malli/schema [:=> [:cat :map] :boolean]}
   [header]
   (= (:locfmt header) "LTL-IEEE"))
@@ -84,34 +84,34 @@
 (def ftp-str "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")
 
 (defn check-ftp-str
-  "Check FTP string of SPK file"
+  "Check FTP string of DAF file"
   {:malli/schema [:=> [:cat :map] :boolean]}
   [header]
   (= (:ftpstr header) (map int ftp-str)))
 
-(defn read-spk-comment
-  "Read SPK comment"
+(defn read-daf-comment
+  "Read DAF comment"
   {:malli/schema [:=> [:cat :map :some] :some]}
   [header buffer]
-  (let [comment-lines (mapv #(decode-record buffer spk-comment-frame %) (range 2 (:forward header)))
+  (let [comment-lines (mapv #(decode-record buffer daf-comment-frame %) (range 2 (:forward header)))
         joined-lines  (clojure.string/join comment-lines)
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
 
-(defn read-spk-summaries
+(defn read-daf-summaries
   "Read descriptors for following data"
   {:malli/schema [:=> [:cat :map :int :some] :map]}
   [header index buffer]
   (let [num-doubles  (:num-doubles header)
         num-integers (:num-integers header)]
-    (decode-record buffer (spk-summaries-frame num-doubles num-integers) index)))
+    (decode-record buffer (daf-summaries-frame num-doubles num-integers) index)))
 
 (defn read-source-names
   "Read source name data"
   {:malli/schema [:=> [:cat :int :int :some] [:sequential :string]]}
   [index n buffer]
-  (mapv clojure.string/trim (decode-record buffer (spk-source-names-frame n) index)))
+  (mapv clojure.string/trim (decode-record buffer (daf-source-names-frame n) index)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
