@@ -113,5 +113,34 @@
   [index n buffer]
   (mapv clojure.string/trim (decode-record buffer (daf-source-names-frame n) index)))
 
+(defn read-daf-summaries-blocks
+  [header index buffer]
+  (let [summaries   (read-daf-summaries header index buffer)
+        next-number (long (:next-number summaries))
+        descriptors (:descriptors summaries)
+        n           (count (:descriptors summaries))
+        sources     (read-source-names (inc index) n buffer)
+        results     (map (fn [source descriptor] (assoc descriptor :source source)) sources descriptors)]
+    (if (zero? next-number)
+      results
+      (concat results (read-daf-summaries-blocks header next-number buffer)))))
+
+(defn spk-segment
+  "Convert DAF descriptor into SPK segment"
+  {:malli/schema [:=> [:cat :map] :map]}
+  [descriptor]
+  (let [source                                        (:source descriptor)
+        [start-second end-second]                     (:doubles descriptor)
+        [target center frame data-type start-i end-i] (:integers descriptor)]
+    {:source       source
+     :start-second start-second
+     :end-second   end-second
+     :target       target
+     :center       center
+     :frame        frame
+     :data-type    data-type
+     :start-i      start-i
+     :end-i        end-i}))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
