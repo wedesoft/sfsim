@@ -43,16 +43,16 @@
          (count cmt) => 50093))
 
 (facts "Size of summary frame"
-       (sizeof (daf-summary-frame 1 0)) => 8
-       (sizeof (daf-summary-frame 2 0)) => 16
-       (sizeof (daf-summary-frame 0 2)) => 8
-       (sizeof (daf-summary-frame 0 4)) => 16
-       (sizeof (daf-summary-frame 0 3)) => 16)
+       (sizeof (daf-descriptor-frame 1 0)) => 8
+       (sizeof (daf-descriptor-frame 2 0)) => 16
+       (sizeof (daf-descriptor-frame 0 2)) => 8
+       (sizeof (daf-descriptor-frame 0 4)) => 16
+       (sizeof (daf-descriptor-frame 0 3)) => 16)
 
 (facts "Read summaries from a record"
        (let [buffer    (map-file-to-buffer "test/sfsim/fixtures/astro/pck-head.bsp")
              header    (read-daf-header buffer)
-             summaries (read-daf-summaries header (:forward header) buffer)]
+             summaries (read-daf-descriptor header (:forward header) buffer)]
          (:next-number summaries) => 0.0
          (:previous-number summaries) => 0.0
          (count (:descriptors summaries)) => 14
@@ -66,7 +66,7 @@
         sources => (repeat 14 "DE-0430LE-0430")))
 
 (facts "Read multiple summary records"
-       (with-redefs [astro/read-daf-summaries
+       (with-redefs [astro/read-daf-descriptor
                      (fn [header index buffer]
                          (fact index => 53)
                          {:next-number 0.0 :descriptors [{:doubles [1.0] :integers [2]}]})
@@ -74,8 +74,8 @@
                      (fn [index n buffer]
                          (fact index => 54)
                          ["DE-0430LE-0430"])]
-         (read-daf-summaries-blocks {:forward 53} 53 :buffer) => [{:source "DE-0430LE-0430" :doubles [1.0] :integers [2]}])
-       (with-redefs [astro/read-daf-summaries
+         (read-daf-summaries {:forward 53} 53 :buffer) => [{:source "DE-0430LE-0430" :doubles [1.0] :integers [2]}])
+       (with-redefs [astro/read-daf-descriptor
                      (fn [header index buffer]
                          ({53 {:next-number 55.0 :descriptors [{:doubles [1.0] :integers [2]}]}
                            55 {:next-number  0.0 :descriptors [{:doubles [3.0] :integers [4]}]}} index))
@@ -83,17 +83,35 @@
                      (fn [index n buffer]
                          ({54 ["SOURCE1"]
                            56 ["SOURCE2"]} index))]
-         (read-daf-summaries-blocks {:forward 53} 53 :buffer) => [{:source "SOURCE1" :doubles [1.0] :integers [2]}
-                                                                  {:source "SOURCE2" :doubles [3.0] :integers [4]}]))
+         (read-daf-summaries {:forward 53} 53 :buffer) => [{:source "SOURCE1" :doubles [1.0] :integers [2]}
+                                                           {:source "SOURCE2" :doubles [3.0] :integers [4]}]))
 
-(fact "Create SPK segment from DAF descriptor"
-      (let [segment (spk-segment {:source "DE-0430LE-0430" :integers [1 0 1 2 6913 609716] :doubles [-4.734072E9 4.7353689E9]})]
-        (:source segment) => "DE-0430LE-0430"
-        (:start-second segment) => -4.734072E9
-        (:end-second segment) => 4.7353689E9
-        (:target segment) => 1
-        (:center segment) => 0
-        (:frame segment) => 1
-        (:data-type segment) => 2
-        (:start-i segment) => 6913
-        (:end-i segment) => 609716))
+(facts "Create SPK segment from DAF descriptor"
+       (let [segment (summary->spk-segment {:source "DE-0430LE-0430"
+                                            :integers [1 0 1 2 6913 609716]
+                                            :doubles [-4.734072E9 4.7353689E9]})]
+         (:source segment) => "DE-0430LE-0430"
+         (:start-second segment) => -4.734072E9
+         (:end-second segment) => 4.7353689E9
+         (:target segment) => 1
+         (:center segment) => 0
+         (:frame segment) => 1
+         (:data-type segment) => 2
+         (:start-i segment) => 6913
+         (:end-i segment) => 609716))
+
+(facts "Create lookup table for SPK segments"
+       (with-redefs [astro/read-daf-summaries
+                     (fn [header index buffer]
+                         (facts header => {:forward 53}
+                                index => 53
+                                buffer => :buffer)
+                         [{:doubles [1.0] :integers [2]}])
+                     astro/summary->spk-segment
+                     (fn [descriptor]
+                         (fact descriptor => {:doubles [1.0] :integers [2]})
+                         {:source "SOURCE"
+                          :center 3
+                          :target 399
+                          :start-i 1234})]
+         (spk-segment-lookup-table {:forward 53} :buffer) => {[3 399] {:source "SOURCE" :center 3 :target 399 :start-i 1234}}))

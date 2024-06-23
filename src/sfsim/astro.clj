@@ -38,7 +38,7 @@
 (def daf-comment-frame
   (compile-frame (string :us-ascii :length 1000)))
 
-(defn daf-summary-frame
+(defn daf-descriptor-frame
   [num-doubles num-integers]
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
@@ -47,13 +47,13 @@
                    :integers (repeat num-integers :int32-le)
                    :padding  (finite-block padding)))))
 
-(defn daf-summaries-frame
+(defn daf-descriptors-frame
   [num-doubles num-integers]
-  (let [summary-frame (daf-summary-frame num-doubles num-integers)]
+  (let [descriptor-frame (daf-descriptor-frame num-doubles num-integers)]
     (compile-frame
       (ordered-map :next-number     :float64-le
                    :previous-number :float64-le
-                   :descriptors     (repeated summary-frame
+                   :descriptors     (repeated descriptor-frame
                                               :prefix (prefix :float64-le long double))))))
 
 (defn daf-source-names-frame
@@ -99,13 +99,13 @@
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
 
-(defn read-daf-summaries
+(defn read-daf-descriptor
   "Read descriptors for following data"
   {:malli/schema [:=> [:cat :map :int :some] :map]}
   [header index buffer]
   (let [num-doubles  (:num-doubles header)
         num-integers (:num-integers header)]
-    (decode-record buffer (daf-summaries-frame num-doubles num-integers) index)))
+    (decode-record buffer (daf-descriptors-frame num-doubles num-integers) index)))
 
 (defn read-source-names
   "Read source name data"
@@ -113,9 +113,10 @@
   [index n buffer]
   (mapv clojure.string/trim (decode-record buffer (daf-source-names-frame n) index)))
 
-(defn read-daf-summaries-blocks
+(defn read-daf-summaries
+  "Read sources and descriptors to get summaries"
   [header index buffer]
-  (let [summaries   (read-daf-summaries header index buffer)
+  (let [summaries   (read-daf-descriptor header index buffer)
         next-number (long (:next-number summaries))
         descriptors (:descriptors summaries)
         n           (count (:descriptors summaries))
@@ -123,15 +124,15 @@
         results     (map (fn [source descriptor] (assoc descriptor :source source)) sources descriptors)]
     (if (zero? next-number)
       results
-      (concat results (read-daf-summaries-blocks header next-number buffer)))))
+      (concat results (read-daf-summaries header next-number buffer)))))
 
-(defn spk-segment
-  "Convert DAF descriptor into SPK segment"
+(defn summary->spk-segment
+  "Convert DAF summary to SPK segment"
   {:malli/schema [:=> [:cat :map] :map]}
-  [descriptor]
-  (let [source                                        (:source descriptor)
-        [start-second end-second]                     (:doubles descriptor)
-        [target center frame data-type start-i end-i] (:integers descriptor)]
+  [summary]
+  (let [source                                        (:source summary)
+        [start-second end-second]                     (:doubles summary)
+        [target center frame data-type start-i end-i] (:integers summary)]
     {:source       source
      :start-second start-second
      :end-second   end-second
@@ -141,6 +142,13 @@
      :data-type    data-type
      :start-i      start-i
      :end-i        end-i}))
+
+(defn spk-segment-lookup-table
+  "Make a lookup table for pairs of center and target to lookup SPK summaries"
+  [header buffer]
+  (let [summaries (read-daf-summaries header (:forward header) buffer)
+        segments  (map summary->spk-segment summaries)]
+    (reduce (fn [lookup segment] (assoc lookup [(:center segment) (:target segment)] segment)) {} segments)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
