@@ -115,3 +115,34 @@
                           :target 399
                           :start-i 1234})]
          (spk-segment-lookup-table {:forward 53} :buffer) => {[3 399] {:source "SOURCE" :center 3 :target 399 :start-i 1234}}))
+
+(facts "Read out coefficient layout from raw data"
+       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coeff-layout.raw")
+             layout (read-coefficient-layout {:end-i 4} buffer)]
+         (:init layout) => -4.734072E9
+         (:intlen layout) => 1382400.0
+         (:rsize layout) => 41
+         (:n layout) => 6850))
+
+(facts "Read out coefficient layout at end of a segment"
+       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coeff-layout-offset.raw")
+             layout (read-coefficient-layout {:end-i 8} buffer)]
+         (:init layout) => -4.734072E9
+         (:intlen layout) => 1382400.0
+         (:rsize layout) => 41
+         (:n layout) => 6850))
+
+(fact "Read coefficients for index zero from segment"
+      (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients.raw")
+            coeffs (read-interval-coefficients {:data-type 2 :start-i 1} {:rsize 41} 0 buffer)]
+        coeffs => (reverse (partition 3 (map double (range 39))))))
+
+(fact "Read coefficients for index one from segment"
+      (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients-offset.raw")
+            coeffs (read-interval-coefficients {:data-type 2 :start-i 1} {:rsize 41} 1 buffer)]
+        coeffs => (reverse (partition 3 (map double (range 39))))))
+
+(fact "Use start position of segment when reading coefficients"
+      (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients-offset.raw")
+            coeffs (read-interval-coefficients {:data-type 2 :start-i 42} {:rsize 41} 0 buffer)]
+        coeffs => (reverse (partition 3 (map double (range 39))))))

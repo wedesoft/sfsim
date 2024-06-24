@@ -1,6 +1,6 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
-    (:require [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix)]
+    (:require [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
@@ -59,6 +59,18 @@
 (defn daf-source-names-frame
   [n]
   (compile-frame (repeat n (string :us-ascii :length 40))))
+
+(def coefficient-layout-frame
+  (compile-frame
+    (ordered-map :init :float64-le
+                 :intlen :float64-le
+                 :rsize :float64-le
+                 :n :float64-le)))
+
+(defn coefficient-frame
+  [rsize component-count]
+  (let [coefficient-count (/ (- rsize 2) component-count)]
+    (compile-frame (concat [:float64-le :float64-le] (repeat coefficient-count (repeat component-count :float64-le))))))
 
 (defn decode-record
   "Decode a record using the specified frame"
@@ -149,6 +161,29 @@
   (let [summaries (read-daf-summaries header (:forward header) buffer)
         segments  (map summary->spk-segment summaries)]
     (reduce (fn [lookup segment] (assoc lookup [(:center segment) (:target segment)] segment)) {} segments)))
+
+(defn convert-to-long
+  "Convert values with specified keys to long"
+  [hashmap keys_]
+  (reduce (fn [hashmap key_] (update hashmap key_ long)) hashmap keys_))
+
+(defn read-coefficient-layout
+  "Read layout information from end of segment"
+  [segment buffer]
+  (let [info (byte-array (sizeof coefficient-layout-frame))]
+    (.position ^ByteBuffer buffer ^long (* 8 (- (:end-i segment) 4)))
+    (.get ^ByteBuffer buffer info)
+    (convert-to-long (decode coefficient-layout-frame info) [:rsize :n])))
+
+(defn read-interval-coefficients
+  "Read coefficient block with specified index from segment"
+  [segment layout index buffer]
+  (let [component-count ({2 3 3 6} (:data-type segment))
+        frame           (coefficient-frame (:rsize layout) component-count)
+        data            (byte-array (sizeof frame))]
+    (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (:start-i segment))) (* index (sizeof frame))))
+    (.get ^ByteBuffer buffer data)
+    (reverse (drop 2 (decode frame data)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
