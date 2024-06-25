@@ -1,7 +1,7 @@
 # TODO
+* method to compute index and offset
+* method to get interpolation result for timestamp center and target
 * use keyword namespace
-* method to use descriptor for getting coefficients for a given interval index
-* method to perform interpolation
 * create Nuklear GUI to set location and time
   * add wrappers for more GUI elements
 * 2 more levels, higher res map

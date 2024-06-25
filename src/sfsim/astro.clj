@@ -195,7 +195,9 @@
   {:malli/schema [:=> [:cat [:sequential :some] :double :some] :some]}
   [coefficients s zero]
   (let [s2      (* 2.0 s)
-        [w0 w1] (reduce (fn [[w0 w1] c] [(add c (sub (mult w0 s2) w1)) w0]) [zero zero] (butlast coefficients))]
+        [w0 w1] (reduce (fn [[w0 w1] c] [(add c (sub (mult w0 s2) w1)) w0])
+                        [zero zero]
+                        (butlast coefficients))]
     (add (last coefficients) (sub (mult w0 s) w1))))
 
 (set! *warn-on-reflection* false)
