@@ -70,7 +70,7 @@
 (defn coefficient-frame
   [rsize component-count]
   (let [coefficient-count (/ (- rsize 2) component-count)]
-    (compile-frame (concat [:float64-le :float64-le] (repeat coefficient-count (repeat component-count :float64-le))))))
+    (compile-frame (concat [:float64-le :float64-le] (repeat component-count (repeat coefficient-count :float64-le))))))
 
 (defn decode-record
   "Decode a record using the specified frame"
@@ -163,7 +163,7 @@
     (reduce (fn [lookup segment] (assoc lookup [(:center segment) (:target segment)] segment)) {} segments)))
 
 (defn convert-to-long
-  "Convert values with specified keys to long"
+  "Convert values with specified keys to long integer"
   [hashmap keys_]
   (reduce (fn [hashmap key_] (update hashmap key_ long)) hashmap keys_))
 
@@ -183,7 +183,7 @@
         data            (byte-array (sizeof frame))]
     (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (:start-i segment))) (* index (sizeof frame))))
     (.get ^ByteBuffer buffer data)
-    (reverse (drop 2 (decode frame data)))))
+    (reverse (apply map vector (drop 2 (decode frame data))))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -135,14 +135,14 @@
 (fact "Read coefficients for index zero from segment"
       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients.raw")
             coeffs (read-interval-coefficients {:data-type 2 :start-i 1} {:rsize 41} 0 buffer)]
-        coeffs => (reverse (partition 3 (map double (range 39))))))
+        coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
 
 (fact "Read coefficients for index one from segment"
       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients-offset.raw")
             coeffs (read-interval-coefficients {:data-type 2 :start-i 1} {:rsize 41} 1 buffer)]
-        coeffs => (reverse (partition 3 (map double (range 39))))))
+        coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
 
 (fact "Use start position of segment when reading coefficients"
       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients-offset.raw")
             coeffs (read-interval-coefficients {:data-type 2 :start-i 42} {:rsize 41} 0 buffer)]
-        coeffs => (reverse (partition 3 (map double (range 39))))))
+        coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
