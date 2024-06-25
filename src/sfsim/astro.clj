@@ -1,6 +1,7 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
-    (:require [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
+    (:require [fastmath.vector :refer (add mult sub)]
+              [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
@@ -157,6 +158,7 @@
 
 (defn spk-segment-lookup-table
   "Make a lookup table for pairs of center and target to lookup SPK summaries"
+  {:malli/schema [:=> [:cat :map :some] :map]}
   [header buffer]
   (let [summaries (read-daf-summaries header (:forward header) buffer)
         segments  (map summary->spk-segment summaries)]
@@ -164,11 +166,13 @@
 
 (defn convert-to-long
   "Convert values with specified keys to long integer"
+  {:malli/schema [:=> [:cat :map [:vector :keyword]] :map]}
   [hashmap keys_]
   (reduce (fn [hashmap key_] (update hashmap key_ long)) hashmap keys_))
 
 (defn read-coefficient-layout
   "Read layout information from end of segment"
+  {:malli/schema [:=> [:cat :map :some] :map]}
   [segment buffer]
   (let [info (byte-array (sizeof coefficient-layout-frame))]
     (.position ^ByteBuffer buffer ^long (* 8 (- (:end-i segment) 4)))
@@ -177,6 +181,7 @@
 
 (defn read-interval-coefficients
   "Read coefficient block with specified index from segment"
+  {:malli/schema [:=> [:cat :map :map :int :some] [:sequential [:sequential :double]]]}
   [segment layout index buffer]
   (let [component-count ({2 3 3 6} (:data-type segment))
         frame           (coefficient-frame (:rsize layout) component-count)
@@ -184,6 +189,14 @@
     (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (:start-i segment))) (* index (sizeof frame))))
     (.get ^ByteBuffer buffer data)
     (reverse (apply map vector (drop 2 (decode frame data))))))
+
+(defn chebyshev-polynomials
+  "Chebyshev polynomials"
+  {:malli/schema [:=> [:cat [:sequential :some] :double :some] :some]}
+  [coefficients s zero]
+  (let [s2      (* 2.0 s)
+        [w0 w1] (reduce (fn [[w0 w1] c] [(add c (sub (mult w0 s2) w1)) w0]) [zero zero] (butlast coefficients))]
+    (add (last coefficients) (sub (mult w0 s) w1))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

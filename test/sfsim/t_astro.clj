@@ -2,6 +2,7 @@
     (:require [midje.sweet :refer :all]
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
+              [fastmath.vector :refer (vec3)]
               [gloss.core :refer (sizeof)]
               [sfsim.astro :refer :all :as astro])
     (:import [java.nio.charset StandardCharsets]))
@@ -146,3 +147,20 @@
       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients-offset.raw")
             coeffs (read-interval-coefficients {:data-type 2 :start-i 42} {:rsize 41} 0 buffer)]
         coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
+
+(facts "Chebyshev polynomials"
+       (chebyshev-polynomials             [1.0] -1.0 0.0) =>  1.0
+       (chebyshev-polynomials             [1.0]  0.0 0.0) =>  1.0
+       (chebyshev-polynomials             [1.0]  1.0 0.0) =>  1.0
+       (chebyshev-polynomials         [1.0 0.0] -1.0 0.0) => -1.0
+       (chebyshev-polynomials         [1.0 0.0]  0.0 0.0) =>  0.0
+       (chebyshev-polynomials         [1.0 0.0]  1.0 0.0) =>  1.0
+       (chebyshev-polynomials     [1.0 0.0 0.0] -1.0 0.0) =>  1.0
+       (chebyshev-polynomials     [1.0 0.0 0.0]  0.0 0.0) => -1.0
+       (chebyshev-polynomials     [1.0 0.0 0.0]  1.0 0.0) =>  1.0
+       (chebyshev-polynomials [1.0 0.0 0.0 0.0] -1.0 0.0) => -1.0
+       (chebyshev-polynomials [1.0 0.0 0.0 0.0] -0.5 0.0) =>  1.0
+       (chebyshev-polynomials [1.0 0.0 0.0 0.0]  0.0 0.0) =>  0.0
+       (chebyshev-polynomials [1.0 0.0 0.0 0.0]  0.5 0.0) => -1.0
+       (chebyshev-polynomials [1.0 0.0 0.0 0.0]  1.0 0.0) =>  1.0
+       (chebyshev-polynomials [(vec3 1 0 0) (vec3 0 0 0)] 0.0 (vec3 0 0 0)) => (vec3 0 0 0))
