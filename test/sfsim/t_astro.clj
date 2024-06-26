@@ -164,3 +164,13 @@
        (chebyshev-polynomials [1.0 0.0 0.0 0.0]  0.5 0.0) => -1.0
        (chebyshev-polynomials [1.0 0.0 0.0 0.0]  1.0 0.0) =>  1.0
        (chebyshev-polynomials [(vec3 1 0 0) (vec3 0 0 0)] 0.0 (vec3 0 0 0)) => (vec3 0 0 0))
+
+(facts "Compute interval index and position (s) inside for given timestamp"
+       (interval-index-and-position {:n 3 :init 0.0 :intlen 86400.0} T0) => [0 -1.0]
+       (interval-index-and-position {:n 3 :init 0.0 :intlen 86400.0} (+ T0 1.0)) => [1 -1.0]
+       (interval-index-and-position {:n 3 :init 86400.0 :intlen 86400.0} (+ T0 1.0)) => [0 -1.0]
+       (interval-index-and-position {:n 3 :init 0.0 :intlen 43200.0} (+ T0 1.0)) => [2 -1.0]
+       (interval-index-and-position {:n 3 :init 0.0 :intlen 86400.0} (+ T0 0.5)) => [0 0.0]
+       (interval-index-and-position {:n 3 :init 0.0 :intlen 86400.0} (+ T0 1.5)) => [1 0.0]
+       (interval-index-and-position {:n 3 :init 0.0 :intlen 86400.0} (- T0 1.5)) => [0 -4.0]
+       (interval-index-and-position {:n 3 :init 0.0 :intlen 86400.0} (+ T0 3.0)) => [2  1.0])

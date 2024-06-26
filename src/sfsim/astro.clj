@@ -10,6 +10,9 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+(def T0 2451545.0)  ; noon of 1st January 2000
+(def s-per-day 86400.0)  ; seconds per day
+
 (defn map-file-to-buffer
   "Map file to read-only byte buffer"
   {:malli/schema [:=> [:cat :string] :some]}
@@ -195,10 +198,23 @@
   {:malli/schema [:=> [:cat [:sequential :some] :double :some] :some]}
   [coefficients s zero]
   (let [s2      (* 2.0 s)
-        [w0 w1] (reduce (fn [[w0 w1] c] [(add c (sub (mult w0 s2) w1)) w0])
+        [w0 w1] (reduce (fn [[w0 w1] c] [(-> w0 (mult s2) (sub w1) (add c)) w0])
                         [zero zero]
                         (butlast coefficients))]
     (add (last coefficients) (sub (mult w0 s) w1))))
+
+(defn interval-index-and-position
+  "Compute interval index and position (s) inside for given timestamp"
+  {:malli/schema [:=> [:cat :map :double] [:tuple :int :double]]}
+  [layout tdb]
+  (let [init   (:init layout)
+        intlen (:intlen layout)
+        n      (:n layout)
+        t      (- (* (- tdb T0) s-per-day) init)
+        index  (min (max (long (quot t intlen)) 0) (dec n))
+        offset (- t (* index intlen))
+        s      (- (/ (* 2.0 offset) intlen) 1.0)]
+    [index s]))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
