@@ -1,6 +1,7 @@
 # TODO
-* method to get interpolation result for timestamp center and target
-* use keyword namespace in astro module
+* put method together to compute planet position
+* method to compute orientation of Earth
+* method to compute orientation of Moon
 * stricter schemas in astro module
 * create Nuklear GUI to set location and time
   * add wrappers for more GUI elements

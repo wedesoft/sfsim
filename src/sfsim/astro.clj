@@ -28,16 +28,16 @@
 
 (def daf-header-frame
   (compile-frame
-    (ordered-map :locidw       (string :us-ascii :length 8)
-                 :num-doubles  :int32-le
-                 :num-integers :int32-le
-                 :locifn       (string :us-ascii :length 60)
-                 :forward      :int32-le
-                 :backward     :int32-le
-                 :free         :int32-le
-                 :locfmt       (string :us-ascii :length 8)
-                 :prenul       (finite-block 603)
-                 :ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none)))))
+    (ordered-map ::locidw       (string :us-ascii :length 8)
+                 ::num-doubles  :int32-le
+                 ::num-integers :int32-le
+                 ::locifn       (string :us-ascii :length 60)
+                 ::forward      :int32-le
+                 ::backward     :int32-le
+                 ::free         :int32-le
+                 ::locfmt       (string :us-ascii :length 8)
+                 ::prenul       (finite-block 603)
+                 ::ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none)))))
 
 (def daf-comment-frame
   (compile-frame (string :us-ascii :length 1000)))
@@ -47,18 +47,18 @@
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
     (compile-frame
-      (ordered-map :doubles  (repeat num-doubles :float64-le)
-                   :integers (repeat num-integers :int32-le)
-                   :padding  (finite-block padding)))))
+      (ordered-map ::doubles  (repeat num-doubles :float64-le)
+                   ::integers (repeat num-integers :int32-le)
+                   ::padding  (finite-block padding)))))
 
 (defn daf-descriptors-frame
   [num-doubles num-integers]
   (let [descriptor-frame (daf-descriptor-frame num-doubles num-integers)]
     (compile-frame
-      (ordered-map :next-number     :float64-le
-                   :previous-number :float64-le
-                   :descriptors     (repeated descriptor-frame
-                                              :prefix (prefix :float64-le long double))))))
+      (ordered-map ::next-number     :float64-le
+                   ::previous-number :float64-le
+                   ::descriptors     (repeated descriptor-frame
+                                               :prefix (prefix :float64-le long double))))))
 
 (defn daf-source-names-frame
   [n]
@@ -66,10 +66,10 @@
 
 (def coefficient-layout-frame
   (compile-frame
-    (ordered-map :init :float64-le
-                 :intlen :float64-le
-                 :rsize :float64-le
-                 :n :float64-le)))
+    (ordered-map ::init :float64-le
+                 ::intlen :float64-le
+                 ::rsize :float64-le
+                 ::n :float64-le)))
 
 (defn coefficient-frame
   [rsize component-count]
@@ -95,7 +95,7 @@
   "Check endianness of DAF file"
   {:malli/schema [:=> [:cat :map] :boolean]}
   [header]
-  (= (:locfmt header) "LTL-IEEE"))
+  (= (::locfmt header) "LTL-IEEE"))
 
 (def ftp-str "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")
 
@@ -103,13 +103,13 @@
   "Check FTP string of DAF file"
   {:malli/schema [:=> [:cat :map] :boolean]}
   [header]
-  (= (:ftpstr header) (map int ftp-str)))
+  (= (::ftpstr header) (map int ftp-str)))
 
 (defn read-daf-comment
   "Read DAF comment"
   {:malli/schema [:=> [:cat :map :some] :some]}
   [header buffer]
-  (let [comment-lines (mapv #(decode-record buffer daf-comment-frame %) (range 2 (:forward header)))
+  (let [comment-lines (mapv #(decode-record buffer daf-comment-frame %) (range 2 (::forward header)))
         joined-lines  (clojure.string/join comment-lines)
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
@@ -119,8 +119,8 @@
   "Read descriptors for following data"
   {:malli/schema [:=> [:cat :map :int :some] :map]}
   [header index buffer]
-  (let [num-doubles  (:num-doubles header)
-        num-integers (:num-integers header)]
+  (let [num-doubles  (::num-doubles header)
+        num-integers (::num-integers header)]
     (decode-record buffer (daf-descriptors-frame num-doubles num-integers) index)))
 
 (defn read-source-names
@@ -133,11 +133,11 @@
   "Read sources and descriptors to get summaries"
   [header index buffer]
   (let [summaries   (read-daf-descriptor header index buffer)
-        next-number (long (:next-number summaries))
-        descriptors (:descriptors summaries)
-        n           (count (:descriptors summaries))
+        next-number (long (::next-number summaries))
+        descriptors (::descriptors summaries)
+        n           (count (::descriptors summaries))
         sources     (read-source-names (inc index) n buffer)
-        results     (map (fn [source descriptor] (assoc descriptor :source source)) sources descriptors)]
+        results     (map (fn [source descriptor] (assoc descriptor ::source source)) sources descriptors)]
     (if (zero? next-number)
       results
       (concat results (read-daf-summaries header next-number buffer)))))
@@ -146,26 +146,26 @@
   "Convert DAF summary to SPK segment"
   {:malli/schema [:=> [:cat :map] :map]}
   [summary]
-  (let [source                                        (:source summary)
-        [start-second end-second]                     (:doubles summary)
-        [target center frame data-type start-i end-i] (:integers summary)]
-    {:source       source
-     :start-second start-second
-     :end-second   end-second
-     :target       target
-     :center       center
-     :frame        frame
-     :data-type    data-type
-     :start-i      start-i
-     :end-i        end-i}))
+  (let [source                                        (::source summary)
+        [start-second end-second]                     (::doubles summary)
+        [target center frame data-type start-i end-i] (::integers summary)]
+    {::source       source
+     ::start-second start-second
+     ::end-second   end-second
+     ::target       target
+     ::center       center
+     ::frame        frame
+     ::data-type    data-type
+     ::start-i      start-i
+     ::end-i        end-i}))
 
 (defn spk-segment-lookup-table
   "Make a lookup table for pairs of center and target to lookup SPK summaries"
   {:malli/schema [:=> [:cat :map :some] :map]}
   [header buffer]
-  (let [summaries (read-daf-summaries header (:forward header) buffer)
+  (let [summaries (read-daf-summaries header (::forward header) buffer)
         segments  (map summary->spk-segment summaries)]
-    (reduce (fn [lookup segment] (assoc lookup [(:center segment) (:target segment)] segment)) {} segments)))
+    (reduce (fn [lookup segment] (assoc lookup [(::center segment) (::target segment)] segment)) {} segments)))
 
 (defn convert-to-long
   "Convert values with specified keys to long integer"
@@ -178,18 +178,18 @@
   {:malli/schema [:=> [:cat :map :some] :map]}
   [segment buffer]
   (let [info (byte-array (sizeof coefficient-layout-frame))]
-    (.position ^ByteBuffer buffer ^long (* 8 (- (:end-i segment) 4)))
+    (.position ^ByteBuffer buffer ^long (* 8 (- (::end-i segment) 4)))
     (.get ^ByteBuffer buffer info)
-    (convert-to-long (decode coefficient-layout-frame info) [:rsize :n])))
+    (convert-to-long (decode coefficient-layout-frame info) [::rsize ::n])))
 
 (defn read-interval-coefficients
   "Read coefficient block with specified index from segment"
   {:malli/schema [:=> [:cat :map :map :int :some] [:sequential [:sequential :double]]]}
   [segment layout index buffer]
-  (let [component-count ({2 3 3 6} (:data-type segment))
-        frame           (coefficient-frame (:rsize layout) component-count)
+  (let [component-count ({2 3 3 6} (::data-type segment))
+        frame           (coefficient-frame (::rsize layout) component-count)
         data            (byte-array (sizeof frame))]
-    (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (:start-i segment))) (* index (sizeof frame))))
+    (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (::start-i segment))) (* index (sizeof frame))))
     (.get ^ByteBuffer buffer data)
     (reverse (apply map vector (drop 2 (decode frame data))))))
 
@@ -207,9 +207,9 @@
   "Compute interval index and position (s) inside for given timestamp"
   {:malli/schema [:=> [:cat :map :double] [:tuple :int :double]]}
   [layout tdb]
-  (let [init   (:init layout)
-        intlen (:intlen layout)
-        n      (:n layout)
+  (let [init   (::init layout)
+        intlen (::intlen layout)
+        n      (::n layout)
         t      (- (* (- tdb T0) s-per-day) init)
         index  (min (max (long (quot t intlen)) 0) (dec n))
         offset (- t (* index intlen))
