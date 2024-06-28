@@ -32,20 +32,21 @@ Requires OpenGL 4.5.
 * Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`
 * Build cloud cover: `clj -T:build cloud-cover`
-* Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
 * Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
 * Download NOAA elevation data: `clj -T:build download-elevation`
+* Download NASA JPL ephemeris data: `clj -T:build download-ephemeris`
 * Extract elevation data: `clj -T:build extract-elevation`
 * Convert day map sectors into pyramid of tiles: `clj -T:build map-sectors-day`
 * Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
+* Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Perform all build steps above: `clj -T:build all`
+* Enable integration tests (requiring results of above build steps): `touch .integration`
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json` (delete out-windows folder first)
 * Create Windows installer: `makensis nsis-config.nsi`
-* Enable integration tests: `touch .integration`
 
 # Lint
 

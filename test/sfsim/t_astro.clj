@@ -178,3 +178,7 @@
        (interval-index-and-position {:sfsim.astro/n 3 :sfsim.astro/init 0.0 :sfsim.astro/intlen 86400.0} (+ T0 1.5)) => [1 0.0]
        (interval-index-and-position {:sfsim.astro/n 3 :sfsim.astro/init 0.0 :sfsim.astro/intlen 86400.0} (- T0 1.5)) => [0 -4.0]
        (interval-index-and-position {:sfsim.astro/n 3 :sfsim.astro/init 0.0 :sfsim.astro/intlen 86400.0} (+ T0 3.0)) => [2  1.0])
+
+(facts "Convert list of vectors to list of vec3 objects"
+       (map-vec3 []) => []
+       (map-vec3 [[1.0 2.0 3.0]]) => [(vec3 1.0 2.0 3.0)])

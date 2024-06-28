@@ -1,8 +1,10 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
-    (:require [fastmath.vector :refer (add mult sub)]
+    (:require [clojure.core.memoize :as z]
+              [fastmath.vector :refer (add mult sub vec3)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
-              [gloss.io :refer (decode)])
+              [gloss.io :refer (decode)]
+              [sfsim.matrix :refer (fvec3)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
@@ -10,8 +12,12 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
+; Code ported from python-skyfield
+; See https://rhodesmill.org/skyfield/
+
 (def T0 2451545.0)  ; noon of 1st January 2000
 (def s-per-day 86400.0)  ; seconds per day
+(def AU-KM 149597870.700)  ; astronomical unit in km
 
 (defn map-file-to-buffer
   "Map file to read-only byte buffer"
@@ -215,6 +221,35 @@
         offset (- t (* index intlen))
         s      (- (/ (* 2.0 offset) intlen) 1.0)]
     [index s]))
+
+(defn map-vec3
+  "Convert list of vectors to list of vec3 objects"
+  {:malli/schema [:=> [:cat [:sequential [:vector :double]]] [:sequential fvec3]]}
+  [lst]
+  (map #(apply vec3 %) lst))
+
+(defn make-spk-document
+  "Create object with segment information"
+  {:malli/schema [:=> [:cat :string] :map]}
+  [filename]
+  (let [buffer (map-file-to-buffer filename)
+        header (read-daf-header buffer)
+        lookup (spk-segment-lookup-table header buffer)]
+    {::header header
+     ::lookup lookup
+     ::buffer buffer}))
+
+(defn make-segment-interpolator
+  [spk center target]
+  (let [buffer  (::buffer spk)
+        lookup  (::lookup spk)
+        segment (get lookup [center target])
+        layout  (read-coefficient-layout segment buffer)
+        cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
+    (fn [tdb]
+        (let [[index s]    (interval-index-and-position layout tdb)
+              coefficients (cache index)]
+          (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

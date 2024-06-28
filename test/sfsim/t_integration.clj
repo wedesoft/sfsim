@@ -4,14 +4,15 @@
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (PI to-radians)]
               [clojure.java.io :as io]
-              [sfsim.conftest :refer (is-image)]
-              [fastmath.vector :refer (vec3 add)]
+              [sfsim.conftest :refer (roughly-vector is-image)]
+              [fastmath.vector :refer (vec3 add div sub)]
               [fastmath.matrix :refer (mulm)]
               [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y)]
               [sfsim.quaternion :as q]
               [sfsim.quadtree :refer :all]
               [sfsim.texture :refer :all]
               [sfsim.render :refer :all]
+              [sfsim.astro :refer :all]
               [sfsim.atmosphere :as atmosphere]
               [sfsim.opacity :as opacity]
               [sfsim.planet :as planet]
@@ -213,5 +214,15 @@
         (opacity/destroy-opacity-renderer opacity-renderer)
         (atmosphere/destroy-atmosphere-luts atmosphere-luts)
         (clouds/destroy-cloud-data cloud-data)))))
+
+(if (.exists (io/file ".integration"))
+  (fact "Integration test position of Sun relative to Earth"
+        (let [spk        (make-spk-document "data/de430_1850-2150.bsp")
+              sun        (make-segment-interpolator spk 0 10)
+              earth-moon (make-segment-interpolator spk 0 3)
+              earth      (make-segment-interpolator spk 3 399)
+              tdb        2458837.9618055606]
+          (div (sub (sun (- tdb (+ (/ 8 1440) (/ 20 86400)))) (add (earth-moon tdb) (earth tdb))) AU-KM)
+          => (roughly-vector (vec3 -0.034666711163175164, -0.90209322168943, -0.391053015058352) 1e-6))))
 
 (GLFW/glfwTerminate)

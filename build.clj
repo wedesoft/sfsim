@@ -309,17 +309,28 @@
            :basis basis
            :main 'sfsim.core}))
 
+(defn download-ephemeris
+  "Download NASA JPL planet ephemeris data from https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/"
+  [_]
+  (let [filename "de430_1850-2150.bsp"
+        url      (str "https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/" filename)]
+    (.println *err* (str "Downloading " url " ..."))
+    (io/copy
+      (io/input-stream url)
+      (io/file (str "data/" filename)))))
+
 (defn all [_]
   (worley)
   (perlin)
   (bluenoise)
   (cloud-cover)
-  (atmosphere-lut)
   (download-bluemarble)
   (download-blackmarble)
   (download-elevation)
+  (download-ephemeris)
   (extract-elevation)
   (map-sectors-day)
   (map-sectors-night)
   (elevation-sectors)
-  (cube-maps))
+  (cube-maps)
+  (atmosphere-lut))
