@@ -221,8 +221,9 @@
               sun        (make-segment-interpolator spk 0 10)
               earth-moon (make-segment-interpolator spk 0 3)
               earth      (make-segment-interpolator spk 3 399)
-              tdb        2458837.9618055606]
-          (div (sub (sun (- tdb (+ (/ 8 1440) (/ 20 86400)))) (add (earth-moon tdb) (earth tdb))) AU-KM)
+              tdb        2458837.9618055606
+              light-time (+ (/ 8 1440) (/ 20 86400))]
+          (div (sub (sun (- tdb light-time)) (add (earth-moon tdb) (earth tdb))) AU-KM)
           => (roughly-vector (vec3 -0.034666711163175164, -0.90209322168943, -0.391053015058352) 1e-6))))
 
 (GLFW/glfwTerminate)
