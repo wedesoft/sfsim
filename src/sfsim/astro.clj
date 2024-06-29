@@ -240,6 +240,8 @@
      ::buffer buffer}))
 
 (defn make-segment-interpolator
+  "Create object for interpolation of a particular target position"
+  {:malli/schema [:=> [:cat :map :int :int] ifn?]}
   [spk center target]
   (let [buffer  (::buffer spk)
         lookup  (::lookup spk)
@@ -250,6 +252,29 @@
         (let [[index s]    (interval-index-and-position layout tdb)
               coefficients (cache index)]
           (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
+
+(defn julian-date
+  "Convert calendar date to Julian date"
+  {:malli/schema [:=> [:cat :map] :int]}
+  [{:keys [year month day]}]
+  (let [g (- (+ year 4716) (if (<= month 2) 1 0))
+        f (mod (+ month 9) 12)
+        e (- (+ (quot (* 1461 g) 4) day) 1402)
+        J (+ e (quot (+ (* 153 f) 2) 5))]
+    (+ J (- 38 (quot (* (quot (+ g 184) 100) 3) 4)))))
+
+(defn calendar-date
+  {:malli/schema [:=> [:cat :int] :map]}
+  [jd]
+  (let [f (+ jd 1401)
+        f (+ f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
+        e (+ (* 4 f) 3)
+        g (quot (mod e 1461) 4)
+        h (+ (* 5 g) 2)
+        day (inc (quot (mod h 153) 5))
+        month (inc (mod (+ (quot h 153) 2) 12))
+        year (+ (- (quot e 1461) 4716) (quot (- (+ 12 2) month) 12))]
+    {:year year :month month :day day}))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

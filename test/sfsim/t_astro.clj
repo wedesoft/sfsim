@@ -182,3 +182,19 @@
 (facts "Convert list of vectors to list of vec3 objects"
        (map-vec3 []) => []
        (map-vec3 [[1.0 2.0 3.0]]) => [(vec3 1.0 2.0 3.0)])
+
+(facts "Convert calendar date to Julian date"
+       (julian-date {:year 2024 :month 1 :day 1}) => 2460311
+       (julian-date {:year 2024 :month 1 :day 2}) => 2460312
+       (julian-date {:year 2024 :month 2 :day 1}) => 2460342
+       (julian-date {:year 2024 :month 3 :day 1}) => 2460371
+       (julian-date {:year 2025 :month 2 :day 1}) => 2460708
+       (julian-date {:year 2025 :month 3 :day 1}) => 2460736)
+
+(facts "Convert Julian date to calendar date"
+       (calendar-date 2460311) => {:year 2024 :month 1 :day 1}
+       (calendar-date 2460312) => {:year 2024 :month 1 :day 2}
+       (calendar-date 2460342) => {:year 2024 :month 2 :day 1}
+       (calendar-date 2460371) => {:year 2024 :month 3 :day 1}
+       (calendar-date 2460708) => {:year 2025 :month 2 :day 1}
+       (calendar-date 2460736) => {:year 2025 :month 3 :day 1})
