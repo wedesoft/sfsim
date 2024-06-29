@@ -1,5 +1,4 @@
 # TODO
-* put method together to compute planet position
 * method to compute orientation of Earth
 * method to compute orientation of Moon
 * stricter schemas in astro module
