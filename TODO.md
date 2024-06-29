@@ -1,8 +1,7 @@
 # TODO
-* add methods to convert between calendar date and julian date
+* stricter schemas in astro module
 * method to compute orientation of Earth
 * method to compute orientation of Moon
-* stricter schemas in astro module
 * create Nuklear GUI to set location and time
   * add wrappers for more GUI elements
 * 2 more levels, higher res map
