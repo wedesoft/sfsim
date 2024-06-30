@@ -1,13 +1,24 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
-    (:require [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix)]
-              [gloss.io :refer (decode)])
+    (:require [clojure.core.memoize :as z]
+              [malli.core :as m]
+              [fastmath.vector :refer (add mult sub vec3)]
+              [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
+              [gloss.io :refer (decode)]
+              [sfsim.matrix :refer (fvec3)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
+
+; Code ported from python-skyfield
+; See https://rhodesmill.org/skyfield/
+
+(def T0 2451545.0)  ; noon of 1st January 2000
+(def s-per-day 86400.0)  ; seconds per day
+(def AU-KM 149597870.700)  ; astronomical unit in km
 
 (defn map-file-to-buffer
   "Map file to read-only byte buffer"
@@ -22,43 +33,63 @@
 
 (def record-size 1024)
 
-(def spk-header-frame
+(def daf-header-frame
   (compile-frame
-    (ordered-map :locidw       (string :us-ascii :length 8)
-                 :num-doubles  :int32-le
-                 :num-integers :int32-le
-                 :locifn       (string :us-ascii :length 60)
-                 :forward      :int32-le
-                 :backward     :int32-le
-                 :free         :int32-le
-                 :locfmt       (string :us-ascii :length 8)
-                 :prenul       (finite-block 603)
-                 :ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none)))))
+    (ordered-map ::locidw       (string :us-ascii :length 8)
+                 ::num-doubles  :int32-le
+                 ::num-integers :int32-le
+                 ::locifn       (string :us-ascii :length 60)
+                 ::forward      :int32-le
+                 ::backward     :int32-le
+                 ::free         :int32-le
+                 ::locfmt       (string :us-ascii :length 8)
+                 ::prenul       (finite-block 603)
+                 ::ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none)))))
 
-(def spk-comment-frame
+(def daf-comment-frame
   (compile-frame (string :us-ascii :length 1000)))
 
-(defn spk-summary-frame
+(defn daf-descriptor-frame
+  "Create codec frame for parsing data descriptor"
+  {:malli/schema [:=> [:cat :int :int] :some]}
   [num-doubles num-integers]
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
     (compile-frame
-      (ordered-map :doubles  (repeat num-doubles :float64-le)
-                   :integers (repeat num-integers :int32-le)
-                   :padding  (finite-block padding)))))
+      (ordered-map ::doubles  (repeat num-doubles :float64-le)
+                   ::integers (repeat num-integers :int32-le)
+                   ::padding  (finite-block padding)))))
 
-(defn spk-summaries-frame
+(defn daf-descriptors-frame
+  "Create codec frame for parsing a descriptor block"
+  {:malli/schema [:=> [:cat :int :int] :some]}
   [num-doubles num-integers]
-  (let [summary-frame (spk-summary-frame num-doubles num-integers)]
+  (let [descriptor-frame (daf-descriptor-frame num-doubles num-integers)]
     (compile-frame
-      (ordered-map :next-number     :float64-le
-                   :previous-number :float64-le
-                   :descriptors     (repeated summary-frame
-                                              :prefix (prefix :float64-le long double))))))
+      (ordered-map ::next-number     :float64-le
+                   ::previous-number :float64-le
+                   ::descriptors     (repeated descriptor-frame
+                                               :prefix (prefix :float64-le long double))))))
 
-(defn spk-source-names-frame
+(defn daf-source-names-frame
+  "Create codec frame for parsing block of source names"
+  {:malli/schema [:=> [:cat :int] :some]}
   [n]
   (compile-frame (repeat n (string :us-ascii :length 40))))
+
+(def coefficient-layout-frame
+  (compile-frame
+    (ordered-map ::init :float64-le
+                 ::intlen :float64-le
+                 ::rsize :float64-le
+                 ::n :float64-le)))
+
+(defn coefficient-frame
+  "Return codec frame for parsing a set of coefficients"
+  {:malli/schema [:=> [:cat :int :int] :some]}
+  [rsize component-count]
+  (let [coefficient-count (/ (- rsize 2) component-count)]
+    (compile-frame (concat [:float64-le :float64-le] (repeat component-count (repeat coefficient-count :float64-le))))))
 
 (defn decode-record
   "Decode a record using the specified frame"
@@ -69,49 +100,214 @@
     (.get ^ByteBuffer buffer record)
     (decode frame record false)))
 
-(defn read-spk-header
-  "Read SPK header from byte buffer"
-  {:malli/schema [:=> [:cat :some] :map]}
+(def daf-header (m/schema [:map [::locidw :string] [::num-doubles :int] [::num-integers :int] [::locifn :string]
+                                [::forward :int] [::backward :int] [::free :int] [::locfmt :string] [::prenul :some]
+                                [::ftpstr [:vector :int]]]))
+
+(defn read-daf-header
+  "Read DAF header from byte buffer"
+  {:malli/schema [:=> [:cat :some] daf-header]}
   [buffer]
-  (decode-record buffer spk-header-frame 1))
+  (decode-record buffer daf-header-frame 1))
 
 (defn check-endianness
-  "Check endianness of SPK file"
-  {:malli/schema [:=> [:cat :map] :boolean]}
+  "Check endianness of DAF file"
+  {:malli/schema [:=> [:cat [:map [::locfmt :string]]] :boolean]}
   [header]
-  (= (:locfmt header) "LTL-IEEE"))
+  (= (::locfmt header) "LTL-IEEE"))
 
 (def ftp-str "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")
 
 (defn check-ftp-str
-  "Check FTP string of SPK file"
-  {:malli/schema [:=> [:cat :map] :boolean]}
+  "Check FTP string of DAF file"
+  {:malli/schema [:=> [:cat [:map [::ftpstr [:sequential :int]]]] :boolean]}
   [header]
-  (= (:ftpstr header) (map int ftp-str)))
+  (= (::ftpstr header) (map int ftp-str)))
 
-(defn read-spk-comment
-  "Read SPK comment"
-  {:malli/schema [:=> [:cat :map :some] :some]}
+(defn read-daf-comment
+  "Read DAF comment"
+  {:malli/schema [:=> [:cat daf-header :some] :string]}
   [header buffer]
-  (let [comment-lines (mapv #(decode-record buffer spk-comment-frame %) (range 2 (:forward header)))
+  (let [comment-lines (mapv #(decode-record buffer daf-comment-frame %) (range 2 (::forward header)))
         joined-lines  (clojure.string/join comment-lines)
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
 
-(defn read-spk-summaries
+(def daf-descriptor (m/schema [:map [::doubles [:vector :double]] [::integers [:vector :int]]]))
+(def daf-descriptors (m/schema [:map [::next-number :double] [::previous-number :double]
+                                     [::descriptors [:vector daf-descriptor]]]))
+
+(defn read-daf-descriptor
   "Read descriptors for following data"
-  {:malli/schema [:=> [:cat :map :int :some] :map]}
+  {:malli/schema [:=> [:cat daf-header :int :some] daf-descriptors]}
   [header index buffer]
-  (let [num-doubles  (:num-doubles header)
-        num-integers (:num-integers header)]
-    (decode-record buffer (spk-summaries-frame num-doubles num-integers) index)))
+  (let [num-doubles  (::num-doubles header)
+        num-integers (::num-integers header)]
+    (decode-record buffer (daf-descriptors-frame num-doubles num-integers) index)))
 
 (defn read-source-names
   "Read source name data"
   {:malli/schema [:=> [:cat :int :int :some] [:sequential :string]]}
   [index n buffer]
-  (mapv clojure.string/trim (decode-record buffer (spk-source-names-frame n) index)))
+  (mapv clojure.string/trim (decode-record buffer (daf-source-names-frame n) index)))
+
+(def daf-summary [:map [::doubles [:vector :double]] [::integers [:vector :int]] [::source :string]])
+
+(defn read-daf-summaries
+  "Read sources and descriptors to get summaries"
+  {:malli/schema [:=> [:cat :map :int :some] [:sequential daf-summary]]}
+  [header index buffer]
+  (let [summaries   (read-daf-descriptor header index buffer)
+        next-number (long (::next-number summaries))
+        descriptors (::descriptors summaries)
+        n           (count (::descriptors summaries))
+        sources     (read-source-names (inc index) n buffer)
+        results     (map (fn [source descriptor] (assoc descriptor ::source source)) sources descriptors)]
+    (if (zero? next-number)
+      results
+      (concat results (read-daf-summaries header next-number buffer)))))
+
+(def spk-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
+                                 [::center :int] [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
+
+(defn summary->spk-segment
+  "Convert DAF summary to SPK segment"
+  {:malli/schema [:=> [:cat daf-summary] spk-segment]}
+  [summary]
+  (let [source                                        (::source summary)
+        [start-second end-second]                     (::doubles summary)
+        [target center frame data-type start-i end-i] (::integers summary)]
+    {::source       source
+     ::start-second start-second
+     ::end-second   end-second
+     ::target       target
+     ::center       center
+     ::frame        frame
+     ::data-type    data-type
+     ::start-i      start-i
+     ::end-i        end-i}))
+
+(def spk-lookup-table (m/schema [:map-of [:tuple :int :int] spk-segment]))
+
+(defn spk-segment-lookup-table
+  "Make a lookup table for pairs of center and target to lookup SPK summaries"
+  {:malli/schema [:=> [:cat :map :some] [:map-of [:tuple :int :int] :map]]}
+  [header buffer]
+  (let [summaries (read-daf-summaries header (::forward header) buffer)
+        segments  (map summary->spk-segment summaries)]
+    (reduce (fn [lookup segment] (assoc lookup [(::center segment) (::target segment)] segment)) {} segments)))
+
+(defn convert-to-long
+  "Convert values with specified keys to long integer"
+  {:malli/schema [:=> [:cat :map [:vector :keyword]] [:map-of :keyword :some]]}
+  [hashmap keys_]
+  (reduce (fn [hashmap key_] (update hashmap key_ long)) hashmap keys_))
+
+(def coefficient-layout (m/schema [:map [::init :double] [::intlen :double] [::rsize :int] [::n :int]]))
+
+(defn read-coefficient-layout
+  "Read layout information from end of segment"
+  {:malli/schema [:=> [:cat :map :some] coefficient-layout]}
+  [segment buffer]
+  (let [info (byte-array (sizeof coefficient-layout-frame))]
+    (.position ^ByteBuffer buffer ^long (* 8 (- (::end-i segment) 4)))
+    (.get ^ByteBuffer buffer info)
+    (convert-to-long (decode coefficient-layout-frame info) [::rsize ::n])))
+
+(defn read-interval-coefficients
+  "Read coefficient block with specified index from segment"
+  {:malli/schema [:=> [:cat :map :map :int :some] [:sequential [:sequential :double]]]}
+  [segment layout index buffer]
+  (let [component-count ({2 3 3 6} (::data-type segment))
+        frame           (coefficient-frame (::rsize layout) component-count)
+        data            (byte-array (sizeof frame))]
+    (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (::start-i segment))) (* index (sizeof frame))))
+    (.get ^ByteBuffer buffer data)
+    (reverse (apply map vector (drop 2 (decode frame data))))))
+
+(defn chebyshev-polynomials
+  "Chebyshev polynomials"
+  {:malli/schema [:=> [:cat [:sequential :some] :double :some] :some]}
+  [coefficients s zero]
+  (let [s2      (* 2.0 s)
+        [w0 w1] (reduce (fn [[w0 w1] c] [(-> w0 (mult s2) (sub w1) (add c)) w0])
+                        [zero zero]
+                        (butlast coefficients))]
+    (add (last coefficients) (sub (mult w0 s) w1))))
+
+(defn interval-index-and-position
+  "Compute interval index and position (s) inside for given timestamp"
+  {:malli/schema [:=> [:cat [:map [::init :double] [::intlen :double] [::n :int]] :double] [:tuple :int :double]]}
+  [layout tdb]
+  (let [init   (::init layout)
+        intlen (::intlen layout)
+        n      (::n layout)
+        t      (- (* (- tdb T0) s-per-day) init)
+        index  (min (max (long (quot t intlen)) 0) (dec n))
+        offset (- t (* index intlen))
+        s      (- (/ (* 2.0 offset) intlen) 1.0)]
+    [index s]))
+
+(defn map-vec3
+  "Convert list of vectors to list of vec3 objects"
+  {:malli/schema [:=> [:cat [:sequential [:vector :double]]] [:sequential fvec3]]}
+  [lst]
+  (map #(apply vec3 %) lst))
+
+(defn make-spk-document
+  "Create object with segment information"
+  {:malli/schema [:=> [:cat :string] [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]]]}
+  [filename]
+  (let [buffer (map-file-to-buffer filename)
+        header (read-daf-header buffer)
+        lookup (spk-segment-lookup-table header buffer)]
+    (if (not (check-ftp-str header))
+      (throw (RuntimeException. "FTPSTR has wrong value")))
+    (if (not (check-endianness header))
+      (throw (RuntimeException. "File endianness not implemented!")))
+    {::header header
+     ::lookup lookup
+     ::buffer buffer}))
+
+(defn make-segment-interpolator
+  "Create object for interpolation of a particular target position"
+  {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]] :int :int] ifn?]}
+  [spk center target]
+  (let [buffer  (::buffer spk)
+        lookup  (::lookup spk)
+        segment (get lookup [center target])
+        layout  (read-coefficient-layout segment buffer)
+        cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
+    (fn [tdb]
+        (let [[index s]    (interval-index-and-position layout tdb)
+              coefficients (cache index)]
+          (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
+
+(def date (m/schema [:map [:year :int] [:month :int] [:day :int]]))
+
+(defn julian-date
+  "Convert calendar date to Julian date"
+  {:malli/schema [:=> [:cat date] :int]}
+  [{:keys [year month day]}]
+  (let [g (- (+ year 4716) (if (<= month 2) 1 0))
+        f (mod (+ month 9) 12)
+        e (- (+ (quot (* 1461 g) 4) day) 1402)
+        J (+ e (quot (+ (* 153 f) 2) 5))]
+    (+ J (- 38 (quot (* (quot (+ g 184) 100) 3) 4)))))
+
+(defn calendar-date
+  {:malli/schema [:=> [:cat :int] date]}
+  [jd]
+  (let [f (+ jd 1401)
+        f (+ f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
+        e (+ (* 4 f) 3)
+        g (quot (mod e 1461) 4)
+        h (+ (* 5 g) 2)
+        day (inc (quot (mod h 153) 5))
+        month (inc (mod (+ (quot h 153) 2) 12))
+        year (+ (- (quot e 1461) 4716) (quot (- (+ 12 2) month) 12))]
+    {:year year :month month :day day}))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
