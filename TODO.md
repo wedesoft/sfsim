@@ -1,5 +1,4 @@
 # TODO
-* stricter schemas in astro module
 * method to compute orientation of Earth
 * method to compute orientation of Moon
 * create Nuklear GUI to set location and time

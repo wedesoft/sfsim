@@ -1,6 +1,7 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
     (:require [clojure.core.memoize :as z]
+              [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
@@ -49,6 +50,8 @@
   (compile-frame (string :us-ascii :length 1000)))
 
 (defn daf-descriptor-frame
+  "Create codec frame for parsing data descriptor"
+  {:malli/schema [:=> [:cat :int :int] :some]}
   [num-doubles num-integers]
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
@@ -58,6 +61,8 @@
                    ::padding  (finite-block padding)))))
 
 (defn daf-descriptors-frame
+  "Create codec frame for parsing a descriptor block"
+  {:malli/schema [:=> [:cat :int :int] :some]}
   [num-doubles num-integers]
   (let [descriptor-frame (daf-descriptor-frame num-doubles num-integers)]
     (compile-frame
@@ -67,6 +72,8 @@
                                                :prefix (prefix :float64-le long double))))))
 
 (defn daf-source-names-frame
+  "Create codec frame for parsing block of source names"
+  {:malli/schema [:=> [:cat :int] :some]}
   [n]
   (compile-frame (repeat n (string :us-ascii :length 40))))
 
@@ -78,6 +85,8 @@
                  ::n :float64-le)))
 
 (defn coefficient-frame
+  "Return codec frame for parsing a set of coefficients"
+  {:malli/schema [:=> [:cat :int :int] :some]}
   [rsize component-count]
   (let [coefficient-count (/ (- rsize 2) component-count)]
     (compile-frame (concat [:float64-le :float64-le] (repeat component-count (repeat coefficient-count :float64-le))))))
@@ -91,15 +100,19 @@
     (.get ^ByteBuffer buffer record)
     (decode frame record false)))
 
+(def daf-header (m/schema [:map [::locidw :string] [::num-doubles :int] [::num-integers :int] [::locifn :string]
+                                [::forward :int] [::backward :int] [::free :int] [::locfmt :string] [::prenul :some]
+                                [::ftpstr [:vector :int]]]))
+
 (defn read-daf-header
   "Read DAF header from byte buffer"
-  {:malli/schema [:=> [:cat :some] :map]}
+  {:malli/schema [:=> [:cat :some] daf-header]}
   [buffer]
   (decode-record buffer daf-header-frame 1))
 
 (defn check-endianness
   "Check endianness of DAF file"
-  {:malli/schema [:=> [:cat :map] :boolean]}
+  {:malli/schema [:=> [:cat [:map [::locfmt :string]]] :boolean]}
   [header]
   (= (::locfmt header) "LTL-IEEE"))
 
@@ -107,13 +120,13 @@
 
 (defn check-ftp-str
   "Check FTP string of DAF file"
-  {:malli/schema [:=> [:cat :map] :boolean]}
+  {:malli/schema [:=> [:cat [:map [::ftpstr [:sequential :int]]]] :boolean]}
   [header]
   (= (::ftpstr header) (map int ftp-str)))
 
 (defn read-daf-comment
   "Read DAF comment"
-  {:malli/schema [:=> [:cat :map :some] :some]}
+  {:malli/schema [:=> [:cat daf-header :some] :string]}
   [header buffer]
   (let [comment-lines (mapv #(decode-record buffer daf-comment-frame %) (range 2 (::forward header)))
         joined-lines  (clojure.string/join comment-lines)
@@ -121,9 +134,13 @@
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
 
+(def daf-descriptor (m/schema [:map [::doubles [:vector :double]] [::integers [:vector :int]]]))
+(def daf-descriptors (m/schema [:map [::next-number :double] [::previous-number :double]
+                                     [::descriptors [:vector daf-descriptor]]]))
+
 (defn read-daf-descriptor
   "Read descriptors for following data"
-  {:malli/schema [:=> [:cat :map :int :some] :map]}
+  {:malli/schema [:=> [:cat daf-header :int :some] daf-descriptors]}
   [header index buffer]
   (let [num-doubles  (::num-doubles header)
         num-integers (::num-integers header)]
@@ -135,8 +152,11 @@
   [index n buffer]
   (mapv clojure.string/trim (decode-record buffer (daf-source-names-frame n) index)))
 
+(def daf-summary [:map [::doubles [:vector :double]] [::integers [:vector :int]] [::source :string]])
+
 (defn read-daf-summaries
   "Read sources and descriptors to get summaries"
+  {:malli/schema [:=> [:cat :map :int :some] [:sequential daf-summary]]}
   [header index buffer]
   (let [summaries   (read-daf-descriptor header index buffer)
         next-number (long (::next-number summaries))
@@ -148,9 +168,12 @@
       results
       (concat results (read-daf-summaries header next-number buffer)))))
 
+(def spk-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
+                                 [::center :int] [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
+
 (defn summary->spk-segment
   "Convert DAF summary to SPK segment"
-  {:malli/schema [:=> [:cat :map] :map]}
+  {:malli/schema [:=> [:cat daf-summary] spk-segment]}
   [summary]
   (let [source                                        (::source summary)
         [start-second end-second]                     (::doubles summary)
@@ -165,9 +188,11 @@
      ::start-i      start-i
      ::end-i        end-i}))
 
+(def spk-lookup-table (m/schema [:map-of [:tuple :int :int] spk-segment]))
+
 (defn spk-segment-lookup-table
   "Make a lookup table for pairs of center and target to lookup SPK summaries"
-  {:malli/schema [:=> [:cat :map :some] :map]}
+  {:malli/schema [:=> [:cat :map :some] [:map-of [:tuple :int :int] :map]]}
   [header buffer]
   (let [summaries (read-daf-summaries header (::forward header) buffer)
         segments  (map summary->spk-segment summaries)]
@@ -175,13 +200,15 @@
 
 (defn convert-to-long
   "Convert values with specified keys to long integer"
-  {:malli/schema [:=> [:cat :map [:vector :keyword]] :map]}
+  {:malli/schema [:=> [:cat :map [:vector :keyword]] [:map-of :keyword :some]]}
   [hashmap keys_]
   (reduce (fn [hashmap key_] (update hashmap key_ long)) hashmap keys_))
 
+(def coefficient-layout (m/schema [:map [::init :double] [::intlen :double] [::rsize :int] [::n :int]]))
+
 (defn read-coefficient-layout
   "Read layout information from end of segment"
-  {:malli/schema [:=> [:cat :map :some] :map]}
+  {:malli/schema [:=> [:cat :map :some] coefficient-layout]}
   [segment buffer]
   (let [info (byte-array (sizeof coefficient-layout-frame))]
     (.position ^ByteBuffer buffer ^long (* 8 (- (::end-i segment) 4)))
@@ -211,7 +238,7 @@
 
 (defn interval-index-and-position
   "Compute interval index and position (s) inside for given timestamp"
-  {:malli/schema [:=> [:cat :map :double] [:tuple :int :double]]}
+  {:malli/schema [:=> [:cat [:map [::init :double] [::intlen :double] [::n :int]] :double] [:tuple :int :double]]}
   [layout tdb]
   (let [init   (::init layout)
         intlen (::intlen layout)
@@ -230,18 +257,22 @@
 
 (defn make-spk-document
   "Create object with segment information"
-  {:malli/schema [:=> [:cat :string] :map]}
+  {:malli/schema [:=> [:cat :string] [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]]]}
   [filename]
   (let [buffer (map-file-to-buffer filename)
         header (read-daf-header buffer)
         lookup (spk-segment-lookup-table header buffer)]
+    (if (not (check-ftp-str header))
+      (throw (RuntimeException. "FTPSTR has wrong value")))
+    (if (not (check-endianness header))
+      (throw (RuntimeException. "File endianness not implemented!")))
     {::header header
      ::lookup lookup
      ::buffer buffer}))
 
 (defn make-segment-interpolator
   "Create object for interpolation of a particular target position"
-  {:malli/schema [:=> [:cat :map :int :int] ifn?]}
+  {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]] :int :int] ifn?]}
   [spk center target]
   (let [buffer  (::buffer spk)
         lookup  (::lookup spk)
@@ -253,9 +284,11 @@
               coefficients (cache index)]
           (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
 
+(def date (m/schema [:map [:year :int] [:month :int] [:day :int]]))
+
 (defn julian-date
   "Convert calendar date to Julian date"
-  {:malli/schema [:=> [:cat :map] :int]}
+  {:malli/schema [:=> [:cat date] :int]}
   [{:keys [year month day]}]
   (let [g (- (+ year 4716) (if (<= month 2) 1 0))
         f (mod (+ month 9) 12)
@@ -264,7 +297,7 @@
     (+ J (- 38 (quot (* (quot (+ g 184) 100) 3) 4)))))
 
 (defn calendar-date
-  {:malli/schema [:=> [:cat :int] :map]}
+  {:malli/schema [:=> [:cat :int] date]}
   [jd]
   (let [f (+ jd 1401)
         f (+ f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
