@@ -198,3 +198,11 @@
        (calendar-date 2460371) => {:year 2024 :month 3 :day 1}
        (calendar-date 2460708) => {:year 2025 :month 2 :day 1}
        (calendar-date 2460736) => {:year 2025 :month 3 :day 1})
+
+(facts "Freeze some test values for the Earth precession angles"
+       (psi-a 0.0)   => 0.0
+       (psi-a 0.5)   => (roughly 2518.9709 1e-4)
+       (psi-a 1.0)   => (roughly 5037.4015 1e-4)
+       (omega-a 0.0) => (roughly 84381.406 1e-6)
+       (omega-a 0.5) => (roughly 84381.404973 1e-6)
+       (omega-a 0.1) => (roughly 84381.403929 1e-6))
