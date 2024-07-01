@@ -3,9 +3,10 @@
     (:require [clojure.core.memoize :as z]
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
+              [fastmath.matrix :refer (mulm)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
-              [sfsim.matrix :refer (fvec3)])
+              [sfsim.matrix :refer (fvec3 rotation-x rotation-z)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
@@ -19,6 +20,7 @@
 (def T0 2451545.0)  ; noon of 1st January 2000
 (def s-per-day 86400.0)  ; seconds per day
 (def AU-KM 149597870.700)  ; astronomical unit in km
+(def ASEC2RAD 4.848136811095359935899141e-6)  ; convert arcseconds (360 * 60 * 60) to radians (2 * PI)
 
 (defn map-file-to-buffer
   "Map file to read-only byte buffer"
@@ -318,17 +320,27 @@
   [t]
   (-> t (* -0.0000000951) (+ 0.000132851) (* t) (- 0.00114045) (* t) (- 1.0790069) (* t) (+ 5038.481507) (* t)))
 
+(def eps0 84381.406)
+
 (defn omega-a
   "Compute Omega angle for Earth precession given centuries since 2000"
   {:malli/schema [:=> [:cat :double] :double]}
   [t]
-  (let [eps0 84381.406]
-    (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ eps0))))
+  (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ eps0)))
 
 (defn chi-a
   "Compute Chi angle for Earth precession given centuries since 2000"
   [t]
   (-> t (* -0.0000000560) (+ 0.000170663) (* t) (- 0.00121197) (* t) (- 2.3814292) (* t) (+ 10.556403) (* t)))
+
+(defn compute-precession
+  [tdb]
+  (let [t          (/ (- tdb T0) 36525.0)
+        r3-chi-a   (rotation-z (* (- (chi-a t)) ASEC2RAD))
+        r1-omega-a (rotation-x (* (omega-a t) ASEC2RAD))
+        r3-psi-a   (rotation-z (* (psi-a t) ASEC2RAD))
+        r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
+    (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

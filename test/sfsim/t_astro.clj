@@ -2,9 +2,13 @@
     (:require [midje.sweet :refer :all]
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
+              [clojure.math :refer (PI)]
+              [sfsim.conftest :refer (roughly-matrix)]
               [fastmath.vector :refer (vec3)]
+              [fastmath.matrix :refer (mulm)]
               [gloss.core :refer (sizeof)]
-              [sfsim.astro :refer :all :as astro])
+              [sfsim.astro :refer :all :as astro]
+              [sfsim.matrix :refer :all])
     (:import [java.nio.charset StandardCharsets]))
 
 (mi/collect! {:ns ['sfsim.astro]})
@@ -209,3 +213,14 @@
        (chi-a 0.0)   => 0.0
        (chi-a 0.5)   => (roughly 4.682703 1e-6)
        (chi-a 1.0)   => (roughly 8.173932 1e-6))
+
+(fact "Test composition of precession matrix"
+      (with-redefs [astro/psi-a   (fn [t] (fact t => 1.0) (/ (* 0.125 PI) ASEC2RAD))
+                    astro/omega-a (fn [t] (fact t => 1.0) (/ (* 0.25  PI) ASEC2RAD))
+                    astro/chi-a   (fn [t] (fact t => 1.0) (/ (* 0.5   PI) ASEC2RAD))]
+        (let [tdb        (+ T0 36525.0)
+              r3-chi-a   (rotation-z (* -0.5 PI))
+              r1-omega-a (rotation-x (* 0.25 PI))
+              r3-psi-a   (rotation-z (* 0.125 PI))
+              r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
+          (compute-precession tdb) => (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0))))))
