@@ -325,5 +325,10 @@
   (let [eps0 84381.406]
     (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ eps0))))
 
+(defn chi-a
+  "Compute Chi angle for Earth precession given centuries since 2000"
+  [t]
+  (-> t (* -0.0000000560) (+ 0.000170663) (* t) (- 0.00121197) (* t) (- 2.3814292) (* t) (+ 10.556403) (* t)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -205,4 +205,7 @@
        (psi-a 1.0)   => (roughly 5037.4015 1e-4)
        (omega-a 0.0) => (roughly 84381.406 1e-6)
        (omega-a 0.5) => (roughly 84381.404973 1e-6)
-       (omega-a 0.1) => (roughly 84381.403929 1e-6))
+       (omega-a 0.1) => (roughly 84381.403929 1e-6)
+       (chi-a 0.0)   => 0.0
+       (chi-a 0.5)   => (roughly 4.682703 1e-6)
+       (chi-a 1.0)   => (roughly 8.173932 1e-6))
