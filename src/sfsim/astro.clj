@@ -345,5 +345,27 @@
         r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
     (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0)))))
 
+; Compute Greenwich mean sidereal time.
+; See python-skyfield earthlib.earth_rotation_angle
+
+(defn earth-rotation-angle
+  "Compute Earth rotation angle as a value between 0 and 1"
+  {:malli/schema [:=> [:cat :double] :double]}
+  [jd-ut]
+  (let [th (+ 0.7790572732640 (* 0.00273781191135448 (- jd-ut T0)))]
+    (mod (+ (mod th 1.0) (mod jd-ut 1.0)) 1.0)))
+
+(defn sidereal-time
+  "Compute Greenwich Mean Sidereal Time (GMST) in hours"
+  [jd-ut]
+  (let [theta (earth-rotation-angle jd-ut)
+        t     (/ (- jd-ut T0) 36525.0)
+        st    (-> t (* -0.0000000368) (- 0.000029956)
+                    (* t) (- 0.00000044)
+                    (* t) (+ 1.3915817)
+                    (* t) (+ 4612.156534)
+                    (* t) (+ 0.014506))]
+    (mod (+ (/ st 54000.0) (* theta 24.0)) 24.0)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

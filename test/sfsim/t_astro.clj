@@ -224,3 +224,16 @@
               r3-psi-a   (rotation-z (* 0.125 PI))
               r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
           (compute-precession tdb) => (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0))))))
+
+(fact "Compute Earth rotation angle as a value between 0 and 1"
+      (earth-rotation-angle (+ T0 0.0)) => (roughly 0.779057 1e-6)
+      (earth-rotation-angle (+ T0 0.5)) => (roughly 0.280426 1e-6)
+      (earth-rotation-angle (+ T0 1.0)) => (roughly 0.781795 1e-6)
+      (earth-rotation-angle (+ T0 183.0)) => (roughly 0.280077 1e-6)
+      (earth-rotation-angle (+ T0 36525.0)) => (roughly 0.777637 1e-6))
+
+(fact "Compute Greenwich Mean Sidereal Time (GMST) in hours"
+      (sidereal-time (+ T0 0.0))     => (roughly (+ 18 (/ 41 60) (/ 50.55 3600)) 2e-6)
+      (sidereal-time (+ T0 0.5))     => (roughly (+  6 (/ 43 60) (/ 48.83 3600)) 2e-6)
+      (sidereal-time (+ T0 1.0))     => (roughly (+ 18 (/ 45 60) (/ 47.10 3600)) 2e-6)
+      (sidereal-time (+ T0 36525.0)) => (roughly (+ 18 (/ 44 60) (/ 55.44 3600)) 2e-6))
