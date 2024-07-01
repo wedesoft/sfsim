@@ -6,7 +6,7 @@
               [fastmath.matrix :refer (mulm)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
-              [sfsim.matrix :refer (fvec3 rotation-x rotation-z)])
+              [sfsim.matrix :refer (fvec3 rotation-x rotation-z fmat3)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
@@ -330,10 +330,13 @@
 
 (defn chi-a
   "Compute Chi angle for Earth precession given centuries since 2000"
+  {:malli/schema [:=> [:cat :double] :double]}
   [t]
   (-> t (* -0.0000000560) (+ 0.000170663) (* t) (- 0.00121197) (* t) (- 2.3814292) (* t) (+ 10.556403) (* t)))
 
 (defn compute-precession
+  "Compute precession matrix for Earth given Julian day"
+  {:malli/schema [:=> [:cat :double] fmat3]}
   [tdb]
   (let [t          (/ (- tdb T0) 36525.0)
         r3-chi-a   (rotation-z (* (- (chi-a t)) ASEC2RAD))
