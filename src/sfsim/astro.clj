@@ -297,6 +297,7 @@
     (+ J (- 38 (quot (* (quot (+ g 184) 100) 3) 4)))))
 
 (defn calendar-date
+  "Convert Julian date to calendar date"
   {:malli/schema [:=> [:cat :int] date]}
   [jd]
   (let [f (+ jd 1401)
@@ -308,6 +309,21 @@
         month (inc (mod (+ (quot h 153) 2) 12))
         year (+ (- (quot e 1461) 4716) (quot (- (+ 12 2) month) 12))]
     {:year year :month month :day day}))
+
+; See python-skyfield precessionlib.compute_precession
+
+(defn psi-a
+  "Compute Psi angle for Earth precession given centuries since 2000"
+  {:malli/schema [:=> [:cat :double] :double]}
+  [t]
+  (-> t (* -0.0000000951) (+ 0.000132851) (* t) (- 0.00114045) (* t) (- 1.0790069) (* t) (+ 5038.481507) (* t)))
+
+(defn omega-a
+  "Compute Omega angle for Earth precession given centuries since 2000"
+  {:malli/schema [:=> [:cat :double] :double]}
+  [t]
+  (let [eps0 84381.406]
+    (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ eps0))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
