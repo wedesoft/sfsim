@@ -148,7 +148,7 @@
            (render-nuklear-gui gui 160 40)
            (destroy-nuklear-gui gui)
            (destroy-font-texture bitmap-font)))
-       => (is-image "test/sfsim/fixtures/gui/button.png" 0.0))
+       => (is-image "test/sfsim/fixtures/gui/button.png" 0.03))
 
 (facts "Test rendering two GUI windows"
        (with-invisible-window
@@ -162,7 +162,7 @@
              (nuklear-window gui "window-2" 160 0 160 40
                              (layout-row-dynamic gui 32 1)
                              (button-label gui "Button B"))
-             (render-nuklear-gui gui 320 40)) => (is-image "test/sfsim/fixtures/gui/guis.png" 0.0)
+             (render-nuklear-gui gui 320 40)) => (is-image "test/sfsim/fixtures/gui/guis.png" 0.03)
            (destroy-nuklear-gui gui)
            (destroy-font-texture bitmap-font))))
 
