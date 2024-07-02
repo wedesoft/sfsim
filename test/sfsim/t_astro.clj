@@ -5,7 +5,7 @@
               [clojure.math :refer (PI)]
               [sfsim.conftest :refer (roughly-matrix)]
               [fastmath.vector :refer (vec3)]
-              [fastmath.matrix :refer (mulm)]
+              [fastmath.matrix :refer (mat3x3 mulm)]
               [gloss.core :refer (sizeof)]
               [sfsim.astro :refer :all :as astro]
               [sfsim.matrix :refer :all])
@@ -237,3 +237,8 @@
       (sidereal-time (+ T0 0.5))     => (roughly (+  6 (/ 43 60) (/ 48.83 3600)) 2e-6)
       (sidereal-time (+ T0 1.0))     => (roughly (+ 18 (/ 45 60) (/ 47.10 3600)) 2e-6)
       (sidereal-time (+ T0 36525.0)) => (roughly (+ 18 (/ 44 60) (/ 55.44 3600)) 2e-6))
+
+(fact "ICRS to J2000 transformation matrix"
+      ICRS-to-J2000 => (roughly-matrix (mat3x3  1.00000000e+00 -7.07827974e-08  8.05614894e-08
+                                                7.07827974e-08  1.00000000e+00  3.30604145e-08
+                                               -8.05614894e-08 -3.30604145e-08  1.00000000e+00) 1e-8))

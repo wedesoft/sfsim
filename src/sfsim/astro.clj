@@ -3,7 +3,7 @@
     (:require [clojure.core.memoize :as z]
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
-              [fastmath.matrix :refer (mulm)]
+              [fastmath.matrix :refer (mat3x3 mulm)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
               [sfsim.matrix :refer (fvec3 rotation-x rotation-z fmat3)])
@@ -366,6 +366,26 @@
                     (* t) (+ 4612.156534)
                     (* t) (+ 0.014506))]
     (mod (+ (/ st 54000.0) (* theta 24.0)) 24.0)))
+
+; Conversion matrix from ICRS to J2000.
+; See python-skyfield framelib.ICRS_to_J2000
+
+(defn- build_matrix []
+  (let [xi0  (* -0.0166170 ASEC2RAD)
+        eta0 (* -0.0068192 ASEC2RAD)
+        da0  (* -0.01460   ASEC2RAD)
+        yx   (- da0)
+        zx   xi0
+        xy   da0
+        zy   eta0
+        xz   (- xi0)
+        yz   (- eta0)
+        xx   (- 1.0 (* 0.5 (+ (* yx yx) (* zx zx))))
+        yy   (- 1.0 (* 0.5 (+ (* yx yx) (* zy zy))))
+        zz   (- 1.0 (* 0.5 (+ (* zy zy) (* zx zx))))]
+    (mat3x3 xx xy xz, yx yy yz, zx zy zz)))
+
+(def ICRS-to-J2000 (build_matrix))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
