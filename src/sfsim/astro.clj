@@ -1,10 +1,11 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
     (:require [clojure.core.memoize :as z]
+              [clojure.math :refer (PI)]
               [clojure.string :refer (join)]
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
-              [fastmath.matrix :refer (mat3x3 mulm)]
+              [fastmath.matrix :refer (mat3x3 mulm inverse)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
               [sfsim.matrix :refer (fvec3 rotation-x rotation-z fmat3)])
@@ -358,6 +359,7 @@
 
 (defn sidereal-time
   "Compute Greenwich Mean Sidereal Time (GMST) in hours"
+  {:malli/schema [:=> [:cat :double] :double]}
   [jd-ut]
   (let [theta (earth-rotation-angle jd-ut)
         t     (/ (- jd-ut T0) 36525.0)
@@ -371,7 +373,10 @@
 ; Conversion matrix from ICRS to J2000.
 ; See python-skyfield framelib.ICRS_to_J2000
 
-(defn- build_matrix []
+(defn- build_matrix
+  "Construct conversion matrix from ICRS to J2000"
+  {:malli/schema [:=> :cat fmat3]}
+  []
   (let [xi0  (* -0.0166170 ASEC2RAD)
         eta0 (* -0.0068192 ASEC2RAD)
         da0  (* -0.01460   ASEC2RAD)
@@ -387,6 +392,18 @@
     (mat3x3 xx xy xz, yx yy yz, zx zy zz)))
 
 (def ICRS-to-J2000 (build_matrix))
+
+(defn icrs-to-now
+  "Compute transformation matrix from ICRS to current epoch (omitting nutation)"
+  {:malli/schema [:=> [:cat :double] fmat3]}
+  [tdb]
+  (mulm (compute-precession tdb) ICRS-to-J2000))
+
+(defn earth-to-icrs
+  "Compute Earth orientation in ICRS coordinate system depending on time t (omitting nutation)"
+  {:malli/schema [:=> [:cat :double] fmat3]}
+  [jd-ut]
+  (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2 PI (/ (sidereal-time jd-ut) 24.0)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

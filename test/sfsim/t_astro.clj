@@ -3,9 +3,9 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (PI)]
-              [sfsim.conftest :refer (roughly-matrix)]
+              [sfsim.conftest :refer (roughly-matrix roughly-vector)]
               [fastmath.vector :refer (vec3)]
-              [fastmath.matrix :refer (mat3x3 mulm)]
+              [fastmath.matrix :refer (mat3x3 mulm mulv)]
               [gloss.core :refer (sizeof)]
               [sfsim.astro :refer :all :as astro]
               [sfsim.matrix :refer :all])
@@ -242,3 +242,12 @@
       ICRS-to-J2000 => (roughly-matrix (mat3x3  1.00000000e+00 -7.07827974e-08  8.05614894e-08
                                                 7.07827974e-08  1.00000000e+00  3.30604145e-08
                                                -8.05614894e-08 -3.30604145e-08  1.00000000e+00) 1e-8))
+
+(fact "ICRS to current epoch (omitting nutation)"
+      (icrs-to-now (+ T0 36525.0)) => (mulm (compute-precession (+ T0 36525.0)) ICRS-to-J2000))
+
+(fact "Earth orientation in ICRS system (omitting nutation)"
+      (let [ut 2456818.5742190727
+            m  (earth-to-icrs ut)
+            v  (vec3 6378137.0 0.0 0.0)]
+        (mulv m v) => (roughly-vector (vec3 1.63777087e+06, -6.16427866e+06, -2.59868171e+03) 3e+2)))
