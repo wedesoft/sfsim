@@ -1,6 +1,7 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
     (:require [clojure.core.memoize :as z]
+              [clojure.string :refer (join)]
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
               [fastmath.matrix :refer (mat3x3 mulm)]
@@ -131,7 +132,7 @@
   {:malli/schema [:=> [:cat daf-header :some] :string]}
   [header buffer]
   (let [comment-lines (mapv #(decode-record buffer daf-comment-frame %) (range 2 (::forward header)))
-        joined-lines  (clojure.string/join comment-lines)
+        joined-lines  (join comment-lines)
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
@@ -264,9 +265,9 @@
   (let [buffer (map-file-to-buffer filename)
         header (read-daf-header buffer)
         lookup (spk-segment-lookup-table header buffer)]
-    (if (not (check-ftp-str header))
+    (when (not (check-ftp-str header))
       (throw (RuntimeException. "FTPSTR has wrong value")))
-    (if (not (check-endianness header))
+    (when (not (check-endianness header))
       (throw (RuntimeException. "File endianness not implemented!")))
     {::header header
      ::lookup lookup
