@@ -1,5 +1,5 @@
 # TODO
-* method to compute orientation of Earth
+* method to compute orientation of Earth (icrs-to-now)
 * method to compute orientation of Moon
 * create Nuklear GUI to set location and time
   * add wrappers for more GUI elements
