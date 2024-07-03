@@ -251,3 +251,12 @@
             m  (earth-to-icrs ut)
             v  (vec3 6378137.0 0.0 0.0)]
         (mulv m v) => (roughly-vector (vec3 1.63777087e+06, -6.16427866e+06, -2.59868171e+03) 3e+2)))
+
+(facts "Parse PCK files"
+       (str (:expecting (first (.reason (pck-parser ""))))) => "KPL/(FK|PCK)\\n"
+       (pck-parser "KPL/PCK\n") => [:START]
+       (pck-parser "KPL/FK\n") => [:START]
+       (pck-parser (slurp "test/sfsim/fixtures/astro/text.tf")) => [:START]
+       (pck-parser (slurp "test/sfsim/fixtures/astro/integer.tf")) => [:START [:ASSIGNMENT "TEST_VAR_1" [:EQUALS] [:NUMBER "42"]]]
+       (pck-parser (slurp "test/sfsim/fixtures/astro/negative-int.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:NUMBER "-42"]]]
+       )

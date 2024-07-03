@@ -6,6 +6,7 @@
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
               [fastmath.matrix :refer (mat3x3 mulm inverse)]
+              [instaparse.core :as insta]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
               [sfsim.matrix :refer (fvec3 rotation-x rotation-z fmat3)])
@@ -404,6 +405,8 @@
   {:malli/schema [:=> [:cat :double] fmat3]}
   [jd-ut]
   (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2 PI (/ (sidereal-time jd-ut) 24.0)))))
+
+(def pck-parser (insta/parser (slurp "resources/grammars/pck.bnf")))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

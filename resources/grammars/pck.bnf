@@ -1,0 +1,14 @@
+START        = <HEAD> DATA*
+HEAD         = MAGIC LINE*
+<DATA>       = <BEGINDATA> (ASSIGNMENT | <WHITESPACE> | <NEWLINE>)*
+ASSIGNMENT   = IDENTIFIER <WHITESPACE?> OPERATOR <WHITESPACE?> VALUE
+<VALUE>      = NUMBER
+<OPERATOR>   = EQUALS
+MAGIC        = #'KPL/(FK|PCK)\n'
+BEGINDATA    = WHITESPACE? '\\begindata' WHITESPACE? NEWLINE
+LINE         = !BEGINDATA #'.*\n'
+NUMBER       = #'[-+]?[0-9]+'
+EQUALS       = <'='>
+<IDENTIFIER> = #'[a-zA-Z_0-9]+'
+WHITESPACE   = #'[,\ \t]+'
+NEWLINE      = '\n'
