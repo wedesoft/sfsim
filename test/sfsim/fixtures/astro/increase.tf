@@ -2,5 +2,5 @@ KPL/PCK
 
   \begindata
 
-  X = 1.2
-  X += 2.4
+  X = 1.25
+  X += 2.5

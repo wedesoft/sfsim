@@ -267,8 +267,18 @@
        (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp1.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2E-1"]]]
        (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp2.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2D-1"]]]
        (pck-parser (slurp "test/sfsim/fixtures/astro/vector.tf"))
-       (pck-parser (slurp "test/sfsim/fixtures/astro/increase.tf"))
-       => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2"]] [:ASSIGNMENT "X" [:PLUSEQUALS] [:DECIMAL "2.4"]]]
        => [:START [:ASSIGNMENT "V" [:EQUALS] [:VECTOR [:DECIMAL "1.0"] [:DECIMAL "2.0"] [:DECIMAL "3.0"]]]]
-       (count (insta/parses pck-parser (slurp "test/sfsim/fixtures/astro/unambiguous.tf"))) => 1
-       )
+       (pck-parser (slurp "test/sfsim/fixtures/astro/increase.tf"))
+       => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.25"]] [:ASSIGNMENT "X" [:PLUSEQUALS] [:DECIMAL "2.5"]]]
+       => [:START [:ASSIGNMENT "V" [:EQUALS] [:VECTOR [:DECIMAL "1.0"] [:DECIMAL "2.0"] [:DECIMAL "3.0"]]]]
+       (count (insta/parses pck-parser (slurp "test/sfsim/fixtures/astro/unambiguous.tf"))) => 1)
+
+(facts "Convert PCK file to hashmap"
+       (str (:expecting (first (.reason (read-pck "test/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\n"
+       (read-pck "test/sfsim/fixtures/astro/text.tf") => {}
+       (read-pck "test/sfsim/fixtures/astro/string.tf") => {"S" "Testing"}
+       (read-pck "test/sfsim/fixtures/astro/integer.tf") => {"TEST_VAR_1" 42}
+       (read-pck "test/sfsim/fixtures/astro/double.tf") => {"X" 3.14}
+       (read-pck "test/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
+       (read-pck "test/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
+       (read-pck "test/sfsim/fixtures/astro/vector.tf") => [1.0 2.0 3.0])

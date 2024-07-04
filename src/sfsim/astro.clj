@@ -408,5 +408,25 @@
 
 (def pck-parser (insta/parser (slurp "resources/grammars/pck.bnf")))
 
+(defn- do-assignment [environment [identifier operator value]]
+  (case operator
+    :=  (assoc environment identifier value)
+    :+= (update environment identifier + value)))
+
+(defn read-pck
+  "Read PCK files and return hashmap with data"
+  [filename]
+  (let [string (slurp filename)]
+    (instaparse.transform/transform
+      {:START      (fn [& assignments] (reduce do-assignment {} assignments))
+       :ASSIGNMENT vector
+       :STRING     identity
+       :NUMBER     #(Integer/parseInt %)
+       :DECIMAL    (comp #(Double/parseDouble %) #(clojure.string/replace % \D \E))
+       :VECTOR     vector
+       :EQUALS     (constantly :=)
+       :PLUSEQUALS (constantly :+=)}
+      (pck-parser string))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
