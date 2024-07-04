@@ -3,15 +3,18 @@ HEAD         = MAGIC LINE*
 <DATA>       = <BEGINDATA> (ASSIGNMENT | <WHITESPACE> | <NEWLINE>)*
 TEXT         = <BEGINTEXT> LINE*
 ASSIGNMENT   = IDENTIFIER <WHITESPACE?> OPERATOR <WHITESPACE?> VALUE
-<VALUE>      = NUMBER / DECIMAL
-<OPERATOR>   = EQUALS
+<VALUE>      = VECTOR | STRING | ( NUMBER / DECIMAL )
+<OPERATOR>   = EQUALS | PLUSEQUALS
 MAGIC        = #'KPL/(FK|PCK)\n'
 BEGINDATA    = WHITESPACE? '\\begindata' WHITESPACE? NEWLINE
 BEGINTEXT    = '\\begintext' WHITESPACE? NEWLINE
 LINE         = !BEGINDATA #'.*\n'
 NUMBER       = #'[-+]?[0-9]+'
 DECIMAL      = #'[-+]?[0-9]+(\.[0-9]*([DE][+-]?[0-9]+)?|[DE][+-]?[0-9]+)'
+STRING       = <'\''> #'[^\']*' <'\''>
 EQUALS       = <'='>
+PLUSEQUALS   = <'+='>
+VECTOR       = <'('> (<WHITESPACE> | <NEWLINE> | VALUE)* <')'>
 <IDENTIFIER> = #'[a-zA-Z_0-9]+'
 WHITESPACE   = #'[,\ \t]+'
 NEWLINE      = '\n'

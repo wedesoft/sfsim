@@ -3,6 +3,7 @@
               [malli.instrument :as mi]
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (PI)]
+              [instaparse.core :as insta]
               [sfsim.conftest :refer (roughly-matrix roughly-vector)]
               [fastmath.vector :refer (vec3)]
               [fastmath.matrix :refer (mat3x3 mulm mulv)]
@@ -258,10 +259,16 @@
        (pck-parser "KPL/FK\n") => [:START]
        (pck-parser (slurp "test/sfsim/fixtures/astro/text.tf")) => [:START]
        (pck-parser (slurp "test/sfsim/fixtures/astro/integer.tf")) => [:START [:ASSIGNMENT "TEST_VAR_1" [:EQUALS] [:NUMBER "42"]]]
+       (pck-parser (slurp "test/sfsim/fixtures/astro/string.tf")) => [:START [:ASSIGNMENT "S" [:EQUALS] [:STRING "Testing"]]]
        (pck-parser (slurp "test/sfsim/fixtures/astro/negative-int.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:NUMBER "-42"]]]
        (pck-parser (slurp "test/sfsim/fixtures/astro/moretext.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:NUMBER "+42"]]]
        (pck-parser (slurp "test/sfsim/fixtures/astro/double.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "3.14"]]]
        (pck-parser (slurp "test/sfsim/fixtures/astro/exponent.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1E3"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp1.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.25E-1"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp2.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.25D-1"]]]
+       (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp1.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2E-1"]]]
+       (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp2.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2D-1"]]]
+       (pck-parser (slurp "test/sfsim/fixtures/astro/vector.tf"))
+       (pck-parser (slurp "test/sfsim/fixtures/astro/increase.tf"))
+       => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2"]] [:ASSIGNMENT "X" [:PLUSEQUALS] [:DECIMAL "2.4"]]]
+       => [:START [:ASSIGNMENT "V" [:EQUALS] [:VECTOR [:DECIMAL "1.0"] [:DECIMAL "2.0"] [:DECIMAL "3.0"]]]]
+       (count (insta/parses pck-parser (slurp "test/sfsim/fixtures/astro/unambiguous.tf"))) => 1
        )

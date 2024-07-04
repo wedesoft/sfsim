@@ -1,3 +1,3 @@
 KPL/FK
 \begindata
-X = 1.25E-1
+X = 1.2E-1
