@@ -281,4 +281,4 @@
        (read-pck "test/sfsim/fixtures/astro/double.tf") => {"X" 3.14}
        (read-pck "test/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
        (read-pck "test/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
-       (read-pck "test/sfsim/fixtures/astro/vector.tf") => [1.0 2.0 3.0])
+       (read-pck "test/sfsim/fixtures/astro/vector.tf") => {"V" [1.0 2.0 3.0]})
