@@ -194,6 +194,26 @@
      ::start-i      start-i
      ::end-i        end-i}))
 
+(def bpc-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
+                                 [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
+
+(defn summary->bpc-segment
+  "Convert DAF summary to BPC segment"
+  {:malli/schema [:=> [:cat daf-summary] bpc-segment]}
+  [summary]
+  (let [source                                 (::source summary)
+        [start-second end-second]              (::doubles summary)
+        [target frame data-type start-i end-i] (::integers summary)]
+    {::source       source
+     ::start-second start-second
+     ::end-second   end-second
+     ::target       target
+     ::frame        frame
+     ; no center value unlike SPK segment
+     ::data-type    data-type
+     ::start-i      start-i
+     ::end-i        end-i}))
+
 (def spk-lookup-table (m/schema [:map-of [:tuple :int :int] spk-segment]))
 
 (defn spk-segment-lookup-table

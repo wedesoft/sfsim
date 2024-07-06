@@ -109,6 +109,19 @@
          (:sfsim.astro/start-i segment) => 6913
          (:sfsim.astro/end-i segment) => 609716))
 
+(facts "Create BPC segment from DAF descriptor"
+       (let [segment (summary->bpc-segment {:sfsim.astro/source "de421.nio"
+                                            :sfsim.astro/integers [31006 1 2 641 221284]
+                                            :sfsim.astro/doubles [-3.1557168E9 1.609416E9]})]
+         (:sfsim.astro/source segment) => "de421.nio"
+         (:sfsim.astro/start-second segment) => -3.1557168E9
+         (:sfsim.astro/end-second segment) => 1.609416E9
+         (:sfsim.astro/target segment) => 31006
+         (:sfsim.astro/frame segment) => 1
+         (:sfsim.astro/data-type segment) => 2
+         (:sfsim.astro/start-i segment) => 641
+         (:sfsim.astro/end-i segment) => 221284))
+
 (facts "Create lookup table for SPK segments"
        (with-redefs [astro/read-daf-summaries
                      (fn [header index buffer]
