@@ -49,7 +49,8 @@
                  ::free         :int32-le
                  ::locfmt       (string :us-ascii :length 8)
                  ::prenul       (finite-block 603)
-                 ::ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none)))))
+                 ::ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none))
+                 ::pstnul       (finite-block 297))))
 
 (def daf-comment-frame
   (compile-frame (string :us-ascii :length 1000)))
