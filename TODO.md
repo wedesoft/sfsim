@@ -1,5 +1,6 @@
 # TODO
 * parse text file with coordinate systems
+* parse binary moon file
 * method to compute orientation of Moon
 * create Nuklear GUI to set location and time
   * add wrappers for more GUI elements
