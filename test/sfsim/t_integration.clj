@@ -4,9 +4,9 @@
               [malli.dev.pretty :as pretty]
               [clojure.math :refer (PI to-radians)]
               [clojure.java.io :as io]
-              [sfsim.conftest :refer (roughly-vector is-image)]
+              [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
               [fastmath.vector :refer (vec3 add div sub)]
-              [fastmath.matrix :refer (mulm)]
+              [fastmath.matrix :refer (mat3x3 mulm)]
               [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y)]
               [sfsim.quaternion :as q]
               [sfsim.quadtree :refer :all]
@@ -34,7 +34,7 @@
           tree (planet/load-tiles-into-opengl planet-renderer (:tree data) (:load data))]
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
-(if (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
@@ -88,7 +88,7 @@
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
     (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
 
-(if (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
@@ -150,7 +150,7 @@
           (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "bump.gltf"   "bump.png"
           (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "bricks.gltf" "bricks.png"))
 
-(if (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration"))
   (fact "Integration test rendering of model self-shadowing"
     (with-invisible-window
       (let [width                     320
@@ -215,9 +215,9 @@
         (atmosphere/destroy-atmosphere-luts atmosphere-luts)
         (clouds/destroy-cloud-data cloud-data)))))
 
-(if (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration"))
   (fact "Integration test position of Sun relative to Earth"
-        (let [spk        (make-spk-document "data/de430_1850-2150.bsp")
+        (let [spk        (make-spk-document "data/astro/de430_1850-2150.bsp")
               sun        (make-segment-interpolator spk 0 10)
               earth-moon (make-segment-interpolator spk 0 3)
               earth      (make-segment-interpolator spk 3 399)
@@ -225,5 +225,14 @@
               light-time (+ (/ 8 1440) (/ 20 86400))]
           (div (sub (sun (- tdb light-time)) (add (earth-moon tdb) (earth tdb))) AU-KM)
           => (roughly-vector (vec3 -0.034666711163175164, -0.90209322168943, -0.391053015058352) 1e-6))))
+
+(when (.exists (io/file ".integration"))
+  (fact "Test Lunar reference frame"
+        (let [pck   (read-pck "data/astro/moon_080317.tf")
+              data  (pck-body-frame-data pck "FRAME_MOON_ME_DE421")
+              frame (pck-body-frame data)]
+          frame => (roughly-matrix (mat3x3  0.999999873254714   -3.2928542237557117E-4  3.808696186713873E-4
+                                            3.29286000210947E-4  0.9999999457843058    -1.4544409378362703E-6
+                                           -3.80869119096078E-4  1.5798557868269077E-6  0.9999999274681064) 1e-8))))
 
 (GLFW/glfwTerminate)

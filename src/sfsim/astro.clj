@@ -5,11 +5,11 @@
               [clojure.string :refer (join)]
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
-              [fastmath.matrix :refer (mat3x3 mulm inverse)]
+              [fastmath.matrix :refer (mat3x3 mulm inverse eye)]
               [instaparse.core :as insta]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
-              [sfsim.matrix :refer (fvec3 rotation-x rotation-z fmat3)])
+              [sfsim.matrix :refer (fvec3 rotation-x rotation-y rotation-z fmat3)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
              [java.nio.channels FileChannel FileChannel$MapMode]))
@@ -23,7 +23,8 @@
 (def T0 2451545.0)  ; noon of 1st January 2000
 (def s-per-day 86400.0)  ; seconds per day
 (def AU-KM 149597870.700)  ; astronomical unit in km
-(def ASEC2RAD 4.848136811095359935899141e-6)  ; convert arcseconds (360 * 60 * 60) to radians (2 * PI)
+(def DEGREES2RAD (/ (* 2 PI) 360.0))  ; convert degrees (360) to radians (2 * PI)
+(def ASEC2RAD (/ (* 2.0 PI) 360.0 60.0 60.0))  ; convert arcseconds (360 * 60 * 60) to radians (2 * PI)
 
 (defn map-file-to-buffer
   "Map file to read-only byte buffer"
@@ -448,6 +449,23 @@
        :EQUALS     (constantly :=)
        :PLUSEQUALS (constantly :+=)}
       (pck-parser string))))
+
+(defn pck-body-frame-data
+  "Get information about the specified body from the PCK data"
+  [pck identifier]
+  (let [number (pck identifier)]
+    {::center (pck (format "FRAME_%d_CENTER" number))
+     ::angles (pck (format "TKFRAME_%d_ANGLES" number))
+     ::axes   (pck (format "TKFRAME_%d_AXES" number))
+     ::units  (pck (format "TKFRAME_%d_UNITS" number))}))
+
+(defn pck-body-frame
+  "Convert body frame information to a transformation matrix"
+  [{::keys [axes angles units]}]
+  (let [scale     ({"DEGREES" DEGREES2RAD "ARCSECONDS" ASEC2RAD} units)
+        rotations [rotation-x rotation-y rotation-z]
+        matrices  (map (fn [angle axis] ((rotations (dec axis)) (* angle scale))) angles axes)]
+    (reduce (fn [result rotation] (mulm rotation result)) (eye 3) matrices)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

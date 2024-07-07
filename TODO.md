@@ -1,7 +1,7 @@
 # TODO
-* parse text file with coordinate systems
-* parse binary moon file
 * method to compute orientation of Moon
+* build step to download lunar data
+* integration test for moon frame and orientation at a certain time
 * create Nuklear GUI to set location and time
   * add wrappers for more GUI elements
 * 2 more levels, higher res map

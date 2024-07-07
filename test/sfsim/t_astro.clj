@@ -6,7 +6,7 @@
               [instaparse.core :as insta]
               [sfsim.conftest :refer (roughly-matrix roughly-vector)]
               [fastmath.vector :refer (vec3)]
-              [fastmath.matrix :refer (mat3x3 mulm mulv)]
+              [fastmath.matrix :refer (mat3x3 mulm mulv eye)]
               [gloss.core :refer (sizeof)]
               [sfsim.astro :refer :all :as astro]
               [sfsim.matrix :refer :all])
@@ -295,3 +295,27 @@
        (read-pck "test/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
        (read-pck "test/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
        (read-pck "test/sfsim/fixtures/astro/vector.tf") => {"V" [1.0 2.0 3.0]})
+
+(facts "Extract information from PCK file"
+       (let [pck  {"FRAME_MOON_ME_DE421" 31007
+                   "FRAME_31007_CENTER" 301
+                   "TKFRAME_31007_ANGLES" [67.92 78.56 0.3]
+                   "TKFRAME_31007_AXES" [3 2 1]
+                   "TKFRAME_31007_UNITS" "ARCSECONDS"}
+             body (pck-body-frame-data pck "FRAME_MOON_ME_DE421")]
+         (:sfsim.astro/center body) => 301
+         (:sfsim.astro/angles body) => [67.92 78.56 0.3]
+         (:sfsim.astro/axes body) => [3 2 1]
+         (:sfsim.astro/units body) => "ARCSECONDS"))
+
+(facts "Convert body frame information to matrix"
+       (pck-body-frame {:sfsim.astro/angles [] :sfsim.astro/axes [] :sfsim.astro/units "DEGREES"})
+       => (eye 3)
+       (pck-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [1] :sfsim.astro/units "DEGREES"})
+       => (rotation-x (/ PI 6.0))
+       (pck-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [2] :sfsim.astro/units "DEGREES"})
+       => (rotation-y (/ PI 6.0))
+       (pck-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [3] :sfsim.astro/units "DEGREES"})
+       => (rotation-z (/ PI 6.0))
+       (pck-body-frame {:sfsim.astro/angles [30.0 45.0] :sfsim.astro/axes [3 2] :sfsim.astro/units "DEGREES"})
+       => (mulm (rotation-y (/ PI 4.0)) (rotation-z (/ PI 6.0))))
