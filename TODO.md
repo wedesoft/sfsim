@@ -1,5 +1,6 @@
 # TODO
-* method to compute orientation of Moon
+* method to compute orientation of Moon, integration tests, refactor
+* get radii from pck0008.tpc?
 * build step to download lunar data
 * integration test for moon frame and orientation at a certain time
 * create Nuklear GUI to set location and time

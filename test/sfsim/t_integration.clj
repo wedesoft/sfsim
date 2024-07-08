@@ -218,9 +218,9 @@
 (when (.exists (io/file ".integration"))
   (fact "Integration test position of Sun relative to Earth"
         (let [spk        (make-spk-document "data/astro/de430_1850-2150.bsp")
-              sun        (make-segment-interpolator spk 0 10)
-              earth-moon (make-segment-interpolator spk 0 3)
-              earth      (make-segment-interpolator spk 3 399)
+              sun        (make-spk-segment-interpolator spk 0 10)
+              earth-moon (make-spk-segment-interpolator spk 0 3)
+              earth      (make-spk-segment-interpolator spk 3 399)
               tdb        2458837.9618055606
               light-time (+ (/ 8 1440) (/ 20 86400))]
           (div (sub (sun (- tdb light-time)) (add (earth-moon tdb) (earth tdb))) AU-KM)
@@ -228,9 +228,9 @@
 
 (when (.exists (io/file ".integration"))
   (fact "Test Lunar reference frame"
-        (let [pck   (read-pck "data/astro/moon_080317.tf")
-              data  (pck-body-frame-data pck "FRAME_MOON_ME_DE421")
-              frame (pck-body-frame data)]
+        (let [pck   (read-frame-kernel "data/astro/moon_080317.tf")
+              data  (frame-kernel-body-frame-data pck "FRAME_MOON_ME_DE421")
+              frame (frame-kernel-body-frame data)]
           frame => (roughly-matrix (mat3x3  0.999999873254714   -3.2928542237557117E-4  3.808696186713873E-4
                                             3.29286000210947E-4  0.9999999457843058    -1.4544409378362703E-6
                                            -3.80869119096078E-4  1.5798557868269077E-6  0.9999999274681064) 1e-8))))

@@ -7,6 +7,7 @@
               [fastmath.vector :refer (add mult sub vec3)]
               [fastmath.matrix :refer (mat3x3 mulm inverse eye)]
               [instaparse.core :as insta]
+              [instaparse.transform :refer (transform)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
               [sfsim.matrix :refer (fvec3 rotation-x rotation-y rotation-z fmat3)])
@@ -195,12 +196,12 @@
      ::start-i      start-i
      ::end-i        end-i}))
 
-(def bpc-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
+(def pck-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
                                  [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
 
-(defn summary->bpc-segment
-  "Convert DAF summary to BPC segment"
-  {:malli/schema [:=> [:cat daf-summary] bpc-segment]}
+(defn summary->pck-segment
+  "Convert DAF summary to PCK segment"
+  {:malli/schema [:=> [:cat daf-summary] pck-segment]}
   [summary]
   (let [source                                 (::source summary)
         [start-second end-second]              (::doubles summary)
@@ -224,6 +225,16 @@
   (let [summaries (read-daf-summaries header (::forward header) buffer)
         segments  (map summary->spk-segment summaries)]
     (reduce (fn [lookup segment] (assoc lookup [(::center segment) (::target segment)] segment)) {} segments)))
+
+(def pck-lookup-table (m/schema [:map-of :int pck-segment]))
+
+(defn pck-segment-lookup-table
+  "Make a lookup table for target to lookup PCK summaries"
+  {:malli/schema [:=> [:cat :map :some] [:map-of :int :map]]}
+  [header buffer]
+  (let [summaries (read-daf-summaries header (::forward header) buffer)
+        segments  (map summary->pck-segment summaries)]
+    (reduce (fn [lookup segment] (assoc lookup (::target segment) segment)) {} segments)))
 
 (defn convert-to-long
   "Convert values with specified keys to long integer"
@@ -283,7 +294,7 @@
   (map #(apply vec3 %) lst))
 
 (defn make-spk-document
-  "Create object with segment information"
+  "Create object with SPK segment information"
   {:malli/schema [:=> [:cat :string] [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]]]}
   [filename]
   (let [buffer (map-file-to-buffer filename)
@@ -297,13 +308,42 @@
      ::lookup lookup
      ::buffer buffer}))
 
-(defn make-segment-interpolator
+(defn make-spk-segment-interpolator
   "Create object for interpolation of a particular target position"
   {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]] :int :int] ifn?]}
   [spk center target]
   (let [buffer  (::buffer spk)
         lookup  (::lookup spk)
         segment (get lookup [center target])
+        layout  (read-coefficient-layout segment buffer)
+        cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
+    (fn [tdb]
+        (let [[index s]    (interval-index-and-position layout tdb)
+              coefficients (cache index)]
+          (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
+
+(defn make-pck-document
+  "Create object with PCK segment information"
+  {:malli/schema [:=> [:cat :string] [:map [::header daf-header] [::lookup pck-lookup-table] [::buffer :some]]]}
+  [filename]
+  (let [buffer (map-file-to-buffer filename)
+        header (read-daf-header buffer)
+        lookup (pck-segment-lookup-table header buffer)]
+    (when (not (check-ftp-str header))
+      (throw (RuntimeException. "FTPSTR has wrong value")))
+    (when (not (check-endianness header))
+      (throw (RuntimeException. "File endianness not implemented!")))
+    {::header header
+     ::lookup lookup
+     ::buffer buffer}))
+
+(defn make-pck-segment-interpolator
+  "Create object for interpolation of a particular target position"
+  {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]] :int] ifn?]}
+  [pck target]
+  (let [buffer  (::buffer pck)
+        lookup  (::lookup pck)
+        segment (get lookup target)
         layout  (read-coefficient-layout segment buffer)
         cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
     (fn [tdb]
@@ -435,11 +475,11 @@
     :=  (assoc environment identifier value)
     :+= (update environment identifier + value)))
 
-(defn read-pck
-  "Read PCK files and return hashmap with data"
+(defn read-frame-kernel
+  "Read frame specification kernel files and return hashmap with data"
   [filename]
   (let [string (slurp filename)]
-    (instaparse.transform/transform
+    (transform
       {:START      (fn [& assignments] (reduce do-assignment {} assignments))
        :ASSIGNMENT vector
        :STRING     identity
@@ -450,7 +490,7 @@
        :PLUSEQUALS (constantly :+=)}
       (pck-parser string))))
 
-(defn pck-body-frame-data
+(defn frame-kernel-body-frame-data
   "Get information about the specified body from the PCK data"
   [pck identifier]
   (let [number (pck identifier)]
@@ -459,7 +499,7 @@
      ::axes   (pck (format "TKFRAME_%d_AXES" number))
      ::units  (pck (format "TKFRAME_%d_UNITS" number))}))
 
-(defn pck-body-frame
+(defn frame-kernel-body-frame
   "Convert body frame information to a transformation matrix"
   [{::keys [axes angles units]}]
   (let [scale     ({"DEGREES" DEGREES2RAD "ARCSECONDS" ASEC2RAD} units)

@@ -319,11 +319,21 @@
       (io/input-stream url)
       (io/file (str "data/astro/" filename)))))
 
-(defn download-lunar-reference-frame
-  "Download NASA JPL moon reference frame specification kernel from https://naif.jpl.nasa.gov/pub/naif/pds/wgc/kernels/fk/"
+(defn download-reference-frames
+  "Download NASA JPL reference frames specification kernel from https://naif.jpl.nasa.gov/pub/naif/pds/wgc/kernels/fk/"
   [_]
   (let [filename "moon_080317.tf"
         url      (str "https://naif.jpl.nasa.gov/pub/naif/pds/wgc/kernels/fk/" filename)]
+    (.println *err* (str "Downloading " url " ..."))
+    (io/copy
+      (io/input-stream url)
+      (io/file (str "data/astro/" filename)))))
+
+(defn download-lunar-pck-file
+  "Download NASA JPL moon PCK file from https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/"
+  [_]
+  (let [filename "moon_pa_de421_1900-2050.bpc"
+        url      (str "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/" filename)]
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
@@ -338,7 +348,8 @@
   (download-blackmarble)
   (download-elevation)
   (download-ephemeris)
-  (download-lunar-reference-frame)
+  (download-reference-frames)
+  (download-lunar-pck-file)
   (extract-elevation)
   (map-sectors-day)
   (map-sectors-night)

@@ -109,8 +109,8 @@
          (:sfsim.astro/start-i segment) => 6913
          (:sfsim.astro/end-i segment) => 609716))
 
-(facts "Create BPC segment from DAF descriptor"
-       (let [segment (summary->bpc-segment {:sfsim.astro/source "de421.nio"
+(facts "Create PCK segment from DAF descriptor"
+       (let [segment (summary->pck-segment {:sfsim.astro/source "de421.nio"
                                             :sfsim.astro/integers [31006 1 2 641 221284]
                                             :sfsim.astro/doubles [-3.1557168E9 1.609416E9]})]
          (:sfsim.astro/source segment) => "de421.nio"
@@ -122,7 +122,7 @@
          (:sfsim.astro/start-i segment) => 641
          (:sfsim.astro/end-i segment) => 221284))
 
-(facts "Create lookup table for SPK segments"
+(facts "Create lookup table for SPK segments (lookup by center and target)"
        (with-redefs [astro/read-daf-summaries
                      (fn [header index buffer]
                          (facts header => {:sfsim.astro/forward 53}
@@ -138,6 +138,22 @@
                           :sfsim.astro/start-i 1234})]
          (spk-segment-lookup-table {:sfsim.astro/forward 53} :buffer)
          => {[3 399] {:sfsim.astro/source "SOURCE" :sfsim.astro/center 3 :sfsim.astro/target 399 :sfsim.astro/start-i 1234}}))
+
+(facts "Create lookup table for PCK segments (lookup by target)"
+       (with-redefs [astro/read-daf-summaries
+                     (fn [header index buffer]
+                         (facts header => {:sfsim.astro/forward 4}
+                                index => 4
+                                buffer => :buffer)
+                         [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}])
+                     astro/summary->pck-segment
+                     (fn [descriptor]
+                         (fact descriptor => {:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]})
+                         {:sfsim.astro/source "SOURCE"
+                          :sfsim.astro/target 31006
+                          :sfsim.astro/start-i 1234})]
+         (pck-segment-lookup-table {:sfsim.astro/forward 4} :buffer)
+         => {31006 {:sfsim.astro/source "SOURCE" :sfsim.astro/target 31006 :sfsim.astro/start-i 1234}}))
 
 (facts "Read out coefficient layout from raw data"
        (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coeff-layout.raw")
@@ -287,14 +303,14 @@
        (count (insta/parses pck-parser (slurp "test/sfsim/fixtures/astro/unambiguous.tf"))) => 1)
 
 (facts "Convert PCK file to hashmap"
-       (str (:expecting (first (.reason (read-pck "test/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\n"
-       (read-pck "test/sfsim/fixtures/astro/text.tf") => {}
-       (read-pck "test/sfsim/fixtures/astro/string.tf") => {"S" "Testing"}
-       (read-pck "test/sfsim/fixtures/astro/integer.tf") => {"TEST_VAR_1" 42}
-       (read-pck "test/sfsim/fixtures/astro/double.tf") => {"X" 3.14}
-       (read-pck "test/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
-       (read-pck "test/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
-       (read-pck "test/sfsim/fixtures/astro/vector.tf") => {"V" [1.0 2.0 3.0]})
+       (str (:expecting (first (.reason (read-frame-kernel "test/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\n"
+       (read-frame-kernel "test/sfsim/fixtures/astro/text.tf") => {}
+       (read-frame-kernel "test/sfsim/fixtures/astro/string.tf") => {"S" "Testing"}
+       (read-frame-kernel "test/sfsim/fixtures/astro/integer.tf") => {"TEST_VAR_1" 42}
+       (read-frame-kernel "test/sfsim/fixtures/astro/double.tf") => {"X" 3.14}
+       (read-frame-kernel "test/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
+       (read-frame-kernel "test/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
+       (read-frame-kernel "test/sfsim/fixtures/astro/vector.tf") => {"V" [1.0 2.0 3.0]})
 
 (facts "Extract information from PCK file"
        (let [pck  {"FRAME_MOON_ME_DE421" 31007
@@ -302,20 +318,20 @@
                    "TKFRAME_31007_ANGLES" [67.92 78.56 0.3]
                    "TKFRAME_31007_AXES" [3 2 1]
                    "TKFRAME_31007_UNITS" "ARCSECONDS"}
-             body (pck-body-frame-data pck "FRAME_MOON_ME_DE421")]
+             body (frame-kernel-body-frame-data pck "FRAME_MOON_ME_DE421")]
          (:sfsim.astro/center body) => 301
          (:sfsim.astro/angles body) => [67.92 78.56 0.3]
          (:sfsim.astro/axes body) => [3 2 1]
          (:sfsim.astro/units body) => "ARCSECONDS"))
 
 (facts "Convert body frame information to matrix"
-       (pck-body-frame {:sfsim.astro/angles [] :sfsim.astro/axes [] :sfsim.astro/units "DEGREES"})
+       (frame-kernel-body-frame {:sfsim.astro/angles [] :sfsim.astro/axes [] :sfsim.astro/units "DEGREES"})
        => (eye 3)
-       (pck-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [1] :sfsim.astro/units "DEGREES"})
+       (frame-kernel-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [1] :sfsim.astro/units "DEGREES"})
        => (rotation-x (/ PI 6.0))
-       (pck-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [2] :sfsim.astro/units "DEGREES"})
+       (frame-kernel-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [2] :sfsim.astro/units "DEGREES"})
        => (rotation-y (/ PI 6.0))
-       (pck-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [3] :sfsim.astro/units "DEGREES"})
+       (frame-kernel-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [3] :sfsim.astro/units "DEGREES"})
        => (rotation-z (/ PI 6.0))
-       (pck-body-frame {:sfsim.astro/angles [30.0 45.0] :sfsim.astro/axes [3 2] :sfsim.astro/units "DEGREES"})
+       (frame-kernel-body-frame {:sfsim.astro/angles [30.0 45.0] :sfsim.astro/axes [3 2] :sfsim.astro/units "DEGREES"})
        => (mulm (rotation-y (/ PI 4.0)) (rotation-z (/ PI 6.0))))
