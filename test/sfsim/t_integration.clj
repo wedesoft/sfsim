@@ -6,7 +6,7 @@
               [clojure.java.io :as io]
               [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
               [fastmath.vector :refer (vec3 add div sub)]
-              [fastmath.matrix :refer (mat3x3 mulm)]
+              [fastmath.matrix :refer (mat3x3 mulm mulv)]
               [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y)]
               [sfsim.quaternion :as q]
               [sfsim.quadtree :refer :all]
@@ -216,7 +216,7 @@
         (clouds/destroy-cloud-data cloud-data)))))
 
 (when (.exists (io/file ".integration"))
-  (fact "Integration test position of Sun relative to Earth"
+  (fact "Integration test position of Sun relative to Earth at a certain time"
         (let [spk        (make-spk-document "data/astro/de430_1850-2150.bsp")
               sun        (make-spk-segment-interpolator spk 0 10)
               earth-moon (make-spk-segment-interpolator spk 0 3)
@@ -228,11 +228,20 @@
 
 (when (.exists (io/file ".integration"))
   (fact "Test Lunar reference frame"
-        (let [pck   (read-frame-kernel "data/astro/moon_080317.tf")
-              data  (frame-kernel-body-frame-data pck "FRAME_MOON_ME_DE421")
+        (let [kern  (read-frame-kernel "data/astro/moon_080317.tf")
+              data  (frame-kernel-body-frame-data kern "FRAME_MOON_ME_DE421")
               frame (frame-kernel-body-frame data)]
           frame => (roughly-matrix (mat3x3  0.999999873254714   -3.2928542237557117E-4  3.808696186713873E-4
                                             3.29286000210947E-4  0.9999999457843058    -1.4544409378362703E-6
                                            -3.80869119096078E-4  1.5798557868269077E-6  0.9999999274681064) 1e-8))))
+
+(when (.exists (io/file ".integration"))
+  (fact "Test Lunar frame at a certain time"
+        (let [kern         (read-frame-kernel "data/astro/moon_080317.tf")
+              pck          (make-pck-document "data/astro/moon_pa_de421_1900-2050.bpc")
+              moon-to-icrs (body-to-icrs kern pck "FRAME_MOON_ME_DE421" 31006)
+              tdb          2458837.9618055606
+              frame        (moon-to-icrs tdb)]
+          (mulv frame (vec3 1737.569 0.0 0.0)) => (roughly-vector (vec3 1692.5386262 339.9349316 197.24425976) 2e-1))))
 
 (GLFW/glfwTerminate)

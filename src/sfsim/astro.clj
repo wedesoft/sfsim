@@ -5,7 +5,7 @@
               [clojure.string :refer (join)]
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
-              [fastmath.matrix :refer (mat3x3 mulm inverse eye)]
+              [fastmath.matrix :refer (mat3x3 mulm inverse eye transpose)]
               [instaparse.core :as insta]
               [instaparse.transform :refer (transform)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
@@ -339,7 +339,7 @@
 
 (defn make-pck-segment-interpolator
   "Create object for interpolation of a particular target position"
-  {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]] :int] ifn?]}
+  {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup pck-lookup-table] [::buffer :some]] :int] ifn?]}
   [pck target]
   (let [buffer  (::buffer pck)
         lookup  (::lookup pck)
@@ -506,6 +506,19 @@
         rotations [rotation-x rotation-y rotation-z]
         matrices  (map (fn [angle axis] ((rotations (dec axis)) (* angle scale))) angles axes)]
     (reduce (fn [result rotation] (mulm rotation result)) (eye 3) matrices)))
+
+(defn body-to-icrs
+  "Create method to interpolate body positions (used for Moon at the moment)"
+  [frame-kernel pck identifier target]
+  (let [matrix       (frame-kernel-body-frame (frame-kernel-body-frame-data frame-kernel identifier))
+        interpolator (make-pck-segment-interpolator pck target)]
+    (fn [tdb]
+        (let [components (interpolator tdb)
+              ra         (.x components)
+              decl       (.y components)
+              w          (.z components)
+              rotation   (mulm matrix (mulm (rotation-z (- w)) (mulm (rotation-x (- decl)) (rotation-z (- ra)))))]
+          (transpose rotation)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
