@@ -1,8 +1,5 @@
 # TODO
-* deviation in orientation of Moon, refactor
-* get radii from pck0008.tpc?
-* build step to download lunar data
-* integration test for moon frame and orientation at a certain time
+* refactor redundant code for PCK and SPK
 * create Nuklear GUI to set location and time
   * add wrappers for more GUI elements
 * 2 more levels, higher res map
