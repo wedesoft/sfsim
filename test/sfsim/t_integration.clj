@@ -242,6 +242,6 @@
               moon-to-icrs (body-to-icrs kern pck "FRAME_MOON_ME_DE421" 31006)
               tdb          2458837.9618055606
               frame        (moon-to-icrs tdb)]
-          (mulv frame (vec3 1737.569 0.0 0.0)) => (roughly-vector (vec3 1692.5386262 339.9349316 197.24425976) 2e-1))))
+          (mulv frame (vec3 1737.4 0.0 0.0)) => (roughly-vector (vec3 1692.36463234,  339.93455383,  197.24403743) 1e-3))))
 
 (GLFW/glfwTerminate)
