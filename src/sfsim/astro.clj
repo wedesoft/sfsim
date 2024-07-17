@@ -179,22 +179,24 @@
 (def spk-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
                                  [::center :int] [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
 
+(defn- summary->segment
+  "Common code for DAF summary conversions"
+  {:malli/schema [:=> [:cat daf-summary] :map]}
+  [summary integer-keys]
+  (let [source                    (::source summary)
+        [start-second end-second] (::doubles summary)
+        integers                  (::integers summary)]
+    (apply assoc
+           {::source       source
+            ::start-second start-second
+            ::end-second   end-second}
+           (interleave integer-keys integers))))
+
 (defn summary->spk-segment
   "Convert DAF summary to SPK segment"
   {:malli/schema [:=> [:cat daf-summary] spk-segment]}
   [summary]
-  (let [source                                        (::source summary)
-        [start-second end-second]                     (::doubles summary)
-        [target center frame data-type start-i end-i] (::integers summary)]
-    {::source       source
-     ::start-second start-second
-     ::end-second   end-second
-     ::target       target
-     ::center       center
-     ::frame        frame
-     ::data-type    data-type
-     ::start-i      start-i
-     ::end-i        end-i}))
+  (summary->segment summary [::target ::center ::frame ::data-type ::start-i ::end-i]))
 
 (def pck-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
                                  [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
@@ -203,18 +205,7 @@
   "Convert DAF summary to PCK segment"
   {:malli/schema [:=> [:cat daf-summary] pck-segment]}
   [summary]
-  (let [source                                 (::source summary)
-        [start-second end-second]              (::doubles summary)
-        [target frame data-type start-i end-i] (::integers summary)]
-    {::source       source
-     ::start-second start-second
-     ::end-second   end-second
-     ::target       target
-     ::frame        frame
-     ; no center value unlike SPK segment
-     ::data-type    data-type
-     ::start-i      start-i
-     ::end-i        end-i}))
+  (summary->segment summary [::target ::frame ::data-type ::start-i ::end-i]))
 
 (def spk-lookup-table (m/schema [:map-of [:tuple :int :int] spk-segment]))
 
