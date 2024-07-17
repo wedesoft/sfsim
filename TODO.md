@@ -1,5 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
+  * press escape to open menu starting with resume button
   * add wrappers for more GUI elements
 * 2 more levels, higher res map
 * microtexture for normal map
