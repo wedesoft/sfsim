@@ -7,18 +7,18 @@
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
         instaparse/instaparse {:mvn/version "1.5.0"}
         org.clj-commons/gloss {:mvn/version "0.3.6"}
-        org.lwjgl/lwjgl {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-nuklear {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-stb {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-assimp {:mvn/version "3.3.3"}
-        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.3.3"}}
+        org.lwjgl/lwjgl {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-nuklear {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-stb {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-assimp {:mvn/version "3.3.4"}
+        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.3.4"}}
  :paths ["src"]
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.4"
                                                          :git/sha "31388ff"}
