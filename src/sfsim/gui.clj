@@ -9,7 +9,7 @@
               [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
-             [org.lwjgl.opengl GL11]
+             [org.lwjgl.opengl GL11 GL13]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
               NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont NkHandle NkTextWidthCallbackI
               NkQueryFontGlyphCallbackI NkUserFontGlyph NkRect]
@@ -177,6 +177,7 @@
         (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
               (when cmd
                 (when (not (zero? (.elem_count cmd)))
+                  (GL13/glActiveTexture GL13/GL_TEXTURE0)
                   (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
                   (let [clip-rect (.clip_rect cmd)]
                     (set-scissor (.x clip-rect) (- height (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))

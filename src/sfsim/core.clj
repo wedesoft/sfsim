@@ -184,11 +184,12 @@
                      ; Render atmosphere with cloud overlay
                      (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
                  (when @menu-on
-                   (setup-rendering 320 200 :sfsim.render/noculling false)
-                   (gui/nuklear-window gui "menu" 0 0 320 200
+                   (setup-rendering 1280 720 :sfsim.render/noculling false)
+                   (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 76) 2) 320 76
                                        (gui/layout-row-dynamic gui 32 1)
+                                       (gui/button-label gui "Resume")
                                        (gui/button-label gui "Quit"))
-                   (gui/render-nuklear-gui gui 320 200)))
+                   (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
                (opacity/destroy-opacity-and-shadow shadow-vars))
