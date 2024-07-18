@@ -1,7 +1,6 @@
 # TODO
-* method to compute orientation of Earth
-* method to compute orientation of Moon
 * create Nuklear GUI to set location and time
+  * press escape to open menu starting with resume and exit button
   * add wrappers for more GUI elements
 * 2 more levels, higher res map
 * microtexture for normal map

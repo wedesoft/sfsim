@@ -374,7 +374,9 @@
   "Initialise rendering of a vertex array object"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (GL30/glBindVertexArray ^long (::vertex-array-object vertex-array-object)))
+  (GL30/glBindVertexArray ^long (::vertex-array-object vertex-array-object))
+  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER (::array-buffer vertex-array-object))
+  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER (::index-buffer vertex-array-object)))
 
 (defn render-quads
   "Render one or more quads"

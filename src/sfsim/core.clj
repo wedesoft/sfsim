@@ -4,7 +4,7 @@
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                                  write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars)]
+                                  write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering)]
             [sfsim.atmosphere :as atmosphere]
             [sfsim.matrix :refer (transformation-matrix quaternion->matrix)]
             [sfsim.planet :as planet]
@@ -12,8 +12,11 @@
             [sfsim.model :as model]
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
+            [sfsim.gui :as gui]
             [sfsim.config :as config])
-  (:import [org.lwjgl.glfw GLFW GLFWKeyCallbackI])
+  (:import [org.lwjgl.system MemoryStack]
+           [org.lwjgl.glfw GLFW GLFWKeyCallbackI GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
+           [org.lwjgl.nuklear Nuklear])
   (:gen-class))
 
 (set! *unchecked-math* true)
@@ -79,6 +82,10 @@
 
 (def tile-tree (planet/make-tile-tree))
 
+(def buffer-initial-size (* 4 1024))
+(def bitmap-font (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
+(def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
+
 (def keystates (atom {}))
 
 (def keyboard-callback
@@ -91,7 +98,32 @@
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
+(GLFW/glfwSetCursorPosCallback
+  window
+  (reify GLFWCursorPosCallbackI
+         (invoke [_this _window xpos ypos]
+           (Nuklear/nk_input_motion (:sfsim.gui/context gui) (int xpos) (int ypos)))))
+
+(GLFW/glfwSetMouseButtonCallback
+  window
+  (reify GLFWMouseButtonCallbackI
+         (invoke [_this _window button action _mods]
+           (let [stack (MemoryStack/stackPush)
+                 cx    (.mallocDouble stack 1)
+                 cy    (.mallocDouble stack 1)]
+             (GLFW/glfwGetCursorPos window cx cy)
+             (let [x        (int (.get cx 0))
+                   y        (int (.get cy 0))
+                   nkbutton (cond
+                              (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
+                              (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
+                              :else Nuklear/NK_BUTTON_LEFT)]
+               (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))
+               (MemoryStack/stackPop))))))
+
 (def dist (atom 100.0))
+
+(def menu-on (atom false))
 
 (defn -main
   "Space flight simulator main function"
@@ -105,6 +137,7 @@
            (planet/update-tile-tree planet-renderer tile-tree (aget w 0) @position)
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
+                 mn (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
                  u  (if (@keystates GLFW/GLFW_KEY_S) 0.001 (if (@keystates GLFW/GLFW_KEY_W) -0.001 0.0))
                  r  (if (@keystates GLFW/GLFW_KEY_A) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0.0))
                  t  (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_Q) -0.001 0.0))
@@ -115,6 +148,7 @@
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
                  to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
+             (reset! menu-on (or @menu-on mn))
              (swap! object-orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
              (swap! object-orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
              (swap! object-orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
@@ -152,32 +186,43 @@
                                         ; Render clouds above the horizon
                                         (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
                (onscreen-render window
-                                (if (< (:sfsim.render/z-near scene-render-vars) (:sfsim.render/z-near planet-render-vars))
-                                  (with-stencils
-                                    (clear (vec3 0 1 0) 1.0 0)
-                                    ; Render model
-                                    (write-to-stencil-buffer)
-                                    (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
-                                    (clear)
-                                    ;; Render planet with cloud overlay
-                                    (mask-with-stencil-buffer)
-                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
-                                                          (planet/get-current-tree tile-tree))
-                                    ;; Render atmosphere with cloud overlay
-                                    (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
-                                  (do
-                                    (clear (vec3 0 1 0) 1.0)
-                                    ; Render model
-                                    (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
-                                    ; Render planet with cloud overlay
-                                    (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
-                                                          (planet/get-current-tree tile-tree))
-                                    ; Render atmosphere with cloud overlay
-                                    (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))))
+                 (if (< (:sfsim.render/z-near scene-render-vars) (:sfsim.render/z-near planet-render-vars))
+                   (with-stencils
+                     (clear (vec3 0 1 0) 1.0 0)
+                     ; Render model
+                     (write-to-stencil-buffer)
+                     (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
+                     (clear)
+                     ;; Render planet with cloud overlay
+                     (mask-with-stencil-buffer)
+                     (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
+                                           (planet/get-current-tree tile-tree))
+                     ;; Render atmosphere with cloud overlay
+                     (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
+                   (do
+                     (clear (vec3 0 1 0) 1.0)
+                     ; Render model
+                     (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
+                     ; Render planet with cloud overlay
+                     (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
+                                           (planet/get-current-tree tile-tree))
+                     ; Render atmosphere with cloud overlay
+                     (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
+                 (when @menu-on
+                   (setup-rendering 1280 720 :sfsim.render/noculling false)
+                   (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 76) 2) 320 76
+                                       (gui/layout-row-dynamic gui 32 1)
+                                       (when (gui/button-label gui "Resume")
+                                         (reset! menu-on false))
+                                       (when (gui/button-label gui "Quit")
+                                         (GLFW/glfwSetWindowShouldClose window true)))
+                   (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
                (opacity/destroy-opacity-and-shadow shadow-vars))
+             (Nuklear/nk_input_begin (:sfsim.gui/context gui))
              (GLFW/glfwPollEvents)
+             (Nuklear/nk_input_end (:sfsim.gui/context gui))
              (swap! n inc)
              (when (zero? (mod @n 10))
                (print (format "\ro.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
@@ -195,6 +240,8 @@
   (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
+  (gui/destroy-nuklear-gui gui)
+  (gui/destroy-font-texture bitmap-font)
   (destroy-window window)
   (GLFW/glfwTerminate)
   (System/exit 0))

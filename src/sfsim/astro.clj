@@ -1,15 +1,20 @@
 (ns sfsim.astro
     "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
     (:require [clojure.core.memoize :as z]
+              [clojure.math :refer (PI)]
+              [clojure.string :refer (join)]
               [malli.core :as m]
               [fastmath.vector :refer (add mult sub vec3)]
-              [fastmath.matrix :refer (mulm)]
+              [fastmath.matrix :refer (mat3x3 mulm inverse eye transpose)]
+              [instaparse.core :as insta]
+              [instaparse.transform :refer (transform)]
               [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
               [gloss.io :refer (decode)]
-              [sfsim.matrix :refer (fvec3 rotation-x rotation-z fmat3)])
+              [sfsim.matrix :refer (fvec3 rotation-x rotation-y rotation-z fmat3)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
-             [java.nio.channels FileChannel FileChannel$MapMode]))
+             [java.nio.channels FileChannel FileChannel$MapMode]
+             [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -20,7 +25,8 @@
 (def T0 2451545.0)  ; noon of 1st January 2000
 (def s-per-day 86400.0)  ; seconds per day
 (def AU-KM 149597870.700)  ; astronomical unit in km
-(def ASEC2RAD 4.848136811095359935899141e-6)  ; convert arcseconds (360 * 60 * 60) to radians (2 * PI)
+(def DEGREES2RAD (/ (* 2 PI) 360.0))  ; convert degrees (360) to radians (2 * PI)
+(def ASEC2RAD (/ (* 2.0 PI) 360.0 60.0 60.0))  ; convert arcseconds (360 * 60 * 60) to radians (2 * PI)
 
 (defn map-file-to-buffer
   "Map file to read-only byte buffer"
@@ -46,7 +52,8 @@
                  ::free         :int32-le
                  ::locfmt       (string :us-ascii :length 8)
                  ::prenul       (finite-block 603)
-                 ::ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none)))))
+                 ::ftpstr       (finite-frame 28 (repeated :ubyte :prefix :none))
+                 ::pstnul       (finite-block 297))))
 
 (def daf-comment-frame
   (compile-frame (string :us-ascii :length 1000)))
@@ -131,7 +138,7 @@
   {:malli/schema [:=> [:cat daf-header :some] :string]}
   [header buffer]
   (let [comment-lines (mapv #(decode-record buffer daf-comment-frame %) (range 2 (::forward header)))
-        joined-lines  (clojure.string/join comment-lines)
+        joined-lines  (join comment-lines)
         delimited     (subs joined-lines 0 (clojure.string/index-of joined-lines \o004))
         with-newlines (clojure.string/replace delimited \o000 \newline)]
     with-newlines))
@@ -173,22 +180,33 @@
 (def spk-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
                                  [::center :int] [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
 
+(defn- summary->segment
+  "Common code for DAF summary conversions"
+  {:malli/schema [:=> [:cat daf-summary] :map]}
+  [summary integer-keys]
+  (let [source                    (::source summary)
+        [start-second end-second] (::doubles summary)
+        integers                  (::integers summary)]
+    (apply assoc
+           {::source       source
+            ::start-second start-second
+            ::end-second   end-second}
+           (interleave integer-keys integers))))
+
 (defn summary->spk-segment
   "Convert DAF summary to SPK segment"
   {:malli/schema [:=> [:cat daf-summary] spk-segment]}
   [summary]
-  (let [source                                        (::source summary)
-        [start-second end-second]                     (::doubles summary)
-        [target center frame data-type start-i end-i] (::integers summary)]
-    {::source       source
-     ::start-second start-second
-     ::end-second   end-second
-     ::target       target
-     ::center       center
-     ::frame        frame
-     ::data-type    data-type
-     ::start-i      start-i
-     ::end-i        end-i}))
+  (summary->segment summary [::target ::center ::frame ::data-type ::start-i ::end-i]))
+
+(def pck-segment (m/schema [:map [::source :string] [::start-second :double] [::end-second :double] [::target :int]
+                                 [::frame :int] [::data-type :int] [::start-i :int] [::end-i :int]]))
+
+(defn summary->pck-segment
+  "Convert DAF summary to PCK segment"
+  {:malli/schema [:=> [:cat daf-summary] pck-segment]}
+  [summary]
+  (summary->segment summary [::target ::frame ::data-type ::start-i ::end-i]))
 
 (def spk-lookup-table (m/schema [:map-of [:tuple :int :int] spk-segment]))
 
@@ -199,6 +217,16 @@
   (let [summaries (read-daf-summaries header (::forward header) buffer)
         segments  (map summary->spk-segment summaries)]
     (reduce (fn [lookup segment] (assoc lookup [(::center segment) (::target segment)] segment)) {} segments)))
+
+(def pck-lookup-table (m/schema [:map-of :int pck-segment]))
+
+(defn pck-segment-lookup-table
+  "Make a lookup table for target to lookup PCK summaries"
+  {:malli/schema [:=> [:cat :map :some] [:map-of :int :map]]}
+  [header buffer]
+  (let [summaries (read-daf-summaries header (::forward header) buffer)
+        segments  (map summary->pck-segment summaries)]
+    (reduce (fn [lookup segment] (assoc lookup (::target segment) segment)) {} segments)))
 
 (defn convert-to-long
   "Convert values with specified keys to long integer"
@@ -258,27 +286,56 @@
   (map #(apply vec3 %) lst))
 
 (defn make-spk-document
-  "Create object with segment information"
+  "Create object with SPK segment information"
   {:malli/schema [:=> [:cat :string] [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]]]}
   [filename]
   (let [buffer (map-file-to-buffer filename)
         header (read-daf-header buffer)
         lookup (spk-segment-lookup-table header buffer)]
-    (if (not (check-ftp-str header))
+    (when (not (check-ftp-str header))
       (throw (RuntimeException. "FTPSTR has wrong value")))
-    (if (not (check-endianness header))
+    (when (not (check-endianness header))
       (throw (RuntimeException. "File endianness not implemented!")))
     {::header header
      ::lookup lookup
      ::buffer buffer}))
 
-(defn make-segment-interpolator
+(defn make-spk-segment-interpolator
   "Create object for interpolation of a particular target position"
   {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup spk-lookup-table] [::buffer :some]] :int :int] ifn?]}
   [spk center target]
   (let [buffer  (::buffer spk)
         lookup  (::lookup spk)
         segment (get lookup [center target])
+        layout  (read-coefficient-layout segment buffer)
+        cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
+    (fn [tdb]
+        (let [[index s]    (interval-index-and-position layout tdb)
+              coefficients (cache index)]
+          (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
+
+(defn make-pck-document
+  "Create object with PCK segment information"
+  {:malli/schema [:=> [:cat :string] [:map [::header daf-header] [::lookup pck-lookup-table] [::buffer :some]]]}
+  [filename]
+  (let [buffer (map-file-to-buffer filename)
+        header (read-daf-header buffer)
+        lookup (pck-segment-lookup-table header buffer)]
+    (when (not (check-ftp-str header))
+      (throw (RuntimeException. "FTPSTR has wrong value")))
+    (when (not (check-endianness header))
+      (throw (RuntimeException. "File endianness not implemented!")))
+    {::header header
+     ::lookup lookup
+     ::buffer buffer}))
+
+(defn make-pck-segment-interpolator
+  "Create object for interpolation of a particular target position"
+  {:malli/schema [:=> [:cat [:map [::header daf-header] [::lookup pck-lookup-table] [::buffer :some]] :int] ifn?]}
+  [pck target]
+  (let [buffer  (::buffer pck)
+        lookup  (::lookup pck)
+        segment (get lookup target)
         layout  (read-coefficient-layout segment buffer)
         cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
     (fn [tdb]
@@ -357,6 +414,7 @@
 
 (defn sidereal-time
   "Compute Greenwich Mean Sidereal Time (GMST) in hours"
+  {:malli/schema [:=> [:cat :double] :double]}
   [jd-ut]
   (let [theta (earth-rotation-angle jd-ut)
         t     (/ (- jd-ut T0) 36525.0)
@@ -366,6 +424,93 @@
                     (* t) (+ 4612.156534)
                     (* t) (+ 0.014506))]
     (mod (+ (/ st 54000.0) (* theta 24.0)) 24.0)))
+
+; Conversion matrix from ICRS to J2000.
+; See python-skyfield framelib.ICRS_to_J2000
+
+(defn- build_matrix
+  "Construct conversion matrix from ICRS to J2000"
+  {:malli/schema [:=> :cat fmat3]}
+  []
+  (let [xi0  (* -0.0166170 ASEC2RAD)
+        eta0 (* -0.0068192 ASEC2RAD)
+        da0  (* -0.01460   ASEC2RAD)
+        yx   (- da0)
+        zx   xi0
+        xy   da0
+        zy   eta0
+        xz   (- xi0)
+        yz   (- eta0)
+        xx   (- 1.0 (* 0.5 (+ (* yx yx) (* zx zx))))
+        yy   (- 1.0 (* 0.5 (+ (* yx yx) (* zy zy))))
+        zz   (- 1.0 (* 0.5 (+ (* zy zy) (* zx zx))))]
+    (mat3x3 xx xy xz, yx yy yz, zx zy zz)))
+
+(def ICRS-to-J2000 (build_matrix))
+
+(defn icrs-to-now
+  "Compute transformation matrix from ICRS to current epoch (omitting nutation)"
+  {:malli/schema [:=> [:cat :double] fmat3]}
+  [tdb]
+  (mulm (compute-precession tdb) ICRS-to-J2000))
+
+(defn earth-to-icrs
+  "Compute Earth orientation in ICRS coordinate system depending on time t (omitting nutation)"
+  {:malli/schema [:=> [:cat :double] fmat3]}
+  [jd-ut]
+  (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2 PI (/ (sidereal-time jd-ut) 24.0)))))
+
+(def pck-parser (insta/parser (slurp "resources/grammars/pck.bnf")))
+
+(defn- do-assignment [environment [identifier operator value]]
+  (case operator
+    :=  (assoc environment identifier value)
+    :+= (update environment identifier + value)))
+
+(defn read-frame-kernel
+  "Read frame specification kernel files and return hashmap with data"
+  [filename]
+  (let [string (slurp filename)]
+    (transform
+      {:START      (fn [& assignments] (reduce do-assignment {} assignments))
+       :ASSIGNMENT vector
+       :STRING     identity
+       :NUMBER     #(Integer/parseInt %)
+       :DECIMAL    (comp #(Double/parseDouble %) #(clojure.string/replace % \D \E))
+       :VECTOR     vector
+       :EQUALS     (constantly :=)
+       :PLUSEQUALS (constantly :+=)}
+      (pck-parser string))))
+
+(defn frame-kernel-body-frame-data
+  "Get information about the specified body from the PCK data"
+  [pck identifier]
+  (let [number (pck identifier)]
+    {::center (pck (format "FRAME_%d_CENTER" number))
+     ::angles (pck (format "TKFRAME_%d_ANGLES" number))
+     ::axes   (pck (format "TKFRAME_%d_AXES" number))
+     ::units  (pck (format "TKFRAME_%d_UNITS" number))}))
+
+(defn frame-kernel-body-frame
+  "Convert body frame information to a transformation matrix"
+  [{::keys [axes angles units]}]
+  (let [scale     ({"DEGREES" DEGREES2RAD "ARCSECONDS" ASEC2RAD} units)
+        rotations [rotation-x rotation-y rotation-z]
+        matrices  (map (fn [angle axis] ((rotations (dec axis)) (* angle scale))) angles axes)]
+    (reduce (fn [result rotation] (mulm rotation result)) (eye 3) matrices)))
+
+(defn body-to-icrs
+  "Create method to interpolate body positions (used for Moon at the moment)"
+  [frame-kernel pck identifier target]
+  (let [matrix       (frame-kernel-body-frame (frame-kernel-body-frame-data frame-kernel identifier))
+        interpolator (make-pck-segment-interpolator pck target)]
+    (fn [tdb]
+        (let [components (interpolator tdb)
+              ra         (.x ^Vec3 components)
+              decl       (.y ^Vec3 components)
+              w          (.z ^Vec3 components)
+              rotation   (mulm matrix (mulm (rotation-z (- w)) (mulm (rotation-x (- decl)) (rotation-z (- ra)))))]
+          (transpose rotation)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -9,10 +9,10 @@
               [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)])
     (:import [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
-             [org.lwjgl.opengl GL11]
+             [org.lwjgl.opengl GL11 GL13]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
               NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont NkHandle NkTextWidthCallbackI
-              NkQueryFontGlyphCallbackI NkUserFontGlyph]
+              NkQueryFontGlyphCallbackI NkUserFontGlyph NkRect]
              [org.lwjgl.stb STBTTFontinfo STBTruetype STBTTPackedchar STBTTPackContext STBTTAlignedQuad STBTTPackedchar$Buffer]))
 
 (set! *unchecked-math* true)
@@ -177,6 +177,7 @@
         (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
               (when cmd
                 (when (not (zero? (.elem_count cmd)))
+                  (GL13/glActiveTexture GL13/GL_TEXTURE0)
                   (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
                   (let [clip-rect (.clip_rect cmd)]
                     (set-scissor (.x clip-rect) (- height (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
@@ -202,7 +203,7 @@
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
-     (when (Nuklear/nk_begin context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#) Nuklear/NK_WINDOW_NO_SCROLLBAR)
+     (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#) Nuklear/NK_WINDOW_NO_SCROLLBAR)
        ~@body
        (Nuklear/nk_end context#))
      (MemoryStack/stackPop)))
