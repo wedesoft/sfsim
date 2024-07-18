@@ -14,7 +14,9 @@
             [sfsim.opacity :as opacity]
             [sfsim.gui :as gui]
             [sfsim.config :as config])
-  (:import [org.lwjgl.glfw GLFW GLFWKeyCallbackI])
+  (:import [org.lwjgl.system MemoryStack]
+           [org.lwjgl.glfw GLFW GLFWKeyCallbackI GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
+           [org.lwjgl.nuklear Nuklear])
   (:gen-class))
 
 (set! *unchecked-math* true)
@@ -96,9 +98,32 @@
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
 
+(GLFW/glfwSetCursorPosCallback
+  window
+  (reify GLFWCursorPosCallbackI
+         (invoke [_this _window xpos ypos]
+           (Nuklear/nk_input_motion (:sfsim.gui/context gui) (int xpos) (int ypos)))))
+
+(GLFW/glfwSetMouseButtonCallback
+  window
+  (reify GLFWMouseButtonCallbackI
+         (invoke [_this _window button action _mods]
+           (let [stack (MemoryStack/stackPush)
+                 cx    (.mallocDouble stack 1)
+                 cy    (.mallocDouble stack 1)]
+             (GLFW/glfwGetCursorPos window cx cy)
+             (let [x        (int (.get cx 0))
+                   y        (int (.get cy 0))
+                   nkbutton (cond
+                              (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
+                              (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
+                              :else Nuklear/NK_BUTTON_LEFT)]
+               (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))
+               (MemoryStack/stackPop))))))
+
 (def dist (atom 100.0))
 
-(def menu-on (atom true))
+(def menu-on (atom false))
 
 (defn -main
   "Space flight simulator main function"
@@ -187,13 +212,17 @@
                    (setup-rendering 1280 720 :sfsim.render/noculling false)
                    (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 76) 2) 320 76
                                        (gui/layout-row-dynamic gui 32 1)
-                                       (gui/button-label gui "Resume")
-                                       (gui/button-label gui "Quit"))
+                                       (when (gui/button-label gui "Resume")
+                                         (reset! menu-on false))
+                                       (when (gui/button-label gui "Quit")
+                                         (GLFW/glfwSetWindowShouldClose window true)))
                    (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
                (opacity/destroy-opacity-and-shadow shadow-vars))
+             (Nuklear/nk_input_begin (:sfsim.gui/context gui))
              (GLFW/glfwPollEvents)
+             (Nuklear/nk_input_end (:sfsim.gui/context gui))
              (swap! n inc)
              (when (zero? (mod @n 10))
                (print (format "\ro.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
