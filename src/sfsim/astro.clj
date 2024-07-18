@@ -13,7 +13,8 @@
               [sfsim.matrix :refer (fvec3 rotation-x rotation-y rotation-z fmat3)])
     (:import [java.nio ByteBuffer]
              [java.nio.file Paths StandardOpenOption]
-             [java.nio.channels FileChannel FileChannel$MapMode]))
+             [java.nio.channels FileChannel FileChannel$MapMode]
+             [fastmath.vector Vec3]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -505,9 +506,9 @@
         interpolator (make-pck-segment-interpolator pck target)]
     (fn [tdb]
         (let [components (interpolator tdb)
-              ra         (.x components)
-              decl       (.y components)
-              w          (.z components)
+              ra         (.x ^Vec3 components)
+              decl       (.y ^Vec3 components)
+              w          (.z ^Vec3 components)
               rotation   (mulm matrix (mulm (rotation-z (- w)) (mulm (rotation-x (- decl)) (rotation-z (- ra)))))]
           (transpose rotation)))))
 
