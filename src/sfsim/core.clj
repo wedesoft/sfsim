@@ -85,6 +85,7 @@
 (def buffer-initial-size (* 4 1024))
 (def bitmap-font (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
 (def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
+(gui/nuklear-dark-style gui)
 
 (def keystates (atom {}))
 
