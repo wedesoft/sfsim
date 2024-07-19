@@ -124,7 +124,7 @@
 
 (def dist (atom 100.0))
 
-(def menu-on (atom false))
+(def menu (atom 0))
 
 (defn -main
   "Space flight simulator main function"
@@ -149,7 +149,7 @@
                  l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
                  to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
-             (reset! menu-on (or @menu-on mn))
+             (when mn (reset! menu 1))
              (swap! object-orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
              (swap! object-orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
              (swap! object-orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
@@ -209,14 +209,24 @@
                                            (planet/get-current-tree tile-tree))
                      ; Render atmosphere with cloud overlay
                      (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
-                 (when @menu-on
+                 (when (not (zero? @menu))
                    (setup-rendering 1280 720 :sfsim.render/noculling false)
-                   (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 76) 2) 320 76
-                                       (gui/layout-row-dynamic gui 32 1)
-                                       (when (gui/button-label gui "Resume")
-                                         (reset! menu-on false))
-                                       (when (gui/button-label gui "Quit")
-                                         (GLFW/glfwSetWindowShouldClose window true)))
+                   (case @menu
+                     1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
+                                           (gui/layout-row-dynamic gui 32 1)
+                                           (when (gui/button-label gui "Location")
+                                             (reset! menu 2))
+                                           (when (gui/button-label gui "Resume")
+                                             (reset! menu 0))
+                                           (when (gui/button-label gui "Quit")
+                                           (GLFW/glfwSetWindowShouldClose window true)))
+                     2 (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
+                                           (gui/layout-row-dynamic gui 32 1)
+                                           (gui/text-label gui "Longitude")
+                                           (gui/text-label gui "Latitude")
+                                           (gui/text-label gui "Height")
+                                           (when (gui/button-label gui "Close")
+                                             (reset! menu 1))))
                    (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
