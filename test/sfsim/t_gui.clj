@@ -154,16 +154,19 @@
        (with-invisible-window
          (let [buffer-initial-size (* 4 1024)
                bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
-               gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
+               gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)
+               gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
            (gui-framebuffer-render 320 40
-             (nuklear-window gui "window-1" 0 0 160 40
-                             (layout-row-dynamic gui 32 1)
-                             (button-label gui "Button A"))
-             (nuklear-window gui "window-2" 160 0 160 40
-                             (layout-row-dynamic gui 32 1)
-                             (button-label gui "Button B"))
-             (render-nuklear-gui gui 320 40)) => (is-image "test/sfsim/fixtures/gui/guis.png" 0.03)
-           (destroy-nuklear-gui gui)
+             (nuklear-window gui1 "window-1" 0 0 160 40
+                             (layout-row-dynamic gui1 32 1)
+                             (button-label gui1 "Button A"))
+             (nuklear-window gui2 "window-2" 160 0 160 40
+                             (layout-row-dynamic gui2 32 1)
+                             (button-label gui2 "Button B"))
+             (render-nuklear-gui gui1 320 40)
+             (render-nuklear-gui gui2 320 40)) => (is-image "test/sfsim/fixtures/gui/guis.png" 0.03)
+           (destroy-nuklear-gui gui2)
+           (destroy-nuklear-gui gui1)
            (destroy-font-texture bitmap-font))))
 
 (fact "Use font to render button"
