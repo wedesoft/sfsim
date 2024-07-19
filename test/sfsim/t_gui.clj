@@ -166,4 +166,18 @@
            (destroy-nuklear-gui gui)
            (destroy-font-texture bitmap-font))))
 
+(fact "Use font to render button"
+       (gui-offscreen-render 160 40
+         (let [buffer-initial-size (* 4 1024)
+               bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+               gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
+           (nuklear-dark-style gui)
+           (nuklear-window gui "test button" 0 0 160 40
+             (layout-row-dynamic gui 32 1)
+             (button-label gui "Test Button"))
+           (render-nuklear-gui gui 160 40)
+           (destroy-nuklear-gui gui)
+           (destroy-font-texture bitmap-font)))
+       => (is-image "test/sfsim/fixtures/gui/dark-style.png" 0.03))
+
 (GLFW/glfwTerminate)
