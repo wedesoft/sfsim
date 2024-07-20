@@ -169,8 +169,8 @@
       (gui-control-test gui (text-label gui "Test Label")) => (is-image "test/sfsim/fixtures/gui/label.png" 0.03))
 
 (fact "Render an edit field"
-      (let [data (gui-edit-data "initial" 31 :sfsim.gui/ascii)]
-        (gui-control-test gui (gui-edit gui data)) => (is-image "test/sfsim/fixtures/gui/edit.png" 0.03)
+      (let [data (gui-edit-data "initial" 31 :sfsim.gui/filter-ascii)]
+        (gui-control-test gui (edit-field gui data)) => (is-image "test/sfsim/fixtures/gui/edit.png" 0.03)
         (gui-edit-get data) => "initial"))
 
 (GLFW/glfwTerminate)

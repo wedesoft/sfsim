@@ -386,7 +386,8 @@
   "Return map with text, limit, and filter for edit field"
   [text max-size text-filter-type]
   (let [text-filter (case text-filter-type
-                      ::ascii (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode))))
+                      ::filter-ascii (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
+                      ::filter-float (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_float edit unicode))))
         text-len    (int-array [(count text)])
         buffer      (BufferUtils/createByteBuffer (inc max-size))]
     (.put ^DirectByteBuffer buffer (.getBytes ^String text (StandardCharsets/UTF_8)))
@@ -410,7 +411,7 @@
     (aset-byte arr text-len 0)
     (String. arr 0 text-len (StandardCharsets/UTF_8))))
 
-(defn gui-edit
+(defn edit-field
   "Create edit field"
   [gui data]
   (= (Nuklear/nk_edit_string (::context gui) Nuklear/NK_EDIT_FIELD (::buffer data) (::text-len data) (::max-size data)

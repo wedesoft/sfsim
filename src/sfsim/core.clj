@@ -1,6 +1,6 @@
 (ns sfsim.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (cos sin to-radians exp)]
+  (:require [clojure.math :refer (cos sin to-radians to-degrees exp)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
@@ -86,6 +86,9 @@
 (def bitmap-font (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
 (def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
 (gui/nuklear-dark-style gui)
+
+(def longitude-data (gui/gui-edit-data (str (to-degrees longitude)) 31 :sfsim.gui/filter-float))
+(def latitude-data (gui/gui-edit-data (str (to-degrees latitude)) 31 :sfsim.gui/filter-float))
 
 (def keystates (atom {}))
 
@@ -221,10 +224,11 @@
                                            (when (gui/button-label gui "Quit")
                                            (GLFW/glfwSetWindowShouldClose window true)))
                      2 (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
-                                           (gui/layout-row-dynamic gui 32 1)
+                                           (gui/layout-row-dynamic gui 32 2)
                                            (gui/text-label gui "Longitude")
+                                           (gui/edit-field gui longitude-data)
                                            (gui/text-label gui "Latitude")
-                                           (gui/text-label gui "Height")
+                                           (gui/edit-field gui latitude-data)
                                            (when (gui/button-label gui "Close")
                                              (reset! menu 1))))
                    (gui/render-nuklear-gui gui 1280 720)))
