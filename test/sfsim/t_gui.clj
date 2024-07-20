@@ -122,62 +122,55 @@
              (destroy-vertex-array-object vao)
              (destroy-program program)))) => (is-image "test/sfsim/fixtures/gui/mode.png" 0.1))
 
-(facts "Render a slider"
-       (gui-offscreen-render 160 40
-         (let [buffer-initial-size (* 4 1024)
-               font                (NkUserFont/create)
-               gui                 (make-nuklear-gui font buffer-initial-size)]
-           (nuklear-window gui "test slider" 0 0 160 40
-             (layout-row-dynamic gui 32 1)
-             (slider-int gui 0 50 100 1))
-           (render-nuklear-gui gui 160 40)
-           (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
-
 (fact "Render font to bitmap"
   (let [bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)]
     (:sfsim.gui/image bitmap-font)) => (is-image "test/sfsim/fixtures/gui/font.png" 7.22 false))
 
-(fact "Use font to render button"
-       (gui-offscreen-render 160 40
-         (let [buffer-initial-size (* 4 1024)
-               bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
-               gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
-           (nuklear-window gui "test button" 0 0 160 40
-             (layout-row-dynamic gui 32 1)
-             (button-label gui "Test Button"))
-           (render-nuklear-gui gui 160 40)
-           (destroy-nuklear-gui gui)
-           (destroy-font-texture bitmap-font)))
-       => (is-image "test/sfsim/fixtures/gui/button.png" 0.03))
+(defmacro gui-control-test
+  [gui & body]
+  `(gui-offscreen-render 160 40
+     (let [buffer-initial-size# (* 4 1024)
+           bitmap-font#         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+           ~gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font#) buffer-initial-size#)]
+       (nuklear-dark-style ~gui)
+       (nuklear-window ~gui "control test window" 0 0 160 40
+         (layout-row-dynamic ~gui 32 1)
+         ~@body)
+       (render-nuklear-gui ~gui 160 40)
+       (destroy-nuklear-gui ~gui)
+       (destroy-font-texture bitmap-font#))))
 
-(facts "Test rendering two GUI windows"
+(facts "Render a slider"
+       (gui-control-test gui (slider-int gui 0 50 100 1)) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
+
+(fact "Use font to render button"
+      (gui-control-test gui (button-label gui "Test Button")) => (is-image "test/sfsim/fixtures/gui/button.png" 0.03))
+
+(facts "Test rendering with two GUI contexts"
        (with-invisible-window
          (let [buffer-initial-size (* 4 1024)
                bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
-               gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
+               gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)
+               gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
            (gui-framebuffer-render 320 40
-             (nuklear-window gui "window-1" 0 0 160 40
-                             (layout-row-dynamic gui 32 1)
-                             (button-label gui "Button A"))
-             (nuklear-window gui "window-2" 160 0 160 40
-                             (layout-row-dynamic gui 32 1)
-                             (button-label gui "Button B"))
-             (render-nuklear-gui gui 320 40)) => (is-image "test/sfsim/fixtures/gui/guis.png" 0.03)
-           (destroy-nuklear-gui gui)
+             (nuklear-window gui1 "window-1" 0 0 160 40
+                             (layout-row-dynamic gui1 32 1)
+                             (button-label gui1 "Button A"))
+             (nuklear-window gui2 "window-2" 160 0 160 40
+                             (layout-row-dynamic gui2 32 1)
+                             (button-label gui2 "Button B"))
+             (render-nuklear-gui gui1 320 40)
+             (render-nuklear-gui gui2 320 40)) => (is-image "test/sfsim/fixtures/gui/guis.png" 0.03)
+           (destroy-nuklear-gui gui2)
+           (destroy-nuklear-gui gui1)
            (destroy-font-texture bitmap-font))))
 
-(fact "Use font to render button"
-       (gui-offscreen-render 160 40
-         (let [buffer-initial-size (* 4 1024)
-               bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
-               gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
-           (nuklear-dark-style gui)
-           (nuklear-window gui "test button" 0 0 160 40
-             (layout-row-dynamic gui 32 1)
-             (button-label gui "Test Button"))
-           (render-nuklear-gui gui 160 40)
-           (destroy-nuklear-gui gui)
-           (destroy-font-texture bitmap-font)))
-       => (is-image "test/sfsim/fixtures/gui/dark-style.png" 0.03))
+(fact "Render a text label"
+      (gui-control-test gui (text-label gui "Test Label")) => (is-image "test/sfsim/fixtures/gui/label.png" 0.03))
+
+(fact "Render an edit field"
+      (let [data (gui-edit-data "initial" 31 :sfsim.gui/filter-ascii)]
+        (gui-control-test gui (edit-field gui data)) => (is-image "test/sfsim/fixtures/gui/edit.png" 0.03)
+        (gui-edit-get data) => "initial"))
 
 (GLFW/glfwTerminate)

@@ -1,6 +1,8 @@
 # TODO
 * create Nuklear GUI to set location and time
-  * press escape to open menu starting with resume and exit button
+  * menu to set location
+  * menu to set time
+  * compute earth barycenter and sun in separate thread
   * add wrappers for more GUI elements
 * 2 more levels, higher res map
 * microtexture for normal map

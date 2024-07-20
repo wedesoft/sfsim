@@ -7,12 +7,14 @@
                                     destroy-vertex-array-object)]
               [sfsim.image :refer (white-image-with-alpha)]
               [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)])
-    (:import [org.lwjgl BufferUtils]
+    (:import [java.nio DirectByteBuffer]
+             [java.nio.charset StandardCharsets]
+             [org.lwjgl BufferUtils]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.opengl GL11 GL13]
              [org.lwjgl.nuklear Nuklear NkDrawNullTexture NkAllocator NkPluginAllocI NkPluginFreeI NkDrawVertexLayoutElement
               NkDrawVertexLayoutElement$Buffer NkConvertConfig NkContext NkBuffer NkUserFont NkHandle NkTextWidthCallbackI
-              NkQueryFontGlyphCallbackI NkUserFontGlyph NkRect NkColor NkColor$Buffer]
+              NkQueryFontGlyphCallbackI NkUserFontGlyph NkRect NkColor NkColor$Buffer NkPluginFilterI]
              [org.lwjgl.stb STBTTFontinfo STBTruetype STBTTPackedchar STBTTPackContext STBTTAlignedQuad STBTTPackedchar$Buffer]))
 
 (set! *unchecked-math* true)
@@ -374,6 +376,47 @@
   "Create a button with text label"
   [gui label]
   (Nuklear/nk_button_label ^NkContext (::context gui) ^String label))
+
+(defn text-label
+  "Create a text label"
+  [gui label]
+  (Nuklear/nk_label ^NkContext (::context gui) ^String label (bit-or Nuklear/NK_TEXT_ALIGN_LEFT Nuklear/NK_TEXT_ALIGN_MIDDLE)))
+
+(defn gui-edit-data
+  "Return map with text, limit, and filter for edit field"
+  [text max-size text-filter-type]
+  (let [text-filter (case text-filter-type
+                      ::filter-ascii (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
+                      ::filter-float (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_float edit unicode))))
+        text-len    (int-array [(count text)])
+        buffer      (BufferUtils/createByteBuffer (inc max-size))]
+    (.put ^DirectByteBuffer buffer (.getBytes ^String text (StandardCharsets/UTF_8)))
+    (.flip buffer)
+    (.limit ^DirectByteBuffer buffer (.capacity ^DirectByteBuffer buffer))
+    {::buffer      buffer
+     ::text-len    text-len
+     ::max-size    max-size
+     ::text-filter text-filter}))
+
+(defn gui-edit-get
+  "Get string with text from edit field"
+  [data]
+  (let [max-size (::max-size data)
+        buffer   (::buffer data)
+        text-len (aget ^ints (::text-len data) 0)
+        arr      (byte-array (inc text-len))]
+    (.get ^DirectByteBuffer buffer arr 0 text-len)
+    (.flip ^DirectByteBuffer buffer)
+    (.limit ^DirectByteBuffer buffer (.capacity ^DirectByteBuffer buffer))
+    (aset-byte arr text-len 0)
+    (String. arr 0 text-len (StandardCharsets/UTF_8))))
+
+(defn edit-field
+  "Create edit field"
+  [gui data]
+  (= (Nuklear/nk_edit_string (::context gui) Nuklear/NK_EDIT_FIELD (::buffer data) (::text-len data) (::max-size data)
+                             (::text-filter data))
+     Nuklear/NK_EDIT_COMMITED))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
