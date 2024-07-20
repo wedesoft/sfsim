@@ -122,17 +122,6 @@
              (destroy-vertex-array-object vao)
              (destroy-program program)))) => (is-image "test/sfsim/fixtures/gui/mode.png" 0.1))
 
-(facts "Render a slider"
-       (gui-offscreen-render 160 40
-         (let [buffer-initial-size (* 4 1024)
-               font                (NkUserFont/create)
-               gui                 (make-nuklear-gui font buffer-initial-size)]
-           (nuklear-window gui "test slider" 0 0 160 40
-             (layout-row-dynamic gui 32 1)
-             (slider-int gui 0 50 100 1))
-           (render-nuklear-gui gui 160 40)
-           (destroy-nuklear-gui gui))) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
-
 (fact "Render font to bitmap"
   (let [bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)]
     (:sfsim.gui/image bitmap-font)) => (is-image "test/sfsim/fixtures/gui/font.png" 7.22 false))
@@ -150,6 +139,9 @@
        (render-nuklear-gui ~gui 160 40)
        (destroy-nuklear-gui ~gui)
        (destroy-font-texture bitmap-font#))))
+
+(facts "Render a slider"
+       (gui-control-test gui (slider-int gui 0 50 100 1)) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
 
 (fact "Use font to render button"
       (gui-control-test gui (button-label gui "Test Button")) => (is-image "test/sfsim/fixtures/gui/button.png" 0.03))
