@@ -87,8 +87,8 @@
 (def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
 (gui/nuklear-dark-style gui)
 
-(def longitude-data (gui/gui-edit-data (str (to-degrees longitude)) 31 :sfsim.gui/filter-float))
-(def latitude-data (gui/gui-edit-data (str (to-degrees latitude)) 31 :sfsim.gui/filter-float))
+(def longitude-data (gui/gui-edit-data (format "%.5f" (to-degrees longitude)) 31 :sfsim.gui/filter-float))
+(def latitude-data (gui/gui-edit-data (format "%.5f" (to-degrees latitude)) 31 :sfsim.gui/filter-float))
 
 (def keystates (atom {}))
 
