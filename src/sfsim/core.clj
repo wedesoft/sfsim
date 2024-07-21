@@ -1,6 +1,6 @@
 (ns sfsim.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (cos sin to-radians to-degrees exp)]
+  (:require [clojure.math :refer (cos sin to-radians to-degrees exp PI)]
             [fastmath.vector :refer (vec3 add mult)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
@@ -15,7 +15,7 @@
             [sfsim.gui :as gui]
             [sfsim.config :as config])
   (:import [org.lwjgl.system MemoryStack]
-           [org.lwjgl.glfw GLFW GLFWKeyCallbackI GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
+           [org.lwjgl.glfw GLFW GLFWKeyCallbackI GLFWCursorPosCallbackI GLFWMouseButtonCallbackI GLFWCharCallbackI]
            [org.lwjgl.nuklear Nuklear])
   (:gen-class))
 
@@ -32,14 +32,24 @@
 (def opacity-base (atom 250.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def radius (+ 30.0 6378000.0))
-(def position (atom (vec3 (* (cos longitude) (cos latitude) radius)
-                          (* (sin longitude) (cos latitude) radius)
-                          (* (sin latitude) radius))))
-(def camera-orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
-(def object-orientation (atom (q/rotation (to-radians 270) (vec3 0 0 1))))
+(def object-orientation (atom nil))
+(def camera-orientation (atom nil))
+(def height 30.0)
+(def position (atom nil))
 (def light (atom 0.0))
 (def speed (atom (/ 7800 1000.0)))
+
+(defn set-geographic-position
+  [longitude latitude height]
+  (let [radius (+ height 6378000.0)]
+    (reset! position (vec3 (* (cos longitude) (cos latitude) radius)
+                           (* (sin longitude) (cos latitude) radius)
+                           (* (sin latitude) radius)))
+    (reset! object-orientation (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
+                                    (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
+    (reset! camera-orientation @object-orientation)))
+
+(set-geographic-position longitude latitude height)
 
 (GLFW/glfwInit)
 
@@ -87,8 +97,9 @@
 (def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
 (gui/nuklear-dark-style gui)
 
-(def longitude-data (gui/gui-edit-data (str (to-degrees longitude)) 31 :sfsim.gui/filter-float))
-(def latitude-data (gui/gui-edit-data (str (to-degrees latitude)) 31 :sfsim.gui/filter-float))
+(def longitude-data (gui/gui-edit-data (format "%.5f" (to-degrees longitude)) 31 :sfsim.gui/filter-float))
+(def latitude-data (gui/gui-edit-data (format "%.5f" (to-degrees latitude)) 31 :sfsim.gui/filter-float))
+(def height-data (gui/gui-edit-data (format "%.1f" height) 31 :sfsim.gui/filter-float))
 
 (def keystates (atom {}))
 
@@ -98,9 +109,29 @@
            (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)
-             (swap! keystates assoc k false)))))
+             (swap! keystates assoc k false))
+           (let [press (or (= action GLFW/GLFW_PRESS) (= action GLFW/GLFW_REPEAT))]
+             (cond
+               (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
+               (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
+               (= k GLFW/GLFW_KEY_TAB)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TAB press)
+               (= k GLFW/GLFW_KEY_BACKSPACE)   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
+               (= k GLFW/GLFW_KEY_UP)          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
+               (= k GLFW/GLFW_KEY_DOWN)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
+               (= k GLFW/GLFW_KEY_LEFT)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_LEFT press)
+               (= k GLFW/GLFW_KEY_RIGHT)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_RIGHT press)
+               (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
+               (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
+               (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
+               (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))))))
 
 (GLFW/glfwSetKeyCallback window keyboard-callback)
+
+(GLFW/glfwSetCharCallback
+  window
+  (reify GLFWCharCallbackI
+         (invoke [this window codepoint]
+           (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))))
 
 (GLFW/glfwSetCursorPosCallback
   window
@@ -115,7 +146,7 @@
            (let [stack (MemoryStack/stackPush)
                  cx    (.mallocDouble stack 1)
                  cy    (.mallocDouble stack 1)]
-             (GLFW/glfwGetCursorPos window cx cy)
+             (GLFW/glfwGetCursorPos ^long window cx cy)
              (let [x        (int (.get cx 0))
                    y        (int (.get cy 0))
                    nkbutton (cond
@@ -214,22 +245,29 @@
                      (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
                  (when (not (zero? @menu))
                    (setup-rendering 1280 720 :sfsim.render/noculling false)
-                   (case @menu
+                   (case (int @menu)
                      1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
                                            (gui/layout-row-dynamic gui 32 1)
                                            (when (gui/button-label gui "Location")
+                                             ; TODO: capture current position
                                              (reset! menu 2))
                                            (when (gui/button-label gui "Resume")
                                              (reset! menu 0))
                                            (when (gui/button-label gui "Quit")
                                            (GLFW/glfwSetWindowShouldClose window true)))
-                     2 (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
+                     2 (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
                                            (gui/layout-row-dynamic gui 32 2)
-                                           (gui/text-label gui "Longitude")
+                                           (gui/text-label gui "Longitude (East)")
                                            (gui/edit-field gui longitude-data)
-                                           (gui/text-label gui "Latitude")
+                                           (gui/text-label gui "Latitude (North)")
                                            (gui/edit-field gui latitude-data)
-                                           (gui/layout-row-dynamic gui 32 1)
+                                           (gui/text-label gui "Height")
+                                           (gui/edit-field gui height-data)
+                                           (when (gui/button-label gui "Set")
+                                             (set-geographic-position
+                                               (to-radians (Double/parseDouble (gui/gui-edit-get longitude-data)))
+                                               (to-radians (Double/parseDouble (gui/gui-edit-get latitude-data)))
+                                               (Double/parseDouble (gui/gui-edit-get height-data))))
                                            (when (gui/button-label gui "Close")
                                              (reset! menu 1))))
                    (gui/render-nuklear-gui gui 1280 720)))
