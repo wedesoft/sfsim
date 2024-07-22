@@ -1,7 +1,7 @@
 (ns sfsim.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (cos sin to-radians to-degrees exp PI)]
-            [fastmath.vector :refer (vec3 add mult)]
+  (:require [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI)]
+            [fastmath.vector :refer (vec3 add mult mag)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
                                   write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering)]
@@ -14,7 +14,8 @@
             [sfsim.opacity :as opacity]
             [sfsim.gui :as gui]
             [sfsim.config :as config])
-  (:import [org.lwjgl.system MemoryStack]
+  (:import [fastmath.vector Vec3]
+           [org.lwjgl.system MemoryStack]
            [org.lwjgl.glfw GLFW GLFWKeyCallbackI GLFWCursorPosCallbackI GLFWMouseButtonCallbackI GLFWCharCallbackI]
            [org.lwjgl.nuklear Nuklear])
   (:gen-class))
@@ -97,9 +98,9 @@
 (def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
 (gui/nuklear-dark-style gui)
 
-(def longitude-data (gui/gui-edit-data (format "%.5f" (to-degrees longitude)) 31 :sfsim.gui/filter-float))
-(def latitude-data (gui/gui-edit-data (format "%.5f" (to-degrees latitude)) 31 :sfsim.gui/filter-float))
-(def height-data (gui/gui-edit-data (format "%.1f" height) 31 :sfsim.gui/filter-float))
+(def longitude-data (gui/gui-edit-data "0.0" 31 :sfsim.gui/filter-float))
+(def latitude-data (gui/gui-edit-data "0.0" 31 :sfsim.gui/filter-float))
+(def height-data (gui/gui-edit-data "0.0" 31 :sfsim.gui/filter-float))
 
 (def keystates (atom {}))
 
@@ -249,8 +250,14 @@
                      1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
                                            (gui/layout-row-dynamic gui 32 1)
                                            (when (gui/button-label gui "Location")
-                                             ; TODO: capture current position
-                                             (reset! menu 2))
+                                             (let [pos       @position
+                                                   longitude (atan2 (.y ^Vec3 pos) (.x ^Vec3 pos))
+                                                   latitude  (atan2 (.z ^Vec3 pos) (hypot (.x ^Vec3 pos) (.y ^Vec3 pos)))
+                                                   height    (- (mag pos) 6378000.0)]
+                                               (gui/gui-edit-set longitude-data (format "%.5f" (to-degrees longitude)))
+                                               (gui/gui-edit-set latitude-data (format "%.5f" (to-degrees latitude)))
+                                               (gui/gui-edit-set height-data (format "%.1f" height))
+                                               (reset! menu 2)))
                                            (when (gui/button-label gui "Resume")
                                              (reset! menu 0))
                                            (when (gui/button-label gui "Quit")
