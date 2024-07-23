@@ -382,7 +382,7 @@
   [gui label]
   (Nuklear/nk_label ^NkContext (::context gui) ^String label (bit-or Nuklear/NK_TEXT_ALIGN_LEFT Nuklear/NK_TEXT_ALIGN_MIDDLE)))
 
-(defn gui-edit-set
+(defn edit-set
   "Set string with text for edit field"
   [data text]
   (let [buffer   (::buffer data)
@@ -392,21 +392,23 @@
     (.limit ^DirectByteBuffer buffer (.capacity ^DirectByteBuffer buffer))
     (aset-int text-len 0 (count text))))
 
-(defn gui-edit-data
+(defn edit-data
   "Return map with text, limit, and filter for edit field"
   [text max-size text-filter-type]
-  (let [text-filter (case text-filter-type
-                      ::filter-ascii (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
-                      ::filter-float (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_float edit unicode))))
+  (let [text-filter
+        (case text-filter-type
+          ::filter-ascii   (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
+          ::filter-float   (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_float edit unicode)))
+          ::filter-decimal (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_decimal edit unicode))))
         text-len    (int-array 1)
-        buffer      (BufferUtils/createByteBuffer (inc max-size))]
-    (gui-edit-set {::buffer buffer ::text-len text-len} text)
+        buffer      (BufferUtils/createByteBuffer max-size)]
+    (edit-set {::buffer buffer ::text-len text-len} text)
     {::buffer      buffer
      ::text-len    text-len
      ::max-size    max-size
      ::text-filter text-filter}))
 
-(defn gui-edit-get
+(defn edit-get
   "Get string with text from edit field"
   [data]
   (let [max-size (::max-size data)

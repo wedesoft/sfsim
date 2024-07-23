@@ -1,7 +1,7 @@
 (ns sfsim.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (cos sin to-radians to-degrees exp PI)]
-            [fastmath.vector :refer (vec3 add mult)]
+  (:require [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI)]
+            [fastmath.vector :refer (vec3 add mult mag)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
                                   write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering)]
@@ -14,7 +14,8 @@
             [sfsim.opacity :as opacity]
             [sfsim.gui :as gui]
             [sfsim.config :as config])
-  (:import [org.lwjgl.system MemoryStack]
+  (:import [fastmath.vector Vec3]
+           [org.lwjgl.system MemoryStack]
            [org.lwjgl.glfw GLFW GLFWKeyCallbackI GLFWCursorPosCallbackI GLFWMouseButtonCallbackI GLFWCharCallbackI]
            [org.lwjgl.nuklear Nuklear])
   (:gen-class))
@@ -97,9 +98,17 @@
 (def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
 (gui/nuklear-dark-style gui)
 
-(def longitude-data (gui/gui-edit-data (format "%.5f" (to-degrees longitude)) 31 :sfsim.gui/filter-float))
-(def latitude-data (gui/gui-edit-data (format "%.5f" (to-degrees latitude)) 31 :sfsim.gui/filter-float))
-(def height-data (gui/gui-edit-data (format "%.1f" height) 31 :sfsim.gui/filter-float))
+(def longitude-data (gui/edit-data "0.0" 32 :sfsim.gui/filter-float))
+(def latitude-data (gui/edit-data "0.0" 32 :sfsim.gui/filter-float))
+(def height-data (gui/edit-data "0.0" 32 :sfsim.gui/filter-float))
+
+(def day-data (gui/edit-data "1" 3 :sfsim.gui/filter-decimal))
+(def month-data (gui/edit-data "1" 3 :sfsim.gui/filter-decimal))
+(def year-data (gui/edit-data "2000" 5 :sfsim.gui/filter-decimal))
+
+(def hour-data (gui/edit-data "12" 3 :sfsim.gui/filter-decimal))
+(def minute-data (gui/edit-data "0" 3 :sfsim.gui/filter-decimal))
+(def second-data (gui/edit-data "0" 3 :sfsim.gui/filter-decimal))
 
 (def keystates (atom {}))
 
@@ -249,12 +258,20 @@
                      1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
                                            (gui/layout-row-dynamic gui 32 1)
                                            (when (gui/button-label gui "Location")
-                                             ; TODO: capture current position
-                                             (reset! menu 2))
+                                             (let [pos       @position
+                                                   longitude (atan2 (.y ^Vec3 pos) (.x ^Vec3 pos))
+                                                   latitude  (atan2 (.z ^Vec3 pos) (hypot (.x ^Vec3 pos) (.y ^Vec3 pos)))
+                                                   height    (- (mag pos) 6378000.0)]
+                                               (gui/edit-set longitude-data (format "%.5f" (to-degrees longitude)))
+                                               (gui/edit-set latitude-data (format "%.5f" (to-degrees latitude)))
+                                               (gui/edit-set height-data (format "%.1f" height))
+                                               (reset! menu 2)))
+                                           (when (gui/button-label gui "Date/Time")
+                                             (reset! menu 3))
                                            (when (gui/button-label gui "Resume")
                                              (reset! menu 0))
                                            (when (gui/button-label gui "Quit")
-                                           (GLFW/glfwSetWindowShouldClose window true)))
+                                             (GLFW/glfwSetWindowShouldClose window true)))
                      2 (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
                                            (gui/layout-row-dynamic gui 32 2)
                                            (gui/text-label gui "Longitude (East)")
@@ -265,11 +282,44 @@
                                            (gui/edit-field gui height-data)
                                            (when (gui/button-label gui "Set")
                                              (set-geographic-position
-                                               (to-radians (Double/parseDouble (gui/gui-edit-get longitude-data)))
-                                               (to-radians (Double/parseDouble (gui/gui-edit-get latitude-data)))
-                                               (Double/parseDouble (gui/gui-edit-get height-data))))
+                                               (to-radians (Double/parseDouble (gui/edit-get longitude-data)))
+                                               (to-radians (Double/parseDouble (gui/edit-get latitude-data)))
+                                               (Double/parseDouble (gui/edit-get height-data))))
                                            (when (gui/button-label gui "Close")
-                                             (reset! menu 1))))
+                                             (reset! menu 1)))
+                     3 (gui/nuklear-window gui "datetime" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
+                                           (Nuklear/nk_layout_row_begin (:sfsim.gui/context gui) Nuklear/NK_DYNAMIC 32 6)
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.4)
+                                           (gui/text-label gui "Date")
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.15)
+                                           (gui/edit-field gui day-data)
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.05)
+                                           (gui/text-label gui "/")
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.15)
+                                           (gui/edit-field gui month-data)
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.05)
+                                           (gui/text-label gui "/")
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.2)
+                                           (gui/edit-field gui year-data)
+                                           (Nuklear/nk_layout_row_end (:sfsim.gui/context gui))
+                                           (Nuklear/nk_layout_row_begin (:sfsim.gui/context gui) Nuklear/NK_DYNAMIC 32 6)
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.45)
+                                           (gui/text-label gui "Time")
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.15)
+                                           (gui/edit-field gui hour-data)
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.05)
+                                           (gui/text-label gui ":")
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.15)
+                                           (gui/edit-field gui minute-data)
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.05)
+                                           (gui/text-label gui ":")
+                                           (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.14999)
+                                           (gui/edit-field gui second-data)
+                                           (Nuklear/nk_layout_row_end (:sfsim.gui/context gui))
+                                           (gui/layout-row-dynamic gui 32 2)
+                                           (gui/button-label gui "Set")
+                                           (when (gui/button-label gui "Close")
+                                             (reset! menu 1)) ))
                    (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
