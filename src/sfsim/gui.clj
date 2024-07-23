@@ -395,11 +395,13 @@
 (defn edit-data
   "Return map with text, limit, and filter for edit field"
   [text max-size text-filter-type]
-  (let [text-filter (case text-filter-type
-                      ::filter-ascii (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
-                      ::filter-float (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_float edit unicode))))
+  (let [text-filter
+        (case text-filter-type
+          ::filter-ascii   (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
+          ::filter-float   (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_float edit unicode)))
+          ::filter-decimal (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_decimal edit unicode))))
         text-len    (int-array 1)
-        buffer      (BufferUtils/createByteBuffer (inc max-size))]
+        buffer      (BufferUtils/createByteBuffer max-size)]
     (edit-set {::buffer buffer ::text-len text-len} text)
     {::buffer      buffer
      ::text-len    text-len
