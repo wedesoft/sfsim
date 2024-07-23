@@ -98,9 +98,9 @@
 (def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
 (gui/nuklear-dark-style gui)
 
-(def longitude-data (gui/gui-edit-data "0.0" 31 :sfsim.gui/filter-float))
-(def latitude-data (gui/gui-edit-data "0.0" 31 :sfsim.gui/filter-float))
-(def height-data (gui/gui-edit-data "0.0" 31 :sfsim.gui/filter-float))
+(def longitude-data (gui/edit-data "0.0" 31 :sfsim.gui/filter-float))
+(def latitude-data (gui/edit-data "0.0" 31 :sfsim.gui/filter-float))
+(def height-data (gui/edit-data "0.0" 31 :sfsim.gui/filter-float))
 
 (def keystates (atom {}))
 
@@ -254,9 +254,9 @@
                                                    longitude (atan2 (.y ^Vec3 pos) (.x ^Vec3 pos))
                                                    latitude  (atan2 (.z ^Vec3 pos) (hypot (.x ^Vec3 pos) (.y ^Vec3 pos)))
                                                    height    (- (mag pos) 6378000.0)]
-                                               (gui/gui-edit-set longitude-data (format "%.5f" (to-degrees longitude)))
-                                               (gui/gui-edit-set latitude-data (format "%.5f" (to-degrees latitude)))
-                                               (gui/gui-edit-set height-data (format "%.1f" height))
+                                               (gui/edit-set longitude-data (format "%.5f" (to-degrees longitude)))
+                                               (gui/edit-set latitude-data (format "%.5f" (to-degrees latitude)))
+                                               (gui/edit-set height-data (format "%.1f" height))
                                                (reset! menu 2)))
                                            (when (gui/button-label gui "Resume")
                                              (reset! menu 0))
@@ -272,9 +272,9 @@
                                            (gui/edit-field gui height-data)
                                            (when (gui/button-label gui "Set")
                                              (set-geographic-position
-                                               (to-radians (Double/parseDouble (gui/gui-edit-get longitude-data)))
-                                               (to-radians (Double/parseDouble (gui/gui-edit-get latitude-data)))
-                                               (Double/parseDouble (gui/gui-edit-get height-data))))
+                                               (to-radians (Double/parseDouble (gui/edit-get longitude-data)))
+                                               (to-radians (Double/parseDouble (gui/edit-get latitude-data)))
+                                               (Double/parseDouble (gui/edit-get height-data))))
                                            (when (gui/button-label gui "Close")
                                              (reset! menu 1))))
                    (gui/render-nuklear-gui gui 1280 720)))
