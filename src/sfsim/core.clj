@@ -255,7 +255,7 @@
                  (when (not (zero? @menu))
                    (setup-rendering 1280 720 :sfsim.render/noculling false)
                    (case (int @menu)
-                     1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
+                     1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
                                            (gui/layout-row-dynamic gui 32 1)
                                            (when (gui/button-label gui "Location")
                                              (let [pos       @position
