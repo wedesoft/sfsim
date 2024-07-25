@@ -12,6 +12,7 @@
             [sfsim.model :as model]
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
+            [sfsim.astro :as astro]
             [sfsim.gui :as gui]
             [sfsim.config :as config])
   (:import [fastmath.vector Vec3]
@@ -173,6 +174,7 @@
   "Space flight simulator main function"
   [& _args]
   (let [t0 (atom (System/currentTimeMillis))
+        ts (atom (- (astro/now) (/ @t0 1000 86400.0)))
         n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
@@ -267,7 +269,17 @@
                                                (gui/edit-set height-data (format "%.1f" height))
                                                (reset! menu 2)))
                                            (when (gui/button-label gui "Date/Time")
-                                             (reset! menu 3))
+                                             (let [t (+ @ts (/ @t0 1000 86400.0))
+                                                   t (+ astro/T0 t 0.5)
+                                                   d (astro/calendar-date (int t))
+                                                   c (astro/clock-time (- t (int t)))]
+                                               (gui/edit-set day-data (format "%2d" (:day d)))
+                                               (gui/edit-set month-data (format "%2d" (:month d)))
+                                               (gui/edit-set year-data (format "%4d" (:year d)))
+                                               (gui/edit-set hour-data (format "%2d" (:hour c)))
+                                               (gui/edit-set minute-data (format "%2d" (:minute c)))
+                                               (gui/edit-set second-data (format "%2d" (:second c)))
+                                               (reset! menu 3)))
                                            (when (gui/button-label gui "Resume")
                                              (reset! menu 0))
                                            (when (gui/button-label gui "Quit")

@@ -233,6 +233,12 @@
        (calendar-date 2460708) => {:year 2025 :month 2 :day 1}
        (calendar-date 2460736) => {:year 2025 :month 3 :day 1})
 
+(facts "Convert day fraction to hours, minutes, and seconds"
+       (clock-time 0.0) => {:hour 0 :minute 0 :second 0}
+       (clock-time 0.5) => {:hour 12 :minute 0 :second 0}
+       (clock-time (/ 25.0 48.0)) => {:hour 12 :minute 30 :second 0}
+       (clock-time (/ 3001.0 5760.0)) => {:hour 12 :minute 30 :second 15})
+
 (facts "Freeze some test values for the Earth precession angles"
        (psi-a 0.0)   => 0.0
        (psi-a 0.5)   => (roughly 2518.9709 1e-4)
