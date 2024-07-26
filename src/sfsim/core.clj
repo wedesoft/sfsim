@@ -170,12 +170,19 @@
 
 (def menu (atom 0))
 
+(def t0 (atom (System/currentTimeMillis)))
+(def ts (atom (- (astro/now) (/ @t0 1000 86400.0))))
+
+(defn set-time
+  [day month year hour minute sec]
+  (let [jd    (astro/julian-date {:year year :month month :day day})
+        clock (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
+    (reset! ts (- (+ (- jd astro/T0 0.5) clock) (/ @t0 1000 86400.0)))))
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
-  (let [t0 (atom (System/currentTimeMillis))
-        ts (atom (- (astro/now) (/ @t0 1000 86400.0)))
-        n  (atom 0)
+  (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
@@ -329,7 +336,14 @@
                                            (gui/edit-field gui second-data)
                                            (Nuklear/nk_layout_row_end (:sfsim.gui/context gui))
                                            (gui/layout-row-dynamic gui 32 2)
-                                           (gui/button-label gui "Set")
+                                           (when (gui/button-label gui "Set")
+                                             (set-time
+                                               (Integer/parseInt (clojure.string/trim (gui/edit-get day-data)))
+                                               (Integer/parseInt (clojure.string/trim (gui/edit-get month-data)))
+                                               (Integer/parseInt (clojure.string/trim (gui/edit-get year-data)))
+                                               (Integer/parseInt (clojure.string/trim (gui/edit-get hour-data)))
+                                               (Integer/parseInt (clojure.string/trim (gui/edit-get minute-data)))
+                                               (Integer/parseInt (clojure.string/trim (gui/edit-get second-data)))))
                                            (when (gui/button-label gui "Close")
                                              (reset! menu 1)) ))
                    (gui/render-nuklear-gui gui 1280 720)))
