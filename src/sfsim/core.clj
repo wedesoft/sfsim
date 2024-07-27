@@ -34,24 +34,9 @@
 (def opacity-base (atom 250.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def object-orientation (atom nil))
-(def camera-orientation (atom nil))
 (def height 30.0)
-(def position (atom nil))
 (def light (atom 0.0))
 (def speed (atom (/ 7800 1000.0)))
-
-(defn set-geographic-position
-  [longitude latitude height]
-  (let [radius (+ height 6378000.0)]
-    (reset! position (vec3 (* (cos longitude) (cos latitude) radius)
-                           (* (sin longitude) (cos latitude) radius)
-                           (* (sin latitude) radius)))
-    (reset! object-orientation (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
-                                    (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
-    (reset! camera-orientation @object-orientation)))
-
-(set-geographic-position longitude latitude height)
 
 (GLFW/glfwInit)
 
@@ -169,6 +154,22 @@
 (def dist (atom 100.0))
 
 (def menu (atom 0))
+
+(def position (atom nil))
+(def object-orientation (atom nil))
+(def camera-orientation (atom nil))
+
+(defn set-geographic-position
+  [longitude latitude height]
+  (let [radius (+ height 6378000.0)]
+    (reset! position (vec3 (* (cos longitude) (cos latitude) radius)
+                           (* (sin longitude) (cos latitude) radius)
+                           (* (sin latitude) radius)))
+    (reset! object-orientation (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
+                                    (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
+    (reset! camera-orientation @object-orientation)))
+
+(set-geographic-position longitude latitude height)
 
 (def t0 (atom (System/currentTimeMillis)))
 (def ts (atom (- (astro/now) (/ @t0 1000 86400.0))))
