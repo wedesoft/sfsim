@@ -1,7 +1,8 @@
 (ns sfsim.core
   "Space flight simulator main program."
   (:require [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI)]
-            [fastmath.vector :refer (vec3 add mult mag)]
+            [fastmath.vector :refer (vec3 add mult mag sub normalize)]
+            [fastmath.matrix :refer (inverse mulv)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
                                   write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering)]
@@ -35,8 +36,10 @@
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
 (def height 30.0)
-(def light (atom 0.0))
 (def speed (atom (/ 7800 1000.0)))
+
+(def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
+(def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
 
 (GLFW/glfwInit)
 
@@ -151,13 +154,12 @@
                (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))
                (MemoryStack/stackPop))))))
 
-(def dist (atom 100.0))
-
 (def menu (atom 0))
 
 (def position (atom nil))
 (def object-orientation (atom nil))
 (def camera-orientation (atom nil))
+(def dist (atom 100.0))
 
 (defn set-geographic-position
   [longitude latitude height]
@@ -199,7 +201,6 @@
                  rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
                  rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
                  v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
-                 l  (if (@keystates GLFW/GLFW_KEY_KP_ADD) 0.005 (if (@keystates GLFW/GLFW_KEY_KP_SUBTRACT) -0.005 0))
                  d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
                  to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
              (when mn (reset! menu 1))
@@ -210,12 +211,14 @@
              (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
              (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
              (swap! position add (mult (q/rotate-vector @object-orientation (vec3 1 0 0)) (* dt v)))
-             (swap! light + (* l 0.1 dt))
              (swap! opacity-base + (* dt to))
              (swap! dist * (exp d))
              (let [origin             (add @position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
                    object-position    @position
-                   light-direction    (vec3 (cos @light) (sin @light) 0)
+                   jd-ut              (+ @ts (/ @t0 1000 86400.0) astro/T0)
+                   icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
+                   sun-pos            (sub (earth-moon jd-ut))
+                   light-direction    (normalize (mulv icrs-to-earth sun-pos))
                    planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                       (aget w 0) (aget h 0) origin @camera-orientation
                                                                       light-direction)
