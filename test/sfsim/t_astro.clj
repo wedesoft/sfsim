@@ -218,26 +218,26 @@
        (map-vec3 [[1.0 2.0 3.0]]) => [(vec3 1.0 2.0 3.0)])
 
 (facts "Convert calendar date to Julian date"
-       (julian-date {:year 2024 :month 1 :day 1}) => 2460311
-       (julian-date {:year 2024 :month 1 :day 2}) => 2460312
-       (julian-date {:year 2024 :month 2 :day 1}) => 2460342
-       (julian-date {:year 2024 :month 3 :day 1}) => 2460371
-       (julian-date {:year 2025 :month 2 :day 1}) => 2460708
-       (julian-date {:year 2025 :month 3 :day 1}) => 2460736)
+       (julian-date #:sfsim.astro{:year 2024 :month 1 :day 1}) => 2460311
+       (julian-date #:sfsim.astro{:year 2024 :month 1 :day 2}) => 2460312
+       (julian-date #:sfsim.astro{:year 2024 :month 2 :day 1}) => 2460342
+       (julian-date #:sfsim.astro{:year 2024 :month 3 :day 1}) => 2460371
+       (julian-date #:sfsim.astro{:year 2025 :month 2 :day 1}) => 2460708
+       (julian-date #:sfsim.astro{:year 2025 :month 3 :day 1}) => 2460736)
 
 (facts "Convert Julian date to calendar date"
-       (calendar-date 2460311) => {:year 2024 :month 1 :day 1}
-       (calendar-date 2460312) => {:year 2024 :month 1 :day 2}
-       (calendar-date 2460342) => {:year 2024 :month 2 :day 1}
-       (calendar-date 2460371) => {:year 2024 :month 3 :day 1}
-       (calendar-date 2460708) => {:year 2025 :month 2 :day 1}
-       (calendar-date 2460736) => {:year 2025 :month 3 :day 1})
+       (calendar-date 2460311) => #:sfsim.astro{:year 2024 :month 1 :day 1}
+       (calendar-date 2460312) => #:sfsim.astro{:year 2024 :month 1 :day 2}
+       (calendar-date 2460342) => #:sfsim.astro{:year 2024 :month 2 :day 1}
+       (calendar-date 2460371) => #:sfsim.astro{:year 2024 :month 3 :day 1}
+       (calendar-date 2460708) => #:sfsim.astro{:year 2025 :month 2 :day 1}
+       (calendar-date 2460736) => #:sfsim.astro{:year 2025 :month 3 :day 1})
 
 (facts "Convert day fraction to hours, minutes, and seconds"
-       (clock-time 0.0) => {:hour 0 :minute 0 :second 0}
-       (clock-time 0.5) => {:hour 12 :minute 0 :second 0}
-       (clock-time (/ 25.0 48.0)) => {:hour 12 :minute 30 :second 0}
-       (clock-time (/ 3001.0 5760.0)) => {:hour 12 :minute 30 :second 15})
+       (clock-time 0.0) => #:sfsim.astro{:hour 0 :minute 0 :second 0}
+       (clock-time 0.5) => #:sfsim.astro{:hour 12 :minute 0 :second 0}
+       (clock-time (/ 25.0 48.0)) => #:sfsim.astro{:hour 12 :minute 30 :second 0}
+       (clock-time (/ 3001.0 5760.0)) => #:sfsim.astro{:hour 12 :minute 30 :second 15})
 
 (facts "Freeze some test values for the Earth precession angles"
        (psi-a 0.0)   => 0.0

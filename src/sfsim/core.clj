@@ -178,7 +178,7 @@
 
 (defn set-time
   [day month year hour minute sec]
-  (let [jd    (astro/julian-date {:year year :month month :day day})
+  (let [jd    (astro/julian-date #:sfsim.astro{:year year :month month :day day})
         clock (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
     (reset! ts (- (+ (- jd astro/T0 0.5) clock) (/ @t0 1000 86400.0)))))
 
@@ -284,12 +284,12 @@
                                                    t (+ astro/T0 t 0.5)
                                                    d (astro/calendar-date (int t))
                                                    c (astro/clock-time (- t (int t)))]
-                                               (gui/edit-set day-data (format "%2d" (:day d)))
-                                               (gui/edit-set month-data (format "%2d" (:month d)))
-                                               (gui/edit-set year-data (format "%4d" (:year d)))
-                                               (gui/edit-set hour-data (format "%2d" (:hour c)))
-                                               (gui/edit-set minute-data (format "%2d" (:minute c)))
-                                               (gui/edit-set second-data (format "%2d" (:second c)))
+                                               (gui/edit-set day-data (format "%2d" (:sfsim.astro/day d)))
+                                               (gui/edit-set month-data (format "%2d" (:sfsim.astro/month d)))
+                                               (gui/edit-set year-data (format "%4d" (:sfsim.astro/year d)))
+                                               (gui/edit-set hour-data (format "%2d" (:sfsim.astro/hour c)))
+                                               (gui/edit-set minute-data (format "%2d" (:sfsim.astro/minute c)))
+                                               (gui/edit-set second-data (format "%2d" (:sfsim.astro/second c)))
                                                (reset! menu 3)))
                                            (when (gui/button-label gui "Resume")
                                              (reset! menu 0))

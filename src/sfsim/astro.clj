@@ -343,12 +343,12 @@
               coefficients (cache index)]
           (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
 
-(def date (m/schema [:map [:year :int] [:month :int] [:day :int]]))
+(def date (m/schema [:map [::year :int] [::month :int] [::day :int]]))
 
 (defn julian-date
   "Convert calendar date to Julian date"
   {:malli/schema [:=> [:cat date] :int]}
-  [{:keys [year month day]}]
+  [{::keys [year month day]}]
   (let [g (- (+ year 4716) (if (<= month 2) 1 0))
         f (mod (+ month 9) 12)
         e (- (+ (quot (* 1461 g) 4) day) 1402)
@@ -367,11 +367,13 @@
         day (inc (quot (mod h 153) 5))
         month (inc (mod (+ (quot h 153) 2) 12))
         year (+ (- (quot e 1461) 4716) (quot (- (+ 12 2) month) 12))]
-    {:year year :month month :day day}))
+    {::year year ::month month ::day day}))
+
+(def clock (m/schema [:map [::hour :int] [::minute :int] [::second :int]]))
 
 (defn clock-time
   "Convert day fraction to hours, minutes, and seconds"
-  {:malli/schema [:=> [:cat :double] :map]}
+  {:malli/schema [:=> [:cat :double] clock]}
   [day-fraction]
   (let [hours   (* 24.0 day-fraction)
         hour    (int hours)
@@ -379,7 +381,7 @@
         minute  (int minutes)
         seconds (* 60.0 (- minutes minute))
         sec     (int (+ seconds 0.5))]
-    {:hour hour :minute minute :second sec}))
+    {::hour hour ::minute minute ::second sec}))
 
 ; See python-skyfield precessionlib.compute_precession
 
