@@ -329,6 +329,7 @@
                                            (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.45)
                                            (gui/text-label gui "Time")
                                            (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.15)
+                                           ; (Nuklear/nk_edit_focus (:sfsim.gui/context gui) Nuklear/NK_EDIT_ACTIVE)
                                            (gui/edit-field gui hour-data)
                                            (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) 0.05)
                                            (gui/text-label gui ":")
