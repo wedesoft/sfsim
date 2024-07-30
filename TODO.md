@@ -1,5 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
+  * (Nuklear/nk\_edit\_focus (:sfsim.gui/context gui) Nuklear/NK\_EDIT\_ACTIVE)
   * menu to set location
   * menu to set time
   * compute earth barycenter and sun in separate thread
