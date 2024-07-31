@@ -174,14 +174,36 @@
 
 (set-geographic-position longitude latitude height)
 
+(defn position-edit-set
+  [position-data position]
+  (let [longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
+        latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
+        height    (- (mag position) 6378000.0)]
+    (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees longitude)))
+    (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees latitude)))
+    (gui/edit-set (:height position-data) (format "%.1f" height))))
+
 (def t0 (atom (System/currentTimeMillis)))
-(def ts (atom (- (astro/now) (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0))))
 
 (defn set-time
   [day month year hour minute sec]
   (let [jd    (astro/julian-date #:sfsim.astro{:year year :month month :day day})
         clock (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
-    (reset! ts (- (+ (- jd astro/T0 0.5) clock) (/ @t0 1000 86400.0)))))
+    (reset! time-delta (- (+ (- jd astro/T0 0.5) clock) (/ @t0 1000 86400.0)))))
+
+(defn time-edit-set
+  [time-data time-delta t0]
+  (let [t     (+ time-delta (/ t0 1000 86400.0))
+        t     (+ astro/T0 t 0.5)
+        date  (astro/calendar-date (int t))
+        clock (astro/clock-time (- t (int t)))]
+    (gui/edit-set (:day time-data) (format "%2d" (:sfsim.astro/day date)))
+    (gui/edit-set (:month time-data) (format "%2d" (:sfsim.astro/month date)))
+    (gui/edit-set (:year time-data) (format "%4d" (:sfsim.astro/year date)))
+    (gui/edit-set (:hour time-data) (format "%2d" (:sfsim.astro/hour clock)))
+    (gui/edit-set (:minute time-data) (format "%2d" (:sfsim.astro/minute clock)))
+    (gui/edit-set (:second time-data) (format "%2d" (:sfsim.astro/second clock)))))
 
 (defn -main
   "Space flight simulator main function"
@@ -216,7 +238,7 @@
              (swap! dist * (exp d))
              (let [origin             (add @position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
                    object-position    @position
-                   jd-ut              (+ @ts (/ @t0 1000 86400.0) astro/T0)
+                   jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
                    icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
                    sun-pos            (sub (earth-moon jd-ut))
                    light-direction    (normalize (mulv icrs-to-earth sun-pos))
@@ -272,26 +294,11 @@
                      1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
                                            (gui/layout-row-dynamic gui 32 1)
                                            (when (gui/button-label gui "Location")
-                                             (let [pos       @position
-                                                   longitude (atan2 (.y ^Vec3 pos) (.x ^Vec3 pos))
-                                                   latitude  (atan2 (.z ^Vec3 pos) (hypot (.x ^Vec3 pos) (.y ^Vec3 pos)))
-                                                   height    (- (mag pos) 6378000.0)]
-                                               (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees longitude)))
-                                               (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees latitude)))
-                                               (gui/edit-set (:height position-data) (format "%.1f" height))
-                                               (reset! menu 2)))
+                                             (position-edit-set position-data @position)
+                                             (reset! menu 2))
                                            (when (gui/button-label gui "Date/Time")
-                                             (let [t (+ @ts (/ @t0 1000 86400.0))
-                                                   t (+ astro/T0 t 0.5)
-                                                   d (astro/calendar-date (int t))
-                                                   c (astro/clock-time (- t (int t)))]
-                                               (gui/edit-set (:day time-data) (format "%2d" (:sfsim.astro/day d)))
-                                               (gui/edit-set (:month time-data) (format "%2d" (:sfsim.astro/month d)))
-                                               (gui/edit-set (:year time-data) (format "%4d" (:sfsim.astro/year d)))
-                                               (gui/edit-set (:hour time-data) (format "%2d" (:sfsim.astro/hour c)))
-                                               (gui/edit-set (:minute time-data) (format "%2d" (:sfsim.astro/minute c)))
-                                               (gui/edit-set (:second time-data) (format "%2d" (:sfsim.astro/second c)))
-                                               (reset! menu 3)))
+                                             (time-edit-set time-data @time-delta @t0)
+                                             (reset! menu 3))
                                            (when (gui/button-label gui "Resume")
                                              (reset! menu 0))
                                            (when (gui/button-label gui "Quit")
