@@ -186,11 +186,17 @@
 (def t0 (atom (System/currentTimeMillis)))
 (def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0))))
 
-(defn set-time
-  [day month year hour minute sec]
-  (let [jd    (astro/julian-date #:sfsim.astro{:year year :month month :day day})
-        clock (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
-    (reset! time-delta (- (+ (- jd astro/T0 0.5) clock) (/ @t0 1000 86400.0)))))
+(defn time-edit-get
+  [time-data t0]
+  (let [day    (Integer/parseInt (clojure.string/trim (gui/edit-get (:day time-data))))
+        month  (Integer/parseInt (clojure.string/trim (gui/edit-get (:month time-data))))
+        year   (Integer/parseInt (clojure.string/trim (gui/edit-get (:year time-data))))
+        hour   (Integer/parseInt (clojure.string/trim (gui/edit-get (:hour time-data))))
+        minute (Integer/parseInt (clojure.string/trim (gui/edit-get (:minute time-data))))
+        sec    (Integer/parseInt (clojure.string/trim (gui/edit-get (:second time-data))))
+        jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
+        clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
+    (- (+ (- jd astro/T0 0.5) clock) (/ t0 1000 86400.0))))
 
 (defn time-edit-set
   [time-data time-delta t0]
@@ -347,15 +353,9 @@
                                              (gui/edit-field gui (:second time-data)))
                                            (gui/layout-row-dynamic gui 32 2)
                                            (when (gui/button-label gui "Set")
-                                             (set-time
-                                               (Integer/parseInt (clojure.string/trim (gui/edit-get (:day time-data))))
-                                               (Integer/parseInt (clojure.string/trim (gui/edit-get (:month time-data))))
-                                               (Integer/parseInt (clojure.string/trim (gui/edit-get (:year time-data))))
-                                               (Integer/parseInt (clojure.string/trim (gui/edit-get (:hour time-data))))
-                                               (Integer/parseInt (clojure.string/trim (gui/edit-get (:minute time-data))))
-                                               (Integer/parseInt (clojure.string/trim (gui/edit-get (:second time-data))))))
+                                             (reset! time-delta (time-edit-get time-data @t0)))
                                            (when (gui/button-label gui "Close")
-                                             (reset! menu 1)) ))
+                                             (reset! menu 1))))
                    (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
