@@ -157,22 +157,31 @@
 
 (def menu (atom 0))
 
-(def position (atom nil))
-(def object-orientation (atom nil))
-(def camera-orientation (atom nil))
+(defn position-from-lon-lat
+  [longitude latitude height]
+  (let [radius (+ height (:sfsim.planet/radius config/planet-config))]
+    (vec3 (* (cos longitude) (cos latitude) radius)
+          (* (sin longitude) (cos latitude) radius)
+          (* (sin latitude) radius))))
+
+(defn orientation-from-lon-lat
+  [longitude latitude]
+  (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
+       (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
+
+(def position (atom (position-from-lon-lat longitude latitude height)))
+(def object-orientation (atom (orientation-from-lon-lat longitude latitude)))
+(def camera-orientation (atom @object-orientation))
 (def dist (atom 100.0))
 
-(defn set-geographic-position
-  [longitude latitude height]
-  (let [radius (+ height 6378000.0)]
-    (reset! position (vec3 (* (cos longitude) (cos latitude) radius)
-                           (* (sin longitude) (cos latitude) radius)
-                           (* (sin latitude) radius)))
-    (reset! object-orientation (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
-                                    (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
-    (reset! camera-orientation @object-orientation)))
-
-(set-geographic-position longitude latitude height)
+(defn position-edit-get
+  [position-data]
+  (let [longitude   (to-radians (Double/parseDouble (gui/edit-get (:longitude position-data))))
+        latitude    (to-radians (Double/parseDouble (gui/edit-get (:latitude position-data))))
+        height      (Double/parseDouble (gui/edit-get (:height position-data)))
+        position    (position-from-lon-lat longitude latitude height)
+        orientation (orientation-from-lon-lat longitude latitude)]
+    {:position position :orientation orientation}))
 
 (defn position-edit-set
   [position-data position]
@@ -318,10 +327,10 @@
                                            (gui/text-label gui "Height")
                                            (gui/edit-field gui (:height position-data))
                                            (when (gui/button-label gui "Set")
-                                             (set-geographic-position
-                                               (to-radians (Double/parseDouble (gui/edit-get (:longitude position-data))))
-                                               (to-radians (Double/parseDouble (gui/edit-get (:latitude position-data))))
-                                               (Double/parseDouble (gui/edit-get (:height position-data)))))
+                                             (let [pose (position-edit-get position-data)]
+                                               (reset! position (:position pose))
+                                               (reset! object-orientation (:orientation pose))
+                                               (reset! camera-orientation (:orientation pose))))
                                            (when (gui/button-label gui "Close")
                                              (reset! menu 1)))
                      3 (gui/nuklear-window gui "datetime" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)

@@ -1,5 +1,6 @@
 # TODO
 * create Nuklear GUI to set location and time
+  * put position and orientation into pose variable?
   * (Nuklear/nk\_edit\_focus (:sfsim.gui/context gui) Nuklear/NK\_EDIT\_ACTIVE)
   * menu to set location
   * menu to set time
