@@ -1,11 +1,8 @@
 # TODO
-* create Nuklear GUI to set location and time
-  * put position and orientation into pose variable?
-  * (Nuklear/nk\_edit\_focus (:sfsim.gui/context gui) Nuklear/NK\_EDIT\_ACTIVE)
-  * menu to set location
-  * menu to set time
-  * compute earth barycenter and sun in separate thread
-  * add wrappers for more GUI elements
+* refactor gui window rendering code into methods or macros
+* put position and orientation into pose variable?
+* (Nuklear/nk\_edit\_focus (:sfsim.gui/context gui) Nuklear/NK\_EDIT\_ACTIVE)
+* compute earth barycenter and sun in separate thread (use future)
 * 2 more levels, higher res map
 * microtexture for normal map
 * try lower-res clouds with increased sampling rate
