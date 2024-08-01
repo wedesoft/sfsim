@@ -169,9 +169,9 @@
   (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
        (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
 
-(def position (atom (position-from-lon-lat longitude latitude height)))
-(def object-orientation (atom (orientation-from-lon-lat longitude latitude)))
-(def camera-orientation (atom @object-orientation))
+(def pose (atom {:position (position-from-lon-lat longitude latitude height)
+                 :orientation (orientation-from-lon-lat longitude latitude)}))
+(def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
 (def dist (atom 100.0))
 
 (defn position-edit-get
@@ -184,8 +184,9 @@
     {:position position :orientation orientation}))
 
 (defn position-edit-set
-  [position-data position]
-  (let [longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
+  [position-data pose]
+  (let [position  (:position pose)
+        longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
         height    (- (mag position) 6378000.0)]
     (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees longitude)))
@@ -228,7 +229,7 @@
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-           (planet/update-tile-tree planet-renderer tile-tree (aget w 0) @position)
+           (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  mn (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -242,17 +243,17 @@
                  d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
                  to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
              (when mn (reset! menu 1))
-             (swap! object-orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
-             (swap! object-orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
-             (swap! object-orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
+             (swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
+             (swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
+             (swap! pose update :orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
              (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
              (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
              (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
-             (swap! position add (mult (q/rotate-vector @object-orientation (vec3 1 0 0)) (* dt v)))
+             (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt v)))
              (swap! opacity-base + (* dt to))
              (swap! dist * (exp d))
-             (let [origin             (add @position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
-                   object-position    @position
+             (let [object-position    (:position @pose)
+                   origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
                    jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
                    icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
                    sun-pos            (sub (earth-moon jd-ut))
@@ -267,7 +268,7 @@
                    shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                           cloud-data shadow-render-vars
                                                                           (planet/get-current-tree tile-tree) @opacity-base)
-                   object-to-world    (transformation-matrix (quaternion->matrix @object-orientation) object-position)
+                   object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
                    moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
                    object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
                    w2                 (quot (:sfsim.render/window-width planet-render-vars) 2)
@@ -309,7 +310,7 @@
                      1 (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
                                            (gui/layout-row-dynamic gui 32 1)
                                            (when (gui/button-label gui "Location")
-                                             (position-edit-set position-data @position)
+                                             (position-edit-set position-data @pose)
                                              (reset! menu 2))
                                            (when (gui/button-label gui "Date/Time")
                                              (time-edit-set time-data @time-delta @t0)
@@ -327,10 +328,8 @@
                                            (gui/text-label gui "Height")
                                            (gui/edit-field gui (:height position-data))
                                            (when (gui/button-label gui "Set")
-                                             (let [pose (position-edit-get position-data)]
-                                               (reset! position (:position pose))
-                                               (reset! object-orientation (:orientation pose))
-                                               (reset! camera-orientation (:orientation pose))))
+                                             (reset! pose (position-edit-get position-data))
+                                             (reset! camera-orientation (:orientation @pose)))
                                            (when (gui/button-label gui "Close")
                                              (reset! menu 1)))
                      3 (gui/nuklear-window gui "datetime" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
