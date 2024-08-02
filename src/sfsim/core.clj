@@ -157,6 +157,8 @@
 
 (def menu (atom nil))
 
+(declare main-dialog)
+
 (defn position-from-lon-lat
   [longitude latitude height]
   (let [radius (+ height (:sfsim.planet/radius config/planet-config))]
@@ -174,7 +176,7 @@
 (def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
 (def dist (atom 100.0))
 
-(defn position-edit-get
+(defn location-dialog-get
   [position-data]
   (let [longitude   (to-radians (Double/parseDouble (gui/edit-get (:longitude position-data))))
         latitude    (to-radians (Double/parseDouble (gui/edit-get (:latitude position-data))))
@@ -183,7 +185,7 @@
         orientation (orientation-from-lon-lat longitude latitude)]
     {:position position :orientation orientation}))
 
-(defn position-edit-set
+(defn location-dialog-set
   [position-data pose]
   (let [position  (:position pose)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
@@ -193,10 +195,27 @@
     (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees latitude)))
     (gui/edit-set (:height position-data) (format "%.1f" height))))
 
+(defn location-dialog
+  [gui]
+  (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
+                      (gui/layout-row-dynamic gui 32 2)
+                      (gui/text-label gui "Longitude (East)")
+                      (gui/edit-field gui (:longitude position-data))
+                      (gui/text-label gui "Latitude (North)")
+                      (gui/edit-field gui (:latitude position-data))
+                      (gui/text-label gui "Height")
+                      (gui/edit-field gui (:height position-data))
+                      (when (gui/button-label gui "Set")
+                        (reset! pose (location-dialog-get position-data))
+                        (reset! camera-orientation (:orientation @pose)))
+                      (when (gui/button-label gui "Close")
+                        (reset! menu main-dialog))))
+
+
 (def t0 (atom (System/currentTimeMillis)))
 (def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0))))
 
-(defn time-edit-get
+(defn datetime-dialog-get
   [time-data t0]
   (let [day    (Integer/parseInt (clojure.string/trim (gui/edit-get (:day time-data))))
         month  (Integer/parseInt (clojure.string/trim (gui/edit-get (:month time-data))))
@@ -208,7 +227,7 @@
         clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
     (- (+ (- jd astro/T0 0.5) clock) (/ t0 1000 86400.0))))
 
-(defn time-edit-set
+(defn datetime-dialog-set
   [time-data time-delta t0]
   (let [t     (+ time-delta (/ t0 1000 86400.0))
         t     (+ astro/T0 t 0.5)
@@ -220,6 +239,56 @@
     (gui/edit-set (:hour time-data) (format "%2d" (:sfsim.astro/hour clock)))
     (gui/edit-set (:minute time-data) (format "%2d" (:sfsim.astro/minute clock)))
     (gui/edit-set (:second time-data) (format "%2d" (:sfsim.astro/second clock)))))
+
+(defn datetime-dialog
+  [gui]
+  (gui/nuklear-window gui "datetime" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
+                      (gui/layout-row gui 32 6
+                                      (gui/layout-row-push gui 0.4)
+                                      (gui/text-label gui "Date")
+                                      (gui/layout-row-push gui 0.15)
+                                      (gui/edit-field gui (:day time-data))
+                                      (gui/layout-row-push gui 0.05)
+                                      (gui/text-label gui "/")
+                                      (gui/layout-row-push gui 0.15)
+                                      (gui/edit-field gui (:month time-data))
+                                      (gui/layout-row-push gui 0.05)
+                                      (gui/text-label gui "/")
+                                      (gui/layout-row-push gui 0.2)
+                                      (gui/edit-field gui (:year time-data)))
+                      (gui/layout-row gui 32 6
+                                      (gui/layout-row-push gui 0.45)
+                                      (gui/text-label gui "Time")
+                                      (gui/layout-row-push gui 0.15)
+                                      (gui/edit-field gui (:hour time-data))
+                                      (gui/layout-row-push gui 0.05)
+                                      (gui/text-label gui ":")
+                                      (gui/layout-row-push gui 0.15)
+                                      (gui/edit-field gui (:minute time-data))
+                                      (gui/layout-row-push gui 0.05)
+                                      (gui/text-label gui ":")
+                                      (gui/layout-row-push gui 0.14999)
+                                      (gui/edit-field gui (:second time-data)))
+                      (gui/layout-row-dynamic gui 32 2)
+                      (when (gui/button-label gui "Set")
+                        (reset! time-delta (datetime-dialog-get time-data @t0)))
+                      (when (gui/button-label gui "Close")
+                        (reset! menu main-dialog))))
+
+(defn main-dialog
+  [gui]
+  (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
+                      (gui/layout-row-dynamic gui 32 1)
+                      (when (gui/button-label gui "Location")
+                        (location-dialog-set position-data @pose)
+                        (reset! menu location-dialog))
+                      (when (gui/button-label gui "Date/Time")
+                        (datetime-dialog-set time-data @time-delta @t0)
+                        (reset! menu datetime-dialog))
+                      (when (gui/button-label gui "Resume")
+                        (reset! menu nil))
+                      (when (gui/button-label gui "Quit")
+                        (GLFW/glfwSetWindowShouldClose window true))))
 
 (defn -main
   "Space flight simulator main function"
@@ -242,7 +311,7 @@
                  v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
                  d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
                  to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
-             (when mn (reset! menu :main))
+             (when mn (reset! menu main-dialog))
              (swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
              (swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
              (swap! pose update :orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
@@ -306,64 +375,7 @@
                      (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
                  (when @menu
                    (setup-rendering 1280 720 :sfsim.render/noculling false)
-                   (case @menu
-                     :main (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
-                                               (gui/layout-row-dynamic gui 32 1)
-                                               (when (gui/button-label gui "Location")
-                                                 (position-edit-set position-data @pose)
-                                                 (reset! menu :location))
-                                               (when (gui/button-label gui "Date/Time")
-                                                 (time-edit-set time-data @time-delta @t0)
-                                                 (reset! menu :datetime))
-                                               (when (gui/button-label gui "Resume")
-                                                 (reset! menu nil))
-                                               (when (gui/button-label gui "Quit")
-                                                 (GLFW/glfwSetWindowShouldClose window true)))
-                     :location (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
-                                                   (gui/layout-row-dynamic gui 32 2)
-                                                   (gui/text-label gui "Longitude (East)")
-                                                   (gui/edit-field gui (:longitude position-data))
-                                                   (gui/text-label gui "Latitude (North)")
-                                                   (gui/edit-field gui (:latitude position-data))
-                                                   (gui/text-label gui "Height")
-                                                   (gui/edit-field gui (:height position-data))
-                                                   (when (gui/button-label gui "Set")
-                                                     (reset! pose (position-edit-get position-data))
-                                                     (reset! camera-orientation (:orientation @pose)))
-                                                   (when (gui/button-label gui "Close")
-                                                     (reset! menu :main)))
-                     :datetime (gui/nuklear-window gui "datetime" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
-                                                   (gui/layout-row gui 32 6
-                                                                   (gui/layout-row-push gui 0.4)
-                                                                   (gui/text-label gui "Date")
-                                                                   (gui/layout-row-push gui 0.15)
-                                                                   (gui/edit-field gui (:day time-data))
-                                                                   (gui/layout-row-push gui 0.05)
-                                                                   (gui/text-label gui "/")
-                                                                   (gui/layout-row-push gui 0.15)
-                                                                   (gui/edit-field gui (:month time-data))
-                                                                   (gui/layout-row-push gui 0.05)
-                                                                   (gui/text-label gui "/")
-                                                                   (gui/layout-row-push gui 0.2)
-                                                                   (gui/edit-field gui (:year time-data)))
-                                                   (gui/layout-row gui 32 6
-                                                                   (gui/layout-row-push gui 0.45)
-                                                                   (gui/text-label gui "Time")
-                                                                   (gui/layout-row-push gui 0.15)
-                                                                   (gui/edit-field gui (:hour time-data))
-                                                                   (gui/layout-row-push gui 0.05)
-                                                                   (gui/text-label gui ":")
-                                                                   (gui/layout-row-push gui 0.15)
-                                                                   (gui/edit-field gui (:minute time-data))
-                                                                   (gui/layout-row-push gui 0.05)
-                                                                   (gui/text-label gui ":")
-                                                                   (gui/layout-row-push gui 0.14999)
-                                                                   (gui/edit-field gui (:second time-data)))
-                                                   (gui/layout-row-dynamic gui 32 2)
-                                                   (when (gui/button-label gui "Set")
-                                                     (reset! time-delta (time-edit-get time-data @t0)))
-                                                   (when (gui/button-label gui "Close")
-                                                     (reset! menu :main))))
+                   (@menu gui)
                    (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
