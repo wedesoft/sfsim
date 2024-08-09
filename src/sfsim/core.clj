@@ -102,14 +102,23 @@
 
 (def keystates (atom {}))
 
+(def focus-old (atom 0))
+(def focus-new (atom nil))
+
 (def keyboard-callback
   (reify GLFWKeyCallbackI
-         (invoke [_this _window k _scancode action _mods]
+         (invoke [_this _window k _scancode action mods]
            (when (= action GLFW/GLFW_PRESS)
              (swap! keystates assoc k true))
            (when (= action GLFW/GLFW_RELEASE)
              (swap! keystates assoc k false))
            (let [press (or (= action GLFW/GLFW_PRESS) (= action GLFW/GLFW_REPEAT))]
+             (when (and press (= k GLFW/GLFW_KEY_TAB))
+               (if @focus-old
+                 (if (not (zero? (bit-and mods GLFW/GLFW_MOD_SHIFT)))
+                   (reset! focus-new (dec @focus-old))
+                   (reset! focus-new (inc @focus-old)))
+                 (reset! focus-new 0)))
              (cond
                (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
                (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
@@ -159,6 +168,13 @@
 
 (declare main-dialog)
 
+(defmacro tabbing [gui edit idx cnt]
+  `(do
+     (when (and @focus-new (= (mod @focus-new ~cnt) ~idx))
+       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE))
+     (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
+       (reset! focus-old ~idx))))
+
 (defn position-from-lon-lat
   [longitude latitude height]
   (let [radius (+ height (:sfsim.planet/radius config/planet-config))]
@@ -200,11 +216,11 @@
   (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
-                      (gui/edit-field gui (:longitude position-data))
+                      (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
                       (gui/text-label gui "Latitude (North)")
-                      (gui/edit-field gui (:latitude position-data))
+                      (tabbing gui (gui/edit-field gui (:latitude position-data)) 1 3)
                       (gui/text-label gui "Height")
-                      (gui/edit-field gui (:height position-data))
+                      (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
                       (when (gui/button-label gui "Set")
                         (reset! pose (location-dialog-get position-data))
                         (reset! camera-orientation (:orientation @pose)))
@@ -247,28 +263,28 @@
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
                                       (gui/layout-row-push gui 0.15)
-                                      (gui/edit-field gui (:day time-data))
+                                      (tabbing gui (gui/edit-field gui (:day time-data)) 0 6)
                                       (gui/layout-row-push gui 0.05)
                                       (gui/text-label gui "/")
                                       (gui/layout-row-push gui 0.15)
-                                      (gui/edit-field gui (:month time-data))
+                                      (tabbing gui (gui/edit-field gui (:month time-data)) 1 6)
                                       (gui/layout-row-push gui 0.05)
                                       (gui/text-label gui "/")
                                       (gui/layout-row-push gui 0.2)
-                                      (gui/edit-field gui (:year time-data)))
+                                      (tabbing gui (gui/edit-field gui (:year time-data)) 2 6))
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.45)
                                       (gui/text-label gui "Time")
                                       (gui/layout-row-push gui 0.15)
-                                      (gui/edit-field gui (:hour time-data))
+                                      (tabbing gui (gui/edit-field gui (:hour time-data)) 3 6)
                                       (gui/layout-row-push gui 0.05)
                                       (gui/text-label gui ":")
                                       (gui/layout-row-push gui 0.15)
-                                      (gui/edit-field gui (:minute time-data))
+                                      (tabbing gui (gui/edit-field gui (:minute time-data)) 4 6)
                                       (gui/layout-row-push gui 0.05)
                                       (gui/text-label gui ":")
                                       (gui/layout-row-push gui 0.14999)
-                                      (gui/edit-field gui (:second time-data)))
+                                      (tabbing gui (gui/edit-field gui (:second time-data)) 5 6))
                       (gui/layout-row-dynamic gui 32 2)
                       (when (gui/button-label gui "Set")
                         (reset! time-delta (datetime-dialog-get time-data @t0)))
@@ -375,7 +391,9 @@
                      (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
                  (when @menu
                    (setup-rendering 1280 720 :sfsim.render/noculling false)
+                   (reset! focus-old nil)
                    (@menu gui)
+                   (reset! focus-new nil)
                    (gui/render-nuklear-gui gui 1280 720)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
