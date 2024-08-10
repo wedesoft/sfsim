@@ -1,9 +1,5 @@
 # TODO
-* create Nuklear GUI to set location and time
-  * menu to set location
-  * menu to set time
-  * compute earth barycenter and sun in separate thread
-  * add wrappers for more GUI elements
+* compute earth barycenter and sun in separate thread (use future)
 * 2 more levels, higher res map
 * microtexture for normal map
 * try lower-res clouds with increased sampling rate
