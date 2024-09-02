@@ -1,22 +1,24 @@
 # TODO
-* compute earth barycenter and sun in separate thread (use future)
+* far away clouds shadows in top layer are too much
 * 2 more levels, higher res map
+* atmospheric flight with stationary atmosphere
+* animate flaps
+* gear locations, hover thruster locations
+* make model with rigged gear or simulate with Project Chrono
+* bake gear animation and name actions the same
+* gear/terrain physics with stationary Earth
+* gear/terrain physics with rotating and moving Earth
+* compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map
-* try lower-res clouds with increased sampling rate
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
-* object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
-* direct light integrates atmosphere and overall shadow, overall shadow integrates cascade, opacity cascade, and model list
 * pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
 * separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
 * integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
   use multiplication of local shadow map and planet+cloud shadows?
 * https://lup.lub.lu.se/student-papers/search/publication/8893256
-  Gaussian towers for cloud height variation
-  Low-res cloud texture to increase sampling size
   Scattering approximation function
 * add object radius to object?
-* bake gear animation and name actions the same
 * dted elevation data: https://gdal.org/drivers/raster/dted.html
   gmted maybe: https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
 * read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
@@ -70,7 +72,6 @@
     life support
 * https://blog.kuula.co/virtual-tour-space-shuttle
 * cockpit and scene rendering looking downward so that horizon is in upper half of screen
-* make model with rigged gear
 * simplify dispatch and program selection?
 * how to render with shadow and cloud textures
 * make spaceplane with Blender
