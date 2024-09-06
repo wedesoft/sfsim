@@ -68,6 +68,7 @@ Requires OpenGL 4.5.
   * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
   * [Flight of Nova](https://flight-of-nova.com/)
   * [Lunar Flight](http://www.shovsoft.com/lunarflight/)
+  * [Eagle Lander 3D](http://eaglelander3d.com/)
   * [Tungsten Moon](https://tungstenmoon.com/)
   * [Rogue System](http://imagespaceinc.com/rogsys/)
 * Engines
