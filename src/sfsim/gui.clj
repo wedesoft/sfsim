@@ -201,7 +201,8 @@
   (destroy-gui-context (::context gui))
   (destroy-allocator (::allocator gui)))
 
-(defmacro nuklear-window [gui title x y width height & body]
+(defmacro nuklear-window
+  [gui title x y width height & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
@@ -426,6 +427,17 @@
   [gui data]
   (Nuklear/nk_edit_string ^NkContext (::context gui) Nuklear/NK_EDIT_FIELD ^DirectByteBuffer (::buffer data)
                           ^ints (::text-len data) ^int (::max-size data) ^NkPluginFilterI (::text-filter data)))
+
+(defmacro layout-row
+  [gui height cnt & body]
+  `(do
+     (Nuklear/nk_layout_row_begin (:sfsim.gui/context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
+     ~@body
+     (Nuklear/nk_layout_row_end (:sfsim.gui/context ~gui))))
+
+(defn layout-row-push
+  [gui frac]
+  (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

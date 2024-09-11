@@ -1,26 +1,35 @@
 # TODO
-* create Nuklear GUI to set location and time
-  * menu to set location
-  * menu to set time
-  * compute earth barycenter and sun in separate thread
-  * add wrappers for more GUI elements
+* visualise prototype vehicle and wheels
+* level of detail in opacity cascade, cloud brightness flickering at large distance?
+  mipmaps for all cloud textures and octaves
+  change cloud computation when viewing from space far away (use different lod of shadow?)
+* introduce variation to cloud height
+* .jpg -> .day.jpg
 * 2 more levels, higher res map
-* microtexture for normal map
-* try lower-res clouds with increased sampling rate
+* atmospheric flight with stationary atmosphere
+* far away clouds shadows in top layer are too much
+* animate flaps
+* gear locations, hover thruster locations
+* make model with rigged gear or simulate with Project Chrono
+* bake gear animation and name actions the same
+* gear/terrain physics with stationary Earth (ground collisions)
+* gear/terrain physics with rotating and moving Earth (ground collisions)
+* space station model
+* docking physics
+* moon landing physics
+* deferred decals for rendering runway
+* launch complex
+* compute earth barycenter and sun in separate thread (use future)
+* microtexture for normal map, microtextures, bump maps
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
-* object shadows on planet, use overall\_shading in planet fragment shader (parametrise planet vertex and fragment shader)
-* direct light integrates atmosphere and overall shadow, overall shadow integrates cascade, opacity cascade, and model list
 * pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
 * separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
 * integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
   use multiplication of local shadow map and planet+cloud shadows?
 * https://lup.lub.lu.se/student-papers/search/publication/8893256
-  Gaussian towers for cloud height variation
-  Low-res cloud texture to increase sampling size
   Scattering approximation function
 * add object radius to object?
-* bake gear animation and name actions the same
 * dted elevation data: https://gdal.org/drivers/raster/dted.html
   gmted maybe: https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
 * read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
@@ -28,8 +37,22 @@
 * add amplifier for ambient phong lighting which seems to be too dark, add earth light
 * concept for bundling shaders with uniform setting methods?
 * shadow and opacity map with different resolution for spaceship
-* render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
 * use add-watch?
+* render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
+* cockpit and scene rendering looking downward so that horizon is in upper half of screen
+* 3D cockpit
+  * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
+  * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
+  * SpaceX cockpit: https://iss-sim.spacex.com/
+  * orbit plane alignment
+  * docking view
+  * horizon with height and variometer
+  * encounter
+    * station
+    * moon/base
+    * earth
+  * aerobrake/base roll-reversal, speed-height-distance profile
+  * heading alignment cylinder
 * cockpit
   * top:
     warnings (status display)
@@ -73,36 +96,13 @@
     fuel lines open/close (lox, main), external pressure online
     life support
 * https://blog.kuula.co/virtual-tour-space-shuttle
-* cockpit and scene rendering looking downward so that horizon is in upper half of screen
-* make model with rigged gear
-* simplify dispatch and program selection?
 * how to render with shadow and cloud textures
-* make spaceplane with Blender
 * make cockpit with Blender
-* spaceplane windows?
 * test for render-triangles
-* spacecraft rendering
-  * glTF/GLB file format, Assimp library, Java bindings https://github.com/kotlin-graphics/assimp, see https://poly.pizza/
-  * 3D model: Dream Chaser, Soyuz, PTK NP, https://www.thingiverse.com/thing:2565361
-  * create windows using blending
-  * http://www.ioaircraft.com/hypersonic/ranger.php
-  * http://www.ioaircraft.com/hypersonic/raven.php
-  * https://www.russianspaceweb.com/spiral\_orbiter\_design.html
-* render shadow of cube
-* .jpg -> .day.jpg
-* find fix for accuracy problems with ground
-  https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds
-* render object in a second pass if z-near for planet is too big
-* problem with shadow mapping creating dark bar at bottom for nearby terrain
-* ground collisions
-* deferred decals for rendering runway
+* create windows using blending
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
 * use 1-channel png for water?
 * constant texel size across opacity cascade to prevent step in opacity?
-* level of detail in opacity cascade, cloud brightness flickering at large distance?
-  mipmaps for all cloud textures and octaves
-  change cloud computation when viewing from space far away (use different lod of shadow?)
-* introduce variation to cloud height
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
 * amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
@@ -115,25 +115,11 @@
   * https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
-* microtextures, bump maps
 * how to render water, waves
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5
   * no skydome and just stars as pixels?
-* 3D cockpit
-  * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
-  * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
-  * SpaceX cockpit: https://iss-sim.spacex.com/
-  * orbit plane alignment
-  * docking view
-  * horizon with height and variometer
-  * encounter
-    * station
-    * moon/base
-    * earth
-  * aerobrake/base roll-reversal, speed-height-distance profile
-  * heading alignment cylinder
 * glTextureStorage2D levels correct for mipmaps?
 * when building maps put intermediate files into a common subdirectory (tmp?)
 * uniform random offsets for Worley noises to generate different cloud cover for each game
