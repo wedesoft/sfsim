@@ -40,6 +40,13 @@
     (spit-floats file-name (float-array [2.0 3.0 5.0 7.0])) => anything
     (seq (slurp-floats file-name)) => [2.0 3.0 5.0 7.0]))
 
+(facts "Slurp bytes into a Java byte buffer"
+  (let [buffer (slurp-byte-buffer "test/sfsim/fixtures/util/bytes.raw")]
+    (.get buffer 0) => 2
+    (.get buffer 1) => 3
+    (.get buffer 2) => 5
+    (.get buffer 3) => 7))
+
 (fact "Determine file path of map tile"
   (tile-path "world" 1 3 2 ".png") => "world/1/2/3.png")
 

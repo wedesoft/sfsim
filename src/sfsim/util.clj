@@ -5,7 +5,10 @@
             [malli.core :as m]
             [progrock.core :as p])
   (:import [java.io ByteArrayOutputStream]
-           [java.nio ByteBuffer ByteOrder]))
+           [java.nio ByteBuffer ByteOrder]
+           [java.nio.channels FileChannel]
+           [java.nio.file Paths StandardOpenOption]
+           [org.lwjgl BufferUtils]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -79,6 +82,15 @@
         byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
     (.put (.asFloatBuffer byte-buffer) float-data)
     (spit-bytes file-name (.array byte-buffer))))
+
+(defn slurp-byte-buffer [filename]
+  (let [option-read (into-array StandardOpenOption [StandardOpenOption/READ])
+        path        (Paths/get filename (make-array String 0))
+        channel     (FileChannel/open path option-read)
+        len         (.size channel)
+        result      (BufferUtils/createByteBuffer len)]
+    (.read channel result)
+    (.flip result)))
 
 (def N0 (m/schema [:int {:min 0}]))
 (def N (m/schema [:int {:min 1}]))

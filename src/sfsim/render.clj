@@ -8,7 +8,7 @@
             [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
-  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL15 GL20 GL30 GL32 GL40 GL45]
+  (:import [org.lwjgl.opengl GL GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL32 GL40 GL45]
            [org.lwjgl.glfw GLFW]))
 
 (set! *unchecked-math* true)
@@ -20,12 +20,17 @@
 
 (defn setup-rendering
   "Common code for setting up rendering"
-  {:malli/schema [:=> [:cat N N [:enum ::cullfront ::cullback]] :nil]}
-  [width height culling]
+  {:malli/schema [:=> [:cat N N [:enum ::cullfront ::cullback ::noculling] :boolean] :nil]}
+  [width height culling depth-test]
   (GL11/glViewport 0 0 width height)
-  (GL11/glEnable GL11/GL_DEPTH_TEST)
-  (GL11/glEnable GL11/GL_CULL_FACE)
-  (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} culling))
+  (if (= culling ::noculling)
+    (GL11/glDisable GL11/GL_CULL_FACE)
+    (do
+      (GL11/glEnable GL11/GL_CULL_FACE)
+      (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} culling))))
+  (if depth-test
+    (GL11/glEnable GL11/GL_DEPTH_TEST)
+    (GL11/glDisable GL11/GL_DEPTH_TEST))
   (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
@@ -51,6 +56,31 @@
   (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
   (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
   (GL11/glStencilMask 0))
+
+(defmacro with-blending
+  "Enable alpha blending for the specified body of code"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_BLEND)
+     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     (GL14/glBlendFunc GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_BLEND)
+       result#)))
+
+(defmacro with-scissor
+  "Enable scissor test for the specified body of code"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_SCISSOR_TEST)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_SCISSOR_TEST)
+       result#)))
+
+(defn set-scissor
+  {:malli/schema [:=> [:cat number? number? number? number?] :nil]}
+  [x y w h]
+  (GL11/glScissor (int x) (int y) (int w) (int h)))
 
 (defn setup-window-hints
   "Set GLFW window hints"
@@ -96,7 +126,7 @@
   `(let [width#  (int-array 1)
          height# (int-array 1)]
      (GLFW/glfwGetWindowSize ~(vary-meta window assoc :tag 'long) width# height#)
-     (setup-rendering (aget width# 0) (aget height# 0) ::cullback)
+     (setup-rendering (aget width# 0) (aget height# 0) ::cullback true)
      ~@body
      (GLFW/glfwSwapBuffers ~window)))
 
@@ -172,38 +202,97 @@
   (GL20/glDeleteProgram program))
 
 (def vertex-array-object
-  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int] [::nrows N]
+  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int]
                   [::attribute-locations [:vector :int]]]))
 
+(defn set-static-float-buffer-data
+  "Use glBufferData to set up static buffer data"
+  {:malli/schema [:=> [:cat :int :some] :nil]}
+  [target data]
+  (GL15/glBufferData ^int target ^java.nio.DirectFloatBufferU data GL15/GL_STATIC_DRAW))
+
+(defn set-static-int-buffer-data
+  "Use glBufferData to set up static buffer data"
+  {:malli/schema [:=> [:cat :int :some] :nil]}
+  [target data]
+  (GL15/glBufferData ^int target ^java.nio.DirectIntBufferU data GL15/GL_STATIC_DRAW))
+
+(defn opengl-type-size
+  "Get byte size of OpenGL type"
+  {:malli/schema [:=> [:cat :int] :int]}
+  [opengl-type]
+  (cond
+        (= opengl-type GL11/GL_UNSIGNED_BYTE)  Byte/BYTES
+        (= opengl-type GL11/GL_UNSIGNED_SHORT) Short/BYTES
+        (= opengl-type GL11/GL_UNSIGNED_INT)   Integer/BYTES
+        (= opengl-type GL11/GL_FLOAT)          Float/BYTES
+        (= opengl-type GL11/GL_DOUBLE)         Double/BYTES))
+
+
+(defn setup-vertex-attrib-pointers
+  "Set up mappings from vertex array buffer row to vertex shader attributes"
+  {:malli/schema [:=> [:cat :int [:and sequential? [:repeat [:cat :int :string N]]]] [:vector :int]]}
+  [program attributes]
+  (let [attribute-pairs (partition 3 attributes)
+        sizes           (map (fn [[opengl-type _name size]] (* (opengl-type-size opengl-type) size) ) attribute-pairs)
+        stride          (apply + sizes)
+        offsets         (reductions + 0 (butlast sizes))
+        attr-locations  (for [[[opengl-type attribute size] offset] (map list attribute-pairs offsets)]
+                             (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
+                               (GL20/glVertexAttribPointer location ^long size ^long opengl-type true ^long stride ^long offset)
+                               (GL20/glEnableVertexAttribArray location)
+                               location))]
+    (vec attr-locations)))
+
 (defn make-vertex-array-object
-  "Create vertex array object and vertex buffer objects"
-  {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:vector [:or :string N]]] vertex-array-object]}
+  "Create vertex array object and vertex buffer objects using integers for indices and floating point numbers for vertex data"
+  {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and sequential? [:repeat [:cat :string N]]]]
+                      vertex-array-object]}
   [program indices vertices attributes]
-  (let [vertex-array-object (GL30/glGenVertexArrays)]
+  (let [float-attributes    (mapcat #(conj % GL11/GL_FLOAT) (partition 2 attributes))
+        vertex-array-object (GL30/glGenVertexArrays)
+        array-buffer        (GL15/glGenBuffers)
+        index-buffer        (GL15/glGenBuffers)]
     (GL30/glBindVertexArray vertex-array-object)
-    (let [array-buffer (GL15/glGenBuffers)
-          index-buffer (GL15/glGenBuffers)]
-      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-      (GL15/glBufferData GL15/GL_ARRAY_BUFFER ^java.nio.DirectFloatBufferU (make-float-buffer (float-array vertices))
-                         GL15/GL_STATIC_DRAW)
-      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-      (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER ^java.nio.DirectIntBufferU (make-int-buffer (int-array indices))
-                         GL15/GL_STATIC_DRAW)
-      (let [attribute-pairs (partition 2 attributes)
-            sizes           (map second attribute-pairs)
-            stride          (apply + sizes)
-            offsets         (reductions + (cons 0 (butlast sizes)))
-            attr-locations  (for [[[attribute size] offset] (map list attribute-pairs offsets)]
-                                 (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
-                                   (GL20/glVertexAttribPointer location ^long size GL11/GL_FLOAT false
-                                                               ^long (* stride Float/BYTES) ^long (* offset Float/BYTES))
-                                   (GL20/glEnableVertexAttribArray location)
-                                   location))]
-        {::vertex-array-object vertex-array-object
-         ::array-buffer        array-buffer
-         ::index-buffer        index-buffer
-         ::attribute-locations (vec attr-locations)
-         ::nrows               (count indices)}))))
+    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
+    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
+    (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)))
+    (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
+    {::vertex-array-object vertex-array-object
+     ::array-buffer        array-buffer
+     ::index-buffer        index-buffer
+     ::attribute-locations (setup-vertex-attrib-pointers program float-attributes)
+     ::nrows               (count indices)}))
+
+(defn make-vertex-array-stream
+  "Create vertex array object using stream draw mode for integer index buffer and mixed type array buffer"
+  {:malli/schema [:=> [:cat :int :int :int] vertex-array-object]}
+  [_program max-index-buffer max-vertex-buffer]
+  (let [vertex-array-object (GL30/glGenVertexArrays)
+        array-buffer        (GL15/glGenBuffers)
+        index-buffer        (GL15/glGenBuffers)]
+    (GL30/glBindVertexArray vertex-array-object)
+    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
+    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
+    (GL15/glBufferData GL15/GL_ARRAY_BUFFER ^long max-vertex-buffer GL15/GL_STREAM_DRAW)
+    (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER ^long max-index-buffer GL15/GL_STREAM_DRAW)
+    {::vertex-array-object vertex-array-object
+     ::array-buffer        array-buffer
+     ::index-buffer        index-buffer
+     ::attribute-locations []
+     ::max-vertex-buffer   max-vertex-buffer
+     ::max-index-buffer    max-index-buffer}))
+
+(defmacro with-mapped-vertex-arrays
+  "Perform memory mapping for specified block of code"
+  [vao vertices indices & body]
+  `(do
+     (setup-vertex-array-object ~vao)
+     (let [~vertices (GL15/glMapBuffer GL15/GL_ARRAY_BUFFER GL15/GL_WRITE_ONLY (::max-vertex-buffer ~vao) nil)
+           ~indices  (GL15/glMapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER GL15/GL_WRITE_ONLY (::max-index-buffer ~vao) nil)]
+       ~@body
+       (GL15/glUnmapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER)
+       (GL15/glUnmapBuffer GL15/GL_ARRAY_BUFFER))))
 
 (defn destroy-vertex-array-object
   "Destroy vertex array object and vertex buffer objects"
@@ -281,11 +370,13 @@
   [textures]
   (doseq [[index texture] textures] (use-texture index texture)))
 
-(defn- setup-vertex-array-object
+(defn setup-vertex-array-object
   "Initialise rendering of a vertex array object"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (GL30/glBindVertexArray ^long (::vertex-array-object vertex-array-object)))
+  (GL30/glBindVertexArray ^long (::vertex-array-object vertex-array-object))
+  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER (::array-buffer vertex-array-object))
+  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER (::index-buffer vertex-array-object)))
 
 (defn render-quads
   "Render one or more quads"
@@ -357,7 +448,7 @@
          (let [attachment-type# (if (:stencil ~depth-texture) GL30/GL_DEPTH_STENCIL_ATTACHMENT GL30/GL_DEPTH_ATTACHMENT)]
            (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:sfsim.texture/texture ~depth-texture) 0)))
        (setup-color-attachments ~color-textures)
-       (setup-rendering ~width ~height ~culling)
+       (setup-rendering ~width ~height ~culling (boolean ~depth-texture))
        ~@body
        (finally
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)

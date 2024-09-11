@@ -145,3 +145,11 @@
          (:sfsim.image/channels result) => 4
          (get-pixel result 0 0) => (vec3 63 63 63)
          (get-pixel result 0 1) => (vec3 127 127 127)))
+
+(facts "Convert alpha image to white image with alpha channel"
+       (let [alpha  #:sfsim.image{:width 3 :height 1 :data (byte-array [0 127 -1]) :channels 1}
+             result (white-image-with-alpha alpha)]
+         (:sfsim.image/width result) => 3
+         (:sfsim.image/height result) => 1
+         (:sfsim.image/channels result) => 4
+         (seq (:sfsim.image/data result)) => [-1 -1 -1 0 -1 -1 -1 127 -1 -1 -1 -1]))

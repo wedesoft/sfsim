@@ -32,20 +32,21 @@ Requires OpenGL 4.5.
 * Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`
 * Build cloud cover: `clj -T:build cloud-cover`
-* Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
 * Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
 * Download NOAA elevation data: `clj -T:build download-elevation`
+* Download NASA JPL ephemeris data: `clj -T:build download-ephemeris`
 * Extract elevation data: `clj -T:build extract-elevation`
 * Convert day map sectors into pyramid of tiles: `clj -T:build map-sectors-day`
 * Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
+* Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Perform all build steps above: `clj -T:build all`
+* Enable integration tests (requiring results of above build steps): `touch .integration`
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json` (delete out-windows folder first)
 * Create Windows installer: `makensis nsis-config.nsi`
-* Enable integration tests: `touch .integration`
 
 # Lint
 
@@ -62,15 +63,19 @@ Requires OpenGL 4.5.
 # External Links
 
 * Simulators
-  * [Orbiter 2016](https://github.com/mschweiger/orbiter)
-  * [Rogue System](http://imagespaceinc.com/rogsys/)
-  * [Flight of Nova](https://flight-of-nova.com/)
-  * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
   * [Reentry](https://reentrygame.com/)
+  * [Orbiter 2016](https://github.com/mschweiger/orbiter)
+  * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
+  * [Flight of Nova](https://flight-of-nova.com/)
+  * [Lunar Flight](http://www.shovsoft.com/lunarflight/)
+  * [Eagle Lander 3D](http://eaglelander3d.com/)
+  * [Tungsten Moon](https://tungstenmoon.com/)
+  * [Rogue System](http://imagespaceinc.com/rogsys/)
 * Engines
   * [Skybolt Engine](https://github.com/Piraxus/Skybolt/) ([article](https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/))
   * [Oreon Engine](https://github.com/fynnfluegge/oreon-engine)
   * [Emulating double precision in Godot](https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds)
+  * [Project Chrono physics engine](https://projectchrono.org/)
 * LWJGL
   * [LWJGL](https://www.lwjgl.org/)
   * [LWJGL Wiki](https://github.com/LWJGL/lwjgl3-wiki/wiki)
