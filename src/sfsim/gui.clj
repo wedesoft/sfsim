@@ -388,7 +388,7 @@
   [data text]
   (let [buffer   (::buffer data)
         text-len (::text-len data)]
-    (.put ^DirectByteBuffer buffer (.getBytes ^String text (StandardCharsets/UTF_8)))
+    (.put ^DirectByteBuffer buffer (.getBytes ^String text StandardCharsets/UTF_8))
     (.flip ^DirectByteBuffer buffer)
     (.limit ^DirectByteBuffer buffer (.capacity ^DirectByteBuffer buffer))
     (aset-int text-len 0 (count text))))
@@ -398,9 +398,9 @@
   [text max-size text-filter-type]
   (let [text-filter
         (case text-filter-type
-          ::filter-ascii   (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
-          ::filter-float   (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_float edit unicode)))
-          ::filter-decimal (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_decimal edit unicode))))
+          ::filter-ascii   (reify NkPluginFilterI (invoke [_this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
+          ::filter-float   (reify NkPluginFilterI (invoke [_this edit unicode] (Nuklear/nnk_filter_float edit unicode)))
+          ::filter-decimal (reify NkPluginFilterI (invoke [_this edit unicode] (Nuklear/nnk_filter_decimal edit unicode))))
         text-len    (int-array 1)
         buffer      (BufferUtils/createByteBuffer max-size)]
     (edit-set {::buffer buffer ::text-len text-len} text)
@@ -412,15 +412,14 @@
 (defn edit-get
   "Get string with text from edit field"
   [data]
-  (let [max-size (::max-size data)
-        buffer   (::buffer data)
+  (let [buffer   (::buffer data)
         text-len (aget ^ints (::text-len data) 0)
         arr      (byte-array (inc text-len))]
     (.get ^DirectByteBuffer buffer arr 0 text-len)
     (.flip ^DirectByteBuffer buffer)
     (.limit ^DirectByteBuffer buffer (.capacity ^DirectByteBuffer buffer))
     (aset-byte arr text-len 0)
-    (String. arr 0 text-len (StandardCharsets/UTF_8))))
+    (String. arr 0 text-len StandardCharsets/UTF_8)))
 
 (defn edit-field
   "Create edit field"

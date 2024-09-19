@@ -1,6 +1,7 @@
 (ns sfsim.core
   "Space flight simulator main program."
   (:require [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI)]
+            [clojure.string :refer (trim)]
             [fastmath.vector :refer (vec3 add mult mag sub normalize)]
             [fastmath.matrix :refer (inverse mulv)]
             [sfsim.texture :refer (destroy-texture)]
@@ -138,7 +139,7 @@
 (GLFW/glfwSetCharCallback
   window
   (reify GLFWCharCallbackI
-         (invoke [this window codepoint]
+         (invoke [_this _window codepoint]
            (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))))
 
 (GLFW/glfwSetCursorPosCallback
@@ -233,12 +234,12 @@
 
 (defn datetime-dialog-get
   [time-data t0]
-  (let [day    (Integer/parseInt (clojure.string/trim (gui/edit-get (:day time-data))))
-        month  (Integer/parseInt (clojure.string/trim (gui/edit-get (:month time-data))))
-        year   (Integer/parseInt (clojure.string/trim (gui/edit-get (:year time-data))))
-        hour   (Integer/parseInt (clojure.string/trim (gui/edit-get (:hour time-data))))
-        minute (Integer/parseInt (clojure.string/trim (gui/edit-get (:minute time-data))))
-        sec    (Integer/parseInt (clojure.string/trim (gui/edit-get (:second time-data))))
+  (let [day    (Integer/parseInt (trim (gui/edit-get (:day time-data))))
+        month  (Integer/parseInt (trim (gui/edit-get (:month time-data))))
+        year   (Integer/parseInt (trim (gui/edit-get (:year time-data))))
+        hour   (Integer/parseInt (trim (gui/edit-get (:hour time-data))))
+        minute (Integer/parseInt (trim (gui/edit-get (:minute time-data))))
+        sec    (Integer/parseInt (trim (gui/edit-get (:second time-data))))
         jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
         clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
     (- (+ (- jd astro/T0 0.5) clock) (/ t0 1000 86400.0))))
