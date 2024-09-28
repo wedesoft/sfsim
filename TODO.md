@@ -1,4 +1,6 @@
 # TODO
+* get height field quad and orientation of split for given space ship position
+* hard threshold for water
 * visualise prototype vehicle and wheels
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
