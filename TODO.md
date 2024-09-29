@@ -6,6 +6,7 @@
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
 * introduce variation to cloud height
+* [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
 * .jpg -> .day.jpg
 * 2 more levels, higher res map
 * atmospheric flight with stationary atmosphere
