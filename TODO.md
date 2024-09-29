@@ -1,5 +1,6 @@
 # TODO
-* get height field quad and orientation of split for given space ship position
+* make height field triangles (with correctly oriented split) for given space ship position for creating convex hull
+* make Java bindings for Jolt and build with build.clj?
 * hard threshold for water
 * visualise prototype vehicle and wheels
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
