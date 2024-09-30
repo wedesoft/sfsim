@@ -55,6 +55,7 @@
 
 (defn determine-face [point]
   "Determine which face a point gets projected on when projecting onto a cube"
+  {:malli/schema [:=> [:cat fvec3] :int]}
   (let [[x y z] point]
     (cond
       (>= (abs x) (max (abs y) (abs z))) (if (>= x 0) 2 4)
@@ -63,6 +64,7 @@
 
 (defn cube-i
   "Determine cube face coordinate i given face and a point on the cube surface"
+  {:malli/schema [:=> [:cat :int fvec3] :double]}
   [face point]
   (case (long face)
     0 (* 0.5 (+ (point 0) 1.0))
@@ -74,6 +76,7 @@
 
 (defn cube-j
   "Determine cube face coordinate j given face and a point on the cube surface"
+  {:malli/schema [:=> [:cat :int fvec3] :double]}
   [face point]
   (case (long face)
     0 (* 0.5 (- 1.0 (point 1)))
