@@ -219,7 +219,7 @@
   (map-sector-night {:sector "D2" :prefix prefix :y 1 :x 3}))
 
 (defn elevation-scales
-  "Generate pyeramid of scales for given "
+  "Generate pyramid of scales for given "
   [& {:keys [sector]}]
   (scale-elevation {:input (str "elevation." sector ".raw") :output (str "elevation." sector "." 2 ".raw")})
   (scale-elevation {:input (str "elevation." sector "." 2 ".raw") :output (str "elevation." sector "." 3 ".raw")})

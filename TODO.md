@@ -1,5 +1,10 @@
 # TODO
 * make height field triangles (with correctly oriented split) for given space ship position for creating convex hull
+* increase resolution of cube map,
+  height field, 30 arc seconds -> 43200 pixels circumference
+  (/ 43200 4 (bit-shift-left 1 4)) -> 675
+  tilesize is 33, color-tilesize is 129, start with correct in-level (-4 -> -4 + sublevel = 2), maybe reduce sublevel?
+  color map is 21600*4 = 86400 circumference
 * make Java bindings for Jolt and build with build.clj?
 * hard threshold for water
 * visualise prototype vehicle and wheels
