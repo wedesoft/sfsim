@@ -1,7 +1,7 @@
 (ns sfsim.cubemap
   "Conversions from cube coordinates (face, j, i) to geodetic coordinates (longitude, latitude)."
   (:require [clojure.core.memoize :as z]
-            [fastmath.vector :refer (vec3 add mult cross mag normalize)]
+            [fastmath.vector :refer (vec3 add mult div cross mag normalize)]
             [fastmath.matrix :refer (mulv)]
             [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
             [sfsim.matrix :refer (rotation-y rotation-z fvec3)]
@@ -93,10 +93,20 @@
     (vec3 (* distance cos-lat (cos longitude)) (* distance cos-lat (sin longitude)) (* distance sin-lat))))
 
 (defn project-onto-sphere
-  "Project a 3D vector onto an ellipsoid"
+  "Project a 3D vector onto a sphere"
   {:malli/schema [:=> [:cat fvec3 :double] fvec3]}
   [point radius]
   (mult (normalize point) radius))
+
+(defn project-onto-cube
+  "Project 3D vector onto cube"
+  {:malli/schema [:=> [:cat fvec3] fvec3]}
+  [point]
+  (let [[|x| |y| |z|] (map abs point)]
+    (cond
+      (>= |x| (max |y| |z|)) (div point |x|)
+      (>= |y| (max |x| |z|)) (div point |y|)
+      :else                  (div point |z|))))
 
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height assuming a spherical Earth"

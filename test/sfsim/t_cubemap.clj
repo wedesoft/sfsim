@@ -129,6 +129,17 @@
    0  1  0        0.0 6378000.0       0.0
    0  0  1        0.0       0.0 6378000.0)
 
+(fact "Project point onto cube"
+      (project-onto-cube (vec3  1  0  0)) => (vec3  1    0    0  )
+      (project-onto-cube (vec3  2  1  1)) => (vec3  1    0.5  0.5)
+      (project-onto-cube (vec3 -2  1  1)) => (vec3 -1    0.5  0.5)
+      (project-onto-cube (vec3  0  1  0)) => (vec3  0    1    0  )
+      (project-onto-cube (vec3  1  2 -1)) => (vec3  0.5  1   -0.5)
+      (project-onto-cube (vec3  1 -2 -1)) => (vec3  0.5 -1   -0.5)
+      (project-onto-cube (vec3  0  0  1)) => (vec3  0    0    1  )
+      (project-onto-cube (vec3 -1  1  2)) => (vec3 -0.5  0.5  1  )
+      (project-onto-cube (vec3  1 -1 -2)) => (vec3  0.5 -0.5 -1  ))
+
 (facts "x-coordinate on raster map"
   (map-x (- PI) 675 3) => 0.0
   (map-x    0.0 675 3) => (* 675 2.0 8))
