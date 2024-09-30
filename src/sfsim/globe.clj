@@ -17,8 +17,10 @@
   [in-level out-level]
   (let [n                  (bit-shift-left 1 out-level)
         width              675
-        surface-tilesize   33
-        sublevel           2
+        surface-tilesize   65
+        sublevel           1
+        max-surface-level  4
+        max-color-level    5
         subsample          (bit-shift-left 1 sublevel)
         color-tilesize     (inc (* subsample (dec surface-tilesize)))
         radius             6378000.0
@@ -34,18 +36,18 @@
           (let [j                 (cube-coordinate out-level surface-tilesize b (double v))
                 i                 (cube-coordinate out-level surface-tilesize a (double u))
                 p                 (cube-map k j i)
-                point             (project-onto-globe p (min 4 in-level) width radius)]
+                point             (project-onto-globe p (max 0 (min max-surface-level in-level)) width radius)]
             (set-vector3! surface v u (sub point center))))
         (doseq [v (range color-tilesize) u (range color-tilesize)]
           (let [j                 (cube-coordinate out-level color-tilesize b (double v))
                 i                 (cube-coordinate out-level color-tilesize a (double u))
                 p                 (cube-map k j i)
-                point             (project-onto-globe p (min 4 in-level) width radius)
+                point             (project-onto-globe p (max 0 (min max-surface-level in-level)) width radius)
                 [lon lat _height] (cartesian->geodetic point radius)
-                normal            (normal-for-point point (min 4 in-level) out-level width color-tilesize radius)
-                color-day         (color-geodetic-day (min 5 (+ in-level sublevel)) width lon lat)
-                color-night       (color-geodetic-night (min 5 (+ in-level sublevel)) width lon lat)
-                wet               (water-geodetic (min 4 (+ in-level sublevel)) width lon lat)]
+                normal            (normal-for-point point (max 0 (min max-surface-level in-level)) out-level width color-tilesize radius)
+                color-day         (color-geodetic-day (max (min max-color-level (+ in-level sublevel))) width lon lat)
+                color-night       (color-geodetic-night (max (min max-color-level (+ in-level sublevel))) width lon lat)
+                wet               (water-geodetic (max (min max-surface-level (+ in-level sublevel))) width lon lat)]
             (set-vector3! normals v u normal)
             (set-pixel! tile-day v u color-day)
             (set-pixel! tile-night v u color-night)

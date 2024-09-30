@@ -19,7 +19,7 @@
                                   :albedo 0.9
                                   :dawn-start -0.2
                                   :dawn-end 0.0
-                                  :tilesize 33
+                                  :tilesize 65
                                   :color-tilesize 129
                                   :reflectivity 0.1
                                   :water-color (vec3 0.09 0.11 0.34)})
