@@ -53,6 +53,36 @@
   [face j i]
   (vec3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
 
+(defn determine-face [point]
+  "Determine which face a point gets projected on when projecting onto a cube"
+  (let [[x y z] point]
+    (cond
+      (>= (abs x) (max (abs y) (abs z))) (if (>= x 0) 2 4)
+      (>= (abs y) (max (abs x) (abs z))) (if (>= y 0) 3 1)
+      :else                              (if (>= z 0) 0 5))))
+
+(defn cube-i
+  "Determine cube face coordinate i given face and a point on the cube surface"
+  [face point]
+  (case (long face)
+    0 (* 0.5 (+ (point 0) 1.0))
+    1 (* 0.5 (+ (point 0) 1.0))
+    2 (* 0.5 (+ (point 1) 1.0))
+    3 (* 0.5 (- 1.0 (point 0)))
+    4 (* 0.5 (- 1.0 (point 1)))
+    5 (* 0.5 (+ (point 0) 1.0))))
+
+(defn cube-j
+  "Determine cube face coordinate j given face and a point on the cube surface"
+  [face point]
+  (case (long face)
+    0 (* 0.5 (- 1.0 (point 1)))
+    1 (* 0.5 (- 1.0 (point 2)))
+    2 (* 0.5 (- 1.0 (point 2)))
+    3 (* 0.5 (- 1.0 (point 2)))
+    4 (* 0.5 (- 1.0 (point 2)))
+    5 (* 0.5 (+ (point 1) 1.0))))
+
 (defn cube-coordinate
   "Determine coordinate of a pixel on a tile of a given level"
   {:malli/schema [:=> [:cat :int :int :int :double] :double]}

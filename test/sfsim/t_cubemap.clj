@@ -70,6 +70,20 @@
 (fact "Get vector to cube face"
   (cube-map 5 0.0 0.5) => (vec3 0.0 -1.0 -1.0))
 
+(tabular "Round trip for conversion to face coordinates and back to coordinates on cube"
+         (fact (let [point  (vec3 ?x ?y ?z)
+                     face   (determine-face point)
+                     i      (cube-i face point)
+                     j      (cube-j face point)]
+                 (cube-map face j i) => (roughly-vector point 1e-6)))
+         ?x   ?y   ?z
+         1.0  0.2  0.4
+        -1.0  0.2  0.4
+         0.2  1.0  0.4
+         0.2 -1.0  0.4
+         0.2  0.4  1.0
+         0.2  0.4 -1.0)
+
 (facts "Test cube coordinates"
   (cube-coordinate 0 256 0   0.0) => 0.0
   (cube-coordinate 0 256 0 127.5) => 0.5
