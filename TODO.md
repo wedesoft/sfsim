@@ -1,9 +1,12 @@
 # TODO
+* get height field quad and orientation of split for given space ship position
+* hard threshold for water
 * visualise prototype vehicle and wheels
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
 * introduce variation to cloud height
+* [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
 * .jpg -> .day.jpg
 * 2 more levels, higher res map
 * atmospheric flight with stationary atmosphere
