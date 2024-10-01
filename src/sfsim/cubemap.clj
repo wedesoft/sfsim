@@ -222,7 +222,7 @@
   "Load and cache elevation tiles"
   (z/lru
     (fn elevation-tile [in-level ty tx]
-      (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
+      (let [data (slurp-shorts (tile-path "tmp/elevation" in-level ty tx ".raw"))
             size (int (round (sqrt (alength data))))]
         {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data data}))
     :lru/threshold 128))

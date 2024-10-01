@@ -45,9 +45,9 @@
                 point             (project-onto-globe p (max 0 (min max-surface-level in-level)) width radius)
                 [lon lat _height] (cartesian->geodetic point radius)
                 normal            (normal-for-point point (max 0 (min max-surface-level in-level)) out-level width color-tilesize radius)
-                color-day         (color-geodetic-day (max (min max-color-level (+ in-level sublevel))) width lon lat)
-                color-night       (color-geodetic-night (max (min max-color-level (+ in-level sublevel))) width lon lat)
-                wet               (water-geodetic (max (min max-surface-level (+ in-level sublevel))) width lon lat)]
+                color-day         (color-geodetic-day (max 0 (min max-color-level (+ in-level sublevel))) width lon lat)
+                color-night       (color-geodetic-night (max 0 (min max-color-level (+ in-level sublevel))) width lon lat)
+                wet               (water-geodetic (max 0 (min max-surface-level (+ in-level sublevel))) width lon lat)]
             (set-vector3! normals v u normal)
             (set-pixel! tile-day v u color-day)
             (set-pixel! tile-night v u color-night)

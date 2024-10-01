@@ -248,7 +248,7 @@
 
 (defn elevation-sectors
   "Convert all elevation sectors into a pyramid of elevation tiles"
-  [& {:keys [prefix] :or {prefix "elevation"}}]
+  [& {:keys [prefix] :or {prefix "tmp/elevation"}}]
   (elevation-sector {:sector "A1" :prefix prefix :y 0 :x 0})
   (elevation-sector {:sector "A2" :prefix prefix :y 1 :x 0})
   (elevation-sector {:sector "B1" :prefix prefix :y 0 :x 1})

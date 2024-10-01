@@ -192,7 +192,7 @@
       (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
-  (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
+  (with-redefs [util/slurp-shorts (fn [file-name] ({"tmp/elevation235.raw" (short-array [2 3 5 7])} file-name))
                 util/tile-path    str]
     (:sfsim.image/width (elevation-tile 2 3 5)) => 2
     (:sfsim.image/height (elevation-tile 2 3 5)) => 2
