@@ -1,4 +1,9 @@
 # TODO
+* clj -T:build cube-map :in-level 0 :out-level 3
+* clj -T:build cube-map :in-level 1 :out-level 4
+* clj -T:build cube-map :in-level 2 :out-level 5
+* clj -T:build cube-map :in-level 3 :out-level 6
+* clj -T:build cube-map :in-level 4 :out-level 7
 * make height field triangles (with correctly oriented split) for given space ship position for creating convex hull
 * increase resolution of cube map,
   height field, 30 arc seconds -> 43200 pixels circumference
