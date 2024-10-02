@@ -265,3 +265,11 @@
       => [[face2 quad0] [face2 quad1] [face2 quad2] [face2 quad3]]
       (:tree (update-level-of-detail flat radius #(= %& [2 0 0 0]) false)) => one-face
       (get-in (update-level-of-detail flat radius (constantly false) true) [:tree face2 :sfsim.quadtree/up]) => true)))
+
+(fact "Get tile indices, coordinates of pixel within tile and position in pixel"
+      (tile-coordinates 1.0  0.5  0 1) => [0 0 0 0 1.0 0.5]
+      (tile-coordinates 0.25 0.25 0 2) => [0 0 0 0 0.5 0.5]
+      (tile-coordinates 0.75 0.25 0 2) => [0 0 1 0 0.5 0.5]
+      (tile-coordinates 0.25 0.75 0 2) => [0 0 0 1 0.5 0.5]
+      (tile-coordinates 0.75 0.25 1 1) => [1 0 0 0 0.5 0.5]
+      (tile-coordinates 0.25 0.75 1 1) => [0 1 0 0 0.5 0.5])

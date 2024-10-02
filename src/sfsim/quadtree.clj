@@ -295,5 +295,24 @@
      :drop (quadtree-extract tree drop-list)
      :load load-list}))
 
+(defn tile-coordinates
+  "Get tile indices, coordinates of pixel within tile and position in pixel"
+  {:malli/schema [:=> [:cat :double :double :int :int] [:tuple :int :int :int :int :double :double]]}
+  [j i level tilesize]
+  (let [n      (bit-shift-left 1 level)
+        jj     (* j n)
+        ii     (* i n)
+        row    (min (long jj) (dec n))
+        column (min (long ii) (dec n))
+        dj     (- jj row)
+        di     (- ii column)
+        y      (* dj tilesize)
+        x      (* di tilesize)
+        tile-y (min (long y) (dec tilesize))
+        tile-x (min (long x) (dec tilesize))
+        dy     (- y tile-y)
+        dx     (- x tile-x)]
+    [row column tile-y tile-x dy dx]))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
