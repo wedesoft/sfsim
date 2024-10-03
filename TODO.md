@@ -8,6 +8,7 @@
   tilesize is 33, color-tilesize is 129, start with correct in-level (-4 -> -4 + sublevel = 2), maybe reduce sublevel?
   color map is 21600*4 = 86400 circumference
 * make Java bindings for Jolt and build with build.clj?
+* quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
 * hard threshold for water
 * visualise prototype vehicle and wheels
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
