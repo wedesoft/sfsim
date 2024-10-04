@@ -3,6 +3,7 @@
 uniform sampler2DArray day_night;
 uniform sampler2D normals;
 uniform sampler2D water;
+uniform float water_threshold;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform float reflectivity;
@@ -31,7 +32,7 @@ vec4 cloud_overlay();
 // Render planet surface as seen through the atmosphere.
 void main()
 {
-  float wet = texture(water, fs_in.colorcoord).r;
+  float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 water_normal = normalize(fs_in.point);
   vec3 normal = mix(land_normal, water_normal, wet);
