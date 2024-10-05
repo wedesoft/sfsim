@@ -1,10 +1,12 @@
 (ns sfsim.render
   "Functions for doing OpenGL rendering"
   (:require [clojure.math :refer (sin asin hypot)]
+            [fastmath.vector :refer (vec3)]
             [fastmath.matrix :refer (mat->float-array)]
             [malli.core :as m]
             [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix)]
             [sfsim.quaternion :refer (quaternion)]
+            [sfsim.image :refer (get-pixel)]
             [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
@@ -585,6 +587,45 @@
   (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
          (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
          (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item))))
+
+(def vertex-passthrough (slurp "resources/shaders/render/vertex-passthrough.glsl"))
+(def tessellation-uniform (slurp "resources/shaders/render/tessellation-uniform.glsl"))
+(def tessellation-chequer (slurp "resources/shaders/render/tessellation-chequer.glsl"))
+(def geometry-point-color (slurp "resources/shaders/render/geometry-point-color.glsl"))
+(def fragment-tessellation (slurp "resources/shaders/render/fragment-tessellation.glsl"))
+
+(defn quad-splits-orientations
+  "Function to determine quad tessellation orientation of diagonal split"
+  {:malli/schema [:=> [:cat :int :int] [:vector [:vector :boolean]]]}
+  [tilesize zoom]
+  (let [indices  [0 1 3 2]
+        vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+        detail   (dec tilesize)
+        program  (make-program :sfsim.render/vertex [vertex-passthrough]
+                               :sfsim.render/tess-control [tessellation-uniform]
+                               :sfsim.render/tess-evaluation [tessellation-chequer]
+                               :sfsim.render/geometry [geometry-point-color]
+                               :sfsim.render/fragment [fragment-tessellation])
+        vao      (make-vertex-array-object program indices vertices ["point" 3])
+        tex      (texture-render-color (* zoom detail) (* zoom detail) false
+                                       (clear (vec3 0 0 0))
+                                       (use-program program)
+                                       (uniform-int program "detail" detail)
+                                       (render-patches vao))
+        img      (texture->image tex)
+        result   (mapv (fn [y]
+                           (mapv (fn [x]
+                                     (let [value ((get-pixel img
+                                                             (+ (quot zoom 2) (* y zoom))
+                                                             (+ (quot zoom 2) (* x zoom))) 1)
+                                           odd   (= (mod (+ x y) 2) 1)]
+                                       (= (>= value 127) odd)))
+                                 (range detail)))
+                       (range detail))]
+    (destroy-texture tex)
+    (destroy-vertex-array-object vao)
+    (destroy-program program)
+    result))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
