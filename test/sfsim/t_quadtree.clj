@@ -273,3 +273,9 @@
       (tile-coordinates 0.25 0.75 0 3) => [0 0 0 1 0.5 0.5]
       (tile-coordinates 0.75 0.25 1 2) => [1 0 0 0 0.5 0.5]
       (tile-coordinates 0.25 0.75 1 2) => [0 1 0 0 0.5 0.5])
+
+(fact "Determine triangle of quad the specified coordinate is in"
+      (tile-triangle 0.25 0.75 true) => :sfsim.quadtree/topright
+      (tile-triangle 0.75 0.25 true) => :sfsim.quadtree/bottomleft
+      (tile-triangle 0.25 0.25 false) => :sfsim.quadtree/topleft
+      (tile-triangle 0.75 0.75 false) => :sfsim.quadtree/bottomright)

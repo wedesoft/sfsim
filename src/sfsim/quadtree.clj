@@ -314,5 +314,13 @@
         dx     (- x tile-x)]
     [row column tile-y tile-x dy dx]))
 
+(defn tile-triangle
+  "Determine triangle of quad the specified coordinate is in"
+  {:malli/schema [:=> [:cat :double :double :boolean] :keyword]}
+  [y x first-diagonal]
+  (if first-diagonal
+    (if (>= x y) ::topright ::bottomleft)
+    (if (<= (+ x y) 1) ::topleft ::bottomright)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

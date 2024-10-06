@@ -595,7 +595,7 @@
 (def fragment-tessellation (slurp "resources/shaders/render/fragment-tessellation.glsl"))
 
 (defn quad-splits-orientations
-  "Function to determine quad tessellation orientation of diagonal split"
+  "Function to determine quad tessellation orientation of diagonal split (true: \\, false: /)"
   {:malli/schema [:=> [:cat :int :int] [:vector [:vector :boolean]]]}
   [tilesize zoom]
   (let [indices  [0 1 3 2]
