@@ -279,3 +279,20 @@
       (tile-triangle 0.75 0.25 true ) => [[0 0] [1 1] [1 0]]
       (tile-triangle 0.25 0.25 false) => [[0 0] [0 1] [1 0]]
       (tile-triangle 0.75 0.75 false) => [[1 0] [0 1] [1 1]])
+
+(fact "Get distance of surface to planet center for given radial vector"
+      (with-redefs [cubemap/project-onto-cube (fn [point] (fact point => (vec3 2 3 5)) (vec3 0.4 0.6 1))
+                    cubemap/determine-face (fn [point] (fact point => (vec3 0.4 0.6 1)) 2)
+                    cubemap/cube-i (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
+                    cubemap/cube-j (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
+                    quadtree/tile-coordinates (fn [j i level tilesize]
+                                                  (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
+                                                  [:row :column :tile-y :tile-x :dy :dx])
+                    util/cube-path (fn [prefix face level y x suffix]
+                                       (fact prefix => "data/globe", face => 2, level => 6, y => :row, x => :column,
+                                             suffix => ".surf")
+                                       "data/globe/2/6/31/35.surf")
+                    util/slurp-floats (fn [file-name] (fact file-name => "data/globe/2/6/31/35.surf") :surface-tile)
+                    cubemap/tile-center (fn [face level b a radius]
+                                            (facts face => 2, level => 6, b => :row, a => :column, radius => 6378000.0))]
+        (distance-to-surface (vec3 2 3 5) 6 65 6378000.0)))

@@ -3,7 +3,7 @@
   (:require [fastmath.vector :refer (sub mag)]
             [clojure.math :refer (tan to-radians)]
             [malli.core :as m]
-            [sfsim.cubemap :refer (tile-center)]
+            [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
             [sfsim.matrix :refer (fvec3)]
             [sfsim.image :refer (slurp-image slurp-normals)]
             [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in N N0)]))
@@ -321,6 +321,20 @@
   (if first-diagonal
     (if (>= x y) [[0 0] [0 1] [1 1]] [[0 0] [1 1] [1 0]])
     (if (<= (+ x y) 1) [[0 0] [0 1] [1 0]] [[1 0] [0 1] [1 1]])))
+
+(defn distance-to-surface
+  "Get distance of surface to planet center for given radial vector"
+  {:malli/schema [:=> [:cat fvec3 :int :int :double] :double]}
+  [point level tilesize radius]
+  (let [p                         (project-onto-cube point)
+        face                      (determine-face p)
+        j                         (cube-j face p)
+        i                         (cube-i face p)
+        [b a tile-y tile-x dy dx] (tile-coordinates j i level tilesize)
+        path                      (cube-path "data/globe" face level b a ".surf")
+        surface                   (slurp-floats path)
+        center                    (tile-center face level b a radius)]
+    0.0))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
