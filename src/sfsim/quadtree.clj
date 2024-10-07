@@ -316,11 +316,11 @@
 
 (defn tile-triangle
   "Determine triangle of quad the specified coordinate is in"
-  {:malli/schema [:=> [:cat :double :double :boolean] :keyword]}
+  {:malli/schema [:=> [:cat :double :double :boolean] [:vector [:tuple :int :int]]]}
   [y x first-diagonal]
   (if first-diagonal
-    (if (>= x y) ::topright ::bottomleft)
-    (if (<= (+ x y) 1) ::topleft ::bottomright)))
+    (if (>= x y) [[0 0] [0 1] [1 1]] [[0 0] [1 1] [1 0]])
+    (if (<= (+ x y) 1) [[0 0] [0 1] [1 0]] [[1 0] [0 1] [1 1]])))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
