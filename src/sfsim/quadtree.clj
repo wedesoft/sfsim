@@ -324,8 +324,8 @@
 
 (defn distance-to-surface
   "Get distance of surface to planet center for given radial vector"
-  {:malli/schema [:=> [:cat fvec3 :int :int :double] :double]}
-  [point level tilesize radius]
+  {:malli/schema [:=> [:cat fvec3 :int :int :double [:vector [:vector :boolean]]] :double]}
+  [point level tilesize radius split-orientations]
   (let [p                         (project-onto-cube point)
         face                      (determine-face p)
         j                         (cube-j face p)
@@ -333,7 +333,9 @@
         [b a tile-y tile-x dy dx] (tile-coordinates j i level tilesize)
         path                      (cube-path "data/globe" face level b a ".surf")
         surface                   (slurp-floats path)
-        center                    (tile-center face level b a radius)]
+        center                    (tile-center face level b a radius)
+        orientation               (nth (nth split-orientations tile-y) tile-x)
+        triangle                  (mapv (fn [[y x]] [(+ y tile-y) (+ x tile-x)]) (tile-triangle dy dx orientation))]
     0.0))
 
 (set! *warn-on-reflection* false)
