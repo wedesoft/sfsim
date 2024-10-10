@@ -6,6 +6,7 @@
             [clojure.math :refer (tan to-radians)]
             [sfsim.quadtree :refer :all :as quadtree]
             [sfsim.cubemap :refer (cube-map) :as cubemap]
+            [sfsim.plane :as plane]
             [sfsim.image :as image]
             [sfsim.util :as util]))
 
@@ -294,11 +295,19 @@
                                        "data/globe/2/6/31/35.surf")
                     util/slurp-floats (fn [file-name] (fact file-name => "data/globe/2/6/31/35.surf") :surface-tile)
                     cubemap/tile-center (fn [face level b a radius]
-                                            (facts face => 2, level => 6, b => 32, a => 40, radius => 6378000.0))
+                                            (facts face => 2, level => 6, b => 32, a => 40, radius => 6378000.0)
+                                            (vec3 1 2 3))
                     quadtree/tile-triangle (fn [y x first-diagonal]
                                                (facts y => :dy, x => :dx, first-diagonal => true)
                                                [[0 0] [0 1] [1 1]])
                     image/get-vector3 (fn [img y x]
-                                          (facts img => :surface-tile, y => #{3 4}, x => #{5 6})
-                                          ({[3 5] (vec3 0 0 0) [3 6] (vec3 1 0 0) [4 6] (vec3 1 1 0)} [y x]))]
-        (distance-to-surface (vec3 2 3 5) 6 65 6378000.0 [[] [] [] [false false false false false true]])))
+                                          (facts (:sfsim.image/data img) => :surface-tile,
+                                                 y => #(contains? #{3 4} %), x => #(contains? #{5 6} %))
+                                          ({[3 5] (vec3 0 0 0) [3 6] (vec3 1 0 0) [4 6] (vec3 1 1 0)} [y x]))
+                    plane/points->plane (fn [p q r] (facts p => (vec3 0 0 0), q => (vec3 1 0 0), r => (vec3 1 1 0)) :plane)
+                    plane/ray-plane-intersection-parameter (fn [plane ray]
+                                                               (facts plane => :plane
+                                                                      (:sfsim.ray/origin ray) => (vec3 -1 -2 -3)
+                                                                      (:sfsim.ray/direction ray) => (vec3 2 3 5))
+                                                               6378123.0)]
+        (distance-to-surface (vec3 2 3 5) 6 65 6378000.0 [[] [] [] [false false false false false true]]) => 6378123.0))

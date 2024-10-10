@@ -392,7 +392,7 @@
 
 (defn texture->image
   "Convert texture to RGB image"
-  {:malli/schema [:=> [:cat texture-2d] byte-image]}
+  {:malli/schema [:=> [:cat texture-2d] image]}
   [{::keys [target texture width height]}]
   (with-texture target texture
     (let [size (* 4 width height)

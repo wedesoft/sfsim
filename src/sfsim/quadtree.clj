@@ -5,7 +5,8 @@
             [malli.core :as m]
             [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
             [sfsim.matrix :refer (fvec3)]
-            [sfsim.image :refer (slurp-image slurp-normals)]
+            [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
+            [sfsim.image :refer (slurp-image slurp-normals get-vector3)]
             [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in N N0)]))
 
 (set! *unchecked-math* true)
@@ -332,11 +333,14 @@
         i                         (cube-i face p)
         [b a tile-y tile-x dy dx] (tile-coordinates j i level tilesize)
         path                      (cube-path "data/globe" face level b a ".surf")
-        surface                   (slurp-floats path)
+        terrain                   #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats path)}
         center                    (tile-center face level b a radius)
         orientation               (nth (nth split-orientations tile-y) tile-x)
-        triangle                  (mapv (fn [[y x]] [(+ y tile-y) (+ x tile-x)]) (tile-triangle dy dx orientation))]
-    0.0))
+        triangle                  (mapv (fn [[y x]] (get-vector3 terrain (+ y tile-y) (+ x tile-x)))
+                                        (tile-triangle dy dx orientation))
+        plane                     (apply points->plane triangle)
+        ray                       #:sfsim.ray{:origin (sub center) :direction point}]
+    (ray-plane-intersection-parameter plane ray)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

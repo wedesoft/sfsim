@@ -14,13 +14,21 @@
   {::point p
    ::normal (normalize (cross (sub q p) (sub r p)))})
 
-(defn ray-plane-intersection
-  "Compute intersection of ray with plane"
-  {:malli/schema [:=> [:cat plane ray] fvec3]}
+(defn ray-plane-intersection-parameter
+  "Get parameter of plane intersection for ray"
+  {:malli/schema [:=> [:cat plane ray] :double]}
   [plane ray]
   (let [p (:sfsim.plane/point plane)
         n (:sfsim.plane/normal plane)
         q (:sfsim.ray/origin ray)
-        v (:sfsim.ray/direction ray)
-        t (/ (dot n (sub p q)) (dot n v))]
+        v (:sfsim.ray/direction ray)]
+    (/ (dot n (sub p q)) (dot n v))))
+
+(defn ray-plane-intersection
+  "Compute intersection of ray with plane"
+  {:malli/schema [:=> [:cat plane ray] fvec3]}
+  [plane ray]
+  (let [t (ray-plane-intersection-parameter plane ray)
+        q (:sfsim.ray/origin ray)
+        v (:sfsim.ray/direction ray)]
     (add q (mult v t))))

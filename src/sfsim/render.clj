@@ -7,6 +7,7 @@
             [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix)]
             [sfsim.quaternion :refer (quaternion)]
             [sfsim.image :refer (get-pixel)]
+            [sfsim.shaders :refer (vertex-passthrough)]
             [sfsim.util :refer (N)]
             [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
                                    make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)])
@@ -588,7 +589,6 @@
          (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
          (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item))))
 
-(def vertex-passthrough (slurp "resources/shaders/render/vertex-passthrough.glsl"))
 (def tessellation-uniform (slurp "resources/shaders/render/tessellation-uniform.glsl"))
 (def tessellation-chequer (slurp "resources/shaders/render/tessellation-chequer.glsl"))
 (def geometry-point-color (slurp "resources/shaders/render/geometry-point-color.glsl"))
