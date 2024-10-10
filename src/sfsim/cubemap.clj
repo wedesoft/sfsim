@@ -53,9 +53,10 @@
   [face j i]
   (vec3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
 
-(defn determine-face [point]
+(defn determine-face
   "Determine which face a point gets projected on when projecting onto a cube"
   {:malli/schema [:=> [:cat fvec3] :int]}
+  [point]
   (let [[x y z] point]
     (cond
       (>= (abs x) (max (abs y) (abs z))) (if (>= x 0) 2 4)
