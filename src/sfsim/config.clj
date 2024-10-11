@@ -20,6 +20,7 @@
                                   :dawn-start -0.2
                                   :dawn-end 0.0
                                   :tilesize 65
+                                  :level 6
                                   :color-tilesize 129
                                   :reflectivity 0.1
                                   :water-threshold 0.8

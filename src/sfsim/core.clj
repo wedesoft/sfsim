@@ -6,8 +6,10 @@
             [fastmath.matrix :refer (inverse mulv)]
             [sfsim.texture :refer (destroy-texture)]
             [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                                  write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering)]
+                                  write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
+                                  quad-splits-orientations)]
             [sfsim.atmosphere :as atmosphere]
+            [sfsim.quadtree :refer (distance-to-surface)]
             [sfsim.matrix :refer (transformation-matrix quaternion->matrix)]
             [sfsim.planet :as planet]
             [sfsim.clouds :as clouds]
@@ -82,6 +84,8 @@
 (def scene (model/load-scene scene-renderer "venturestar.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
+
+(def split-orientations (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8))
 
 (def buffer-initial-size (* 4 1024))
 (def bitmap-font (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
@@ -178,10 +182,14 @@
 
 (defn position-from-lon-lat
   [longitude latitude height]
-  (let [radius (+ height (:sfsim.planet/radius config/planet-config))]
-    (vec3 (* (cos longitude) (cos latitude) radius)
-          (* (sin longitude) (cos latitude) radius)
-          (* (sin latitude) radius))))
+  (let [point      (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
+        min-radius (distance-to-surface point
+                                        (:sfsim.planet/level config/planet-config)
+                                        (:sfsim.planet/tilesize config/planet-config)
+                                        (:sfsim.planet/radius config/planet-config)
+                                        split-orientations)
+        radius     (+ height (:sfsim.planet/radius config/planet-config))]
+    (mult point (max radius min-radius))))
 
 (defn orientation-from-lon-lat
   [longitude latitude]

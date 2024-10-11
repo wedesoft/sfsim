@@ -339,8 +339,10 @@
         triangle                  (mapv (fn [[y x]] (get-vector3 terrain (+ y tile-y) (+ x tile-x)))
                                         (tile-triangle dy dx orientation))
         plane                     (apply points->plane triangle)
-        ray                       #:sfsim.ray{:origin (sub center) :direction point}]
-    (ray-plane-intersection-parameter plane ray)))
+        ray                       #:sfsim.ray{:origin (sub center) :direction point}
+        multiplier                (ray-plane-intersection-parameter plane ray)
+        magnitude-point           (mag point)]
+    (* multiplier magnitude-point)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

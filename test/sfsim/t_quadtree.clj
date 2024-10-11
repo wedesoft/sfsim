@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [malli.instrument :as mi]
             [malli.dev.pretty :as pretty]
-            [fastmath.vector :refer (vec3 add)]
+            [fastmath.vector :refer (vec3 add mag)]
             [clojure.math :refer (tan to-radians)]
             [sfsim.quadtree :refer :all :as quadtree]
             [sfsim.cubemap :refer (cube-map) :as cubemap]
@@ -310,4 +310,5 @@
                                                                       (:sfsim.ray/origin ray) => (vec3 -1 -2 -3)
                                                                       (:sfsim.ray/direction ray) => (vec3 2 3 5))
                                                                6378123.0)]
-        (distance-to-surface (vec3 2 3 5) 6 65 6378000.0 [[] [] [] [false false false false false true]]) => 6378123.0))
+        (distance-to-surface (vec3 2 3 5) 6 65 6378000.0 [[] [] [] [false false false false false true]])
+        => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6) ))
