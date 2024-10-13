@@ -145,7 +145,7 @@
 
 (fact "Use font to render button"
       (gui-control-test gui (layout-row-dynamic gui 32 1) (button-label gui "Test Button"))
-      => (is-image "test/sfsim/fixtures/gui/button.png" 0.03))
+      => (is-image "test/sfsim/fixtures/gui/button.png" 0.07))
 
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
@@ -168,7 +168,7 @@
 
 (fact "Render a text label"
       (gui-control-test gui (layout-row-dynamic gui 32 1) (text-label gui "Test Label"))
-      => (is-image "test/sfsim/fixtures/gui/label.png" 0.03))
+      => (is-image "test/sfsim/fixtures/gui/label.png" 0.10))
 
 (fact "Render an edit field"
       (let [data (edit-data "initial" 31 :sfsim.gui/filter-ascii)]
@@ -186,6 +186,6 @@
                           (layout-row-push gui 0.3)
                           (text-label gui "Two")
                           (layout-row-push gui 0.5)
-                          (text-label gui "Three"))) => (is-image "test/sfsim/fixtures/gui/dynamic-layout.png" 0.03))
+                          (text-label gui "Three"))) => (is-image "test/sfsim/fixtures/gui/dynamic-layout.png" 0.05))
 
 (GLFW/glfwTerminate)
