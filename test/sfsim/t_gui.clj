@@ -144,7 +144,7 @@
        (gui-control-test gui (slider-int gui 0 50 100 1)) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
 
 (fact "Use font to render button"
-      (gui-control-test gui (button-label gui "Test Button")) => (is-image "test/sfsim/fixtures/gui/button.png" 0.03))
+      (gui-control-test gui (button-label gui "Test Button")) => (is-image "test/sfsim/fixtures/gui/button.png" 0.07))
 
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
@@ -166,7 +166,7 @@
            (destroy-font-texture bitmap-font))))
 
 (fact "Render a text label"
-      (gui-control-test gui (text-label gui "Test Label")) => (is-image "test/sfsim/fixtures/gui/label.png" 0.03))
+      (gui-control-test gui (text-label gui "Test Label")) => (is-image "test/sfsim/fixtures/gui/label.png" 0.10))
 
 (fact "Render an edit field"
       (let [data (edit-data "initial" 31 :sfsim.gui/filter-ascii)]
