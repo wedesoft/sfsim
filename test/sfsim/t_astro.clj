@@ -289,7 +289,7 @@
         (mulv m v) => (roughly-vector (vec3 1.63777087e+06, -6.16427866e+06, -2.59868171e+03) 3e+2)))
 
 (facts "Parse PCK files"
-       (str (:expecting (first (.reason (pck-parser ""))))) => "KPL/(FK|PCK)\\n"
+       (str (:expecting (first (.reason (pck-parser ""))))) => "KPL/(FK|PCK)\\r?\\n"
        (pck-parser "KPL/PCK\n") => [:START]
        (pck-parser "KPL/FK\n") => [:START]
        (pck-parser (slurp "test/sfsim/fixtures/astro/text.tf")) => [:START]
@@ -309,7 +309,7 @@
        (count (insta/parses pck-parser (slurp "test/sfsim/fixtures/astro/unambiguous.tf"))) => 1)
 
 (facts "Convert PCK file to hashmap"
-       (str (:expecting (first (.reason (read-frame-kernel "test/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\n"
+       (str (:expecting (first (.reason (read-frame-kernel "test/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\r?\\n"
        (read-frame-kernel "test/sfsim/fixtures/astro/text.tf") => {}
        (read-frame-kernel "test/sfsim/fixtures/astro/string.tf") => {"S" "Testing"}
        (read-frame-kernel "test/sfsim/fixtures/astro/integer.tf") => {"TEST_VAR_1" 42}
