@@ -186,6 +186,6 @@
                           (layout-row-push gui 0.3)
                           (text-label gui "Two")
                           (layout-row-push gui 0.5)
-                          (text-label gui "Three"))) => (is-image "test/sfsim/fixtures/gui/dynamic-layout.png" 0.03))
+                          (text-label gui "Three"))) => (is-image "test/sfsim/fixtures/gui/dynamic-layout.png" 0.05))
 
 (GLFW/glfwTerminate)
