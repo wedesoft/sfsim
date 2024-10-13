@@ -219,7 +219,7 @@
   (map-sector-night {:sector "D2" :prefix prefix :y 1 :x 3}))
 
 (defn elevation-scales
-  "Generate pyeramid of scales for given "
+  "Generate pyramid of scales for given "
   [& {:keys [sector]}]
   (scale-elevation {:input (str "elevation." sector ".raw") :output (str "elevation." sector "." 2 ".raw")})
   (scale-elevation {:input (str "elevation." sector "." 2 ".raw") :output (str "elevation." sector "." 3 ".raw")})
@@ -248,7 +248,7 @@
 
 (defn elevation-sectors
   "Convert all elevation sectors into a pyramid of elevation tiles"
-  [& {:keys [prefix] :or {prefix "elevation"}}]
+  [& {:keys [prefix] :or {prefix "tmp/elevation"}}]
   (elevation-sector {:sector "A1" :prefix prefix :y 0 :x 0})
   (elevation-sector {:sector "A2" :prefix prefix :y 1 :x 0})
   (elevation-sector {:sector "B1" :prefix prefix :y 0 :x 1})
@@ -266,13 +266,14 @@
 (defn cube-maps
   "Create pyramid of cube maps"
   [_]
-  (cube-map {:in-level 0 :out-level 0})
-  (cube-map {:in-level 0 :out-level 1})
-  (cube-map {:in-level 0 :out-level 2})
-  (cube-map {:in-level 1 :out-level 3})
-  (cube-map {:in-level 2 :out-level 4})
-  (cube-map {:in-level 3 :out-level 5})
-  (cube-map {:in-level 4 :out-level 6}))
+  (cube-map {:in-level -3 :out-level 0})
+  (cube-map {:in-level -2 :out-level 1})
+  (cube-map {:in-level -1 :out-level 2})
+  (cube-map {:in-level  0 :out-level 3})
+  (cube-map {:in-level  1 :out-level 4})
+  (cube-map {:in-level  2 :out-level 5})
+  (cube-map {:in-level  3 :out-level 6})
+  (cube-map {:in-level  4 :out-level 7}))
 
 (defn clean [_]
   "Clean secondary files"

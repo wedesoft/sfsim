@@ -417,6 +417,7 @@ float planet_and_cloud_shadows(vec4 point)
   (uniform-sampler program "worley" 7)
   (uniform-float program "specular" 100.0)
   (uniform-float program "max_height" 100000.0)
+  (uniform-float program "water_threshold" 0.5)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
 
 (defn setup-uniforms [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
@@ -502,7 +503,7 @@ float planet_and_cloud_shadows(vec4 point)
          "white"   0.9     2.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "amplify"
          "white"   PI      1.0 1   0   0   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "transmit"
          "pattern" PI      1.0 1   1   1   0.2 0.3 0.5   0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "ambient"
-         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.0   0.0     1.0  0   0   1   0   0   0   "water"
+         "white"   PI      1.0 1   1   1   0   0   0   220       100 0   0.0   0.0     1.0  0   0   1   0   0   0   "water"
          "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0   1   0   0   1   "reflection1"
          "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
          "pattern" PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0  -1   0   0   1   "reflection3"

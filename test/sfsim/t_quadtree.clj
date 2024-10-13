@@ -2,10 +2,11 @@
   (:require [midje.sweet :refer :all]
             [malli.instrument :as mi]
             [malli.dev.pretty :as pretty]
-            [fastmath.vector :refer (vec3 add)]
+            [fastmath.vector :refer (vec3 add mag)]
             [clojure.math :refer (tan to-radians)]
             [sfsim.quadtree :refer :all :as quadtree]
             [sfsim.cubemap :refer (cube-map) :as cubemap]
+            [sfsim.plane :as plane]
             [sfsim.image :as image]
             [sfsim.util :as util]))
 
@@ -265,3 +266,49 @@
       => [[face2 quad0] [face2 quad1] [face2 quad2] [face2 quad3]]
       (:tree (update-level-of-detail flat radius #(= %& [2 0 0 0]) false)) => one-face
       (get-in (update-level-of-detail flat radius (constantly false) true) [:tree face2 :sfsim.quadtree/up]) => true)))
+
+(fact "Get tile indices, coordinates of pixel within tile and position in pixel"
+      (tile-coordinates 1.0  0.5  0 2) => [0 0 0 0 1.0 0.5]
+      (tile-coordinates 0.25 0.25 0 3) => [0 0 0 0 0.5 0.5]
+      (tile-coordinates 0.75 0.25 0 3) => [0 0 1 0 0.5 0.5]
+      (tile-coordinates 0.25 0.75 0 3) => [0 0 0 1 0.5 0.5]
+      (tile-coordinates 0.75 0.25 1 2) => [1 0 0 0 0.5 0.5]
+      (tile-coordinates 0.25 0.75 1 2) => [0 1 0 0 0.5 0.5])
+
+(fact "Determine triangle of quad the specified coordinate is in"
+      (tile-triangle 0.25 0.75 true ) => [[0 0] [0 1] [1 1]]
+      (tile-triangle 0.75 0.25 true ) => [[0 0] [1 1] [1 0]]
+      (tile-triangle 0.25 0.25 false) => [[0 0] [0 1] [1 0]]
+      (tile-triangle 0.75 0.75 false) => [[1 0] [0 1] [1 1]])
+
+(fact "Get distance of surface to planet center for given radial vector"
+      (with-redefs [cubemap/project-onto-cube (fn [point] (fact point => (vec3 2 3 5)) (vec3 0.4 0.6 1))
+                    cubemap/determine-face (fn [point] (fact point => (vec3 0.4 0.6 1)) 2)
+                    cubemap/cube-i (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
+                    cubemap/cube-j (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
+                    quadtree/tile-coordinates (fn [j i level tilesize]
+                                                  (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
+                                                  [32 40 3 5 :dy :dx])
+                    util/cube-path (fn [prefix face level y x suffix]
+                                       (fact prefix => "data/globe", face => 2, level => 6, y => 32, x => 40,
+                                             suffix => ".surf")
+                                       "data/globe/2/6/31/35.surf")
+                    util/slurp-floats (fn [file-name] (fact file-name => "data/globe/2/6/31/35.surf") :surface-tile)
+                    cubemap/tile-center (fn [face level b a radius]
+                                            (facts face => 2, level => 6, b => 32, a => 40, radius => 6378000.0)
+                                            (vec3 1 2 3))
+                    quadtree/tile-triangle (fn [y x first-diagonal]
+                                               (facts y => :dy, x => :dx, first-diagonal => true)
+                                               [[0 0] [0 1] [1 1]])
+                    image/get-vector3 (fn [img y x]
+                                          (facts (:sfsim.image/data img) => :surface-tile,
+                                                 y => #(contains? #{3 4} %), x => #(contains? #{5 6} %))
+                                          ({[3 5] (vec3 0 0 0) [3 6] (vec3 1 0 0) [4 6] (vec3 1 1 0)} [y x]))
+                    plane/points->plane (fn [p q r] (facts p => (vec3 0 0 0), q => (vec3 1 0 0), r => (vec3 1 1 0)) :plane)
+                    plane/ray-plane-intersection-parameter (fn [plane ray]
+                                                               (facts plane => :plane
+                                                                      (:sfsim.ray/origin ray) => (vec3 -1 -2 -3)
+                                                                      (:sfsim.ray/direction ray) => (vec3 2 3 5))
+                                                               6378123.0)]
+        (distance-to-surface (vec3 2 3 5) 6 65 6378000.0 [[] [] [] [false false false false false true]])
+        => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6) ))

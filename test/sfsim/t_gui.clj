@@ -134,17 +134,18 @@
            ~gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font#) buffer-initial-size#)]
        (nuklear-dark-style ~gui)
        (nuklear-window ~gui "control test window" 0 0 160 40
-         (layout-row-dynamic ~gui 32 1)
          ~@body)
        (render-nuklear-gui ~gui 160 40)
        (destroy-nuklear-gui ~gui)
        (destroy-font-texture bitmap-font#))))
 
 (facts "Render a slider"
-       (gui-control-test gui (slider-int gui 0 50 100 1)) => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
+       (gui-control-test gui (layout-row-dynamic gui 32 1) (slider-int gui 0 50 100 1))
+       => (is-image "test/sfsim/fixtures/gui/slider.png" 0.1))
 
 (fact "Use font to render button"
-      (gui-control-test gui (button-label gui "Test Button")) => (is-image "test/sfsim/fixtures/gui/button.png" 0.07))
+      (gui-control-test gui (layout-row-dynamic gui 32 1) (button-label gui "Test Button"))
+      => (is-image "test/sfsim/fixtures/gui/button.png" 0.07))
 
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
@@ -166,13 +167,25 @@
            (destroy-font-texture bitmap-font))))
 
 (fact "Render a text label"
-      (gui-control-test gui (text-label gui "Test Label")) => (is-image "test/sfsim/fixtures/gui/label.png" 0.10))
+      (gui-control-test gui (layout-row-dynamic gui 32 1) (text-label gui "Test Label"))
+      => (is-image "test/sfsim/fixtures/gui/label.png" 0.10))
 
 (fact "Render an edit field"
       (let [data (edit-data "initial" 31 :sfsim.gui/filter-ascii)]
-        (gui-control-test gui (edit-field gui data)) => (is-image "test/sfsim/fixtures/gui/edit.png" 0.03)
+        (gui-control-test gui (layout-row-dynamic gui 32 1) (edit-field gui data))
+        => (is-image "test/sfsim/fixtures/gui/edit.png" 0.03)
         (edit-get data) => "initial"
         (edit-set data "final")
         (edit-get data) => "final"))
+
+(fact "Dynamic row layout with fractions"
+      (gui-control-test gui
+                        (layout-row gui 38 3
+                          (layout-row-push gui 0.2)
+                          (text-label gui "One")
+                          (layout-row-push gui 0.3)
+                          (text-label gui "Two")
+                          (layout-row-push gui 0.5)
+                          (text-label gui "Three"))) => (is-image "test/sfsim/fixtures/gui/dynamic-layout.png" 0.03))
 
 (GLFW/glfwTerminate)

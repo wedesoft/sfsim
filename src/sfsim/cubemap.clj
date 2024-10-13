@@ -1,7 +1,7 @@
 (ns sfsim.cubemap
   "Conversions from cube coordinates (face, j, i) to geodetic coordinates (longitude, latitude)."
   (:require [clojure.core.memoize :as z]
-            [fastmath.vector :refer (vec3 add mult cross mag normalize)]
+            [fastmath.vector :refer (vec3 add mult div cross mag normalize)]
             [fastmath.matrix :refer (mulv)]
             [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
             [sfsim.matrix :refer (rotation-y rotation-z fvec3)]
@@ -53,6 +53,40 @@
   [face j i]
   (vec3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
 
+(defn determine-face
+  "Determine which face a point gets projected on when projecting onto a cube"
+  {:malli/schema [:=> [:cat fvec3] :int]}
+  [point]
+  (let [[x y z] point]
+    (cond
+      (>= (abs x) (max (abs y) (abs z))) (if (>= x 0) 2 4)
+      (>= (abs y) (max (abs x) (abs z))) (if (>= y 0) 3 1)
+      :else                              (if (>= z 0) 0 5))))
+
+(defn cube-i
+  "Determine cube face coordinate i given face and a point on the cube surface"
+  {:malli/schema [:=> [:cat :int fvec3] :double]}
+  [face point]
+  (case (long face)
+    0 (* 0.5 (+ (point 0) 1.0))
+    1 (* 0.5 (+ (point 0) 1.0))
+    2 (* 0.5 (+ (point 1) 1.0))
+    3 (* 0.5 (- 1.0 (point 0)))
+    4 (* 0.5 (- 1.0 (point 1)))
+    5 (* 0.5 (+ (point 0) 1.0))))
+
+(defn cube-j
+  "Determine cube face coordinate j given face and a point on the cube surface"
+  {:malli/schema [:=> [:cat :int fvec3] :double]}
+  [face point]
+  (case (long face)
+    0 (* 0.5 (- 1.0 (point 1)))
+    1 (* 0.5 (- 1.0 (point 2)))
+    2 (* 0.5 (- 1.0 (point 2)))
+    3 (* 0.5 (- 1.0 (point 2)))
+    4 (* 0.5 (- 1.0 (point 2)))
+    5 (* 0.5 (+ (point 1) 1.0))))
+
 (defn cube-coordinate
   "Determine coordinate of a pixel on a tile of a given level"
   {:malli/schema [:=> [:cat :int :int :int :double] :double]}
@@ -93,10 +127,20 @@
     (vec3 (* distance cos-lat (cos longitude)) (* distance cos-lat (sin longitude)) (* distance sin-lat))))
 
 (defn project-onto-sphere
-  "Project a 3D vector onto an ellipsoid"
+  "Project a 3D vector onto a sphere"
   {:malli/schema [:=> [:cat fvec3 :double] fvec3]}
   [point radius]
   (mult (normalize point) radius))
+
+(defn project-onto-cube
+  "Project 3D vector onto cube"
+  {:malli/schema [:=> [:cat fvec3] fvec3]}
+  [point]
+  (let [[|x| |y| |z|] (map abs point)]
+    (cond
+      (>= |x| (max |y| |z|)) (div point |x|)
+      (>= |y| (max |x| |z|)) (div point |y|)
+      :else                  (div point |z|))))
 
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height assuming a spherical Earth"
@@ -179,7 +223,7 @@
   "Load and cache elevation tiles"
   (z/lru
     (fn elevation-tile [in-level ty tx]
-      (let [data (slurp-shorts (tile-path "elevation" in-level ty tx ".raw"))
+      (let [data (slurp-shorts (tile-path "tmp/elevation" in-level ty tx ".raw"))
             size (int (round (sqrt (alength data))))]
         {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data data}))
     :lru/threshold 128))

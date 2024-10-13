@@ -580,13 +580,13 @@ layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 void main(void)
 {
-	gl_Position = gl_in[0].gl_Position;
-	EmitVertex();
-	gl_Position = gl_in[1].gl_Position;
-	EmitVertex();
-	gl_Position = gl_in[2].gl_Position;
-	EmitVertex();
-	EndPrimitive();
+  gl_Position = gl_in[0].gl_Position;
+  EmitVertex();
+  gl_Position = gl_in[1].gl_Position;
+  EmitVertex();
+  gl_Position = gl_in[2].gl_Position;
+  EmitVertex();
+  EndPrimitive();
 }")
 
 (fact "Subdivide quad using a tessellation shader"
@@ -1052,5 +1052,11 @@ void main()
          (:sfsim.render/z-far joined-vars) => 10000.0
          (:sfsim.render/light-direction joined-vars) => light-dir
          (:sfsim.render/camera-to-world joined-vars) => (:sfsim.render/camera-to-world planet-vars)))
+
+(fact "Function to determine quad tessellation orientation of diagonal split"
+      (with-invisible-window
+        (let [orientations (quad-splits-orientations 65 8)]
+          (count orientations) => 64
+          (count (first orientations)) => 64)))
 
 (GLFW/glfwTerminate)

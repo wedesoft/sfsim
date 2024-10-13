@@ -343,6 +343,7 @@
     (uniform-float program "radius" (::radius config))
     (uniform-float program "albedo" (::albedo config))
     (uniform-float program "reflectivity" (::reflectivity config))
+    (uniform-float program "water_threshold" (::water-threshold config))
     (uniform-vector3 program "water_color" (::water-color config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
     program))

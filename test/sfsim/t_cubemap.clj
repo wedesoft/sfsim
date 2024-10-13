@@ -70,6 +70,20 @@
 (fact "Get vector to cube face"
   (cube-map 5 0.0 0.5) => (vec3 0.0 -1.0 -1.0))
 
+(tabular "Round trip for conversion to face coordinates and back to coordinates on cube"
+         (fact (let [point  (vec3 ?x ?y ?z)
+                     face   (determine-face point)
+                     i      (cube-i face point)
+                     j      (cube-j face point)]
+                 (cube-map face j i) => (roughly-vector point 1e-6)))
+         ?x   ?y   ?z
+         1.0  0.2  0.4
+        -1.0  0.2  0.4
+         0.2  1.0  0.4
+         0.2 -1.0  0.4
+         0.2  0.4  1.0
+         0.2  0.4 -1.0)
+
 (facts "Test cube coordinates"
   (cube-coordinate 0 256 0   0.0) => 0.0
   (cube-coordinate 0 256 0 127.5) => 0.5
@@ -129,6 +143,17 @@
    0  1  0        0.0 6378000.0       0.0
    0  0  1        0.0       0.0 6378000.0)
 
+(fact "Project point onto cube"
+      (project-onto-cube (vec3  1  0  0)) => (vec3  1    0    0  )
+      (project-onto-cube (vec3  2  1  1)) => (vec3  1    0.5  0.5)
+      (project-onto-cube (vec3 -2  1  1)) => (vec3 -1    0.5  0.5)
+      (project-onto-cube (vec3  0  1  0)) => (vec3  0    1    0  )
+      (project-onto-cube (vec3  1  2 -1)) => (vec3  0.5  1   -0.5)
+      (project-onto-cube (vec3  1 -2 -1)) => (vec3  0.5 -1   -0.5)
+      (project-onto-cube (vec3  0  0  1)) => (vec3  0    0    1  )
+      (project-onto-cube (vec3 -1  1  2)) => (vec3 -0.5  0.5  1  )
+      (project-onto-cube (vec3  1 -1 -2)) => (vec3  0.5 -0.5 -1  ))
+
 (facts "x-coordinate on raster map"
   (map-x (- PI) 675 3) => 0.0
   (map-x    0.0 675 3) => (* 675 2.0 8))
@@ -167,7 +192,7 @@
       (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
-  (with-redefs [util/slurp-shorts (fn [file-name] ({"elevation235.raw" (short-array [2 3 5 7])} file-name))
+  (with-redefs [util/slurp-shorts (fn [file-name] ({"tmp/elevation235.raw" (short-array [2 3 5 7])} file-name))
                 util/tile-path    str]
     (:sfsim.image/width (elevation-tile 2 3 5)) => 2
     (:sfsim.image/height (elevation-tile 2 3 5)) => 2

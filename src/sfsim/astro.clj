@@ -23,7 +23,7 @@
 ; See https://rhodesmill.org/skyfield/
 
 (def T0 2451545.0)  ; noon of 1st January 2000
-(def s-per-day 86400.0)  ; seconds per day
+(def S-PER-DAY 86400.0)  ; seconds per day
 (def AU-KM 149597870.700)  ; astronomical unit in km
 (def DEGREES2RAD (/ (* 2 PI) 360.0))  ; convert degrees (360) to radians (2 * PI)
 (def ASEC2RAD (/ (* 2.0 PI) 360.0 60.0 60.0))  ; convert arcseconds (360 * 60 * 60) to radians (2 * PI)
@@ -273,7 +273,7 @@
   (let [init   (::init layout)
         intlen (::intlen layout)
         n      (::n layout)
-        t      (- (* (- tdb T0) s-per-day) init)
+        t      (- (* (- tdb T0) S-PER-DAY) init)
         index  (min (max (long (quot t intlen)) 0) (dec n))
         offset (- t (* index intlen))
         s      (- (/ (* 2.0 offset) intlen) 1.0)]
@@ -343,12 +343,12 @@
               coefficients (cache index)]
           (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
 
-(def date (m/schema [:map [:year :int] [:month :int] [:day :int]]))
+(def date (m/schema [:map [::year :int] [::month :int] [::day :int]]))
 
 (defn julian-date
   "Convert calendar date to Julian date"
   {:malli/schema [:=> [:cat date] :int]}
-  [{:keys [year month day]}]
+  [{::keys [year month day]}]
   (let [g (- (+ year 4716) (if (<= month 2) 1 0))
         f (mod (+ month 9) 12)
         e (- (+ (quot (* 1461 g) 4) day) 1402)
@@ -367,7 +367,21 @@
         day (inc (quot (mod h 153) 5))
         month (inc (mod (+ (quot h 153) 2) 12))
         year (+ (- (quot e 1461) 4716) (quot (- (+ 12 2) month) 12))]
-    {:year year :month month :day day}))
+    {::year year ::month month ::day day}))
+
+(def clock (m/schema [:map [::hour :int] [::minute :int] [::second :int]]))
+
+(defn clock-time
+  "Convert day fraction to hours, minutes, and seconds"
+  {:malli/schema [:=> [:cat :double] clock]}
+  [day-fraction]
+  (let [hours   (* 24.0 day-fraction)
+        hour    (int hours)
+        minutes (* 60.0 (- hours hour))
+        minute  (int minutes)
+        seconds (* 60.0 (- minutes minute))
+        sec     (int (+ seconds 0.5))]
+    {::hour hour ::minute minute ::second sec}))
 
 ; See python-skyfield precessionlib.compute_precession
 
@@ -511,6 +525,15 @@
               w          (.z ^Vec3 components)
               rotation   (mulm matrix (mulm (rotation-z (- w)) (mulm (rotation-x (- decl)) (rotation-z (- ra)))))]
           (transpose rotation)))))
+
+(defn now
+  "Get days since J2000 UTC"
+  []
+  (let [j2000-datetime (java.time.ZonedDateTime/of 2000 1 1 12 0 0 0 java.time.ZoneOffset/UTC)
+        j2000-instant  (.toInstant j2000-datetime)
+        t              (java.time.Instant/now)
+        duration       (java.time.Duration/between j2000-instant t)]
+    (/ (.toSeconds duration) S-PER-DAY)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

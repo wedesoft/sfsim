@@ -156,26 +156,29 @@ float cloud_density(vec3 point, float lod)
   (uniform-float program "density_start" start)
   (uniform-float program "level_of_detail" lod))
 
+(defn render-deep-opacity-map
+  [program vao opacity-layers depth z shells multiplier scatter start cloudstep opacitystep lod]
+  (let [shadow-ndc-to-world   (transformation-matrix (mat3x3 1 1 depth) (vec3 0 0 (- z depth)))]
+    (framebuffer-render 3 3 :sfsim.render/cullback nil [opacity-layers]
+                        (use-program program)
+                        (setup-opacity-fragment-static-uniforms program)
+                        (setup-opacity-fragment-dynamic-uniforms program shadow-ndc-to-world (vec3 0 0 1) shells
+                                                                 multiplier scatter depth cloudstep opacitystep start lod)
+                        (render-quads vao))))
+
 (tabular "Compute deep opacity map offsets and layers"
   (fact
     (with-invisible-window
       (let [indices         [0 1 3 2]
             vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-            shadow-ndc-to-world   (transformation-matrix (mat3x3 1 1 ?depth) (vec3 0 0 (- ?z ?depth)))
-            light-direction (vec3 0 0 1)
             program         (make-program :sfsim.render/vertex [opacity-vertex]
                                           :sfsim.render/fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock
                                                                   cloud-density-mock linear-sampling])
             vao             (make-vertex-array-object program indices vertices ["point" 2])
             opacity-layers  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 3 3 8)
             index           ({:offset 0 :layer (inc ?layer)} ?selector)]
-        (framebuffer-render 3 3 :sfsim.render/cullback nil [opacity-layers]
-                            (use-program program)
-                            (setup-opacity-fragment-static-uniforms program)
-                            (setup-opacity-fragment-dynamic-uniforms program shadow-ndc-to-world light-direction ?shells
-                                                                     ?multiplier ?scatter ?depth ?cloudstep ?opacitystep ?start
-                                                                     ?lod)
-                            (render-quads vao))
+        (render-deep-opacity-map program vao opacity-layers ?depth ?z ?shells ?multiplier ?scatter ?start ?cloudstep
+                                 ?opacitystep ?lod)
         (get-float-3d (float-texture-3d->floats opacity-layers) index 1 ?px) => (roughly ?result 1e-6)
         (destroy-texture opacity-layers)
         (destroy-vertex-array-object vao)
