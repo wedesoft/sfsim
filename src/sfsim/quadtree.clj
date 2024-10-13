@@ -3,9 +3,10 @@
   (:require [fastmath.vector :refer (sub mag)]
             [clojure.math :refer (tan to-radians)]
             [malli.core :as m]
-            [sfsim.cubemap :refer (tile-center)]
+            [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
             [sfsim.matrix :refer (fvec3)]
-            [sfsim.image :refer (slurp-image slurp-normals)]
+            [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
+            [sfsim.image :refer (slurp-image slurp-normals get-vector3)]
             [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in N N0)]))
 
 (set! *unchecked-math* true)
@@ -294,6 +295,54 @@
     {:tree (check (quadtree-add (quadtree-drop tree drop-list) load-list new-tiles))
      :drop (quadtree-extract tree drop-list)
      :load load-list}))
+
+(defn tile-coordinates
+  "Get tile indices, coordinates of pixel within tile and position in pixel"
+  {:malli/schema [:=> [:cat :double :double :int :int] [:tuple :int :int :int :int :double :double]]}
+  [j i level tilesize]
+  (let [n      (bit-shift-left 1 level)
+        jj     (* j n)
+        ii     (* i n)
+        row    (min (long jj) (dec n))
+        column (min (long ii) (dec n))
+        dj     (- jj row)
+        di     (- ii column)
+        y      (* dj (dec tilesize))
+        x      (* di (dec tilesize))
+        tile-y (min (long y) (- tilesize 2))
+        tile-x (min (long x) (- tilesize 2))
+        dy     (- y tile-y)
+        dx     (- x tile-x)]
+    [row column tile-y tile-x dy dx]))
+
+(defn tile-triangle
+  "Determine triangle of quad the specified coordinate is in"
+  {:malli/schema [:=> [:cat :double :double :boolean] [:vector [:tuple :int :int]]]}
+  [y x first-diagonal]
+  (if first-diagonal
+    (if (>= x y) [[0 0] [0 1] [1 1]] [[0 0] [1 1] [1 0]])
+    (if (<= (+ x y) 1) [[0 0] [0 1] [1 0]] [[1 0] [0 1] [1 1]])))
+
+(defn distance-to-surface
+  "Get distance of surface to planet center for given radial vector"
+  {:malli/schema [:=> [:cat fvec3 :int :int :double [:vector [:vector :boolean]]] :double]}
+  [point level tilesize radius split-orientations]
+  (let [p                         (project-onto-cube point)
+        face                      (determine-face p)
+        j                         (cube-j face p)
+        i                         (cube-i face p)
+        [b a tile-y tile-x dy dx] (tile-coordinates j i level tilesize)
+        path                      (cube-path "data/globe" face level b a ".surf")
+        terrain                   #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats path)}
+        center                    (tile-center face level b a radius)
+        orientation               (nth (nth split-orientations tile-y) tile-x)
+        triangle                  (mapv (fn [[y x]] (get-vector3 terrain (+ y tile-y) (+ x tile-x)))
+                                        (tile-triangle dy dx orientation))
+        plane                     (apply points->plane triangle)
+        ray                       #:sfsim.ray{:origin (sub center) :direction point}
+        multiplier                (ray-plane-intersection-parameter plane ray)
+        magnitude-point           (mag point)]
+    (* multiplier magnitude-point)))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

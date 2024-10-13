@@ -1,6 +1,15 @@
 # TODO
-* get height field quad and orientation of split for given space ship position
-* hard threshold for water
+* clj -T:build cube-map :in-level 3 :out-level 6
+* clj -T:build cube-map :in-level 4 :out-level 7
+* make height field triangles (with correctly oriented split) for given space ship position for creating convex hull,
+  get 3 points of correct triangle, create plane, and project onto it
+* increase resolution of cube map,
+  height field, 30 arc seconds -> 43200 pixels circumference
+  (/ 43200 4 (bit-shift-left 1 4)) -> 675
+  tilesize is 33, color-tilesize is 129, start with correct in-level (-4 -> -4 + sublevel = 2), maybe reduce sublevel?
+  color map is 21600*4 = 86400 circumference
+* make Java bindings for Jolt and build with build.clj?
+* quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
 * visualise prototype vehicle and wheels
 * level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves

@@ -19,9 +19,11 @@
                                   :albedo 0.9
                                   :dawn-start -0.2
                                   :dawn-end 0.0
-                                  :tilesize 33
+                                  :tilesize 65
+                                  :level 6
                                   :color-tilesize 129
                                   :reflectivity 0.1
+                                  :water-threshold 0.8
                                   :water-color (vec3 0.09 0.11 0.34)})
 
 (def cloud-config #:sfsim.clouds{:cloud-octaves (octaves 4 0.7)
