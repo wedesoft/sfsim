@@ -71,7 +71,7 @@
                                           (clear (vec3 0 1 0) 0.0)
                                           (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                           (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-          (texture->image tex) => (is-image (str "test/sfsim/fixtures/integration/" ?result) 0.0)
+          (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.0)
           (destroy-texture tex)
           (destroy-texture clouds)
           (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -113,7 +113,7 @@
               planet-renderer           (planet/make-planet-renderer data)
               atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
               scene-renderer            (model/make-scene-renderer data)
-              object                    (assoc-in (model/load-scene scene-renderer (str "test/sfsim/fixtures/model/" ?model))
+              object                    (assoc-in (model/load-scene scene-renderer (str "test/clj/sfsim/fixtures/model/" ?model))
                                                   [:sfsim.model/root :sfsim.model/transform] object-to-world)
               tree                      (load-tile-tree planet-renderer {} width ?position level)
               render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
@@ -129,7 +129,7 @@
                                           (model/render-scenes scene-renderer render-vars shadow-vars [] [object])
                                           (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                           (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-          (texture->image tex) => (is-image (str "test/sfsim/fixtures/integration/" ?result) 0.0)
+          (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.0)
           (destroy-texture tex)
           (destroy-texture clouds)
           (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -180,7 +180,7 @@
             scene-renderer            (model/make-scene-renderer data)
             scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
                                                                         object-radius)
-            object                    (assoc-in (model/load-scene scene-renderer "test/sfsim/fixtures/model/torus.gltf")
+            object                    (assoc-in (model/load-scene scene-renderer "test/clj/sfsim/fixtures/model/torus.gltf")
                                                 [:sfsim.model/root :sfsim.model/transform] object-to-world)
             tree                      (load-tile-tree planet-renderer {} width position level)
             render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
@@ -197,7 +197,7 @@
                                         (model/render-scenes scene-renderer render-vars shadow-vars [object-shadow] [object])
                                         (planet/render-planet planet-renderer render-vars shadow-vars [object-shadow] clouds tree)
                                         (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-        (texture->image tex) => (is-image "test/sfsim/fixtures/integration/torus.png" 0.0)
+        (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.0)
         (destroy-texture tex)
         (destroy-texture clouds)
         (model/destroy-scene-shadow-map object-shadow)

@@ -1,5 +1,5 @@
 # TODO
-* make Java bindings for Jolt and build with build.clj? Use Java FFM?
+* use coffi and Jolt C bindings
 * Jolt mesh for surface?
 * clj -T:build cube-map :in-level 4 :out-level 7
 * increase resolution of cube map,

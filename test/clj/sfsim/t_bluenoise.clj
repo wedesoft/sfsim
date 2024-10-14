@@ -121,6 +121,6 @@ void main()
                           (destroy-vertex-array-object vao)
                           (destroy-program program)
                           (destroy-texture bluenoise)))
-      => (is-image "test/sfsim/fixtures/bluenoise/result.png" 0.0))
+      => (is-image "test/clj/sfsim/fixtures/bluenoise/result.png" 0.0))
 
 (GLFW/glfwTerminate)

@@ -8,6 +8,7 @@ BlackMarble_2016_*.jpg
 blackmarble.*.png
 elevation.*.raw
 .cache
+.clj-kondo/metosin
 .cpcache
 .eastwood
 .integration

@@ -51,7 +51,7 @@ Requires OpenGL 4.5.
 # Lint
 
 * [Install clj-kondo](https://github.com/clj-kondo/clj-kondo/blob/master/doc/install.md)
-* Run `clj-kondo --lint src/sfsim`
+* Run `clj-kondo --lint src/clj/sfsim`
 
 # Run
 

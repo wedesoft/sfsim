@@ -77,9 +77,9 @@
           (n2 1)            => (roughly -1.0 1e-2))))
 
 (facts "Reading and writing image pixels"
-  (get-pixel (slurp-image "test/sfsim/fixtures/util/red.png") 0 0) => (vec3 255 0 0)
-  (get-pixel (slurp-image "test/sfsim/fixtures/util/green.png") 0 0) => (vec3 0 255 0)
-  (get-pixel (slurp-image "test/sfsim/fixtures/util/blue.png") 0 0) => (vec3 0 0 255)
+  (get-pixel (slurp-image "test/clj/sfsim/fixtures/util/red.png") 0 0) => (vec3 255 0 0)
+  (get-pixel (slurp-image "test/clj/sfsim/fixtures/util/green.png") 0 0) => (vec3 0 255 0)
+  (get-pixel (slurp-image "test/clj/sfsim/fixtures/util/blue.png") 0 0) => (vec3 0 0 255)
   (let [img #:sfsim.image{:width 4 :height 2 :channels 4
                           :data (byte-array (flatten (concat (repeat 7 [0 0 0 -1]) [[1 2 3 -1]])))}]
     (get-pixel img 1 3) => (vec3 1 2 3))

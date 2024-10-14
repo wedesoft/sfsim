@@ -21,7 +21,7 @@
 (fact "Size of 2D RGB texture"
       (with-invisible-window
         (let [tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp
-                                    (slurp-image "test/sfsim/fixtures/render/pattern.png"))]
+                                    (slurp-image "test/clj/sfsim/fixtures/render/pattern.png"))]
           (:sfsim.texture/width tex) => 2
           (:sfsim.texture/height tex) => 2
           (destroy-texture tex))))
@@ -46,7 +46,7 @@
 (fact "Size of texture array"
       (with-invisible-window
         (let [tex (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
-                                          (repeat 3 (slurp-image "test/sfsim/fixtures/render/pattern.png")))]
+                                          (repeat 3 (slurp-image "test/clj/sfsim/fixtures/render/pattern.png")))]
           (:sfsim.texture/width tex) => 2
           (:sfsim.texture/height tex) => 2
           (:sfsim.texture/depth tex) => 3

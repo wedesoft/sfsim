@@ -17,13 +17,13 @@
 
 ; Header test data cut from de430_1850-2150.bsp: dd if=de430_1850-2150.bsp of=spk-head.bsp bs=1024 count=80
 (fact "Map file to a read-only byte buffer"
-      (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/test.txt")
+      (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/test.txt")
             b      (byte-array 4)]
         (.get buffer b)
         (String. b StandardCharsets/US_ASCII) => "Test"))
 
 (facts "Read header from DAF file"
-       (let [header (read-daf-header (map-file-to-buffer "test/sfsim/fixtures/astro/spk-head.bsp"))]
+       (let [header (read-daf-header (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp"))]
          (:sfsim.astro/locidw header) => "DAF/SPK "
          (:sfsim.astro/num-doubles header) => 2
          (:sfsim.astro/num-integers header) => 6
@@ -42,7 +42,7 @@
        (check-ftp-str {:sfsim.astro/ftpstr (map int "unexpected text")}) => false)
 
 (facts "Extract comment"
-       (let [buffer  (map-file-to-buffer "test/sfsim/fixtures/astro/spk-head.bsp")
+       (let [buffer  (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp")
              header  (read-daf-header buffer)
              cmt     (read-daf-comment header buffer)]
          (subs cmt 0 67) => "JPL planetary and lunar ephemeris DE430\n\nIntegrated 29 March 2013\n\n"
@@ -56,7 +56,7 @@
        (sizeof (daf-descriptor-frame 0 3)) => 16)
 
 (facts "Read summaries from a record"
-       (let [buffer    (map-file-to-buffer "test/sfsim/fixtures/astro/spk-head.bsp")
+       (let [buffer    (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp")
              header    (read-daf-header buffer)
              summaries (read-daf-descriptor header (:sfsim.astro/forward header) buffer)]
          (:sfsim.astro/next-number summaries) => 0.0
@@ -66,7 +66,7 @@
          (:sfsim.astro/integers (first (:sfsim.astro/descriptors summaries))) => [1 0 1 2 6913 609716]))
 
 (fact "Read source names from record"
-      (let [buffer  (map-file-to-buffer "test/sfsim/fixtures/astro/spk-head.bsp")
+      (let [buffer  (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp")
             header  (read-daf-header buffer)
             sources (read-source-names (inc (:sfsim.astro/forward header)) 14 buffer)]
         sources => (repeat 14 "DE-0430LE-0430")))
@@ -156,7 +156,7 @@
          => {31006 {:sfsim.astro/source "SOURCE" :sfsim.astro/target 31006 :sfsim.astro/start-i 1234}}))
 
 (facts "Read out coefficient layout from raw data"
-       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coeff-layout.raw")
+       (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coeff-layout.raw")
              layout (read-coefficient-layout {:sfsim.astro/end-i 4} buffer)]
          (:sfsim.astro/init layout) => -4.734072E9
          (:sfsim.astro/intlen layout) => 1382400.0
@@ -164,7 +164,7 @@
          (:sfsim.astro/n layout) => 6850))
 
 (facts "Read out coefficient layout at end of a segment"
-       (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coeff-layout-offset.raw")
+       (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coeff-layout-offset.raw")
              layout (read-coefficient-layout {:sfsim.astro/end-i 8} buffer)]
          (:sfsim.astro/init layout) => -4.734072E9
          (:sfsim.astro/intlen layout) => 1382400.0
@@ -172,17 +172,17 @@
          (:sfsim.astro/n layout) => 6850))
 
 (fact "Read coefficients for index zero from segment"
-      (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients.raw")
+      (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coefficients.raw")
             coeffs (read-interval-coefficients {:sfsim.astro/data-type 2 :sfsim.astro/start-i 1} {:sfsim.astro/rsize 41} 0 buffer)]
         coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
 
 (fact "Read coefficients for index one from segment"
-      (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients-offset.raw")
+      (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coefficients-offset.raw")
             coeffs (read-interval-coefficients {:sfsim.astro/data-type 2 :sfsim.astro/start-i 1} {:sfsim.astro/rsize 41} 1 buffer)]
         coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
 
 (fact "Use start position of segment when reading coefficients"
-      (let [buffer (map-file-to-buffer "test/sfsim/fixtures/astro/coefficients-offset.raw")
+      (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coefficients-offset.raw")
             coeffs (read-interval-coefficients {:sfsim.astro/data-type 2 :sfsim.astro/start-i 42} {:sfsim.astro/rsize 41} 0 buffer)]
         coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
 
@@ -292,31 +292,31 @@
        (str (:expecting (first (.reason (pck-parser ""))))) => "KPL/(FK|PCK)\\r?\\n"
        (pck-parser "KPL/PCK\n") => [:START]
        (pck-parser "KPL/FK\n") => [:START]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/text.tf")) => [:START]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/integer.tf")) => [:START [:ASSIGNMENT "TEST_VAR_1" [:EQUALS] [:NUMBER "42"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/string.tf")) => [:START [:ASSIGNMENT "S" [:EQUALS] [:STRING "Testing"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/negative-int.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:NUMBER "-42"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/moretext.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:NUMBER "+42"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/double.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "3.14"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/exponent.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1E3"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp1.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2E-1"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/double-exp2.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2D-1"]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/vector.tf"))
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/text.tf")) => [:START]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/integer.tf")) => [:START [:ASSIGNMENT "TEST_VAR_1" [:EQUALS] [:NUMBER "42"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/string.tf")) => [:START [:ASSIGNMENT "S" [:EQUALS] [:STRING "Testing"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/negative-int.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:NUMBER "-42"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/moretext.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:NUMBER "+42"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/double.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "3.14"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/exponent.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1E3"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/double-exp1.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2E-1"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/double-exp2.tf")) => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.2D-1"]]]
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/vector.tf"))
        => [:START [:ASSIGNMENT "V" [:EQUALS] [:VECTOR [:DECIMAL "1.0"] [:DECIMAL "2.0"] [:DECIMAL "3.0"]]]]
-       (pck-parser (slurp "test/sfsim/fixtures/astro/increase.tf"))
+       (pck-parser (slurp "test/clj/sfsim/fixtures/astro/increase.tf"))
        => [:START [:ASSIGNMENT "X" [:EQUALS] [:DECIMAL "1.25"]] [:ASSIGNMENT "X" [:PLUSEQUALS] [:DECIMAL "2.5"]]]
        => [:START [:ASSIGNMENT "V" [:EQUALS] [:VECTOR [:DECIMAL "1.0"] [:DECIMAL "2.0"] [:DECIMAL "3.0"]]]]
-       (count (insta/parses pck-parser (slurp "test/sfsim/fixtures/astro/unambiguous.tf"))) => 1)
+       (count (insta/parses pck-parser (slurp "test/clj/sfsim/fixtures/astro/unambiguous.tf"))) => 1)
 
 (facts "Convert PCK file to hashmap"
-       (str (:expecting (first (.reason (read-frame-kernel "test/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\r?\\n"
-       (read-frame-kernel "test/sfsim/fixtures/astro/text.tf") => {}
-       (read-frame-kernel "test/sfsim/fixtures/astro/string.tf") => {"S" "Testing"}
-       (read-frame-kernel "test/sfsim/fixtures/astro/integer.tf") => {"TEST_VAR_1" 42}
-       (read-frame-kernel "test/sfsim/fixtures/astro/double.tf") => {"X" 3.14}
-       (read-frame-kernel "test/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
-       (read-frame-kernel "test/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
-       (read-frame-kernel "test/sfsim/fixtures/astro/vector.tf") => {"V" [1.0 2.0 3.0]})
+       (str (:expecting (first (.reason (read-frame-kernel "test/clj/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\r?\\n"
+       (read-frame-kernel "test/clj/sfsim/fixtures/astro/text.tf") => {}
+       (read-frame-kernel "test/clj/sfsim/fixtures/astro/string.tf") => {"S" "Testing"}
+       (read-frame-kernel "test/clj/sfsim/fixtures/astro/integer.tf") => {"TEST_VAR_1" 42}
+       (read-frame-kernel "test/clj/sfsim/fixtures/astro/double.tf") => {"X" 3.14}
+       (read-frame-kernel "test/clj/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
+       (read-frame-kernel "test/clj/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
+       (read-frame-kernel "test/clj/sfsim/fixtures/astro/vector.tf") => {"V" [1.0 2.0 3.0]})
 
 (facts "Extract information from PCK file"
        (let [pck  {"FRAME_MOON_ME_DE421" 31007
