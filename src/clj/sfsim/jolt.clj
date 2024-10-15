@@ -5,6 +5,6 @@
 
 (ffi/load-library "src/c/sfsim/libjolt.so")
 
-(defcfn register-default-allocator
-  "Register default allocator"
-  RegisterDefaultAllocator [] ::mem/void)
+(defcfn jolt-init
+  "Initialize Jolt library"
+  jolt_init [] ::mem/void)

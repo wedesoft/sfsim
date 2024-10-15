@@ -15,7 +15,6 @@ elevation.*.raw
 .lein-*
 .nrepl-port
 *.class
-*.h
 *.o
 *.so
 *.jar

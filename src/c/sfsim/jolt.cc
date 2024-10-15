@@ -1,10 +1,7 @@
 #include <Jolt/Jolt.h>
+#include "sfsim/jolt.hh"
 
-extern "C" {
-  void RegisterDefaultAllocator(void);
-}
-
-void RegisterDefaultAllocator(void)
+void jolt_init(void)
 {
   JPH::RegisterDefaultAllocator();
 }
