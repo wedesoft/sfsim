@@ -8,3 +8,7 @@
 (defcfn jolt-init
   "Initialize Jolt library"
   jolt_init [] ::mem/void)
+
+(defcfn jolt-destroy
+  "Destruct Jolt library setup"
+  jolt_destroy [] ::mem/void)

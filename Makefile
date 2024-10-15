@@ -8,3 +8,6 @@ src/c/sfsim/libjolt.so: src/c/sfsim/jolt.o
 
 .cc.o:
 	$(CC) $(CCFLAGS) -c $< -o $@
+
+clean:
+	rm -f src/c/sfsim/libjolt.so src/c/sfsim/*.o
