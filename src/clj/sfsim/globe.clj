@@ -24,8 +24,8 @@
         subsample          (bit-shift-left 1 sublevel)
         color-tilesize     (inc (* subsample (dec surface-tilesize)))
         radius             6378000.0
-        bar                (agent (make-progress-bar (* 1 (quot n 2) n) 1))]
-    (cp/pdoseq (+ (cp/ncpus) 2) [k [1] b (range (quot n 2) n) a (range n)]
+        bar                (agent (make-progress-bar (* 6 n n) 1))]
+    (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
       (let [tile-day   (make-image color-tilesize color-tilesize)
             tile-night (make-image color-tilesize color-tilesize)
             water      (make-byte-image (align-address color-tilesize 4) color-tilesize)
