@@ -6,6 +6,7 @@
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSettings.h>
+#include <Jolt/Physics/PhysicsSystem.h>
 #include "sfsim/jolt.hh"
 
 
@@ -27,8 +28,35 @@ static bool AssertFailedImpl(const char *inExpression, const char *inMessage, co
 };
 #endif
 
+const unsigned short int NON_MOVING = 0;
+const unsigned short int MOVING = 1;
+const unsigned short int NUM_LAYERS = 2;
+
+class ObjectLayerPairFilterImpl: public JPH::ObjectLayerPairFilter
+{
+  public:
+    virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override
+    {
+      switch (inObject1)
+      {
+        case NON_MOVING:
+          return inObject2 == MOVING;
+        case MOVING:
+          return true;
+        default:
+          JPH_ASSERT(false);
+          return false;
+      }
+    }
+};
+
 JPH::TempAllocatorMalloc *temp_allocator = nullptr;
 JPH::JobSystemThreadPool *job_system = nullptr;
+
+const uint cMaxBodies = 1024;
+const uint cNumBodyMutexes = 0;
+const uint cMaxBodyPairs = 1024;
+const uint cMaxContactConstraints = 1024;
 
 void jolt_init(void)
 {

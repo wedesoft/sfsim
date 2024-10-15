@@ -11,5 +11,7 @@ src/c/sfsim/libjolt.so: src/c/sfsim/jolt.o
 .cc.o:
 	$(CC) $(CCFLAGS) -c $< -o $@
 
+src/c/sfsim/jolt.o: src/c/sfsim/jolt.cc src/c/sfsim/jolt.hh
+
 clean:
 	rm -f src/c/sfsim/libjolt.so src/c/sfsim/*.o
