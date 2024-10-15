@@ -4,6 +4,8 @@
 #include <Jolt/Core/Factory.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Physics/PhysicsSettings.h>
 #include "sfsim/jolt.hh"
 
 
@@ -26,6 +28,7 @@ static bool AssertFailedImpl(const char *inExpression, const char *inMessage, co
 #endif
 
 JPH::TempAllocatorMalloc *temp_allocator = nullptr;
+JPH::JobSystemThreadPool *job_system = nullptr;
 
 void jolt_init(void)
 {
@@ -34,13 +37,18 @@ void jolt_init(void)
   JPH_IF_ENABLE_ASSERTS(AssertFailed = AssertFailedImpl;)
   JPH::Factory::sInstance = new JPH::Factory();
   JPH::RegisterTypes();
+
   temp_allocator = new JPH::TempAllocatorMalloc;
+  job_system = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, std::thread::hardware_concurrency() - 1);
 }
 
 void jolt_destroy(void)
 {
+  delete job_system;
+  job_system = nullptr;
   delete temp_allocator;
   temp_allocator = nullptr;
+
   JPH::UnregisterTypes();
   delete JPH::Factory::sInstance;
   JPH::Factory::sInstance = nullptr;
