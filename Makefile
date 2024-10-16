@@ -6,7 +6,7 @@ LDFLAGS = -lJolt
 all: src/c/sfsim/libjolt.so
 
 src/c/sfsim/libjolt.so: src/c/sfsim/jolt.o
-	$(CC) -shared -o $@ $^ $(LDFLAGS)
+	$(CC) -shared -flto=auto -o $@ $^ $(LDFLAGS)
 
 .cc.o:
 	$(CC) $(CCFLAGS) -c $< -o $@
