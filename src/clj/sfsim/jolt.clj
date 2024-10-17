@@ -2,6 +2,7 @@
     "Interface with native Jolt physics library"
     (:require [coffi.ffi :refer (defcfn) :as ffi]
               [coffi.mem :as mem]
+              [fastmath.vector :refer (vec3)]
               [clojure.spec.alpha :as s]))
 
 (defn const
@@ -42,10 +43,29 @@
   "Destruct Jolt library setup"
   jolt_destroy [] ::mem/void)
 
-(defcfn make-sphere
-  "Create shpere body"
-  make_sphere [::mem/float] ::mem/int)
+(mem/defalias ::vec3
+  [::mem/struct
+   [[:x ::mem/double]
+    [:y ::mem/double]
+    [:z ::mem/double]]])
+
+(defcfn make-sphere_
+  make_sphere [::mem/float ::vec3] ::mem/int)
+
+(defn make-sphere
+  "Create sphere body"
+  [radius center]
+  (make-sphere_ radius {:x (center 0) :y (center 1) :z (center 2)}))
 
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"
   remove_and_destroy_body [::mem/int] ::mem/void)
+
+(defcfn get-translation_
+  get_translation [::mem/int] ::vec3)
+
+(defn get-translation
+  "Get translation vector of a body's world transform"
+  [id]
+  (let [result (get-translation_ id)]
+    (vec3 (result :x) (result :y) (result :z))))

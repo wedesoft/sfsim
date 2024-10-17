@@ -173,10 +173,11 @@ void jolt_destroy(void)
   JPH::Factory::sInstance = nullptr;
 }
 
-int make_sphere(float radius)
+int make_sphere(float radius, Vec3 center)
 {
   JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
-  JPH::BodyCreationSettings sphere_settings(sphere_shape, JPH::RVec3::sZero(), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, MOVING);
+  JPH::RVec3 position(center.x, center.y, center.z);
+  JPH::BodyCreationSettings sphere_settings(sphere_shape, position, JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, MOVING);
   JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
   return sphere_id.GetIndexAndSequenceNumber();
 }
@@ -186,4 +187,12 @@ void remove_and_destroy_body(int id)
   JPH::BodyID body_id(id);
   body_interface->RemoveBody(body_id);
   body_interface->DestroyBody(body_id);
+}
+
+Vec3 get_translation(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::RMat44 transform = body_interface->GetWorldTransform(body_id);
+  JPH::RVec3 position = transform.GetTranslation();
+  return (Vec3){ .x = position.GetX(), .y = position.GetY(), .z = position.GetZ() };
 }
