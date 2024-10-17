@@ -8,6 +8,8 @@
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "sfsim/jolt.hh"
 
 
@@ -125,6 +127,7 @@ ObjectLayerPairFilterImpl *object_vs_object_layer_filter = nullptr;
 ObjectVsBroadPhaseLayerFilterImpl *object_vs_broadphase_layer_filter = nullptr;
 
 JPH::PhysicsSystem *physics_system = nullptr;
+JPH::BodyInterface *body_interface = nullptr;
 
 void jolt_init(void)
 {
@@ -144,10 +147,12 @@ void jolt_init(void)
   physics_system = new JPH::PhysicsSystem;
   physics_system->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, *broad_phase_layer_interface,
                        *object_vs_broadphase_layer_filter, *object_vs_object_layer_filter);
+  body_interface = &physics_system->GetBodyInterface();
 }
 
 void jolt_destroy(void)
 {
+  body_interface = nullptr;
   delete physics_system;
   physics_system = nullptr;
 
@@ -166,4 +171,19 @@ void jolt_destroy(void)
   JPH::UnregisterTypes();
   delete JPH::Factory::sInstance;
   JPH::Factory::sInstance = nullptr;
+}
+
+int make_sphere(float radius)
+{
+  JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
+  JPH::BodyCreationSettings sphere_settings(sphere_shape, JPH::RVec3::sZero(), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, MOVING);
+  JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
+  return sphere_id.GetIndexAndSequenceNumber();
+}
+
+void remove_and_destroy_body(int id)
+{
+  JPH::BodyID body_id(id);
+  body_interface->RemoveBody(body_id);
+  body_interface->DestroyBody(body_id);
 }

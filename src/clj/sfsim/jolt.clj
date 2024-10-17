@@ -41,3 +41,11 @@
 (defcfn jolt-destroy
   "Destruct Jolt library setup"
   jolt_destroy [] ::mem/void)
+
+(defcfn make-sphere
+  "Create shpere body"
+  make_sphere [::mem/float] ::mem/int)
+
+(defcfn remove-and-destroy-body
+  "Remove body from physics system and destroy it"
+  remove_and_destroy_body [::mem/int] ::mem/void)
