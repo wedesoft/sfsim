@@ -4,6 +4,7 @@
               [coffi.mem :as mem]
               [fastmath.vector :refer (vec3)]
               [fastmath.matrix :refer (mat3x3)]
+              [sfsim.quaternion :as q]
               [clojure.spec.alpha :as s]))
 
 (defn const
@@ -62,22 +63,24 @@
   (let [result (mem/deserialize-from segment vec3-struct)]
     (vec3 (:x result) (:y result) (:z result))))
 
-(mem/defalias ::quaternion
-  [::mem/struct
-   [[:real ::mem/double]
-    [:imag ::mem/double]
-    [:jmag ::mem/double]
-    [:kmag ::mem/double]]])
+(def quaternion-struct [::mem/struct [[:real ::mem/double] [:imag ::mem/double] [:jmag ::mem/double] [:kmag ::mem/double]]])
 
-(defcfn make-sphere_
-  make_sphere [::mem/float ::vec3 ::quaternion] ::mem/int)
+(defmethod mem/c-layout ::quaternion
+  [_quaternion]
+  (mem/c-layout quaternion-struct))
 
-(defn make-sphere
+(defmethod mem/serialize-into ::quaternion
+  [obj _quaternion segment arena]
+  (mem/serialize-into {:real (.real obj) :imag (.imag obj) :jmag (.jmag obj) :kmag (.kmag obj)} quaternion-struct segment arena))
+
+(defmethod mem/deserialize-from ::quaternion
+  [segment _quaternion]
+  (let [result (mem/deserialize-from segment quaternion-struct)]
+    (q/->Quaternion (:real result) (:imag result) (:jmag result) (:kmag result))))
+
+(defcfn make-sphere
   "Create sphere body"
-  [radius center rotation]
-  (make-sphere_ radius
-                center
-                {:real (.real rotation) :imag (.imag rotation) :jmag (.jmag rotation) :kmag (.kmag rotation)}))
+  make_sphere [::mem/float ::vec3 ::quaternion] ::mem/int)
 
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"
