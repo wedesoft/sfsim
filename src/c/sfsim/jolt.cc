@@ -196,3 +196,23 @@ Vec3 get_translation(int id)
   JPH::RVec3 position = transform.GetTranslation();
   return (Vec3){ .x = position.GetX(), .y = position.GetY(), .z = position.GetZ() };
 }
+
+Mat3x3 get_rotation(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::RMat44 transform = body_interface->GetWorldTransform(body_id);
+  JPH::Vec3 x = transform.GetAxisX();
+  JPH::Vec3 y = transform.GetAxisY();
+  JPH::Vec3 z = transform.GetAxisZ();
+  return (Mat3x3){
+    .m00 = x.GetX(),
+    .m01 = y.GetX(),
+    .m02 = z.GetX(),
+    .m10 = x.GetY(),
+    .m11 = y.GetY(),
+    .m12 = z.GetY(),
+    .m20 = x.GetZ(),
+    .m21 = y.GetZ(),
+    .m22 = z.GetZ()
+  };
+}

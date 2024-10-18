@@ -3,6 +3,7 @@
     (:require [coffi.ffi :refer (defcfn) :as ffi]
               [coffi.mem :as mem]
               [fastmath.vector :refer (vec3)]
+              [fastmath.matrix :refer (mat3x3)]
               [clojure.spec.alpha :as s]))
 
 (defn const
@@ -69,3 +70,27 @@
   [id]
   (let [result (get-translation_ id)]
     (vec3 (result :x) (result :y) (result :z))))
+
+(mem/defalias ::mat3x3
+  [::mem/struct
+   [[:m00 ::mem/double]
+    [:m01 ::mem/double]
+    [:m02 ::mem/double]
+    [:m10 ::mem/double]
+    [:m11 ::mem/double]
+    [:m12 ::mem/double]
+    [:m20 ::mem/double]
+    [:m21 ::mem/double]
+    [:m22 ::mem/double]]])
+
+(defcfn get-rotation_
+  get_rotation [::mem/int] ::mat3x3)
+
+(defn get-rotation
+  [id]
+  "Get rotation matrix of a body's world transform"
+  (let [result (get-rotation_ id)]
+    (mat3x3
+      (result :m00) (result :m01) (result :m02)
+      (result :m10) (result :m11) (result :m12)
+      (result :m20) (result :m21) (result :m22))))
