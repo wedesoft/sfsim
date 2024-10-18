@@ -22,12 +22,13 @@ extern "C" {
 
   void set_gravity(Vec3 gravity);
   void update_system(double dt);
-  int make_sphere(float radius, Vec3 center, Quaternion rotation);
+  int make_sphere(float radius, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity);
   void remove_and_destroy_body(int id);
 
   Vec3 get_translation(int id);
   Mat3x3 get_rotation(int id);
   Vec3 get_linear_velocity(int id);
+  Vec3 get_angular_velocity(int id);
 #ifdef __cplusplus
 }
 #endif

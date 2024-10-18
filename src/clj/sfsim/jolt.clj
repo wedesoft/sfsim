@@ -118,7 +118,7 @@
 
 (defcfn make-sphere
   "Create sphere body"
-  make_sphere [::mem/float ::vec3 ::quaternion] ::mem/int)
+  make_sphere [::mem/float ::vec3 ::quaternion ::vec3 ::vec3] ::mem/int)
 
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"
@@ -134,3 +134,7 @@
 (defcfn get-linear-velocity
   "Get linear velocity of a body"
   get_linear_velocity [::mem/int] ::vec3)
+
+(defcfn get-angular-velocity
+  "Get angular velocity of a body"
+  get_angular_velocity [::mem/int] ::vec3)

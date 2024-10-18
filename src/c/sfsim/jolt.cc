@@ -192,7 +192,7 @@ void body_default_settings(JPH::BodyCreationSettings &body_settings)
   body_settings.mAngularDamping = 0.0;
 }
 
-int make_sphere(float radius, Vec3 center, Quaternion rotation)
+int make_sphere(float radius, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
 {
   JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
   JPH::RVec3 position(center.x, center.y, center.z);
@@ -200,6 +200,10 @@ int make_sphere(float radius, Vec3 center, Quaternion rotation)
   JPH::BodyCreationSettings sphere_settings(sphere_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
   body_default_settings(sphere_settings);
   JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
+  JPH::Vec3 linear_speed(linear_velocity.x, linear_velocity.y, linear_velocity.z);
+  body_interface->SetLinearVelocity(sphere_id, linear_speed);
+  JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
+  body_interface->SetAngularVelocity(sphere_id, angular_speed);
   return sphere_id.GetIndexAndSequenceNumber();
 }
 
@@ -243,4 +247,11 @@ Vec3 get_linear_velocity(int id)
   JPH::BodyID body_id(id);
   JPH::Vec3 linear_velocity = body_interface->GetLinearVelocity(body_id);
   return (Vec3){ .x = linear_velocity.GetX(), .y = linear_velocity.GetY(), .z = linear_velocity.GetZ() };
+}
+
+Vec3 get_angular_velocity(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 angular_velocity = body_interface->GetAngularVelocity(body_id);
+  return (Vec3){ .x = angular_velocity.GetX(), .y = angular_velocity.GetY(), .z = angular_velocity.GetZ() };
 }
