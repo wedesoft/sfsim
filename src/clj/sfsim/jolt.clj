@@ -50,13 +50,22 @@
     [:y ::mem/double]
     [:z ::mem/double]]])
 
+(mem/defalias ::quaternion
+  [::mem/struct
+   [[:real ::mem/double]
+    [:imag ::mem/double]
+    [:jmag ::mem/double]
+    [:kmag ::mem/double]]])
+
 (defcfn make-sphere_
-  make_sphere [::mem/float ::vec3] ::mem/int)
+  make_sphere [::mem/float ::vec3 ::quaternion] ::mem/int)
 
 (defn make-sphere
   "Create sphere body"
-  [radius center]
-  (make-sphere_ radius {:x (center 0) :y (center 1) :z (center 2)}))
+  [radius center rotation]
+  (make-sphere_ radius
+                {:x (center 0) :y (center 1) :z (center 2)}
+                {:real (.real rotation) :imag (.imag rotation) :jmag (.jmag rotation) :kmag (.kmag rotation)}))
 
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"

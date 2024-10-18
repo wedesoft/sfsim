@@ -173,11 +173,12 @@ void jolt_destroy(void)
   JPH::Factory::sInstance = nullptr;
 }
 
-int make_sphere(float radius, Vec3 center)
+int make_sphere(float radius, Vec3 center, Quaternion rotation)
 {
   JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
   JPH::RVec3 position(center.x, center.y, center.z);
-  JPH::BodyCreationSettings sphere_settings(sphere_shape, position, JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, MOVING);
+  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
+  JPH::BodyCreationSettings sphere_settings(sphere_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
   JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
   return sphere_id.GetIndexAndSequenceNumber();
 }
