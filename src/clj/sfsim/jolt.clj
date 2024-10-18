@@ -89,26 +89,36 @@
 (defcfn get-translation
   get_translation [::mem/int] ::vec3)
 
-(mem/defalias ::mat3x3
-  [::mem/struct
-   [[:m00 ::mem/double]
-    [:m01 ::mem/double]
-    [:m02 ::mem/double]
-    [:m10 ::mem/double]
-    [:m11 ::mem/double]
-    [:m12 ::mem/double]
-    [:m20 ::mem/double]
-    [:m21 ::mem/double]
-    [:m22 ::mem/double]]])
+(def mat3x3-struct [::mem/struct
+                    [[:m00 ::mem/double]
+                     [:m01 ::mem/double]
+                     [:m02 ::mem/double]
+                     [:m10 ::mem/double]
+                     [:m11 ::mem/double]
+                     [:m12 ::mem/double]
+                     [:m20 ::mem/double]
+                     [:m21 ::mem/double]
+                     [:m22 ::mem/double]]])
 
-(defcfn get-rotation_
-  get_rotation [::mem/int] ::mat3x3)
+(defmethod mem/c-layout ::mat3x3
+  [_mat3x3]
+  (mem/c-layout mat3x3-struct))
 
-(defn get-rotation
-  [id]
-  "Get rotation matrix of a body's world transform"
-  (let [result (get-rotation_ id)]
+(defmethod mem/serialize-into ::mat3x3
+  [obj _mat3x3 segment arena]
+  (mem/serialize-into {:m00 (obj 0 0) :m01 (obj 0 1) :m02 (obj 0 2)
+                       :m10 (obj 1 0) :m11 (obj 1 1) :m12 (obj 1 2)
+                       :m20 (obj 2 0) :m21 (obj 2 1) :m22 (obj 2 2)}
+                      mat3x3-struct segment arena))
+
+(defmethod mem/deserialize-from ::mat3x3
+  [segment _mat3x3]
+  (let [result (mem/deserialize-from segment mat3x3-struct)]
     (mat3x3
       (result :m00) (result :m01) (result :m02)
       (result :m10) (result :m11) (result :m12)
       (result :m20) (result :m21) (result :m22))))
+
+(defcfn get-rotation
+  "Get rotation matrix of a body's world transform"
+  get_rotation [::mem/int] ::mat3x3)
