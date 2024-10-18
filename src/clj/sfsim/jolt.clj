@@ -78,17 +78,6 @@
   (let [result (mem/deserialize-from segment quaternion-struct)]
     (q/->Quaternion (:real result) (:imag result) (:jmag result) (:kmag result))))
 
-(defcfn make-sphere
-  "Create sphere body"
-  make_sphere [::mem/float ::vec3 ::quaternion] ::mem/int)
-
-(defcfn remove-and-destroy-body
-  "Remove body from physics system and destroy it"
-  remove_and_destroy_body [::mem/int] ::mem/void)
-
-(defcfn get-translation
-  get_translation [::mem/int] ::vec3)
-
 (def mat3x3-struct [::mem/struct
                     [[:m00 ::mem/double]
                      [:m01 ::mem/double]
@@ -119,6 +108,29 @@
       (result :m10) (result :m11) (result :m12)
       (result :m20) (result :m21) (result :m22))))
 
+(defcfn set-gravity
+  "Set gravity vector"
+  set_gravity [::vec3] ::mem/void)
+
+(defcfn update-system
+  "Perform time step of physics system"
+  update_system [::mem/double] ::mem/void)
+
+(defcfn make-sphere
+  "Create sphere body"
+  make_sphere [::mem/float ::vec3 ::quaternion] ::mem/int)
+
+(defcfn remove-and-destroy-body
+  "Remove body from physics system and destroy it"
+  remove_and_destroy_body [::mem/int] ::mem/void)
+
+(defcfn get-translation
+  get_translation [::mem/int] ::vec3)
+
 (defcfn get-rotation
   "Get rotation matrix of a body's world transform"
   get_rotation [::mem/int] ::mat3x3)
+
+(defcfn get-linear-velocity
+  "Get linear velocity of a body"
+  get_linear_velocity [::mem/int] ::vec3)

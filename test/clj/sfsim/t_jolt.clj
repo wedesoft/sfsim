@@ -14,11 +14,17 @@
 
 (def sphere (make-sphere 0.5 (vec3 2 3 5) (q/->Quaternion 0 1 0 0)))
 
-(fact "Get position of sphere body"
-      (get-translation sphere) => (vec3 2 3 5))
+(facts "Get position vector and rotation matrix of sphere body"
+       (get-translation sphere) => (vec3 2 3 5)
+       (get-rotation sphere) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1))
 
-(fact "Get rotation matrix of sphere body"
-      (get-rotation sphere) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1))
+(set-gravity (vec3 0 -1 0))
+
+(update-system 1.0)
+
+(facts "Check position and speed after time step"
+       (get-translation sphere) => (vec3 2 2 5)
+       (get-linear-velocity sphere) => (vec3 0 -1 0))
 
 (remove-and-destroy-body sphere)
 

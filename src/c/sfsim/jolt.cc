@@ -173,12 +173,32 @@ void jolt_destroy(void)
   JPH::Factory::sInstance = nullptr;
 }
 
+void update_system(double dt)
+{
+  const int cCollisionSteps = 1;
+  physics_system->Update(dt, cCollisionSteps, temp_allocator, job_system);
+}
+
+void set_gravity(Vec3 gravity)
+{
+  JPH::Vec3 gravity_vector(gravity.x, gravity.y, gravity.z);
+  physics_system->SetGravity(gravity_vector);
+}
+
+void body_default_settings(JPH::BodyCreationSettings &body_settings)
+{
+  body_settings.mApplyGyroscopicForce = true;
+  body_settings.mLinearDamping = 0.0;
+  body_settings.mAngularDamping = 0.0;
+}
+
 int make_sphere(float radius, Vec3 center, Quaternion rotation)
 {
   JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
   JPH::RVec3 position(center.x, center.y, center.z);
   JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
   JPH::BodyCreationSettings sphere_settings(sphere_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
+  body_default_settings(sphere_settings);
   JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
   return sphere_id.GetIndexAndSequenceNumber();
 }
@@ -216,4 +236,11 @@ Mat3x3 get_rotation(int id)
     .m21 = y.GetZ(),
     .m22 = z.GetZ()
   };
+}
+
+Vec3 get_linear_velocity(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 linear_velocity = body_interface->GetLinearVelocity(body_id);
+  return (Vec3){ .x = linear_velocity.GetX(), .y = linear_velocity.GetY(), .z = linear_velocity.GetZ() };
 }
