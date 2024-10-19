@@ -118,7 +118,11 @@
 
 (defcfn make-sphere
   "Create sphere body"
-  make_sphere [::mem/float ::vec3 ::quaternion ::vec3 ::vec3] ::mem/int)
+  make_sphere [::mem/float ::mem/float ::vec3 ::quaternion ::vec3 ::vec3] ::mem/int)
+
+(defcfn make-box
+  "Create box body"
+  make_box [::vec3 ::mem/float ::vec3 ::quaternion ::vec3 ::vec3] ::mem/int)
 
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"

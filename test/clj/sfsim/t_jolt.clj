@@ -14,7 +14,7 @@
        MOVING-LAYER => 1
        NUM-LAYERS => 2)
 
-(def sphere (make-sphere 0.5 (vec3 2 3 5) (q/->Quaternion 0 1 0 0) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
+(def sphere (make-sphere 0.5 1000.0 (vec3 2 3 5) (q/->Quaternion 0 1 0 0) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
 
 (facts "Get position vector, rotation matrix, and velocities of sphere body"
        (get-translation sphere) => (vec3 2 3 5)
@@ -33,5 +33,15 @@
        (get-angular-velocity sphere) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
 
 (remove-and-destroy-body sphere)
+
+(def box (make-box (vec3 0.2 0.3 0.5) 1000.0 (vec3 2 3 5) (q/->Quaternion 0 1 0 0) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
+
+(facts "Get position vector, rotation matrix, and velocities of box body"
+       (get-translation box) => (vec3 2 3 5)
+       (get-rotation box) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1)
+       (get-linear-velocity box) => (vec3 0 0 0)
+       (get-angular-velocity box) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
+
+(remove-and-destroy-body box)
 
 (jolt-destroy)

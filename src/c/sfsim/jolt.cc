@@ -9,6 +9,7 @@
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "sfsim/jolt.hh"
 
@@ -192,9 +193,10 @@ void body_default_settings(JPH::BodyCreationSettings &body_settings)
   body_settings.mAngularDamping = 0.0;
 }
 
-int make_sphere(float radius, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
+int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
 {
   JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
+  sphere_shape->SetDensity(density);
   JPH::RVec3 position(center.x, center.y, center.z);
   JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
   JPH::BodyCreationSettings sphere_settings(sphere_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
@@ -205,6 +207,27 @@ int make_sphere(float radius, Vec3 center, Quaternion rotation, Vec3 linear_velo
   JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
   body_interface->SetAngularVelocity(sphere_id, angular_speed);
   return sphere_id.GetIndexAndSequenceNumber();
+}
+
+int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
+{
+  JPH::Vec3 half_extent_box(half_extent.x, half_extent.y, half_extent.z);
+  JPH::BoxShapeSettings box_shape_settings(half_extent_box);
+  box_shape_settings.mConvexRadius = 0.01f;
+  box_shape_settings.SetDensity(density);
+  box_shape_settings.SetEmbedded();
+  JPH::ShapeSettings::ShapeResult shape_result = box_shape_settings.Create();
+  JPH::ShapeRefC box_shape = shape_result.Get();
+  JPH::RVec3 position(center.x, center.y, center.z);
+  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
+  JPH::BodyCreationSettings box_settings(box_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
+  body_default_settings(box_settings);
+  JPH::BodyID box_id = body_interface->CreateAndAddBody(box_settings, JPH::EActivation::Activate);
+  JPH::Vec3 linear_speed(linear_velocity.x, linear_velocity.y, linear_velocity.z);
+  body_interface->SetLinearVelocity(box_id, linear_speed);
+  JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
+  body_interface->SetAngularVelocity(box_id, angular_speed);
+  return box_id.GetIndexAndSequenceNumber();
 }
 
 void remove_and_destroy_body(int id)
