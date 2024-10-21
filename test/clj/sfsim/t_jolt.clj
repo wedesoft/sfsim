@@ -48,6 +48,7 @@
 (def mesh (make-mesh [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)] [[0 1 3] [1 2 3]]
                      1e+4 (vec3 0 -1 0) (q/->Quaternion 1 0 0 0)))
 
+; TODO: material of mesh
 ; TODO: update broad phase, add sphere, simulate resting on mesh
 
 (remove-and-destroy-body mesh)
