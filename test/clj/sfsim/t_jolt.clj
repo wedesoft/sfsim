@@ -4,6 +4,7 @@
               [clojure.math :refer (PI)]
               [fastmath.vector :refer (vec3)]
               [fastmath.matrix :refer (mat3x3)]
+              [coffi.mem :as mem]
               [sfsim.quaternion :as q]
               [sfsim.jolt :refer :all]))
 
@@ -43,5 +44,12 @@
        (get-angular-velocity box) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
 
 (remove-and-destroy-body box)
+
+(def mesh (make-mesh [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)] [[0 1 3] [1 2 3]]
+                     1e+4 (vec3 0 -1 0) (q/->Quaternion 1 0 0 0)))
+
+; TODO: update broad phase, add sphere, simulate resting on mesh
+
+(remove-and-destroy-body mesh)
 
 (jolt-destroy)

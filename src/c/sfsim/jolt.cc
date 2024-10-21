@@ -10,6 +10,7 @@
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "sfsim/jolt.hh"
 
@@ -228,6 +229,29 @@ int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, 
   JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
   body_interface->SetAngularVelocity(box_id, angular_speed);
   return box_id.GetIndexAndSequenceNumber();
+}
+
+int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangles, float mass, Vec3 center, Quaternion rotation)
+{
+  JPH::VertexList vertex_list(num_vertices);
+  for (int i=0; i<num_vertices; i++) {
+    vertex_list[i] = JPH::Float3(vertices[0], vertices[1], vertices[2]);
+    vertices += 3;
+  };
+  JPH::IndexedTriangleList triangle_list(num_triangles);
+  for (int i=0; i<num_triangles; i++) {
+    triangle_list[i] = JPH::IndexedTriangle(triangles[0], triangles[1], triangles[2], 0);
+    triangles += 3;
+  };
+  JPH::MeshShapeSettings mesh_shape_settings(vertex_list, triangle_list);
+  mesh_shape_settings.SetEmbedded();
+  JPH::ShapeSettings::ShapeResult shape_result = mesh_shape_settings.Create();
+  JPH::ShapeRefC mesh_shape = shape_result.Get();
+  JPH::RVec3 position(center.x, center.y, center.z);
+  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
+  JPH::BodyCreationSettings mesh_settings(mesh_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
+  JPH::BodyID mesh_id = body_interface->CreateAndAddBody(mesh_settings, JPH::EActivation::Activate);
+  return mesh_id.GetIndexAndSequenceNumber();
 }
 
 void remove_and_destroy_body(int id)

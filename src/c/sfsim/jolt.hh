@@ -24,6 +24,7 @@ extern "C" {
   void update_system(double dt);
   int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity);
   int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity);
+  int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangles, float mass, Vec3 center, Quaternion rotation);
   void remove_and_destroy_body(int id);
 
   Vec3 get_translation(int id);

@@ -124,6 +124,20 @@
   "Create box body"
   make_box [::vec3 ::mem/float ::vec3 ::quaternion ::vec3 ::vec3] ::mem/int)
 
+(defcfn make-mesh_
+  "Create a mesh object (private function)"
+  make_mesh [::mem/pointer ::mem/int ::mem/pointer ::mem/int ::mem/float ::vec3 ::quaternion] ::mem/int)
+
+(defn make-mesh
+  "Create a mesh object"
+  [vertices triangles mass center rotation]
+  (let [arena (mem/auto-arena)
+        num-vertices (count vertices)
+        num-triangles (count triangles)]
+    (make-mesh_ (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
+                (mem/serialize (apply concat triangles) [::mem/array ::mem/int (* 3 num-triangles)] arena) num-triangles
+                mass center rotation)))
+
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"
   remove_and_destroy_body [::mem/int] ::mem/void)
