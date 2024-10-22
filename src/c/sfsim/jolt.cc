@@ -187,6 +187,11 @@ void set_gravity(Vec3 gravity)
   physics_system->SetGravity(gravity_vector);
 }
 
+void optimize_broad_phase()
+{
+  physics_system->OptimizeBroadPhase();
+}
+
 void body_default_settings(JPH::BodyCreationSettings &body_settings)
 {
   body_settings.mApplyGyroscopicForce = true;
@@ -243,7 +248,8 @@ int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangl
     triangle_list[i] = JPH::IndexedTriangle(triangles[0], triangles[1], triangles[2], 0);
     triangles += 3;
   };
-  JPH::MeshShapeSettings mesh_shape_settings(vertex_list, triangle_list);
+  JPH::PhysicsMaterialList materials { JPH::PhysicsMaterial::sDefault };
+  JPH::MeshShapeSettings mesh_shape_settings(vertex_list, triangle_list, materials);
   mesh_shape_settings.SetEmbedded();
   JPH::ShapeSettings::ShapeResult shape_result = mesh_shape_settings.Create();
   JPH::ShapeRefC mesh_shape = shape_result.Get();
@@ -252,6 +258,18 @@ int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangl
   JPH::BodyCreationSettings mesh_settings(mesh_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
   JPH::BodyID mesh_id = body_interface->CreateAndAddBody(mesh_settings, JPH::EActivation::Activate);
   return mesh_id.GetIndexAndSequenceNumber();
+}
+
+void set_friction(int id, float friction)
+{
+  JPH::BodyID body_id(id);
+  body_interface->SetFriction(body_id, friction);
+}
+
+void set_restitution(int id, float restitution)
+{
+  JPH::BodyID body_id(id);
+  body_interface->SetRestitution(body_id, restitution);
 }
 
 void remove_and_destroy_body(int id)

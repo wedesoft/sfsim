@@ -45,12 +45,22 @@
 
 (remove-and-destroy-body box)
 
-(def mesh (make-mesh [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)] [[0 1 3] [1 2 3]]
+(def mesh (make-mesh [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)] [[0 3 1] [1 3 2]]
                      1e+4 (vec3 0 -1 0) (q/->Quaternion 1 0 0 0)))
+(set-friction mesh 0.5)
+(set-restitution mesh 0.2)
 
-; TODO: material of mesh
-; TODO: update broad phase, add sphere, simulate resting on mesh
+(def sphere (make-sphere 1.0 1000.0 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0)))
+(set-friction sphere 0.5)
+(set-restitution sphere 0.2)
 
+(optimize-broad-phase)
+(update-system 1.0)
+
+(fact "Mesh prevents object from dropping"
+      (get-translation sphere) => (vec3 0 0 0))
+
+(remove-and-destroy-body sphere)
 (remove-and-destroy-body mesh)
 
 (jolt-destroy)

@@ -112,6 +112,10 @@
   "Set gravity vector"
   set_gravity [::vec3] ::mem/void)
 
+(defcfn optimize-broad-phase
+  "Optimize broad phase of collision algorithm"
+  optimize_broad_phase [] ::mem/void)
+
 (defcfn update-system
   "Perform time step of physics system"
   update_system [::mem/double] ::mem/void)
@@ -137,6 +141,14 @@
     (make-mesh_ (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
                 (mem/serialize (apply concat triangles) [::mem/array ::mem/int (* 3 num-triangles)] arena) num-triangles
                 mass center rotation)))
+
+(defcfn set-friction
+  "Set friction constant of body surface"
+  set_friction [::mem/int ::mem/float] ::mem/void)
+
+(defcfn set-restitution
+  "Set restitution constant of body surface"
+  set_restitution [::mem/int ::mem/float] ::mem/void)
 
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"
