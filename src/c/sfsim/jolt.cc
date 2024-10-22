@@ -255,7 +255,7 @@ int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangl
   JPH::ShapeRefC mesh_shape = shape_result.Get();
   JPH::RVec3 position(center.x, center.y, center.z);
   JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
-  JPH::BodyCreationSettings mesh_settings(mesh_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
+  JPH::BodyCreationSettings mesh_settings(mesh_shape, position, orientation, JPH::EMotionType::Static, NON_MOVING);
   JPH::BodyID mesh_id = body_interface->CreateAndAddBody(mesh_settings, JPH::EActivation::Activate);
   return mesh_id.GetIndexAndSequenceNumber();
 }
