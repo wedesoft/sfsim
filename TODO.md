@@ -1,14 +1,14 @@
 # TODO
-* clj -T:build cube-map :in-level 3 :out-level 6
+* p -> face, i, j -> face, b, a, tile-y, tile-x -> [face, b, a, tile-y, tile-x] * {8,9}
+  -> [face, i, j, tile-y, tile-x, b, a, {0, 1}, {0, 1}] * 3 * 2 * {8, 9}
+  -> canonical form -> set of canonical forms and indexed triangles -> coordinates and indexed triangles
+* Jolt mesh for surface?
 * clj -T:build cube-map :in-level 4 :out-level 7
-* make height field triangles (with correctly oriented split) for given space ship position for creating convex hull,
-  get 3 points of correct triangle, create plane, and project onto it
 * increase resolution of cube map,
   height field, 30 arc seconds -> 43200 pixels circumference
   (/ 43200 4 (bit-shift-left 1 4)) -> 675
   tilesize is 33, color-tilesize is 129, start with correct in-level (-4 -> -4 + sublevel = 2), maybe reduce sublevel?
   color map is 21600*4 = 86400 circumference
-* make Java bindings for Jolt and build with build.clj?
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
 * visualise prototype vehicle and wheels
 * level of detail in opacity cascade, cloud brightness flickering at large distance?

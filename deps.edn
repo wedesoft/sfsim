@@ -1,5 +1,5 @@
 {:deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        metosin/malli {:mvn/version "0.16.2"}
+        metosin/malli {:mvn/version "0.16.4"}
         org.clojure/core.memoize {:mvn/version "1.1.266"}
         comb/comb {:mvn/version "0.1.1"}
         progrock/progrock {:mvn/version "0.1.2"}
@@ -7,6 +7,7 @@
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
         instaparse/instaparse {:mvn/version "1.5.0"}
         org.clj-commons/gloss {:mvn/version "0.3.6"}
+        org.suskalo/coffi {:mvn/version "1.0.486"}
         org.lwjgl/lwjgl {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl$natives-windows {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl-opengl {:mvn/version "3.3.4"}
@@ -19,9 +20,10 @@
         org.lwjgl/lwjgl-stb$natives-windows {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl-assimp {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl-assimp$natives-windows {:mvn/version "3.3.4"}}
- :paths ["src"]
- :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.4"
-                                                         :git/sha "31388ff"}
+ :paths ["src/clj"]
+ :jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
+ :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.5"
+                                                         :git/sha "2a21b7a"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all
@@ -29,7 +31,8 @@
            :test {:extra-deps {midje/midje {:mvn/version "1.10.10"}
                                midje-runner/midje-runner {:git/url "https://github.com/wedesoft/midje-runner.git"
                                                           :git/sha "8ceb29d5781b9fc43ad4116fc645ade797342fad"}}
-                  :extra-paths ["test"]
-                  :main-opts ["-m" "midje-runner.runner"]}
-           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
+                  :extra-paths ["test/clj"]
+                  :main-opts ["-m" "midje-runner.runner"]
+                  :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
+           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.4.0"}}
                      :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"]}}}

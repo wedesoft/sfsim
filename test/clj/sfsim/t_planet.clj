@@ -81,7 +81,7 @@ void main()
                           (use-program program)
                           (raster-lines (render-quads vao))
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/sfsim/fixtures/planet/quad.png" 2.0))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/planet/quad.png" 2.0))
 
 (tabular "Tessellation control shader to control outer tessellation of quad using a uniform integer"
          (fact
@@ -116,11 +116,11 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 5.0))
          ?neighbours ?result
-         15          "test/sfsim/fixtures/planet/tessellation.png"
-          1          "test/sfsim/fixtures/planet/tessellation-0.png"
-          2          "test/sfsim/fixtures/planet/tessellation-1.png"
-          4          "test/sfsim/fixtures/planet/tessellation-2.png"
-          8          "test/sfsim/fixtures/planet/tessellation-3.png")
+         15          "test/clj/sfsim/fixtures/planet/tessellation.png"
+          1          "test/clj/sfsim/fixtures/planet/tessellation-0.png"
+          2          "test/clj/sfsim/fixtures/planet/tessellation-1.png"
+          4          "test/clj/sfsim/fixtures/planet/tessellation-2.png"
+          8          "test/clj/sfsim/fixtures/planet/tessellation-3.png")
 
 (def texture-coordinates-probe
   (template/fn [selector] "#version 410 core
@@ -170,9 +170,9 @@ void main()
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 0.02))
          ?selector                            ?scale ?result
-         "frag_in.colorcoord"                 1.0    "test/sfsim/fixtures/planet/color-coords.png"
-         "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/sfsim/fixtures/planet/point.png"
-         "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/sfsim/fixtures/planet/scaled-point.png")
+         "frag_in.colorcoord"                 1.0    "test/clj/sfsim/fixtures/planet/color-coords.png"
+         "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/clj/sfsim/fixtures/planet/point.png"
+         "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/clj/sfsim/fixtures/planet/scaled-point.png")
 
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -205,7 +205,7 @@ void main()
                           (destroy-texture surface)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
-      => (is-image "test/sfsim/fixtures/planet/tessellation.png" 5.0))
+      => (is-image "test/clj/sfsim/fixtures/planet/tessellation.png" 5.0))
 
 (fact "Apply projection matrix to points in tessellation evaluation shader"
       (offscreen-render 256 256
@@ -239,7 +239,7 @@ void main()
                           (destroy-texture surface)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
-      => (is-image "test/sfsim/fixtures/planet/projection.png" 0.9))
+      => (is-image "test/clj/sfsim/fixtures/planet/projection.png" 0.9))
 
 (fact "Scale vertex coordinates using given height field"
       (offscreen-render 256 256
@@ -272,7 +272,7 @@ void main()
                           (destroy-texture surface)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)))
-      => (is-image "test/sfsim/fixtures/planet/heightfield.png" 1.6))
+      => (is-image "test/clj/sfsim/fixtures/planet/heightfield.png" 1.6))
 
 (defn ray-scatter [x view-direction light-direction above-horizon]
   (let [value (* (pow (max (dot view-direction light-direction) 0.0) 10) (exp (/ (- radius (mag x)) 5500.0)))]
@@ -453,8 +453,8 @@ float planet_and_cloud_shadows(vec4 point)
 (defn planet-textures
   [colors nx ny nz tr tg tb s ar ag ab water size]
   (let [day-night     (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
-                                              [(slurp-image (str "test/sfsim/fixtures/planet/" colors ".png"))
-                                               (slurp-image (str "test/sfsim/fixtures/planet/night.png"))])
+                                              [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
+                                               (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])
         normals       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width 2 :height 2
                                                             :data (float-array (flatten (repeat 4 [nx ny nz])))})
@@ -494,7 +494,7 @@ float planet_and_cloud_shadows(vec4 point)
                                (doseq [tex textures] (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-           => (is-image (str "test/sfsim/fixtures/planet/" ?result ".png") 0.0))
+           => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.0))
          ?colors   ?albedo ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
          "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "fragment"
          "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "colors"
@@ -561,7 +561,7 @@ void main()
                                (raster-lines (render-tile program tile (inverse transform) [] [:sfsim.planet/surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/sfsim/fixtures/planet/" ?result) 0.01))
+                               (destroy-program program))) => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result) 0.01))
          ?up   ?left ?down ?right ?result
          true  true  true  true   "tile.png"
          false true  true  true   "tile-up.png"

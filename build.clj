@@ -300,10 +300,10 @@
 (def class-dir "target/classes")
 
 (defn uber [_]
-  (b/copy-dir {:src-dirs ["src"]
+  (b/copy-dir {:src-dirs ["src/clj"]
                :target-dir class-dir})
   (b/compile-clj {:basis basis
-                  :src-dirs ["src"]
+                  :src-dirs ["src/clj"]
                   :class-dir class-dir})
   (b/uber {:class-dir class-dir
            :uber-file "target/sfsim.jar"

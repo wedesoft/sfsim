@@ -612,13 +612,13 @@ void main()
       (let [worley-size  8
             worley-north (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                                 #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                              :data (slurp-floats "test/sfsim/fixtures/clouds/worley-north.raw")})
+                                                              :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-north.raw")})
             worley-south (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                                 #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                              :data (slurp-floats "test/sfsim/fixtures/clouds/worley-south.raw")})
+                                                              :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-south.raw")})
             worley-cover (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                                 #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                              :data (slurp-floats "test/sfsim/fixtures/clouds/worley-cover.raw")})
+                                                              :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-cover.raw")})
             program      (make-program :sfsim.render/vertex [cover-vertex]
                                        :sfsim.render/fragment [cover-fragment shaders/ray-sphere])
             indices      [0 1 3 2]
@@ -655,7 +655,7 @@ void main()
           (destroy-texture worley-north)
           (destroy-texture tex)
           img)))
-    => (is-image "test/sfsim/fixtures/clouds/cover.png" 0.1))
+    => (is-image "test/clj/sfsim/fixtures/clouds/cover.png" 0.1))
 
 (def cloud-profile-probe
   (template/fn [x y z]
@@ -1217,7 +1217,7 @@ void main()
       (destroy-vertex-array-object tile)
       (destroy-program planet)
       (destroy-texture surface)
-      img)) => (is-image "test/sfsim/fixtures/clouds/overlay.png" 0.0))
+      img)) => (is-image "test/clj/sfsim/fixtures/clouds/overlay.png" 0.0))
 
 (def opacity-cascade-mocks
 "#version 410 core
@@ -1307,7 +1307,7 @@ void main()
                                   (render-quads vao)
                                   (destroy-vertex-array-object vao)
                                   (destroy-program program)))]
-          (texture->image tex) => (is-image "test/sfsim/fixtures/clouds/cascade.png" 0.0)
+          (texture->image tex) => (is-image "test/clj/sfsim/fixtures/clouds/cascade.png" 0.0)
           (destroy-texture tex)
           (doseq [opacity-map opacity-maps]
                  (destroy-texture opacity-map))

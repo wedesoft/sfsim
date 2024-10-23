@@ -23,7 +23,7 @@
 
 (GLFW/glfwInit)
 
-(def cube (read-gltf "test/sfsim/fixtures/model/cube.gltf"))
+(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.gltf"))
 
 (fact "Root of cube scene"
       (:sfsim.model/name (:sfsim.model/root cube)) => "Cube")
@@ -131,9 +131,9 @@ void main()
                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                               (uniform-vector3 program "diffuse_color" diffuse))))
           (destroy-scene opengl-scene)
-          (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cube.png" 0.0))
+          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.0))
 
-(def cubes (read-gltf "test/sfsim/fixtures/model/cubes.gltf"))
+(def cubes (read-gltf "test/clj/sfsim/fixtures/model/cubes.gltf"))
 
 (fact "Name of root node"
       (:sfsim.model/name (:sfsim.model/root cubes)) => "ROOT")
@@ -160,9 +160,9 @@ void main()
                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                               (uniform-vector3 program "diffuse_color" diffuse))))
           (destroy-scene opengl-scene)
-          (destroy-program program))) => (is-image "test/sfsim/fixtures/model/cubes.png" 0.01))
+          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cubes.png" 0.01))
 
-(def dice (read-gltf "test/sfsim/fixtures/model/dice.gltf"))
+(def dice (read-gltf "test/clj/sfsim/fixtures/model/dice.gltf"))
 
 (fact "Dice has one texture"
       (count (:sfsim.model/textures dice)) => 1)
@@ -245,9 +245,9 @@ void main()
                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                               (use-textures {0 colors}))))
           (destroy-scene opengl-scene)
-          (destroy-program program))) => (is-image "test/sfsim/fixtures/model/dice.png" 0.01))
+          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/dice.png" 0.01))
 
-(def bricks (read-gltf "test/sfsim/fixtures/model/bricks.gltf"))
+(def bricks (read-gltf "test/clj/sfsim/fixtures/model/bricks.gltf"))
 
 (fact "Color texture index for bricks material is zero"
       (:sfsim.model/color-texture-index (first (:sfsim.model/materials bricks))) => 0)
@@ -313,7 +313,7 @@ void main()
                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                               (use-textures {0 colors 1 normals}))))
           (destroy-scene opengl-scene)
-          (destroy-program program))) => (is-image "test/sfsim/fixtures/model/bricks.png" 0.01))
+          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/bricks.png" 0.01))
 
 (defn cube-material-type [{:sfsim.model/keys [color-texture-index]}]
   (if color-texture-index
@@ -332,7 +332,7 @@ void main()
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (use-textures {0 colors}))
 
-(def cube-and-dice (read-gltf "test/sfsim/fixtures/model/cube-and-dice.gltf"))
+(def cube-and-dice (read-gltf "test/clj/sfsim/fixtures/model/cube-and-dice.gltf"))
 
 (fact "Render uniformly colored cube and textured cube"
       (offscreen-render 160 120
@@ -351,9 +351,9 @@ void main()
           (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene render-cube)
           (destroy-scene opengl-scene)
           (destroy-program program-dice)
-          (destroy-program program-cube))) => (is-image "test/sfsim/fixtures/model/cube-and-dice.png" 0.01))
+          (destroy-program program-cube))) => (is-image "test/clj/sfsim/fixtures/model/cube-and-dice.png" 0.01))
 
-(def translation (read-gltf "test/sfsim/fixtures/model/translation.gltf"))
+(def translation (read-gltf "test/clj/sfsim/fixtures/model/translation.gltf"))
 
 (fact "Number of animations"
       (count (:sfsim.model/animations translation)) => 1)
@@ -382,7 +382,7 @@ void main()
        (:sfsim.model/position (first (:sfsim.model/position-keys translation-channel))) => (roughly-vector (vec3 2 0 0) 1e-6)
        (:sfsim.model/position (last (:sfsim.model/position-keys translation-channel))) => (roughly-vector (vec3 5 0 0) 1e-6))
 
-(def rotation (read-gltf "test/sfsim/fixtures/model/rotation.gltf"))
+(def rotation (read-gltf "test/clj/sfsim/fixtures/model/rotation.gltf"))
 
 (def rotation-animation ((:sfsim.model/animations rotation) "CubeAction"))
 (def rotation-channel ((:sfsim.model/channels rotation-animation) "Cube"))
@@ -396,7 +396,7 @@ void main()
        (:sfsim.model/rotation (first (:sfsim.model/rotation-keys rotation-channel))) => (roughly-quaternion (->Quaternion 1 0 0 0) 1e-6)
        (:sfsim.model/rotation (last (:sfsim.model/rotation-keys rotation-channel))) => (roughly-quaternion (->Quaternion 0 0 -1 0) 1e-6))
 
-(def scaling (read-gltf "test/sfsim/fixtures/model/scaling.gltf"))
+(def scaling (read-gltf "test/clj/sfsim/fixtures/model/scaling.gltf"))
 
 (def scaling-animation ((:sfsim.model/animations scaling) "CubeAction"))
 (def scaling-channel ((:sfsim.model/channels scaling-animation) "Cube"))
@@ -485,7 +485,7 @@ void main()
        => {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform :mock :sfsim.model/children
                               [{:sfsim.model/name "Cube" :sfsim.model/transform :mock-changed :sfsim.model/children []}]}})
 
-(def bump (read-gltf "test/sfsim/fixtures/model/bump.gltf"))
+(def bump (read-gltf "test/clj/sfsim/fixtures/model/bump.gltf"))
 
 (def cloud-point-mock
 "#version 410 core
@@ -588,7 +588,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                         moved-scene
                         render-mesh)
           (destroy-scene opengl-scene)
-          (destroy-scene-renderer renderer))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01)))
+          (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.01)))
   ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
   cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
   cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
@@ -650,7 +650,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
         (destroy-scene-shadow-map object-shadow)
         (destroy-scene scene)
         (destroy-scene-shadow-renderer renderer)
-        img)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))
+        img)) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.01))
   ?model ?object-radius ?angle-x ?angle-y ?result
   cube   1.75           0.5      -0.4     "shadow-map-cube.png"
   dice   1.75           0.5      -0.4     "shadow-map-dice.png"
@@ -658,7 +658,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
   bricks 1.75           0.5      -0.4     "shadow-map-bricks.png"
   cubes  4.0            0.1      -1.0     "shadow-map-cubes.png")
 
-(def torus (read-gltf "test/sfsim/fixtures/model/torus.gltf"))
+(def torus (read-gltf "test/clj/sfsim/fixtures/model/torus.gltf"))
 
 (def vertex-torus
 "#version 410 core
@@ -745,7 +745,7 @@ void main()
         (destroy-scene opengl-scene)
         (destroy-scene-shadow-renderer shadow-renderer)
         (destroy-program program)
-        result)) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.02))
+        result)) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.02))
   ?model ?object-radius ?distance ?result
   torus  1.5            3         "torus-shadow.png"
   cubes  4.0            7         "cubes-shadow.png")
@@ -823,7 +823,7 @@ vec4 cloud_point(vec3 point)
           (destroy-scene opengl-scene)
           (destroy-scene-shadow-renderer shadow-renderer)
           (destroy-scene-renderer renderer)
-          result))) => (is-image (str "test/sfsim/fixtures/model/" ?result) 0.01))
+          result))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.01))
   ?model ?dist ?angle-x ?angle-y ?result
   torus  3.0   0.5      -0.4     "torus-integration.png"
   cubes  6.0   0.1      -1.0     "cubes-integration.png")
