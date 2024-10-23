@@ -1,4 +1,7 @@
 # TODO
+* p -> face, i, j -> face, b, a, tile-y, tile-x -> [face, b, a, tile-y, tile-x] * {8,9}
+  -> [face, i, j, tile-y, tile-x, b, a, {0, 1}, {0, 1}] * 3 * 2 * {8, 9}
+  -> canonical form -> set of canonical forms and indexed triangles -> coordinates and indexed triangles
 * Jolt mesh for surface?
 * clj -T:build cube-map :in-level 4 :out-level 7
 * increase resolution of cube map,
