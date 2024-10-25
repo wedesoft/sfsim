@@ -444,7 +444,7 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width 60.0 10 6 position)]; TODO: use params for values
+        increase? (partial increase-level? tilesize (::radius config) width 60.0 10 7 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius config) increase? true)))
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))

@@ -311,7 +311,7 @@
                                                                       (:sfsim.ray/direction ray) => (vec3 2 3 5))
                                                                6378123.0)]
         (distance-to-surface (vec3 2 3 5) 6 65 6378000.0 [[] [] [] [false false false false false true]])
-        => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6) ))
+        => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6)))
 
 (tabular "Get neighbouring tile face and coordinates"
          (fact (neighbour-tile ?face ?level ?tilesize ?b ?a ?tile-y ?tile-x ?dy ?dx) => ?neighbour)
@@ -324,4 +324,5 @@
          0     2      9         1  2  5       7        0   2  [0 1 3 5 0]
          0     2      9         1  2  5       7       -6   0  [0 0 2 8 7]
          0     2      9         1  2  5       7        0  -8  [0 1 1 5 8]
+         1     2      9         0  0  0       0       -1   0  [0 3 0 8 0]
          )
