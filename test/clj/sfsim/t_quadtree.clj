@@ -324,5 +324,20 @@
          0     2      9         1  2  5       7        0   2  [0 1 3 5 0]
          0     2      9         1  2  5       7       -6   0  [0 0 2 8 7]
          0     2      9         1  2  5       7        0  -8  [0 1 1 5 8]
-         1     2      9         0  0  0       0       -1   0  [0 3 0 8 0]
+         1     2      9         0  0  0       0       -1   0  [0 3 0 8 0])
+
+(tabular "Get neighbouring tile face and coordinates"
+         (let [[face b a tile-y tile-x] (neighbour-tile ?face 1 9 ?b ?a 4 4 ?dy ?dx)
+               j                        (/ (+ (/ tile-y 8) b) 2)
+               i                        (/ (+ (/ tile-x 8) a) 2)
+               p                        (cube-map face j i)]
+           p => (vec3 ?x ?y ?z))
+         ?face ?b ?a ?dy ?dx  ?x   ?y   ?z
+         0     0  0   0   0  -0.5  0.5  1.0
+         1     0  0   0   0  -0.5 -1.0  0.5
+         1     0  0  -9   0  -0.5 -0.5  1.0
+         2     0  0   0   0   1.0 -0.5  0.5
+         2     0  0  -9   0   0.5 -0.5  1.0
+         3     0  0   0   0   0.5  1.0  0.5
+         3     0  0  -9   0   0.5  0.5  1.0
          )

@@ -344,20 +344,40 @@
         magnitude-point           (mag point)]
     (* multiplier magnitude-point)))
 
+(defn rotate-b [angle size b a]
+  (case angle
+      0 b
+     90 (- size a 1)
+    180 (- size b 1)
+    270 a))
+
+(defn rotate-a [angle size b a]
+  (case angle
+      0 a
+     90 b
+    180 (- size a 1)
+    270 (- size b 1)))
+
 (defn neighbour-tile
   "Get neighbouring tile face and coordinates"
   {:malli/schema [:=> [:cat :int :int :int :int :int :int :int :int :int] [:tuple :int :int :int :int :int]]}
   [face level tilesize b a tile-y tile-x dy dx]
-  (if (< b 0)
-    [0 (+ b (bit-shift-left 1 level)) a tile-y tile-x]
-    (let [tile-y (+ tile-y dy)]
-      (cond
-        (>= tile-y tilesize) (recur face level tilesize (inc b) a (- tile-y tilesize) tile-x 0 dx)
-        (< tile-y 0)         (recur face level tilesize (dec b) a (+ tile-y tilesize) tile-x 0 dx)
-        :else (let [tile-x (+ tile-x dx)]
-                (cond (>= tile-x tilesize) (recur face level tilesize b (inc a) tile-y (- tile-x tilesize) dy 0)
-                      (< tile-x 0)         (recur face level tilesize b (dec a) tile-y (+ tile-x tilesize) dy 0)
-                      :else [face b a tile-y tile-x]))))))
+  (let [gridsize (bit-shift-left 1 level)]
+    (if (< b 0)
+      (let [b (+ b gridsize)]
+        (case face  ; TODO: rotate tile-y and tile-x
+          1 [0 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+          2 [0 (rotate-b  90 gridsize b a) (rotate-a  90 gridsize b a) tile-y tile-x]
+          3 [0 (rotate-b 180 gridsize b a) (rotate-a 180 gridsize b a) tile-y tile-x]
+          ))
+      (let [tile-y (+ tile-y dy)]
+        (cond
+          (>= tile-y tilesize) (recur face level tilesize (inc b) a (- tile-y tilesize) tile-x 0 dx)
+          (< tile-y 0)         (recur face level tilesize (dec b) a (+ tile-y tilesize) tile-x 0 dx)
+          :else (let [tile-x (+ tile-x dx)]
+                  (cond (>= tile-x tilesize) (recur face level tilesize b (inc a) tile-y (- tile-x tilesize) dy 0)
+                        (< tile-x 0)         (recur face level tilesize b (dec a) tile-y (+ tile-x tilesize) dy 0)
+                        :else [face b a tile-y tile-x])))))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
