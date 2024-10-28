@@ -373,14 +373,24 @@
           4 [0 (rotate-b 270 gridsize b a) (rotate-a 270 gridsize b a) tile-y tile-x]
           5 [1 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
           ))
-      (let [tile-y (+ tile-y dy)]
-        (cond
-          (>= tile-y tilesize) (recur face level tilesize (inc b) a (- tile-y tilesize) tile-x 0 dx)
-          (< tile-y 0)         (recur face level tilesize (dec b) a (+ tile-y tilesize) tile-x 0 dx)
-          :else (let [tile-x (+ tile-x dx)]
-                  (cond (>= tile-x tilesize) (recur face level tilesize b (inc a) tile-y (- tile-x tilesize) dy 0)
-                        (< tile-x 0)         (recur face level tilesize b (dec a) tile-y (+ tile-x tilesize) dy 0)
-                        :else [face b a tile-y tile-x])))))))
+      (if (>= b gridsize)
+        (let [b (- b gridsize)]
+          (case face
+            0 [1 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+            1 [5 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+            2 [5 (rotate-b 270 gridsize b a) (rotate-a 270 gridsize b a) tile-y tile-x]
+            3 [5 (rotate-b 180 gridsize b a) (rotate-a 180 gridsize b a) tile-y tile-x]
+            4 [5 (rotate-b  90 gridsize b a) (rotate-a  90 gridsize b a) tile-y tile-x]
+            5 [3 (rotate-b 180 gridsize b a) (rotate-a 180 gridsize b a) tile-y tile-x]
+            ))
+        (let [tile-y (+ tile-y dy)]
+          (cond
+            (>= tile-y tilesize) (recur face level tilesize (inc b) a (- tile-y tilesize) tile-x 0 dx)
+            (< tile-y 0)         (recur face level tilesize (dec b) a (+ tile-y tilesize) tile-x 0 dx)
+            :else (let [tile-x (+ tile-x dx)]
+                    (cond (>= tile-x tilesize) (recur face level tilesize b (inc a) tile-y (- tile-x tilesize) dy 0)
+                          (< tile-x 0)         (recur face level tilesize b (dec a) tile-y (+ tile-x tilesize) dy 0)
+                          :else [face b a tile-y tile-x]))))))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
