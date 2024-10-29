@@ -385,7 +385,10 @@
       (< a 0)
       (let [a (+ a gridsize)]
         (case (long face)
-          0 [4 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]))
+          0 [4 (rotate-b  90 gridsize b a) (rotate-a  90 gridsize b a) tile-y tile-x]
+          1 [4 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+          2 [1 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+          ))
       :else
       (let [tile-y (+ tile-y dy)]
         (cond
