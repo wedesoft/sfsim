@@ -388,6 +388,9 @@
           0 [4 (rotate-b  90 gridsize b a) (rotate-a  90 gridsize b a) tile-y tile-x]
           1 [4 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
           2 [1 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+          3 [2 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+          4 [3 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
+          5 [4 (rotate-b 270 gridsize b a) (rotate-a 270 gridsize b a) tile-y tile-x]
           ))
       :else
       (let [tile-y (+ tile-y dy)]
