@@ -345,14 +345,14 @@
     (* multiplier magnitude-point)))
 
 (defn rotate-b [angle size b a]
-  (case angle
+  (case (long angle)
       0 b
      90 (- size a 1)
     180 (- size b 1)
     270 a))
 
 (defn rotate-a [angle size b a]
-  (case angle
+  (case (long angle)
       0 a
      90 b
     180 (- size a 1)
@@ -366,7 +366,7 @@
     (cond
       (< b 0)
       (let [b (+ b gridsize)]
-        (case face  ; TODO: rotate tile-y and tile-x
+        (case (long face)  ; TODO: rotate tile-y and tile-x
           0 [3 (rotate-b 180 gridsize b a) (rotate-a 180 gridsize b a) tile-y tile-x]
           1 [0 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
           2 [0 (rotate-b  90 gridsize b a) (rotate-a  90 gridsize b a) tile-y tile-x]
@@ -375,7 +375,7 @@
           5 [1 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]))
       (>= b gridsize)
       (let [b (- b gridsize)]
-        (case face
+        (case (long face)
           0 [1 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
           1 [5 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
           2 [5 (rotate-b 270 gridsize b a) (rotate-a 270 gridsize b a) tile-y tile-x]
@@ -384,7 +384,7 @@
           5 [3 (rotate-b 180 gridsize b a) (rotate-a 180 gridsize b a) tile-y tile-x]))
       (< a 0)
       (let [a (+ a gridsize)]
-        (case face
+        (case (long face)
           0 [4 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]))
       :else
       (let [tile-y (+ tile-y dy)]
