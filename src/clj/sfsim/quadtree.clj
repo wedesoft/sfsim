@@ -399,16 +399,15 @@
           2 [3 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
           3 [4 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
           4 [1 (rotate-b   0 gridsize b a) (rotate-a   0 gridsize b a) tile-y tile-x]
-
           5 [2 (rotate-b  90 gridsize b a) (rotate-a  90 gridsize b a) tile-y tile-x]))
       :else
       (let [tile-y (+ tile-y dy)]
         (cond
-          (>= tile-y tilesize) (recur face level tilesize (inc b) a (- tile-y tilesize) tile-x 0 dx)
-          (< tile-y 0)         (recur face level tilesize (dec b) a (+ tile-y tilesize) tile-x 0 dx)
+          (>= tile-y tilesize) (recur face level tilesize (inc b) a (- tile-y (dec tilesize)) tile-x 0 dx)
+          (< tile-y 0)         (recur face level tilesize (dec b) a (+ tile-y (dec tilesize)) tile-x 0 dx)
           :else (let [tile-x (+ tile-x dx)]
-                  (cond (>= tile-x tilesize) (recur face level tilesize b (inc a) tile-y (- tile-x tilesize) dy 0)
-                        (< tile-x 0)         (recur face level tilesize b (dec a) tile-y (+ tile-x tilesize) dy 0)
+                  (cond (>= tile-x tilesize) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) dy 0)
+                        (< tile-x 0)         (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0)
                         :else [face b a tile-y tile-x])))))))
 
 (set! *warn-on-reflection* false)
