@@ -368,8 +368,10 @@
         b'       (rotate-b rotation gridsize b a)
         a'       (rotate-a rotation gridsize b a)
         tile-y'  (rotate-b rotation tilesize tile-y tile-x)
-        tile-x'  (rotate-a rotation tilesize tile-y tile-x)]
-    (neighbour-tile face level tilesize b' a' tile-y' tile-x' dy dx)))
+        tile-x'  (rotate-a rotation tilesize tile-y tile-x)
+        dy'      (rotate-b rotation 1 dy dx)
+        dx'      (rotate-a rotation 1 dy dx)]
+    (neighbour-tile face level tilesize b' a' tile-y' tile-x' dy' dx')))
 
 (defn neighbour-tile
   "Get neighbouring tile face and coordinates"
