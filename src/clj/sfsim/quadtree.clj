@@ -418,13 +418,13 @@
       :else
       (let [tile-y (+ tile-y dy)]
         (cond
-          (>= tile-y tilesize) (recur face level tilesize (inc b) a (- tile-y (dec tilesize)) tile-x 0 dx)
-          (< tile-y 0)         (recur face level tilesize (dec b) a (+ tile-y (dec tilesize)) tile-x 0 dx)
+          (>= tile-y (dec tilesize)) (recur face level tilesize (inc b) a (- tile-y (dec tilesize)) tile-x 0 dx)
+          (< tile-y 0)               (recur face level tilesize (dec b) a (+ tile-y (dec tilesize)) tile-x 0 dx)
           :else
           (let [tile-x (+ tile-x dx)]
-            (cond (>= tile-x tilesize) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) dy 0)
-                  (< tile-x 0)         (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0)
-                  :else                [face b a tile-y tile-x])))))))
+            (cond (>= tile-x (dec tilesize)) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) dy 0)
+                  (< tile-x 0)               (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0)
+                  :else                      [face b a tile-y tile-x])))))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

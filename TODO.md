@@ -1,4 +1,5 @@
 # TODO
+* point, project-onto-cube, determine-face and cube-j and cube-i, tile-coordinates
 * p -> face, i, j -> face, b, a, tile-y, tile-x -> [face, b, a, tile-y, tile-x] * {8,9}
   -> [face, i, j, tile-y, tile-x, b, a, {0, 1}, {0, 1}] * 3 * 2 * {8, 9}
   -> canonical form -> set of canonical forms and indexed triangles -> coordinates and indexed triangles
