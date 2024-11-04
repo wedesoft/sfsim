@@ -362,69 +362,72 @@
 
 (defn build-neighbour
   "Create vector with coordinates in neighbouring face"
-  {:malli/schema [:=> [:cat :int :int :int :int :int :int :int :int :int :int] [:tuple :int :int :int :int :int]]}
-  [face rotation level tilesize b a tile-y tile-x dy dx]
-  (let [gridsize (bit-shift-left 1 level)
-        b'       (rotate-b rotation gridsize b a)
-        a'       (rotate-a rotation gridsize b a)
-        tile-y'  (rotate-b rotation tilesize tile-y tile-x)
-        tile-x'  (rotate-a rotation tilesize tile-y tile-x)
-        dy'      (rotate-b rotation 1 dy dx)
-        dx'      (rotate-a rotation 1 dy dx)]
-    (neighbour-tile face level tilesize b' a' tile-y' tile-x' dy' dx')))
+  {:malli/schema [:=> [:cat :int :int :int :int :int :int rational? rational? :int :int :int]
+                      [:tuple :int :int :int rational? rational? :int]]}
+  [face drotation level tilesize b a tile-y tile-x dy dx rotation]
+  (let [gridsize  (bit-shift-left 1 level)
+        b'        (rotate-b drotation gridsize b a)
+        a'        (rotate-a drotation gridsize b a)
+        tile-y'   (rotate-b drotation tilesize tile-y tile-x)
+        tile-x'   (rotate-a drotation tilesize tile-y tile-x)
+        dy'       (rotate-b drotation 1 dy dx)
+        dx'       (rotate-a drotation 1 dy dx)
+        rotation' (mod (+ rotation drotation) 360)]
+    (neighbour-tile face level tilesize b' a' tile-y' tile-x' dy' dx' rotation')))
 
 (defn neighbour-tile
   "Get neighbouring tile face and coordinates"
-  {:malli/schema [:=> [:cat :int :int :int :int :int :int :int :int :int] [:tuple :int :int :int :int :int]]}
-  [face level tilesize b a tile-y tile-x dy dx]
+  {:malli/schema [:=> [:cat :int :int :int :int :int rational? rational? :int :int :int]
+                      [:tuple :int :int :int rational? rational? :int]]}
+  [face level tilesize b a tile-y tile-x dy dx rotation]
   (let [gridsize (bit-shift-left 1 level)]
     (cond
       (< b 0)
       (let [b (+ b gridsize)]
         (case (long face)
-          0 (build-neighbour 3 180 level tilesize b a tile-y tile-x dy dx)
-          1 (build-neighbour 0   0 level tilesize b a tile-y tile-x dy dx)
-          2 (build-neighbour 0  90 level tilesize b a tile-y tile-x dy dx)
-          3 (build-neighbour 0 180 level tilesize b a tile-y tile-x dy dx)
-          4 (build-neighbour 0 270 level tilesize b a tile-y tile-x dy dx)
-          5 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx)))
+          0 (build-neighbour 3 180 level tilesize b a tile-y tile-x dy dx rotation)
+          1 (build-neighbour 0   0 level tilesize b a tile-y tile-x dy dx rotation)
+          2 (build-neighbour 0  90 level tilesize b a tile-y tile-x dy dx rotation)
+          3 (build-neighbour 0 180 level tilesize b a tile-y tile-x dy dx rotation)
+          4 (build-neighbour 0 270 level tilesize b a tile-y tile-x dy dx rotation)
+          5 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)))
       (>= b gridsize)
       (let [b (- b gridsize)]
         (case (long face)
-          0 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx)
-          1 (build-neighbour 5   0 level tilesize b a tile-y tile-x dy dx)
-          2 (build-neighbour 5 270 level tilesize b a tile-y tile-x dy dx)
-          3 (build-neighbour 5 180 level tilesize b a tile-y tile-x dy dx)
-          4 (build-neighbour 5  90 level tilesize b a tile-y tile-x dy dx)
-          5 (build-neighbour 3 180 level tilesize b a tile-y tile-x dy dx)))
+          0 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)
+          1 (build-neighbour 5   0 level tilesize b a tile-y tile-x dy dx rotation)
+          2 (build-neighbour 5 270 level tilesize b a tile-y tile-x dy dx rotation)
+          3 (build-neighbour 5 180 level tilesize b a tile-y tile-x dy dx rotation)
+          4 (build-neighbour 5  90 level tilesize b a tile-y tile-x dy dx rotation)
+          5 (build-neighbour 3 180 level tilesize b a tile-y tile-x dy dx rotation)))
       (< a 0)
       (let [a (+ a gridsize)]
         (case (long face)
-          0 (build-neighbour 4  90 level tilesize b a tile-y tile-x dy dx)
-          1 (build-neighbour 4   0 level tilesize b a tile-y tile-x dy dx)
-          2 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx)
-          3 (build-neighbour 2   0 level tilesize b a tile-y tile-x dy dx)
-          4 (build-neighbour 3   0 level tilesize b a tile-y tile-x dy dx)
-          5 (build-neighbour 4 270 level tilesize b a tile-y tile-x dy dx)))
+          0 (build-neighbour 4  90 level tilesize b a tile-y tile-x dy dx rotation)
+          1 (build-neighbour 4   0 level tilesize b a tile-y tile-x dy dx rotation)
+          2 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)
+          3 (build-neighbour 2   0 level tilesize b a tile-y tile-x dy dx rotation)
+          4 (build-neighbour 3   0 level tilesize b a tile-y tile-x dy dx rotation)
+          5 (build-neighbour 4 270 level tilesize b a tile-y tile-x dy dx rotation)))
       (>= a gridsize)
       (let [a (- a gridsize)]
         (case (long face)
-          0 (build-neighbour 2 270 level tilesize b a tile-y tile-x dy dx)
-          1 (build-neighbour 2   0 level tilesize b a tile-y tile-x dy dx)
-          2 (build-neighbour 3   0 level tilesize b a tile-y tile-x dy dx)
-          3 (build-neighbour 4   0 level tilesize b a tile-y tile-x dy dx)
-          4 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx)
-          5 (build-neighbour 2  90 level tilesize b a tile-y tile-x dy dx)))
+          0 (build-neighbour 2 270 level tilesize b a tile-y tile-x dy dx rotation)
+          1 (build-neighbour 2   0 level tilesize b a tile-y tile-x dy dx rotation)
+          2 (build-neighbour 3   0 level tilesize b a tile-y tile-x dy dx rotation)
+          3 (build-neighbour 4   0 level tilesize b a tile-y tile-x dy dx rotation)
+          4 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)
+          5 (build-neighbour 2  90 level tilesize b a tile-y tile-x dy dx rotation)))
       :else
       (let [tile-y (+ tile-y dy)]
         (cond
-          (>= tile-y (dec tilesize)) (recur face level tilesize (inc b) a (- tile-y (dec tilesize)) tile-x 0 dx)
-          (< tile-y 0)               (recur face level tilesize (dec b) a (+ tile-y (dec tilesize)) tile-x 0 dx)
+          (>= tile-y (dec tilesize)) (recur face level tilesize (inc b) a (- tile-y (dec tilesize)) tile-x 0 dx rotation)
+          (< tile-y 0)               (recur face level tilesize (dec b) a (+ tile-y (dec tilesize)) tile-x 0 dx rotation)
           :else
           (let [tile-x (+ tile-x dx)]
-            (cond (>= tile-x (dec tilesize)) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) dy 0)
-                  (< tile-x 0)               (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0)
-                  :else                      [face b a tile-y tile-x])))))))
+            (cond (>= tile-x (dec tilesize)) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) dy 0 rotation)
+                  (< tile-x 0)               (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0 rotation)
+                  :else                      [face b a tile-y tile-x rotation])))))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
