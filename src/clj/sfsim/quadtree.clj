@@ -429,5 +429,12 @@
                   (< tile-x 0)               (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0 rotation)
                   :else                      [face b a tile-y tile-x rotation])))))))
 
+(defn quad-split-orientation
+  "Perform lookup and rotation for split orientation of quad"
+  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] rational? rational? :int] :boolean]}
+  [orientations tile-y tile-x rotation]
+  (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
+    (= original-orientation (= (mod rotation 180) 0))))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

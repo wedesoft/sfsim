@@ -383,3 +383,12 @@
          0     0  0  -8   0  -0.5  1.0  0.5
          0     0  0   0   8   0.5  0.5  1.0
          0     0  0  -8   8   0.5  1.0  0.5)
+
+(facts "Get diagonal orientations of quad"
+       (quad-split-orientation [[true]] 1/2 1/2 0) => true
+       (quad-split-orientation [[false]] 1/2 1/2 0) => false
+       (quad-split-orientation [[false true]] 1/2 3/2 0) => true
+       (quad-split-orientation [[false] [true]] 3/2 1/2 0) => true
+       (quad-split-orientation [[true]] 1/2 1/2 90) => false
+       (quad-split-orientation [[false]] 1/2 1/2 90) => true
+       (quad-split-orientation [[true]] 1/2 1/2 180) => true)
