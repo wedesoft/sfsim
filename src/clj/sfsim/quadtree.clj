@@ -436,5 +436,13 @@
   (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
     (= original-orientation (= (mod rotation 180) 0))))
 
+(defn indexed-triangles
+  "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"
+  {:malli/schema [:=> [:cat :int :int :int :int :boolean] [:vector [:tuple :int :int :int]]]}
+  [center-y center-x dy dx orientation]
+  (if orientation
+    [[(+ dx 1) (+ dx 2) (+ dx 6)] [(+ dx 1) (+ dx 6) (+ dx 5)]]
+    [[(+ dx 1) (+ dx 2) (+ dx 5)] [(+ dx 2) (+ dx 6) (+ dx 5)]]))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

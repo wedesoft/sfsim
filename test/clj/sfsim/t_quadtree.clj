@@ -392,3 +392,13 @@
        (quad-split-orientation [[true]] 1/2 1/2 90) => false
        (quad-split-orientation [[false]] 1/2 1/2 90) => true
        (quad-split-orientation [[true]] 1/2 1/2 180) => true)
+
+(facts "Get triangles of point indices"
+       (nth (indexed-triangles 1 1 -1 -1  true) 0) => [0 1 5]
+       (nth (indexed-triangles 1 1 -1 -1  true) 1) => [0 5 4]
+       (nth (indexed-triangles 1 1 -1 -1 false) 0) => [0 1 4]
+       (nth (indexed-triangles 1 1 -1 -1 false) 1) => [1 5 4]
+       (nth (indexed-triangles 1 1 -1  0  true) 0) => [1 2 6]
+       (nth (indexed-triangles 1 1 -1  0  true) 1) => [1 6 5]
+       (nth (indexed-triangles 1 1 -1  0 false) 0) => [1 2 5]
+       (nth (indexed-triangles 1 1 -1  0 false) 1) => [2 6 5])
