@@ -438,8 +438,8 @@
 
 (defn indexed-triangles
   "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"
-  {:malli/schema [:=> [:cat :int :int :int :int :boolean] [:vector [:tuple :int :int :int]]]}
-  [center-y center-x dy dx orientation]
+  {:malli/schema [:=> [:cat :int :int :boolean] [:vector [:tuple :int :int :int]]]}
+  [dy dx orientation]
   (let [offset (+ (* 4 dy) dx)]
     (if orientation
       [[(+ offset 5) (+ offset 6) (+ offset 10)] [(+ offset 5) (+ offset 10) (+ offset 9)]]
