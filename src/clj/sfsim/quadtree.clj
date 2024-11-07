@@ -436,14 +436,25 @@
   (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
     (= original-orientation (= (mod rotation 180) 0))))
 
-(defn indexed-triangles
-  "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"
+(defn translate-indices
+  "Apply lookup table with index replacements"
+  {:malli/schema [:=> [:cat [:map-of :int :int] [:vector :int]] [:vector :int]]}
+  [index-map indices]
+  (mapv #(get index-map % %) indices))
+
+(defn generate-triangle-pair
+  "Make two triangles for a quad in a 3x3 mesh of 4x4 points"
   {:malli/schema [:=> [:cat :int :int :boolean] [:vector [:tuple :int :int :int]]]}
   [dy dx orientation]
   (let [offset (+ (* 4 dy) dx)]
-    (if orientation
-      [[(+ offset 5) (+ offset 6) (+ offset 10)] [(+ offset 5) (+ offset 10) (+ offset 9)]]
-      [[(+ offset 5) (+ offset 6) (+ offset  9)] [(+ offset 6) (+ offset 10) (+ offset 9)]])))
+    (mapv (partial mapv #(+ offset %)) (if orientation [[5 6 10] [5 10 9]] [[5 6 9] [6 10 9]]))))
+
+(defn indexed-triangles
+  "Determine point indices of a pair of triangles and apply index map"
+  {:malli/schema [:=> [:cat :int :int :boolean [:map-of :int :int]] [:vector [:tuple :int :int :int]]]}
+  [dy dx orientation index-map]
+  (let [offset (+ (* 4 dy) dx)]
+    (mapv (partial translate-indices index-map) (generate-triangle-pair dy dx orientation))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

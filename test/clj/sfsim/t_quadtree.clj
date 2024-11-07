@@ -385,24 +385,28 @@
          0     0  0  -8   8   0.5  1.0  0.5)
 
 (facts "Get diagonal orientations of quad"
-       (quad-split-orientation [[true]] 1/2 1/2 0) => true
-       (quad-split-orientation [[false]] 1/2 1/2 0) => false
-       (quad-split-orientation [[false true]] 1/2 3/2 0) => true
-       (quad-split-orientation [[false] [true]] 3/2 1/2 0) => true
-       (quad-split-orientation [[true]] 1/2 1/2 90) => false
-       (quad-split-orientation [[false]] 1/2 1/2 90) => true
-       (quad-split-orientation [[true]] 1/2 1/2 180) => true)
+       (quad-split-orientation [[true]]         1/2 1/2   0) => true
+       (quad-split-orientation [[false]]        1/2 1/2   0) => false
+       (quad-split-orientation [[false true]]   1/2 3/2   0) => true
+       (quad-split-orientation [[false] [true]] 3/2 1/2   0) => true
+       (quad-split-orientation [[true]]         1/2 1/2  90) => false
+       (quad-split-orientation [[false]]        1/2 1/2  90) => true
+       (quad-split-orientation [[true]]         1/2 1/2 180) => true)
 
 (facts "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"
-       (first  (indexed-triangles -1 -1  true)) => [0 1 5]
-       (second (indexed-triangles -1 -1  true)) => [0 5 4]
-       (first  (indexed-triangles -1 -1 false)) => [0 1 4]
-       (second (indexed-triangles -1 -1 false)) => [1 5 4]
-       (first  (indexed-triangles -1  0  true)) => [1 2 6]
-       (second (indexed-triangles -1  0  true)) => [1 6 5]
-       (first  (indexed-triangles -1  0 false)) => [1 2 5]
-       (second (indexed-triangles -1  0 false)) => [2 6 5]
-       (first  (indexed-triangles  0 -1  true)) => [4 5 9]
-       (second (indexed-triangles  0 -1  true)) => [4 9 8]
-       (first  (indexed-triangles  0 -1 false)) => [4 5 8]
-       (second (indexed-triangles  0 -1 false)) => [5 9 8])
+       (first  (indexed-triangles -1 -1  true {}    )) => [ 0  1 5]
+       (second (indexed-triangles -1 -1  true {}    )) => [ 0  5 4]
+       (first  (indexed-triangles -1 -1 false {}    )) => [ 0  1 4]
+       (second (indexed-triangles -1 -1 false {}    )) => [ 1  5 4]
+       (first  (indexed-triangles -1  0  true {}    )) => [ 1  2 6]
+       (second (indexed-triangles -1  0  true {}    )) => [ 1  6 5]
+       (first  (indexed-triangles -1  0 false {}    )) => [ 1  2 5]
+       (second (indexed-triangles -1  0 false {}    )) => [ 2  6 5]
+       (first  (indexed-triangles  0 -1  true {}    )) => [ 4  5 9]
+       (second (indexed-triangles  0 -1  true {}    )) => [ 4  9 8]
+       (first  (indexed-triangles  0 -1 false {}    )) => [ 4  5 8]
+       (second (indexed-triangles  0 -1 false {}    )) => [ 5  9 8]
+       (first  (indexed-triangles -1  0  true { 1 4})) => [ 4  2 6]
+       (second (indexed-triangles -1  0  true { 1 4})) => [ 4  6 5]
+       (first  (indexed-triangles  1  0 false {13 8})) => [ 9 10 8]
+       (second (indexed-triangles  1  0 false {13 8})) => [10 14 8])
