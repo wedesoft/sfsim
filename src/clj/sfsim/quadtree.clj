@@ -456,5 +456,22 @@
   (let [offset (+ (* 4 dy) dx)]
     (mapv (partial translate-indices index-map) (generate-triangle-pair dy dx orientation))))
 
+(defn identify-neighbours
+  "Determine relative neighbour coordinates and index map for cube corners with special cases for corners of face"
+  {:malli/schema [:=> [:cat :int :int :int :int :int :int] [:tuple [:vector [:vector :int]] [:map-of :int :int]]]}
+  [level tilesize b a tile-y tile-x]
+  (let [gridsize    (bit-shift-left 1 level)
+        top         (and (<= b 0) (<= tile-y 0))
+        bottom      (and (>= b (dec gridsize)) (>= tile-y (- tilesize 2)))
+        left        (and (<= a 0) (<= tile-x 0))
+        right       (and (>= a (dec gridsize)) (>= tile-x (- tilesize 2)))
+        coordinates (for [dy [-1 0 1] dx [-1 0 1]] [dy dx])]
+    (cond
+      (and top    left ) [(vec (remove #{[-1 -1]} coordinates)) { 1  4}]
+      (and top    right) [(vec (remove #{[-1  1]} coordinates)) { 2  7}]
+      (and bottom left ) [(vec (remove #{[ 1 -1]} coordinates)) {13  8}]
+      (and bottom right) [(vec (remove #{[ 1  1]} coordinates)) {14 11}]
+      :else              [(vec coordinates) {}])))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
