@@ -417,3 +417,12 @@
        (identify-neighbours 2 9 0 3 0 7) => [[[-1 -1] [-1 0]        [0 -1] [0 0] [0 1] [1 -1] [1 0] [1 1]] { 2  7}]
        (identify-neighbours 2 9 3 0 7 0) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1]        [1 0] [1 1]] {13  8}]
        (identify-neighbours 2 9 3 3 7 7) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0]      ] {14 11}])
+
+(facts "Create local mesh using GPU tessellation information"
+       (let [orientations (vec (repeat 4 (vec (repeat 4 true))))]
+         (nth (create-local-mesh orientations 0 2 5 0 0 1 1) 0) => [0 1 5]
+         (nth (create-local-mesh (assoc-in orientations [0 0] false) 0 2 5 0 0 1 1) 0) => [0 1 4]
+         (nth (create-local-mesh orientations 2 2 5 0 0 0 1) 0) => [0 1 4]
+         (nth (create-local-mesh (assoc-in orientations [3 0] false) 1 2 5 0 0 0 1) 0) => [0 1 4]
+         (count (create-local-mesh orientations 0 2 5 0 0 1 1)) => (* 3 3 2)
+         (count (create-local-mesh orientations 0 2 5 0 0 0 0)) => (- (* 3 3 2) 2)))

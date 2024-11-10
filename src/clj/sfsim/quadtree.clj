@@ -473,5 +473,16 @@
       (and bottom right) [(vec (remove #{[ 1  1]} coordinates)) {14 11}]
       :else              [(vec coordinates) {}])))
 
+(defn create-local-mesh
+  "Create local mesh using GPU tessellation information"
+  [orientations face level tilesize b a tile-y tile-x]
+  (let [[coordinates index-map] (identify-neighbours level tilesize b a tile-y tile-x)]
+    (mapcat
+      (fn [[dy dx]]
+          (let [tile        (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
+                orientation (quad-split-orientation orientations (nth tile 3) (nth tile 4) (nth tile 5))]
+            (indexed-triangles dy dx orientation index-map)))
+      coordinates)))
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
