@@ -1,5 +1,5 @@
 # TODO
-* use hashmaps instead of vectors of values, use ::face0 instead of 0,
+* use hashmaps instead of vectors of values
   test 3x3 array of center quad (3 indices, 3 indices) using orientation input and rotation,
   test 4x4 array of corner (face, b, a, tile-y, tile-x (dx=0, dy=0))
 * point, project-onto-cube, determine-face and cube-j and cube-i, tile-coordinates

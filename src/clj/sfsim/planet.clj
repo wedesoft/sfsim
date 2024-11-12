@@ -30,7 +30,7 @@
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
-  {:malli/schema [:=> [:cat N0 N0 N0 N0 N N] [:vector :double]]}
+  {:malli/schema [:=> [:cat :keyword N0 N0 N0 N N] [:vector :double]]}
   [face level y x height-tilesize color-tilesize]
   (let [[a b c d] (cube-map-corners face level y x)
         h0        (/ 0.5 height-tilesize)
@@ -102,8 +102,7 @@
                               (if (:sfsim.quadtree/down  tile) 4 0)
                               (if (:sfsim.quadtree/right tile) 8 0))
         tile-center   (:sfsim.quadtree/center tile)
-        tile-to-world (transformation-matrix (eye 3) tile-center)
-        ]
+        tile-to-world (transformation-matrix (eye 3) tile-center)]
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
     (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera tile-to-world))
@@ -123,8 +122,8 @@
   (when-not (empty? node)
             (if (is-leaf? node)
               (render-tile program node world-to-camera scene-shadows texture-keys)
-              (doseq [selector [:sfsim.quadtree/face0 :sfsim.quadtree/face1 :sfsim.quadtree/face2 :sfsim.quadtree/face3
-                                :sfsim.quadtree/face4 :sfsim.quadtree/face5
+              (doseq [selector [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2 :sfsim.cubemap/face3
+                                :sfsim.cubemap/face4 :sfsim.cubemap/face5
                                 :sfsim.quadtree/quad0 :sfsim.quadtree/quad1 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3]]
                      (render-tree program (selector node) world-to-camera scene-shadows texture-keys)))))
 

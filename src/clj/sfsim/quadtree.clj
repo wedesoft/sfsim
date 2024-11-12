@@ -7,7 +7,7 @@
             [sfsim.matrix :refer (fvec3)]
             [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
             [sfsim.image :refer (slurp-image slurp-normals get-vector3)]
-            [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in N N0)]))
+            [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in face->index N N0)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -24,7 +24,7 @@
 
 (defn- quad-size-for-camera-position
   "Determine screen size of a quad given the camera position"
-  {:malli/schema [:=> [:cat N :double N :double fvec3 N0 N0 N0 N0]]}
+  {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 N0 N0]]}
   [tilesize radius width angle position face level y x]
   (let [center   (tile-center face level y x radius)
         distance (mag (sub position center))]
@@ -32,12 +32,12 @@
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
-  {:malli/schema [:=> [:cat N :double N :double N N fvec3 N0 N0 N0 N0] :boolean]}
+  {:malli/schema [:=> [:cat N :double N :double N N fvec3 :keyword N0 N0 N0] :boolean]}
   [tilesize radius width angle max-size max-level position face level y x]
   (and (< level max-level)
        (> (quad-size-for-camera-position tilesize radius width angle position face level y x) max-size)))
 
-(def tile (m/schema [:map [::face N0]
+(def tile (m/schema [:map [::face :keyword]
                           [::level N0]
                           [::y N0]
                           [::x N0]
@@ -50,7 +50,7 @@
 
 (defn load-tile-data
   "Load data associated with a cube map tile"
-  {:malli/schema [:=> [:cat N0 N0 N0 N0 :double] tile]}
+  {:malli/schema [:=> [:cat :keyword N0 N0 N0 :double] tile]}
   [face level y x radius]
   {::face                 face
    ::level                level
@@ -63,11 +63,11 @@
    :sfsim.planet/normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
    :sfsim.planet/water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
 
-(def tile-info (m/schema [:map [::face N0] [::level N0] [::y N0] [::x N0]]))
+(def tile-info (m/schema [:map [::face :keyword] [::level N0] [::y N0] [::x N0]]))
 
 (defn sub-tiles-info
   "Get metadata for sub tiles of cube map tile"
-  {:malli/schema [:=> [:cat N0 N0 N0 N0] [:vector tile-info]]}
+  {:malli/schema [:=> [:cat :keyword N0 N0 N0] [:vector tile-info]]}
   [face level y x]
   [{::face face ::level (inc level) ::y (* 2 y)       ::x (* 2 x)}
    {::face face ::level (inc level) ::y (* 2 y)       ::x (inc (* 2 x))}
@@ -86,12 +86,12 @@
   [node]
   (not
     (or (nil? node)
-        (contains? node ::face0)
-        (contains? node ::face1)
-        (contains? node ::face2)
-        (contains? node ::face3)
-        (contains? node ::face4)
-        (contains? node ::face5)
+        (contains? node :sfsim.cubemap/face0)
+        (contains? node :sfsim.cubemap/face1)
+        (contains? node :sfsim.cubemap/face2)
+        (contains? node :sfsim.cubemap/face3)
+        (contains? node :sfsim.cubemap/face4)
+        (contains? node :sfsim.cubemap/face5)
         (contains? node ::quad0)
         (contains? node ::quad1)
         (contains? node ::quad2)
@@ -112,7 +112,9 @@
   "Determine tiles to remove from the quad tree"
   {:malli/schema [:=> [:cat [:maybe :map] fn? [:? [:vector :keyword]]] [:sequential [:vector :keyword]]]}
   ([tree increase-level-fun?]
-   (mapcat #(tiles-to-drop (% tree) increase-level-fun? [%]) [::face0 ::face1 ::face2 ::face3 ::face4 ::face5]))
+   (mapcat #(tiles-to-drop (% tree) increase-level-fun? [%])
+           [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+            :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5]))
   ([tree increase-level-fun? path]
    (cond
      (nil? tree) []
@@ -124,7 +126,8 @@
   {:malli/schema [:=> [:cat [:maybe :map] [:? [:vector :keyword]]] [:sequential [:vector :keyword]]]}
   ([tree] (tiles-path-list tree []))
   ([tree path]
-   (let [nodes       (filter (partial contains? tree) [::face0 ::face1 ::face2 ::face3 ::face4 ::face5
+   (let [nodes       (filter (partial contains? tree) [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+                                                       :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
                                                        ::quad0 ::quad1 ::quad2 ::quad3])
          child-paths (mapcat #(tiles-path-list (get tree %) (conj path %)) nodes)]
      (concat child-paths (map #(conj path %) nodes)))))
@@ -134,9 +137,11 @@
   {:malli/schema [:=> [:cat [:maybe :map] fn? [:? [:vector :keyword]]] [:sequential [:vector :keyword]]]}
   ([tree increase-level-fun?]
    (if (empty? tree)
-     [[::face0] [::face1] [::face2] [::face3] [::face4] [::face5]]
+     [[:sfsim.cubemap/face0] [:sfsim.cubemap/face1] [:sfsim.cubemap/face2]
+      [:sfsim.cubemap/face3] [:sfsim.cubemap/face4] [:sfsim.cubemap/face5]]
      (mapcat (fn load-tiles-for-face [k] (tiles-to-load (k tree) increase-level-fun? [k]))
-             [::face0 ::face1 ::face2 ::face3 ::face4 ::face5])))
+             [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+              :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5])))
   ([tree increase-level-fun? path]
    (if (nil? tree) []
      (let [increase? (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree))]
@@ -146,8 +151,6 @@
                                                  [::quad0 ::quad1 ::quad2 ::quad3])
          :else                           [])))))
 
-(def face->index {::face0 0 ::face1 1 ::face2 2 ::face3 3 ::face4 4 ::face5 5})
-
 (defn tile-meta-data
   "Convert tile path to face, level, y and x"
   {:malli/schema [:=> [:cat [:vector :keyword]] tile-info]}
@@ -156,7 +159,7 @@
         dy              {::quad0 0 ::quad1 0 ::quad2 1 ::quad3 1}
         dx              {::quad0 0 ::quad1 1 ::quad2 0 ::quad3 1}
         combine-offsets #(bit-or (bit-shift-left %1 1) %2)]
-    {::face  (face->index top)
+    {::face  top
      ::level (count tree)
      ::y     (reduce combine-offsets 0 (map dy tree))
      ::x     (reduce combine-offsets 0 (map dx tree))}))
@@ -208,24 +211,35 @@
                c3           {::quad0 ::quad1, ::quad1 ::quad3, ::quad3 ::quad2, ::quad2 ::quad0}
                [replacement rotation]
                (case (first path)
-                 ::face0 (case (long dy) -1 [::face3 c2],
-                                          0 (case (long dx) -1 [::face4 c1], 0 [::face0 c0], 1 [::face2 c3]),
-                                          1 [::face1 c0])
-                 ::face1 (case (long dy) -1 [::face0 c0],
-                                          0 (case (long dx) -1 [::face4 c0], 0 [::face1 c0], 1 [::face2 c0]),
-                                          1 [::face5 c0])
-                 ::face2 (case (long dy) -1 [::face0 c1],
-                                          0 (case (long dx) -1 [::face1 c0], 0 [::face2 c0], 1 [::face3 c0]),
-                                          1 [::face5 c3])
-                 ::face3 (case (long dy) -1 [::face0 c2],
-                                          0 (case (long dx) -1 [::face2 c0], 0 [::face3 c0], 1 [::face4 c0]),
-                                          1 [::face5 c2])
-                 ::face4 (case (long dy) -1 [::face0 c3],
-                                          0 (case (long dx) -1 [::face3 c0], 0 [::face4 c0], 1 [::face1 c0]),
-                                          1 [::face5 c1])
-                 ::face5 (case (long dy) -1 [::face1 c0],
-                                          0 (case (long dx) -1 [::face4 c3], 0 [::face5 c0], 1 [::face2 c1]),
-                                          1 [::face3 c2]))]
+                 :sfsim.cubemap/face0
+                 (case (long dy)
+                   -1 [:sfsim.cubemap/face3 c2],
+                   0 (case (long dx) -1 [:sfsim.cubemap/face4 c1], 0 [:sfsim.cubemap/face0 c0], 1 [:sfsim.cubemap/face2 c3]),
+                   1 [:sfsim.cubemap/face1 c0])
+                 :sfsim.cubemap/face1
+                 (case (long dy)
+                   -1 [:sfsim.cubemap/face0 c0],
+                   0 (case (long dx) -1 [:sfsim.cubemap/face4 c0], 0 [:sfsim.cubemap/face1 c0], 1 [:sfsim.cubemap/face2 c0]),
+                   1 [:sfsim.cubemap/face5 c0])
+                 :sfsim.cubemap/face2
+                 (case (long dy)
+                   -1 [:sfsim.cubemap/face0 c1],
+                   0 (case (long dx) -1 [:sfsim.cubemap/face1 c0], 0 [:sfsim.cubemap/face2 c0], 1 [:sfsim.cubemap/face3 c0]),
+                   1 [:sfsim.cubemap/face5 c3])
+                 :sfsim.cubemap/face3
+                 (case (long dy)
+                   -1 [:sfsim.cubemap/face0 c2],
+                   0 (case (long dx) -1 [:sfsim.cubemap/face2 c0], 0 [:sfsim.cubemap/face3 c0], 1 [:sfsim.cubemap/face4 c0]),
+                   1 [:sfsim.cubemap/face5 c2])
+                 :sfsim.cubemap/face4
+                 (case (long dy)
+                   -1 [:sfsim.cubemap/face0 c3],
+                   0 (case (long dx) -1 [:sfsim.cubemap/face3 c0], 0 [:sfsim.cubemap/face4 c0], 1 [:sfsim.cubemap/face1 c0]),
+                   1 [:sfsim.cubemap/face5 c1])
+                 :sfsim.cubemap/face5
+                 (case (long dy) -1 [:sfsim.cubemap/face1 c0],
+                   0 (case (long dx) -1 [:sfsim.cubemap/face4 c3], 0 [:sfsim.cubemap/face5 c0], 1 [:sfsim.cubemap/face2 c1]),
+                   1 [:sfsim.cubemap/face3 c2]))]
            (cons replacement (map rotation tail)))
          (let [[replacement propagate]
                (case tile
@@ -263,7 +277,9 @@
       (if (is-leaf? v)
         [(list k)]
         (map #(cons k %) (leaf-paths v))))
-    (select-keys tree #{::face0 ::face1 ::face2 ::face3 ::face4 ::face5 ::quad0 ::quad1 ::quad2 ::quad3})))
+    (select-keys tree #{:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+                        :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
+                        ::quad0 ::quad1 ::quad2 ::quad3})))
 
 (defn- check-neighbours-for-tile
   "Update neighbourhood information for a single tile"
@@ -362,8 +378,8 @@
 
 (defn build-neighbour
   "Create vector with coordinates in neighbouring face"
-  {:malli/schema [:=> [:cat :int :int :int :int :int :int rational? rational? :int :int :int]
-                      [:tuple :int :int :int rational? rational? :int]]}
+  {:malli/schema [:=> [:cat :keyword :int :int :int :int :int rational? rational? :int :int :int]
+                      [:tuple :keyword :int :int rational? rational? :int]]}
   [face drotation level tilesize b a tile-y tile-x dy dx rotation]
   (let [gridsize  (bit-shift-left 1 level)
         b'        (rotate-b drotation gridsize b a)
@@ -377,47 +393,47 @@
 
 (defn neighbour-tile
   "Get neighbouring tile face and coordinates"
-  {:malli/schema [:=> [:cat :int :int :int :int :int rational? rational? :int :int :int]
-                      [:tuple :int :int :int rational? rational? :int]]}
+  {:malli/schema [:=> [:cat :keyword :int :int :int :int rational? rational? :int :int :int]
+                      [:tuple :keyword :int :int rational? rational? :int]]}
   [face level tilesize b a tile-y tile-x dy dx rotation]
   (let [gridsize (bit-shift-left 1 level)]
     (cond
       (< b 0)
       (let [b (+ b gridsize)]
-        (case (long face)
-          0 (build-neighbour 3 180 level tilesize b a tile-y tile-x dy dx rotation)
-          1 (build-neighbour 0   0 level tilesize b a tile-y tile-x dy dx rotation)
-          2 (build-neighbour 0  90 level tilesize b a tile-y tile-x dy dx rotation)
-          3 (build-neighbour 0 180 level tilesize b a tile-y tile-x dy dx rotation)
-          4 (build-neighbour 0 270 level tilesize b a tile-y tile-x dy dx rotation)
-          5 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)))
+        (case face
+          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face3 180 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face0   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face0  90 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face0 180 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face0 270 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face1   0 level tilesize b a tile-y tile-x dy dx rotation)))
       (>= b gridsize)
       (let [b (- b gridsize)]
-        (case (long face)
-          0 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)
-          1 (build-neighbour 5   0 level tilesize b a tile-y tile-x dy dx rotation)
-          2 (build-neighbour 5 270 level tilesize b a tile-y tile-x dy dx rotation)
-          3 (build-neighbour 5 180 level tilesize b a tile-y tile-x dy dx rotation)
-          4 (build-neighbour 5  90 level tilesize b a tile-y tile-x dy dx rotation)
-          5 (build-neighbour 3 180 level tilesize b a tile-y tile-x dy dx rotation)))
+        (case face
+          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face1   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face5   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face5 270 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face5 180 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face5  90 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face3 180 level tilesize b a tile-y tile-x dy dx rotation)))
       (< a 0)
       (let [a (+ a gridsize)]
-        (case (long face)
-          0 (build-neighbour 4  90 level tilesize b a tile-y tile-x dy dx rotation)
-          1 (build-neighbour 4   0 level tilesize b a tile-y tile-x dy dx rotation)
-          2 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)
-          3 (build-neighbour 2   0 level tilesize b a tile-y tile-x dy dx rotation)
-          4 (build-neighbour 3   0 level tilesize b a tile-y tile-x dy dx rotation)
-          5 (build-neighbour 4 270 level tilesize b a tile-y tile-x dy dx rotation)))
+        (case face
+          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face4  90 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face4   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face1   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face2   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face3   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face4 270 level tilesize b a tile-y tile-x dy dx rotation)))
       (>= a gridsize)
       (let [a (- a gridsize)]
-        (case (long face)
-          0 (build-neighbour 2 270 level tilesize b a tile-y tile-x dy dx rotation)
-          1 (build-neighbour 2   0 level tilesize b a tile-y tile-x dy dx rotation)
-          2 (build-neighbour 3   0 level tilesize b a tile-y tile-x dy dx rotation)
-          3 (build-neighbour 4   0 level tilesize b a tile-y tile-x dy dx rotation)
-          4 (build-neighbour 1   0 level tilesize b a tile-y tile-x dy dx rotation)
-          5 (build-neighbour 2  90 level tilesize b a tile-y tile-x dy dx rotation)))
+        (case face
+          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face2 270 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face2   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face3   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face4   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face1   0 level tilesize b a tile-y tile-x dy dx rotation)
+          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face2  90 level tilesize b a tile-y tile-x dy dx rotation)))
       :else
       (let [tile-y (+ tile-y dy)]
         (cond
@@ -475,14 +491,16 @@
 
 (defn create-local-mesh
   "Create local mesh using GPU tessellation information"
+  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] :keyword :int :int :int :int :int :int] [:vector [:vector :int]]]}
   [orientations face level tilesize b a tile-y tile-x]
   (let [[coordinates index-map] (identify-neighbours level tilesize b a tile-y tile-x)]
-    (mapcat
-      (fn [[dy dx]]
-          (let [tile        (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
-                orientation (quad-split-orientation orientations (nth tile 3) (nth tile 4) (nth tile 5))]
-            (indexed-triangles dy dx orientation index-map)))
-      coordinates)))
+    (vec
+      (mapcat
+        (fn [[dy dx]]
+            (let [tile        (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
+                  orientation (quad-split-orientation orientations (nth tile 3) (nth tile 4) (nth tile 5))]
+              (indexed-triangles dy dx orientation index-map)))
+        coordinates))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
