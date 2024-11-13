@@ -54,10 +54,10 @@
   (tile-dir "world" 1 2) => "world/1/2")
 
 (fact "Determine file path of cube tile"
-  (cube-path "globe" 5 2 3 1 ".png") => "globe/5/2/1/3.png")
+  (cube-path "globe" :sfsim.cubemap/face5 2 3 1 ".png") => "globe/5/2/1/3.png")
 
 (fact "Determine directory name of cube tile"
-  (cube-dir "globe" 5 2 1) => "globe/5/2/1")
+  (cube-dir "globe" :sfsim.cubemap/face5 2 1) => "globe/5/2/1")
 
 (tabular "Sinc function"
   (fact (sinc ?x) => (roughly ?result 1e-6))

@@ -42,10 +42,10 @@
              b (vec3 -0.5  -0.5  -1.0)
              c (vec3 -0.75 -0.25 -1.0)
              d (vec3 -0.5  -0.25 -1.0)]
-         (with-redefs [cubemap/cube-map-corners (fn [^long face ^long level ^long y ^long x]
-                                                    (fact [face level y x] => [5 3 2 1])
+         (with-redefs [cubemap/cube-map-corners (fn [face level y x]
+                                                    (fact [face level y x] => [:sfsim.cubemap/face5 3 2 1])
                                                     [a b c d])]
-           (let [arr (make-cube-map-tile-vertices 5 3 2 1 10 100)]
+           (let [arr (make-cube-map-tile-vertices :sfsim.cubemap/face5 3 2 1 10 100)]
              (subvec arr  0  3) => (vec a)
              (subvec arr  7 10) => (vec b)
              (subvec arr 14 17) => (vec c)
@@ -535,7 +535,7 @@ void main()
                                                             :sfsim.render/geometry [(geometry-planet 0)]
                                                             :sfsim.render/fragment [fragment-white-tree])
                                    indices    [0 2 3 1]
-                                   face       0
+                                   face       :sfsim.cubemap/face0
                                    vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
                                    data       (flatten
                                                 (for [y (range 1.0 -1.25 -0.25) x (range -1.0 1.25 0.25)]
@@ -583,14 +583,14 @@ void main()
     ?program ?transform ?node                                ?result
     1234 :transform {}                                       []
     1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.quadtree/face3 {:sfsim.quadtree/quad2 {vao 42}}}
-                                                             [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
+    1234 :transform {:sfsim.cubemap/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.cubemap/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.cubemap/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.cubemap/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.cubemap/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.cubemap/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+    1234 :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
+                                                            [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
 
 (facts "Maximum shadow depth for cloud shadows"
        (render-depth 4.0 1.0 0.0) => 3.0

@@ -1,4 +1,8 @@
 # TODO
+* use hashmaps instead of vectors of values
+  test 3x3 array of center quad (3 indices, 3 indices) using orientation input and rotation,
+  test 4x4 array of corner (face, b, a, tile-y, tile-x (dx=0, dy=0))
+* point, project-onto-cube, determine-face and cube-j and cube-i, tile-coordinates
 * p -> face, i, j -> face, b, a, tile-y, tile-x -> [face, b, a, tile-y, tile-x] * {8,9}
   -> [face, i, j, tile-y, tile-x, b, a, {0, 1}, {0, 1}] * 3 * 2 * {8, 9}
   -> canonical form -> set of canonical forms and indexed triangles -> coordinates and indexed triangles

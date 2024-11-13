@@ -13,8 +13,15 @@
 (mi/collect! {:ns ['sfsim.cubemap]})
 (mi/instrument! {:report (pretty/thrower)})
 
+(def face0 :sfsim.cubemap/face0)
+(def face1 :sfsim.cubemap/face1)
+(def face2 :sfsim.cubemap/face2)
+(def face3 :sfsim.cubemap/face3)
+(def face4 :sfsim.cubemap/face4)
+(def face5 :sfsim.cubemap/face5)
+
 (tabular "First face of cube"
-  (fact (?c 0 ?j ?i) => ?result)
+  (fact (?c face0 ?j ?i) => ?result)
   ?c         ?j  ?i  ?result
   cube-map-z 0.0 0.0  1.0
   cube-map-x 0.0 0.0 -1.0
@@ -23,7 +30,7 @@
   cube-map-y 1.0 0.0 -1.0)
 
 (tabular "Second face of cube"
-  (fact (?c 1 ?j ?i) => ?result)
+  (fact (?c face1 ?j ?i) => ?result)
   ?c         ?j  ?i  ?result
   cube-map-y 0.0 0.0 -1.0
   cube-map-x 0.0 0.0 -1.0
@@ -32,7 +39,7 @@
   cube-map-z 1.0 0.0 -1.0)
 
 (tabular "Third face of cube"
-  (fact (?c 2 ?j ?i) => ?result)
+  (fact (?c face2 ?j ?i) => ?result)
   ?c         ?j  ?i  ?result
   cube-map-x 0.0 0.0  1.0
   cube-map-z 0.0 0.0  1.0
@@ -41,7 +48,7 @@
   cube-map-y 0.0 1.0  1.0)
 
 (tabular "Fourth face of cube"
-  (fact (?c 3 ?j ?i) => ?result)
+  (fact (?c face3 ?j ?i) => ?result)
   ?c         ?j  ?i  ?result
   cube-map-y 0.0 0.0  1.0
   cube-map-x 0.0 0.0  1.0
@@ -50,7 +57,7 @@
   cube-map-z 1.0 0.0 -1.0)
 
 (tabular "Fifth face of cube"
-  (fact (?c 4 ?j ?i) => ?result)
+  (fact (?c face4 ?j ?i) => ?result)
   ?c         ?j ?i   ?result
   cube-map-x 0.0 0.0 -1.0
   cube-map-z 0.0 0.0  1.0
@@ -59,7 +66,7 @@
   cube-map-y 0.0 1.0 -1.0)
 
 (tabular "Sixth face of cube"
-  (fact (?c 5 ?j ?i) => ?result)
+  (fact (?c face5 ?j ?i) => ?result)
   ?c         ?j  ?i  ?result
   cube-map-z 0.0 0.0 -1.0
   cube-map-x 0.0 0.0 -1.0
@@ -68,7 +75,7 @@
   cube-map-y 1.0 0.0  1.0)
 
 (fact "Get vector to cube face"
-  (cube-map 5 0.0 0.5) => (vec3 0.0 -1.0 -1.0))
+  (cube-map face5 0.0 0.5) => (vec3 0.0 -1.0 -1.0))
 
 (tabular "Round trip for conversion to face coordinates and back to coordinates on cube"
          (fact (let [point  (vec3 ?x ?y ?z)
@@ -91,15 +98,15 @@
 
 (tabular "Get corners of cube map tiles"
   (fact (nth (cube-map-corners ?face ?level ?b ?a) ?idx) => (vec3 ?x ?y ?z))
-  ?face ?level ?b ?a ?idx ?x ?y ?z
-  0 0 0 0 0 -1    1    1
-  0 0 0 0 1  1    1    1
-  0 0 0 0 2 -1   -1    1
-  0 0 0 0 3  1   -1    1
-  5 2 3 1 0 -0.5  0.5 -1.0
-  5 2 3 1 1  0.0  0.5 -1.0
-  5 2 3 1 2 -0.5  1.0 -1.0
-  5 2 3 1 3  0.0  1.0 -1.0)
+  ?face ?level ?b ?a ?idx ?x   ?y   ?z
+  face0 0      0  0  0   -1    1    1
+  face0 0      0  0  1    1    1    1
+  face0 0      0  0  2   -1   -1    1
+  face0 0      0  0  3    1   -1    1
+  face5 2      3  1  0   -0.5  0.5 -1.0
+  face5 2      3  1  1    0.0  0.5 -1.0
+  face5 2      3  1  2   -0.5  1.0 -1.0
+  face5 2      3  1  3    0.0  1.0 -1.0)
 
 (facts "Longitude of 3D point"
   (longitude (vec3 1 0 0)) => (roughly 0        1e-6)
@@ -228,7 +235,7 @@
   (with-redefs [cubemap/project-onto-sphere (fn [^Vec3 p ^double radius]
                                                  (fact [p radius] => [(vec3 1.0 -0.625 -0.875) 6378000.0])
                                                  (vec3 1000 -625 -875))]
-    (tile-center 2 3 7 1 6378000.0) => (vec3 1000 -625 -875)))
+    (tile-center face2 3 7 1 6378000.0) => (vec3 1000 -625 -875)))
 
 (fact "Getting world map day color for given longitude and latitude"
       (color-geodetic-day 5 675 135.0 45.0) => (vec3 3 5 7)
