@@ -390,13 +390,13 @@
          face0 0  0  -8   8   0.5  1.0  0.5)
 
 (facts "Get diagonal orientations of quad"
-       (quad-split-orientation [[true]]         1/2 1/2   0) => true
-       (quad-split-orientation [[false]]        1/2 1/2   0) => false
-       (quad-split-orientation [[false true]]   1/2 3/2   0) => true
-       (quad-split-orientation [[false] [true]] 3/2 1/2   0) => true
-       (quad-split-orientation [[true]]         1/2 1/2  90) => false
-       (quad-split-orientation [[false]]        1/2 1/2  90) => true
-       (quad-split-orientation [[true]]         1/2 1/2 180) => true)
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => true
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => false
+       (quad-split-orientation [[false true]]   #:sfsim.quadtree{:tile-y 1/2 :tile-x 3/2 :rotation   0}) => true
+       (quad-split-orientation [[false] [true]] #:sfsim.quadtree{:tile-y 3/2 :tile-x 1/2 :rotation   0}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => false
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation 180}) => true)
 
 (facts "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"
        (first  (indexed-triangles -1 -1  true {}    )) => [ 0  1 5]

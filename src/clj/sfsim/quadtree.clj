@@ -489,8 +489,9 @@
 
 (defn quad-split-orientation
   "Perform lookup and rotation for split orientation of quad"
-  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] rational? rational? :int] :boolean]}
-  [orientations tile-y tile-x rotation]
+  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] [:map [::tile-y rational?] [::tile-x rational?] [::rotation :int]]]
+                      :boolean]}
+  [orientations {::keys [tile-y tile-x rotation]}]
   (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
     (= original-orientation (= (mod rotation 180) 0))))
 
@@ -502,8 +503,8 @@
     (vec
       (mapcat
         (fn [[dy dx]]
-            (let [tile        (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
-                  orientation (quad-split-orientation orientations (::tile-y tile) (::tile-x tile) (::rotation tile))]
+            (let [neighbour   (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
+                  orientation (quad-split-orientation orientations neighbour)]
               (indexed-triangles dy dx orientation index-map)))
         coordinates))))
 
