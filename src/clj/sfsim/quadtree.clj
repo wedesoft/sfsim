@@ -376,10 +376,16 @@
 
 (declare neighbour-tile)
 
+(def neighbour (m/schema [:map [::face :keyword]
+                               [::b :int]
+                               [::a :int]
+                               [::tile-y rational?]
+                               [::tile-x rational?]
+                               [::rotation :int]]))
+
 (defn build-neighbour
   "Create vector with coordinates in neighbouring face"
-  {:malli/schema [:=> [:cat :keyword :int :int :int :int :int rational? rational? :int :int :int]
-                      [:tuple :keyword :int :int rational? rational? :int]]}
+  {:malli/schema [:=> [:cat :keyword :int :int :int :int :int rational? rational? :int :int :int] neighbour]}
   [face drotation level tilesize b a tile-y tile-x dy dx rotation]
   (let [gridsize  (bit-shift-left 1 level)
         b'        (rotate-b drotation gridsize b a)
@@ -393,8 +399,7 @@
 
 (defn neighbour-tile
   "Get neighbouring tile face and coordinates"
-  {:malli/schema [:=> [:cat :keyword :int :int :int :int rational? rational? :int :int :int]
-                      [:tuple :keyword :int :int rational? rational? :int]]}
+  {:malli/schema [:=> [:cat :keyword :int :int :int :int rational? rational? :int :int :int] neighbour]}
   [face level tilesize b a tile-y tile-x dy dx rotation]
   (let [gridsize (bit-shift-left 1 level)]
     (cond
@@ -443,14 +448,7 @@
           (let [tile-x (+ tile-x dx)]
             (cond (>= tile-x (dec tilesize)) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) dy 0 rotation)
                   (< tile-x 0)               (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0 rotation)
-                  :else                      [face b a tile-y tile-x rotation])))))))
-
-(defn quad-split-orientation
-  "Perform lookup and rotation for split orientation of quad"
-  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] rational? rational? :int] :boolean]}
-  [orientations tile-y tile-x rotation]
-  (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
-    (= original-orientation (= (mod rotation 180) 0))))
+                  :else                      {::face face ::b b ::a a ::tile-y tile-y ::tile-x tile-x ::rotation rotation})))))))
 
 (defn translate-indices
   "Apply lookup table with index replacements"
@@ -489,6 +487,13 @@
       (and bottom right) [(vec (remove #{[ 1  1]} coordinates)) {14 11}]
       :else              [(vec coordinates) {}])))
 
+(defn quad-split-orientation
+  "Perform lookup and rotation for split orientation of quad"
+  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] rational? rational? :int] :boolean]}
+  [orientations tile-y tile-x rotation]
+  (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
+    (= original-orientation (= (mod rotation 180) 0))))
+
 (defn create-local-mesh
   "Create local mesh using GPU tessellation information"
   {:malli/schema [:=> [:cat [:vector [:vector :boolean]] :keyword :int :int :int :int :int :int] [:vector [:vector :int]]]}
@@ -498,7 +503,7 @@
       (mapcat
         (fn [[dy dx]]
             (let [tile        (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
-                  orientation (quad-split-orientation orientations (nth tile 3) (nth tile 4) (nth tile 5))]
+                  orientation (quad-split-orientation orientations (::tile-y tile) (::tile-x tile) (::rotation tile))]
               (indexed-triangles dy dx orientation index-map)))
         coordinates))))
 

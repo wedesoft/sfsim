@@ -317,7 +317,9 @@
         => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6)))
 
 (tabular "Get neighbouring tile face and coordinates"
-         (fact (neighbour-tile ?face 2 9 ?b ?a ?tile-y ?tile-x ?dy ?dx 0) => ?neighbour)
+         (let [extract (juxt :sfsim.quadtree/face :sfsim.quadtree/b :sfsim.quadtree/a
+                             :sfsim.quadtree/tile-y :sfsim.quadtree/tile-x :sfsim.quadtree/rotation)]
+           (fact (extract (neighbour-tile ?face 2 9 ?b ?a ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
          ?face ?b ?a ?tile-y ?tile-x ?dy ?dx ?neighbour
          face0 0  0     0       0      0   0  [face0 0 0   0   0   0]
          face0 1  2     5       7      0   0  [face0 1 2   5   7   0]
@@ -334,10 +336,10 @@
          face0 3  0  15/2     1/2      1   0  [face1 0 0 1/2 1/2   0])
 
 (tabular "Get neighbouring tile face and coordinates"
-         (let [[face b a tile-y tile-x _] (neighbour-tile ?face 1 9 ?b ?a 4 4 ?dy ?dx 0)
-               j                          (/ (+ (/ tile-y 8) b) 2)
-               i                          (/ (+ (/ tile-x 8) a) 2)
-               p                          (cube-map face j i)]
+         (let [tile (neighbour-tile ?face 1 9 ?b ?a 4 4 ?dy ?dx 0)
+               j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8) (:sfsim.quadtree/b tile)) 2)
+               i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8) (:sfsim.quadtree/a tile)) 2)
+               p    (cube-map (:sfsim.quadtree/face tile) j i)]
            p => (vec3 ?x ?y ?z))
          ?face ?b ?a ?dy ?dx  ?x   ?y   ?z
          ; direct neighbours of face 0
