@@ -417,11 +417,12 @@
        (second (indexed-triangles  1  0 false {13 8})) => [10 14 8])
 
 (facts "Determine relative neighbour coordinates and index map for cube corners with special cases for corners of face"
-       (identify-neighbours 2 9 0 0 1 1) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0] [1 1]] {}     ]
-       (identify-neighbours 2 9 0 0 0 0) => [[        [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0] [1 1]] { 1  4}]
-       (identify-neighbours 2 9 0 3 0 7) => [[[-1 -1] [-1 0]        [0 -1] [0 0] [0 1] [1 -1] [1 0] [1 1]] { 2  7}]
-       (identify-neighbours 2 9 3 0 7 0) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1]        [1 0] [1 1]] {13  8}]
-       (identify-neighbours 2 9 3 3 7 7) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0]      ] {14 11}])
+       (let [extract (juxt :sfsim.quadtree/coordinates :sfsim.quadtree/index-map)]
+         (extract (identify-neighbours 2 9 0 0 1 1)) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0] [1 1]] {}     ]
+         (extract (identify-neighbours 2 9 0 0 0 0)) => [[        [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0] [1 1]] { 1  4}]
+         (extract (identify-neighbours 2 9 0 3 0 7)) => [[[-1 -1] [-1 0]        [0 -1] [0 0] [0 1] [1 -1] [1 0] [1 1]] { 2  7}]
+         (extract (identify-neighbours 2 9 3 0 7 0)) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1]        [1 0] [1 1]] {13  8}]
+         (extract (identify-neighbours 2 9 3 3 7 7)) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0]      ] {14 11}]))
 
 (facts "Create local mesh using GPU tessellation information"
        (let [orientations (vec (repeat 4 (vec (repeat 4 true))))]

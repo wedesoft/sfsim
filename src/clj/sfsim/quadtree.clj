@@ -472,7 +472,8 @@
 
 (defn identify-neighbours
   "Determine relative neighbour coordinates and index map for cube corners with special cases for corners of face"
-  {:malli/schema [:=> [:cat :int :int :int :int :int :int] [:tuple [:vector [:vector :int]] [:map-of :int :int]]]}
+  {:malli/schema [:=> [:cat :int :int :int :int :int :int]
+                      [:map [::coordinates [:vector [:vector :int]]] [::index-map [:map-of :int :int]]]]}
   [level tilesize b a tile-y tile-x]
   (let [gridsize    (bit-shift-left 1 level)
         top         (and (<= b 0) (<= tile-y 0))
@@ -481,11 +482,11 @@
         right       (and (>= a (dec gridsize)) (>= tile-x (- tilesize 2)))
         coordinates (for [dy [-1 0 1] dx [-1 0 1]] [dy dx])]
     (cond
-      (and top    left ) [(vec (remove #{[-1 -1]} coordinates)) { 1  4}]
-      (and top    right) [(vec (remove #{[-1  1]} coordinates)) { 2  7}]
-      (and bottom left ) [(vec (remove #{[ 1 -1]} coordinates)) {13  8}]
-      (and bottom right) [(vec (remove #{[ 1  1]} coordinates)) {14 11}]
-      :else              [(vec coordinates) {}])))
+      (and top    left ) {::coordinates (vec (remove #{[-1 -1]} coordinates)) ::index-map { 1  4}}
+      (and top    right) {::coordinates (vec (remove #{[-1  1]} coordinates)) ::index-map { 2  7}}
+      (and bottom left ) {::coordinates (vec (remove #{[ 1 -1]} coordinates)) ::index-map {13  8}}
+      (and bottom right) {::coordinates (vec (remove #{[ 1  1]} coordinates)) ::index-map {14 11}}
+      :else              {::coordinates (vec coordinates)                     ::index-map {}     })))
 
 (defn quad-split-orientation
   "Perform lookup and rotation for split orientation of quad"
@@ -499,7 +500,7 @@
   "Create local mesh using GPU tessellation information"
   {:malli/schema [:=> [:cat [:vector [:vector :boolean]] :keyword :int :int :int :int :int :int] [:vector [:vector :int]]]}
   [orientations face level tilesize b a tile-y tile-x]
-  (let [[coordinates index-map] (identify-neighbours level tilesize b a tile-y tile-x)]
+  (let [{::keys [coordinates index-map]} (identify-neighbours level tilesize b a tile-y tile-x)]
     (vec
       (mapcat
         (fn [[dy dx]]
