@@ -339,6 +339,19 @@
     (if (>= x y) [[0 0] [0 1] [1 1]] [[0 0] [1 1] [1 0]])
     (if (<= (+ x y) 1) [[0 0] [0 1] [1 0]] [[1 0] [0 1] [1 1]])))
 
+(defn load-surface-tile
+  "Load tile with specified face and tile position"
+  [level tilesize face b a]
+  (let [path (cube-path "data/globe" face level b a ".surf")]
+    #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats path)}))
+
+(defn tile-center-to-surface
+  "Get vector from tile center to surface mesh point"
+  {:malli/schema [:=> [:cat :int :int :keyword :int :int :int :int] fvec3]}
+  [level tilesize face b a tile-y tile-x]
+  (let [terrain (load-surface-tile level tilesize face b a)]
+    (get-vector3 terrain tile-y tile-x)))
+
 (defn distance-to-surface
   "Get distance of surface to planet center for given radial vector"
   {:malli/schema [:=> [:cat fvec3 :int :int :double [:vector [:vector :boolean]]] :double]}
@@ -348,8 +361,7 @@
         j                         (cube-j face p)
         i                         (cube-i face p)
         [b a tile-y tile-x dy dx] (tile-coordinates j i level tilesize)
-        path                      (cube-path "data/globe" face level b a ".surf")
-        terrain                   #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats path)}
+        terrain                   (load-surface-tile level tilesize face b a)
         center                    (tile-center face level b a radius)
         orientation               (nth (nth split-orientations tile-y) tile-x)
         triangle                  (mapv (fn [[y x]] (get-vector3 terrain (+ y tile-y) (+ x tile-x)))
@@ -504,7 +516,7 @@
     (vec
       (mapcat
         (fn [[dy dx]]
-            (let [neighbour   (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
+            (let [neighbour   (neighbour-tile face level tilesize b a (+ tile-y 1/2) (+ tile-x 1/2) dy dx 0)
                   orientation (quad-split-orientation orientations neighbour)]
               (indexed-triangles dy dx orientation index-map)))
         coordinates))))

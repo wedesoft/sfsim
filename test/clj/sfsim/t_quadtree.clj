@@ -431,4 +431,5 @@
          (nth (create-local-mesh orientations face2 2 5 0 0 0 1) 0) => [0 1 4]
          (nth (create-local-mesh (assoc-in orientations [3 0] false) face1 2 5 0 0 0 1) 0) => [0 1 4]
          (count (create-local-mesh orientations face0 2 5 0 0 1 1)) => (* 3 3 2)
-         (count (create-local-mesh orientations face0 2 5 0 0 0 0)) => (- (* 3 3 2) 2)))
+         (count (create-local-mesh orientations face0 2 5 0 0 0 0)) => (- (* 3 3 2) 2)
+         (count (create-local-mesh orientations face0 2 5 3 3 3 3)) => (- (* 3 3 2) 2)))
