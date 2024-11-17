@@ -458,8 +458,8 @@
           (< tile-y 0)               (recur face level tilesize (dec b) a (+ tile-y (dec tilesize)) tile-x 0 dx rotation)
           :else
           (let [tile-x (+ tile-x dx)]
-            (cond (>= tile-x (dec tilesize)) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) dy 0 rotation)
-                  (< tile-x 0)               (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) dy 0 rotation)
+            (cond (>= tile-x (dec tilesize)) (recur face level tilesize b (inc a) tile-y (- tile-x (dec tilesize)) 0 0 rotation)
+                  (< tile-x 0)               (recur face level tilesize b (dec a) tile-y (+ tile-x (dec tilesize)) 0 0 rotation)
                   :else                      {::face face ::b b ::a a ::tile-y tile-y ::tile-x tile-x ::rotation rotation})))))))
 
 (defn translate-indices

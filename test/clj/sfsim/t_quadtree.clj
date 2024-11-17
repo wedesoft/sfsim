@@ -333,7 +333,8 @@
          face0 0  0     0       0     -1   0  [face4 0 0   1   0 180]
          face0 0  0   1/2       0      1   0  [face0 0 0 3/2   0   0]
          face0 0  0     0     1/2      0   1  [face0 0 0   0 3/2   0]
-         face0 3  0  15/2     1/2      1   0  [face1 0 0 1/2 1/2   0])
+         face0 3  0  15/2     1/2      1   0  [face1 0 0 1/2 1/2   0]
+         face0 3  3     2       0     -1  -1  [face0 3 2   1   7   0])
 
 (tabular "Get neighbouring tile face and coordinates"
          (let [tile (neighbour-tile ?face 1 9 ?b ?a 4 4 ?dy ?dx 0)
