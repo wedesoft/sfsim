@@ -337,8 +337,8 @@
 
 (tabular "Get neighbouring tile face and coordinates"
          (let [tile (neighbour-tile ?face 1 9 ?b ?a 4 4 ?dy ?dx 0)
-               j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8) (:sfsim.quadtree/b tile)) 2)
-               i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8) (:sfsim.quadtree/a tile)) 2)
+               j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8.0) (:sfsim.quadtree/b tile)) 2)
+               i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8.0) (:sfsim.quadtree/a tile)) 2)
                p    (cube-map (:sfsim.quadtree/face tile) j i)]
            p => (vec3 ?x ?y ?z))
          ?face ?b ?a ?dy ?dx  ?x   ?y   ?z
