@@ -7,7 +7,7 @@
             [sfsim.util :refer :all])
   (:import [java.io File]))
 
-(mi/collect! {:ns ['sfsim.util]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Get elements of a small list"

@@ -6,7 +6,7 @@
             [fastmath.vector :refer (vec2 vec3)]
             [sfsim.ray :refer :all]))
 
-(mi/collect! {:ns ['sfsim.ray]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Integrate over a ray"

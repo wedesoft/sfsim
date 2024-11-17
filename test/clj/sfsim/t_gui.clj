@@ -18,7 +18,7 @@
              [org.lwjgl.stb STBTTFontinfo STBTTPackedchar STBTruetype STBTTPackContext]
              [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.gui]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)

@@ -10,7 +10,7 @@
             [sfsim.cubemap :refer :all :as cubemap])
   (:import [fastmath.vector Vec3]))
 
-(mi/collect! {:ns ['sfsim.cubemap]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (def face0 :sfsim.cubemap/face0)

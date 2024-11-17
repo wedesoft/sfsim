@@ -10,7 +10,7 @@
             [sfsim.image :as image]
             [sfsim.util :as util]))
 
-(mi/collect! {:ns ['sfsim.quadtree]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (def face0 :sfsim.cubemap/face0)
