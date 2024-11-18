@@ -443,20 +443,20 @@
                                tilesize => 65
                                b => 1
                                a => 3
-                               tile-y => 7
+                               tile-y => 0
                                tile-x => 5
                                rotation => 0
                                (contains? #{-1 0 1 2} dy) => true
                                (contains? #{-1 0 1 2} dx) => true)
-                        #:sfsim.quadtree{:face face :b b :a a :tile-y (+ tile-y dy) :tile-x (+ tile-x dx)})
+                        #:sfsim.quadtree{:face face :b (if (>= dy 0) 1 0) :a a :tile-y (mod dy 64) :tile-x (+ tile-x dx)})
                     quadtree/tile-center-to-surface
                     (fn [level tilesize face b a tile-y tile-x]
                         (facts face => face2
                                level => 7
                                tilesize => 65
-                               b => 1
+                               (contains? #{0 1} b) => true
                                a => 3
-                               (contains? #{6 7 8 9} tile-y) => true
+                               (contains? #{63 0 1 2} tile-y) => true
                                (contains? #{4 5 6 7} tile-x) => true)
                         (vec3 (- tile-y 7) (- tile-x 5) 0))]
-        (create-local-points face2 7 65 1 3 7 5)))
+        (create-local-points face2 7 65 1 3 0 5)))
