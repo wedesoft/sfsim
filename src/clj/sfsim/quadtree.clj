@@ -509,7 +509,7 @@
     (= original-orientation (= (mod rotation 180) 0))))
 
 (defn create-local-mesh
-  "Create local mesh using GPU tessellation information"
+  "Create local mesh of 3x3x2 triangles using GPU tessellation information"
   {:malli/schema [:=> [:cat [:vector [:vector :boolean]] :keyword :int :int :int :int :int :int] [:vector [:vector :int]]]}
   [orientations face level tilesize b a tile-y tile-x]
   (let [{::keys [coordinates index-map]} (identify-neighbours level tilesize b a tile-y tile-x)]
@@ -520,6 +520,15 @@
                   orientation (quad-split-orientation orientations neighbour)]
               (indexed-triangles dy dx orientation index-map)))
         coordinates))))
+
+(defn create-local-points
+  "Get 4x4 points of local mesh of 3x3 quads"
+  [face level tilesize b a tile-y tile-x]
+  (vec
+    (for [dy [-1 0 1 2] dx [-1 0 1 2]]
+         (let [{::keys [face b a tile-y tile-x]} (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
+               surface-vector                    (tile-center-to-surface level tilesize face b a tile-y tile-x)]
+           surface-vector))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

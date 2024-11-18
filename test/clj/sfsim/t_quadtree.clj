@@ -425,7 +425,7 @@
          (extract (identify-neighbours 2 9 3 0 7 0)) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1]        [1 0] [1 1]] {13  8}]
          (extract (identify-neighbours 2 9 3 3 7 7)) => [[[-1 -1] [-1 0] [-1 1] [0 -1] [0 0] [0 1] [1 -1] [1 0]      ] {14 11}]))
 
-(facts "Create local mesh using GPU tessellation information"
+(facts "Create local mesh of 3x3x2 triangles using GPU tessellation information"
        (let [orientations (vec (repeat 4 (vec (repeat 4 true))))]
          (nth (create-local-mesh orientations face0 2 5 0 0 1 1) 0) => [0 1 5]
          (nth (create-local-mesh (assoc-in orientations [0 0] false) face0 2 5 0 0 1 1) 0) => [0 1 4]
@@ -434,3 +434,29 @@
          (count (create-local-mesh orientations face0 2 5 0 0 1 1)) => (* 3 3 2)
          (count (create-local-mesh orientations face0 2 5 0 0 0 0)) => (- (* 3 3 2) 2)
          (count (create-local-mesh orientations face0 2 5 3 3 3 3)) => (- (* 3 3 2) 2)))
+
+(fact "Get 4x4 points of local mesh of 3x3 quads"
+      (with-redefs [quadtree/neighbour-tile
+                    (fn [face level tilesize b a tile-y tile-x dy dx rotation]
+                        (facts face => face2
+                               level => 7
+                               tilesize => 65
+                               b => 1
+                               a => 3
+                               tile-y => 7
+                               tile-x => 5
+                               rotation => 0
+                               (contains? #{-1 0 1 2} dy) => true
+                               (contains? #{-1 0 1 2} dx) => true)
+                        #:sfsim.quadtree{:face face :b b :a a :tile-y (+ tile-y dy) :tile-x (+ tile-x dx)})
+                    quadtree/tile-center-to-surface
+                    (fn [level tilesize face b a tile-y tile-x]
+                        (facts face => face2
+                               level => 7
+                               tilesize => 65
+                               b => 1
+                               a => 3
+                               (contains? #{6 7 8 9} tile-y) => true
+                               (contains? #{4 5 6 7} tile-x) => true)
+                        (vec3 (- tile-y 7) (- tile-x 5) 0))]
+        (create-local-points face2 7 65 1 3 7 5)))

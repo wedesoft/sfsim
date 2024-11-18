@@ -194,9 +194,9 @@
 
 (fact "Load (and cache) map tile"
   (world-map-tile "tmp/day" 2 3 5) => :map-tile
-    (provided
-      (image/slurp-image "tmp/day/2/3/5.png") => :map-tile :times irrelevant
-      (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
+  (provided
+    (image/slurp-image "tmp/day/2/3/5.png") => :map-tile :times irrelevant
+    (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
   (with-redefs [util/slurp-shorts (fn [file-name] ({"tmp/elevation235.raw" (short-array [2 3 5 7])} file-name))
@@ -249,8 +249,8 @@
 
 (fact "Getting elevation value for given longitude and latitude"
   (elevation-geodetic 5 675 135.0 45.0) => 42.0
-    (provided
-      (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
+  (provided
+    (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
 
 (fact "Test height zero maps to zero water"
   (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
