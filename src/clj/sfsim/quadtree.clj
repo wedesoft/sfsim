@@ -1,7 +1,8 @@
 (ns sfsim.quadtree
   "Manage quad tree of map tiles."
-  (:require [fastmath.vector :refer (sub mag add)]
-            [clojure.math :refer (tan to-radians)]
+  (:require [clojure.math :refer (tan to-radians)]
+            [clojure.core.memoize :as z]
+            [fastmath.vector :refer (sub mag add)]
             [malli.core :as m]
             [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
             [sfsim.matrix :refer (fvec3)]
@@ -339,11 +340,13 @@
     (if (>= x y) [[0 0] [0 1] [1 1]] [[0 0] [1 1] [1 0]])
     (if (<= (+ x y) 1) [[0 0] [0 1] [1 0]] [[1 0] [0 1] [1 1]])))
 
-(defn load-surface-tile
+(def load-surface-tile
   "Load tile with specified face and tile position"
-  [level tilesize face b a]
-  (let [path (cube-path "data/globe" face level b a ".surf")]
-    #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats path)}))
+  (z/lru
+    (fn [level tilesize face b a]
+        (let [path (cube-path "data/globe" face level b a ".surf")]
+          #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats path)}))
+    :lru/threshold 4))
 
 (defn tile-center-to-surface
   "Get vector from tile center to surface mesh point"
