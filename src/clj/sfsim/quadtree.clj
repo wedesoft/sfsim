@@ -523,6 +523,7 @@
 
 (defn create-local-points
   "Get 4x4 points of local mesh of 3x3 quads"
+  {:malli/schema [:=> [:cat :keyword :int :int :int :int :int :int :double fvec3] [:vector fvec3]]}
   [face level tilesize b a tile-y tile-x radius center]
   (vec
     (for [dy [-1 0 1 2] dx [-1 0 1 2]]
