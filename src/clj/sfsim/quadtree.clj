@@ -1,6 +1,6 @@
 (ns sfsim.quadtree
   "Manage quad tree of map tiles."
-  (:require [fastmath.vector :refer (sub mag)]
+  (:require [fastmath.vector :refer (sub mag add)]
             [clojure.math :refer (tan to-radians)]
             [malli.core :as m]
             [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
@@ -523,12 +523,13 @@
 
 (defn create-local-points
   "Get 4x4 points of local mesh of 3x3 quads"
-  [face level tilesize b a tile-y tile-x]
+  [face level tilesize b a tile-y tile-x radius center]
   (vec
     (for [dy [-1 0 1 2] dx [-1 0 1 2]]
          (let [{::keys [face b a tile-y tile-x]} (neighbour-tile face level tilesize b a tile-y tile-x dy dx 0)
-               surface-vector                    (tile-center-to-surface level tilesize face b a tile-y tile-x)]
-           surface-vector))))
+               surface-vector                    (tile-center-to-surface level tilesize face b a tile-y tile-x)
+               center-of-current-tile            (tile-center face level b a radius)]
+           (sub (add center-of-current-tile surface-vector) center)))))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

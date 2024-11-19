@@ -458,5 +458,13 @@
                                a => 3
                                (contains? #{63 0 1 2} tile-y) => true
                                (contains? #{4 5 6 7} tile-x) => true)
-                        (vec3 (- tile-y 7) (- tile-x 5) 0))]
-        (create-local-points face2 7 65 1 3 0 5)))
+                        (vec3 tile-y (- tile-x 5) 0))
+                    cubemap/tile-center
+                    (fn [face level b a radius]
+                        (facts face => face2
+                               level => 7
+                               (contains? #{0 1} b) => true
+                               a => 3
+                               radius => 100.0)
+                        (vec3 (* 64 (dec b)) 0 radius))]
+        (create-local-points face2 7 65 1 3 0 5 100.0 (vec3 0 0 30)) => (for [y [-1 0 1 2] x [-1 0 1 2]] (vec3 y x 70))))
