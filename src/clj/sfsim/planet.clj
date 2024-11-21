@@ -112,7 +112,7 @@
                  object-to-shadow-map (:sfsim.matrix/object-to-shadow-map matrices)]
              (uniform-matrix4 program (str "tile_to_shadow_map_" (inc i))
                               (mulm object-to-shadow-map (mulm world-to-object tile-to-world)))))
-    (use-textures (zipmap (range) (map tile texture-keys)))
+    (use-textures (zipmap (range) (mapv tile texture-keys)))
     (render-patches (::vao tile))))
 
 (defn render-tree
@@ -358,7 +358,7 @@
         atmosphere-luts (:sfsim.atmosphere/luts data)
         shadow-data     (:sfsim.opacity/data data)
         variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
-        programs        (map #(make-planet-program data %) variations)]
+        programs        (mapv #(make-planet-program data %) variations)]
     {::programs (zipmap variations programs)
      :sfsim.atmosphere/luts atmosphere-luts
      ::config config}))

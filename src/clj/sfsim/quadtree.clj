@@ -131,7 +131,7 @@
                                                        :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
                                                        ::quad0 ::quad1 ::quad2 ::quad3])
          child-paths (mapcat #(tiles-path-list (get tree %) (conj path %)) nodes)]
-     (concat child-paths (map #(conj path %) nodes)))))
+     (concat child-paths (mapv #(conj path %) nodes)))))
 
 (defn tiles-to-load
   "Determine which tiles to load into the quad tree"
@@ -162,8 +162,8 @@
         combine-offsets #(bit-or (bit-shift-left %1 1) %2)]
     {::face  top
      ::level (count tree)
-     ::y     (reduce combine-offsets 0 (map dy tree))
-     ::x     (reduce combine-offsets 0 (map dx tree))}))
+     ::y     (reduce combine-offsets 0 (mapv dy tree))
+     ::x     (reduce combine-offsets 0 (mapv dx tree))}))
 
 (defn tiles-meta-data
   "Convert multiple tile paths to face, level, y and x"
@@ -175,7 +175,7 @@
   "Add tiles to quad tree"
   {:malli/schema [:=> [:cat [:maybe :map] [:sequential [:vector :keyword]] [:sequential :map]] [:maybe :map]]}
   [tree paths tiles]
-  (reduce (fn add-title-to-quadtree [tree [path tile]] (assoc-in tree path tile)) tree (map vector paths tiles)))
+  (reduce (fn add-title-to-quadtree [tree [path tile]] (assoc-in tree path tile)) tree (mapv vector paths tiles)))
 
 (defn quadtree-extract
   "Extract a list of tiles from quad tree"
@@ -241,7 +241,7 @@
                  (case (long dy) -1 [:sfsim.cubemap/face1 c0],
                    0 (case (long dx) -1 [:sfsim.cubemap/face4 c3], 0 [:sfsim.cubemap/face5 c0], 1 [:sfsim.cubemap/face2 c1]),
                    1 [:sfsim.cubemap/face3 c2]))]
-           (cons replacement (map rotation tail)))
+           (cons replacement (mapv rotation tail)))
          (let [[replacement propagate]
                (case tile
                  ::quad0 (case (long dy) -1 [::quad2 true ],
@@ -277,7 +277,7 @@
     (fn leaves-of-node [[k v]]
       (if (is-leaf? v)
         [(list k)]
-        (map #(cons k %) (leaf-paths v))))
+        (mapv #(cons k %) (leaf-paths v))))
     (select-keys tree #{:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
                         :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
                         ::quad0 ::quad1 ::quad2 ::quad3})))

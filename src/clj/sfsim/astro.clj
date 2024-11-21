@@ -131,7 +131,7 @@
   "Check FTP string of DAF file"
   {:malli/schema [:=> [:cat [:map [::ftpstr [:sequential :int]]]] :boolean]}
   [header]
-  (= (::ftpstr header) (map int ftp-str)))
+  (= (::ftpstr header) (mapv int ftp-str)))
 
 (defn read-daf-comment
   "Read DAF comment"
@@ -172,7 +172,7 @@
         descriptors (::descriptors summaries)
         n           (count (::descriptors summaries))
         sources     (read-source-names (inc index) n buffer)
-        results     (map (fn [source descriptor] (assoc descriptor ::source source)) sources descriptors)]
+        results     (mapv (fn [source descriptor] (assoc descriptor ::source source)) sources descriptors)]
     (if (zero? next-number)
       results
       (concat results (read-daf-summaries header next-number buffer)))))
@@ -215,7 +215,7 @@
   {:malli/schema [:=> [:cat :map :some] [:map-of [:tuple :int :int] :map]]}
   [header buffer]
   (let [summaries (read-daf-summaries header (::forward header) buffer)
-        segments  (map summary->spk-segment summaries)]
+        segments  (mapv summary->spk-segment summaries)]
     (reduce (fn [lookup segment] (assoc lookup [(::center segment) (::target segment)] segment)) {} segments)))
 
 (def pck-lookup-table (m/schema [:map-of :int pck-segment]))
@@ -225,7 +225,7 @@
   {:malli/schema [:=> [:cat :map :some] [:map-of :int :map]]}
   [header buffer]
   (let [summaries (read-daf-summaries header (::forward header) buffer)
-        segments  (map summary->pck-segment summaries)]
+        segments  (mapv summary->pck-segment summaries)]
     (reduce (fn [lookup segment] (assoc lookup (::target segment) segment)) {} segments)))
 
 (defn convert-to-long
@@ -283,7 +283,7 @@
   "Convert list of vectors to list of vec3 objects"
   {:malli/schema [:=> [:cat [:sequential [:vector :double]]] [:sequential fvec3]]}
   [lst]
-  (map #(apply vec3 %) lst))
+  (mapv #(apply vec3 %) lst))
 
 (defn make-spk-document
   "Create object with SPK segment information"
@@ -510,7 +510,7 @@
   [{::keys [axes angles units]}]
   (let [scale     ({"DEGREES" DEGREES2RAD "ARCSECONDS" ASEC2RAD} units)
         rotations [rotation-x rotation-y rotation-z]
-        matrices  (map (fn [angle axis] ((rotations (dec axis)) (* angle scale))) angles axes)]
+        matrices  (mapv (fn [angle axis] ((rotations (dec axis)) (* angle scale))) angles axes)]
     (reduce (fn [result rotation] (mulm rotation result)) (eye 3) matrices)))
 
 (defn body-to-icrs

@@ -39,7 +39,7 @@
   (let [n      (quot (* size size) 10)
         sigma  1.5
         dither (bn/blue-noise size n sigma)]
-    (u/spit-floats "data/bluenoise.raw" (float-array (map #(/ % size size) dither)))))
+    (u/spit-floats "data/bluenoise.raw" (float-array (mapv #(/ % size size) dither)))))
 
 (defn cloud-cover
   "Generate cloud cover cubemap"

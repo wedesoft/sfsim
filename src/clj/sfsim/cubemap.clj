@@ -136,7 +136,7 @@
   "Project 3D vector onto cube"
   {:malli/schema [:=> [:cat fvec3] fvec3]}
   [point]
-  (let [[|x| |y| |z|] (map abs point)]
+  (let [[|x| |y| |z|] (mapv abs point)]
     (cond
       (>= |x| (max |y| |z|)) (div point |x|)
       (>= |y| (max |x| |z|)) (div point |y|)
@@ -326,8 +326,8 @@
   (let [pc (surrounding-points p in-level out-level width tilesize radius)
         sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
         sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
-        n1 (reduce add (map mult pc sx))
-        n2 (reduce add (map mult pc sy))]
+        n1 (reduce add (mapv mult pc sx))
+        n2 (reduce add (mapv mult pc sy))]
     (normalize (cross n1 n2))))
 
 (set! *warn-on-reflection* false)
