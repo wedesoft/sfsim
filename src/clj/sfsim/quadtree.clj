@@ -476,7 +476,7 @@
   {:malli/schema [:=> [:cat :int :int :boolean] [:vector [:tuple :int :int :int]]]}
   [dy dx orientation]
   (let [offset (+ (* 4 dy) dx)]
-    (mapv (partial mapv #(+ offset %)) (if orientation [[5 6 10] [5 10 9]] [[5 6 9] [6 10 9]]))))
+    (mapv (partial mapv #(+ offset %)) (if orientation [[5 10 6] [5 9 10]] [[5 9 6] [6 9 10]]))))
 
 (defn indexed-triangles
   "Determine point indices of a pair of triangles and apply index map"

@@ -400,22 +400,22 @@
        (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation 180}) => true)
 
 (facts "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"
-       (first  (indexed-triangles -1 -1  true {}    )) => [ 0  1 5]
-       (second (indexed-triangles -1 -1  true {}    )) => [ 0  5 4]
-       (first  (indexed-triangles -1 -1 false {}    )) => [ 0  1 4]
-       (second (indexed-triangles -1 -1 false {}    )) => [ 1  5 4]
-       (first  (indexed-triangles -1  0  true {}    )) => [ 1  2 6]
-       (second (indexed-triangles -1  0  true {}    )) => [ 1  6 5]
-       (first  (indexed-triangles -1  0 false {}    )) => [ 1  2 5]
-       (second (indexed-triangles -1  0 false {}    )) => [ 2  6 5]
-       (first  (indexed-triangles  0 -1  true {}    )) => [ 4  5 9]
-       (second (indexed-triangles  0 -1  true {}    )) => [ 4  9 8]
-       (first  (indexed-triangles  0 -1 false {}    )) => [ 4  5 8]
-       (second (indexed-triangles  0 -1 false {}    )) => [ 5  9 8]
-       (first  (indexed-triangles -1  0  true { 1 4})) => [ 4  2 6]
-       (second (indexed-triangles -1  0  true { 1 4})) => [ 4  6 5]
-       (first  (indexed-triangles  1  0 false {13 8})) => [ 9 10 8]
-       (second (indexed-triangles  1  0 false {13 8})) => [10 14 8])
+       (first  (indexed-triangles -1 -1  true {}    )) => [ 0 5  1]
+       (second (indexed-triangles -1 -1  true {}    )) => [ 0 4  5]
+       (first  (indexed-triangles -1 -1 false {}    )) => [ 0 4  1]
+       (second (indexed-triangles -1 -1 false {}    )) => [ 1 4  5]
+       (first  (indexed-triangles -1  0  true {}    )) => [ 1 6  2]
+       (second (indexed-triangles -1  0  true {}    )) => [ 1 5  6]
+       (first  (indexed-triangles -1  0 false {}    )) => [ 1 5  2]
+       (second (indexed-triangles -1  0 false {}    )) => [ 2 5  6]
+       (first  (indexed-triangles  0 -1  true {}    )) => [ 4 9  5]
+       (second (indexed-triangles  0 -1  true {}    )) => [ 4 8  9]
+       (first  (indexed-triangles  0 -1 false {}    )) => [ 4 8  5]
+       (second (indexed-triangles  0 -1 false {}    )) => [ 5 8  9]
+       (first  (indexed-triangles -1  0  true { 1 4})) => [ 4 6  2]
+       (second (indexed-triangles -1  0  true { 1 4})) => [ 4 5  6]
+       (first  (indexed-triangles  1  0 false {13 8})) => [ 9 8 10]
+       (second (indexed-triangles  1  0 false {13 8})) => [10 8 14])
 
 (facts "Determine relative neighbour coordinates and index map for cube corners with special cases for corners of face"
        (let [extract (juxt :sfsim.quadtree/coordinates :sfsim.quadtree/index-map)]
@@ -427,10 +427,10 @@
 
 (facts "Create local mesh of 3x3x2 triangles using GPU tessellation information"
        (let [orientations (vec (repeat 4 (vec (repeat 4 true))))]
-         (nth (create-local-mesh orientations face0 2 5 0 0 1 1) 0) => [0 1 5]
-         (nth (create-local-mesh (assoc-in orientations [0 0] false) face0 2 5 0 0 1 1) 0) => [0 1 4]
-         (nth (create-local-mesh orientations face2 2 5 0 0 0 1) 0) => [0 1 4]
-         (nth (create-local-mesh (assoc-in orientations [3 0] false) face1 2 5 0 0 0 1) 0) => [0 1 4]
+         (nth (create-local-mesh orientations face0 2 5 0 0 1 1) 0) => [0 5 1]
+         (nth (create-local-mesh (assoc-in orientations [0 0] false) face0 2 5 0 0 1 1) 0) => [0 4 1]
+         (nth (create-local-mesh orientations face2 2 5 0 0 0 1) 0) => [0 4 1]
+         (nth (create-local-mesh (assoc-in orientations [3 0] false) face1 2 5 0 0 0 1) 0) => [0 4 1]
          (count (create-local-mesh orientations face0 2 5 0 0 1 1)) => (* 3 3 2)
          (count (create-local-mesh orientations face0 2 5 0 0 0 0)) => (- (* 3 3 2) 2)
          (count (create-local-mesh orientations face0 2 5 3 3 3 3)) => (- (* 3 3 2) 2)))
