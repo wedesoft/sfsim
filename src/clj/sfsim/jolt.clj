@@ -118,7 +118,7 @@
 
 (defcfn update-system
   "Perform time step of physics system"
-  update_system [::mem/double] ::mem/void)
+  update_system [::mem/double ::mem/int] ::mem/void)
 
 (defcfn make-sphere
   "Create sphere body"

@@ -175,10 +175,9 @@ void jolt_destroy(void)
   JPH::Factory::sInstance = nullptr;
 }
 
-void update_system(double dt)
+void update_system(double dt, int collision_steps)
 {
-  const int cCollisionSteps = 1;
-  physics_system->Update(dt, cCollisionSteps, temp_allocator, job_system);
+  physics_system->Update(dt, collision_steps, temp_allocator, job_system);
 }
 
 void set_gravity(Vec3 gravity)

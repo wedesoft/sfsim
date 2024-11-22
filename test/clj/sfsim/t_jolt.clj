@@ -25,7 +25,7 @@
 
 (set-gravity (vec3 0 -1 0))
 
-(update-system 1.0)
+(update-system 1.0 1)
 
 (facts "Check position and speed after time step"
        (get-translation sphere) => (vec3 2 2 5)
@@ -55,7 +55,7 @@
 (set-restitution sphere 0.2)
 
 (optimize-broad-phase)
-(update-system 1.0)
+(update-system 1.0 1)
 
 (fact "Mesh prevents object from dropping"
       (get-translation sphere) => (vec3 0 0 0))
