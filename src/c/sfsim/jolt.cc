@@ -196,6 +196,7 @@ void body_default_settings(JPH::BodyCreationSettings &body_settings)
   body_settings.mApplyGyroscopicForce = true;
   body_settings.mLinearDamping = 0.0;
   body_settings.mAngularDamping = 0.0;
+  body_settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
 }
 
 int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
