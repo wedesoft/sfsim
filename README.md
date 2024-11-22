@@ -30,7 +30,7 @@ Requires OpenGL 4.5.
 
 ```Shell
 cd Build
-./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF
+./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF
 cd Linux_Release
 make -j `nproc`
 sudo make install
