@@ -521,7 +521,7 @@
   (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
     (= original-orientation (= (mod rotation 180) 0))))
 
-(defn create-local-mesh
+(defn create-local-triangles
   "Create local mesh of 3x3x2 triangles using GPU tessellation information"
   {:malli/schema [:=> [:cat [:vector [:vector :boolean]] :keyword :int :int :int :int :int :int] [:vector [:vector :int]]]}
   [orientations face level tilesize row column tile-y tile-x]
@@ -534,7 +534,7 @@
               (indexed-triangles dy dx orientation index-map)))
         coordinates))))
 
-(defn create-local-points
+(defn create-local-vertices
   "Get 4x4 points of local mesh of 3x3 quads"
   {:malli/schema [:=> [:cat :keyword :int :int :int :int :int :int :double fvec3] [:vector fvec3]]}
   [face level tilesize row column tile-y tile-x radius center]
@@ -544,6 +544,14 @@
                surface-vector                           (tile-center-to-surface level tilesize face row column tile-y tile-x)
                center-of-current-tile                   (tile-center face level row column radius)]
            (sub (add center-of-current-tile surface-vector) center)))))
+
+(defn create-local-mesh
+  "Return local mesh consisting of vertices and triangles"
+  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] :keyword :int :int :int :int :int :int :double :any]
+                      [:map [::vertices [:vector :any]] [::triangles [:vector [:vector :int]]]]]}
+  [orientations face level tilesize row column tile-y tile-x radius center]
+  {::vertices (create-local-vertices face level tilesize row column tile-y tile-x radius center)
+   ::triangles (create-local-triangles orientations face level tilesize row column tile-y tile-x)})
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

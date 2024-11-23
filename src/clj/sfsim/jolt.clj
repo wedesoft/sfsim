@@ -134,7 +134,7 @@
 
 (defn make-mesh
   "Create a mesh object"
-  [vertices triangles mass center rotation]
+  [{:sfsim.quadtree/keys [vertices triangles]} mass center rotation]
   (let [arena (mem/auto-arena)
         num-vertices (count vertices)
         num-triangles (count triangles)]

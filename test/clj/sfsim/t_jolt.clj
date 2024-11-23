@@ -45,7 +45,8 @@
 
 (remove-and-destroy-body box)
 
-(def mesh (make-mesh [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)] [[0 3 1] [1 3 2]]
+(def mesh (make-mesh #:sfsim.quadtree{:vertices [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)]
+                                      :triangles [[0 3 1] [1 3 2]]}
                      1e+4 (vec3 0 -1 0) (q/->Quaternion 1 0 0 0)))
 (set-friction mesh 0.5)
 (set-restitution mesh 0.2)

@@ -1,5 +1,4 @@
 # TODO
-* make jolt mesh and quadtree mesh code compatible
 * method to create local mesh
 * point, project-onto-cube, determine-face and cube-j and cube-i, tile-coordinates
 * p -> face, i, j -> face, b, a, tile-y, tile-x -> [face, b, a, tile-y, tile-x] * {8,9}

@@ -429,13 +429,13 @@
 
 (facts "Create local mesh of 3x3x2 triangles using GPU tessellation information"
        (let [orientations (vec (repeat 4 (vec (repeat 4 true))))]
-         (nth (create-local-mesh orientations face0 2 5 0 0 1 1) 0) => [0 5 1]
-         (nth (create-local-mesh (assoc-in orientations [0 0] false) face0 2 5 0 0 1 1) 0) => [0 4 1]
-         (nth (create-local-mesh orientations face2 2 5 0 0 0 1) 0) => [0 4 1]
-         (nth (create-local-mesh (assoc-in orientations [3 0] false) face1 2 5 0 0 0 1) 0) => [0 4 1]
-         (count (create-local-mesh orientations face0 2 5 0 0 1 1)) => (* 3 3 2)
-         (count (create-local-mesh orientations face0 2 5 0 0 0 0)) => (- (* 3 3 2) 2)
-         (count (create-local-mesh orientations face0 2 5 3 3 3 3)) => (- (* 3 3 2) 2)))
+         (nth (create-local-triangles orientations face0 2 5 0 0 1 1) 0) => [0 5 1]
+         (nth (create-local-triangles (assoc-in orientations [0 0] false) face0 2 5 0 0 1 1) 0) => [0 4 1]
+         (nth (create-local-triangles orientations face2 2 5 0 0 0 1) 0) => [0 4 1]
+         (nth (create-local-triangles (assoc-in orientations [3 0] false) face1 2 5 0 0 0 1) 0) => [0 4 1]
+         (count (create-local-triangles orientations face0 2 5 0 0 1 1)) => (* 3 3 2)
+         (count (create-local-triangles orientations face0 2 5 0 0 0 0)) => (- (* 3 3 2) 2)
+         (count (create-local-triangles orientations face0 2 5 3 3 3 3)) => (- (* 3 3 2) 2)))
 
 (fact "Get 4x4 points of local mesh of 3x3 quads"
       (with-redefs [quadtree/neighbour-tile
@@ -470,4 +470,13 @@
                                column => 3
                                radius => 100.0)
                         (vec3 (* 64 (dec row)) 0 radius))]
-        (create-local-points face2 7 65 1 3 0 5 100.0 (vec3 0 0 30)) => (for [y [-1 0 1 2] x [-1 0 1 2]] (vec3 y x 70))))
+        (create-local-vertices face2 7 65 1 3 0 5 100.0 (vec3 0 0 30)) => (for [y [-1 0 1 2] x [-1 0 1 2]] (vec3 y x 70))))
+
+(fact "Create local mesh"
+      (let [orientations (vec (repeat 4 (vec (repeat 4 true))))
+            point        (vec3 2 3 5)]
+        (create-local-mesh orientations face2 7 65 2 3 7 5 6378000.0 (vec3 0 0 30))
+        => #:sfsim.quadtree{:vertices [point] :triangles [[0 1 2]]}
+        (provided
+          (quadtree/create-local-triangles orientations face2 7 65 2 3 7 5) => [[0 1 2]]
+          (quadtree/create-local-vertices face2 7 65 2 3 7 5 6378000.0 (vec3 0 0 30)) => [point])))
