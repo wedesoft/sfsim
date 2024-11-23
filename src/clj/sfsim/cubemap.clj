@@ -97,11 +97,11 @@
 (defn cube-map-corners
   "Get 3D vectors to corners of cube map tile"
   {:malli/schema [:=> [:cat :keyword :int :int :int] [:tuple fvec3 fvec3 fvec3 fvec3]]}
-  [face level b a]
-  [(cube-map face (cube-coordinate level 2 b 0.0) (cube-coordinate level 2 a 0.0))
-   (cube-map face (cube-coordinate level 2 b 0.0) (cube-coordinate level 2 a 1.0))
-   (cube-map face (cube-coordinate level 2 b 1.0) (cube-coordinate level 2 a 0.0))
-   (cube-map face (cube-coordinate level 2 b 1.0) (cube-coordinate level 2 a 1.0))])
+  [face level row column]
+  [(cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 0.0))
+   (cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 1.0))
+   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 0.0))
+   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 1.0))])
 
 (defn longitude
   "Longitude of 3D point (East is positive)"
@@ -270,9 +270,9 @@
 (defn tile-center
   "Determine the 3D center of a cube map tile"
   {:malli/schema [:=> [:cat :keyword :int :int :int :double] fvec3]}
-  [face level b a radius]
-  (let [j (cube-coordinate level 3 b 1.0)
-        i (cube-coordinate level 3 a 1.0)]
+  [face level row column radius]
+  (let [j (cube-coordinate level 3 row 1.0)
+        i (cube-coordinate level 3 column 1.0)]
     (project-onto-sphere (cube-map face j i) radius)))
 
 (defn color-geodetic-day

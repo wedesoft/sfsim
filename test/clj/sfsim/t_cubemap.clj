@@ -97,16 +97,16 @@
   (cube-coordinate 1 256 1 127.5) => 0.75)
 
 (tabular "Get corners of cube map tiles"
-  (fact (nth (cube-map-corners ?face ?level ?b ?a) ?idx) => (vec3 ?x ?y ?z))
-  ?face ?level ?b ?a ?idx ?x   ?y   ?z
-  face0 0      0  0  0   -1    1    1
-  face0 0      0  0  1    1    1    1
-  face0 0      0  0  2   -1   -1    1
-  face0 0      0  0  3    1   -1    1
-  face5 2      3  1  0   -0.5  0.5 -1.0
-  face5 2      3  1  1    0.0  0.5 -1.0
-  face5 2      3  1  2   -0.5  1.0 -1.0
-  face5 2      3  1  3    0.0  1.0 -1.0)
+  (fact (nth (cube-map-corners ?face ?level ?row ?column) ?idx) => (vec3 ?x ?y ?z))
+  ?face ?level ?row ?column ?idx ?x   ?y   ?z
+  face0 0      0    0  0   -1    1    1
+  face0 0      0    0  1    1    1    1
+  face0 0      0    0  2   -1   -1    1
+  face0 0      0    0  3    1   -1    1
+  face5 2      3    1  0   -0.5  0.5 -1.0
+  face5 2      3    1  1    0.0  0.5 -1.0
+  face5 2      3    1  2   -0.5  1.0 -1.0
+  face5 2      3    1  3    0.0  1.0 -1.0)
 
 (facts "Longitude of 3D point"
   (longitude (vec3 1 0 0)) => (roughly 0        1e-6)

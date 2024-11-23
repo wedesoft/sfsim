@@ -271,12 +271,14 @@
       (get-in (update-level-of-detail flat radius (constantly false) true) [:tree face2 :sfsim.quadtree/up]) => true)))
 
 (fact "Get tile indices, coordinates of pixel within tile and position in pixel"
-      (tile-coordinates 1.0  0.5  0 2) => [0 0 0 0 1.0 0.5]
-      (tile-coordinates 0.25 0.25 0 3) => [0 0 0 0 0.5 0.5]
-      (tile-coordinates 0.75 0.25 0 3) => [0 0 1 0 0.5 0.5]
-      (tile-coordinates 0.25 0.75 0 3) => [0 0 0 1 0.5 0.5]
-      (tile-coordinates 0.75 0.25 1 2) => [1 0 0 0 0.5 0.5]
-      (tile-coordinates 0.25 0.75 1 2) => [0 1 0 0 0.5 0.5])
+      (let [extract (juxt :sfsim.quadtree/row :sfsim.quadtree/column :sfsim.quadtree/tile-y :sfsim.quadtree/tile-x
+                          :sfsim.quadtree/dy :sfsim.quadtree/dx)]
+        (extract (tile-coordinates 1.0  0.5  0 2)) => [0 0 0 0 1.0 0.5]
+        (extract (tile-coordinates 0.25 0.25 0 3)) => [0 0 0 0 0.5 0.5]
+        (extract (tile-coordinates 0.75 0.25 0 3)) => [0 0 1 0 0.5 0.5]
+        (extract (tile-coordinates 0.25 0.75 0 3)) => [0 0 0 1 0.5 0.5]
+        (extract (tile-coordinates 0.75 0.25 1 2)) => [1 0 0 0 0.5 0.5]
+        (extract (tile-coordinates 0.25 0.75 1 2)) => [0 1 0 0 0.5 0.5]))
 
 (fact "Determine triangle of quad the specified coordinate is in"
       (tile-triangle 0.25 0.75 true ) => [[0 0] [0 1] [1 1]]
@@ -291,14 +293,14 @@
                     cubemap/cube-j (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
                     quadtree/tile-coordinates (fn [j i level tilesize]
                                                   (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
-                                                  [32 40 3 5 :dy :dx])
+                                                  #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy :dy :dx :dx})
                     util/cube-path (fn [prefix face level y x suffix]
                                        (fact prefix => "data/globe", face => 2, level => 6, y => 32, x => 40,
                                              suffix => ".surf")
                                        "data/globe/2/6/31/35.surf")
                     util/slurp-floats (fn [file-name] (fact file-name => "data/globe/2/6/31/35.surf") :surface-tile)
-                    cubemap/tile-center (fn [face level b a radius]
-                                            (facts face => 2, level => 6, b => 32, a => 40, radius => 6378000.0)
+                    cubemap/tile-center (fn [face level row column radius]
+                                            (facts face => 2, level => 6, row => 32, column => 40, radius => 6378000.0)
                                             (vec3 1 2 3))
                     quadtree/tile-triangle (fn [y x first-diagonal]
                                                (facts y => :dy, x => :dx, first-diagonal => true)
@@ -317,78 +319,78 @@
         => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6)))
 
 (tabular "Get neighbouring tile face and coordinates"
-         (let [extract (juxt :sfsim.quadtree/face :sfsim.quadtree/b :sfsim.quadtree/a
+         (let [extract (juxt :sfsim.quadtree/face :sfsim.quadtree/row :sfsim.quadtree/column
                              :sfsim.quadtree/tile-y :sfsim.quadtree/tile-x :sfsim.quadtree/rotation)]
-           (fact (extract (neighbour-tile ?face 2 9 ?b ?a ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
-         ?face ?b ?a ?tile-y ?tile-x ?dy ?dx ?neighbour
-         face0 0  0     0       0      0   0  [face0 0 0   0   0   0]
-         face0 1  2     5       7      0   0  [face0 1 2   5   7   0]
-         face0 1  2     5       7      1   0  [face0 1 2   6   7   0]
-         face0 1  2     5       6      0   1  [face0 1 2   5   7   0]
-         face0 1  2     5       7      4   0  [face0 2 2   1   7   0]
-         face0 1  2     5       7      0   2  [face0 1 3   5   1   0]
-         face0 1  2     5       7     -6   0  [face0 0 2   7   7   0]
-         face0 1  2     5       7      0  -8  [face0 1 1   5   7   0]
-         face1 0  0     0       0     -1   0  [face0 3 0   7   0   0]
-         face0 0  0     0       0     -1   0  [face4 0 0   1   0 180]
-         face0 0  0   1/2       0      1   0  [face0 0 0 3/2   0   0]
-         face0 0  0     0     1/2      0   1  [face0 0 0   0 3/2   0]
-         face0 3  0  15/2     1/2      1   0  [face1 0 0 1/2 1/2   0]
-         face0 3  3     2       0     -1  -1  [face0 3 2   1   7   0])
+           (fact (extract (neighbour-tile ?face 2 9 ?row ?column ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
+         ?face ?row ?column ?tile-y ?tile-x ?dy ?dx ?neighbour
+         face0 0    0         0       0      0   0  [face0 0 0   0   0   0]
+         face0 1    2         5       7      0   0  [face0 1 2   5   7   0]
+         face0 1    2         5       7      1   0  [face0 1 2   6   7   0]
+         face0 1    2         5       6      0   1  [face0 1 2   5   7   0]
+         face0 1    2         5       7      4   0  [face0 2 2   1   7   0]
+         face0 1    2         5       7      0   2  [face0 1 3   5   1   0]
+         face0 1    2         5       7     -6   0  [face0 0 2   7   7   0]
+         face0 1    2         5       7      0  -8  [face0 1 1   5   7   0]
+         face1 0    0         0       0     -1   0  [face0 3 0   7   0   0]
+         face0 0    0         0       0     -1   0  [face4 0 0   1   0 180]
+         face0 0    0       1/2       0      1   0  [face0 0 0 3/2   0   0]
+         face0 0    0         0     1/2      0   1  [face0 0 0   0 3/2   0]
+         face0 3    0      15/2     1/2      1   0  [face1 0 0 1/2 1/2   0]
+         face0 3    3         2       0     -1  -1  [face0 3 2   1   7   0])
 
 (tabular "Get neighbouring tile face and coordinates"
-         (let [tile (neighbour-tile ?face 1 9 ?b ?a 4 4 ?dy ?dx 0)
-               j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8.0) (:sfsim.quadtree/b tile)) 2)
-               i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8.0) (:sfsim.quadtree/a tile)) 2)
+         (let [tile (neighbour-tile ?face 1 9 ?row ?column 4 4 ?dy ?dx 0)
+               j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8.0) (:sfsim.quadtree/row tile)) 2)
+               i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8.0) (:sfsim.quadtree/column tile)) 2)
                p    (cube-map (:sfsim.quadtree/face tile) j i)]
            p => (vec3 ?x ?y ?z))
-         ?face ?b ?a ?dy ?dx  ?x   ?y   ?z
+         ?face ?row ?column ?dy ?dx  ?x   ?y   ?z
          ; direct neighbours of face 0
-         face0 0  0   0   0  -0.5  0.5  1.0
-         face0 0  0  -8   0  -0.5  1.0  0.5
-         face0 1  0   8   0  -0.5 -1.0  0.5
-         face0 0  0   0  -8  -1.0  0.5  0.5
-         face0 0  1   0   8   1.0  0.5  0.5
+         face0 0    0       0   0  -0.5  0.5  1.0
+         face0 0    0      -8   0  -0.5  1.0  0.5
+         face0 1    0       8   0  -0.5 -1.0  0.5
+         face0 0    0       0  -8  -1.0  0.5  0.5
+         face0 0    1       0   8   1.0  0.5  0.5
          ; direct neighbours of face 1
-         face1 0  0   0   0  -0.5 -1.0  0.5
-         face1 0  0  -8   0  -0.5 -0.5  1.0
-         face1 1  0   8   0  -0.5 -0.5 -1.0
-         face1 0  0   0  -8  -1.0 -0.5  0.5
-         face1 0  1   0   8   1.0 -0.5  0.5
+         face1 0    0       0   0  -0.5 -1.0  0.5
+         face1 0    0      -8   0  -0.5 -0.5  1.0
+         face1 1    0       8   0  -0.5 -0.5 -1.0
+         face1 0    0       0  -8  -1.0 -0.5  0.5
+         face1 0    1       0   8   1.0 -0.5  0.5
          ; direct neighbours of face 2
-         face2 0  0   0   0   1.0 -0.5  0.5
-         face2 0  0  -8   0   0.5 -0.5  1.0
-         face2 1  0   8   0   0.5 -0.5 -1.0
-         face2 0  0   0  -8   0.5 -1.0  0.5
-         face2 0  1   0   8   0.5  1.0  0.5
+         face2 0    0       0   0   1.0 -0.5  0.5
+         face2 0    0      -8   0   0.5 -0.5  1.0
+         face2 1    0       8   0   0.5 -0.5 -1.0
+         face2 0    0       0  -8   0.5 -1.0  0.5
+         face2 0    1       0   8   0.5  1.0  0.5
          ; direct neighbours of face 3
-         face3 0  0   0   0   0.5  1.0  0.5
-         face3 0  0  -8   0   0.5  0.5  1.0
-         face3 1  0   8   0   0.5  0.5 -1.0
-         face3 0  0   0  -8   1.0  0.5  0.5
-         face3 0  1   0   8  -1.0  0.5  0.5
+         face3 0    0       0   0   0.5  1.0  0.5
+         face3 0    0      -8   0   0.5  0.5  1.0
+         face3 1    0       8   0   0.5  0.5 -1.0
+         face3 0    0       0  -8   1.0  0.5  0.5
+         face3 0    1       0   8  -1.0  0.5  0.5
          ; direct neighbours of face 4
-         face4 0  0   0   0  -1.0  0.5  0.5
-         face4 0  0  -8   0  -0.5  0.5  1.0
-         face4 1  0   8   0  -0.5  0.5 -1.0
-         face4 0  0   0  -8  -0.5  1.0  0.5
-         face4 0  1   0   8  -0.5 -1.0  0.5
+         face4 0    0       0   0  -1.0  0.5  0.5
+         face4 0    0      -8   0  -0.5  0.5  1.0
+         face4 1    0       8   0  -0.5  0.5 -1.0
+         face4 0    0       0  -8  -0.5  1.0  0.5
+         face4 0    1       0   8  -0.5 -1.0  0.5
          ; direct neighbours of face 5
-         face5 0  0   0   0  -0.5 -0.5 -1.0
-         face5 0  0  -8   0  -0.5 -1.0 -0.5
-         face5 1  0   8   0  -0.5  1.0 -0.5
-         face5 0  0   0  -8  -1.0 -0.5 -0.5
-         face5 0  1   0   8   1.0 -0.5 -0.5
+         face5 0    0       0   0  -0.5 -0.5 -1.0
+         face5 0    0      -8   0  -0.5 -1.0 -0.5
+         face5 1    0       8   0  -0.5  1.0 -0.5
+         face5 0    0       0  -8  -1.0 -0.5 -0.5
+         face5 0    1       0   8   1.0 -0.5 -0.5
          ; test tile coordinates get rotated as well
-         face0 0  0  -4   0  -0.5  1.0  1.0
-         face0 0  0  -6   0  -0.5  1.0  0.75
-         face0 1  0   4   0  -0.5 -1.0  1.0
-         face0 1  0   6   0  -0.5 -1.0  0.75
+         face0 0    0      -4   0  -0.5  1.0  1.0
+         face0 0    0      -6   0  -0.5  1.0  0.75
+         face0 1    0       4   0  -0.5 -1.0  1.0
+         face0 1    0       6   0  -0.5 -1.0  0.75
          ; test rotation of dy and dx
-         face0 0  0   0   0  -0.5  0.5  1.0
-         face0 0  0  -8   0  -0.5  1.0  0.5
-         face0 0  0   0   8   0.5  0.5  1.0
-         face0 0  0  -8   8   0.5  1.0  0.5)
+         face0 0    0       0   0  -0.5  0.5  1.0
+         face0 0    0      -8   0  -0.5  1.0  0.5
+         face0 0    0       0   8   0.5  0.5  1.0
+         face0 0    0      -8   8   0.5  1.0  0.5)
 
 (facts "Get diagonal orientations of quad"
        (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => true
@@ -437,34 +439,35 @@
 
 (fact "Get 4x4 points of local mesh of 3x3 quads"
       (with-redefs [quadtree/neighbour-tile
-                    (fn [face level tilesize b a tile-y tile-x dy dx rotation]
+                    (fn [face level tilesize row column tile-y tile-x dy dx rotation]
                         (facts face => face2
                                level => 7
                                tilesize => 65
-                               b => 1
-                               a => 3
+                               row => 1
+                               column => 3
                                tile-y => 0
                                tile-x => 5
                                rotation => 0
                                (contains? #{-1 0 1 2} dy) => true
                                (contains? #{-1 0 1 2} dx) => true)
-                        #:sfsim.quadtree{:face face :b (if (>= dy 0) 1 0) :a a :tile-y (mod dy 64) :tile-x (+ tile-x dx)})
+                        #:sfsim.quadtree{:face face :row (if (>= dy 0) 1 0) :column column
+                                         :tile-y (mod dy 64) :tile-x (+ tile-x dx)})
                     quadtree/tile-center-to-surface
-                    (fn [level tilesize face b a tile-y tile-x]
+                    (fn [level tilesize face row column tile-y tile-x]
                         (facts face => face2
                                level => 7
                                tilesize => 65
-                               (contains? #{0 1} b) => true
-                               a => 3
+                               (contains? #{0 1} row) => true
+                               column => 3
                                (contains? #{63 0 1 2} tile-y) => true
                                (contains? #{4 5 6 7} tile-x) => true)
                         (vec3 tile-y (- tile-x 5) 0))
                     cubemap/tile-center
-                    (fn [face level b a radius]
+                    (fn [face level row column radius]
                         (facts face => face2
                                level => 7
-                               (contains? #{0 1} b) => true
-                               a => 3
+                               (contains? #{0 1} row) => true
+                               column => 3
                                radius => 100.0)
-                        (vec3 (* 64 (dec b)) 0 radius))]
+                        (vec3 (* 64 (dec row)) 0 radius))]
         (create-local-points face2 7 65 1 3 0 5 100.0 (vec3 0 0 30)) => (for [y [-1 0 1 2] x [-1 0 1 2]] (vec3 y x 70))))
