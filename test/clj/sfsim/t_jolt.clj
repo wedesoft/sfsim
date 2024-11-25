@@ -20,6 +20,7 @@
 (facts "Get position vector, rotation matrix, and velocities of sphere body"
        (get-translation sphere) => (vec3 2 3 5)
        (get-rotation sphere) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1)
+       (get-orientation sphere) => (q/->Quaternion 0 1 0 0)
        (get-linear-velocity sphere) => (vec3 0 0 0)
        (get-angular-velocity sphere) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
 

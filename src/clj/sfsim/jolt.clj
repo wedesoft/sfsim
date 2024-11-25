@@ -161,6 +161,10 @@
   "Get rotation matrix of a body's world transform"
   get_rotation [::mem/int] ::mat3x3)
 
+(defcfn get-orientation
+  "Get rotation quaternion of a body's world transform"
+  get_orientation [::mem/int] ::quaternion)
+
 (defcfn get-linear-velocity
   "Get linear velocity of a body"
   get_linear_velocity [::mem/int] ::vec3)

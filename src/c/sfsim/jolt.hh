@@ -32,6 +32,7 @@ extern "C" {
 
   Vec3 get_translation(int id);
   Mat3x3 get_rotation(int id);
+  Quaternion get_orientation(int id);
   Vec3 get_linear_velocity(int id);
   Vec3 get_angular_velocity(int id);
 #ifdef __cplusplus

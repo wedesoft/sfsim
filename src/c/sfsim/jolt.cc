@@ -307,6 +307,18 @@ Mat3x3 get_rotation(int id)
   };
 }
 
+Quaternion get_orientation(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::Quat orientation = body_interface->GetRotation(body_id);
+  return (Quaternion){
+    .real = orientation.GetW(),
+    .imag = orientation.GetX(),
+    .jmag = orientation.GetY(),
+    .kmag = orientation.GetZ()
+  };
+}
+
 Vec3 get_linear_velocity(int id)
 {
   JPH::BodyID body_id(id);
