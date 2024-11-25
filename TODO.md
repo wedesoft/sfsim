@@ -1,4 +1,5 @@
 # TODO
+* convert matrix to quaternion or get quaternion from jolt
 * integrate local mesh and cube physics into application
 * fix problem with resolution of neighbouring tiles in planetary cubemap
 * fix problems with cloud self-shadowing, far away clouds shadows in top layer are too much
