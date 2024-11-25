@@ -9,11 +9,13 @@
                                   write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
                                   quad-splits-orientations)]
             [sfsim.atmosphere :as atmosphere]
-            [sfsim.quadtree :refer (distance-to-surface)]
+            [sfsim.quadtree :as quadtree]
             [sfsim.matrix :refer (transformation-matrix quaternion->matrix)]
             [sfsim.planet :as planet]
             [sfsim.clouds :as clouds]
             [sfsim.model :as model]
+            [sfsim.jolt :as jolt]
+            [sfsim.cubemap :as cubemap]
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.astro :as astro]
@@ -38,13 +40,16 @@
 (def opacity-base (atom 250.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 30.0)
+(def height 100.0)
+; (def height 30.0)
 (def speed (atom (/ 7800 1000.0)))
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
 (def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
 
 (GLFW/glfwInit)
+
+(jolt/jolt-init)
 
 (def window (make-window "sfsim" 1280 720))
 (GLFW/glfwShowWindow window)
@@ -81,7 +86,8 @@
 (def scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
                                                              config/object-radius))
 
-(def scene (model/load-scene scene-renderer "venturestar.gltf"))
+; (def scene (model/load-scene scene-renderer "venturestar.gltf"))
+(def scene (model/load-scene scene-renderer "cube.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -183,11 +189,11 @@
 (defn position-from-lon-lat
   [longitude latitude height]
   (let [point      (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
-        min-radius (distance-to-surface point
-                                        (:sfsim.planet/level config/planet-config)
-                                        (:sfsim.planet/tilesize config/planet-config)
-                                        (:sfsim.planet/radius config/planet-config)
-                                        split-orientations)
+        min-radius (quadtree/distance-to-surface point
+                                                 (:sfsim.planet/level config/planet-config)
+                                                 (:sfsim.planet/tilesize config/planet-config)
+                                                 (:sfsim.planet/radius config/planet-config)
+                                                 split-orientations)
         radius     (+ height (:sfsim.planet/radius config/planet-config))]
     (mult point (max radius min-radius))))
 
@@ -200,6 +206,47 @@
                  :orientation (orientation-from-lon-lat longitude latitude)}))
 (def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
 (def dist (atom 100.0))
+
+(def box (jolt/make-box (vec3 1 1 1) 1000.0 (:position @pose) (:orientation @pose) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
+(jolt/set-friction box 0.5)
+(jolt/set-restitution box 0.4)
+
+(jolt/optimize-broad-phase)
+
+(def coords (atom nil))
+(def mesh (atom nil))
+
+(defn update-mesh!
+  [position]
+  (let [point  (cubemap/project-onto-cube position)
+        face   (cubemap/determine-face point)
+        j      (cubemap/cube-j face point)
+        i      (cubemap/cube-i face point)
+        c      (dissoc (quadtree/tile-coordinates j i
+                                                  (:sfsim.planet/level config/planet-config)
+                                                  (:sfsim.planet/tilesize config/planet-config))
+                       :sfsim.quadtree/dy :sfsim.quadtree/dx)]
+    (when (not= c @coords)
+      (let [b      (:sfsim.quadtree/row c)
+            a      (:sfsim.quadtree/column c)
+            tile-y (:sfsim.quadtree/tile-y c)
+            tile-x (:sfsim.quadtree/tile-x c)
+            center (cubemap/tile-center face
+                                        (:sfsim.planet/level config/planet-config) b a
+                                        (:sfsim.planet/radius config/planet-config))
+            m      (quadtree/create-local-mesh split-orientations face
+                                               (:sfsim.planet/level config/planet-config)
+                                               (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
+                                               (:sfsim.planet/radius config/planet-config) center)]
+        (when @mesh (jolt/remove-and-destroy-body @mesh))
+        (reset! coords c)
+        (reset! mesh (jolt/make-mesh m 5.9742e+24 center (q/->Quaternion 1 0 0 0)))
+        (println face j i)
+        (println c)
+        (println point)
+        (jolt/set-friction @mesh 0.5)
+        (jolt/set-restitution @mesh 0.4)
+        (jolt/optimize-broad-phase)))))
 
 (defn location-dialog-get
   [position-data]
@@ -238,7 +285,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0) (/ 9 24.0))))
 
 (defn datetime-dialog-get
   [time-data t0]
@@ -337,13 +384,17 @@
                  d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
                  to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
              (when mn (reset! menu main-dialog))
-             (swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
-             (swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
-             (swap! pose update :orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
+             (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+             (update-mesh! (:position @pose))
+             (jolt/update-system (* dt 0.001) 1)
+             (reset! pose {:position (jolt/get-translation box) :orientation (jolt/get-orientation box)})
+             ;(swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
+             ;(swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
+             ;(swap! pose update :orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
              (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
              (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
              (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
-             (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt v)))
+             ;(swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt v)))
              (swap! opacity-base + (* dt to))
              (swap! dist * (exp d))
              (let [object-position    (:position @pose)
@@ -430,5 +481,6 @@
   (gui/destroy-nuklear-gui gui)
   (gui/destroy-font-texture bitmap-font)
   (destroy-window window)
+  (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
   (System/exit 0))
