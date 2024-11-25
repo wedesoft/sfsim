@@ -40,7 +40,7 @@
 (def opacity-base (atom 250.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 100.0)
+(def height 70.0)
 ; (def height 30.0)
 (def speed (atom (/ 7800 1000.0)))
 
@@ -205,7 +205,7 @@
 (def pose (atom {:position (position-from-lon-lat longitude latitude height)
                  :orientation (orientation-from-lon-lat longitude latitude)}))
 (def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
-(def dist (atom 100.0))
+(def dist (atom 40.0))
 
 (def box (jolt/make-box (vec3 1 1 1) 1000.0 (:position @pose) (:orientation @pose) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
 (jolt/set-friction box 0.5)
@@ -285,7 +285,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0) (/ 9 24.0))))
+(def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0) 100 (/ 9 24.0))))
 
 (defn datetime-dialog-get
   [time-data t0]
@@ -362,6 +362,8 @@
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
+(def unpause (atom 0))
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -371,6 +373,7 @@
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
            (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
+           (if (@keystates GLFW/GLFW_KEY_P) (reset! unpause 1))
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  mn (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -386,7 +389,7 @@
              (when mn (reset! menu main-dialog))
              (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
              (update-mesh! (:position @pose))
-             (jolt/update-system (* dt 0.001) 1)
+             (jolt/update-system (* dt @unpause 0.001) 10)
              (reset! pose {:position (jolt/get-translation box) :orientation (jolt/get-orientation box)})
              ;(swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
              ;(swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
