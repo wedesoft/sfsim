@@ -21,8 +21,9 @@
         org.lwjgl/lwjgl-assimp {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.3.4"}}
  :paths ["src/clj"]
- :jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
- :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.5"
+ :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
+                 :main-opts ["-m" "sfsim.core"]}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.5"
                                                          :git/sha "2a21b7a"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
