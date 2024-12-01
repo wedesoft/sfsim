@@ -1,9 +1,9 @@
 # TODO
-* fix problem with resolution of neighbouring tiles in planetary cubemap
 * fix problems with cloud self-shadowing, far away clouds shadows in top layer are too much
   level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
+* fix problem with resolution of neighbouring tiles in planetary cubemap
 * Jolt convex hulls and unions to create space craft collision shape
 * visualise prototype vehicle and wheels
 * gear/terrain physics with stationary Earth (ground collisions)
