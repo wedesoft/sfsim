@@ -144,26 +144,25 @@ float cloud_density(vec3 point, float lod)
   (uniform-float program "cloud_top" 200.0))
 
 (defn setup-opacity-fragment-dynamic-uniforms [program shadow-ndc-to-world light-direction shells multiplier scatter
-                                               depth cloudstep opacitystep start lod]
+                                               depth opacitystep start lod]
   (uniform-matrix4 program "shadow_ndc_to_world" shadow-ndc-to-world)
   (uniform-vector3 program "light_direction" light-direction)
   (uniform-int program "num_shell_intersections" shells)
   (uniform-float program "cloud_multiplier" multiplier)
   (uniform-float program "scatter_amount" scatter)
   (uniform-float program "depth" depth)
-  (uniform-float program "cloud_max_step" cloudstep)
   (uniform-float program "opacity_step" opacitystep)
   (uniform-float program "density_start" start)
   (uniform-float program "level_of_detail" lod))
 
 (defn render-deep-opacity-map
-  [program vao opacity-layers depth z shells multiplier scatter start cloudstep opacitystep lod]
+  [program vao opacity-layers depth z shells multiplier scatter start opacitystep lod]
   (let [shadow-ndc-to-world   (transformation-matrix (mat3x3 1 1 depth) (vec3 0 0 (- z depth)))]
     (framebuffer-render 3 3 :sfsim.render/cullback nil [opacity-layers]
                         (use-program program)
                         (setup-opacity-fragment-static-uniforms program)
                         (setup-opacity-fragment-dynamic-uniforms program shadow-ndc-to-world (vec3 0 0 1) shells
-                                                                 multiplier scatter depth cloudstep opacitystep start lod)
+                                                                 multiplier scatter depth opacitystep start lod)
                         (render-quads vao))))
 
 (tabular "Compute deep opacity map offsets and layers"
@@ -177,34 +176,25 @@ float cloud_density(vec3 point, float lod)
             vao             (make-vertex-array-object program indices vertices ["point" 2])
             opacity-layers  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 3 3 8)
             index           ({:offset 0 :layer (inc ?layer)} ?selector)]
-        (render-deep-opacity-map program vao opacity-layers ?depth ?z ?shells ?multiplier ?scatter ?start ?cloudstep
-                                 ?opacitystep ?lod)
+        (render-deep-opacity-map program vao opacity-layers ?depth ?z ?shells ?multiplier ?scatter ?start ?opacitystep ?lod)
         (get-float-3d (float-texture-3d->floats opacity-layers) index 1 ?px) => (roughly ?result 1e-6)
         (destroy-texture opacity-layers)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?shells ?px ?depth ?cloudstep ?opacitystep ?scatter ?start  ?multiplier ?lod ?z   ?selector ?layer ?result
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1200 :offset   0      1
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.2)
-  2       0    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.201)
-  2       1    1000.0 50.0       50.0        0.0       1150.0 0.02        0.0  1200 :offset   0      (- 1 0.05)
-  2       1   10000.0 50.0       50.0        0.0      -9999.0 0.02        0.0  1200 :offset   0      0.0
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1200 :layer    0      1.0
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1200 :layer    1      (exp -1)
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        1.0  1200 :layer    1      (exp -0.5)
-  2       1    1000.0 50.0       50.0        0.5       1200.0 0.02        0.0  1200 :layer    1      (exp -0.5)
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1400 :layer    1      (exp -1)
-  2       1    1000.0 50.0       25.0        0.0       1200.0 0.02        0.0  1200 :layer    1      (/ (+ 1 (exp -1)) 2)
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1200 :layer    2      (exp -2)
-  2       1    1000.0 50.0       50.0        0.0       1200.0 0.02        0.0  1200 :layer    3      (exp -2)
-  2       1   10000.0 50.0       50.0        0.0          0.0 0.02        0.0  1200 :offset   0      (- 1 0.23)
-  2       1   10000.0 50.0       50.0        0.0          0.0 0.02        0.0  1200 :layer    0      1.0
-  2       1   10000.0 50.0       50.0        0.0          0.0 0.02        0.0  1200 :layer    1      (exp -1)
-  2       1   10000.0 50.0       50.0        0.0          0.0 0.02        0.0  1200 :layer    2      (exp -2)
-  2       1   10000.0 50.0       50.0        0.0          0.0 0.02        0.0  1200 :layer    3      (exp -2)
-  2       1   10000.0 50.0       50.0        0.0          0.0 0.02        0.0  1200 :layer    6      (exp -2)
-  2       1   10000.0 50.0       50.0        0.0      -9999.0 0.02        0.0  1200 :layer    6      1.0
-  1       1   10000.0 50.0       50.0        0.0      -1000.0 0.02        0.0  1200 :offset   0      (- 1 0.22))
+  ?shells ?px ?depth  ?opacitystep ?scatter ?start  ?multiplier ?lod ?z   ?selector ?layer ?result
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :offset   0      1
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.2)
+  2       0    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.201)
+  2       1    1000.0  50.0        0.0       1150.0 0.02        0.0  1200 :offset   0      (- 1 0.05)
+  2       1   10000.0  50.0        0.0      -9999.0 0.02        0.0  1200 :offset   0      0.0
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    0      1.0
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    1      (exp -1)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        1.0  1200 :layer    1      (exp -0.5)
+  2       1    1000.0  50.0        0.5       1200.0 0.02        0.0  1200 :layer    1      (exp -0.5)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :layer    1      (exp -1)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    2      (exp -2)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    3      (exp -2)
+  2       1   10000.0  50.0        0.0          0.0 0.02        0.0  1200 :layer    0      1.0)
 
 (def opacity-lookup-probe
   (template/fn [x y z depth]
@@ -1278,7 +1268,6 @@ void main()
                                                (uniform-float program-opac "radius" 0.25)
                                                (uniform-float program-opac "cloud_bottom" 0.25)
                                                (uniform-float program-opac "cloud_top" 0.75)
-                                               (uniform-float program-opac "cloud_max_step" 0.05)
                                                (uniform-float program-opac "opacity_step" 0.1)
                                                (uniform-float program-opac "scatter_amount" 0.5)
                                                (render-quads vao))
