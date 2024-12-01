@@ -1,5 +1,5 @@
 # TODO
-* fix problems with cloud self-shadowing, far away clouds shadows in top layer are too much
+* far away cloud shadows in top layer are too much
   level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
