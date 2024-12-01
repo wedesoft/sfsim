@@ -38,9 +38,9 @@
 ; (dev/start! {:report (pretty/thrower)})
 
 (def opacity-base (atom 250.0))
-(def longitude (to-radians -11.29696))
-(def latitude (to-radians 52.28203))
-(def height 30000.0)
+(def longitude (to-radians -12.58936))
+(def latitude (to-radians 52.73127))
+(def height 49660.0)
 ; (def height 30.0)
 (def speed (atom (/ 7800 1000.0)))
 
