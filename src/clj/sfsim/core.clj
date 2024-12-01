@@ -51,7 +51,9 @@
 
 (jolt/jolt-init)
 
-(def window (make-window "sfsim" 1280 720))
+(def window-width (quot 1920 3))
+(def window-height (quot 1080 3))
+(def window (make-window "sfsim" window-width window-height))
 (GLFW/glfwShowWindow window)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
@@ -266,7 +268,7 @@
 
 (defn location-dialog
   [gui]
-  (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -311,7 +313,7 @@
 
 (defn datetime-dialog
   [gui]
-  (gui/nuklear-window gui "datetime" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
+  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 38 3)) 2) 320 (* 38 3)
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -346,7 +348,7 @@
 
 (defn main-dialog
   [gui]
-  (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
@@ -416,10 +418,10 @@
                    object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
                    moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
                    object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
-                   w2                 (quot (:sfsim.render/window-width planet-render-vars) 2)
-                   h2                 (quot (:sfsim.render/window-height planet-render-vars) 2)
                    clouds             (texture-render-color-depth
-                                        w2 h2 true
+                                        (:sfsim.render/window-width planet-render-vars)
+                                        (:sfsim.render/window-height planet-render-vars)
+                                        true
                                         (clear (vec3 0 0 0) 1.0)
                                         ; Render clouds in front of planet
                                         (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
@@ -450,11 +452,11 @@
                      ; Render atmosphere with cloud overlay
                      (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
                  (when @menu
-                   (setup-rendering 1280 720 :sfsim.render/noculling false)
+                   (setup-rendering window-width window-height :sfsim.render/noculling false)
                    (reset! focus-old nil)
                    (@menu gui)
                    (reset! focus-new nil)
-                   (gui/render-nuklear-gui gui 1280 720)))
+                   (gui/render-nuklear-gui gui window-width window-height)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
                (opacity/destroy-opacity-and-shadow shadow-vars))
