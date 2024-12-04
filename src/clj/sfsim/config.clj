@@ -41,7 +41,7 @@
                                  :opacity-cutoff 0.01})
 
 (def shadow-config #:sfsim.opacity{:num-opacity-layers 7
-                                   :shadow-size 1024
+                                   :shadow-size 128
                                    :num-steps 3
                                    :scene-shadow-size 512
                                    :scene-shadow-counts [0 1]
