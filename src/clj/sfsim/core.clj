@@ -284,7 +284,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (astro/now) (/ @t0 1000 86400.0) 100 (/ 9 24.0))))
+(def time-delta (atom (- (astro/now) (long (/ @t0 1000 86400.0)) 100 (/ 12 24.0))))
 
 (defn datetime-dialog-get
   [time-data t0]
