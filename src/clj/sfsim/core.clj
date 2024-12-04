@@ -361,7 +361,7 @@
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
-(def unpause (atom 0))
+;(def unpause (atom 0))
 
 (defn -main
   "Space flight simulator main function"
@@ -372,7 +372,7 @@
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
            (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
-           (if (@keystates GLFW/GLFW_KEY_P) (reset! unpause 1))
+           ;(when (@keystates GLFW/GLFW_KEY_P) (reset! unpause 1))
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  mn (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
