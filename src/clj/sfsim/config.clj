@@ -34,7 +34,7 @@
                                  :cloud-scale 50000.0
                                  :cloud-multiplier 10.0
                                  :cover-multiplier 26.0
-                                 :threshold 18.2
+                                 :threshold 30.0
                                  :cap 0.01
                                  :anisotropic 0.25
                                  :cloud-step 400.0

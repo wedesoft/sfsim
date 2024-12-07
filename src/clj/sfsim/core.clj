@@ -1,6 +1,6 @@
 (ns sfsim.core
   "Space flight simulator main program."
-  (:require [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI)]
+  (:require [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI sqrt)]
             [clojure.string :refer (trim)]
             [fastmath.vector :refer (vec3 add mult mag sub normalize)]
             [fastmath.matrix :refer (inverse mulv)]
@@ -30,17 +30,19 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-; (require '[nrepl.server :refer [start-server stop-server]])
-; (defonce server (start-server :port 7888))
+(require '[nrepl.server :refer [start-server stop-server]])
+(defonce server (start-server :port 7888))
 
 ; (require '[malli.dev :as dev])
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})
 
 (def opacity-base (atom 125.0))
-(def longitude (to-radians -12.58936))
-(def latitude (to-radians 52.73127))
-(def height 49660.0)
+;(def longitude (to-radians -12.58936))
+;(def latitude (to-radians 52.73127))
+(def longitude (to-radians 0))
+(def latitude (to-radians 0))
+(def height 5000.0)
 ; (def height 30.0)
 (def speed (atom (/ 7800 1000.0)))
 
@@ -206,8 +208,9 @@
 
 (def pose (atom {:position (position-from-lon-lat longitude latitude height)
                  :orientation (orientation-from-lon-lat longitude latitude)}))
-(def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
-(def dist (atom 200.0))
+;(def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
+(def camera-orientation (atom (q/rotation (/ PI 2) (vec3 0 1 0))))
+(def dist (atom 0.0))
 
 (def box (jolt/make-box (vec3 1 1 1) 1000.0 (:position @pose) (:orientation @pose) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
 (jolt/set-friction box 0.5)
@@ -404,7 +407,7 @@
                    jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
                    icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
                    sun-pos            (sub (earth-moon jd-ut))
-                   light-direction    (normalize (mulv icrs-to-earth sun-pos))
+                   light-direction    (vec3 (sqrt 0.5) 0.0 (sqrt 0.5)); (normalize (mulv icrs-to-earth sun-pos))
                    planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                       (aget w 0) (aget h 0) origin @camera-orientation
                                                                       light-direction)

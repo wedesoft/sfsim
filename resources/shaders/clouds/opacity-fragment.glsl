@@ -20,6 +20,7 @@ layout (location = <%= (inc i) %>) out float opacity_layer_<%= i %>;
 <% ) %>
 
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
 int number_of_samples(float a, float b, float max_step);
 float step_size(float a, float b, int num_samples);
@@ -27,45 +28,56 @@ float sample_point(float a, float idx, float step_size);
 
 void main()
 {
-  vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
-  float previous_transmittance = 1.0;
+//  vec4 intersections = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, fs_in.origin, -light_direction);
+  vec2 intersections = ray_sphere(vec3(0, 0, 0), radius, fs_in.origin, -light_direction);
+//  float previous_transmittance = 1.0;
   float start_depth = 0.0;
   float start_segment = intersections.x;
   float extent_segment = intersections.y;
-  int current_layer = 0;
-  opacity_layer_0 = 1.0;
+//  int current_layer = 0;
+  float x = (int(gl_FragCoord.x) % 2) == (int(gl_FragCoord.y) % 2) ? 1.0 : 0.0;
+  opacity_layer_0 = 1;
   if (extent_segment > 0) {
-    int steps = number_of_samples(start_segment, start_segment + extent_segment, opacity_step);
-    float stepsize = step_size(start_segment, start_segment + extent_segment, steps);
-    for (int i=0; i<steps; i++) {
-      float s = sample_point(start_segment, i, stepsize);
-      vec3 sample_point = fs_in.origin - s * light_direction;
-      float density = cloud_density(sample_point, level_of_detail);
-      float transmittance;
-      // Compute this on the CPU: scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic)
-      if (density > 0.0) {
-        float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
-        transmittance = previous_transmittance * transmittance_step;
-      } else
-        transmittance = previous_transmittance;
-      if (previous_transmittance == 1.0) {
-        start_depth = start_segment + i * stepsize;
-      };
-      if (transmittance < 1.0) {
-        current_layer = current_layer + 1;
-        switch (current_layer) {
-<% (doseq [i (range 1 num-layers)] %>
-          case <%= i %>:
-            opacity_layer_<%= i %> = transmittance;
-<% ) %>
-        };
-      };
-      previous_transmittance = transmittance;
-      if (current_layer >= <%= (dec num-layers ) %>)
-        break;
-    };
+    start_depth = start_segment;
+    opacity_layer_1 = x;
+    opacity_layer_2 = x;
+    opacity_layer_3 = x;
+    opacity_layer_4 = x;
+    opacity_layer_5 = x;
+    opacity_layer_6 = x;
   };
-  if (previous_transmittance == 1.0)
-    start_depth = depth;
+//  if (extent_segment > 0) {
+//    int steps = number_of_samples(start_segment, start_segment + extent_segment, opacity_step);
+//    float stepsize = step_size(start_segment, start_segment + extent_segment, steps);
+//    for (int i=0; i<steps; i++) {
+//      float s = sample_point(start_segment, i, stepsize);
+//      vec3 sample_point = fs_in.origin - s * light_direction;
+//      float density = cloud_density(sample_point, level_of_detail);
+//      float transmittance;
+//      // Compute this on the CPU: scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic)
+//      if (density > 0.0) {
+//        float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
+//        transmittance = previous_transmittance * transmittance_step;
+//      } else
+//        transmittance = previous_transmittance;
+//      if (previous_transmittance == 1.0) {
+//        start_depth = start_segment + i * stepsize;
+//      };
+//      if (transmittance < 1.0) {
+//        current_layer = current_layer + 1;
+//        switch (current_layer) {
+//<% (doseq [i (range 1 num-layers)] %>
+//          case <%= i %>:
+//            opacity_layer_<%= i %> = transmittance;
+//<% ) %>
+//        };
+//      };
+//      previous_transmittance = transmittance;
+//      if (current_layer >= <%= (dec num-layers ) %>)
+//        break;
+//    };
+//  };
+//  if (previous_transmittance == 1.0)
+//    start_depth = depth;
   opacity_offset = 1.0 - start_depth / depth;
 }
