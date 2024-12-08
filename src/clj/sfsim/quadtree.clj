@@ -8,7 +8,7 @@
             [sfsim.matrix :refer (fvec3)]
             [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
             [sfsim.image :refer (slurp-image slurp-normals get-vector3)]
-            [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in face->index N N0)]))
+            [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in N N0)]))
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -385,7 +385,6 @@
     (* multiplier magnitude-point)))
 
 (defn rotate-b [angle size row column]
-:wa
   (case (long angle)
       0 row
      90 (- size column 1)
@@ -492,8 +491,7 @@
   "Determine point indices of a pair of triangles and apply index map"
   {:malli/schema [:=> [:cat :int :int :boolean [:map-of :int :int]] [:vector [:tuple :int :int :int]]]}
   [dy dx orientation index-map]
-  (let [offset (+ (* 4 dy) dx)]
-    (mapv (partial translate-indices index-map) (generate-triangle-pair dy dx orientation))))
+  (mapv (partial translate-indices index-map) (generate-triangle-pair dy dx orientation)))
 
 (defn identify-neighbours
   "Determine relative neighbour coordinates and index map for cube corners with special cases for corners of face"
