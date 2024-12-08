@@ -11,11 +11,11 @@ float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords)
 {
   vec2 offset_index = convert_2d_index(opacity_map_coords.xy, shadow_size, shadow_size);
   float offset_ = texture(layers, vec3(offset_index, 0.0)).r - opacity_map_coords.z;
-  float z_index = max(abs(offset_ * depth / 200), 0) + 1.0;
+  float z_index = max(abs(offset_ * depth / 132), 0) + 1.0;
   vec3 idx = vec3(opacity_map_coords.xy, z_index / num_opacity_layers);
   vec3 opacity_index = convert_3d_index(idx, num_opacity_layers + 1, shadow_size, shadow_size);
   float transmittance = texture(layers, opacity_index).r;
-  float transmittance2 = max(0, min(1, abs(offset_ * depth / 200))) * transmittance;
+  float transmittance2 = max(0, min(1, abs(offset_ * depth / 132))) * transmittance;
   // float transmittance = int(offset_ * depth / 100) % 2 == 0 ? 1.0 : 0.0;
   return transmittance2;
 }
