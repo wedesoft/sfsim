@@ -16,10 +16,11 @@ float opacity_cascade_lookup(vec4 point)
 {
   float z = -(world_to_camera * point).z;
 <% (doseq [i (range n)] %>
-  if (z <= split<%= (inc i) %>) {
-    vec4 map_coords = world_to_shadow_map<%= i %> * point;
-    return <%= base-function %>(opacity<%= i %>, depth<%= i %>, map_coords);
-  };
+//  if (z <= split<%= (inc i) %>) {
+//    vec4 map_coords = world_to_shadow_map<%= i %> * point;
+//    return <%= base-function %>(opacity<%= i %>, depth<%= i %>, map_coords);
+//  };
 <% ) %>
-  return 1.0;
+  vec4 map_coords = world_to_shadow_map0 * point;
+  return <%= base-function %>(opacity0, depth0, map_coords);
 }

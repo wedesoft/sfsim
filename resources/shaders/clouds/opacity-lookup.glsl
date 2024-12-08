@@ -1,6 +1,6 @@
 #version 410 core
 
-uniform float opacity_step;
+// uniform float opacity_step;
 uniform int shadow_size;
 uniform int num_opacity_layers;
 
