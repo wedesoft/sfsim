@@ -23,4 +23,10 @@ float opacity_cascade_lookup(vec4 point)
 <% ) %>
   vec4 map_coords = world_to_shadow_map0 * point;
   return <%= base-function %>(opacity0, depth0, map_coords);
+  //if (gl_FragCoord.y <= 120)
+  //  return abs(point.x - 6378000.0) / 1.0;
+  //else if (gl_FragCoord.y <= 240)
+  //  return 0.0;
+  //else
+  //  return 1.0;
 }
