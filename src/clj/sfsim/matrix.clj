@@ -120,6 +120,12 @@
 
 (def bbox (m/schema [:map [:bottomleftnear fvec3] [:toprightfar fvec3]]))
 
+(defn- span-of-box
+  "Get vector of box dimensions"
+  {:malli/schema [:=> [:cat bbox] fvec3]}
+  [bounding-box]
+  (fv/sub (:toprightfar bounding-box) (:bottomleftnear bounding-box)))
+
 (defn bounding-box
   "Compute 3D bounding box for a set of points"
   {:malli/schema [:=> [:cat [:sequential fvec4]] bbox]}
@@ -187,12 +193,6 @@
   {:malli/schema [:=> [:cat fmat4 [:vector fvec4]] [:vector fvec4]]}
   [matrix corners]
   (mapv #(fm/mulv matrix %) corners))
-
-(defn- span-of-box
-  "Get vector of box dimensions"
-  {:malli/schema [:=> [:cat bbox] fvec3]}
-  [bounding-box]
-  (fv/sub (:toprightfar bounding-box) (:bottomleftnear bounding-box)))
 
 (defn- bounding-box-for-rotated-frustum
   "Determine bounding box for rotated frustum"
