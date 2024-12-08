@@ -284,9 +284,7 @@
   "List of opacity lookup shaders"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" "shadow_size"
-                                        [["sampler3D" "layers"] ["float" "depth"]])
+  [(opacity-cascade-lookup num-steps "opacity_lookup") opacity-lookup
    shaders/convert-2d-index shaders/convert-3d-index])
 
 (defn fragment-atmosphere-clouds
