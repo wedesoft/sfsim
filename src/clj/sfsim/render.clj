@@ -583,6 +583,9 @@
   "Set up cascade of shadow matrices for rendering"
   {:malli/schema [:=> [:cat :int shadow-matrix-vars] :nil]}
   [program shadow-vars]
+  (uniform-float program "bias0" 300)
+  (uniform-float program "bias1" (* 5 300))
+  (uniform-float program "bias2" (* 3 5 300))
   (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
          (uniform-float program (str "split" idx) item))
   (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
