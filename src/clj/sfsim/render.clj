@@ -490,7 +490,7 @@
         (texture-render-depth size size
                               (clear)
                               (use-program program)
-                              (fun (:sfsim.matrix/shadow-ndc-matrix shadow-level))))
+                              (fun (:sfsim.matrix/world-to-shadow-ndc shadow-level))))
     matrix-cascade))
 
 (defmacro offscreen-render

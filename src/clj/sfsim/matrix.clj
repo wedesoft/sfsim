@@ -208,7 +208,7 @@
                                    [:sfsim.opacity/mix :double] [:sfsim.opacity/shadow-bias :double]]))
 (def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
 
-(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
+(def shadow-box (m/schema [:map [::world-to-shadow-ndc fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping of view frustum or part of frustum"
@@ -223,7 +223,7 @@
          span         (span-of-box bounding-box)
          scale        (* 0.5 (+ (span 0) (span 1)))
          depth        (- (span 2))]
-     {::shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
+     {::world-to-shadow-ndc (fm/mulm shadow-ndc light-matrix)
       ::world-to-shadow-map (fm/mulm shadow-map light-matrix)
       ::scale scale
       ::depth depth})))
@@ -262,7 +262,7 @@
               (shadow-matrices projection camera-to-world light-direction depth ndc1 ndc2)))
         (range num-steps)))
 
-(def shadow-patch (m/schema [:map [::shadow-ndc-matrix fmat4]
+(def shadow-patch (m/schema [:map [::object-to-shadow-ndc fmat4]
                                   [::object-to-shadow-map fmat4]
                                   [::world-to-object fmat4]
                                   [::scale :double]
@@ -279,7 +279,7 @@
         shadow-map      (shadow-box-to-map bounding-box)
         world-to-object (fm/inverse object-to-world)
         light-matrix    (orient-to-light (vec4->vec3 (fm/mulv world-to-object (vec3->vec4 light-direction 0.0))))]
-    {::shadow-ndc-matrix    (fm/mulm shadow-ndc light-matrix)
+    {::object-to-shadow-ndc (fm/mulm shadow-ndc light-matrix)
      ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
      ::world-to-object      world-to-object
      ::scale                (* 2.0 object-radius)

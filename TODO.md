@@ -1,5 +1,4 @@
 # TODO
-* shadow-ndc-matrix -> world-to-shadow-ndc, object-to-shadow-ndc
 * far away cloud shadows in top layer are too much
   level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves

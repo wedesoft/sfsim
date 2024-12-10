@@ -268,7 +268,7 @@
                                (uniform-int ~program "shadow_size" ~size)
                                (uniform-float ~program "level_of_detail" level-of-detail#)
                                (uniform-matrix4 ~program "shadow_ndc_to_world"
-                                                (inverse (:sfsim.matrix/shadow-ndc-matrix opacity-level#)))
+                                                (inverse (:sfsim.matrix/world-to-shadow-ndc opacity-level#)))
                                (uniform-float ~program "depth" (:sfsim.matrix/depth opacity-level#))
                                ~@body)
            opacity-layers#))
