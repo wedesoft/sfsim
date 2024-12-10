@@ -20,19 +20,19 @@
   [expected error]
   (fn [actual]
       (and (== (count expected) (count actual))
-           (<= (sqrt (apply + (map (comp #(* % %) -) actual expected))) error))))
+           (<= (sqrt (apply + (mapv (comp #(* % %) -) actual expected))) error))))
 
 (defn roughly-quaternion
   "Compare quaternion with expected value."
   [expected error]
   (fn [actual]
-      (and (<= (sqrt (apply + (map (comp #(* % %) #(- (% actual) (% expected))) [:real :imag :jmag :kmag]))) error))))
+      (and (<= (sqrt (apply + (mapv (comp #(* % %) #(- (% actual) (% expected))) [:real :imag :jmag :kmag]))) error))))
 
 (defn rgba-dist [c1 c2]
-  (apply max (map #(abs (- %1 %2)) c1 c2)))
+  (apply max (mapv #(abs (- %1 %2)) c1 c2)))
 
 (defn average-rgba-dist [data1 data2]
-  (let [distances (map rgba-dist (partition 4 data1) (partition 4 data2))]
+  (let [distances (mapv rgba-dist (partition 4 data1) (partition 4 data2))]
     (float (/ (reduce + distances) (count distances)))))
 
 (defn is-image

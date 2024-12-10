@@ -2,6 +2,7 @@
   "Various utility functions."
   (:require [clojure.java.io :as io]
             [clojure.math :refer (sin)]
+            [clojure.set :refer (map-invert)]
             [malli.core :as m]
             [progrock.core :as p])
   (:import [java.io ByteArrayOutputStream]
@@ -12,6 +13,10 @@
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
+
+(def face->index {:sfsim.cubemap/face0 0 :sfsim.cubemap/face1 1 :sfsim.cubemap/face2 2
+                  :sfsim.cubemap/face3 3 :sfsim.cubemap/face4 4 :sfsim.cubemap/face5 5})
+(def index->face (map-invert face->index))
 
 (defn third
   "Get third element of a list"
@@ -94,7 +99,7 @@
 
 (def N0 (m/schema [:int {:min 0}]))
 (def N (m/schema [:int {:min 1}]))
-(def face (m/schema [:int {:min 0 :max 5}]))
+(def face (m/schema :keyword))
 
 (defn tile-path
   "Determine file path of map tile"
@@ -112,13 +117,13 @@
   "Determine file path of cube tile"
   {:malli/schema [:=> [:cat :string face N0 N0 N0 :string] :string]}
   [prefix face level y x suffix]
-  (str prefix \/ face \/ level \/ x \/ y suffix))
+  (str prefix \/ (face->index face) \/ level \/ x \/ y suffix))
 
 (defn cube-dir
   "Determine directory name of cube tile"
   {:malli/schema [:=> [:cat :string face N0 N0] :string]}
   [prefix face level x]
-  (str prefix \/ face \/ level \/ x))
+  (str prefix \/ (face->index face) \/ level \/ x))
 
 (defn sinc
   "sin(x) / x function"

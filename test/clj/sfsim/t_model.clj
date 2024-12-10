@@ -18,7 +18,7 @@
               [sfsim.quaternion :refer (->Quaternion) :as q])
     (:import [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.model]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)

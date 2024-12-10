@@ -60,19 +60,19 @@
   "Numerically integrate function in the range from zero to two pi"
   {:malli/schema [:=> [:cat N [:=> [:cat :double] [:vector :double]]] [:vector :double]]}
   [steps fun]
-  (let [samples (map #(* 2 PI (/ (+ 0.5 %) steps)) (range steps))
+  (let [samples (mapv #(* 2 PI (/ (+ 0.5 %) steps)) (range steps))
         weight  (/ (* 2 PI) steps)]
-    (mult (reduce add (map fun samples)) weight)))
+    (mult (reduce add (mapv fun samples)) weight)))
 
 (defn- spherical-integral
   "Integrate over specified range of sphere"
   {:malli/schema [:=> [:cat N N :double ]]}
   [theta-steps phi-steps theta-range normal fun]
-  (let [samples (map #(* theta-range (/ (+ 0.5 %) theta-steps)) (range theta-steps))
+  (let [samples (mapv #(* theta-range (/ (+ 0.5 %) theta-steps)) (range theta-steps))
         delta2  (/ theta-range theta-steps 2)
         mat     (transpose (oriented-matrix normal))]
     (reduce add
-      (map (fn sample-circle [theta]
+      (mapv (fn sample-circle [theta]
         (let [factor    (- (cos (- theta delta2)) (cos (+ theta delta2)))
               ringsteps (int (ceil (* (sin theta) phi-steps)))
               cos-theta (cos theta)

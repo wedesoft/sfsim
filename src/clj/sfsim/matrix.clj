@@ -124,9 +124,9 @@
   "Compute 3D bounding box for a set of points"
   {:malli/schema [:=> [:cat [:sequential fvec4]] bbox]}
   [points]
-  (let [x (map #(/ (% 0) (% 3)) points)
-        y (map #(/ (% 1) (% 3)) points)
-        z (map #(/ (% 2) (% 3)) points)]
+  (let [x (mapv #(/ (% 0) (% 3)) points)
+        y (mapv #(/ (% 1) (% 3)) points)
+        z (mapv #(/ (% 2) (% 3)) points)]
     {:bottomleftnear (fv/vec3 (apply min x) (apply min y) (apply max z))
      :toprightfar (fv/vec3 (apply max x) (apply max y) (apply min z))}))
 

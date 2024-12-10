@@ -6,7 +6,7 @@
               [sfsim.util :refer (dimension-count)]
               [sfsim.worley :refer :all :as worley]))
 
-(mi/collect! {:ns ['sfsim.worley]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Create a 3D grid with a random point in each cell"

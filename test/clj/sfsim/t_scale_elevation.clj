@@ -6,7 +6,7 @@
               [sfsim.util :refer :all])
     (:import [java.io File]))
 
-(mi/collect! {:ns ['sfsim.util]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (def img (short-array [2 3 0 0 5 7 0 0 0 0 0 0 0 0 0 0]))

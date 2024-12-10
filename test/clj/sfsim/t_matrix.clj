@@ -9,7 +9,7 @@
             [sfsim.matrix :refer :all]
             [sfsim.quaternion :refer (->Quaternion rotation)]))
 
-(mi/collect! {:ns ['sfsim.matrix]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (def ca (/ (sqrt 3) 2))

@@ -7,7 +7,7 @@
             [sfsim.image :refer :all])
   (:import [java.io File]))
 
-(mi/collect! {:ns ['sfsim.image]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Create empty RGBA color image"

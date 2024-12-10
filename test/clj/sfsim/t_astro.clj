@@ -12,7 +12,7 @@
               [sfsim.matrix :refer :all])
     (:import [java.nio.charset StandardCharsets]))
 
-(mi/collect! {:ns ['sfsim.astro]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 ; Header test data cut from de430_1850-2150.bsp: dd if=de430_1850-2150.bsp of=spk-head.bsp bs=1024 count=80

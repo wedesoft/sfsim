@@ -65,7 +65,6 @@
                      (uniform-vector3 program "light_direction" light-direction)
                      (uniform-float program "scatter_amount" scatter-amount)
                      (uniform-float program "opacity_step" opacity-step)
-                     (uniform-float program "cloud_max_step" (* 0.5 opacity-step))
                      (render-quads vao))))
 
 (defn destroy-opacity-cascade

@@ -22,7 +22,7 @@ extern "C" {
 
   void set_gravity(Vec3 gravity);
   void optimize_broad_phase();
-  void update_system(double dt);
+  void update_system(double dt, int collision_steps);
   int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity);
   int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity);
   int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangles, float mass, Vec3 center, Quaternion rotation);
@@ -32,6 +32,7 @@ extern "C" {
 
   Vec3 get_translation(int id);
   Mat3x3 get_rotation(int id);
+  Quaternion get_orientation(int id);
   Vec3 get_linear_velocity(int id);
   Vec3 get_angular_velocity(int id);
 #ifdef __cplusplus

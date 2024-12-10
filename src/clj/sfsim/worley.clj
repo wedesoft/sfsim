@@ -55,7 +55,7 @@
         [x y z]  point
         [i j k]  [(int (quot x cellsize)) (int (quot y cellsize)) (int (quot z cellsize))]
         points   (for [dk [-1 0 1] dj [-1 0 1] di [-1 0 1]] (extract-point-from-grid grid size (+ k dk) (+ j dj) (+ i di)))]
-    (apply min (map #(mag (sub point %)) points))))
+    (apply min (mapv #(mag (sub point %)) points))))
 
 (defn normalize-vector
   "Normalize the values of a vector by scaling the maximum down to 1.0"

@@ -1,8 +1,5 @@
 {:linters
  {:unresolved-symbol
-  {:exclude [(com.climate.claypoole/pfor)
-             (comb.template/fn)
-             (com.climate.claypoole/pdoseq)
-             (sfsim.render/with-mapped-vertex-arrays)]}
+  {:level :off}
   :type-mismatch {:level :off}}
  :output {:linter-name true}}

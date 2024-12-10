@@ -13,79 +13,79 @@
 
 (defn cube-map-x
   "x-coordinate of point on cube face"
-  {:malli/schema [:=> [:cat :int :double :double] :double]}
+  {:malli/schema [:=> [:cat :keyword :double :double] :double]}
   [face _j i]
-  (case (long face)
-    0 (+ -1.0 (* 2.0 i))
-    1 (+ -1.0 (* 2.0 i))
-    2  1.0
-    3 (-  1.0 (* 2.0 i))
-    4 -1.0
-    5 (+ -1.0 (* 2.0 i))))
+  (case face
+    ::face0 (+ -1.0 (* 2.0 i))
+    ::face1 (+ -1.0 (* 2.0 i))
+    ::face2  1.0
+    ::face3 (-  1.0 (* 2.0 i))
+    ::face4 -1.0
+    ::face5 (+ -1.0 (* 2.0 i))))
 
 (defn cube-map-y
   "y-coordinate of point on cube face"
-  {:malli/schema [:=> [:cat :int :double :double] :double]}
+  {:malli/schema [:=> [:cat :keyword :double :double] :double]}
   [face j i]
-  (case (long face)
-    0 (-  1.0 (* 2.0 j))
-    1 -1.0
-    2 (+ -1.0 (* 2.0 i))
-    3  1.0
-    4 (-  1.0 (* 2.0 i))
-    5 (+ -1.0 (* 2.0 j))))
+  (case face
+    ::face0 (-  1.0 (* 2.0 j))
+    ::face1 -1.0
+    ::face2 (+ -1.0 (* 2.0 i))
+    ::face3  1.0
+    ::face4 (-  1.0 (* 2.0 i))
+    ::face5 (+ -1.0 (* 2.0 j))))
 
 (defn cube-map-z
   "z-coordinate of point on cube face"
-  {:malli/schema [:=> [:cat :int :double :double] :double]}
+  {:malli/schema [:=> [:cat :keyword :double :double] :double]}
   [face j _i]
-  (case (long face)
-    0  1.0
-    1 (- 1.0 (* 2.0 j))
-    2 (- 1.0 (* 2.0 j))
-    3 (- 1.0 (* 2.0 j))
-    4 (- 1.0 (* 2.0 j))
-    5 -1.0))
+  (case face
+    ::face0  1.0
+    ::face1 (- 1.0 (* 2.0 j))
+    ::face2 (- 1.0 (* 2.0 j))
+    ::face3 (- 1.0 (* 2.0 j))
+    ::face4 (- 1.0 (* 2.0 j))
+    ::face5 -1.0))
 
 (defn cube-map
   "Get 3D vector to point on cube face"
-  {:malli/schema [:=> [:cat :int :double :double] fvec3]}
+  {:malli/schema [:=> [:cat :keyword :double :double] fvec3]}
   [face j i]
   (vec3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
 
 (defn determine-face
   "Determine which face a point gets projected on when projecting onto a cube"
-  {:malli/schema [:=> [:cat fvec3] :int]}
+  {:malli/schema [:=> [:cat fvec3] :keyword]}
   [point]
   (let [[x y z] point]
     (cond
-      (>= (abs x) (max (abs y) (abs z))) (if (>= x 0) 2 4)
-      (>= (abs y) (max (abs x) (abs z))) (if (>= y 0) 3 1)
-      :else                              (if (>= z 0) 0 5))))
+      (>= (abs x) (max (abs y) (abs z))) (if (>= x 0) ::face2 ::face4)
+      (>= (abs y) (max (abs x) (abs z))) (if (>= y 0) ::face3 ::face1)
+      :else                              (if (>= z 0) ::face0 ::face5))))
 
 (defn cube-i
   "Determine cube face coordinate i given face and a point on the cube surface"
-  {:malli/schema [:=> [:cat :int fvec3] :double]}
+  {:malli/schema [:=> [:cat :keyword fvec3] :double]}
   [face point]
-  (case (long face)
-    0 (* 0.5 (+ (point 0) 1.0))
-    1 (* 0.5 (+ (point 0) 1.0))
-    2 (* 0.5 (+ (point 1) 1.0))
-    3 (* 0.5 (- 1.0 (point 0)))
-    4 (* 0.5 (- 1.0 (point 1)))
-    5 (* 0.5 (+ (point 0) 1.0))))
+  (case face
+    ::face0 (* 0.5 (+ (point 0) 1.0))
+    ::face1 (* 0.5 (+ (point 0) 1.0))
+    ::face2 (* 0.5 (+ (point 1) 1.0))
+    ::face3 (* 0.5 (- 1.0 (point 0)))
+    ::face4 (* 0.5 (- 1.0 (point 1)))
+    ::face5 (* 0.5 (+ (point 0) 1.0))))
 
 (defn cube-j
   "Determine cube face coordinate j given face and a point on the cube surface"
-  {:malli/schema [:=> [:cat :int fvec3] :double]}
+  {:malli/schema [:=> [:cat :keyword fvec3] :double]}
   [face point]
-  (case (long face)
-    0 (* 0.5 (- 1.0 (point 1)))
-    1 (* 0.5 (- 1.0 (point 2)))
-    2 (* 0.5 (- 1.0 (point 2)))
-    3 (* 0.5 (- 1.0 (point 2)))
-    4 (* 0.5 (- 1.0 (point 2)))
-    5 (* 0.5 (+ (point 1) 1.0))))
+  (case face
+    ::face0 (* 0.5 (- 1.0 (point 1)))
+    ::face1 (* 0.5 (- 1.0 (point 2)))
+    ::face2 (* 0.5 (- 1.0 (point 2)))
+    ::face3 (* 0.5 (- 1.0 (point 2)))
+    ::face4 (* 0.5 (- 1.0 (point 2)))
+    ::face5 (* 0.5 (+ (point 1) 1.0))))
 
 (defn cube-coordinate
   "Determine coordinate of a pixel on a tile of a given level"
@@ -96,12 +96,12 @@
 
 (defn cube-map-corners
   "Get 3D vectors to corners of cube map tile"
-  {:malli/schema [:=> [:cat :int :int :int :int] [:tuple fvec3 fvec3 fvec3 fvec3]]}
-  [face level b a]
-  [(cube-map face (cube-coordinate level 2 b 0.0) (cube-coordinate level 2 a 0.0))
-   (cube-map face (cube-coordinate level 2 b 0.0) (cube-coordinate level 2 a 1.0))
-   (cube-map face (cube-coordinate level 2 b 1.0) (cube-coordinate level 2 a 0.0))
-   (cube-map face (cube-coordinate level 2 b 1.0) (cube-coordinate level 2 a 1.0))])
+  {:malli/schema [:=> [:cat :keyword :int :int :int] [:tuple fvec3 fvec3 fvec3 fvec3]]}
+  [face level row column]
+  [(cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 0.0))
+   (cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 1.0))
+   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 0.0))
+   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 1.0))])
 
 (defn longitude
   "Longitude of 3D point (East is positive)"
@@ -136,7 +136,7 @@
   "Project 3D vector onto cube"
   {:malli/schema [:=> [:cat fvec3] fvec3]}
   [point]
-  (let [[|x| |y| |z|] (map abs point)]
+  (let [[|x| |y| |z|] (mapv abs point)]
     (cond
       (>= |x| (max |y| |z|)) (div point |x|)
       (>= |y| (max |x| |z|)) (div point |y|)
@@ -269,10 +269,10 @@
 
 (defn tile-center
   "Determine the 3D center of a cube map tile"
-  {:malli/schema [:=> [:cat :int :int :int :int :double] fvec3]}
-  [face level b a radius]
-  (let [j (cube-coordinate level 3 b 1.0)
-        i (cube-coordinate level 3 a 1.0)]
+  {:malli/schema [:=> [:cat :keyword :int :int :int :double] fvec3]}
+  [face level row column radius]
+  (let [j (cube-coordinate level 3 row 1.0)
+        i (cube-coordinate level 3 column 1.0)]
     (project-onto-sphere (cube-map face j i) radius)))
 
 (defn color-geodetic-day
@@ -326,8 +326,8 @@
   (let [pc (surrounding-points p in-level out-level width tilesize radius)
         sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
         sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
-        n1 (reduce add (map mult pc sx))
-        n2 (reduce add (map mult pc sy))]
+        n1 (reduce add (mapv mult pc sx))
+        n2 (reduce add (mapv mult pc sy))]
     (normalize (cross n1 n2))))
 
 (set! *warn-on-reflection* false)

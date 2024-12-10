@@ -39,7 +39,7 @@
   (let [n      (quot (* size size) 10)
         sigma  1.5
         dither (bn/blue-noise size n sigma)]
-    (u/spit-floats "data/bluenoise.raw" (float-array (map #(/ % size size) dither)))))
+    (u/spit-floats "data/bluenoise.raw" (float-array (mapv #(/ % size size) dither)))))
 
 (defn cloud-cover
   "Generate cloud cover cubemap"
@@ -310,6 +310,16 @@
            :basis basis
            :main 'sfsim.core}))
 
+(defn download-spaceship
+  "Download Spaceship model"
+  [_]
+  (let [filename "venturestar.gltf"
+        url      (str "https://www.wedesoft.de/downloads/" filename)]
+    (.println *err* (str "Downloading " url " ..."))
+    (io/copy
+      (io/input-stream url)
+      (io/file filename))))
+
 (defn download-ephemeris
   "Download NASA JPL planet ephemeris data from https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/"
   [_]
@@ -345,6 +355,7 @@
   (perlin)
   (bluenoise)
   (cloud-cover)
+  (download-spaceship)
   (download-bluemarble)
   (download-blackmarble)
   (download-elevation)

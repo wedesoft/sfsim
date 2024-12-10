@@ -19,7 +19,7 @@
            [org.lwjgl.glfw GLFW]
            [org.lwjgl BufferUtils]))
 
-(mi/collect! {:ns ['sfsim.render]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)

@@ -7,7 +7,7 @@
               [sfsim.interpolate :refer :all]
               [sfsim.util :refer (sqr)]))
 
-(mi/collect! {:ns ['sfsim.interpolate]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (tabular "1D linear mapping"
