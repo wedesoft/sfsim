@@ -41,11 +41,11 @@
                                  :opacity-cutoff 0.01})
 
 (def shadow-config #:sfsim.opacity{:num-opacity-layers 7
-                                   :shadow-size 512
+                                   :shadow-size 1024
                                    :num-steps 3
-                                   :scene-shadow-size 256
+                                   :scene-shadow-size 512
                                    :scene-shadow-counts [0 1]
-                                   :mix 0.8
+                                   :mix 0.2
                                    :shadow-bias 1e-6})
 
 (def object-radius 30.0)

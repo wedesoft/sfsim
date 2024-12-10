@@ -94,7 +94,7 @@
   {:malli/schema [:function [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3] fvec3]
                             [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 :boolean] fvec3]]}
   ([planet scatter steps x x0]
-   (let [overall-extinction (fn overall-extinction [point] (apply add (map #(extinction % (height planet point)) scatter)))]
+   (let [overall-extinction (fn overall-extinction [point] (apply add (mapv #(extinction % (height planet point)) scatter)))]
      (-> (integral-ray #:sfsim.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub fv/exp)))
   ([planet scatter steps x v above-horizon]
    (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
@@ -118,7 +118,7 @@
   "Determine overall amount of in-scattering for multiple scattering components"
   {:malli/schema [:=> [:cat sphere [:vector scatter] fvec3 fvec3 fvec3] fvec3]}
   [planet scatter x view-direction light-direction]
-  (apply add (map #(in-scattering-component planet % x view-direction light-direction) scatter)))
+  (apply add (mapv #(in-scattering-component planet % x view-direction light-direction) scatter)))
 
 (defn- filtered-sun-light
   "Determine amount of incoming direct sun light"

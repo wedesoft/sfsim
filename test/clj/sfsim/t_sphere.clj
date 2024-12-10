@@ -7,7 +7,7 @@
             [clojure.math :refer (PI)]
             [sfsim.sphere :refer :all]))
 
-(mi/collect! {:ns ['sfsim.sphere]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Determine height above surface for given point"

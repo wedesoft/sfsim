@@ -97,11 +97,11 @@
 (defn cube-map-corners
   "Get 3D vectors to corners of cube map tile"
   {:malli/schema [:=> [:cat :keyword :int :int :int] [:tuple fvec3 fvec3 fvec3 fvec3]]}
-  [face level b a]
-  [(cube-map face (cube-coordinate level 2 b 0.0) (cube-coordinate level 2 a 0.0))
-   (cube-map face (cube-coordinate level 2 b 0.0) (cube-coordinate level 2 a 1.0))
-   (cube-map face (cube-coordinate level 2 b 1.0) (cube-coordinate level 2 a 0.0))
-   (cube-map face (cube-coordinate level 2 b 1.0) (cube-coordinate level 2 a 1.0))])
+  [face level row column]
+  [(cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 0.0))
+   (cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 1.0))
+   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 0.0))
+   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 1.0))])
 
 (defn longitude
   "Longitude of 3D point (East is positive)"
@@ -136,7 +136,7 @@
   "Project 3D vector onto cube"
   {:malli/schema [:=> [:cat fvec3] fvec3]}
   [point]
-  (let [[|x| |y| |z|] (map abs point)]
+  (let [[|x| |y| |z|] (mapv abs point)]
     (cond
       (>= |x| (max |y| |z|)) (div point |x|)
       (>= |y| (max |x| |z|)) (div point |y|)
@@ -270,9 +270,9 @@
 (defn tile-center
   "Determine the 3D center of a cube map tile"
   {:malli/schema [:=> [:cat :keyword :int :int :int :double] fvec3]}
-  [face level b a radius]
-  (let [j (cube-coordinate level 3 b 1.0)
-        i (cube-coordinate level 3 a 1.0)]
+  [face level row column radius]
+  (let [j (cube-coordinate level 3 row 1.0)
+        i (cube-coordinate level 3 column 1.0)]
     (project-onto-sphere (cube-map face j i) radius)))
 
 (defn color-geodetic-day
@@ -326,8 +326,8 @@
   (let [pc (surrounding-points p in-level out-level width tilesize radius)
         sx [-0.25  0    0.25, -0.5 0 0.5, -0.25 0   0.25]
         sy [-0.25 -0.5 -0.25,  0   0 0  ,  0.25 0.5 0.25]
-        n1 (reduce add (map mult pc sx))
-        n2 (reduce add (map mult pc sy))]
+        n1 (reduce add (mapv mult pc sx))
+        n2 (reduce add (mapv mult pc sy))]
     (normalize (cross n1 n2))))
 
 (set! *warn-on-reflection* false)

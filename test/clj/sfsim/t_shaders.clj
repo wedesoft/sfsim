@@ -14,7 +14,7 @@
             [sfsim.image :refer (get-float get-vector3 convert-4d-to-2d)])
   (:import [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.shaders]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)

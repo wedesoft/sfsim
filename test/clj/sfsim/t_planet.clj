@@ -23,7 +23,7 @@
     (:import [org.lwjgl.glfw GLFW]
              [fastmath.matrix Mat4x4]))
 
-(mi/collect! {:ns ['sfsim.planet]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)

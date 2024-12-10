@@ -5,7 +5,7 @@
             [fastmath.vector :refer (vec3)]
             [sfsim.plane :refer :all]))
 
-(mi/collect! {:ns ['sfsim.plane]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Put plane through three points"

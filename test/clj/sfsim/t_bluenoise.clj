@@ -11,7 +11,7 @@
               [sfsim.shaders :as shaders])
     (:import [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.bluenoise]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)

@@ -19,7 +19,7 @@
               [sfsim.clouds :refer :all])
     (:import [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.clouds]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
@@ -86,7 +86,7 @@ void main()
 (def linear-sampling-test
   (shader-test
     (fn [program]
-        (uniform-float program "cloud_scale" 100)
+        (uniform-float program "cloud_scale" 100.0)
         (uniform-int program "cloud_size" 20))
     sampling-probe
     linear-sampling))
@@ -139,31 +139,30 @@ float cloud_density(vec3 point, float lod)
 (defn setup-opacity-fragment-static-uniforms
   [program]
   (uniform-int program "shadow_size" 3)
-  (uniform-float program "radius" 1000)
-  (uniform-float program "cloud_bottom" 100)
-  (uniform-float program "cloud_top" 200))
+  (uniform-float program "radius" 1000.0)
+  (uniform-float program "cloud_bottom" 100.0)
+  (uniform-float program "cloud_top" 200.0))
 
 (defn setup-opacity-fragment-dynamic-uniforms [program shadow-ndc-to-world light-direction shells multiplier scatter
-                                               depth cloudstep opacitystep start lod]
+                                               depth opacitystep start lod]
   (uniform-matrix4 program "shadow_ndc_to_world" shadow-ndc-to-world)
   (uniform-vector3 program "light_direction" light-direction)
   (uniform-int program "num_shell_intersections" shells)
   (uniform-float program "cloud_multiplier" multiplier)
   (uniform-float program "scatter_amount" scatter)
   (uniform-float program "depth" depth)
-  (uniform-float program "cloud_max_step" cloudstep)
   (uniform-float program "opacity_step" opacitystep)
   (uniform-float program "density_start" start)
   (uniform-float program "level_of_detail" lod))
 
 (defn render-deep-opacity-map
-  [program vao opacity-layers depth z shells multiplier scatter start cloudstep opacitystep lod]
+  [program vao opacity-layers depth z shells multiplier scatter start opacitystep lod]
   (let [shadow-ndc-to-world   (transformation-matrix (mat3x3 1 1 depth) (vec3 0 0 (- z depth)))]
     (framebuffer-render 3 3 :sfsim.render/cullback nil [opacity-layers]
                         (use-program program)
                         (setup-opacity-fragment-static-uniforms program)
                         (setup-opacity-fragment-dynamic-uniforms program shadow-ndc-to-world (vec3 0 0 1) shells
-                                                                 multiplier scatter depth cloudstep opacitystep start lod)
+                                                                 multiplier scatter depth opacitystep start lod)
                         (render-quads vao))))
 
 (tabular "Compute deep opacity map offsets and layers"
@@ -177,34 +176,25 @@ float cloud_density(vec3 point, float lod)
             vao             (make-vertex-array-object program indices vertices ["point" 2])
             opacity-layers  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 3 3 8)
             index           ({:offset 0 :layer (inc ?layer)} ?selector)]
-        (render-deep-opacity-map program vao opacity-layers ?depth ?z ?shells ?multiplier ?scatter ?start ?cloudstep
-                                 ?opacitystep ?lod)
+        (render-deep-opacity-map program vao opacity-layers ?depth ?z ?shells ?multiplier ?scatter ?start ?opacitystep ?lod)
         (get-float-3d (float-texture-3d->floats opacity-layers) index 1 ?px) => (roughly ?result 1e-6)
         (destroy-texture opacity-layers)
         (destroy-vertex-array-object vao)
         (destroy-program program))))
-  ?shells ?px ?depth ?cloudstep ?opacitystep ?scatter ?start ?multiplier ?lod ?z   ?selector ?layer ?result
-  2       1    1000   50         50          0         1200  0.02        0.0  1200 :offset   0      1
-  2       1    1000   50         50          0         1200  0.02        0.0  1400 :offset   0      (- 1 0.2)
-  2       0    1000   50         50          0         1200  0.02        0.0  1400 :offset   0      (- 1 0.201)
-  2       1    1000   50         50          0         1150  0.02        0.0  1200 :offset   0      (- 1 0.05)
-  2       1   10000   50         50          0        -9999  0.02        0.0  1200 :offset   0      0.0
-  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    0      1.0
-  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    1      (exp -1)
-  2       1    1000   50         50          0         1200  0.02        1.0  1200 :layer    1      (exp -0.5)
-  2       1    1000   50         50          0.5       1200  0.02        0.0  1200 :layer    1      (exp -0.5)
-  2       1    1000   50         50          0         1200  0.02        0.0  1400 :layer    1      (exp -1)
-  2       1    1000   50         25          0         1200  0.02        0.0  1200 :layer    1      (/ (+ 1 (exp -1)) 2)
-  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    2      (exp -2)
-  2       1    1000   50         50          0         1200  0.02        0.0  1200 :layer    3      (exp -2)
-  2       1   10000   50         50          0            0  0.02        0.0  1200 :offset   0      (- 1 0.23)
-  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    0      1.0
-  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    1      (exp -1)
-  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    2      (exp -2)
-  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    3      (exp -2)
-  2       1   10000   50         50          0            0  0.02        0.0  1200 :layer    6      (exp -2)
-  2       1   10000   50         50          0        -9999  0.02        0.0  1200 :layer    6      1.0
-  1       1   10000   50         50          0        -1000  0.02        0.0  1200 :offset   0      (- 1 0.22))
+  ?shells ?px ?depth  ?opacitystep ?scatter ?start  ?multiplier ?lod ?z   ?selector ?layer ?result
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :offset   0      1
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.2)
+  2       0    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.201)
+  2       1    1000.0  50.0        0.0       1150.0 0.02        0.0  1200 :offset   0      (- 1 0.05)
+  2       1   10000.0  50.0        0.0      -9999.0 0.02        0.0  1200 :offset   0      0.0
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    0      1.0
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    1      (exp -1)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        1.0  1200 :layer    1      (exp -0.5)
+  2       1    1000.0  50.0        0.5       1200.0 0.02        0.0  1200 :layer    1      (exp -0.5)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :layer    1      (exp -1)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    2      (exp -2)
+  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    3      (exp -2)
+  2       1   10000.0  50.0        0.0          0.0 0.02        0.0  1200 :layer    0      1.0)
 
 (def opacity-lookup-probe
   (template/fn [x y z depth]
@@ -419,18 +409,18 @@ vec3 curl_field_mock(vec3 point)
 
 (tabular "Update normalised cubemap warp vectors using specified vectors"
          (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-3))
-         ?n ?scale ?px ?py ?pz ?x ?y ?z ?rx   ?ry   ?rz
-         0  1      1   0   0   0  0  0  1     0     0
-         0  1     -1   0   0   0  0  0 -1     0     0
-         0  1      0   1   0   0  0  0  0     1     0
-         0  1      0  -1   0   0  0  0  0    -1     0
-         0  1      0   0   1   0  0  0  0     0     1
-         0  1      0   0  -1   0  0  0  0     0    -1
-         1  1      1   0   0   2  0  0  3     0     0
-         1  1      1   0   0   0  1  0  1     1     0
-         1  1     -1   0   0   0  1  0 -1     0     0
-         1  0.5    1   0   0   2  0  0  2     0     0
-         2  1      1   0   0   0  1  0  0.707 1.707 0)
+         ?n ?scale ?px ?py ?pz ?x  ?y  ?z   ?rx   ?ry   ?rz
+         0  1.0    1   0   0   0.0 0.0 0.0  1     0     0
+         0  1.0   -1   0   0   0.0 0.0 0.0 -1     0     0
+         0  1.0    0   1   0   0.0 0.0 0.0  0     1     0
+         0  1.0    0  -1   0   0.0 0.0 0.0  0    -1     0
+         0  1.0    0   0   1   0.0 0.0 0.0  0     0     1
+         0  1.0    0   0  -1   0.0 0.0 0.0  0     0    -1
+         1  1.0    1   0   0   2.0 0.0 0.0  3     0     0
+         1  1.0    1   0   0   0.0 1.0 0.0  1     1     0
+         1  1.0   -1   0   0   0.0 1.0 0.0 -1     0     0
+         1  0.5    1   0   0   2.0 0.0 0.0  2     0     0
+         2  1.0    1   0   0   0.0 1.0 0.0  0.707 1.707 0)
 
 (def lookup-mock
 "#version 410 core
@@ -523,10 +513,10 @@ void main()
 (tabular "Shader for computing curl vectors from noise function"
          (fact (curl-test [0.125 ?dx ?dy ?dz] [?x ?y ?z]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-3))
          ?dx ?dy ?dz ?x ?y ?z ?rx ?ry ?rz
-         0   0   0   1  0  0  0   0   0
-         0   0.1 0   1  0  0  0   0   0.1
-         0   0   0.1 1  0  0  0  -0.1 0
-         0.2 0.1 0   1  0  0  0   0   0.1)
+         0.0 0.0 0.0 1  0  0  0   0   0
+         0.0 0.1 0.0 1  0  0  0   0   0.1
+         0.0 0.0 0.1 1  0  0  0  -0.1 0
+         0.2 0.1 0.0 1  0  0  0   0   0.1)
 
 (def flow-field-probe
   (template/fn [north south x y z]
@@ -560,16 +550,16 @@ void main()
 (tabular "Shader to create potential field for generating curl noise for global cloud cover"
          (fact ((flow-field-test [?curl-scale ?prevailing ?whirl] [?north ?south ?x ?y ?z]) 0) => (roughly ?result 1e-5))
          ?curl-scale ?prevailing ?whirl ?north ?south ?x                     ?y                     ?z ?result
-         1           0           0      0.0    0.0    1                      0                      0  0
-         1           1           0      0.0    0.0    0                     -1                      0  1
-         1           1           0      0.0    0.0    1                      0                      0  0
-         1           1           0      0.0    0.0    (cos (/ (asin 0.5) 3)) (sin (/ (asin 0.5) 3)) 0  0.5
-         1           0           1      1.0    0.3    0                     -1                      0  1
-         1           0           1      0.3    1.0    0                      1                      0 -1
-         1           0           0.5    1.0    0.0    0                     -1                      0  0.5
-         1           0           0.5    0.0    1.0    0                      1                      0 -0.5
-         1           0           1      0.0    0.0    0                      0                      1  0.25
-         2           0           1      0.0    0.0    0                      0                      1  0.125)
+         1.0         0.0         0.0    0.0    0.0    1                      0                      0  0
+         1.0         1.0         0.0    0.0    0.0    0                     -1                      0  1
+         1.0         1.0         0.0    0.0    0.0    1                      0                      0  0
+         1.0         1.0         0.0    0.0    0.0    (cos (/ (asin 0.5) 3)) (sin (/ (asin 0.5) 3)) 0  0.5
+         1.0         0.0         1.0    1.0    0.3    0                     -1                      0  1
+         1.0         0.0         1.0    0.3    1.0    0                      1                      0 -1
+         1.0         0.0         0.5    1.0    0.0    0                     -1                      0  0.5
+         1.0         0.0         0.5    0.0    1.0    0                      1                      0 -0.5
+         1.0         0.0         1.0    0.0    0.0    0                      0                      1  0.25
+         2.0         0.0         1.0    0.0    0.0    0                      0                      1  0.125)
 
 (def cover-vertex
 "#version 410 core
@@ -680,13 +670,13 @@ void main()
 (tabular "Shader for creating vertical cloud profile"
          (fact ((cloud-profile-test [?radius ?bottom ?top] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
          ?radius ?bottom ?top ?x    ?y  ?z ?result
-         100     10      18   110   0   0  0.0
-         100     10      18   110.5 0   0  0.5
-         100     10      18   111   0   0  1.0
-         100     10      18   113.5 0   0  0.7
-         100     10      18   116   0   0  0.4
-         100     10      18   117   0   0  0.2
-         100     10      18   118   0   0  0.0)
+         100.0   10.0    18.0 110   0   0  0.0
+         100.0   10.0    18.0 110.5 0   0  0.5
+         100.0   10.0    18.0 111   0   0  1.0
+         100.0   10.0    18.0 113.5 0   0  0.7
+         100.0   10.0    18.0 116   0   0  0.4
+         100.0   10.0    18.0 117   0   0  0.2
+         100.0   10.0    18.0 118   0   0  0.0)
 
 (def sphere-noise-probe
   (template/fn [x y z]
@@ -1010,10 +1000,10 @@ void main()
 (def cloud-point-test
   (shader-test
     (fn [program origin depth]
-        (uniform-float program "radius" 10)
-        (uniform-float program "max_height" 3)
-        (uniform-float program "cloud_bottom" 1)
-        (uniform-float program "cloud_top" 2)
+        (uniform-float program "radius" 10.0)
+        (uniform-float program "max_height" 3.0)
+        (uniform-float program "cloud_bottom" 1.0)
+        (uniform-float program "cloud_top" 2.0)
         (uniform-float program "depth" depth)
         (uniform-vector3 program "origin" (vec3 0 0 origin)))
     cloud-point-probe
@@ -1022,13 +1012,13 @@ void main()
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
          (fact ((cloud-point-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
          ?origin ?z ?depth ?selector ?result
-         11      10 100    "g"        0.0
-         11      10 100    "a"        0.0
-         12      10 100    "g"        1.0
-         12      10 100    "a"        1.0
-         12      10 100    "r"       12.0
-         14      10 100    "r"       13.0
-         13      10 100    "a"        1.0
+         11      10 100.0  "g"        0.0
+         11      10 100.0  "a"        0.0
+         12      10 100.0  "g"        1.0
+         12      10 100.0  "a"        1.0
+         12      10 100.0  "r"       12.0
+         14      10 100.0  "r"       13.0
+         13      10 100.0  "a"        1.0
          13      10   1.5  "a"        0.5)
 
 (def cloud-outer-probe
@@ -1076,10 +1066,10 @@ void main()
 (def cloud-outer-test
   (shader-test
     (fn [program z]
-        (uniform-float program "radius" 10)
-        (uniform-float program "max_height" 3)
-        (uniform-float program "cloud_bottom" 1)
-        (uniform-float program "cloud_top" 2)
+        (uniform-float program "radius" 10.0)
+        (uniform-float program "max_height" 3.0)
+        (uniform-float program "cloud_bottom" 1.0)
+        (uniform-float program "cloud_top" 2.0)
         (uniform-vector3 program "origin" (vec3 0 0 z)))
     cloud-outer-probe
     (last (cloud-outer 3 [] []))))
@@ -1180,10 +1170,10 @@ void main()
           atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
                                         :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-outer 3 [] []))])
           indices         [0 1 3 2]
-          vertices        (map #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
+          vertices        (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
           vao             (make-vertex-array-object atmosphere indices vertices ["point" 3])
           tex             (texture-render-color-depth width height true
-                                                      (clear (vec3 0 0 0) 0)
+                                                      (clear (vec3 0 0 0) 0.0)
                                                       (use-program planet)
                                                       (uniform-sampler planet "surface" 0)
                                                       (uniform-matrix4 planet "projection" projection)
@@ -1191,11 +1181,11 @@ void main()
                                                       (uniform-matrix4 planet "tile_to_camera" (inverse camera-to-world))
                                                       (uniform-vector3 planet "origin" origin)
                                                       (uniform-vector3 planet "light_direction" (vec3 1 0 0))
-                                                      (uniform-float planet "radius" 5)
-                                                      (uniform-float planet "max_height" 4)
-                                                      (uniform-float planet "cloud_bottom" 1)
-                                                      (uniform-float planet "cloud_top" 2)
-                                                      (uniform-float planet "depth" 3)
+                                                      (uniform-float planet "radius" 5.0)
+                                                      (uniform-float planet "max_height" 4.0)
+                                                      (uniform-float planet "cloud_bottom" 1.0)
+                                                      (uniform-float planet "cloud_top" 2.0)
+                                                      (uniform-float planet "depth" 3.0)
                                                       (uniform-int planet "neighbours" 15)
                                                       (uniform-int planet "high_detail" (dec tilesize))
                                                       (uniform-int planet "low_detail" (quot (dec tilesize) 2))
@@ -1205,10 +1195,10 @@ void main()
                                                       (uniform-matrix4 atmosphere "projection" projection)
                                                       (uniform-matrix4 atmosphere "camera_to_world" camera-to-world)
                                                       (uniform-vector3 atmosphere "origin" origin)
-                                                      (uniform-float atmosphere "radius" 5)
-                                                      (uniform-float atmosphere "max_height" 4)
-                                                      (uniform-float atmosphere "cloud_bottom" 1)
-                                                      (uniform-float atmosphere "cloud_top" 2)
+                                                      (uniform-float atmosphere "radius" 5.0)
+                                                      (uniform-float atmosphere "max_height" 4.0)
+                                                      (uniform-float atmosphere "cloud_bottom" 1.0)
+                                                      (uniform-float atmosphere "cloud_top" 2.0)
                                                       (render-quads vao))
           img        (texture->image tex)]
       (destroy-texture tex)
@@ -1278,7 +1268,6 @@ void main()
                                                (uniform-float program-opac "radius" 0.25)
                                                (uniform-float program-opac "cloud_bottom" 0.25)
                                                (uniform-float program-opac "cloud_top" 0.75)
-                                               (uniform-float program-opac "cloud_max_step" 0.05)
                                                (uniform-float program-opac "opacity_step" 0.1)
                                                (uniform-float program-opac "scatter_amount" 0.5)
                                                (render-quads vao))
@@ -1291,7 +1280,7 @@ void main()
                                                                                                               "opacity_lookup")
                                                                                       opacity-lookup])
                                       vao       (make-vertex-array-object program indices vertices ["point" 3])]
-                                  (clear (vec3 0 0 0) 0)
+                                  (clear (vec3 0 0 0) 0.0)
                                   (use-program program)
                                   (uniform-sampler program "opacity0" 0)
                                   (uniform-float program "opacity_step" 0.1)

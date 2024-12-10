@@ -8,7 +8,7 @@
     (:import [java.nio.file Files]
              [java.nio.file.attribute FileAttribute]))
 
-(mi/collect! {:ns ['sfsim.map-tiles]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Convert image into set of tiles"

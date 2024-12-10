@@ -1,39 +1,26 @@
 # TODO
-* use hashmaps instead of vectors of values
-  test 3x3 array of center quad (3 indices, 3 indices) using orientation input and rotation,
-  test 4x4 array of corner (face, b, a, tile-y, tile-x (dx=0, dy=0))
-* point, project-onto-cube, determine-face and cube-j and cube-i, tile-coordinates
-* p -> face, i, j -> face, b, a, tile-y, tile-x -> [face, b, a, tile-y, tile-x] * {8,9}
-  -> [face, i, j, tile-y, tile-x, b, a, {0, 1}, {0, 1}] * 3 * 2 * {8, 9}
-  -> canonical form -> set of canonical forms and indexed triangles -> coordinates and indexed triangles
-* Jolt mesh for surface?
-* clj -T:build cube-map :in-level 4 :out-level 7
-* increase resolution of cube map,
-  height field, 30 arc seconds -> 43200 pixels circumference
-  (/ 43200 4 (bit-shift-left 1 4)) -> 675
-  tilesize is 33, color-tilesize is 129, start with correct in-level (-4 -> -4 + sublevel = 2), maybe reduce sublevel?
-  color map is 21600*4 = 86400 circumference
-* quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
-* visualise prototype vehicle and wheels
-* level of detail in opacity cascade, cloud brightness flickering at large distance?
+* far away cloud shadows in top layer are too much
+  level of detail in opacity cascade, cloud brightness flickering at large distance?
   mipmaps for all cloud textures and octaves
   change cloud computation when viewing from space far away (use different lod of shadow?)
+* fix problem with resolution of neighbouring tiles in planetary cubemap
+* Jolt convex hulls and unions to create space craft collision shape
+* visualise prototype vehicle and wheels
+* gear/terrain physics with stationary Earth (ground collisions)
+* gear/terrain physics with rotating and moving Earth (ground collisions)
+* quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
+  deferred decals for rendering runway
 * introduce variation to cloud height
 * [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
 * .jpg -> .day.jpg
-* 2 more levels, higher res map
 * atmospheric flight with stationary atmosphere
-* far away clouds shadows in top layer are too much
 * animate flaps
 * gear locations, hover thruster locations
 * make model with rigged gear or simulate with Project Chrono
 * bake gear animation and name actions the same
-* gear/terrain physics with stationary Earth (ground collisions)
-* gear/terrain physics with rotating and moving Earth (ground collisions)
 * space station model
 * docking physics
 * moon landing physics
-* deferred decals for rendering runway
 * launch complex
 * compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map, microtextures, bump maps

@@ -9,7 +9,7 @@
             [fastmath.vector :refer (vec3)]
             [sfsim.quaternion :refer :all]))
 
-(mi/collect! {:ns ['sfsim.quaternion]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (def  o (->Quaternion  1  0  0  0))

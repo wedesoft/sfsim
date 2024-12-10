@@ -21,7 +21,7 @@
               [sfsim.config :as config])
     (:import [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.render]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
