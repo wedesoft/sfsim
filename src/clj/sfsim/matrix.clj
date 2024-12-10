@@ -206,7 +206,7 @@
 (def shadow-config (m/schema [:map [:sfsim.opacity/num-opacity-layers N] [:sfsim.opacity/shadow-size N]
                                    [:sfsim.opacity/num-steps N] [:sfsim.opacity/scene-shadow-counts [:vector N0]]
                                    [:sfsim.opacity/mix :double] [:sfsim.opacity/shadow-bias :double]
-                                   [:sfsim.opacity/opacity-bias :double]]))
+                                   [:sfsim.opacity/opacity-biases [:vector :double]]]))
 (def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
 
 (def shadow-box (m/schema [:map [::world-to-shadow-ndc fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))

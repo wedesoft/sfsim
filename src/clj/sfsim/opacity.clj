@@ -86,7 +86,7 @@
                       shadow-vars]}
   [opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars tree opacity-base]
   (let [splits          (split-list shadow-data render-vars)
-        biases          (biases-like (:sfsim.opacity/opacity-bias shadow-data) splits)
+        biases          (:sfsim.opacity/opacity-biases shadow-data)
         matrix-cascade  (shadow-matrix-cascade shadow-data render-vars)
         position        (:sfsim.render/origin render-vars)
         cos-light       (/ (dot (:sfsim.render/light-direction render-vars) position) (mag position))
