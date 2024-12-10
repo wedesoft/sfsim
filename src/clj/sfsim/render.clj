@@ -585,10 +585,11 @@
   [program shadow-vars]
   (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
          (uniform-float program (str "split" idx) item))
+  (doseq [[idx item] (map-indexed vector (:sfsim.opacity/biases shadow-vars))]
+         (uniform-float program (str "bias" idx) item))
   (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
          (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
-         (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item))
-         (uniform-float program (str "bias" idx) 0.0)))
+         (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item))))
 
 (def tessellation-uniform (slurp "resources/shaders/render/tessellation-uniform.glsl"))
 (def tessellation-chequer (slurp "resources/shaders/render/tessellation-chequer.glsl"))

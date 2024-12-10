@@ -205,7 +205,8 @@
 
 (def shadow-config (m/schema [:map [:sfsim.opacity/num-opacity-layers N] [:sfsim.opacity/shadow-size N]
                                    [:sfsim.opacity/num-steps N] [:sfsim.opacity/scene-shadow-counts [:vector N0]]
-                                   [:sfsim.opacity/mix :double] [:sfsim.opacity/shadow-bias :double]]))
+                                   [:sfsim.opacity/mix :double] [:sfsim.opacity/shadow-bias :double]
+                                   [:sfsim.opacity/opacity-bias :double]]))
 (def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
 
 (def shadow-box (m/schema [:map [::world-to-shadow-ndc fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
@@ -251,6 +252,12 @@
   {:malli/schema [:=> [:cat :map :map] [:vector :double]]}
   [{:sfsim.opacity/keys [mix num-steps]} {:sfsim.render/keys [z-near z-far]}]
   (mapv (partial split-mixed mix z-near z-far num-steps) (range (inc num-steps))))
+
+(defn biases-like
+  "Create list of increasing biases"
+  {:malli/schema [:=> [:cat :double [:vector :double]] [:vector :double]]}
+  [opacity-bias splits]
+  (mapv #(* opacity-bias (/ % (second splits))) (rest splits)))
 
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices for view frustum"

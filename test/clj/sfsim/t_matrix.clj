@@ -176,6 +176,11 @@
                    {:sfsim.render/z-near 10.0 :sfsim.render/z-far 40.0})
        => [10.0 25.0 40.0])
 
+(facts "Create list of increasing biases"
+       (biases-like 100.0 [10.0 50.0]) => [100.0]
+       (biases-like 100.0 [10.0 50.0 100.0]) => [100.0 200.0]
+       (biases-like 100.0 [10.0 50.0 100.0 200.0]) => [100.0 200.0 400.0])
+
 (facts "Cascade of shadow matrices"
        (let [z-near          10.0
              z-far           40.0

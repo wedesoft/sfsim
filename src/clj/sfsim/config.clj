@@ -43,6 +43,7 @@
 (def shadow-config #:sfsim.opacity{:num-opacity-layers 7
                                    :shadow-size 1024
                                    :num-steps 3
+                                   :opacity-bias 200.0
                                    :scene-shadow-size 512
                                    :scene-shadow-counts [0 1]
                                    :mix 0.2

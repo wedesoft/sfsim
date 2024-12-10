@@ -210,7 +210,7 @@
      :sfsim.render/config render-config}))
 
 (def shadow-vars (m/schema [:map [:sfsim.opacity/opacity-step :double] [:sfsim.opacity/splits [:vector :double]]
-                                 [:sfsim.opacity/matrix-cascade [:vector shadow-box]]
+                                 [:sfsim.opacity/biases [:vector :double]] [:sfsim.opacity/matrix-cascade [:vector shadow-box]]
                                  [:sfsim.opacity/shadows [:vector texture-2d]] [:sfsim.opacity/opacities [:vector texture-3d]]]))
 
 (defn render-cloud-planet
