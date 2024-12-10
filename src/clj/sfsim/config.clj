@@ -46,7 +46,7 @@
                                    :opacity-bias 200.0
                                    :scene-shadow-size 512
                                    :scene-shadow-counts [0 1]
-                                   :mix 0.2
+                                   :mix 0.7
                                    :shadow-bias 1e-6})
 
 (def object-radius 30.0)
