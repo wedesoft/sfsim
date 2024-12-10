@@ -1,11 +1,13 @@
 #version 410 core
 
 uniform mat4 world_to_camera;
+uniform vec3 light_direction;
 
 <% (doseq [i (range n)] %>
 uniform sampler3D opacity<%= i %>;
 uniform mat4 world_to_shadow_map<%= i %>;
 uniform float depth<%= i %>;
+uniform float bias<%= i %>;
 <% ) %>
 <% (doseq [i (range (inc n))] %>
 uniform float split<%= i %>;
@@ -18,7 +20,8 @@ float opacity_cascade_lookup(vec4 point)
 <% (doseq [i (range n)] %>
   if (z <= split<%= (inc i) %>) {
     vec4 map_coords = world_to_shadow_map<%= i %> * point;
-    return <%= base-function %>(opacity<%= i %>, depth<%= i %>, map_coords);
+    vec4 offset_map_coords = vec4(map_coords.xyz + light_direction * bias<%= i %>, 1.0);
+    return <%= base-function %>(opacity<%= i %>, depth<%= i %>, offset_map_coords);
   };
 <% ) %>
   return 1.0;
