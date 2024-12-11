@@ -17,6 +17,7 @@ elevation.*.raw
 *.class
 *.o
 *.so
+*.dll
 *.jar
 *.tgz
 *.log
