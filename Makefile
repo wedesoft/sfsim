@@ -1,8 +1,8 @@
 CC = g++
 STRIP = strip
 JOLTFLAGS = -DJPH_OBJECT_STREAM -DJPH_DOUBLE_PRECISION
-CCFLAGS = -g -fPIC -Wall -Werror -DNDEBUG $(JOLTFLAGS) -Isrc/c
-LDFLAGS = -lJolt
+CCFLAGS = -g -fPIC -Wall -Werror -DNDEBUG -I/usr/local/include $(JOLTFLAGS) -Isrc/c
+LDFLAGS = -L/usr/local/lib -lJolt
 
 all: src/c/sfsim/libjolt.so
 

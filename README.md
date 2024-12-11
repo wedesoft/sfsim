@@ -28,6 +28,8 @@ Requires OpenGL 4.5.
 
 ## Install JoltPhysics
 
+### GCC/Linux
+
 ```Shell
 cd Build
 ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF
@@ -35,6 +37,16 @@ cd Linux_Release
 make -j `nproc`
 sudo make install
 cd ../..
+```
+
+### MinGW/Windows
+
+```Shell
+cd Build
+./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DINTERPROCEDURAL_OPTIMIZATION=OFF
+cmake --build MinGW_Release -j 4
+cmake --install MinGW_Release --prefix /usr/local
+cd ..
 ```
 
 # Build
