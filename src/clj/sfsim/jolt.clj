@@ -31,7 +31,8 @@
 (s/fdef defconst
   :args ::defconst-args)
 
-(ffi/load-library "src/c/sfsim/libjolt.so")
+; use ldd to list dependencies of DLL
+(ffi/load-library "src/c/sfsim/libjolt.dll")
 
 (defcfn jolt-init
   "Initialize Jolt library"

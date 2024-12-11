@@ -270,7 +270,7 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn opacity-cascade-lookup-test [n z shift-z opacities offsets select]
+(defn opacity-cascade-lookup-test [n z shift-z opacities offsets bias select]
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -286,9 +286,11 @@ void main()
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
                                                 (uniform-matrix4 program "world_to_camera" world-to-camera)
+                                                (uniform-vector3 program "light_direction" (vec3 1 0 0))
                                                 (doseq [idx (range n)]
                                                        (uniform-sampler program (str "opacity" idx) idx)
-                                                       (uniform-float program (str "depth" idx) 200.0))
+                                                       (uniform-float program (str "depth" idx) 200.0)
+                                                       (uniform-float program (str "bias" idx) (* bias idx)))
                                                 (doseq [idx (range n)]
                                                        (uniform-matrix4 program (str "world_to_shadow_map" idx)
                                                                         (transformation-matrix (eye 3)
@@ -307,15 +309,17 @@ void main()
       (get-vector3 img 0 0))))
 
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
-         (fact ((opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
-         ?n ?z  ?shift-z ?opacities ?offsets ?select  ?result
-         1  -10  0       [0.75]     [0]      :opacity 0.75
-         2  -40  0       [0.75 0.5] [0 0]    :opacity 0.5
-         2  -50 10       [0.75 0.5] [0 0]    :opacity 0.5
-         2  -50  0       [0.75 0.5] [0 0]    :opacity 1.0
-         1  -10  0       [1.0]      [0]      :coord   1.0
-         2  -10  0       [1.0]      [0]      :coord   1.0
-         2  -40  0       [1.0]      [0]      :coord   2.0)
+         (fact ((opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?bias ?select) 0) => (roughly ?result 1e-6))
+         ?n ?z  ?shift-z ?opacities ?offsets ?bias ?select  ?result
+         1  -10  0       [0.75]     [0]      0.0   :opacity 0.75
+         2  -40  0       [0.75 0.5] [0 0]    0.0   :opacity 0.5
+         2  -50 10       [0.75 0.5] [0 0]    0.0   :opacity 0.5
+         2  -50  0       [0.75 0.5] [0 0]    0.0   :opacity 1.0
+         1  -10  0       [1.0]      [0]      0.0   :coord   1.0
+         2  -10  0       [1.0]      [0]      0.0   :coord   1.0
+         2  -40  0       [1.0]      [0]      0.0   :coord   2.0
+         2  -10  0       [1.0]      [0]      1.0   :coord   1.0
+         2  -40  0       [1.0]      [0]      1.0   :coord   3.0)
 
 (def cubemap-probe
   (template/fn [x y z]

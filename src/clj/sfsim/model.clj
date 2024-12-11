@@ -641,7 +641,7 @@
   {:malli/schema [:=> [:cat material mesh-vars] :nil]}
   [_material {::keys [program transform] :as render-vars}]
   (use-program program)
-  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/shadow-ndc-matrix render-vars) transform)))
+  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/object-to-shadow-ndc render-vars) transform)))
 
 (defn render-shadow-map
   "Render shadow map for an object"

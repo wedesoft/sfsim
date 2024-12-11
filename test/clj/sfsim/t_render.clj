@@ -805,12 +805,12 @@ void main()
 
 (def vertex-shadow
 "#version 410 core
-uniform mat4 shadow_ndc_matrix;
+uniform mat4 world_to_shadow_ndc;
 in vec3 point;
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main(void)
 {
-  gl_Position = shrink_shadow_index(shadow_ndc_matrix * vec4(point, 1), 128, 128);
+  gl_Position = shrink_shadow_index(world_to_shadow_ndc * vec4(point, 1), 128, 128);
 }")
 
 (def fragment-shadow
@@ -868,7 +868,7 @@ void main(void)
                                 128 128
                                 (clear)
                                 (use-program program-shadow)
-                                (uniform-matrix4 program-shadow "shadow_ndc_matrix" (:sfsim.matrix/shadow-ndc-matrix shadow-mat))
+                                (uniform-matrix4 program-shadow "world_to_shadow_ndc" (:sfsim.matrix/world-to-shadow-ndc shadow-mat))
                                 (render-quads vao))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
@@ -924,8 +924,8 @@ void main(void)
                                                                     (s/shadow-lookup "shadow_lookup" "shadow_size")])
               vao             (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-maps     (shadow-cascade 128 shadow-mats program-shadow
-                                              (fn [shadow-ndc-matrix]
-                                                  (uniform-matrix4 program-shadow "shadow_ndc_matrix" shadow-ndc-matrix)
+                                              (fn [world-to-shadow-ndc]
+                                                  (uniform-matrix4 program-shadow "world_to_shadow_ndc" world-to-shadow-ndc)
                                                   (render-quads vao)))]
           (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
                 tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
