@@ -29,7 +29,7 @@
     (:import [fastmath.vector Vec3]
              [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.atmosphere]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
@@ -848,7 +848,7 @@ void main()
         (let [indices  [0 1 3 2]
               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
-              img      #:sfsim.image{:width 2 :height 2 :data (byte-array data)}
+              img      #:sfsim.image{:width 2 :height 2 :data (byte-array data) :channels 3}
               clouds   (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp img)
               program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                      :sfsim.render/fragment [fragment-overlay-lookup cloud-overlay])

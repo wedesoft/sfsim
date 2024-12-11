@@ -7,7 +7,7 @@
               [sfsim.util :refer (dimension-count)]
               [sfsim.conftest :refer (roughly-vector)]))
 
-(mi/collect! {:ns ['sfsim.perlin]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (facts "Return random gradient vector"

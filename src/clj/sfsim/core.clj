@@ -9,11 +9,13 @@
                                   write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
                                   quad-splits-orientations)]
             [sfsim.atmosphere :as atmosphere]
-            [sfsim.quadtree :refer (distance-to-surface)]
+            [sfsim.quadtree :as quadtree]
             [sfsim.matrix :refer (transformation-matrix quaternion->matrix)]
             [sfsim.planet :as planet]
             [sfsim.clouds :as clouds]
             [sfsim.model :as model]
+            [sfsim.jolt :as jolt]
+            [sfsim.cubemap :as cubemap]
             [sfsim.quaternion :as q]
             [sfsim.opacity :as opacity]
             [sfsim.astro :as astro]
@@ -35,10 +37,11 @@
 ; (require '[malli.dev.pretty :as pretty])
 ; (dev/start! {:report (pretty/thrower)})
 
-(def opacity-base (atom 250.0))
+(def opacity-base (atom 125.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 30.0)
+(def height 49660.0)
+; (def height 30.0)
 (def speed (atom (/ 7800 1000.0)))
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
@@ -46,7 +49,11 @@
 
 (GLFW/glfwInit)
 
-(def window (make-window "sfsim" 1280 720))
+(jolt/jolt-init)
+
+(def window-width (quot 1920 3))
+(def window-height (quot 1080 3))
+(def window (make-window "sfsim" window-width window-height))
 (GLFW/glfwShowWindow window)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
@@ -82,6 +89,7 @@
                                                              config/object-radius))
 
 (def scene (model/load-scene scene-renderer "venturestar.gltf"))
+; (def scene (model/load-scene scene-renderer "cube.gltf"))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -183,11 +191,11 @@
 (defn position-from-lon-lat
   [longitude latitude height]
   (let [point      (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
-        min-radius (distance-to-surface point
-                                        (:sfsim.planet/level config/planet-config)
-                                        (:sfsim.planet/tilesize config/planet-config)
-                                        (:sfsim.planet/radius config/planet-config)
-                                        split-orientations)
+        min-radius (quadtree/distance-to-surface point
+                                                 (:sfsim.planet/level config/planet-config)
+                                                 (:sfsim.planet/tilesize config/planet-config)
+                                                 (:sfsim.planet/radius config/planet-config)
+                                                 split-orientations)
         radius     (+ height (:sfsim.planet/radius config/planet-config))]
     (mult point (max radius min-radius))))
 
@@ -199,7 +207,45 @@
 (def pose (atom {:position (position-from-lon-lat longitude latitude height)
                  :orientation (orientation-from-lon-lat longitude latitude)}))
 (def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
-(def dist (atom 100.0))
+(def dist (atom 200.0))
+
+(def box (jolt/make-box (vec3 1 1 1) 1000.0 (:position @pose) (:orientation @pose) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
+(jolt/set-friction box 0.5)
+(jolt/set-restitution box 0.4)
+
+(jolt/optimize-broad-phase)
+
+(def coords (atom nil))
+(def mesh (atom nil))
+
+(defn update-mesh!
+  [position]
+  (let [point  (cubemap/project-onto-cube position)
+        face   (cubemap/determine-face point)
+        j      (cubemap/cube-j face point)
+        i      (cubemap/cube-i face point)
+        c      (dissoc (quadtree/tile-coordinates j i
+                                                  (:sfsim.planet/level config/planet-config)
+                                                  (:sfsim.planet/tilesize config/planet-config))
+                       :sfsim.quadtree/dy :sfsim.quadtree/dx)]
+    (when (not= c @coords)
+      (let [b      (:sfsim.quadtree/row c)
+            a      (:sfsim.quadtree/column c)
+            tile-y (:sfsim.quadtree/tile-y c)
+            tile-x (:sfsim.quadtree/tile-x c)
+            center (cubemap/tile-center face
+                                        (:sfsim.planet/level config/planet-config) b a
+                                        (:sfsim.planet/radius config/planet-config))
+            m      (quadtree/create-local-mesh split-orientations face
+                                               (:sfsim.planet/level config/planet-config)
+                                               (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
+                                               (:sfsim.planet/radius config/planet-config) center)]
+        (when @mesh (jolt/remove-and-destroy-body @mesh))
+        (reset! coords c)
+        (reset! mesh (jolt/make-mesh m 5.9742e+24 center (q/->Quaternion 1 0 0 0)))
+        (jolt/set-friction @mesh 0.5)
+        (jolt/set-restitution @mesh 0.4)
+        (jolt/optimize-broad-phase)))))
 
 (defn location-dialog-get
   [position-data]
@@ -222,7 +268,7 @@
 
 (defn location-dialog
   [gui]
-  (gui/nuklear-window gui "location" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -267,7 +313,7 @@
 
 (defn datetime-dialog
   [gui]
-  (gui/nuklear-window gui "datetime" (quot (- 1280 320) 2) (quot (- 720 (* 38 3)) 2) 320 (* 38 3)
+  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 38 3)) 2) 320 (* 38 3)
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -302,7 +348,7 @@
 
 (defn main-dialog
   [gui]
-  (gui/nuklear-window gui "menu" (quot (- 1280 320) 2) (quot (- 720 (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
@@ -315,6 +361,8 @@
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
+(def unpause (atom 0))
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -324,6 +372,7 @@
     (while (not (GLFW/glfwWindowShouldClose window))
            (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
            (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
+           (when (@keystates GLFW/GLFW_KEY_P) (reset! unpause 1))
            (let [t1 (System/currentTimeMillis)
                  dt (- t1 @t0)
                  mn (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -337,6 +386,10 @@
                  d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
                  to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
              (when mn (reset! menu main-dialog))
+             ;(jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+             ;(update-mesh! (:position @pose))
+             ;(jolt/update-system (* dt @unpause 0.001) 10)
+             ;(reset! pose {:position (jolt/get-translation box) :orientation (jolt/get-orientation box)})
              (swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
              (swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
              (swap! pose update :orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
@@ -365,10 +418,10 @@
                    object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
                    moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
                    object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
-                   w2                 (quot (:sfsim.render/window-width planet-render-vars) 2)
-                   h2                 (quot (:sfsim.render/window-height planet-render-vars) 2)
                    clouds             (texture-render-color-depth
-                                        w2 h2 true
+                                        (:sfsim.render/window-width planet-render-vars)
+                                        (:sfsim.render/window-height planet-render-vars)
+                                        true
                                         (clear (vec3 0 0 0) 1.0)
                                         ; Render clouds in front of planet
                                         (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
@@ -399,11 +452,11 @@
                      ; Render atmosphere with cloud overlay
                      (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
                  (when @menu
-                   (setup-rendering 1280 720 :sfsim.render/noculling false)
+                   (setup-rendering window-width window-height :sfsim.render/noculling false)
                    (reset! focus-old nil)
                    (@menu gui)
                    (reset! focus-new nil)
-                   (gui/render-nuklear-gui gui 1280 720)))
+                   (gui/render-nuklear-gui gui window-width window-height)))
                (destroy-texture clouds)
                (model/destroy-scene-shadow-map object-shadow)
                (opacity/destroy-opacity-and-shadow shadow-vars))
@@ -430,5 +483,6 @@
   (gui/destroy-nuklear-gui gui)
   (gui/destroy-font-texture bitmap-font)
   (destroy-window window)
+  (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
   (System/exit 0))

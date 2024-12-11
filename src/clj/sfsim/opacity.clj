@@ -3,7 +3,7 @@
     (:require [clojure.math :refer (sqrt)]
               [malli.core :as m]
               [fastmath.vector :refer (mag dot)]
-              [sfsim.matrix :refer (split-list shadow-matrix-cascade shadow-config shadow-data)]
+              [sfsim.matrix :refer (split-list biases-like shadow-matrix-cascade shadow-config shadow-data)]
               [sfsim.texture :refer (destroy-texture)]
               [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
                                     use-program uniform-int uniform-float uniform-vector3 render-quads use-textures render-config
@@ -65,7 +65,6 @@
                      (uniform-vector3 program "light_direction" light-direction)
                      (uniform-float program "scatter_amount" scatter-amount)
                      (uniform-float program "opacity_step" opacity-step)
-                     (uniform-float program "cloud_max_step" (* 0.5 opacity-step))
                      (render-quads vao))))
 
 (defn destroy-opacity-cascade
@@ -87,6 +86,7 @@
                       shadow-vars]}
   [opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars tree opacity-base]
   (let [splits          (split-list shadow-data render-vars)
+        biases          (:sfsim.opacity/opacity-biases shadow-data)
         matrix-cascade  (shadow-matrix-cascade shadow-data render-vars)
         position        (:sfsim.render/origin render-vars)
         cos-light       (/ (dot (:sfsim.render/light-direction render-vars) position) (mag position))
@@ -99,6 +99,7 @@
         shadows         (render-shadow-cascade planet-shadow-renderer ::matrix-cascade matrix-cascade :tree tree)]
     {::opacity-step opacity-step
      ::splits splits
+     ::biases biases
      ::matrix-cascade matrix-cascade
      ::shadows shadows
      ::opacities opacities}))

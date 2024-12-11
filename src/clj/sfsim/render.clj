@@ -180,16 +180,16 @@
                   :int]}
   [& {::keys [vertex tess-control tess-evaluation geometry fragment]
       :or {vertex [] tess-control [] tess-evaluation [] geometry [] fragment []}}]
-  (let [shaders (concat (map (partial make-shader "vertex" GL20/GL_VERTEX_SHADER)
-                             (distinct (flatten vertex)))
-                        (map (partial make-shader "tessellation control" GL40/GL_TESS_CONTROL_SHADER)
-                             (distinct (flatten tess-control)))
-                        (map (partial make-shader "tessellation evaluation" GL40/GL_TESS_EVALUATION_SHADER)
-                             (distinct (flatten tess-evaluation)))
-                        (map (partial make-shader "geometry" GL32/GL_GEOMETRY_SHADER)
-                             (distinct (flatten geometry)))
-                        (map (partial make-shader "fragment" GL20/GL_FRAGMENT_SHADER)
-                             (distinct (flatten fragment))))
+  (let [shaders (concat (mapv (partial make-shader "vertex" GL20/GL_VERTEX_SHADER)
+                              (distinct (flatten vertex)))
+                        (mapv (partial make-shader "tessellation control" GL40/GL_TESS_CONTROL_SHADER)
+                              (distinct (flatten tess-control)))
+                        (mapv (partial make-shader "tessellation evaluation" GL40/GL_TESS_EVALUATION_SHADER)
+                              (distinct (flatten tess-evaluation)))
+                        (mapv (partial make-shader "geometry" GL32/GL_GEOMETRY_SHADER)
+                              (distinct (flatten geometry)))
+                        (mapv (partial make-shader "fragment" GL20/GL_FRAGMENT_SHADER)
+                              (distinct (flatten fragment))))
         program (GL20/glCreateProgram)]
     (doseq [shader shaders] (GL20/glAttachShader program shader))
     (GL20/glLinkProgram program)
@@ -237,10 +237,10 @@
   {:malli/schema [:=> [:cat :int [:and sequential? [:repeat [:cat :int :string N]]]] [:vector :int]]}
   [program attributes]
   (let [attribute-pairs (partition 3 attributes)
-        sizes           (map (fn [[opengl-type _name size]] (* (opengl-type-size opengl-type) size) ) attribute-pairs)
+        sizes           (mapv (fn [[opengl-type _name size]] (* (opengl-type-size opengl-type) size) ) attribute-pairs)
         stride          (apply + sizes)
         offsets         (reductions + 0 (butlast sizes))
-        attr-locations  (for [[[opengl-type attribute size] offset] (map list attribute-pairs offsets)]
+        attr-locations  (for [[[opengl-type attribute size] offset] (mapv list attribute-pairs offsets)]
                              (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
                                (GL20/glVertexAttribPointer location ^long size ^long opengl-type true ^long stride ^long offset)
                                (GL20/glEnableVertexAttribArray location)
@@ -416,12 +416,12 @@
   {:malli/schema [:=> [:cat [:sequential texture]] [:sequential texture]]}
   [textures]
   (flatten
-    (map (fn layers-of-texture [texture]
-             (if (:sfsim.texture/depth texture)
-               (map (fn layer-of-3d-texture [layer] (assoc texture :sfsim.texture/layer layer))
-                    (range (:sfsim.texture/depth texture)))
-               texture))
-         textures)))
+    (mapv (fn layers-of-texture [texture]
+              (if (:sfsim.texture/depth texture)
+                (mapv (fn layer-of-3d-texture [layer] (assoc texture :sfsim.texture/layer layer))
+                      (range (:sfsim.texture/depth texture)))
+                texture))
+          textures)))
 
 (defn setup-color-attachments
   "Setup color attachments with 2D and 3D textures"
@@ -490,7 +490,7 @@
         (texture-render-depth size size
                               (clear)
                               (use-program program)
-                              (fun (:sfsim.matrix/shadow-ndc-matrix shadow-level))))
+                              (fun (:sfsim.matrix/world-to-shadow-ndc shadow-level))))
     matrix-cascade))
 
 (defmacro offscreen-render
@@ -585,6 +585,8 @@
   [program shadow-vars]
   (doseq [[idx item] (map-indexed vector (:sfsim.opacity/splits shadow-vars))]
          (uniform-float program (str "split" idx) item))
+  (doseq [[idx item] (map-indexed vector (:sfsim.opacity/biases shadow-vars))]
+         (uniform-float program (str "bias" idx) item))
   (doseq [[idx item] (map-indexed vector (:sfsim.opacity/matrix-cascade shadow-vars))]
          (uniform-matrix4 program (str "world_to_shadow_map" idx) (:sfsim.matrix/world-to-shadow-map item))
          (uniform-float program (str "depth" idx) (:sfsim.matrix/depth item))))

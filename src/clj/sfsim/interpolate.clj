@@ -16,14 +16,14 @@
   {:malli/schema [:=> [:cat [:vector :double] [:vector :double] [:vector N]] [:=> [:cat [:* :double]] [:vector :double]]]}
   [minima maxima shape]
   (fn linear-forward [& point]
-      (map (fn linear-forward-component [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
+      (mapv (fn linear-forward-component [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
 
 (defn- linear-backward
   "Inverse linear mapping to get sample values for lookup table"
   {:malli/schema [:=> [:cat [:vector :double] [:vector :double] [:vector N]] [:=> [:cat [:* :double]] [:vector :double]]]}
   [minima maxima shape]
   (fn linear-backward [& indices]
-      (map (fn linear-backward-component [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
+      (mapv (fn linear-backward-component [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
 
 (defn linear-space
   "Create forward and backward mapping for linear sampling"

@@ -11,7 +11,7 @@
   {:malli/schema [:=> [:cat ray N :double [:=> [:cat [:vector :double]] :some]] :some]}
   [{::keys [origin direction]} steps distance fun]
   (let [stepsize      (/ distance steps)
-        samples       (map #(* (+ 0.5 %) stepsize) (range steps))
+        samples       (mapv #(* (+ 0.5 %) stepsize) (range steps))
         interpolate   (fn interpolate [s] (add origin (mult direction s)))
         direction-len (mag direction)]
-    (reduce add (map #(-> % interpolate fun (mult (* stepsize direction-len))) samples))))
+    (reduce add (mapv #(-> % interpolate fun (mult (* stepsize direction-len))) samples))))

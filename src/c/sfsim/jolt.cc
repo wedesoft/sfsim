@@ -26,7 +26,7 @@ static void TraceImpl(const char *inFMT, ...)
 }
 
 #ifdef JPH_ENABLE_ASSERTS
-static bool AssertFailedImpl(const char *inExpression, const char *inMessage, const char *inFile, uint inLine)
+static bool AssertFailedImpl(const char *inExpression, const char *inMessage, const char *inFile, unsigned int inLine)
 {
   std::cerr << inFile << ":" << inLine << ": (" << inExpression << ") " << (inMessage != nullptr? inMessage : "") << std::endl;
   return true;
@@ -59,7 +59,7 @@ namespace BroadPhaseLayers
 {
   static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
   static constexpr JPH::BroadPhaseLayer MOVING(1);
-  static constexpr uint NUM_LAYERS(2);
+  static constexpr unsigned int NUM_LAYERS(2);
 };
 
 class BPLayerInterfaceImpl final: public JPH::BroadPhaseLayerInterface
@@ -71,7 +71,7 @@ public:
     mObjectToBroadPhase[MOVING] = BroadPhaseLayers::MOVING;
   }
 
-  virtual uint GetNumBroadPhaseLayers() const override
+  virtual unsigned int GetNumBroadPhaseLayers() const override
   {
     return BroadPhaseLayers::NUM_LAYERS;
   }
@@ -119,10 +119,10 @@ public:
 JPH::TempAllocatorMalloc *temp_allocator = nullptr;
 JPH::JobSystemThreadPool *job_system = nullptr;
 
-const uint cMaxBodies = 1024;
-const uint cNumBodyMutexes = 0;
-const uint cMaxBodyPairs = 1024;
-const uint cMaxContactConstraints = 1024;
+const unsigned int cMaxBodies = 1024;
+const unsigned int cNumBodyMutexes = 0;
+const unsigned int cMaxBodyPairs = 1024;
+const unsigned int cMaxContactConstraints = 1024;
 
 BPLayerInterfaceImpl *broad_phase_layer_interface = nullptr;
 ObjectLayerPairFilterImpl *object_vs_object_layer_filter = nullptr;
@@ -175,10 +175,9 @@ void jolt_destroy(void)
   JPH::Factory::sInstance = nullptr;
 }
 
-void update_system(double dt)
+void update_system(double dt, int collision_steps)
 {
-  const int cCollisionSteps = 1;
-  physics_system->Update(dt, cCollisionSteps, temp_allocator, job_system);
+  physics_system->Update(dt, collision_steps, temp_allocator, job_system);
 }
 
 void set_gravity(Vec3 gravity)
@@ -197,6 +196,7 @@ void body_default_settings(JPH::BodyCreationSettings &body_settings)
   body_settings.mApplyGyroscopicForce = true;
   body_settings.mLinearDamping = 0.0;
   body_settings.mAngularDamping = 0.0;
+  body_settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
 }
 
 int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
@@ -304,6 +304,18 @@ Mat3x3 get_rotation(int id)
     .m20 = x.GetZ(),
     .m21 = y.GetZ(),
     .m22 = z.GetZ()
+  };
+}
+
+Quaternion get_orientation(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::Quat orientation = body_interface->GetRotation(body_id);
+  return (Quaternion){
+    .real = orientation.GetW(),
+    .imag = orientation.GetX(),
+    .jmag = orientation.GetY(),
+    .kmag = orientation.GetZ()
   };
 }
 

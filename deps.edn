@@ -21,10 +21,9 @@
         org.lwjgl/lwjgl-assimp {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl-assimp$natives-windows {:mvn/version "3.3.4"}}
  :paths ["src/clj"]
- :jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
                  :main-opts ["-m" "sfsim.core"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.5"
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.6"
                                                          :git/sha "2a21b7a"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
@@ -36,5 +35,5 @@
                   :extra-paths ["test/clj"]
                   :main-opts ["-m" "midje-runner.runner"]
                   :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
-           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.4.0"}}
+           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.5.0"}}
                      :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"]}}}

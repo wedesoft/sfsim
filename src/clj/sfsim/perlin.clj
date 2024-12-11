@@ -52,7 +52,7 @@
   {:malli/schema [:=> [:cat [:vector [:vector [:vector fvec3]]] fvec3] [:vector fvec3]]}
   [gradient-grid point]
   (let [[x  y  z ] (determine-division point)
-        [x+ y+ z+] (map #(mod (inc %) (dimension-count gradient-grid 0)) [x y z])]
+        [x+ y+ z+] (mapv #(mod (inc %) (dimension-count gradient-grid 0)) [x y z])]
     (vec (for [zd [z z+] yd [y y+] xd [x x+]]
               (reduce nth gradient-grid [zd yd xd])))))
 
@@ -96,7 +96,7 @@
         gradients (corner-gradients gradient-grid point)
         influence (influence-values gradients corners)
         weights   (interpolation-weights ease-curve point)]
-    (apply + (map * weights influence))))
+    (apply + (mapv * weights influence))))
 
 (defn perlin-noise
   "Create 3D Perlin noise"

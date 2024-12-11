@@ -7,7 +7,7 @@
               [sfsim.image :refer :all])
     (:import [org.lwjgl.glfw GLFW]))
 
-(mi/collect! {:ns ['sfsim.texture]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)

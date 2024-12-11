@@ -60,7 +60,7 @@
   {:malli/schema [:=> [:cat :some] [:sequential N0]]}
   [face]
   (let [indices (.mIndices ^AIFace face)]
-    (map #(.get indices ^long %) (range (.mNumIndices ^AIFace face)))))
+    (mapv #(.get indices ^long %) (range (.mNumIndices ^AIFace face)))))
 
 (defn- decode-indices
   "Get vertex indices of faces from mesh"
@@ -226,7 +226,7 @@
         ticks-per-second (.mTicksPerSecond animation)]
     [(.dataString (.mName animation))
      {::duration (/ (.mDuration animation) ticks-per-second)
-      ::channels (into {} (map #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation))))}]))
+      ::channels (into {} (mapv #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation))))}]))
 
 (defn read-gltf
   "Import a glTF file"
@@ -236,7 +236,7 @@
         materials  (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
         meshes     (mapv #(decode-mesh scene materials %) (range (.mNumMeshes scene)))
         textures   (mapv #(decode-texture scene %) (range (.mNumTextures scene)))
-        animations (into {} (map #(decode-animation scene %) (range (.mNumAnimations scene))))
+        animations (into {} (mapv #(decode-animation scene %) (range (.mNumAnimations scene))))
         result     {::root (decode-node (.mRootNode scene))
                     ::materials materials
                     ::meshes meshes
@@ -505,7 +505,7 @@
         texture-offset       (+ 8 (* 2 num-steps))
         variations           (for [textured [false true] bump [false true] num-scene-shadows scene-shadow-counts]
                                   [textured bump num-scene-shadows])
-        programs             (map #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
+        programs             (mapv #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
     {::programs              (zipmap variations programs)
      ::texture-offset        texture-offset
      :sfsim.clouds/data      cloud-data
@@ -632,7 +632,7 @@
   {:malli/schema [:=> [:cat N :double] scene-shadow-renderer]}
   [size object-radius]
   (let [variations (for [textured [false true] bump [false true]] [textured bump])
-        programs   (map #(make-scene-shadow-program (first %) (second %)) variations)]
+        programs   (mapv #(make-scene-shadow-program (first %) (second %)) variations)]
     {::programs      (zipmap variations programs)
      ::size          size
      ::object-radius object-radius}))
@@ -641,7 +641,7 @@
   {:malli/schema [:=> [:cat material mesh-vars] :nil]}
   [_material {::keys [program transform] :as render-vars}]
   (use-program program)
-  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/shadow-ndc-matrix render-vars) transform)))
+  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/object-to-shadow-ndc render-vars) transform)))
 
 (defn render-shadow-map
   "Render shadow map for an object"

@@ -268,7 +268,7 @@
                                (uniform-int ~program "shadow_size" ~size)
                                (uniform-float ~program "level_of_detail" level-of-detail#)
                                (uniform-matrix4 ~program "shadow_ndc_to_world"
-                                                (inverse (:sfsim.matrix/shadow-ndc-matrix opacity-level#)))
+                                                (inverse (:sfsim.matrix/world-to-shadow-ndc opacity-level#)))
                                (uniform-float ~program "depth" (:sfsim.matrix/depth opacity-level#))
                                ~@body)
            opacity-layers#))
@@ -321,13 +321,13 @@
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
         worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
         worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)
-        perlin-worley-floats (float-array (map #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
+        perlin-worley-floats (float-array (mapv #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
         perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
         perlin-worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat perlin-worley-data)
-        cover-floats-list    (map (fn load-cloud-cubemap-face [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
-        cover-data           (map (fn make-cloud-cover-image [cover-floats]
-                                      #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
-                                  cover-floats-list)
+        cover-floats-list    (mapv (fn load-cloud-cubemap-face [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
+        cover-data           (mapv (fn make-cloud-cover-image [cover-floats]
+                                       #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
+                                   cover-floats-list)
         cloud-cover          (make-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp cover-data)
         bluenoise-floats     (slurp-floats "data/bluenoise.raw")
         bluenoise-data       #:sfsim.image{:width noise-size :height noise-size :data bluenoise-floats}

@@ -10,7 +10,7 @@
             [sfsim.cubemap :refer :all :as cubemap])
   (:import [fastmath.vector Vec3]))
 
-(mi/collect! {:ns ['sfsim.cubemap]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (def face0 :sfsim.cubemap/face0)
@@ -97,16 +97,16 @@
   (cube-coordinate 1 256 1 127.5) => 0.75)
 
 (tabular "Get corners of cube map tiles"
-  (fact (nth (cube-map-corners ?face ?level ?b ?a) ?idx) => (vec3 ?x ?y ?z))
-  ?face ?level ?b ?a ?idx ?x   ?y   ?z
-  face0 0      0  0  0   -1    1    1
-  face0 0      0  0  1    1    1    1
-  face0 0      0  0  2   -1   -1    1
-  face0 0      0  0  3    1   -1    1
-  face5 2      3  1  0   -0.5  0.5 -1.0
-  face5 2      3  1  1    0.0  0.5 -1.0
-  face5 2      3  1  2   -0.5  1.0 -1.0
-  face5 2      3  1  3    0.0  1.0 -1.0)
+  (fact (nth (cube-map-corners ?face ?level ?row ?column) ?idx) => (vec3 ?x ?y ?z))
+  ?face ?level ?row ?column ?idx ?x   ?y   ?z
+  face0 0      0    0  0   -1    1    1
+  face0 0      0    0  1    1    1    1
+  face0 0      0    0  2   -1   -1    1
+  face0 0      0    0  3    1   -1    1
+  face5 2      3    1  0   -0.5  0.5 -1.0
+  face5 2      3    1  1    0.0  0.5 -1.0
+  face5 2      3    1  2   -0.5  1.0 -1.0
+  face5 2      3    1  3    0.0  1.0 -1.0)
 
 (facts "Longitude of 3D point"
   (longitude (vec3 1 0 0)) => (roughly 0        1e-6)
@@ -194,9 +194,9 @@
 
 (fact "Load (and cache) map tile"
   (world-map-tile "tmp/day" 2 3 5) => :map-tile
-    (provided
-      (image/slurp-image "tmp/day/2/3/5.png") => :map-tile :times irrelevant
-      (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
+  (provided
+    (image/slurp-image "tmp/day/2/3/5.png") => :map-tile :times irrelevant
+    (util/tile-path "tmp/day" 2 3 5 ".png") => "tmp/day/2/3/5.png" :times irrelevant))
 
 (facts "Load (and cache) elevation tile"
   (with-redefs [util/slurp-shorts (fn [file-name] ({"tmp/elevation235.raw" (short-array [2 3 5 7])} file-name))
@@ -249,8 +249,8 @@
 
 (fact "Getting elevation value for given longitude and latitude"
   (elevation-geodetic 5 675 135.0 45.0) => 42.0
-    (provided
-      (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
+  (provided
+    (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
 
 (fact "Test height zero maps to zero water"
   (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]

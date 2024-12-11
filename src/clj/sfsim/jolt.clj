@@ -118,7 +118,7 @@
 
 (defcfn update-system
   "Perform time step of physics system"
-  update_system [::mem/double] ::mem/void)
+  update_system [::mem/double ::mem/int] ::mem/void)
 
 (defcfn make-sphere
   "Create sphere body"
@@ -134,7 +134,7 @@
 
 (defn make-mesh
   "Create a mesh object"
-  [vertices triangles mass center rotation]
+  [{:sfsim.quadtree/keys [vertices triangles]} mass center rotation]
   (let [arena (mem/auto-arena)
         num-vertices (count vertices)
         num-triangles (count triangles)]
@@ -160,6 +160,10 @@
 (defcfn get-rotation
   "Get rotation matrix of a body's world transform"
   get_rotation [::mem/int] ::mat3x3)
+
+(defcfn get-orientation
+  "Get rotation quaternion of a body's world transform"
+  get_orientation [::mem/int] ::quaternion)
 
 (defcfn get-linear-velocity
   "Get linear velocity of a body"

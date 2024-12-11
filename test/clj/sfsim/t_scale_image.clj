@@ -7,7 +7,7 @@
               [sfsim.scale-image :refer :all])
     (:import [java.io File]))
 
-(mi/collect! {:ns ['sfsim.scale-image]})
+(mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (fact "Scale image to 50% size"

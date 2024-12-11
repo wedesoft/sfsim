@@ -124,9 +124,9 @@
   "Compute 3D bounding box for a set of points"
   {:malli/schema [:=> [:cat [:sequential fvec4]] bbox]}
   [points]
-  (let [x (map #(/ (% 0) (% 3)) points)
-        y (map #(/ (% 1) (% 3)) points)
-        z (map #(/ (% 2) (% 3)) points)]
+  (let [x (mapv #(/ (% 0) (% 3)) points)
+        y (mapv #(/ (% 1) (% 3)) points)
+        z (mapv #(/ (% 2) (% 3)) points)]
     {:bottomleftnear (fv/vec3 (apply min x) (apply min y) (apply max z))
      :toprightfar (fv/vec3 (apply max x) (apply max y) (apply min z))}))
 
@@ -205,10 +205,11 @@
 
 (def shadow-config (m/schema [:map [:sfsim.opacity/num-opacity-layers N] [:sfsim.opacity/shadow-size N]
                                    [:sfsim.opacity/num-steps N] [:sfsim.opacity/scene-shadow-counts [:vector N0]]
-                                   [:sfsim.opacity/mix :double] [:sfsim.opacity/shadow-bias :double]]))
+                                   [:sfsim.opacity/mix :double] [:sfsim.opacity/shadow-bias :double]
+                                   [:sfsim.opacity/opacity-biases [:vector :double]]]))
 (def shadow-data (m/schema [:and shadow-config [:map [:sfsim.opacity/depth :double]]]))
 
-(def shadow-box (m/schema [:map [::shadow-ndc-matrix fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
+(def shadow-box (m/schema [:map [::world-to-shadow-ndc fmat4] [::world-to-shadow-map fmat4] [::scale :double] [::depth :double]]))
 
 (defn shadow-matrices
   "Choose NDC and texture coordinate matrices for shadow mapping of view frustum or part of frustum"
@@ -223,7 +224,7 @@
          span         (span-of-box bounding-box)
          scale        (* 0.5 (+ (span 0) (span 1)))
          depth        (- (span 2))]
-     {::shadow-ndc-matrix (fm/mulm shadow-ndc light-matrix)
+     {::world-to-shadow-ndc (fm/mulm shadow-ndc light-matrix)
       ::world-to-shadow-map (fm/mulm shadow-map light-matrix)
       ::scale scale
       ::depth depth})))
@@ -252,6 +253,12 @@
   [{:sfsim.opacity/keys [mix num-steps]} {:sfsim.render/keys [z-near z-far]}]
   (mapv (partial split-mixed mix z-near z-far num-steps) (range (inc num-steps))))
 
+(defn biases-like
+  "Create list of increasing biases"
+  {:malli/schema [:=> [:cat :double [:vector :double]] [:vector :double]]}
+  [opacity-bias splits]
+  (mapv #(* opacity-bias (/ % (second splits))) (rest splits)))
+
 (defn shadow-matrix-cascade
   "Compute cascade of shadow matrices for view frustum"
   {:malli/schema [:=> [:cat :map :map] [:vector shadow-box]]}
@@ -262,7 +269,7 @@
               (shadow-matrices projection camera-to-world light-direction depth ndc1 ndc2)))
         (range num-steps)))
 
-(def shadow-patch (m/schema [:map [::shadow-ndc-matrix fmat4]
+(def shadow-patch (m/schema [:map [::object-to-shadow-ndc fmat4]
                                   [::object-to-shadow-map fmat4]
                                   [::world-to-object fmat4]
                                   [::scale :double]
@@ -279,7 +286,7 @@
         shadow-map      (shadow-box-to-map bounding-box)
         world-to-object (fm/inverse object-to-world)
         light-matrix    (orient-to-light (vec4->vec3 (fm/mulv world-to-object (vec3->vec4 light-direction 0.0))))]
-    {::shadow-ndc-matrix    (fm/mulm shadow-ndc light-matrix)
+    {::object-to-shadow-ndc (fm/mulm shadow-ndc light-matrix)
      ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
      ::world-to-object      world-to-object
      ::scale                (* 2.0 object-radius)

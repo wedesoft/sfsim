@@ -1,4 +1,4 @@
-# [sfsim][1] [![EPL-2.0](https://img.shields.io/github/license/wedesoft/sfsim)](https://opensource.org/license/epl-1-0/) [![tipping jar](https://img.shields.io/badge/tipping%20jar-wedesoft%40getalby.com-yellow)](https://getalby.com/wedesoft)
+# [sfsim][1] [![EPL-2.0](https://img.shields.io/github/license/wedesoft/sfsim)](https://opensource.org/license/epl-1-0/)
 
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
@@ -28,13 +28,25 @@ Requires OpenGL 4.5.
 
 ## Install JoltPhysics
 
+### GCC/Linux
+
 ```Shell
 cd Build
-./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON
+./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF
 cd Linux_Release
 make -j `nproc`
 sudo make install
 cd ../..
+```
+
+### MinGW/Windows
+
+```Shell
+cd Build
+./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DINTERPROCEDURAL_OPTIMIZATION=OFF
+cmake --build MinGW_Release -j 4
+cmake --install MinGW_Release --prefix /usr/local
+cd ..
 ```
 
 # Build
@@ -69,7 +81,7 @@ cd ../..
 * Run tests: `clj -M:test`
 * Run test for specific module (rendering for example): `clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
-* Run main program displaying black window: `clj -M -m sfsim.core`
+* Run main program: `clj -M:run`
 
 # External Links
 
