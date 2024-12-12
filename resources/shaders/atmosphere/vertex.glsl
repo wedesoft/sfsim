@@ -13,5 +13,7 @@ out VS_OUT
 void main()
 {
   vs_out.direction = (camera_to_world * vec4(point, 0)).xyz;
-  gl_Position = projection * vec4(point, 1);
+  vec4 position = projection * vec4(point, 1);
+  position.z = max(position.z, 0.0);  // Handle numerical errors at farside of reversed-z rendering space.
+  gl_Position = position;
 }

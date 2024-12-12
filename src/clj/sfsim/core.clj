@@ -435,7 +435,7 @@
                      ; Render model
                      (write-to-stencil-buffer)
                      (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
-                     (clear)
+                     (clear)  ; Only clear depth buffer
                      ;; Render planet with cloud overlay
                      (mask-with-stencil-buffer)
                      (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
