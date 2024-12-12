@@ -2,7 +2,6 @@
 * far away cloud shadows in top layer are too much
   cloud brightness flickering at large distance?
   change cloud computation when viewing from space far away (use different lod of shadow?)
-* atmosphere sometimes fails to render when far away from planet
 * shift and update opacity and planet shadow maps for improved performance
 * fix problem with resolution of neighbouring tiles in planetary cubemap
 * Jolt convex hulls and unions to create space craft collision shape
