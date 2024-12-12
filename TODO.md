@@ -1,22 +1,23 @@
 # TODO
-* far away cloud shadows in top layer are too much
-  cloud brightness flickering at large distance?
-  change cloud computation when viewing from space far away (use different lod of shadow?)
-* shift and update opacity and planet shadow maps for improved performance
 * fix problem with resolution of neighbouring tiles in planetary cubemap
 * Jolt convex hulls and unions to create space craft collision shape
-* visualise prototype vehicle and wheels
+* space flight physics with resting coordinate system
+* rotating Earth
+* atmospheric flight with stationary atmosphere in rotating coordinate system
+* vehicle physics
+* good position of wheels for takeoff (with low fuel) and landing
+* hover thruster locations
+* shift and update opacity and planet shadow maps for improved performance
 * gear/terrain physics with stationary Earth (ground collisions)
 * gear/terrain physics with rotating and moving Earth (ground collisions)
+* visualise prototype vehicle and wheels
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
   deferred decals for rendering runway
 * introduce variation to cloud height
 * [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
 * .jpg -> .day.jpg
-* atmospheric flight with stationary atmosphere
+* cloud shadow flickering at large distance?
 * animate flaps
-* gear locations, hover thruster locations
-* make model with rigged gear or simulate with Project Chrono
 * bake gear animation and name actions the same
 * space station model
 * docking physics
