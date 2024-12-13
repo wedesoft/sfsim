@@ -6,7 +6,7 @@
     [malli.core :as m]
     [sfsim.atmosphere :refer (phase)]
     [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
-    [sfsim.matrix :refer (split-list biases-like shadow-matrix-cascade shadow-config shadow-data)]
+    [sfsim.matrix :refer (split-list shadow-matrix-cascade shadow-config shadow-data)]
     [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config planet-shadow-renderer
                                                 shadow-vars render-depth)]
     [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object

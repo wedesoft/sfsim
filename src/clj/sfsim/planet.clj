@@ -3,8 +3,8 @@
   (:require
     [clojure.math :refer (sqrt cos)]
     [comb.template :as template]
-    [fastmath.matrix :refer (mulm mulv eye inverse)]
-    [fastmath.vector :refer (mag vec4)]
+    [fastmath.matrix :refer (mulm eye inverse)]
+    [fastmath.vector :refer (mag)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                                 atmosphere-luts)]

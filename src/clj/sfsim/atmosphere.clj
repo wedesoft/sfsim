@@ -2,8 +2,8 @@
   "Functions for computing the atmosphere"
   (:require
     [clojure.math :refer (exp pow PI sqrt log)]
-    [fastmath.vector :refer (vec3 vec4 mag normalize add sub div dot mult emult) :as fv]
-    [fastmath.matrix :refer (inverse mulv)]
+    [fastmath.matrix :refer (inverse)]
+    [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
     [sfsim.matrix :refer (fvec3)]
