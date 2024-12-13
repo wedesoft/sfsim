@@ -571,7 +571,10 @@
   (let [render-config (:sfsim.render/config other)
         planet-config (:sfsim.planet/config other)
         program       (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                    :sfsim.render/fragment [fragment-atmosphere])]
+                                    :sfsim.render/fragment [fragment-atmosphere])
+        indices    [0 1 3 2]
+        vertices   [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+        vao        (make-vertex-array-object program indices vertices ["ndc" 2])]
     (use-program program)
     (setup-atmosphere-uniforms program luts 0 false)
     (uniform-sampler program "clouds" 3)
@@ -579,32 +582,30 @@
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
     {::program program
-     ::luts luts}))
+     ::luts luts
+     ::vao vao}))
 
 
 (defn render-atmosphere
   "Render atmosphere with cloud overlay"
   {:malli/schema [:=> [:cat atmosphere-renderer render-vars texture-2d] :nil]}
-  [{::keys [program luts]} render-vars clouds]
-  (let [indices    [0 1 3 2]
-        vertices   [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-        vao        (make-vertex-array-object program indices vertices ["ndc" 2])]
-    (use-program program)
-    (uniform-matrix4 program "inverse_projection" (inverse (:sfsim.render/projection render-vars)))
-    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
-    (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-    (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
-    (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
-    (use-textures {0 (::transmittance luts) 1 (::scatter luts) 2 (::mie luts) 3 clouds})
-    (render-quads vao)
-    (destroy-vertex-array-object vao)))
+  [{::keys [program luts vao]} render-vars clouds]
+  (use-program program)
+  (uniform-matrix4 program "inverse_projection" (inverse (:sfsim.render/projection render-vars)))
+  (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
+  (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
+  (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
+  (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
+  (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
+  (use-textures {0 (::transmittance luts) 1 (::scatter luts) 2 (::mie luts) 3 clouds})
+  (render-quads vao))
 
 
 (defn destroy-atmosphere-renderer
   "Destroy atmosphere renderer"
   {:malli/schema [:=> [:cat atmosphere-renderer] :nil]}
-  [{::keys [program]}]
+  [{::keys [program vao]}]
+  (destroy-vertex-array-object vao)
   (destroy-program program))
 
 
