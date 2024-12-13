@@ -2,7 +2,8 @@
   "Functions for computing the atmosphere"
   (:require
     [clojure.math :refer (exp pow PI sqrt log)]
-    [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
+    [fastmath.vector :refer (vec3 vec4 mag normalize add sub div dot mult emult) :as fv]
+    [fastmath.matrix :refer (inverse mulv)]
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
     [sfsim.matrix :refer (fvec3)]
@@ -586,10 +587,10 @@
   {:malli/schema [:=> [:cat atmosphere-renderer render-vars texture-2d] :nil]}
   [{::keys [program luts]} render-vars clouds]
   (let [indices    [0 1 3 2]
-        vertices   (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-        vao        (make-vertex-array-object program indices vertices ["point" 3])]
+        vertices   [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+        vao        (make-vertex-array-object program indices vertices ["ndc" 2])]
     (use-program program)
-    (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
+    (uniform-matrix4 program "inverse_projection" (inverse (:sfsim.render/projection render-vars)))
     (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))

@@ -6,7 +6,7 @@
               [comb.template :as template]
               [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
               [fastmath.vector :refer (vec3 mult emult add dot)]
-              [fastmath.matrix :refer (eye)]
+              [fastmath.matrix :refer (eye inverse)]
               [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
               [sfsim.sphere :as sphere]
               [sfsim.interpolate :refer (make-lookup-table)]
@@ -719,17 +719,18 @@ void main()
          (fact
            (offscreen-render 256 256
                              (let [indices   [0 1 3 2]
-                                   vertices  [-0.5 -0.5 -1
-                                               0.5 -0.5 -1
-                                              -0.5  0.5 -1
-                                               0.5  0.5 -1]
+                                   vertices  [-0.5 -0.5,
+                                               0.5 -0.5,
+                                              -0.5  0.5,
+                                               0.5  0.5]
                                    program   (make-program :sfsim.render/vertex [vertex-atmosphere]
                                                            :sfsim.render/fragment [(vertex-atmosphere-probe ?selector)])
-                                   variables ["point" 3]
+                                   variables ["ndc" 2]
                                    vao       (make-vertex-array-object program indices vertices variables)]
                                (clear (vec3 0 0 0))
                                (use-program program)
-                               (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
+                               (uniform-matrix4 program "inverse_projection"
+                                                (inverse (projection-matrix 256 256 0.5 1.5 (/ PI 3))))
                                (uniform-matrix4 program "camera_to_world" ?matrix)
                                (uniform-float program "z_far" 1.0)
                                (uniform-float program "z_near" 0.5)
@@ -755,17 +756,17 @@ vec4 cloud_overlay()
          (fact
            (offscreen-render 256 256
                              (let [indices         [0 1 3 2]
-                                   vertices        [-0.5 -0.5 -1
-                                                     0.5 -0.5 -1
-                                                    -0.5  0.5 -1
-                                                     0.5  0.5 -1]
+                                   vertices        [-0.8 -0.8,
+                                                     0.8 -0.8,
+                                                    -0.8  0.8,
+                                                     0.8  0.8]
                                    origin          (vec3 ?x ?y ?z)
                                    camera-to-world (transformation-matrix (rotation-x ?rotation) origin)
                                    program         (make-program :sfsim.render/vertex [vertex-atmosphere]
                                                                  :sfsim.render/fragment [(last fragment-atmosphere)
                                                                                          shaders/ray-sphere attenuation-outer
                                                                                          (cloud-overlay-mock ?cloud)])
-                                   variables       ["point" 3]
+                                   variables       ["ndc" 2]
                                    transmittance   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                    #:sfsim.image{:width size :height size :data T})
                                    ray-scatter     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
@@ -778,7 +779,8 @@ vec4 cloud_overlay()
                                (uniform-sampler program "transmittance" 0)
                                (uniform-sampler program "ray_scatter" 1)
                                (uniform-sampler program "mie_strength" 2)
-                               (uniform-matrix4 program "projection" (projection-matrix 256 256 0.5 1.5 (/ PI 3)))
+                               (uniform-matrix4 program "inverse_projection"
+                                                (inverse (projection-matrix 256 256 0.5 1.5 (/ PI 3))))
                                (uniform-float program "z_near" 0.0)
                                (uniform-float program "z_far" 1.0)
                                (uniform-matrix4 program "camera_to_world" camera-to-world)

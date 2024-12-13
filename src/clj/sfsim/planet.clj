@@ -3,8 +3,8 @@
   (:require
     [clojure.math :refer (sqrt cos)]
     [comb.template :as template]
-    [fastmath.matrix :refer (mulm eye inverse)]
-    [fastmath.vector :refer (mag)]
+    [fastmath.matrix :refer (mulm mulv eye inverse)]
+    [fastmath.vector :refer (mag vec4)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
                                                 atmosphere-luts)]
@@ -315,12 +315,12 @@
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
         indices         [0 1 3 2]
-        vertices        (mapv #(* % (:sfsim.render/z-far render-vars)) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-        vao             (make-vertex-array-object program indices vertices ["point" 3])
+        vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+        vao             (make-vertex-array-object program indices vertices ["ndc" 2])
         world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
     (uniform-float program "lod_offset" (lod-offset render-config data render-vars))
-    (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
+    (uniform-matrix4 program "inverse_projection" (inverse (:sfsim.render/projection render-vars)))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
     (uniform-matrix4 program "world_to_camera" world-to-camera)

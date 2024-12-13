@@ -1174,8 +1174,8 @@ void main()
           atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
                                         :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-outer 3 [] []))])
           indices         [0 1 3 2]
-          vertices        (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-          vao             (make-vertex-array-object atmosphere indices vertices ["point" 3])
+          vertices        [-1 -1, 1 -1, -1 1, 1 1]
+          vao             (make-vertex-array-object atmosphere indices vertices ["ndc" 2])
           tex             (texture-render-color-depth width height true
                                                       (clear (vec3 0 0 0) 0.0)
                                                       (use-program planet)
@@ -1196,7 +1196,7 @@ void main()
                                                       (use-textures {0 surface})
                                                       (render-patches tile)
                                                       (use-program atmosphere)
-                                                      (uniform-matrix4 atmosphere "projection" projection)
+                                                      (uniform-matrix4 atmosphere "inverse_projection" (inverse projection))
                                                       (uniform-matrix4 atmosphere "camera_to_world" camera-to-world)
                                                       (uniform-vector3 atmosphere "origin" origin)
                                                       (uniform-float atmosphere "radius" 5.0)
