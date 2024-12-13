@@ -1,25 +1,30 @@
 (ns sfsim.opacity
-    "Rendering of deep opacity maps for cloud shadows"
-    (:require [clojure.math :refer (sqrt)]
-              [malli.core :as m]
-              [fastmath.vector :refer (mag dot)]
-              [sfsim.matrix :refer (split-list biases-like shadow-matrix-cascade shadow-config shadow-data)]
-              [sfsim.texture :refer (destroy-texture)]
-              [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
-                                    use-program uniform-int uniform-float uniform-vector3 render-quads use-textures render-config
-                                    vertex-array-object render-vars)]
-              [sfsim.worley :refer (worley-size)]
-              [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
-              [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config planet-shadow-renderer
-                                    shadow-vars render-depth)]
-              [sfsim.atmosphere :refer (phase)]
-              [sfsim.util :refer (sqr)]))
+  "Rendering of deep opacity maps for cloud shadows"
+  (:require
+    [clojure.math :refer (sqrt)]
+    [fastmath.vector :refer (mag dot)]
+    [malli.core :as m]
+    [sfsim.atmosphere :refer (phase)]
+    [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
+    [sfsim.matrix :refer (split-list biases-like shadow-matrix-cascade shadow-config shadow-data)]
+    [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config planet-shadow-renderer
+                                                shadow-vars render-depth)]
+    [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
+                                       use-program uniform-int uniform-float uniform-vector3 render-quads use-textures render-config
+                                       vertex-array-object render-vars)]
+    [sfsim.texture :refer (destroy-texture)]
+    [sfsim.util :refer (sqr)]
+    [sfsim.worley :refer (worley-size)]))
+
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def opacity-renderer (m/schema [:map [::program :int] [:sfsim.clouds/data cloud-data] [::data shadow-data]
-                                      [::vao vertex-array-object]]))
+
+(def opacity-renderer
+  (m/schema [:map [::program :int] [:sfsim.clouds/data cloud-data] [::data shadow-data]
+             [::vao vertex-array-object]]))
+
 
 (defn make-shadow-data
   "Create hash map with shadow parameters"
@@ -30,10 +35,11 @@
                                (:sfsim.planet/max-height planet-config)
                                (:sfsim.clouds/cloud-top cloud-data))))
 
+
 (defn make-opacity-renderer
   "Initialise an opacity program"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [:sfsim.planet/config planet-config]
-                                  [:sfsim.clouds/data cloud-data] [::data shadow-data]]] opacity-renderer]}
+                             [:sfsim.clouds/data cloud-data] [::data shadow-data]]] opacity-renderer]}
   [data]
   (let [planet-config (:sfsim.planet/config data)
         shadow-data   (::data data)
@@ -54,6 +60,7 @@
      ::data shadow-data
      ::vao vao}))
 
+
 (defn render-opacity-cascade
   "Render a cascade of opacity maps and return it as a list of 3D textures"
   [{::keys [program vao data] :as other} matrix-cas light-direction scatter-amount opacity-step]
@@ -67,11 +74,13 @@
                      (uniform-float program "opacity_step" opacity-step)
                      (render-quads vao))))
 
+
 (defn destroy-opacity-cascade
   "Destroy cascade of opacity maps"
   [opacities]
   (doseq [layer opacities]
-         (destroy-texture layer)))
+    (destroy-texture layer)))
+
 
 (defn destroy-opacity-renderer
   "Delete opacity renderer objects"
@@ -80,10 +89,11 @@
   (destroy-vertex-array-object vao)
   (destroy-program program))
 
+
 (defn opacity-and-shadow-cascade
   "Compute deep opacity map cascade and shadow cascade"
   {:malli/schema [:=> [:cat opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars [:maybe :map] :double]
-                      shadow-vars]}
+                  shadow-vars]}
   [opacity-renderer planet-shadow-renderer shadow-data cloud-data render-vars tree opacity-base]
   (let [splits          (split-list shadow-data render-vars)
         biases          (:sfsim.opacity/opacity-biases shadow-data)
@@ -93,7 +103,7 @@
         sin-light       (sqrt (- 1 (sqr cos-light)))
         opacity-step    (* (+ cos-light (* 10 sin-light)) opacity-base)
         scatter-amount  (+ (* (:sfsim.clouds/anisotropic cloud-data) (phase {:sfsim.atmosphere/scatter-g 0.76} -1.0))
-                          (- 1 (:sfsim.clouds/anisotropic cloud-data)))
+                           (- 1 (:sfsim.clouds/anisotropic cloud-data)))
         light-direction (:sfsim.render/light-direction render-vars)
         opacities       (render-opacity-cascade opacity-renderer matrix-cascade light-direction scatter-amount opacity-step)
         shadows         (render-shadow-cascade planet-shadow-renderer ::matrix-cascade matrix-cascade :tree tree)]
@@ -104,11 +114,13 @@
      ::shadows shadows
      ::opacities opacities}))
 
+
 (defn destroy-opacity-and-shadow
   "Destroy deep opacity map cascade and shadow cascade"
   [{::keys [shadows opacities]}]
   (destroy-opacity-cascade opacities)
   (destroy-shadow-cascade shadows))
+
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

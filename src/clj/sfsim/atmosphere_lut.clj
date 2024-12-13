@@ -1,26 +1,38 @@
 (ns sfsim.atmosphere-lut
-    "Compute lookup tables for atmospheric scattering"
-    (:require [fastmath.vector :refer (vec3 add mult dot)]
-              [sfsim.atmosphere :refer (phase point-scatter point-scatter-component point-scatter-space ray-scatter
-                                        ray-scatter-space strength-component surface-radiance surface-radiance-base
-                                        surface-radiance-space transmittance transmittance-space)]
-              [sfsim.interpolate :refer (interpolate-function make-lookup-table)]
-              [sfsim.matrix :refer (pack-matrices)]
-              [sfsim.image :refer (convert-4d-to-2d)]
-              [sfsim.util :refer (progress-wrap size-of-shape spit-floats)]))
+  "Compute lookup tables for atmospheric scattering"
+  (:require
+    [fastmath.vector :refer (vec3 add mult dot)]
+    [sfsim.atmosphere :refer (phase point-scatter point-scatter-component point-scatter-space ray-scatter
+                                    ray-scatter-space strength-component surface-radiance surface-radiance-base
+                                    surface-radiance-space transmittance transmittance-space)]
+    [sfsim.image :refer (convert-4d-to-2d)]
+    [sfsim.interpolate :refer (interpolate-function make-lookup-table)]
+    [sfsim.matrix :refer (pack-matrices)]
+    [sfsim.util :refer (progress-wrap size-of-shape spit-floats)]))
+
 
 (def radius 6378000.0)
 (def height 35000.0)
-(def earth {:sfsim.sphere/centre (vec3 0 0 0)
-            :sfsim.sphere/radius radius
-            :sfsim.atmosphere/height height
-            :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
-(def mie #:sfsim.atmosphere{:scatter-base (vec3 5e-6 5e-6 5e-6)
-                            :scatter-scale 2000.0
-                            :scatter-g 0.76
-                            :scatter-quotient 0.9})
-(def rayleigh #:sfsim.atmosphere{:scatter-base (vec3 5.8e-6 13.5e-6 33.1e-6)
-                                 :scatter-scale 8000.0})
+
+
+(def earth
+  {:sfsim.sphere/centre (vec3 0 0 0)
+   :sfsim.sphere/radius radius
+   :sfsim.atmosphere/height height
+   :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
+
+
+(def mie
+  #:sfsim.atmosphere{:scatter-base (vec3 5e-6 5e-6 5e-6)
+                     :scatter-scale 2000.0
+                     :scatter-g 0.76
+                     :scatter-quotient 0.9})
+
+
+(def rayleigh
+  #:sfsim.atmosphere{:scatter-base (vec3 5.8e-6 13.5e-6 33.1e-6)
+                     :scatter-scale 8000.0})
+
 
 (defn generate-atmosphere-luts
   "Program to generate lookup tables for atmospheric scattering"
@@ -59,23 +71,24 @@
         first-order-rayleigh          (interpolate-function ray-scatter-base-rayleigh ray-scatter-space-planet)
         first-order-mie-strength      (interpolate-function ray-scatter-strength-mie ray-scatter-space-planet)
         dS                            (atom
-                                        (fn dS [x view-direction light-direction above-horizon]
-                                            (add (first-order-rayleigh x view-direction light-direction above-horizon)
-                                                 (mult (first-order-mie-strength x view-direction light-direction above-horizon)
-                                                       (phase mie (dot view-direction light-direction))))))
+                                        (fn dS
+                                          [x view-direction light-direction above-horizon]
+                                          (add (first-order-rayleigh x view-direction light-direction above-horizon)
+                                               (mult (first-order-mie-strength x view-direction light-direction above-horizon)
+                                                     (phase mie (dot view-direction light-direction))))))
         S                             (atom first-order-rayleigh)]  ; First order Mie scatter strength goes into another table.
     (doseq [iteration (range iterations)]
-           (.println *err* (str "Iteration " (inc iteration) "/" iterations " " (.toString (java.time.LocalDateTime/now))))
-           (let [point-scatter-planet    (bar (partial point-scatter earth scatter @dS @dE intensity sphere-steps ray-steps))
-                 surface-radiance-planet (partial surface-radiance earth @dS ray-steps)
-                 dJ                      (interpolate-function point-scatter-planet point-scatter-space-planet)
-                 ray-scatter-planet      (bar (partial ray-scatter earth scatter ray-steps dJ))]
-             (reset! dE (interpolate-function surface-radiance-planet surface-radiance-space-planet))
-             (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
-             (reset! E (let [E @E dE @dE] (interpolate-function (fn E+dE [x s] (add (E x s) (dE x s)))
-                                                                surface-radiance-space-planet)))
-             (reset! S (let [S @S dS @dS] (interpolate-function (fn S+dS [x v s a] (add (S x v s a) (dS x v s a)))
-                                                                ray-scatter-space-planet)))))
+      (.println *err* (str "Iteration " (inc iteration) "/" iterations " " (.toString (java.time.LocalDateTime/now))))
+      (let [point-scatter-planet    (bar (partial point-scatter earth scatter @dS @dE intensity sphere-steps ray-steps))
+            surface-radiance-planet (partial surface-radiance earth @dS ray-steps)
+            dJ                      (interpolate-function point-scatter-planet point-scatter-space-planet)
+            ray-scatter-planet      (bar (partial ray-scatter earth scatter ray-steps dJ))]
+        (reset! dE (interpolate-function surface-radiance-planet surface-radiance-space-planet))
+        (reset! dS (interpolate-function ray-scatter-planet ray-scatter-space-planet))
+        (reset! E (let [E @E dE @dE] (interpolate-function (fn E+dE [x s] (add (E x s) (dE x s)))
+                                                           surface-radiance-space-planet)))
+        (reset! S (let [S @S dS @dS] (interpolate-function (fn S+dS [x v s a] (add (S x v s a) (dS x v s a)))
+                                                           ray-scatter-space-planet)))))
     (let [lookup-table-transmittance    (make-lookup-table T transmittance-space-planet)
           lookup-table-surface-radiance (make-lookup-table @E surface-radiance-space-planet)
           lookup-table-ray-scatter      (make-lookup-table @S ray-scatter-space-planet)
