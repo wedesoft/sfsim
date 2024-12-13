@@ -1,14 +1,19 @@
 (ns sfsim.t-scale-image
-    (:require [midje.sweet :refer :all]
-              [malli.instrument :as mi]
-              [malli.dev.pretty :as pretty]
-              [sfsim.conftest :refer (is-image)]
-              [sfsim.image :refer (slurp-image)]
-              [sfsim.scale-image :refer :all])
-    (:import [java.io File]))
+  (:require
+    [malli.dev.pretty :as pretty]
+    [malli.instrument :as mi]
+    [midje.sweet :refer :all]
+    [sfsim.conftest :refer (is-image)]
+    [sfsim.image :refer (slurp-image)]
+    [sfsim.scale-image :refer :all])
+  (:import
+    (java.io
+      File)))
+
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
+
 
 (fact "Scale image to 50% size"
       (let [file-name (.getPath (File/createTempFile "scaled" ".png"))]
