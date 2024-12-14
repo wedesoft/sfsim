@@ -1,26 +1,32 @@
 (ns sfsim.t-astro
-    (:require [midje.sweet :refer :all]
-              [malli.instrument :as mi]
-              [malli.dev.pretty :as pretty]
-              [clojure.math :refer (PI)]
-              [instaparse.core :as insta]
-              [sfsim.conftest :refer (roughly-matrix roughly-vector)]
-              [fastmath.vector :refer (vec3)]
-              [fastmath.matrix :refer (mat3x3 mulm mulv eye)]
-              [gloss.core :refer (sizeof)]
-              [sfsim.astro :refer :all :as astro]
-              [sfsim.matrix :refer :all])
-    (:import [java.nio.charset StandardCharsets]))
+  (:require
+    [clojure.math :refer (PI)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv eye)]
+    [fastmath.vector :refer (vec3)]
+    [gloss.core :refer (sizeof)]
+    [instaparse.core :as insta]
+    [malli.dev.pretty :as pretty]
+    [malli.instrument :as mi]
+    [midje.sweet :refer :all]
+    [sfsim.astro :refer :all :as astro]
+    [sfsim.conftest :refer (roughly-matrix roughly-vector)]
+    [sfsim.matrix :refer :all])
+  (:import
+    (java.nio.charset
+      StandardCharsets)))
+
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
-; Header test data cut from de430_1850-2150.bsp: dd if=de430_1850-2150.bsp of=spk-head.bsp bs=1024 count=80
+
+;; Header test data cut from de430_1850-2150.bsp: dd if=de430_1850-2150.bsp of=spk-head.bsp bs=1024 count=80
 (fact "Map file to a read-only byte buffer"
       (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/test.txt")
             b      (byte-array 4)]
         (.get buffer b)
         (String. b StandardCharsets/US_ASCII) => "Test"))
+
 
 (facts "Read header from DAF file"
        (let [header (read-daf-header (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp"))]
@@ -33,13 +39,16 @@
          (:sfsim.astro/locfmt header) => "LTL-IEEE"
          (:sfsim.astro/ftpstr header) => (map int "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")))
 
+
 (facts "Check endianness"
        (check-endianness {:sfsim.astro/locfmt "LTL-IEEE"}) => true
        (check-endianness {:sfsim.astro/locfmt "BIG-IEEE"}) => false)
 
+
 (facts "Check FTP string"
        (check-ftp-str {:sfsim.astro/ftpstr (map int "FTPSTR:\r:\n:\r\n:\r\u0000:\u0081:\u0010\u00ce:ENDFTP")}) => true
        (check-ftp-str {:sfsim.astro/ftpstr (map int "unexpected text")}) => false)
+
 
 (facts "Extract comment"
        (let [buffer  (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp")
@@ -48,12 +57,14 @@
          (subs cmt 0 67) => "JPL planetary and lunar ephemeris DE430\n\nIntegrated 29 March 2013\n\n"
          (count cmt) => 50093))
 
+
 (facts "Size of summary frame"
        (sizeof (daf-descriptor-frame 1 0)) => 8
        (sizeof (daf-descriptor-frame 2 0)) => 16
        (sizeof (daf-descriptor-frame 0 2)) => 8
        (sizeof (daf-descriptor-frame 0 4)) => 16
        (sizeof (daf-descriptor-frame 0 3)) => 16)
+
 
 (facts "Read summaries from a record"
        (let [buffer    (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp")
@@ -65,35 +76,38 @@
          (:sfsim.astro/doubles (first (:sfsim.astro/descriptors summaries))) => [-4.734072E9 4.735368E9]
          (:sfsim.astro/integers (first (:sfsim.astro/descriptors summaries))) => [1 0 1 2 6913 609716]))
 
+
 (fact "Read source names from record"
       (let [buffer  (map-file-to-buffer "test/clj/sfsim/fixtures/astro/spk-head.bsp")
             header  (read-daf-header buffer)
             sources (read-source-names (inc (:sfsim.astro/forward header)) 14 buffer)]
         sources => (repeat 14 "DE-0430LE-0430")))
 
+
 (facts "Read multiple summary records"
        (with-redefs [astro/read-daf-descriptor
                      (fn [header index buffer]
-                         (fact index => 53)
-                         {:sfsim.astro/next-number 0.0
-                          :sfsim.astro/descriptors [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}]})
+                       (fact index => 53)
+                       {:sfsim.astro/next-number 0.0
+                        :sfsim.astro/descriptors [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}]})
                      astro/read-source-names
                      (fn [index n buffer]
-                         (fact index => 54)
-                         ["DE-0430LE-0430"])]
+                       (fact index => 54)
+                       ["DE-0430LE-0430"])]
          (read-daf-summaries {:sfsim.astro/forward 53} 53 :buffer)
          => [{:sfsim.astro/source "DE-0430LE-0430" :sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}])
        (with-redefs [astro/read-daf-descriptor
                      (fn [header index buffer]
-                         ({53 {:sfsim.astro/next-number 55.0 :sfsim.astro/descriptors [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}]}
-                           55 {:sfsim.astro/next-number  0.0 :sfsim.astro/descriptors [{:sfsim.astro/doubles [3.0] :sfsim.astro/integers [4]}]}} index))
+                       ({53 {:sfsim.astro/next-number 55.0 :sfsim.astro/descriptors [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}]}
+                         55 {:sfsim.astro/next-number  0.0 :sfsim.astro/descriptors [{:sfsim.astro/doubles [3.0] :sfsim.astro/integers [4]}]}} index))
                      astro/read-source-names
                      (fn [index n buffer]
-                         ({54 ["SOURCE1"]
-                           56 ["SOURCE2"]} index))]
+                       ({54 ["SOURCE1"]
+                         56 ["SOURCE2"]} index))]
          (read-daf-summaries {:sfsim.astro/forward 53} 53 :buffer)
          => [{:sfsim.astro/source "SOURCE1" :sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}
              {:sfsim.astro/source "SOURCE2" :sfsim.astro/doubles [3.0] :sfsim.astro/integers [4]}]))
+
 
 (facts "Create SPK segment from DAF descriptor"
        (let [segment (summary->spk-segment {:sfsim.astro/source "DE-0430LE-0430"
@@ -109,6 +123,7 @@
          (:sfsim.astro/start-i segment) => 6913
          (:sfsim.astro/end-i segment) => 609716))
 
+
 (facts "Create PCK segment from DAF descriptor"
        (let [segment (summary->pck-segment {:sfsim.astro/source "de421.nio"
                                             :sfsim.astro/integers [31006 1 2 641 221284]
@@ -122,38 +137,41 @@
          (:sfsim.astro/start-i segment) => 641
          (:sfsim.astro/end-i segment) => 221284))
 
+
 (facts "Create lookup table for SPK segments (lookup by center and target)"
        (with-redefs [astro/read-daf-summaries
                      (fn [header index buffer]
-                         (facts header => {:sfsim.astro/forward 53}
-                                index => 53
-                                buffer => :buffer)
-                         [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}])
+                       (facts header => {:sfsim.astro/forward 53}
+                              index => 53
+                              buffer => :buffer)
+                       [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}])
                      astro/summary->spk-segment
                      (fn [descriptor]
-                         (fact descriptor => {:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]})
-                         {:sfsim.astro/source "SOURCE"
-                          :sfsim.astro/center 3
-                          :sfsim.astro/target 399
-                          :sfsim.astro/start-i 1234})]
+                       (fact descriptor => {:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]})
+                       {:sfsim.astro/source "SOURCE"
+                        :sfsim.astro/center 3
+                        :sfsim.astro/target 399
+                        :sfsim.astro/start-i 1234})]
          (spk-segment-lookup-table {:sfsim.astro/forward 53} :buffer)
          => {[3 399] {:sfsim.astro/source "SOURCE" :sfsim.astro/center 3 :sfsim.astro/target 399 :sfsim.astro/start-i 1234}}))
+
 
 (facts "Create lookup table for PCK segments (lookup by target)"
        (with-redefs [astro/read-daf-summaries
                      (fn [header index buffer]
-                         (facts header => {:sfsim.astro/forward 4}
-                                index => 4
-                                buffer => :buffer)
-                         [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}])
+                       (facts header => {:sfsim.astro/forward 4}
+                              index => 4
+                              buffer => :buffer)
+                       [{:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]}])
                      astro/summary->pck-segment
                      (fn [descriptor]
-                         (fact descriptor => {:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]})
-                         {:sfsim.astro/source "SOURCE"
-                          :sfsim.astro/target 31006
-                          :sfsim.astro/start-i 1234})]
+                       (fact descriptor => {:sfsim.astro/doubles [1.0] :sfsim.astro/integers [2]})
+                       {:sfsim.astro/source "SOURCE"
+                        :sfsim.astro/target 31006
+                        :sfsim.astro/start-i 1234})]
          (pck-segment-lookup-table {:sfsim.astro/forward 4} :buffer)
          => {31006 {:sfsim.astro/source "SOURCE" :sfsim.astro/target 31006 :sfsim.astro/start-i 1234}}))
+
 
 (facts "Read out coefficient layout from raw data"
        (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coeff-layout.raw")
@@ -163,6 +181,7 @@
          (:sfsim.astro/rsize layout) => 41
          (:sfsim.astro/n layout) => 6850))
 
+
 (facts "Read out coefficient layout at end of a segment"
        (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coeff-layout-offset.raw")
              layout (read-coefficient-layout {:sfsim.astro/end-i 8} buffer)]
@@ -171,20 +190,24 @@
          (:sfsim.astro/rsize layout) => 41
          (:sfsim.astro/n layout) => 6850))
 
+
 (fact "Read coefficients for index zero from segment"
       (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coefficients.raw")
             coeffs (read-interval-coefficients {:sfsim.astro/data-type 2 :sfsim.astro/start-i 1} {:sfsim.astro/rsize 41} 0 buffer)]
         coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
+
 
 (fact "Read coefficients for index one from segment"
       (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coefficients-offset.raw")
             coeffs (read-interval-coefficients {:sfsim.astro/data-type 2 :sfsim.astro/start-i 1} {:sfsim.astro/rsize 41} 1 buffer)]
         coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
 
+
 (fact "Use start position of segment when reading coefficients"
       (let [buffer (map-file-to-buffer "test/clj/sfsim/fixtures/astro/coefficients-offset.raw")
             coeffs (read-interval-coefficients {:sfsim.astro/data-type 2 :sfsim.astro/start-i 42} {:sfsim.astro/rsize 41} 0 buffer)]
         coeffs => (reverse (apply map vector (partition 13 (map double (range 39)))))))
+
 
 (facts "Chebyshev polynomials"
        (chebyshev-polynomials             [1.0] -1.0 0.0) =>  1.0
@@ -203,6 +226,7 @@
        (chebyshev-polynomials [1.0 0.0 0.0 0.0]  1.0 0.0) =>  1.0
        (chebyshev-polynomials [(vec3 1 0 0) (vec3 0 0 0)] 0.0 (vec3 0 0 0)) => (vec3 0 0 0))
 
+
 (facts "Compute interval index and position (s) inside for given timestamp"
        (interval-index-and-position {:sfsim.astro/n 3 :sfsim.astro/init 0.0 :sfsim.astro/intlen 86400.0} T0) => [0 -1.0]
        (interval-index-and-position {:sfsim.astro/n 3 :sfsim.astro/init 0.0 :sfsim.astro/intlen 86400.0} (+ T0 1.0)) => [1 -1.0]
@@ -213,9 +237,11 @@
        (interval-index-and-position {:sfsim.astro/n 3 :sfsim.astro/init 0.0 :sfsim.astro/intlen 86400.0} (- T0 1.5)) => [0 -4.0]
        (interval-index-and-position {:sfsim.astro/n 3 :sfsim.astro/init 0.0 :sfsim.astro/intlen 86400.0} (+ T0 3.0)) => [2  1.0])
 
+
 (facts "Convert list of vectors to list of vec3 objects"
        (map-vec3 []) => []
        (map-vec3 [[1.0 2.0 3.0]]) => [(vec3 1.0 2.0 3.0)])
+
 
 (facts "Convert calendar date to Julian date"
        (julian-date #:sfsim.astro{:year 2024 :month 1 :day 1}) => 2460311
@@ -225,6 +251,7 @@
        (julian-date #:sfsim.astro{:year 2025 :month 2 :day 1}) => 2460708
        (julian-date #:sfsim.astro{:year 2025 :month 3 :day 1}) => 2460736)
 
+
 (facts "Convert Julian date to calendar date"
        (calendar-date 2460311) => #:sfsim.astro{:year 2024 :month 1 :day 1}
        (calendar-date 2460312) => #:sfsim.astro{:year 2024 :month 1 :day 2}
@@ -233,11 +260,13 @@
        (calendar-date 2460708) => #:sfsim.astro{:year 2025 :month 2 :day 1}
        (calendar-date 2460736) => #:sfsim.astro{:year 2025 :month 3 :day 1})
 
+
 (facts "Convert day fraction to hours, minutes, and seconds"
        (clock-time 0.0) => #:sfsim.astro{:hour 0 :minute 0 :second 0}
        (clock-time 0.5) => #:sfsim.astro{:hour 12 :minute 0 :second 0}
        (clock-time (/ 25.0 48.0)) => #:sfsim.astro{:hour 12 :minute 30 :second 0}
        (clock-time (/ 3001.0 5760.0)) => #:sfsim.astro{:hour 12 :minute 30 :second 15})
+
 
 (facts "Freeze some test values for the Earth precession angles"
        (psi-a 0.0)   => 0.0
@@ -250,6 +279,7 @@
        (chi-a 0.5)   => (roughly 4.682703 1e-6)
        (chi-a 1.0)   => (roughly 8.173932 1e-6))
 
+
 (fact "Test composition of precession matrix"
       (with-redefs [astro/psi-a   (fn [t] (fact t => 1.0) (/ (* 0.125 PI) ASEC2RAD))
                     astro/omega-a (fn [t] (fact t => 1.0) (/ (* 0.25  PI) ASEC2RAD))
@@ -261,6 +291,7 @@
               r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
           (compute-precession tdb) => (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0))))))
 
+
 (fact "Compute Earth rotation angle as a value between 0 and 1"
       (earth-rotation-angle (+ T0 0.0)) => (roughly 0.779057 1e-6)
       (earth-rotation-angle (+ T0 0.5)) => (roughly 0.280426 1e-6)
@@ -268,25 +299,30 @@
       (earth-rotation-angle (+ T0 183.0)) => (roughly 0.280077 1e-6)
       (earth-rotation-angle (+ T0 36525.0)) => (roughly 0.777637 1e-6))
 
+
 (fact "Compute Greenwich Mean Sidereal Time (GMST) in hours"
       (sidereal-time (+ T0 0.0))     => (roughly (+ 18 (/ 41 60) (/ 50.55 3600)) 2e-6)
       (sidereal-time (+ T0 0.5))     => (roughly (+  6 (/ 43 60) (/ 48.83 3600)) 2e-6)
       (sidereal-time (+ T0 1.0))     => (roughly (+ 18 (/ 45 60) (/ 47.10 3600)) 2e-6)
       (sidereal-time (+ T0 36525.0)) => (roughly (+ 18 (/ 44 60) (/ 55.44 3600)) 2e-6))
 
+
 (fact "ICRS to J2000 transformation matrix"
-      ICRS-to-J2000 => (roughly-matrix (mat3x3  1.00000000e+00 -7.07827974e-08  8.05614894e-08
-                                                7.07827974e-08  1.00000000e+00  3.30604145e-08
-                                               -8.05614894e-08 -3.30604145e-08  1.00000000e+00) 1e-8))
+      ICRS-to-J2000 => (roughly-matrix (mat3x3  +1.00000000e+00 -7.07827974e-08  8.05614894e-08
+                                                +7.07827974e-08  1.00000000e+00  3.30604145e-08
+                                                -8.05614894e-08 -3.30604145e-08  1.00000000e+00) 1e-8))
+
 
 (fact "ICRS to current epoch (omitting nutation)"
       (icrs-to-now (+ T0 36525.0)) => (mulm (compute-precession (+ T0 36525.0)) ICRS-to-J2000))
+
 
 (fact "Earth orientation in ICRS system (omitting nutation)"
       (let [ut 2456818.5742190727
             m  (earth-to-icrs ut)
             v  (vec3 6378137.0 0.0 0.0)]
         (mulv m v) => (roughly-vector (vec3 1.63777087e+06, -6.16427866e+06, -2.59868171e+03) 3e+2)))
+
 
 (facts "Parse PCK files"
        (str (:expecting (first (.reason (pck-parser ""))))) => "KPL/(FK|PCK)\\r?\\n"
@@ -308,6 +344,7 @@
        => [:START [:ASSIGNMENT "V" [:EQUALS] [:VECTOR [:DECIMAL "1.0"] [:DECIMAL "2.0"] [:DECIMAL "3.0"]]]]
        (count (insta/parses pck-parser (slurp "test/clj/sfsim/fixtures/astro/unambiguous.tf"))) => 1)
 
+
 (facts "Convert PCK file to hashmap"
        (str (:expecting (first (.reason (read-frame-kernel "test/clj/sfsim/fixtures/astro/empty.tf"))))) => "KPL/(FK|PCK)\\r?\\n"
        (read-frame-kernel "test/clj/sfsim/fixtures/astro/text.tf") => {}
@@ -317,6 +354,7 @@
        (read-frame-kernel "test/clj/sfsim/fixtures/astro/double-exp2.tf") => {"X" 0.12}
        (read-frame-kernel "test/clj/sfsim/fixtures/astro/increase.tf") => {"X" 3.75}
        (read-frame-kernel "test/clj/sfsim/fixtures/astro/vector.tf") => {"V" [1.0 2.0 3.0]})
+
 
 (facts "Extract information from PCK file"
        (let [pck  {"FRAME_MOON_ME_DE421" 31007
@@ -329,6 +367,7 @@
          (:sfsim.astro/angles body) => [67.92 78.56 0.3]
          (:sfsim.astro/axes body) => [3 2 1]
          (:sfsim.astro/units body) => "ARCSECONDS"))
+
 
 (facts "Convert body frame information to matrix"
        (frame-kernel-body-frame {:sfsim.astro/angles [] :sfsim.astro/axes [] :sfsim.astro/units "DEGREES"})

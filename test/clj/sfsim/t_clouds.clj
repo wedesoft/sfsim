@@ -1,32 +1,37 @@
 (ns sfsim.t-clouds
-    (:require [midje.sweet :refer :all]
-              [malli.instrument :as mi]
-              [malli.dev.pretty :as pretty]
-              [sfsim.conftest :refer (roughly-vector shader-test is-image)]
-              [comb.template :as template]
-              [clojure.math :refer (exp log sin cos asin atan to-radians PI)]
-              [fastmath.vector :refer (vec3)]
-              [fastmath.matrix :refer (mat3x3 eye inverse)]
-              [sfsim.texture :refer :all]
-              [sfsim.render :refer :all]
-              [sfsim.shaders :as shaders]
-              [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
-              [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
-              [sfsim.atmosphere :refer (vertex-atmosphere)]
-              [sfsim.image :refer (get-vector3 get-float get-float-3d)]
-              [sfsim.util :refer (slurp-floats)]
-              [sfsim.worley :refer (worley-size)]
-              [sfsim.clouds :refer :all])
-    (:import [org.lwjgl.glfw GLFW]))
+  (:require
+    [clojure.math :refer (exp log sin cos asin atan to-radians PI)]
+    [comb.template :as template]
+    [fastmath.matrix :refer (mat3x3 eye inverse)]
+    [fastmath.vector :refer (vec3)]
+    [malli.dev.pretty :as pretty]
+    [malli.instrument :as mi]
+    [midje.sweet :refer :all]
+    [sfsim.atmosphere :refer (vertex-atmosphere)]
+    [sfsim.clouds :refer :all]
+    [sfsim.conftest :refer (roughly-vector shader-test is-image)]
+    [sfsim.image :refer (get-vector3 get-float get-float-3d)]
+    [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
+    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
+    [sfsim.render :refer :all]
+    [sfsim.shaders :as shaders]
+    [sfsim.texture :refer :all]
+    [sfsim.util :refer (slurp-floats)]
+    [sfsim.worley :refer (worley-size)])
+  (:import
+    (org.lwjgl.glfw
+      GLFW)))
+
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
+
 (def cloud-noise-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 uniform sampler3D worley;
 float cloud_octaves(vec3 idx, float lod)
@@ -41,7 +46,9 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn cloud-noise-test [scale octaves x y z]
+
+(defn cloud-noise-test
+  [scale octaves x y z]
   (with-invisible-window
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -63,6 +70,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Shader to sample 3D cloud noise texture"
          (fact ((cloud-noise-test ?scale ?octaves ?x ?y ?z) 0) => (roughly ?result 1e-5))
          ?scale ?octaves ?x   ?y   ?z   ?result
@@ -70,9 +78,10 @@ void main()
          1.0    [1.0]    0.25 0.75 0.25 0.0
          2.0    [1.0]    0.5  0.5  0.5  1.0)
 
+
 (def sampling-probe
   (template/fn [term]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 int number_of_samples(float a, float b, float max_step);
 float step_size(float a, float b, int num_samples);
@@ -83,13 +92,15 @@ void main()
   fragColor = vec3(<%= term %>, 0, 0);
 }"))
 
+
 (def linear-sampling-test
   (shader-test
     (fn [program]
-        (uniform-float program "cloud_scale" 100.0)
-        (uniform-int program "cloud_size" 20))
+      (uniform-float program "cloud_scale" 100.0)
+      (uniform-int program "cloud_size" 20))
     sampling-probe
     linear-sampling))
+
 
 (tabular "Shader functions for defining linear sampling"
          (fact ((linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
@@ -106,8 +117,9 @@ void main()
          "lod_at_distance(1, 3)"         3
          "lod_at_distance(2, 3)"         4)
 
+
 (def ray-shell-mock
-"#version 410 core
+  "#version 410 core
 uniform int num_shell_intersections;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
@@ -123,8 +135,9 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
                 0);
 }")
 
+
 (def cloud-density-mock
-"#version 410 core
+  "#version 410 core
 uniform float radius;
 uniform float density_start;
 uniform float cloud_multiplier;
@@ -136,6 +149,7 @@ float cloud_density(vec3 point, float lod)
     return -1.0;
 }")
 
+
 (defn setup-opacity-fragment-static-uniforms
   [program]
   (uniform-int program "shadow_size" 3)
@@ -143,8 +157,10 @@ float cloud_density(vec3 point, float lod)
   (uniform-float program "cloud_bottom" 100.0)
   (uniform-float program "cloud_top" 200.0))
 
-(defn setup-opacity-fragment-dynamic-uniforms [program shadow-ndc-to-world light-direction shells multiplier scatter
-                                               depth opacitystep start lod]
+
+(defn setup-opacity-fragment-dynamic-uniforms
+  [program shadow-ndc-to-world light-direction shells multiplier scatter
+   depth opacitystep start lod]
   (uniform-matrix4 program "shadow_ndc_to_world" shadow-ndc-to-world)
   (uniform-vector3 program "light_direction" light-direction)
   (uniform-int program "num_shell_intersections" shells)
@@ -154,6 +170,7 @@ float cloud_density(vec3 point, float lod)
   (uniform-float program "opacity_step" opacitystep)
   (uniform-float program "density_start" start)
   (uniform-float program "level_of_detail" lod))
+
 
 (defn render-deep-opacity-map
   [program vao opacity-layers depth z shells multiplier scatter start opacitystep lod]
@@ -165,40 +182,42 @@ float cloud_density(vec3 point, float lod)
                                                                  multiplier scatter depth opacitystep start lod)
                         (render-quads vao))))
 
+
 (tabular "Compute deep opacity map offsets and layers"
-  (fact
-    (with-invisible-window
-      (let [indices         [0 1 3 2]
-            vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-            program         (make-program :sfsim.render/vertex [opacity-vertex]
-                                          :sfsim.render/fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock
-                                                                  cloud-density-mock linear-sampling])
-            vao             (make-vertex-array-object program indices vertices ["point" 2])
-            opacity-layers  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 3 3 8)
-            index           ({:offset 0 :layer (inc ?layer)} ?selector)]
-        (render-deep-opacity-map program vao opacity-layers ?depth ?z ?shells ?multiplier ?scatter ?start ?opacitystep ?lod)
-        (get-float-3d (float-texture-3d->floats opacity-layers) index 1 ?px) => (roughly ?result 1e-6)
-        (destroy-texture opacity-layers)
-        (destroy-vertex-array-object vao)
-        (destroy-program program))))
-  ?shells ?px ?depth  ?opacitystep ?scatter ?start  ?multiplier ?lod ?z   ?selector ?layer ?result
-  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :offset   0      1
-  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.2)
-  2       0    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.201)
-  2       1    1000.0  50.0        0.0       1150.0 0.02        0.0  1200 :offset   0      (- 1 0.05)
-  2       1   10000.0  50.0        0.0      -9999.0 0.02        0.0  1200 :offset   0      0.0
-  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    0      1.0
-  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    1      (exp -1)
-  2       1    1000.0  50.0        0.0       1200.0 0.02        1.0  1200 :layer    1      (exp -0.5)
-  2       1    1000.0  50.0        0.5       1200.0 0.02        0.0  1200 :layer    1      (exp -0.5)
-  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :layer    1      (exp -1)
-  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    2      (exp -2)
-  2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    3      (exp -2)
-  2       1   10000.0  50.0        0.0          0.0 0.02        0.0  1200 :layer    0      1.0)
+         (fact
+           (with-invisible-window
+             (let [indices         [0 1 3 2]
+                   vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+                   program         (make-program :sfsim.render/vertex [opacity-vertex]
+                                                 :sfsim.render/fragment [(last (opacity-fragment 7 [] [])) ray-shell-mock
+                                                                         cloud-density-mock linear-sampling])
+                   vao             (make-vertex-array-object program indices vertices ["point" 2])
+                   opacity-layers  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp 3 3 8)
+                   index           ({:offset 0 :layer (inc ?layer)} ?selector)]
+               (render-deep-opacity-map program vao opacity-layers ?depth ?z ?shells ?multiplier ?scatter ?start ?opacitystep ?lod)
+               (get-float-3d (float-texture-3d->floats opacity-layers) index 1 ?px) => (roughly ?result 1e-6)
+               (destroy-texture opacity-layers)
+               (destroy-vertex-array-object vao)
+               (destroy-program program))))
+         ?shells ?px ?depth  ?opacitystep ?scatter ?start  ?multiplier ?lod ?z   ?selector ?layer ?result
+         2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :offset   0      1
+         2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.2)
+         2       0    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :offset   0      (- 1 0.201)
+         2       1    1000.0  50.0        0.0       1150.0 0.02        0.0  1200 :offset   0      (- 1 0.05)
+         2       1   10000.0  50.0        0.0      -9999.0 0.02        0.0  1200 :offset   0      0.0
+         2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    0      1.0
+         2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    1      (exp -1)
+         2       1    1000.0  50.0        0.0       1200.0 0.02        1.0  1200 :layer    1      (exp -0.5)
+         2       1    1000.0  50.0        0.5       1200.0 0.02        0.0  1200 :layer    1      (exp -0.5)
+         2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1400 :layer    1      (exp -1)
+         2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    2      (exp -2)
+         2       1    1000.0  50.0        0.0       1200.0 0.02        0.0  1200 :layer    3      (exp -2)
+         2       1   10000.0  50.0        0.0          0.0 0.02        0.0  1200 :layer    0      1.0)
+
 
 (def opacity-lookup-probe
   (template/fn [x y z depth]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 uniform sampler3D opacity_layers;
 float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords);
@@ -209,7 +228,9 @@ void main()
   fragColor = vec3(result, result, result);
 }"))
 
-(defn opacity-lookup-test [offset step depth x y z]
+
+(defn opacity-lookup-test
+  [offset step depth x y z]
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -236,19 +257,21 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Lookup values from deep opacity map taking into account offsets"
-  (fact ((opacity-lookup-test ?offset ?step ?depth ?x ?y ?z) 0) => (roughly ?result 1e-6))
-  ?offset ?step ?depth ?x    ?y ?z        ?result
-  1.0     1.0    6      1     0  1         1.0
-  1.0     1.0    6      1     0  0         0.4
-  0.0     1.0    6      1     0  0         1.0
-  1.0     1.0    12     1     0  0.5       0.4
-  1.0     1.0    6      1     0  (/ 5.0 6) 0.9
-  1.0     2.0    12     1     0  (/ 5.0 6) 0.9
-  1.0     1.0    6      0.75  0  0.5       0.85)
+         (fact ((opacity-lookup-test ?offset ?step ?depth ?x ?y ?z) 0) => (roughly ?result 1e-6))
+         ?offset ?step ?depth ?x    ?y ?z        ?result
+         1.0     1.0    6      1     0  1         1.0
+         1.0     1.0    6      1     0  0         0.4
+         0.0     1.0    6      1     0  0         1.0
+         1.0     1.0    12     1     0  0.5       0.4
+         1.0     1.0    6      1     0  (/ 5.0 6) 0.9
+         1.0     2.0    12     1     0  (/ 5.0 6) 0.9
+         1.0     1.0    6      0.75  0  0.5       0.85)
+
 
 (def opacity-lookup-mock
-"#version 410 core
+  "#version 410 core
 uniform int select;
 float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords)
 {
@@ -258,9 +281,10 @@ float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords)
     return opacity_map_coords.x;
 }")
 
+
 (def opacity-cascade-lookup-probe
   (template/fn [z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float opacity_cascade_lookup(vec4 point);
 void main()
@@ -270,7 +294,9 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn opacity-cascade-lookup-test [n z shift-z opacities offsets select]
+
+(defn opacity-cascade-lookup-test
+  [n z shift-z opacities offsets bias select]
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -286,16 +312,18 @@ void main()
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
                                                 (uniform-matrix4 program "world_to_camera" world-to-camera)
+                                                (uniform-vector3 program "light_direction" (vec3 1 0 0))
                                                 (doseq [idx (range n)]
-                                                       (uniform-sampler program (str "opacity" idx) idx)
-                                                       (uniform-float program (str "depth" idx) 200.0))
+                                                  (uniform-sampler program (str "opacity" idx) idx)
+                                                  (uniform-float program (str "depth" idx) 200.0)
+                                                  (uniform-float program (str "bias" idx) (* bias idx)))
                                                 (doseq [idx (range n)]
-                                                       (uniform-matrix4 program (str "world_to_shadow_map" idx)
-                                                                        (transformation-matrix (eye 3)
-                                                                                               (vec3 (inc idx) 0 0))))
+                                                  (uniform-matrix4 program (str "world_to_shadow_map" idx)
+                                                                   (transformation-matrix (eye 3)
+                                                                                          (vec3 (inc idx) 0 0))))
                                                 (doseq [idx (range (inc n))]
-                                                       (uniform-float program (str "split" idx)
-                                                                      (+ 10.0 (/ (* 30.0 idx) n))))
+                                                  (uniform-float program (str "split" idx)
+                                                                 (+ 10.0 (/ (* 30.0 idx) n))))
                                                 (uniform-int program "select" ({:opacity 0 :coord 1} select))
                                                 (use-textures (zipmap (range) opacity-texs))
                                                 (render-quads vao))
@@ -306,20 +334,24 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform opacity (transparency) lookup in cascade of deep opacity maps"
-         (fact ((opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?select) 0) => (roughly ?result 1e-6))
-         ?n ?z  ?shift-z ?opacities ?offsets ?select  ?result
-         1  -10  0       [0.75]     [0]      :opacity 0.75
-         2  -40  0       [0.75 0.5] [0 0]    :opacity 0.5
-         2  -50 10       [0.75 0.5] [0 0]    :opacity 0.5
-         2  -50  0       [0.75 0.5] [0 0]    :opacity 1.0
-         1  -10  0       [1.0]      [0]      :coord   1.0
-         2  -10  0       [1.0]      [0]      :coord   1.0
-         2  -40  0       [1.0]      [0]      :coord   2.0)
+         (fact ((opacity-cascade-lookup-test ?n ?z ?shift-z ?opacities ?offsets ?bias ?select) 0) => (roughly ?result 1e-6))
+         ?n ?z  ?shift-z ?opacities ?offsets ?bias ?select  ?result
+         1  -10  0       [0.75]     [0]      0.0   :opacity 0.75
+         2  -40  0       [0.75 0.5] [0 0]    0.0   :opacity 0.5
+         2  -50 10       [0.75 0.5] [0 0]    0.0   :opacity 0.5
+         2  -50  0       [0.75 0.5] [0 0]    0.0   :opacity 1.0
+         1  -10  0       [1.0]      [0]      0.0   :coord   1.0
+         2  -10  0       [1.0]      [0]      0.0   :coord   1.0
+         2  -40  0       [1.0]      [0]      0.0   :coord   2.0
+         2  -10  0       [1.0]      [0]      1.0   :coord   1.0
+         2  -40  0       [1.0]      [0]      1.0   :coord   3.0)
+
 
 (def cubemap-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 uniform samplerCube cubemap;
 out vec3 fragColor;
 vec3 convert_cubemap_index(vec3 idx, int size);
@@ -329,7 +361,9 @@ void main()
   fragColor = texture(cubemap, idx).rgb;
 }"))
 
-(defn identity-cubemap-test [x y z]
+
+(defn identity-cubemap-test
+  [x y z]
   (with-invisible-window
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -349,19 +383,21 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Create identity cubemap"
          (fact (identity-cubemap-test ?x ?y ?z) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
          ?x ?y  ?z
          1  0   0
-        -1  0   0
+         -1  0   0
          0  1   0
          0 -1   0
          0  0   1
          0  0  -1
          1  0.5 0.25)
 
+
 (def curl-field-mock
-"#version 410 core
+  "#version 410 core
 uniform float x;
 uniform float y;
 uniform float z;
@@ -373,15 +409,19 @@ vec3 curl_field_mock(vec3 point)
     return vec3(0, 0, 0);
 }")
 
-(defn update-cubemap [program current scale x y z]
-  (iterate-cubemap 15 scale program
-    (uniform-sampler program "current" 0)
-    (uniform-float program "x" x)
-    (uniform-float program "y" y)
-    (uniform-float program "z" z)
-    (use-textures {0 current})))
 
-(defn iterate-cubemap-warp-test [n scale px py pz x y z]
+(defn update-cubemap
+  [program current scale x y z]
+  (iterate-cubemap 15 scale program
+                   (uniform-sampler program "current" 0)
+                   (uniform-float program "x" x)
+                   (uniform-float program "y" y)
+                   (uniform-float program "z" z)
+                   (use-textures {0 current})))
+
+
+(defn iterate-cubemap-warp-test
+  [n scale px py pz x y z]
   (with-invisible-window
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -407,6 +447,7 @@ vec3 curl_field_mock(vec3 point)
         (destroy-program program)
         (get-vector3 img 0 0)))))
 
+
 (tabular "Update normalised cubemap warp vectors using specified vectors"
          (fact (iterate-cubemap-warp-test ?n ?scale ?px ?py ?pz ?x ?y ?z) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-3))
          ?n ?scale ?px ?py ?pz ?x  ?y  ?z   ?rx   ?ry   ?rz
@@ -422,8 +463,9 @@ vec3 curl_field_mock(vec3 point)
          1  0.5    1   0   0   2.0 0.0 0.0  2     0     0
          2  1.0    1   0   0   0.0 1.0 0.0  0.707 1.707 0)
 
+
 (def lookup-mock
-"#version 410 core
+  "#version 410 core
 uniform int selector;
 float lookup_mock(vec3 point)
 {
@@ -436,7 +478,9 @@ float lookup_mock(vec3 point)
   return 2.0;
 }")
 
-(defn cubemap-warp-test [px py pz selector]
+
+(defn cubemap-warp-test
+  [px py pz selector]
   (with-invisible-window
     (let [indices  [0 1 3 2]
           vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -465,20 +509,22 @@ float lookup_mock(vec3 point)
         (destroy-program program)
         ((get-vector3 img 0 0) 0)))))
 
+
 (tabular "Lookup floating-point values using cubemap warp vector field"
          (fact (cubemap-warp-test ?px ?py ?pz ?selector) => (roughly ?result 1e-3))
          ?px ?py ?pz ?selector ?result
-         1   0   0   0         1
-         1   0   0   1         0
-         1   0   0   2         0
-        -1   0   0   1         1
-         0   1   0   2         1
-         0  -1   0   0        -1
-         0   0   1   1        -1
-         0   0  -1   2        -1)
+         +1   0   0   0         1
+         +1   0   0   1         0
+         +1   0   0   2         0
+         -1   0   0   1         1
+         +0   1   0   2         1
+         +0  -1   0   0        -1
+         +0   0   1   1        -1
+         +0   0  -1   2        -1)
+
 
 (def noise-mock
-"#version 410 core
+  "#version 410 core
 uniform float dx;
 uniform float dy;
 uniform float dz;
@@ -487,9 +533,10 @@ float noise_mock(vec3 point)
   return dot(point, vec3(dx, dy, dz));
 }")
 
+
 (def curl-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec3 curl(vec3 point);
 void main()
@@ -498,17 +545,19 @@ void main()
   fragColor = curl(point);
 }"))
 
+
 (def curl-test
   (shader-test
     (fn [program epsilon dx dy dz]
-        (uniform-float program "epsilon" epsilon)
-        (uniform-float program "dx" dx)
-        (uniform-float program "dy" dy)
-        (uniform-float program "dz" dz))
+      (uniform-float program "epsilon" epsilon)
+      (uniform-float program "dx" dx)
+      (uniform-float program "dy" dy)
+      (uniform-float program "dz" dz))
     curl-probe
     (curl-vector "curl" "gradient")
     (shaders/gradient-3d "gradient" "noise_mock" "epsilon")
     noise-mock))
+
 
 (tabular "Shader for computing curl vectors from noise function"
          (fact (curl-test [0.125 ?dx ?dy ?dz] [?x ?y ?z]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-3))
@@ -518,9 +567,10 @@ void main()
          0.0 0.0 0.1 1  0  0  0  -0.1 0
          0.2 0.1 0.0 1  0  0  0   0   0.1)
 
+
 (def flow-field-probe
   (template/fn [north south x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float octaves_north(vec3 idx)
 {
@@ -538,14 +588,16 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def flow-field-test
   (shader-test
     (fn [program curl-scale prevailing whirl]
-        (uniform-float program "curl_scale" curl-scale)
-        (uniform-float program "prevailing" prevailing)
-        (uniform-float program "whirl" whirl))
+      (uniform-float program "curl_scale" curl-scale)
+      (uniform-float program "prevailing" prevailing)
+      (uniform-float program "whirl" whirl))
     flow-field-probe
     (last (flow-field []))))
+
 
 (tabular "Shader to create potential field for generating curl noise for global cloud cover"
          (fact ((flow-field-test [?curl-scale ?prevailing ?whirl] [?north ?south ?x ?y ?z]) 0) => (roughly ?result 1e-5))
@@ -561,8 +613,9 @@ void main()
          1.0         0.0         1.0    0.0    0.0    0                      0                      1  0.25
          2.0         0.0         1.0    0.0    0.0    0                      0                      1  0.125)
 
+
 (def cover-vertex
-"#version 410 core
+  "#version 410 core
 in vec3 point;
 out VS_OUT
 {
@@ -574,8 +627,9 @@ void main()
   gl_Position = vec4(point, 1);
 }")
 
+
 (def cover-fragment
-"#version 410 core
+  "#version 410 core
 uniform samplerCube cubemap;
 uniform float threshold;
 uniform float multiplier;
@@ -597,59 +651,60 @@ void main()
     fragColor = vec4(0, 0, 0, 1.0);
 }")
 
+
 (fact "Program to generate planetary cloud cover using curl noise"
-    (with-invisible-window
-      (let [worley-size  8
-            worley-north (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
-                                                #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                              :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-north.raw")})
-            worley-south (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
-                                                #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                              :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-south.raw")})
-            worley-cover (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
-                                                #:sfsim.image{:width worley-size :height worley-size :depth worley-size
-                                                              :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-cover.raw")})
-            program      (make-program :sfsim.render/vertex [cover-vertex]
-                                       :sfsim.render/fragment [cover-fragment shaders/ray-sphere])
-            indices      [0 1 3 2]
-            vertices     [-1 -1 0, 1 -1 0, -1 1 0, 1 1 0]
-            vao          (make-vertex-array-object program indices vertices ["point" 3])
-            cubemap      (cloud-cover-cubemap :sfsim.clouds/size 256
-                                              :sfsim.clouds/worley-size worley-size
-                                              :sfsim.clouds/worley-south worley-south
-                                              :sfsim.clouds/worley-north worley-north
-                                              :sfsim.clouds/worley-cover worley-cover
-                                              :sfsim.clouds/flow-octaves [0.5 0.25 0.125]
-                                              :sfsim.clouds/cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
-                                              :sfsim.clouds/whirl 2.0
-                                              :sfsim.clouds/prevailing 0.1
-                                              :sfsim.clouds/curl-scale 1.0
-                                              :sfsim.clouds/cover-scale 2.0
-                                              :sfsim.clouds/num-iterations 50
-                                              :sfsim.clouds/flow-scale 1.5e-3)]
-        (let [tex (texture-render-color 128 128 false
-                                        (clear (vec3 1 0 0))
-                                        (use-program program)
-                                        (uniform-sampler program "cubemap" 0)
-                                        (uniform-float program "threshold" 0.3)
-                                        (uniform-float program "multiplier" 4.0)
-                                        (use-textures {0 cubemap})
-                                        (render-quads vao)
-                                        )
-              img (texture->image tex)]
-          (destroy-texture cubemap)
-          (destroy-vertex-array-object vao)
-          (destroy-program program)
-          (destroy-texture worley-cover)
-          (destroy-texture worley-south)
-          (destroy-texture worley-north)
-          (destroy-texture tex)
-          img)))
-    => (is-image "test/clj/sfsim/fixtures/clouds/cover.png" 0.1))
+      (with-invisible-window
+        (let [worley-size  8
+              worley-north (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
+                                                  #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                                :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-north.raw")})
+              worley-south (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
+                                                  #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                                :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-south.raw")})
+              worley-cover (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
+                                                  #:sfsim.image{:width worley-size :height worley-size :depth worley-size
+                                                                :data (slurp-floats "test/clj/sfsim/fixtures/clouds/worley-cover.raw")})
+              program      (make-program :sfsim.render/vertex [cover-vertex]
+                                         :sfsim.render/fragment [cover-fragment shaders/ray-sphere])
+              indices      [0 1 3 2]
+              vertices     [-1 -1 0, 1 -1 0, -1 1 0, 1 1 0]
+              vao          (make-vertex-array-object program indices vertices ["point" 3])
+              cubemap      (cloud-cover-cubemap :sfsim.clouds/size 256
+                                                :sfsim.clouds/worley-size worley-size
+                                                :sfsim.clouds/worley-south worley-south
+                                                :sfsim.clouds/worley-north worley-north
+                                                :sfsim.clouds/worley-cover worley-cover
+                                                :sfsim.clouds/flow-octaves [0.5 0.25 0.125]
+                                                :sfsim.clouds/cloud-octaves [0.25 0.25 0.125 0.125 0.0625 0.0625]
+                                                :sfsim.clouds/whirl 2.0
+                                                :sfsim.clouds/prevailing 0.1
+                                                :sfsim.clouds/curl-scale 1.0
+                                                :sfsim.clouds/cover-scale 2.0
+                                                :sfsim.clouds/num-iterations 50
+                                                :sfsim.clouds/flow-scale 1.5e-3)]
+          (let [tex (texture-render-color 128 128 false
+                                          (clear (vec3 1 0 0))
+                                          (use-program program)
+                                          (uniform-sampler program "cubemap" 0)
+                                          (uniform-float program "threshold" 0.3)
+                                          (uniform-float program "multiplier" 4.0)
+                                          (use-textures {0 cubemap})
+                                          (render-quads vao))
+                img (texture->image tex)]
+            (destroy-texture cubemap)
+            (destroy-vertex-array-object vao)
+            (destroy-program program)
+            (destroy-texture worley-cover)
+            (destroy-texture worley-south)
+            (destroy-texture worley-north)
+            (destroy-texture tex)
+            img)))
+      => (is-image "test/clj/sfsim/fixtures/clouds/cover.png" 0.1))
+
 
 (def cloud-profile-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float cloud_profile(vec3 point);
 void main()
@@ -659,13 +714,15 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def cloud-profile-test
   (shader-test
     (fn [program radius cloud-bottom cloud-top]
-        (uniform-float program "radius" radius)
-        (uniform-float program "cloud_bottom" cloud-bottom)
-        (uniform-float program "cloud_top" cloud-top))
+      (uniform-float program "radius" radius)
+      (uniform-float program "cloud_bottom" cloud-bottom)
+      (uniform-float program "cloud_top" cloud-top))
     cloud-profile-probe cloud-profile))
+
 
 (tabular "Shader for creating vertical cloud profile"
          (fact ((cloud-profile-test [?radius ?bottom ?top] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
@@ -678,9 +735,10 @@ void main()
          100.0   10.0    18.0 117   0   0  0.2
          100.0   10.0    18.0 118   0   0  0.0)
 
+
 (def sphere-noise-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float base_noise(vec3 point)
 {
@@ -694,13 +752,15 @@ void main()
   fragColor = vec3(noise, 0, 0);
 }"))
 
+
 (def sphere-noise-test
   (shader-test
     (fn [program radius cloud-scale]
-        (uniform-float program "radius" radius)
-        (uniform-float program "cloud_scale" cloud-scale))
+      (uniform-float program "radius" radius)
+      (uniform-float program "cloud_scale" cloud-scale))
     sphere-noise-probe
     (sphere-noise "base_noise")))
+
 
 (tabular "Sample 3D noise on the surface of a sphere"
          (fact ((sphere-noise-test [?radius ?cloud-scale] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
@@ -710,9 +770,10 @@ void main()
          100.0    10.0       -1.0 0.0 0.0 -10.0
          100.0    10.0        2.0 0.0 0.0  10.0)
 
+
 (def cloud-base-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float cloud_cover(vec3 point)
 {
@@ -734,31 +795,34 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def cloud-base-test
   (shader-test
     (fn [program cover clouds threshold]
-        (uniform-float program "cover_multiplier" cover)
-        (uniform-float program "cloud_multiplier" clouds)
-        (uniform-float program "cloud_threshold" threshold))
+      (uniform-float program "cover_multiplier" cover)
+      (uniform-float program "cloud_multiplier" clouds)
+      (uniform-float program "cloud_threshold" threshold))
     cloud-base-probe
     (last (cloud-base []))))
 
+
 (tabular "Shader for determining cloud density at specified point"
          (fact ((cloud-base-test [?cover ?clouds ?threshold] [?x ?y ?z]) 0) => (roughly ?result 1e-5))
-          ?cover ?clouds ?threshold ?x   ?y ?z ?result
-          1.0     1.0     0.0       1000 -1  0  1.0
-          1.0     1.0     0.0      -1000 -1  0  0.0
-          0.5     1.0     0.0       1000 -1  0  0.5
-          0.0     1.0     0.0       1000  1  0  0.4
-          0.0     0.5     0.0       1000  1  0  0.2
-          1.0     1.0     0.5       1000  1  0  0.9
-          1.0     1.0     0.5        950  1  0  0.45
-          1.0     1.0     3.0       1000 -1  0 -1.0
-          1.0     1.0     1.5        950  1  0  0.0)
+         ?cover ?clouds ?threshold ?x   ?y ?z ?result
+         1.0     1.0     0.0       1000 -1  0  1.0
+         1.0     1.0     0.0      -1000 -1  0  0.0
+         0.5     1.0     0.0       1000 -1  0  0.5
+         0.0     1.0     0.0       1000  1  0  0.4
+         0.0     0.5     0.0       1000  1  0  0.2
+         1.0     1.0     0.5       1000  1  0  0.9
+         1.0     1.0     0.5        950  1  0  0.45
+         1.0     1.0     3.0       1000 -1  0 -1.0
+         1.0     1.0     1.5        950  1  0  0.0)
+
 
 (def cloud-cover-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float cloud_cover(vec3 idx);
 void main()
@@ -767,7 +831,9 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn cloud-cover-test [x y z]
+
+(defn cloud-cover-test
+  [x y z]
   (with-invisible-window
     (let [indices     [0 1 3 2]
           vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -791,6 +857,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform cloud cover lookup in cube map"
          (fact ((cloud-cover-test ?x ?y ?z) 0) => ?result)
          ?x   ?y ?z  ?result
@@ -798,9 +865,10 @@ void main()
          1    0  -1   1.0
          1    0   0.5 0.25)
 
+
 (def cloud-density-probe
   (template/fn [lod x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float cloud_base(vec3 point)
 {
@@ -818,13 +886,15 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def cloud-density-test
   (shader-test
     (fn [program cap]
-        (uniform-float program "cap" cap))
+      (uniform-float program "cap" cap))
     cloud-density-probe
     (last (cloud-density [] []))
     shaders/remap))
+
 
 (tabular "Compute cloud density at given point"
          (fact ((cloud-density-test [?cap] [?lod ?x ?y ?z]) 0) => (roughly ?result 1e-5))
@@ -838,9 +908,10 @@ void main()
          1.0  0.0  0.5 0.25 0.0 0.0
          1.0  0.5  1.0 1.0  0.0 0.5)
 
+
 (def cloud-transfer-probe
   (template/fn [red alpha density stepsize selector scatter]
-"#version 410 core
+    "#version 410 core
 uniform float shadow;
 uniform float transmittance;
 uniform float atmosphere;
@@ -871,17 +942,19 @@ void main()
   fragColor.r = cloud_transfer(start, point, <%= scatter %>, <%= stepsize %>, cloud_scatter, <%= density %>).<%= selector %>;
 }"))
 
+
 (def cloud-transfer-test
   (shader-test
     (fn [program shadow transmittance atmosphere in-scatter amplification]
-        (uniform-float program "shadow" shadow)
-        (uniform-float program "transmittance" transmittance)
-        (uniform-float program "atmosphere" atmosphere)
-        (uniform-float program "in_scatter" in-scatter)
-        (uniform-float program "amplification" amplification)
-        (uniform-vector3 program "light_direction" (vec3 1 0 0)))
+      (uniform-float program "shadow" shadow)
+      (uniform-float program "transmittance" transmittance)
+      (uniform-float program "atmosphere" atmosphere)
+      (uniform-float program "in_scatter" in-scatter)
+      (uniform-float program "amplification" amplification)
+      (uniform-vector3 program "light_direction" (vec3 1 0 0)))
     cloud-transfer-probe
     (last (cloud-transfer 3))))
+
 
 (tabular "Shader function to increment scattering caused by clouds"
          (fact ((cloud-transfer-test [?shadow ?transmit ?atmos ?inscatter ?amp]
@@ -904,9 +977,10 @@ void main()
          1.0     1.0       1.0    0.5        1.0  0.0  0.5    (log 2.0) 1.0       1.0      "r"       0.375
          1.0     1.0       1.0    0.5        2.0  0.0  1.0    (log 2.0) 1.0       1.0      "r"       1.0)
 
+
 (def sample-cloud-probe
   (template/fn [cloud-begin cloud-length density red alpha selector]
-"#version 410 core
+    "#version 410 core
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
 out vec3 fragColor;
 float sampling_offset()
@@ -937,17 +1011,19 @@ void main()
   fragColor.r = sample_cloud(origin, start, direction, cloud_shell, cloud_scatter).<%= selector %>;
 }"))
 
+
 (def sample-cloud-test
   (shader-test
     (fn [program cloud-step opacity-cutoff]
-        (uniform-float program "cloud_step" cloud-step)
-        (uniform-float program "lod_offset" 0.0)
-        (uniform-float program "anisotropic" 0.5)
-        (uniform-vector3 program "light_direction" (vec3 0 1 0))
-        (uniform-float program "opacity_cutoff" opacity-cutoff))
+      (uniform-float program "cloud_step" cloud-step)
+      (uniform-float program "lod_offset" 0.0)
+      (uniform-float program "anisotropic" 0.5)
+      (uniform-vector3 program "light_direction" (vec3 0 1 0))
+      (uniform-float program "opacity_cutoff" opacity-cutoff))
     sample-cloud-probe
     (last (sample-cloud 3 [] []))
     linear-sampling))
+
 
 (tabular "Shader to sample the cloud layer and apply cloud scattering update steps"
          (fact ((sample-cloud-test [?step ?cutoff] [?begin ?length ?density ?red ?alpha ?selector]) 0)
@@ -964,9 +1040,10 @@ void main()
          2.0    1.0     1.0   0.0      0.0  1.0    "a"       0.0     1.0
          2.0    2.0     1.0   1.0      0.0  1.0    "a"       0.5     0.5)
 
+
 (def cloud-point-probe
   (template/fn [z selector]
-"#version 410 core
+    "#version 410 core
 uniform float radius;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
@@ -997,17 +1074,19 @@ void main()
   fragColor.r = result.<%= selector %>;
 }"))
 
+
 (def cloud-point-test
   (shader-test
     (fn [program origin depth]
-        (uniform-float program "radius" 10.0)
-        (uniform-float program "max_height" 3.0)
-        (uniform-float program "cloud_bottom" 1.0)
-        (uniform-float program "cloud_top" 2.0)
-        (uniform-float program "depth" depth)
-        (uniform-vector3 program "origin" (vec3 0 0 origin)))
+      (uniform-float program "radius" 10.0)
+      (uniform-float program "max_height" 3.0)
+      (uniform-float program "cloud_bottom" 1.0)
+      (uniform-float program "cloud_top" 2.0)
+      (uniform-float program "depth" depth)
+      (uniform-vector3 program "origin" (vec3 0 0 origin)))
     cloud-point-probe
     (last (cloud-point 3 [] []))))
+
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
          (fact ((cloud-point-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
@@ -1021,9 +1100,10 @@ void main()
          13      10 100.0  "a"        1.0
          13      10   1.5  "a"        0.5)
 
+
 (def cloud-outer-probe
   (template/fn [dz selector]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
@@ -1063,16 +1143,18 @@ void main()
   fragColor.r = result.<%= selector %>;
 }"))
 
+
 (def cloud-outer-test
   (shader-test
     (fn [program z]
-        (uniform-float program "radius" 10.0)
-        (uniform-float program "max_height" 3.0)
-        (uniform-float program "cloud_bottom" 1.0)
-        (uniform-float program "cloud_top" 2.0)
-        (uniform-vector3 program "origin" (vec3 0 0 z)))
+      (uniform-float program "radius" 10.0)
+      (uniform-float program "max_height" 3.0)
+      (uniform-float program "cloud_bottom" 1.0)
+      (uniform-float program "cloud_top" 2.0)
+      (uniform-vector3 program "origin" (vec3 0 0 z)))
     cloud-outer-probe
     (last (cloud-outer 3 [] []))))
+
 
 (tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
          (fact ((cloud-outer-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
@@ -1087,8 +1169,9 @@ void main()
          12   -1  "r"       12.0
          15   -1  "r"       13.0)
 
+
 (def fragment-planet-clouds
-"#version 410 core
+  "#version 410 core
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -1117,8 +1200,9 @@ void main()
   fragColor = cloud_point(fs_in.point);
 }")
 
+
 (def fragment-atmosphere-clouds-mock
-"#version 410 core
+  "#version 410 core
 in VS_OUT
 {
   vec3 direction;
@@ -1145,72 +1229,74 @@ void main()
   fragColor = cloud_outer(fs_in.direction);
 }")
 
+
 (fact "Test rendering of cloud overlay image"
-  (with-invisible-window
-    (let [width           160
-          height          120
-          fov             (to-radians 60.0)
-          z-near          1.0
-          z-far           100.0
-          tilesize        33
-          data            (flatten (for [y (range -1.0 1.0625 0.0625) x (range -1.0 1.0625 0.0625)] [x y 5.0]))
-          surface         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                  #:sfsim.image{:width tilesize :height tilesize :data (float-array data)})
-          projection      (projection-matrix width height z-near (+ z-far 1) fov)
-          origin          (vec3 0 0 10)
-          camera-to-world (transformation-matrix (eye 3) origin)
-          planet          (make-program :sfsim.render/vertex [vertex-planet]
-                                        :sfsim.render/tess-control [tess-control-planet]
-                                        :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                        :sfsim.render/geometry [(geometry-planet 0)]
-                                        :sfsim.render/fragment [fragment-planet-clouds (last (cloud-point 3 [] []))])
-          indices         [0 1 3 2]
-          vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
-          tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-          atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                        :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-outer 3 [] []))])
-          indices         [0 1 3 2]
-          vertices        (mapv #(* % z-far) [-4 -4 -1, 4 -4 -1, -4  4 -1, 4  4 -1])
-          vao             (make-vertex-array-object atmosphere indices vertices ["point" 3])
-          tex             (texture-render-color-depth width height true
-                                                      (clear (vec3 0 0 0) 0.0)
-                                                      (use-program planet)
-                                                      (uniform-sampler planet "surface" 0)
-                                                      (uniform-matrix4 planet "projection" projection)
-                                                      (uniform-vector3 planet "tile_center" (vec3 0 0 0))
-                                                      (uniform-matrix4 planet "tile_to_camera" (inverse camera-to-world))
-                                                      (uniform-vector3 planet "origin" origin)
-                                                      (uniform-vector3 planet "light_direction" (vec3 1 0 0))
-                                                      (uniform-float planet "radius" 5.0)
-                                                      (uniform-float planet "max_height" 4.0)
-                                                      (uniform-float planet "cloud_bottom" 1.0)
-                                                      (uniform-float planet "cloud_top" 2.0)
-                                                      (uniform-float planet "depth" 3.0)
-                                                      (uniform-int planet "neighbours" 15)
-                                                      (uniform-int planet "high_detail" (dec tilesize))
-                                                      (uniform-int planet "low_detail" (quot (dec tilesize) 2))
-                                                      (use-textures {0 surface})
-                                                      (render-patches tile)
-                                                      (use-program atmosphere)
-                                                      (uniform-matrix4 atmosphere "projection" projection)
-                                                      (uniform-matrix4 atmosphere "camera_to_world" camera-to-world)
-                                                      (uniform-vector3 atmosphere "origin" origin)
-                                                      (uniform-float atmosphere "radius" 5.0)
-                                                      (uniform-float atmosphere "max_height" 4.0)
-                                                      (uniform-float atmosphere "cloud_bottom" 1.0)
-                                                      (uniform-float atmosphere "cloud_top" 2.0)
-                                                      (render-quads vao))
-          img        (texture->image tex)]
-      (destroy-texture tex)
-      (destroy-vertex-array-object vao)
-      (destroy-program atmosphere)
-      (destroy-vertex-array-object tile)
-      (destroy-program planet)
-      (destroy-texture surface)
-      img)) => (is-image "test/clj/sfsim/fixtures/clouds/overlay.png" 0.0))
+      (with-invisible-window
+        (let [width           160
+              height          120
+              fov             (to-radians 60.0)
+              z-near          1.0
+              z-far           100.0
+              tilesize        33
+              data            (flatten (for [y (range -1.0 1.0625 0.0625) x (range -1.0 1.0625 0.0625)] [x y 5.0]))
+              surface         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                      #:sfsim.image{:width tilesize :height tilesize :data (float-array data)})
+              projection      (projection-matrix width height z-near (+ z-far 1) fov)
+              origin          (vec3 0 0 10)
+              camera-to-world (transformation-matrix (eye 3) origin)
+              planet          (make-program :sfsim.render/vertex [vertex-planet]
+                                            :sfsim.render/tess-control [tess-control-planet]
+                                            :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                            :sfsim.render/geometry [(geometry-planet 0)]
+                                            :sfsim.render/fragment [fragment-planet-clouds (last (cloud-point 3 [] []))])
+              indices         [0 1 3 2]
+              vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
+              tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+              atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
+                                            :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-outer 3 [] []))])
+              indices         [0 1 3 2]
+              vertices        [-1 -1, 1 -1, -1 1, 1 1]
+              vao             (make-vertex-array-object atmosphere indices vertices ["ndc" 2])
+              tex             (texture-render-color-depth width height true
+                                                          (clear (vec3 0 0 0) 0.0)
+                                                          (use-program planet)
+                                                          (uniform-sampler planet "surface" 0)
+                                                          (uniform-matrix4 planet "projection" projection)
+                                                          (uniform-vector3 planet "tile_center" (vec3 0 0 0))
+                                                          (uniform-matrix4 planet "tile_to_camera" (inverse camera-to-world))
+                                                          (uniform-vector3 planet "origin" origin)
+                                                          (uniform-vector3 planet "light_direction" (vec3 1 0 0))
+                                                          (uniform-float planet "radius" 5.0)
+                                                          (uniform-float planet "max_height" 4.0)
+                                                          (uniform-float planet "cloud_bottom" 1.0)
+                                                          (uniform-float planet "cloud_top" 2.0)
+                                                          (uniform-float planet "depth" 3.0)
+                                                          (uniform-int planet "neighbours" 15)
+                                                          (uniform-int planet "high_detail" (dec tilesize))
+                                                          (uniform-int planet "low_detail" (quot (dec tilesize) 2))
+                                                          (use-textures {0 surface})
+                                                          (render-patches tile)
+                                                          (use-program atmosphere)
+                                                          (uniform-matrix4 atmosphere "inverse_projection" (inverse projection))
+                                                          (uniform-matrix4 atmosphere "camera_to_world" camera-to-world)
+                                                          (uniform-vector3 atmosphere "origin" origin)
+                                                          (uniform-float atmosphere "radius" 5.0)
+                                                          (uniform-float atmosphere "max_height" 4.0)
+                                                          (uniform-float atmosphere "cloud_bottom" 1.0)
+                                                          (uniform-float atmosphere "cloud_top" 2.0)
+                                                          (render-quads vao))
+              img        (texture->image tex)]
+          (destroy-texture tex)
+          (destroy-vertex-array-object vao)
+          (destroy-program atmosphere)
+          (destroy-vertex-array-object tile)
+          (destroy-program planet)
+          (destroy-texture surface)
+          img)) => (is-image "test/clj/sfsim/fixtures/clouds/overlay.png" 0.0))
+
 
 (def opacity-cascade-mocks
-"#version 410 core
+  "#version 410 core
 float cloud_density(vec3 point, float lod)
 {
   if (abs(point.x) < 0.5 && abs(point.y) < 0.5)
@@ -1219,8 +1305,9 @@ float cloud_density(vec3 point, float lod)
     return 0.0;
 }")
 
+
 (def vertex-render-opacity
-"#version 410 core
+  "#version 410 core
 uniform mat4 projection;
 uniform mat4 world_to_camera;
 in vec3 point;
@@ -1231,8 +1318,9 @@ void main()
   gl_Position = projection * world_to_camera * pos;
 }")
 
+
 (def fragment-render-opacity
-"#version 410 core
+  "#version 410 core
 uniform mat4 world_to_camera;
 in vec4 pos;
 out vec4 fragColor;
@@ -1242,6 +1330,7 @@ void main()
   float value = 0.9 * opacity_cascade_lookup(pos) + 0.1;
   fragColor = vec4(value, value, value, 1.0);
 }")
+
 
 (fact "Render cascade of deep opacity maps"
       (with-invisible-window
@@ -1257,7 +1346,7 @@ void main()
               light           (vec3 0 0 1)
               shadow-data     #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 5.0}
               render-vars     #:sfsim.render{:projection projection :camera-to-world camera-to-world :light-direction light
-                                               :z-near z-near :z-far z-far}
+                                             :z-near z-near :z-far z-far}
               shadow-mats     (shadow-matrix-cascade shadow-data render-vars)
               program-opac    (make-program :sfsim.render/vertex [opacity-vertex shaders/grow-shadow-index]
                                             :sfsim.render/fragment [(last (opacity-fragment num-layers [] [])) shaders/ray-shell
@@ -1272,40 +1361,41 @@ void main()
                                                (uniform-float program-opac "scatter_amount" 0.5)
                                                (render-quads vao))
               tex             (texture-render-color-depth 320 240 false
-                                (let [indices   [0 1 3 2]
-                                      vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
-                                      program   (make-program :sfsim.render/vertex [vertex-render-opacity]
-                                                              :sfsim.render/fragment [fragment-render-opacity
-                                                                                      (opacity-cascade-lookup num-steps
-                                                                                                              "opacity_lookup")
-                                                                                      opacity-lookup])
-                                      vao       (make-vertex-array-object program indices vertices ["point" 3])]
-                                  (clear (vec3 0 0 0) 0.0)
-                                  (use-program program)
-                                  (uniform-sampler program "opacity0" 0)
-                                  (uniform-float program "opacity_step" 0.1)
-                                  (uniform-int program "shadow_size" shadow-size)
-                                  (uniform-int program "num_opacity_layers" num-layers)
-                                  (uniform-matrix4 program "projection" projection)
-                                  (uniform-matrix4 program "world_to_camera" (inverse camera-to-world))
-                                  (uniform-float program "split0" z-near)
-                                  (uniform-float program "split1" z-far)
-                                  (uniform-matrix4 program "world_to_shadow_map0" (:sfsim.matrix/world-to-shadow-map (shadow-mats 0)))
-                                  (uniform-float program "depth0" (:sfsim.matrix/depth (shadow-mats 0)))
-                                  (use-textures (zipmap (range) opacity-maps))
-                                  (render-quads vao)
-                                  (destroy-vertex-array-object vao)
-                                  (destroy-program program)))]
+                                                          (let [indices   [0 1 3 2]
+                                                                vertices  [-1.0 -1.0 0, 1.0 -1.0 0, -1.0 1.0 0, 1.0 1.0 0]
+                                                                program   (make-program :sfsim.render/vertex [vertex-render-opacity]
+                                                                                        :sfsim.render/fragment [fragment-render-opacity
+                                                                                                                (opacity-cascade-lookup num-steps
+                                                                                                                                        "opacity_lookup")
+                                                                                                                opacity-lookup])
+                                                                vao       (make-vertex-array-object program indices vertices ["point" 3])]
+                                                            (clear (vec3 0 0 0) 0.0)
+                                                            (use-program program)
+                                                            (uniform-sampler program "opacity0" 0)
+                                                            (uniform-float program "opacity_step" 0.1)
+                                                            (uniform-int program "shadow_size" shadow-size)
+                                                            (uniform-int program "num_opacity_layers" num-layers)
+                                                            (uniform-matrix4 program "projection" projection)
+                                                            (uniform-matrix4 program "world_to_camera" (inverse camera-to-world))
+                                                            (uniform-float program "split0" z-near)
+                                                            (uniform-float program "split1" z-far)
+                                                            (uniform-matrix4 program "world_to_shadow_map0" (:sfsim.matrix/world-to-shadow-map (shadow-mats 0)))
+                                                            (uniform-float program "depth0" (:sfsim.matrix/depth (shadow-mats 0)))
+                                                            (use-textures (zipmap (range) opacity-maps))
+                                                            (render-quads vao)
+                                                            (destroy-vertex-array-object vao)
+                                                            (destroy-program program)))]
           (texture->image tex) => (is-image "test/clj/sfsim/fixtures/clouds/cascade.png" 0.0)
           (destroy-texture tex)
           (doseq [opacity-map opacity-maps]
-                 (destroy-texture opacity-map))
+            (destroy-texture opacity-map))
           (destroy-vertex-array-object vao)
           (destroy-program program-opac))))
 
+
 (def planet-and-cloud-shadows-probe
   (template/fn []
-"#version 410 core
+    "#version 410 core
 uniform float opacity;
 uniform float shadow;
 out vec3 fragColor;
@@ -1324,16 +1414,19 @@ void main()
   fragColor = vec3(result, result, result);
 }"))
 
+
 (def planet-and-cloud-shadows-test
   (shader-test
     (fn [program opacity shadow]
-        (uniform-float program "opacity" opacity)
-        (uniform-float program "shadow" shadow))
+      (uniform-float program "opacity" opacity)
+      (uniform-float program "shadow" shadow))
     planet-and-cloud-shadows-probe
     (last (planet-and-cloud-shadows 3))))
 
+
 (fact "Multiply shadows to get overall shadow"
       ((planet-and-cloud-shadows-test [2.0 3.0] []) 0) => 6.0)
+
 
 (facts "Test level-of-detail offset computation"
        (lod-offset {:sfsim.render/fov (/ PI 2)} {:sfsim.clouds/detail-scale worley-size} {:sfsim.render/window-width 1})
@@ -1347,9 +1440,10 @@ void main()
                    {:sfsim.render/window-width 1})
        => (roughly 2.0 1e-5))
 
+
 (def environmental-shading-probe
   (template/fn [z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 bool is_above_horizon(vec3 point, vec3 direction)
 {
@@ -1371,23 +1465,26 @@ void main()
   fragColor = environmental_shading(point);
 }"))
 
+
 (def environmental-shading-test
   (shader-test
     (fn [program light-dir]
-        (uniform-vector3 program "light_direction" (vec3 0 0 light-dir)))
+      (uniform-vector3 program "light_direction" (vec3 0 0 light-dir)))
     environmental-shading-probe (last (environmental-shading 3))))
 
+
 (tabular "Shader function for determining direct light left after atmospheric scattering and shadows"
-  (fact ((environmental-shading-test [?light-dir] [?z]) 0) => (roughly ?result 1e-5))
-  ?z  ?light-dir ?result
-  0.0  1.0       0.0
-  5.0  1.0       1.0
-  2.0  1.0       0.5
-  5.0 -1.0       0.0)
+         (fact ((environmental-shading-test [?light-dir] [?z]) 0) => (roughly ?result 1e-5))
+         ?z  ?light-dir ?result
+         0.0  1.0       0.0
+         5.0  1.0       1.0
+         2.0  1.0       0.5
+         5.0 -1.0       0.0)
+
 
 (def overall-shading-probe
   (template/fn [x y z sx sy sz]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec3 environmental_shading(vec3 point)
 {
@@ -1405,15 +1502,18 @@ void main()
   fragColor = overall_shading(point, shadow_pos);
 }"))
 
+
 (def overall-shading-test
   (shader-test (fn [program]) overall-shading-probe (last (overall-shading 3 [["test_shadow" "shadow_map"]]))))
 
+
 (tabular "Overall shadow composed of environmental and scene shadows"
-  (fact ((overall-shading-test [] [?x ?y ?z ?sx ?sy ?sz]) 0) => (roughly ?result 1e-5))
-        ?x  ?y ?z ?sx ?sy ?sz ?result
-        1   0  0  1   0   0   1.0
-        0   0  0  1   0   0   0.0
-        1   0  0  0   0   0   0.0
-        0.5 0  0  0.5 0   0   0.25)
+         (fact ((overall-shading-test [] [?x ?y ?z ?sx ?sy ?sz]) 0) => (roughly ?result 1e-5))
+         ?x  ?y ?z ?sx ?sy ?sz ?result
+         1   0  0  1   0   0   1.0
+         0   0  0  1   0   0   0.0
+         1   0  0  0   0   0   0.0
+         0.5 0  0  0.5 0   0   0.25)
+
 
 (GLFW/glfwTerminate)

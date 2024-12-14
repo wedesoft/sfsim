@@ -1,10 +1,12 @@
 (ns sfsim.worley
-    "Create Worley noise"
-    (:require [malli.core :as m]
-              [fastmath.vector :refer (vec3 add sub mag)]
-              [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N N0)]
-              [sfsim.matrix :refer (fvec3)]
-              [com.climate.claypoole :refer (pfor ncpus)]))
+  "Create Worley noise"
+  (:require
+    [com.climate.claypoole :refer (pfor ncpus)]
+    [fastmath.vector :refer (vec3 add sub mag)]
+    [malli.core :as m]
+    [sfsim.matrix :refer (fvec3)]
+    [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N N0)]))
+
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -13,6 +15,7 @@
 
 (def grid (m/schema [:vector [:vector [:vector fvec3]]]))
 
+
 (defn random-point-grid
   "Create a 3D grid with a random point in each cell"
   {:malli/schema [:=> [:cat N N [:? [:=> :cat :double]]] grid]}
@@ -20,14 +23,18 @@
    (random-point-grid divisions size rand))
   ([divisions size random]
    (let [cellsize (/ size divisions)]
-     (mapv (fn random-table [k]
-               (mapv (fn random-row [j]
-                         (mapv (fn random-point [i]
-                                   (add (vec3 (* i cellsize) (* j cellsize) (* k cellsize))
-                                        (apply vec3 (repeatedly 3 #(random cellsize)))))
-                               (range divisions)))
-                     (range divisions)))
+     (mapv (fn random-table
+             [k]
+             (mapv (fn random-row
+                     [j]
+                     (mapv (fn random-point
+                             [i]
+                             (add (vec3 (* i cellsize) (* j cellsize) (* k cellsize))
+                                  (apply vec3 (repeatedly 3 #(random cellsize)))))
+                           (range divisions)))
+                   (range divisions)))
            (range divisions)))))
+
 
 (defn- clipped-index-and-offset
   "Return index modulo dimension of grid and offset for corresponding coordinate"
@@ -38,6 +45,7 @@
         offset        (if (< index divisions) (if (>= index 0) 0 (- size)) size)]
     [clipped-index offset]))
 
+
 (defn extract-point-from-grid
   "Extract the random point from the given grid cell"
   {:malli/schema [:=> [:cat grid N :int :int :int] fvec3]}
@@ -46,6 +54,7 @@
         [j-clip y-offset] (clipped-index-and-offset grid size 1 j)
         [k-clip z-offset] (clipped-index-and-offset grid size 0 k)]
     (add (get-in grid [k-clip j-clip i-clip]) (vec3 x-offset y-offset z-offset))))
+
 
 (defn closest-distance-to-point-in-grid
   "Return distance to closest point in 3D grid"
@@ -57,6 +66,7 @@
         points   (for [dk [-1 0 1] dj [-1 0 1] di [-1 0 1]] (extract-point-from-grid grid size (+ k dk) (+ j dj) (+ i di)))]
     (apply min (mapv #(mag (sub point %)) points))))
 
+
 (defn normalize-vector
   "Normalize the values of a vector by scaling the maximum down to 1.0"
   {:malli/schema [:=> [:cat [:sequential :double]] [:vector :double]]}
@@ -64,11 +74,13 @@
   (let [maximum (apply max values)]
     (vec (pmap #(/ % maximum) values))))
 
+
 (defn invert-vector
   "Invert values of a vector"
   {:malli/schema [:=> [:cat [:sequential :double]] [:vector :double]]}
   [values]
   (mapv #(- 1 %) values))
+
 
 (defn worley-noise
   "Create 3D Worley noise"
@@ -84,6 +96,7 @@
                (do
                  (when progress (send bar tick-and-print))
                  (closest-distance-to-point-in-grid grid divisions size (vec3 (+ k 0.5) (+ j 0.5) (+ i 0.5))))))))))
+
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

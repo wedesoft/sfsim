@@ -1,10 +1,13 @@
 (ns sfsim.ray
   "Functions dealing with rays"
-  (:require [malli.core :as m]
-            [fastmath.vector :refer (add mult mag)]
-            [sfsim.util :refer (N)]))
+  (:require
+    [fastmath.vector :refer (add mult mag)]
+    [malli.core :as m]
+    [sfsim.util :refer (N)]))
+
 
 (def ray (m/schema [:map [::origin [:vector :double]] [::direction [:vector :double]]]))
+
 
 (defn integral-ray
   "Integrate given function over a ray in 3D space"

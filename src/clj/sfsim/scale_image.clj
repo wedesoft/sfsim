@@ -1,10 +1,17 @@
 (ns sfsim.scale-image
   "Convert large map image into a smaller image with half the width and height."
-  (:require [clojure.java.io :as io]
-            [sfsim.util :refer (non-empty-string)])
-  (:import [javax.imageio ImageIO]
-           [java.awt.image BufferedImage AffineTransformOp]
-           [java.awt.geom AffineTransform]))
+  (:require
+    [clojure.java.io :as io]
+    [sfsim.util :refer (non-empty-string)])
+  (:import
+    (java.awt.geom
+      AffineTransform)
+    (java.awt.image
+      AffineTransformOp
+      BufferedImage)
+    (javax.imageio
+      ImageIO)))
+
 
 (defn scale-image-file
   "Program to load, scale, and save image"
