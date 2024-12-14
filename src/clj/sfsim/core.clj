@@ -49,7 +49,7 @@
 ;; (require '[malli.dev.pretty :as pretty])
 ;; (dev/start! {:report (pretty/thrower)})
 
-(def opacity-base (atom 125.0))
+(def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
 (def height 49660.0)
