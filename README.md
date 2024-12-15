@@ -123,5 +123,12 @@ cd ..
   * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
+* Clojure
+  * [cljstyle](https://github.com/greglook/cljstyle) (style checking)
+  * [clj-kondo](https://github.com/clj-kondo/clj-kondo) (static code analysis)
+  * [clj-async-profiler](https://github.com/clojure-goes-fast/clj-async-profiler) (flame graph profiler)
+  * [antq](https://github.com/liquidz/antq) (detect available updates for dependencies)
+  * [nREPL](https://nrepl.org/) server and [REPL-y](https://github.com/trptcolin/reply) client
+  * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 
   [1]: https://github.com/wedesoft/sfsim
