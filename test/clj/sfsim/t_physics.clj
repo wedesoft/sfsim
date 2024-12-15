@@ -1,10 +1,10 @@
 (ns sfsim.t-physics
-    (:require
-      [clojure.math :refer (exp)]
-      [malli.dev.pretty :as pretty]
-      [malli.instrument :as mi]
-      [midje.sweet :refer :all]
-      [sfsim.physics :refer :all]))
+  (:require
+    [clojure.math :refer (exp)]
+    [malli.dev.pretty :as pretty]
+    [malli.instrument :as mi]
+    [midje.sweet :refer :all]
+    [sfsim.physics :refer :all]))
 
 
 (mi/collect! {:ns (all-ns)})
