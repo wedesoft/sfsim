@@ -82,7 +82,7 @@
   (fm/mat4x4 (m 0 0) (m 0 1) (m 0 2) (v 0)
              (m 1 0) (m 1 1) (m 1 2) (v 1)
              (m 2 0) (m 2 1) (m 2 2) (v 2)
-             0       0       0     1))
+             0       0       0       1))
 
 
 (defn projection-matrix
@@ -94,9 +94,9 @@
         a  (/ (* far near) (- far near))
         b  (/ near (- far near))]
     (fm/mat4x4 dx  0  0  0
-               0 dy  0  0
-               0  0  b  a
-               0  0 -1  0)))
+               0  dy  0  0
+               0   0  b  a
+               0   0 -1  0)))
 
 
 (defn pack-matrices
@@ -164,10 +164,10 @@
         top    (toprightfar 1)
         near   (- (bottomleftnear 2))
         far    (- (toprightfar 2))]
-    (fm/mat4x4 (/ 2 (- right left))                    0                  0   (- (/ (* 2 left) (- left right)) 1)
-               0 (/ 2 (- top bottom))                  0 (- (/ (* 2 bottom) (- bottom top)) 1)
-               0                    0 (/ 1 (- far near))                  (/ far (- far near))
-               0                    0                  0                                     1)))
+    (fm/mat4x4 (/ 2 (- right left)) 0                    0                  (- (/ (* 2 left) (- left right)) 1)
+               0                    (/ 2 (- top bottom)) 0                  (- (/ (* 2 bottom) (- bottom top)) 1)
+               0                    0                    (/ 1 (- far near)) (/ far (- far near))
+               0                    0                    0                  1)))
 
 
 (defn shadow-box-to-map
@@ -202,7 +202,7 @@
     (fm/mat4x4 (o 1 0) (o 1 1) (o 1 2) 0
                (o 2 0) (o 2 1) (o 2 2) 0
                (o 0 0) (o 0 1) (o 0 2) 0
-               0       0       0 1)))
+               0       0       0       1)))
 
 
 (defn- transform-point-list

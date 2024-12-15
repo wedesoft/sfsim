@@ -240,32 +240,33 @@
                  :sfsim.cubemap/face0
                  (case (long dy)
                    -1 [:sfsim.cubemap/face3 c2],
-                   0 (case (long dx) -1 [:sfsim.cubemap/face4 c1], 0 [:sfsim.cubemap/face0 c0], 1 [:sfsim.cubemap/face2 c3]),
-                   1 [:sfsim.cubemap/face1 c0])
+                   +0 (case (long dx) -1 [:sfsim.cubemap/face4 c1], 0 [:sfsim.cubemap/face0 c0], 1 [:sfsim.cubemap/face2 c3]),
+                   +1 [:sfsim.cubemap/face1 c0])
                  :sfsim.cubemap/face1
                  (case (long dy)
                    -1 [:sfsim.cubemap/face0 c0],
-                   0 (case (long dx) -1 [:sfsim.cubemap/face4 c0], 0 [:sfsim.cubemap/face1 c0], 1 [:sfsim.cubemap/face2 c0]),
-                   1 [:sfsim.cubemap/face5 c0])
+                   +0 (case (long dx) -1 [:sfsim.cubemap/face4 c0], 0 [:sfsim.cubemap/face1 c0], 1 [:sfsim.cubemap/face2 c0]),
+                   +1 [:sfsim.cubemap/face5 c0])
                  :sfsim.cubemap/face2
                  (case (long dy)
                    -1 [:sfsim.cubemap/face0 c1],
-                   0 (case (long dx) -1 [:sfsim.cubemap/face1 c0], 0 [:sfsim.cubemap/face2 c0], 1 [:sfsim.cubemap/face3 c0]),
-                   1 [:sfsim.cubemap/face5 c3])
+                   +0 (case (long dx) -1 [:sfsim.cubemap/face1 c0], 0 [:sfsim.cubemap/face2 c0], 1 [:sfsim.cubemap/face3 c0]),
+                   +1 [:sfsim.cubemap/face5 c3])
                  :sfsim.cubemap/face3
                  (case (long dy)
                    -1 [:sfsim.cubemap/face0 c2],
-                   0 (case (long dx) -1 [:sfsim.cubemap/face2 c0], 0 [:sfsim.cubemap/face3 c0], 1 [:sfsim.cubemap/face4 c0]),
-                   1 [:sfsim.cubemap/face5 c2])
+                   +0 (case (long dx) -1 [:sfsim.cubemap/face2 c0], 0 [:sfsim.cubemap/face3 c0], 1 [:sfsim.cubemap/face4 c0]),
+                   +1 [:sfsim.cubemap/face5 c2])
                  :sfsim.cubemap/face4
                  (case (long dy)
                    -1 [:sfsim.cubemap/face0 c3],
-                   0 (case (long dx) -1 [:sfsim.cubemap/face3 c0], 0 [:sfsim.cubemap/face4 c0], 1 [:sfsim.cubemap/face1 c0]),
-                   1 [:sfsim.cubemap/face5 c1])
+                   +0 (case (long dx) -1 [:sfsim.cubemap/face3 c0], 0 [:sfsim.cubemap/face4 c0], 1 [:sfsim.cubemap/face1 c0]),
+                   +1 [:sfsim.cubemap/face5 c1])
                  :sfsim.cubemap/face5
-                 (case (long dy) -1 [:sfsim.cubemap/face1 c0],
-                       0 (case (long dx) -1 [:sfsim.cubemap/face4 c3], 0 [:sfsim.cubemap/face5 c0], 1 [:sfsim.cubemap/face2 c1]),
-                       1 [:sfsim.cubemap/face3 c2]))]
+                 (case (long dy)
+                   -1 [:sfsim.cubemap/face1 c0],
+                   +0 (case (long dx) -1 [:sfsim.cubemap/face4 c3], 0 [:sfsim.cubemap/face5 c0], 1 [:sfsim.cubemap/face2 c1]),
+                   +1 [:sfsim.cubemap/face3 c2]))]
            (cons replacement (mapv rotation tail)))
          (let [[replacement propagate]
                (case tile
@@ -427,8 +428,8 @@
 (defn rotate-b
   [angle size row column]
   (case (long angle)
-    0 row
-    90 (- size column 1)
+    0   row
+    90  (- size column 1)
     180 (- size row 1)
     270 column))
 
@@ -436,8 +437,8 @@
 (defn rotate-a
   [angle size row column]
   (case (long angle)
-    0 column
-    90 row
+    0   column
+    90  row
     180 (- size column 1)
     270 (- size row 1)))
 
