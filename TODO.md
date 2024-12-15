@@ -158,7 +158,6 @@
 * collision of blocks
 * contact constraints of blocks
 * joint constraints
-* Runge-Kutta integration
 * convex hull extraction or definition
 * collision of gear
 * estimate friction impulse
