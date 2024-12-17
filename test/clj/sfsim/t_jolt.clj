@@ -42,6 +42,11 @@
        (get-angular-velocity sphere) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
 
 
+(facts "Test setting position of sphere"
+       (set-translation sphere (vec3 1 2 3))
+       (get-translation sphere) => (vec3 1 2 3))
+
+
 (remove-and-destroy-body sphere)
 
 (def box (make-box (vec3 0.2 0.3 0.5) 1000.0 (vec3 2 3 5) (q/->Quaternion 0 1 0 0) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))

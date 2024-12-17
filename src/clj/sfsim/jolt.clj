@@ -193,6 +193,10 @@
   get_translation [::mem/int] ::vec3)
 
 
+(defcfn set-translation
+  set_translation [::mem/int ::vec3] ::mem/void)
+
+
 (defcfn get-rotation
   "Get rotation matrix of a body's world transform"
   get_rotation [::mem/int] ::mat3x3)

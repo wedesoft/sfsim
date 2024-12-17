@@ -287,6 +287,13 @@ Vec3 get_translation(int id)
   return (Vec3){ .x = position.GetX(), .y = position.GetY(), .z = position.GetZ() };
 }
 
+void set_translation(int id, Vec3 translation)
+{
+  JPH::BodyID body_id(id);
+  JPH::RVec3 position(translation.x, translation.y, translation.z);
+  body_interface->SetPosition(body_id, position, JPH::EActivation::Activate);
+}
+
 Mat3x3 get_rotation(int id)
 {
   JPH::BodyID body_id(id);

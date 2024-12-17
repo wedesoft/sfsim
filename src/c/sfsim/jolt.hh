@@ -31,6 +31,7 @@ extern "C" {
   void remove_and_destroy_body(int id);
 
   Vec3 get_translation(int id);
+  void set_translation(int id, Vec3 translation);
   Mat3x3 get_rotation(int id);
   Quaternion get_orientation(int id);
   Vec3 get_linear_velocity(int id);
