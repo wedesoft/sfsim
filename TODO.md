@@ -1,4 +1,6 @@
 # TODO
+* Set force and torque for object in Jolt
+* implement two-step Runge-Kutta wrapper alignment
 * fix problem with resolution of neighbouring tiles in planetary cubemap
 * Jolt convex hulls and unions to create space craft collision shape
 * space flight physics with resting coordinate system
