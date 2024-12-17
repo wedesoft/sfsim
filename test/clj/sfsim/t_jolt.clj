@@ -53,19 +53,35 @@
        (get-orientation sphere) => (q/->Quaternion 1 0 0 0))
 
 
+(def sphere-mass (* (/ 4 3) PI 0.5 0.5 0.5 1000))
+
+
 (facts "Test applying force to sphere for a single physics update"
        (set-gravity (vec3 0 0 0))
        (get-translation sphere) => (vec3 2 3 5)
        (set-linear-velocity sphere (vec3 0 0 0))
        (set-angular-velocity sphere (vec3 0 0 0))
-       (add-force sphere (vec3 (* (/ 4 3) PI 0.5 0.5 0.5 1000) 0 0))
+       (add-force sphere (vec3 sphere-mass 0 0))
        (update-system 1.0 1)
        (get-translation sphere) => (roughly-vector (vec3 3 3 5) 1e-6)
        (update-system 1.0 1)
        (get-translation sphere) => (roughly-vector (vec3 4 3 5) 1e-6))
 
 
+(def sphere-inertia (* (/ 2 5) sphere-mass 0.5 0.5))
+
+
+(facts "Test applying torque to sphere for a single physics update"
+       (get-angular-velocity sphere) => (vec3 0 0 0)
+       (add-torque sphere (vec3 sphere-inertia 0 0))
+       (update-system 1.0 1)
+       (get-angular-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (update-system 1.0 1)
+       (get-angular-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6))
+
+
 (remove-and-destroy-body sphere)
+
 
 (def box (make-box (vec3 0.2 0.3 0.5) 1000.0 (vec3 2 3 5) (q/->Quaternion 0 1 0 0) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
 

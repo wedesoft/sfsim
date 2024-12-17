@@ -279,6 +279,13 @@ void add_force(int id, Vec3 force)
   body_interface->AddForce(body_id, force_vector);
 }
 
+void add_torque(int id, Vec3 torque)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 torque_vector(torque.x, torque.y, torque.z);
+  body_interface->AddTorque(body_id, torque_vector);
+}
+
 void remove_and_destroy_body(int id)
 {
   JPH::BodyID body_id(id);

@@ -189,6 +189,11 @@
   add_force [::mem/int ::vec3] ::mem/void)
 
 
+(defcfn add-torque
+  "Apply a torque in the next physics update"
+  add_torque [::mem/int ::vec3] ::mem/void)
+
+
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"
   remove_and_destroy_body [::mem/int] ::mem/void)
