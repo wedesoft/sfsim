@@ -326,6 +326,13 @@ Quaternion get_orientation(int id)
   };
 }
 
+void set_orientation(int id, Quaternion orientation)
+{
+  JPH::BodyID body_id(id);
+  JPH::Quat orientation_quaternion(orientation.imag, orientation.jmag, orientation.kmag, orientation.real);
+  body_interface->SetRotation(body_id, orientation_quaternion, JPH::EActivation::Activate);
+}
+
 Vec3 get_linear_velocity(int id)
 {
   JPH::BodyID body_id(id);

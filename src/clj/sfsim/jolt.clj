@@ -207,6 +207,11 @@
   get_orientation [::mem/int] ::quaternion)
 
 
+(defcfn set-orientation
+  "Set rotation quaternion of a body's world transform"
+  set_orientation [::mem/int ::quaternion] ::mem/void)
+
+
 (defcfn get-linear-velocity
   "Get linear velocity of a body"
   get_linear_velocity [::mem/int] ::vec3)

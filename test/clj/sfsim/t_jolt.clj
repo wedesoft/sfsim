@@ -44,7 +44,16 @@
 
 (facts "Test setting position of sphere"
        (set-translation sphere (vec3 1 2 3))
-       (get-translation sphere) => (vec3 1 2 3))
+       (get-translation sphere) => (vec3 1 2 3)
+       (set-translation sphere (vec3 2 3 5))
+       (get-translation sphere) => (vec3 2 3 5))
+
+
+(facts "Test setting orientation of sphere"
+       (set-orientation sphere (q/->Quaternion 0 1 0 0))
+       (get-orientation sphere) => (q/->Quaternion 0 1 0 0)
+       (set-orientation sphere (q/->Quaternion 1 0 0 0))
+       (get-orientation sphere) => (q/->Quaternion 1 0 0 0))
 
 
 (remove-and-destroy-body sphere)
