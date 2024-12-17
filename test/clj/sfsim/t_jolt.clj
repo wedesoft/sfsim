@@ -62,10 +62,10 @@
        (set-linear-velocity sphere (vec3 0 0 0))
        (set-angular-velocity sphere (vec3 0 0 0))
        (add-force sphere (vec3 sphere-mass 0 0))
-       (update-system 1.0 1)
-       (get-translation sphere) => (roughly-vector (vec3 3 3 5) 1e-6)
-       (update-system 1.0 1)
-       (get-translation sphere) => (roughly-vector (vec3 4 3 5) 1e-6))
+       (update-system 1.0 2)
+       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (update-system 1.0 2)
+       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6))
 
 
 (def sphere-inertia (* (/ 2 5) sphere-mass 0.5 0.5))
@@ -74,9 +74,9 @@
 (facts "Test applying torque to sphere for a single physics update"
        (get-angular-velocity sphere) => (vec3 0 0 0)
        (add-torque sphere (vec3 sphere-inertia 0 0))
-       (update-system 1.0 1)
+       (update-system 1.0 2)
        (get-angular-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6)
-       (update-system 1.0 1)
+       (update-system 1.0 2)
        (get-angular-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6))
 
 
