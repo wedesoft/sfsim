@@ -30,12 +30,9 @@
        (get-angular-velocity sphere) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
 
 
-(set-gravity (vec3 0 -1 0))
-
-(update-system 1.0 1)
-
-
 (facts "Check position and speed after time step"
+       (set-gravity (vec3 0 -1 0))
+       (update-system 1.0 1)
        (get-translation sphere) => (vec3 2 2 5)
        (get-linear-velocity sphere) => (vec3 0 -1 0)
        (get-rotation sphere) => (roughly-matrix (mat3x3 1 0 0, 0 0 1, 0 -1 0) 1e-6)
@@ -54,6 +51,18 @@
        (get-orientation sphere) => (q/->Quaternion 0 1 0 0)
        (set-orientation sphere (q/->Quaternion 1 0 0 0))
        (get-orientation sphere) => (q/->Quaternion 1 0 0 0))
+
+
+(facts "Test applying force to sphere for a single physics update"
+       (set-gravity (vec3 0 0 0))
+       (get-translation sphere) => (vec3 2 3 5)
+       (set-linear-velocity sphere (vec3 0 0 0))
+       (set-angular-velocity sphere (vec3 0 0 0))
+       (add-force sphere (vec3 (* (/ 4 3) PI 0.5 0.5 0.5 1000) 0 0))
+       (update-system 1.0 1)
+       (get-translation sphere) => (roughly-vector (vec3 3 3 5) 1e-6)
+       (update-system 1.0 1)
+       (get-translation sphere) => (roughly-vector (vec3 4 3 5) 1e-6))
 
 
 (remove-and-destroy-body sphere)
@@ -85,10 +94,10 @@
 (set-restitution sphere 0.2)
 
 (optimize-broad-phase)
-(update-system 1.0 1)
 
 
 (fact "Mesh prevents object from dropping"
+      (update-system 1.0 1)
       (get-translation sphere) => (vec3 0 0 0))
 
 

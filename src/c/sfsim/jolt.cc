@@ -272,6 +272,13 @@ void set_restitution(int id, float restitution)
   body_interface->SetRestitution(body_id, restitution);
 }
 
+void add_force(int id, Vec3 force)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 force_vector(force.x, force.y, force.z);
+  body_interface->AddForce(body_id, force_vector);
+}
+
 void remove_and_destroy_body(int id)
 {
   JPH::BodyID body_id(id);
@@ -340,9 +347,23 @@ Vec3 get_linear_velocity(int id)
   return (Vec3){ .x = linear_velocity.GetX(), .y = linear_velocity.GetY(), .z = linear_velocity.GetZ() };
 }
 
+void set_linear_velocity(int id, Vec3 velocity)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 linear_velocity(velocity.x, velocity.y, velocity.z);
+  body_interface->SetLinearVelocity(body_id, linear_velocity);
+}
+
 Vec3 get_angular_velocity(int id)
 {
   JPH::BodyID body_id(id);
   JPH::Vec3 angular_velocity = body_interface->GetAngularVelocity(body_id);
   return (Vec3){ .x = angular_velocity.GetX(), .y = angular_velocity.GetY(), .z = angular_velocity.GetZ() };
+}
+
+void set_angular_velocity(int id, Vec3 velocity)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 angular_velocity(velocity.x, velocity.y, velocity.z);
+  body_interface->SetAngularVelocity(body_id, angular_velocity);
 }
