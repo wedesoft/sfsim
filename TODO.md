@@ -1,10 +1,10 @@
 # TODO
-* implement two-step Runge-Kutta wrapper alignment
-* space flight physics with resting coordinate system
 * add convex hull shape Jolt wrapper
 * add static compound shape Jolt wrapper
 * add wheeled vehicle Jolt wrapper
 * gear/terrain physics with stationary Earth (ground collisions)
+* implement two-step Runge-Kutta wrapper alignment
+* space flight physics with resting coordinate system
 * bake gear animation and name actions the same
 * animate gears and wheels
 * good position of wheels for takeoff (with low fuel) and landing
