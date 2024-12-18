@@ -1,17 +1,18 @@
 # TODO
-* Set force and torque for object in Jolt
 * implement two-step Runge-Kutta wrapper alignment
-* fix problem with resolution of neighbouring tiles in planetary cubemap
-* Jolt convex hulls and unions to create space craft collision shape
 * space flight physics with resting coordinate system
-* rotating Earth
-* atmospheric flight with stationary atmosphere in rotating coordinate system
-* vehicle physics
+* add convex hull shape Jolt wrapper
+* add static compound shape Jolt wrapper
+* add wheeled vehicle Jolt wrapper
+* gear/terrain physics with stationary Earth (ground collisions)
+* bake gear animation and name actions the same
+* animate gears and wheels
 * good position of wheels for takeoff (with low fuel) and landing
+* rotating Earth coordinate system (centrifugal and coriolis force),
+  atmospheric flight with stationary atmosphere in rotating coordinate system
+* fix problem with resolution of neighbouring tiles in planetary cubemap
 * hover thruster locations
 * shift and update opacity and planet shadow maps for improved performance
-* gear/terrain physics with stationary Earth (ground collisions)
-* gear/terrain physics with rotating and moving Earth (ground collisions)
 * visualise prototype vehicle and wheels
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
   deferred decals for rendering runway
@@ -20,7 +21,6 @@
 * .jpg -> .day.jpg
 * cloud shadow flickering at large distance?
 * animate flaps
-* bake gear animation and name actions the same
 * space station model
 * docking physics
 * moon landing physics
