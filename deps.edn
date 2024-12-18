@@ -24,7 +24,7 @@
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
                  :main-opts ["-m" "sfsim.core"]}
            :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.6"
-                                                         :git/sha "2a21b7a"}
+                                                         :git/sha "52cf7d6"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all
