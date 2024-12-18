@@ -164,7 +164,7 @@
 
 
 (defn make-mesh
-  "Create a mesh object"
+  "Create a static mesh object"
   [{:sfsim.quadtree/keys [vertices triangles]} mass center rotation]
   (let [arena (mem/auto-arena)
         num-vertices (count vertices)
@@ -172,6 +172,20 @@
     (make-mesh_ (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
                 (mem/serialize (apply concat triangles) [::mem/array ::mem/int (* 3 num-triangles)] arena) num-triangles
                 mass center rotation)))
+
+
+(defcfn make-convex-hull_
+  "Create a convex hull object (private function)"
+  make_convex_hull [::mem/pointer ::mem/int ::mem/float ::mem/float ::vec3 ::quaternion] ::mem/int)
+
+
+(defn make-convex-hull
+  "Create a convex hull"
+  [vertices convex-radius density center rotation]
+  (let [arena        (mem/auto-arena)
+        num-vertices (count vertices)]
+    (make-convex-hull_ (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
+                       convex-radius density center rotation)))
 
 
 (defcfn set-friction

@@ -81,41 +81,50 @@
 (remove-and-destroy-body sphere)
 
 
-(def box (make-box (vec3 0.2 0.3 0.5) 1000.0 (vec3 2 3 5) (q/->Quaternion 0 1 0 0) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
-
-
 (facts "Get position vector, rotation matrix, and velocities of box body"
-       (get-translation box) => (vec3 2 3 5)
-       (get-rotation box) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1)
-       (get-linear-velocity box) => (vec3 0 0 0)
-       (get-angular-velocity box) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
-
-
-(remove-and-destroy-body box)
-
-
-(def mesh
-  (make-mesh #:sfsim.quadtree{:vertices [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)]
-                              :triangles [[0 3 1] [1 3 2]]}
-             1e+4 (vec3 0 -1 0) (q/->Quaternion 1 0 0 0)))
-
-
-(set-friction mesh 0.5)
-(set-restitution mesh 0.2)
-
-(def sphere (make-sphere 1.0 1000.0 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0)))
-(set-friction sphere 0.5)
-(set-restitution sphere 0.2)
-
-(optimize-broad-phase)
+       (let [box (make-box (vec3 0.2 0.3 0.5) 1000.0 (vec3 2 3 5) (q/->Quaternion 0 1 0 0) (vec3 0 0 0) (vec3 (/ PI 2) 0 0))]
+         (get-translation box) => (vec3 2 3 5)
+         (get-rotation box) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1)
+         (get-linear-velocity box) => (vec3 0 0 0)
+         (get-angular-velocity box) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6)
+         (remove-and-destroy-body box)))
 
 
 (fact "Mesh prevents object from dropping"
-      (update-system 1.0 1)
-      (get-translation sphere) => (vec3 0 0 0))
+      (let [mesh   (make-mesh #:sfsim.quadtree{:vertices [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)]
+                                               :triangles [[0 3 1] [1 3 2]]}
+                              1e+4 (vec3 0 -1 0) (q/->Quaternion 1 0 0 0))
+            sphere (make-sphere 1.0 1000.0 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0))]
+        (set-friction mesh 0.5)
+        (set-restitution mesh 0.2)
+        (set-friction sphere 0.5)
+        (set-restitution sphere 0.2)
+        (optimize-broad-phase)
+        (set-gravity (vec3 0 -1 0))
+        (update-system 1.0 1)
+        (get-translation sphere) => (vec3 0 0 0)
+        (remove-and-destroy-body sphere)
+        (remove-and-destroy-body mesh)))
 
 
-(remove-and-destroy-body sphere)
-(remove-and-destroy-body mesh)
+(fact "Convex hull prevents object from dropping"
+      (let [hull   (make-convex-hull [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1) (vec3 0 -1 0)]
+                                     0.05 1000.0 (vec3 0 -1.5 0) (q/->Quaternion 1 0 0 0))
+            sphere (make-sphere 1.0 1000.0 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0))]
+        (set-gravity (vec3 0 0 0))
+        (set-friction hull 0.5)
+        (set-restitution hull 0.2)
+        (set-friction sphere 0.5)
+        (set-restitution sphere 0.2)
+        (optimize-broad-phase)
+        (set-linear-velocity sphere (vec3 0 -1 0))
+        (update-system 1.0 1)
+        (get-linear-velocity sphere) => (vec3 0 0 0)
+        (get-linear-velocity hull) => (vec3 0 0 0)
+        (get-translation sphere) => (vec3 0 0 0)
+        (get-translation hull) => (vec3 0 0 0)
+        (remove-and-destroy-body sphere)
+        (remove-and-destroy-body hull)))
+
 
 (jolt-destroy)

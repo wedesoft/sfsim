@@ -11,6 +11,7 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "sfsim/jolt.hh"
 
@@ -258,6 +259,25 @@ int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangl
   JPH::BodyCreationSettings mesh_settings(mesh_shape, position, orientation, JPH::EMotionType::Static, NON_MOVING);
   JPH::BodyID mesh_id = body_interface->CreateAndAddBody(mesh_settings, JPH::EActivation::Activate);
   return mesh_id.GetIndexAndSequenceNumber();
+}
+
+int make_convex_hull(float *vertices, int num_vertices, float convex_radius, float density, Vec3 center, Quaternion rotation)
+{
+  JPH::Array<JPH::Vec3> vertex_list(num_vertices);
+  for (int i=0; i<num_vertices; i++) {
+    vertex_list[i] = JPH::Vec3(vertices[0], vertices[1], vertices[2]);
+    vertices += 3;
+  }
+  JPH::ConvexHullShapeSettings convex_hull_shape_settings(vertex_list, convex_radius);
+  convex_hull_shape_settings.SetDensity(density);
+  convex_hull_shape_settings.SetEmbedded();
+  JPH::ShapeSettings::ShapeResult shape_result = convex_hull_shape_settings.Create();
+  JPH::ShapeRefC convex_hull_shape = shape_result.Get();
+  JPH::RVec3 position(center.x, center.y, center.z);
+  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
+  JPH::BodyCreationSettings convex_hull_settings(convex_hull_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
+  JPH::BodyID convex_hull_id = body_interface->CreateAndAddBody(convex_hull_settings, JPH::EActivation::Activate);
+  return convex_hull_id.GetIndexAndSequenceNumber();
 }
 
 void set_friction(int id, float friction)
