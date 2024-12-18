@@ -31,6 +31,7 @@ extern "C" {
   void set_restitution(int id, float restitution);
   void add_force(int id, Vec3 force);
   void add_torque(int id, Vec3 torque);
+  void activate_body(int id);
   void remove_and_destroy_body(int id);
   Vec3 get_translation(int id);
   void set_translation(int id, Vec3 translation);

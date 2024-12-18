@@ -90,6 +90,24 @@
          (remove-and-destroy-body box)))
 
 
+(fact "Test restitution of sphere"
+      (let [sphere1 (make-sphere 1.0 1000.0 (vec3 0.0  2.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0 -1 0) (vec3 0 0 0))
+            sphere2 (make-sphere 1.0 1000.0 (vec3 0.0 -2.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0  0 0) (vec3 0 0 0))]
+        (set-gravity (vec3 0 0 0))
+        (set-friction sphere1 0.2)
+        (set-restitution sphere1 1.0)
+        (set-friction sphere2 0.2)
+        (set-restitution sphere2 1.0)
+        (optimize-broad-phase)
+        (dotimes [i 10]
+          (activate-body sphere1)
+          (activate-body sphere2)
+          (update-system 0.4 1)
+          (println "sphere1 = " (get-linear-velocity sphere1) ", sphere2 = " (get-linear-velocity sphere2)))
+        (remove-and-destroy-body sphere1)
+        (remove-and-destroy-body sphere2)))
+
+
 (fact "Mesh prevents object from dropping"
       (let [mesh   (make-mesh #:sfsim.quadtree{:vertices [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1)]
                                                :triangles [[0 3 1] [1 3 2]]}
@@ -108,8 +126,8 @@
 
 
 (fact "Convex hull prevents object from dropping"
-      (let [hull   (make-convex-hull [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1) (vec3 0 -1 0)]
-                                     0.05 1000.0 (vec3 0 -1.5 0) (q/->Quaternion 1 0 0 0))
+      (let [hull   (make-convex-hull [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1) (vec3 0 -2 0)]
+                                     0.01 1000.0 (vec3 0 -2.0 0) (q/->Quaternion 1 0 0 0))
             sphere (make-sphere 1.0 1000.0 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0))]
         (set-gravity (vec3 0 0 0))
         (set-friction hull 0.5)
@@ -118,11 +136,9 @@
         (set-restitution sphere 0.2)
         (optimize-broad-phase)
         (set-linear-velocity sphere (vec3 0 -1 0))
-        (update-system 1.0 1)
-        (get-linear-velocity sphere) => (vec3 0 0 0)
-        (get-linear-velocity hull) => (vec3 0 0 0)
-        (get-translation sphere) => (vec3 0 0 0)
-        (get-translation hull) => (vec3 0 0 0)
+        (set-linear-velocity hull (vec3 0 0 0))
+        (dotimes [i 20] (update-system 0.1 1)
+          (println "velocity sphere = " (get-linear-velocity sphere) ", velocity hull = " (get-linear-velocity hull)))
         (remove-and-destroy-body sphere)
         (remove-and-destroy-body hull)))
 

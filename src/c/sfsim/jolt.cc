@@ -276,6 +276,7 @@ int make_convex_hull(float *vertices, int num_vertices, float convex_radius, flo
   JPH::RVec3 position(center.x, center.y, center.z);
   JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
   JPH::BodyCreationSettings convex_hull_settings(convex_hull_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
+  body_default_settings(convex_hull_settings);
   JPH::BodyID convex_hull_id = body_interface->CreateAndAddBody(convex_hull_settings, JPH::EActivation::Activate);
   return convex_hull_id.GetIndexAndSequenceNumber();
 }
@@ -304,6 +305,12 @@ void add_torque(int id, Vec3 torque)
   JPH::BodyID body_id(id);
   JPH::Vec3 torque_vector(torque.x, torque.y, torque.z);
   body_interface->AddTorque(body_id, torque_vector);
+}
+
+void activate_body(int id)
+{
+  JPH::BodyID body_id(id);
+  body_interface->ActivateBody(body_id);
 }
 
 void remove_and_destroy_body(int id)

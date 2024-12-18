@@ -208,6 +208,11 @@
   add_torque [::mem/int ::vec3] ::mem/void)
 
 
+(defcfn activate-body
+  "Make sure body is active"
+  activate_body [::mem/int] ::mem/void)
+
+
 (defcfn remove-and-destroy-body
   "Remove body from physics system and destroy it"
   remove_and_destroy_body [::mem/int] ::mem/void)
