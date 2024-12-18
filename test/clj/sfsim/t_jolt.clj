@@ -99,10 +99,10 @@
         (set-friction sphere2 0.2)
         (set-restitution sphere2 1.0)
         (optimize-broad-phase)
-        (dotimes [i 10]
+        (dotimes [i 40]
           (activate-body sphere1)
           (activate-body sphere2)
-          (update-system 0.4 1)
+          (update-system 0.1 1)
           (println "sphere1 = " (get-linear-velocity sphere1) ", sphere2 = " (get-linear-velocity sphere2)))
         (remove-and-destroy-body sphere1)
         (remove-and-destroy-body sphere2)))
@@ -137,7 +137,10 @@
         (optimize-broad-phase)
         (set-linear-velocity sphere (vec3 0 -1 0))
         (set-linear-velocity hull (vec3 0 0 0))
-        (dotimes [i 20] (update-system 0.1 1)
+        (dotimes [i 20]
+          (activate-body sphere)
+          (activate-body hull)
+          (update-system 0.1 1)
           (println "velocity sphere = " (get-linear-velocity sphere) ", velocity hull = " (get-linear-velocity hull)))
         (remove-and-destroy-body sphere)
         (remove-and-destroy-body hull)))
