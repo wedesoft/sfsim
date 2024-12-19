@@ -99,11 +99,9 @@
         (set-friction sphere2 0.2)
         (set-restitution sphere2 1.0)
         (optimize-broad-phase)
-        (dotimes [i 40]
-          (activate-body sphere1)
-          (activate-body sphere2)
-          (update-system 0.1 1)
-          (println "sphere1 = " (get-linear-velocity sphere1) ", sphere2 = " (get-linear-velocity sphere2)))
+        (dotimes [i 40] (update-system 0.1 1))
+        (get-linear-velocity sphere1) => (roughly-vector (vec3 0  0 0) 1e-6)
+        (get-linear-velocity sphere2) => (roughly-vector (vec3 0 -1 0) 1e-6)
         (remove-and-destroy-body sphere1)
         (remove-and-destroy-body sphere2)))
 
@@ -119,29 +117,27 @@
         (set-restitution sphere 0.2)
         (optimize-broad-phase)
         (set-gravity (vec3 0 -1 0))
-        (update-system 1.0 1)
-        (get-translation sphere) => (vec3 0 0 0)
+        (dotimes [i 10] (update-system 0.1 1))
+        (get-translation sphere) => (roughly-vector (vec3 0 0 0) 1e-6)
         (remove-and-destroy-body sphere)
         (remove-and-destroy-body mesh)))
 
 
-(fact "Convex hull prevents object from dropping"
+(fact "Convex hull detects sphere collision"
       (let [hull   (make-convex-hull [(vec3 -1 0 -1) (vec3 1 0 -1) (vec3 1 0 1) (vec3 -1 0 1) (vec3 0 -2 0)]
                                      0.01 1000.0 (vec3 0 -2.0 0) (q/->Quaternion 1 0 0 0))
             sphere (make-sphere 1.0 1000.0 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0))]
         (set-gravity (vec3 0 0 0))
         (set-friction hull 0.5)
-        (set-restitution hull 0.2)
+        (set-restitution hull 1.0)
         (set-friction sphere 0.5)
-        (set-restitution sphere 0.2)
+        (set-restitution sphere 1.0)
         (optimize-broad-phase)
         (set-linear-velocity sphere (vec3 0 -1 0))
         (set-linear-velocity hull (vec3 0 0 0))
-        (dotimes [i 20]
-          (activate-body sphere)
-          (activate-body hull)
-          (update-system 0.1 1)
-          (println "velocity sphere = " (get-linear-velocity sphere) ", velocity hull = " (get-linear-velocity hull)))
+        (dotimes [i 20] (update-system 0.1 1))
+        (get-linear-velocity sphere) => (roughly-vector (vec3 0 -0.222 0) 1e-3)
+        (get-linear-velocity hull) => (roughly-vector (vec3 0 -1.222 0) 1e-3)
         (remove-and-destroy-body sphere)
         (remove-and-destroy-body hull)))
 

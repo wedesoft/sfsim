@@ -150,6 +150,9 @@ void jolt_init(void)
   physics_system = new JPH::PhysicsSystem;
   physics_system->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, *broad_phase_layer_interface,
                        *object_vs_broadphase_layer_filter, *object_vs_object_layer_filter);
+  JPH::PhysicsSettings physics_settings = physics_system->GetPhysicsSettings();
+  physics_settings.mMinVelocityForRestitution = 0.1f;
+  physics_system->SetPhysicsSettings(physics_settings);
   body_interface = &physics_system->GetBodyInterface();
 }
 
