@@ -1,23 +1,26 @@
 # TODO
-* far away cloud shadows in top layer are too much
-  level of detail in opacity cascade, cloud brightness flickering at large distance?
-  mipmaps for all cloud textures and octaves
-  change cloud computation when viewing from space far away (use different lod of shadow?)
-* fix problem with resolution of neighbouring tiles in planetary cubemap
-* Jolt convex hulls and unions to create space craft collision shape
-* visualise prototype vehicle and wheels
+* add convex hull shape Jolt wrapper
+* add static compound shape Jolt wrapper
+* add wheeled vehicle Jolt wrapper
 * gear/terrain physics with stationary Earth (ground collisions)
-* gear/terrain physics with rotating and moving Earth (ground collisions)
+* implement two-step Runge-Kutta wrapper alignment
+* space flight physics with resting coordinate system
+* bake gear animation and name actions the same
+* animate gears and wheels
+* good position of wheels for takeoff (with low fuel) and landing
+* rotating Earth coordinate system (centrifugal and coriolis force),
+  atmospheric flight with stationary atmosphere in rotating coordinate system
+* fix problem with resolution of neighbouring tiles in planetary cubemap
+* hover thruster locations
+* shift and update opacity and planet shadow maps for improved performance
+* visualise prototype vehicle and wheels
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
   deferred decals for rendering runway
 * introduce variation to cloud height
 * [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
 * .jpg -> .day.jpg
-* atmospheric flight with stationary atmosphere
+* cloud shadow flickering at large distance?
 * animate flaps
-* gear locations, hover thruster locations
-* make model with rigged gear or simulate with Project Chrono
-* bake gear animation and name actions the same
 * space station model
 * docking physics
 * moon landing physics
@@ -157,7 +160,6 @@
 * collision of blocks
 * contact constraints of blocks
 * joint constraints
-* Runge-Kutta integration
 * convex hull extraction or definition
 * collision of gear
 * estimate friction impulse

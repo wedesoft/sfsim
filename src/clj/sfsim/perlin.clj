@@ -1,15 +1,18 @@
 (ns sfsim.perlin
-    "Create improved Perlin noise"
-    (:require [clojure.math :refer (floor)]
-              [fastmath.vector :refer (vec3 add sub dot mult)]
-              [com.climate.claypoole :refer (pfor ncpus)]
-              [sfsim.matrix :refer (fvec3)]
-              [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N)]))
+  "Create improved Perlin noise"
+  (:require
+    [clojure.math :refer (floor)]
+    [com.climate.claypoole :refer (pfor ncpus)]
+    [fastmath.vector :refer (vec3 add sub dot mult)]
+    [sfsim.matrix :refer (fvec3)]
+    [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N)]))
 
-; improved Perlin noise algorithm
-; https://adrianb.io/2014/08/09/perlinnoise.html
+
+;; improved Perlin noise algorithm
+;; https://adrianb.io/2014/08/09/perlinnoise.html
 
 (set! *unchecked-math* true)
+
 
 (defn random-gradient
   "Randomly pick one of twelve gradient vectors"
@@ -18,9 +21,10 @@
    (random-gradient rand-nth))
   ([selector]
    (apply vec3
-          (selector [[ 1  1  0] [-1  1  0] [ 1 -1  0] [-1 -1  0]
-                     [ 1  0  1] [-1  0  1] [ 1  0 -1] [-1  0 -1]
-                     [ 0  1  1] [ 0 -1  1] [ 0  1 -1] [ 0 -1 -1]]))))
+          (selector [[1  1  0] [-1  1  0] [1 -1  0] [-1 -1  0]
+                     [1  0  1] [-1  0  1] [1  0 -1] [-1  0 -1]
+                     [0  1  1] [+0 -1  1] [0  1 -1] [+0 -1 -1]]))))
+
 
 (defn random-gradient-grid
   "Create a 3D grid with random gradient vectors"
@@ -29,9 +33,11 @@
    (random-gradient-grid divisions random-gradient))
   ([divisions random-gradient]
    (vec (repeatedly divisions
-                    (fn random-gradient-table []
-                        (vec (repeatedly divisions
-                                         (fn random-gradient-row [] (vec (repeatedly divisions random-gradient))))))))))
+                    (fn random-gradient-table
+                      []
+                      (vec (repeatedly divisions
+                                       (fn random-gradient-row [] (vec (repeatedly divisions random-gradient))))))))))
+
 
 (defn determine-division
   "Determine division point belongs to"
@@ -39,22 +45,25 @@
   [point]
   (mapv (comp int floor) point))
 
+
 (defn corner-vectors
   "Get 3D vectors pointing to corners of division"
   {:malli/schema [:=> [:cat fvec3] [:vector {:min 8 :max 8} fvec3]]}
   [point]
   (let [division (apply vec3 (determine-division point))]
     (vec (for [z (range 2) y (range 2) x (range 2)]
-              (sub point (add division (vec3 x y z)))))))
+           (sub point (add division (vec3 x y z)))))))
+
 
 (defn corner-gradients
   "Get 3D gradient vectors from corners of division"
   {:malli/schema [:=> [:cat [:vector [:vector [:vector fvec3]]] fvec3] [:vector fvec3]]}
   [gradient-grid point]
-  (let [[x  y  z ] (determine-division point)
+  (let [[x  y  z] (determine-division point)
         [x+ y+ z+] (mapv #(mod (inc %) (dimension-count gradient-grid 0)) [x y z])]
     (vec (for [zd [z z+] yd [y y+] xd [x x+]]
-              (reduce nth gradient-grid [zd yd xd])))))
+           (reduce nth gradient-grid [zd yd xd])))))
+
 
 (defn influence-values
   "Determine influence values"
@@ -62,11 +71,13 @@
   [corner-gradients corner-vectors]
   (mapv dot corner-gradients corner-vectors))
 
+
 (defn ease-curve
   "Monotonous and point-symmetric ease curve"
   {:malli/schema [:=> [:cat :double] :double]}
   [t]
   (-> t (* 6.0) (- 15.0) (* t) (+ 10.0) (* t t t)))
+
 
 (defn interpolation-weights
   "Determine weights for interpolation"
@@ -77,7 +88,8 @@
         [bx by bz] point
         [ax ay az] (sub (vec3 1 1 1) point)]
     (for [z [az bz] y [ay by] x [ax bx]]
-         (* (ease-curve z) (ease-curve y) (ease-curve x)))))
+      (* (ease-curve z) (ease-curve y) (ease-curve x)))))
+
 
 (defn normalize-vector
   "Normalize the values of a vector to be between 0.0 and 1.0"
@@ -86,6 +98,7 @@
   (let [minimum (apply min values)
         maximum (apply max values)]
     (vec (pmap #(/ (- % minimum) (- maximum minimum)) values))))
+
 
 (defn perlin-noise-sample
   "Compute a single sample of Perlin noise"
@@ -97,6 +110,7 @@
         influence (influence-values gradients corners)
         weights   (interpolation-weights ease-curve point)]
     (apply + (mapv * weights influence))))
+
 
 (defn perlin-noise
   "Create 3D Perlin noise"
@@ -111,6 +125,7 @@
          (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
                (do
                  (when progress (send bar tick-and-print))
-                 (perlin-noise-sample gradient-grid divisions size (vec3 (+ i 0.5) (+ j 0.5) (+ k 0.5) )))))))))
+                 (perlin-noise-sample gradient-grid divisions size (vec3 (+ i 0.5) (+ j 0.5) (+ k 0.5))))))))))
+
 
 (set! *unchecked-math* false)

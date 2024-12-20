@@ -11,6 +11,7 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "sfsim/jolt.hh"
 
@@ -149,6 +150,9 @@ void jolt_init(void)
   physics_system = new JPH::PhysicsSystem;
   physics_system->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, *broad_phase_layer_interface,
                        *object_vs_broadphase_layer_filter, *object_vs_object_layer_filter);
+  JPH::PhysicsSettings physics_settings = physics_system->GetPhysicsSettings();
+  physics_settings.mMinVelocityForRestitution = 0.1f;
+  physics_system->SetPhysicsSettings(physics_settings);
   body_interface = &physics_system->GetBodyInterface();
 }
 
@@ -260,6 +264,26 @@ int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangl
   return mesh_id.GetIndexAndSequenceNumber();
 }
 
+int make_convex_hull(float *vertices, int num_vertices, float convex_radius, float density, Vec3 center, Quaternion rotation)
+{
+  JPH::Array<JPH::Vec3> vertex_list(num_vertices);
+  for (int i=0; i<num_vertices; i++) {
+    vertex_list[i] = JPH::Vec3(vertices[0], vertices[1], vertices[2]);
+    vertices += 3;
+  }
+  JPH::ConvexHullShapeSettings convex_hull_shape_settings(vertex_list, convex_radius);
+  convex_hull_shape_settings.SetDensity(density);
+  convex_hull_shape_settings.SetEmbedded();
+  JPH::ShapeSettings::ShapeResult shape_result = convex_hull_shape_settings.Create();
+  JPH::ShapeRefC convex_hull_shape = shape_result.Get();
+  JPH::RVec3 position(center.x, center.y, center.z);
+  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
+  JPH::BodyCreationSettings convex_hull_settings(convex_hull_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
+  body_default_settings(convex_hull_settings);
+  JPH::BodyID convex_hull_id = body_interface->CreateAndAddBody(convex_hull_settings, JPH::EActivation::Activate);
+  return convex_hull_id.GetIndexAndSequenceNumber();
+}
+
 void set_friction(int id, float friction)
 {
   JPH::BodyID body_id(id);
@@ -270,6 +294,26 @@ void set_restitution(int id, float restitution)
 {
   JPH::BodyID body_id(id);
   body_interface->SetRestitution(body_id, restitution);
+}
+
+void add_force(int id, Vec3 force)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 force_vector(force.x, force.y, force.z);
+  body_interface->AddForce(body_id, force_vector);
+}
+
+void add_torque(int id, Vec3 torque)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 torque_vector(torque.x, torque.y, torque.z);
+  body_interface->AddTorque(body_id, torque_vector);
+}
+
+void activate_body(int id)
+{
+  JPH::BodyID body_id(id);
+  body_interface->ActivateBody(body_id);
 }
 
 void remove_and_destroy_body(int id)
@@ -285,6 +329,13 @@ Vec3 get_translation(int id)
   JPH::RMat44 transform = body_interface->GetWorldTransform(body_id);
   JPH::RVec3 position = transform.GetTranslation();
   return (Vec3){ .x = position.GetX(), .y = position.GetY(), .z = position.GetZ() };
+}
+
+void set_translation(int id, Vec3 translation)
+{
+  JPH::BodyID body_id(id);
+  JPH::RVec3 position(translation.x, translation.y, translation.z);
+  body_interface->SetPosition(body_id, position, JPH::EActivation::Activate);
 }
 
 Mat3x3 get_rotation(int id)
@@ -319,6 +370,13 @@ Quaternion get_orientation(int id)
   };
 }
 
+void set_orientation(int id, Quaternion orientation)
+{
+  JPH::BodyID body_id(id);
+  JPH::Quat orientation_quaternion(orientation.imag, orientation.jmag, orientation.kmag, orientation.real);
+  body_interface->SetRotation(body_id, orientation_quaternion, JPH::EActivation::Activate);
+}
+
 Vec3 get_linear_velocity(int id)
 {
   JPH::BodyID body_id(id);
@@ -326,9 +384,23 @@ Vec3 get_linear_velocity(int id)
   return (Vec3){ .x = linear_velocity.GetX(), .y = linear_velocity.GetY(), .z = linear_velocity.GetZ() };
 }
 
+void set_linear_velocity(int id, Vec3 velocity)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 linear_velocity(velocity.x, velocity.y, velocity.z);
+  body_interface->SetLinearVelocity(body_id, linear_velocity);
+}
+
 Vec3 get_angular_velocity(int id)
 {
   JPH::BodyID body_id(id);
   JPH::Vec3 angular_velocity = body_interface->GetAngularVelocity(body_id);
   return (Vec3){ .x = angular_velocity.GetX(), .y = angular_velocity.GetY(), .z = angular_velocity.GetZ() };
+}
+
+void set_angular_velocity(int id, Vec3 velocity)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 angular_velocity(velocity.x, velocity.y, velocity.z);
+  body_interface->SetAngularVelocity(body_id, angular_velocity);
 }

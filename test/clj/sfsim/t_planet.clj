@@ -1,27 +1,32 @@
 (ns sfsim.t-planet
-    (:require [midje.sweet :refer :all]
-              [malli.instrument :as mi]
-              [malli.dev.pretty :as pretty]
-              [sfsim.conftest :refer (shader-test roughly-vector is-image)]
-              [comb.template :as template]
-              [clojure.math :refer (PI exp pow)]
-              [fastmath.vector :refer (vec3 mult dot mag)]
-              [fastmath.matrix :refer (eye diagonal inverse)]
-              [sfsim.quaternion :as q]
-              [sfsim.cubemap :as cubemap]
-              [sfsim.atmosphere :as atmosphere]
-              [sfsim.texture :refer :all]
-              [sfsim.render :refer :all]
-              [sfsim.shaders :as shaders]
-              [sfsim.matrix :refer :all :as matrix]
-              [sfsim.interpolate :refer :all]
-              [sfsim.image :refer :all]
-              [sfsim.util :refer :all]
-              [sfsim.planet :refer :all :as planet]
-              [sfsim.bluenoise :as bluenoise]
-              [sfsim.clouds :as clouds])
-    (:import [org.lwjgl.glfw GLFW]
-             [fastmath.matrix Mat4x4]))
+  (:require
+    [clojure.math :refer (PI exp pow)]
+    [comb.template :as template]
+    [fastmath.matrix :refer (eye diagonal inverse)]
+    [fastmath.vector :refer (vec3 mult dot mag)]
+    [malli.dev.pretty :as pretty]
+    [malli.instrument :as mi]
+    [midje.sweet :refer :all]
+    [sfsim.atmosphere :as atmosphere]
+    [sfsim.bluenoise :as bluenoise]
+    [sfsim.clouds :as clouds]
+    [sfsim.conftest :refer (shader-test roughly-vector is-image)]
+    [sfsim.cubemap :as cubemap]
+    [sfsim.image :refer :all]
+    [sfsim.interpolate :refer :all]
+    [sfsim.matrix :refer :all :as matrix]
+    [sfsim.planet :refer :all :as planet]
+    [sfsim.quaternion :as q]
+    [sfsim.render :refer :all]
+    [sfsim.shaders :as shaders]
+    [sfsim.texture :refer :all]
+    [sfsim.util :refer :all])
+  (:import
+    (fastmath.matrix
+      Mat4x4)
+    (org.lwjgl.glfw
+      GLFW)))
+
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
@@ -32,10 +37,14 @@
 (def max-height 100000.0)
 (def ray-steps 10)
 (def size 12)
-(def earth #:sfsim.sphere{:centre (vec3 0 0 0)
-                          :radius radius
-                          :sfsim.atmosphere/height max-height
-                          :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
+
+
+(def earth
+  #:sfsim.sphere{:centre (vec3 0 0 0)
+                 :radius radius
+                 :sfsim.atmosphere/height max-height
+                 :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
+
 
 (facts "Create vertex array object for drawing cube map tiles"
        (let [a (vec3 -0.75 -0.5  -1.0)
@@ -43,8 +52,8 @@
              c (vec3 -0.75 -0.25 -1.0)
              d (vec3 -0.5  -0.25 -1.0)]
          (with-redefs [cubemap/cube-map-corners (fn [face level y x]
-                                                    (fact [face level y x] => [:sfsim.cubemap/face5 3 2 1])
-                                                    [a b c d])]
+                                                  (fact [face level y x] => [:sfsim.cubemap/face5 3 2 1])
+                                                  [a b c d])]
            (let [arr (make-cube-map-tile-vertices :sfsim.cubemap/face5 3 2 1 10 100)]
              (subvec arr  0  3) => (vec a)
              (subvec arr  7 10) => (vec b)
@@ -59,20 +68,23 @@
              (subvec arr 19 21) => [0.005 0.995]
              (subvec arr 26 28) => [0.995 0.995]))))
 
-(def fragment-white "#version 410 core
+
+(def fragment-white
+  "#version 410 core
 out vec3 fragColor;
 void main()
 {
   fragColor = vec3(1, 1, 1);
 }")
 
+
 (fact "Use vertex data to draw a quad"
       (offscreen-render 256 256
                         (let [indices   [0 1 3 2]
                               vertices  [-0.5 -0.5 0.5 0.0 0.0 0.0 0.0
-                                          0.5 -0.5 0.5 0.0 0.0 0.0 0.0
+                                         +0.5 -0.5 0.5 0.0 0.0 0.0 0.0
                                          -0.5  0.5 0.5 0.0 0.0 0.0 0.0
-                                          0.5  0.5 0.5 0.0 0.0 0.0 0.0]
+                                         +0.5  0.5 0.5 0.0 0.0 0.0 0.0]
                               program   (make-program :sfsim.render/vertex [vertex-planet]
                                                       :sfsim.render/fragment [fragment-white])
                               variables ["point" 3 "surfacecoord" 2 "colorcoord" 2]
@@ -83,14 +95,15 @@ void main()
                           (destroy-vertex-array-object vao)
                           (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/planet/quad.png" 2.0))
 
+
 (tabular "Tessellation control shader to control outer tessellation of quad using a uniform integer"
          (fact
            (offscreen-render 256 256
                              (let [indices     [0 1 3 2]
                                    vertices    [-0.5 -0.5 0.5 0.25 0.25 0.0 0.0,
-                                                 0.5 -0.5 0.5 0.75 0.25 0.0 0.0,
+                                                +0.5 -0.5 0.5 0.75 0.25 0.0 0.0,
                                                 -0.5  0.5 0.5 0.25 0.75 0.0 0.0,
-                                                 0.5  0.5 0.5 0.75 0.75 0.0 0.0]
+                                                +0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                                    program     (make-program :sfsim.render/vertex [vertex-planet]
                                                              :sfsim.render/tess-control [tess-control-planet]
                                                              :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
@@ -117,13 +130,15 @@ void main()
                                (destroy-program program))) => (is-image ?result 5.0))
          ?neighbours ?result
          15          "test/clj/sfsim/fixtures/planet/tessellation.png"
-          1          "test/clj/sfsim/fixtures/planet/tessellation-0.png"
-          2          "test/clj/sfsim/fixtures/planet/tessellation-1.png"
-          4          "test/clj/sfsim/fixtures/planet/tessellation-2.png"
-          8          "test/clj/sfsim/fixtures/planet/tessellation-3.png")
+         +1          "test/clj/sfsim/fixtures/planet/tessellation-0.png"
+         +2          "test/clj/sfsim/fixtures/planet/tessellation-1.png"
+         +4          "test/clj/sfsim/fixtures/planet/tessellation-2.png"
+         +8          "test/clj/sfsim/fixtures/planet/tessellation-3.png")
+
 
 (def texture-coordinates-probe
-  (template/fn [selector] "#version 410 core
+  (template/fn [selector]
+    "#version 410 core
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -136,14 +151,15 @@ void main()
   fragColor.b = 0;
 }"))
 
+
 (tabular "Test color texture coordinates"
          (fact
            (offscreen-render 256 256
                              (let [indices     [0 1 3 2]
                                    vertices    [-0.5 -0.5 0.5 0.25 0.25 0.25 0.25,
-                                                 0.5 -0.5 0.5 0.75 0.25 0.75 0.25,
+                                                +0.5 -0.5 0.5 0.75 0.25 0.75 0.25,
                                                 -0.5  0.5 0.5 0.25 0.75 0.25 0.75,
-                                                 0.5  0.5 0.5 0.75 0.75 0.75 0.75]
+                                                +0.5  0.5 0.5 0.75 0.75 0.75 0.75]
                                    program     (make-program :sfsim.render/vertex [vertex-planet]
                                                              :sfsim.render/tess-control [tess-control-planet]
                                                              :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
@@ -174,13 +190,14 @@ void main()
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/clj/sfsim/fixtures/planet/point.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.1    "test/clj/sfsim/fixtures/planet/scaled-point.png")
 
+
 (fact "Apply transformation to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
                               vertices    [-0.6 -0.5 0.5 0.25 0.25 0.0 0.0
-                                            0.4 -0.5 0.5 0.75 0.25 0.0 0.0
+                                           +0.4 -0.5 0.5 0.75 0.25 0.0 0.0
                                            -0.6  0.5 0.5 0.25 0.75 0.0 0.0
-                                            0.4  0.5 0.5 0.75 0.75 0.0 0.0]
+                                           +0.4  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
                                                         :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
@@ -207,13 +224,14 @@ void main()
                           (destroy-program program)))
       => (is-image "test/clj/sfsim/fixtures/planet/tessellation.png" 5.0))
 
+
 (fact "Apply projection matrix to points in tessellation evaluation shader"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
                               vertices    [-0.5 -0.5 0.0 0.25 0.25 0.0 0.0
-                                            0.5 -0.5 0.0 0.75 0.25 0.0 0.0
+                                           +0.5 -0.5 0.0 0.75 0.25 0.0 0.0
                                            -0.5  0.5 0.0 0.25 0.75 0.0 0.0
-                                            0.5  0.5 0.0 0.75 0.75 0.0 0.0]
+                                           +0.5  0.5 0.0 0.75 0.75 0.0 0.0]
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
                                                         :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
@@ -241,13 +259,14 @@ void main()
                           (destroy-program program)))
       => (is-image "test/clj/sfsim/fixtures/planet/projection.png" 0.9))
 
+
 (fact "Scale vertex coordinates using given height field"
       (offscreen-render 256 256
                         (let [indices     [0 1 3 2]
                               vertices    [-0.5 -0.5 0.5 0.25 0.25 0.0 0.0
-                                            0.5 -0.5 0.5 0.75 0.25 0.0 0.0
+                                           +0.5 -0.5 0.5 0.75 0.25 0.0 0.0
                                            -0.5  0.5 0.5 0.25 0.75 0.0 0.0
-                                            0.5  0.5 0.5 0.75 0.75 0.0 0.0]
+                                           +0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
                                                         :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
@@ -274,40 +293,47 @@ void main()
                           (destroy-program program)))
       => (is-image "test/clj/sfsim/fixtures/planet/heightfield.png" 1.6))
 
-(defn ray-scatter [x view-direction light-direction above-horizon]
+
+(defn ray-scatter
+  [x view-direction light-direction above-horizon]
   (let [value (* (pow (max (dot view-direction light-direction) 0.0) 10) (exp (/ (- radius (mag x)) 5500.0)))]
     (vec3 value value value)))
+
 
 (def surface-radiance-earth (partial atmosphere/surface-radiance earth ray-scatter ray-steps))
 (def surface-radiance-space-earth (atmosphere/surface-radiance-space earth [size size]))
 (def S (pack-matrices (make-lookup-table surface-radiance-earth surface-radiance-space-earth)))
 
-(defn surface-radiance-shader-test [setup probe & shaders]
+
+(defn surface-radiance-shader-test
+  [setup probe & shaders]
   (fn [uniforms args]
-      (with-invisible-window
-        (let [indices          [0 1 3 2]
-              vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              surface-radiance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                       #:sfsim.image{:width size :height size :data S})
-              program          (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                             :sfsim.render/fragment (conj shaders (apply probe args)))
-              vao              (make-vertex-array-object program indices vertices ["point" 3])
-              tex              (texture-render-color
-                                 1 1 true
-                                 (use-program program)
-                                 (uniform-sampler program "surface_radiance" 0)
-                                 (apply setup program uniforms)
-                                 (use-textures {0 surface-radiance})
-                                 (render-quads vao))
-              img           (rgb-texture->vectors3 tex)]
-          (destroy-texture tex)
-          (destroy-texture surface-radiance)
-          (destroy-vertex-array-object vao)
-          (destroy-program program)
-          (get-vector3 img 0 0)))))
+    (with-invisible-window
+      (let [indices          [0 1 3 2]
+            vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+            surface-radiance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                     #:sfsim.image{:width size :height size :data S})
+            program          (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                           :sfsim.render/fragment (conj shaders (apply probe args)))
+            vao              (make-vertex-array-object program indices vertices ["point" 3])
+            tex              (texture-render-color
+                               1 1 true
+                               (use-program program)
+                               (uniform-sampler program "surface_radiance" 0)
+                               (apply setup program uniforms)
+                               (use-textures {0 surface-radiance})
+                               (render-quads vao))
+            img           (rgb-texture->vectors3 tex)]
+        (destroy-texture tex)
+        (destroy-texture surface-radiance)
+        (destroy-vertex-array-object vao)
+        (destroy-program program)
+        (get-vector3 img 0 0)))))
+
 
 (def surface-radiance-probe
-  (template/fn [px py pz lx ly lz] "#version 410 core
+  (template/fn [px py pz lx ly lz]
+    "#version 410 core
 out vec3 fragColor;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 void main()
@@ -317,15 +343,17 @@ void main()
   fragColor = surface_radiance_function(point, light_direction);
 }"))
 
+
 (def surface-radiance-test
   (surface-radiance-shader-test
     (fn [program radius max-height size]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height)
-        (uniform-int program "surface_sun_elevation_size" size)
-        (uniform-int program "surface_height_size" size))
+      (uniform-float program "radius" radius)
+      (uniform-float program "max_height" max-height)
+      (uniform-int program "surface_sun_elevation_size" size)
+      (uniform-int program "surface_height_size" size))
     surface-radiance-probe surface-radiance-function shaders/surface-radiance-forward shaders/interpolate-2d
     shaders/height-to-index shaders/horizon-distance shaders/sun-elevation-to-index shaders/convert-2d-index))
+
 
 (tabular "Shader function to determine ambient light scattered by the atmosphere"
          (fact ((surface-radiance-test [radius max-height size] [?x ?y ?z ?lx ?ly ?lz]) 0) => (roughly ?value 1e-6))
@@ -334,7 +362,9 @@ void main()
          0  0  radius          1   0   0   0.095782
          0  0  (+ radius 1000) 0   0   1   0.639491)
 
-(def vertex-planet-probe "#version 410 core
+
+(def vertex-planet-probe
+  "#version 410 core
 in vec3 point;
 in vec2 colorcoord;
 uniform float radius;
@@ -350,7 +380,9 @@ void main()
   vs_out.point = vec3(0, 0, radius);
 }")
 
-(def fake-transmittance "#version 410 core
+
+(def fake-transmittance
+  "#version 410 core
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dist = distance(p, q);
@@ -359,44 +391,52 @@ vec3 transmittance_track(vec3 p, vec3 q)
   return vec3(0, 0, 0);
 }")
 
-(def fake-ray-scatter "#version 410 core
+
+(def fake-ray-scatter
+  "#version 410 core
 uniform vec3 scatter;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return scatter;
 }")
 
+
 (def opacity-lookup-mock
-"#version 410 core
+  "#version 410 core
 float opacity_cascade_lookup(vec4 point)
 {
   return 1.0;
 }")
 
+
 (def sampling-offset-mock
-"#version 410 core
+  "#version 410 core
 float sampling_offset()
 {
   return 0.5;
 }")
 
+
 (def cloud-overlay-mock
-"#version 410 core
+  "#version 410 core
 uniform float clouds;
 vec4 cloud_overlay()
 {
   return vec4(clouds, clouds, clouds, clouds);
 }")
 
+
 (def planet-and-cloud-shadows-mock
-"#version 410 core
+  "#version 410 core
 uniform float shadow;
 float planet_and_cloud_shadows(vec4 point)
 {
   return shadow;
 }")
 
-(defn make-mocked-planet-program []
+
+(defn make-mocked-planet-program
+  []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
                                         planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
@@ -404,8 +444,10 @@ float planet_and_cloud_shadows(vec4 point)
                                         shaders/remap (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
                                         (last atmosphere/attenuation-track) shaders/phong (last atmosphere/attenuation-point)]))
 
-(defn setup-static-uniforms [program]
-  ; Moved this code out of the test below, otherwise method is too large
+
+(defn setup-static-uniforms
+  [program]
+  ;; Moved this code out of the test below, otherwise method is too large
   (use-program program)
   (uniform-sampler program "day_night" 0)
   (uniform-sampler program "normals" 1)
@@ -420,8 +462,10 @@ float planet_and_cloud_shadows(vec4 point)
   (uniform-float program "water_threshold" 0.5)
   (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
 
-(defn setup-uniforms [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
-  ; Moved this code out of the test below, otherwise method is too large
+
+(defn setup-uniforms
+  [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
+  ;; Moved this code out of the test below, otherwise method is too large
   (use-program program)
   (uniform-int program "height_size" size)
   (uniform-int program "elevation_size" size)
@@ -444,11 +488,16 @@ float planet_and_cloud_shadows(vec4 point)
   (uniform-float program "dawn_end" 0.05)
   (uniform-float program "amplification" ?a))
 
+
 (def planet-indices [0 1 3 2])
-(def planet-vertices [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5
-                       0.5 -0.5 0.5 0.75 0.25 0.5 0.5
-                      -0.5  0.5 0.5 0.25 0.75 0.5 0.5
-                       0.5  0.5 0.5 0.75 0.75 0.5 0.5])
+
+
+(def planet-vertices
+  [-0.5 -0.5 0.5 0.25 0.25 0.5 0.5
+   +0.5 -0.5 0.5 0.75 0.25 0.5 0.5
+   -0.5  0.5 0.5 0.25 0.75 0.5 0.5
+   +0.5  0.5 0.5 0.75 0.75 0.5 0.5])
+
 
 (defn planet-textures
   [colors nx ny nz tr tg tb s ar ag ab water size]
@@ -476,6 +525,7 @@ float planet_and_cloud_shadows(vec4 point)
         worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
                                              #:sfsim.image{:width 2 :height 2 :depth 2 :data worley-data})]
     [day-night normals transmittance ray-scatter mie-strength radiance water worley]))
+
 
 (tabular "Fragment shader to render planetary surface"
          (fact
@@ -513,8 +563,9 @@ float planet_and_cloud_shadows(vec4 point)
          "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.5     1.0  0   0   1   0   0   1   "clouds"
          "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     0.5  0   0   1   0   0   1   "shadow")
 
+
 (def fragment-white-tree
-"#version 410 core
+  "#version 410 core
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -525,6 +576,7 @@ void main()
 {
   fragColor = vec3(1, 1, 1);
 }")
+
 
 (tabular "Render a planetary tile using the specified texture keys and neighbour tessellation"
          (fact
@@ -539,7 +591,7 @@ void main()
                                    vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
                                    data       (flatten
                                                 (for [y (range 1.0 -1.25 -0.25) x (range -1.0 1.25 0.25)]
-                                                     [(* x 0.5) (* y 0.5) 0.5]))
+                                                  [(* x 0.5) (* y 0.5) 0.5]))
                                    surf-tex   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                       #:sfsim.image{:width 9 :height 9 :data (float-array data)})
                                    vao        (make-vertex-array-object program indices vertices
@@ -569,34 +621,39 @@ void main()
          true  true  false true   "tile-down.png"
          true  true  true  false  "tile-right.png")
 
-(defn render-tile-calls [program node transform scene-shadows texture-keys]
+
+(defn render-tile-calls
+  [program node transform scene-shadows texture-keys]
   (let [calls (atom [])]
     (with-redefs [render-tile (fn [program tile transform scene-shadows texture-keys]
-                                  (swap! calls conj [program tile transform scene-shadows texture-keys])
-                                  nil)]
+                                (swap! calls conj [program tile transform scene-shadows texture-keys])
+                                nil)]
       (render-tree program node transform scene-shadows texture-keys)
       @calls)))
 
+
 (let [vao :sfsim.planet/vao]
   (tabular "Call each tile in tree to be rendered"
-    (fact (render-tile-calls ?program ?node ?transform [] [:sfsim.planet/surf-tex]) => ?result)
-    ?program ?transform ?node                                ?result
-    1234 :transform {}                                       []
-    1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.cubemap/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.cubemap/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.cubemap/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.cubemap/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.cubemap/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.cubemap/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-    1234 :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
-                                                            [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
+           (fact (render-tile-calls ?program ?node ?transform [] [:sfsim.planet/surf-tex]) => ?result)
+           ?program ?transform ?node                                ?result
+           1234 :transform {}                                       []
+           1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234 :transform {:sfsim.cubemap/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234 :transform {:sfsim.cubemap/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234 :transform {:sfsim.cubemap/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234 :transform {:sfsim.cubemap/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234 :transform {:sfsim.cubemap/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234 :transform {:sfsim.cubemap/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234 :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
+           [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
+
 
 (facts "Maximum shadow depth for cloud shadows"
        (render-depth 4.0 1.0 0.0) => 3.0
        (render-depth 3.0 2.0 0.0) => 4.0
        (render-depth 4.0 0.0 1.0) => 3.0
        (render-depth 4.0 1.0 1.0) => 6.0)
+
 
 (facts "Create hashmap with render variables for rendering current frame of planet"
        (let [planet {:sfsim.planet/radius 1000.0}
@@ -617,5 +674,6 @@ void main()
            (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (eye 4)
            (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (diagonal 1 2 3 4)
            (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => light)))
+
 
 (GLFW/glfwTerminate)

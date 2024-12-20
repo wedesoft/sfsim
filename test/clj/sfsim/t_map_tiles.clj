@@ -1,15 +1,21 @@
 (ns sfsim.t-map-tiles
-    (:require [midje.sweet :refer :all]
-              [malli.instrument :as mi]
-              [malli.dev.pretty :as pretty]
-              [sfsim.conftest :refer (is-image)]
-              [sfsim.image :refer (slurp-image)]
-              [sfsim.map-tiles :refer :all])
-    (:import [java.nio.file Files]
-             [java.nio.file.attribute FileAttribute]))
+  (:require
+    [malli.dev.pretty :as pretty]
+    [malli.instrument :as mi]
+    [midje.sweet :refer :all]
+    [sfsim.conftest :refer (is-image)]
+    [sfsim.image :refer (slurp-image)]
+    [sfsim.map-tiles :refer :all])
+  (:import
+    (java.nio.file
+      Files)
+    (java.nio.file.attribute
+      FileAttribute)))
+
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
+
 
 (facts "Convert image into set of tiles"
        (let [path (str (Files/createTempDirectory "tiles" (into-array FileAttribute [])))]

@@ -1,9 +1,13 @@
 (ns sfsim.elevation-tiles
   "Split part of Mercator elevation map into small map tiles of specified size and save them in computed file names."
-  (:import [java.io File])
-  (:require [clojure.math :refer (sqrt)]
-            [sfsim.util :refer (slurp-shorts spit-shorts tile-dir tile-path)])
-  (:gen-class))
+  (:gen-class)
+  (:require
+    [clojure.math :refer (sqrt)]
+    [sfsim.util :refer (slurp-shorts spit-shorts tile-dir tile-path)])
+  (:import
+    (java.io
+      File)))
+
 
 (defn make-elevation-tiles
   "Program to generate elevation tiles"

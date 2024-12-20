@@ -1,27 +1,32 @@
 (ns sfsim.t-shaders
-  (:require [midje.sweet :refer :all]
-            [malli.instrument :as mi]
-            [malli.dev.pretty :as pretty]
-            [sfsim.conftest :refer (roughly-vector shader-test)]
-            [comb.template :as template]
-            [clojure.math :refer (cos sin PI sqrt)]
-            [fastmath.vector :refer (vec3 div ediv dot mag cross)]
-            [fastmath.matrix :refer (eye)]
-            [sfsim.texture :refer :all]
-            [sfsim.render :refer :all]
-            [sfsim.shaders :refer :all]
-            [sfsim.matrix :refer (orthogonal transformation-matrix)]
-            [sfsim.image :refer (get-float get-vector3 convert-4d-to-2d)])
-  (:import [org.lwjgl.glfw GLFW]))
+  (:require
+    [clojure.math :refer (cos sin PI sqrt)]
+    [comb.template :as template]
+    [fastmath.matrix :refer (eye)]
+    [fastmath.vector :refer (vec3 div ediv dot mag cross)]
+    [malli.dev.pretty :as pretty]
+    [malli.instrument :as mi]
+    [midje.sweet :refer :all]
+    [sfsim.conftest :refer (roughly-vector shader-test)]
+    [sfsim.image :refer (get-float get-vector3 convert-4d-to-2d)]
+    [sfsim.matrix :refer (orthogonal transformation-matrix)]
+    [sfsim.render :refer :all]
+    [sfsim.shaders :refer :all]
+    [sfsim.texture :refer :all])
+  (:import
+    (org.lwjgl.glfw
+      GLFW)))
+
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
 
+
 (def ray-sphere-probe
   (template/fn [cx cy cz ox oy oz dx dy dz]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
@@ -33,7 +38,9 @@ void main()
   fragColor = vec3(result.x, result.y, 0);
 }"))
 
+
 (def ray-sphere-test (shader-test (fn [program]) ray-sphere-probe ray-sphere))
+
 
 (tabular "Shader for intersection of ray with sphere"
          (fact (ray-sphere-test [] [?cx ?cy ?cz ?ox ?oy ?oz ?dx ?dy ?dz]) => (vec3 ?ix ?iy 0))
@@ -45,8 +52,10 @@ void main()
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
+
 (def convert-1d-index-probe
-  (template/fn [x] "#version 410 core
+  (template/fn [x]
+    "#version 410 core
 out vec3 fragColor;
 float convert_1d_index(float idx, int size);
 void main()
@@ -55,16 +64,20 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def convert-1d-index-test (shader-test (fn [program]) convert-1d-index-probe convert-1d-index))
+
 
 (tabular "Convert 1D index to 1D texture lookup index"
          (fact ((convert-1d-index-test [] [?x]) 0) => (roughly (/ ?r 15) 1e-6))
          ?x  ?r
-          0   0.5
-          1  14.5)
+         0   0.5
+         1  14.5)
+
 
 (def convert-2d-index-probe
-  (template/fn [x y] "#version 410 core
+  (template/fn [x y]
+    "#version 410 core
 out vec3 fragColor;
 vec2 convert_2d_index(vec2 idx, int size_y, int size_x);
 void main()
@@ -73,17 +86,21 @@ void main()
   fragColor.b = 0;
 }"))
 
+
 (def convert-2d-index-test (shader-test (fn [program]) convert-2d-index-probe convert-2d-index))
+
 
 (tabular "Convert 2D index to 2D texture lookup index"
          (fact (convert-2d-index-test [] [?x ?y]) => (roughly-vector (ediv (vec3 ?r ?g 0) (vec3 15 17 1)) 1e-6))
          ?x  ?y  ?r   ?g
-          0   0   0.5  0.5
-          1   0  14.5  0.5
-          0   1   0.5 16.5)
+         0   0   0.5  0.5
+         1   0  14.5  0.5
+         0   1   0.5 16.5)
+
 
 (def convert-3d-index-probe
-  (template/fn [x y z] "#version 410 core
+  (template/fn [x y z]
+    "#version 410 core
 out vec3 fragColor;
 vec3 convert_3d_index(vec3 idx, int size_z, int size_y, int size_x);
 void main()
@@ -91,19 +108,22 @@ void main()
   fragColor = convert_3d_index(vec3(<%= x %>, <%= y %>, <%= z %>), 19, 17, 15);
 }"))
 
+
 (def convert-3d-index-test (shader-test (fn [program]) convert-3d-index-probe convert-3d-index))
+
 
 (tabular "Convert 2D index to 2D texture lookup index"
          (fact (convert-3d-index-test [] [?x ?y ?z]) => (roughly-vector (ediv (vec3 ?r ?g ?b) (vec3 15 17 19)) 1e-6))
          ?x  ?y  ?z  ?r   ?g   ?b
-          0   0   0  0.5  0.5  0.5
-          1   0   0 14.5  0.5  0.5
-          0   1   0  0.5 16.5  0.5
-          0   0   1  0.5  0.5 18.5)
+         0   0   0  0.5  0.5  0.5
+         1   0   0 14.5  0.5  0.5
+         0   1   0  0.5 16.5  0.5
+         0   0   1  0.5  0.5 18.5)
+
 
 (def convert-cubemap-index-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec3 convert_cubemap_index(vec3 idx, int size);
 void main()
@@ -111,25 +131,29 @@ void main()
   fragColor = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 3);
 }"))
 
+
 (def convert-cubemap-index-test (shader-test (fn [program]) convert-cubemap-index-probe convert-cubemap-index))
+
 
 (tabular "Convert cubemap index to avoid clamping regions"
          (fact (convert-cubemap-index-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?r ?g ?b) 1e-3))
          ?x     ?y     ?z     ?r   ?g   ?b
-         1.5    0.0    0.0    1.5  0.0  0.0
-         1.5    1.499  0.0    1.5  1.0  0.0
-        -1.5    1.499  0.0   -1.5  1.0  0.0
-         1.5    0.0    1.499  1.5  0.0  1.0
-         1.499  1.5    0.0    1.0  1.5  0.0
-         1.499 -1.5    0.0    1.0 -1.5  0.0
-         0.0    1.5    1.499  0.0  1.5  1.0
-         1.499  1.499  1.5    1.0  1.0  1.5
-         1.499  1.499 -1.5    1.0  1.0 -1.5
-         0.000  1.499  1.5    0.0  1.0  1.5
-         0.000  1.499 -1.5    0.0  1.0 -1.5)
+         +1.5    0.0    0.0    1.5  0.0  0.0
+         +1.5    1.499  0.0    1.5  1.0  0.0
+         -1.5    1.499  0.0   -1.5  1.0  0.0
+         +1.5    0.0    1.499  1.5  0.0  1.0
+         +1.499  1.5    0.0    1.0  1.5  0.0
+         +1.499 -1.5    0.0    1.0 -1.5  0.0
+         +0.0    1.5    1.499  0.0  1.5  1.0
+         +1.499  1.499  1.5    1.0  1.0  1.5
+         +1.499  1.499 -1.5    1.0  1.0 -1.5
+         +0.000  1.499  1.5    0.0  1.0  1.5
+         +0.000  1.499 -1.5    0.0  1.0 -1.5)
+
 
 (def convert-shadow-index-probe
-  (template/fn [x y z] "#version 410 core
+  (template/fn [x y z]
+    "#version 410 core
 out vec3 fragColor;
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
@@ -137,21 +161,26 @@ void main()
   fragColor = convert_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 4, 6).rgb;
 }"))
 
-(def convert-shadow-index-test (shader-test (fn [program bias] (uniform-float program "shadow_bias" bias))
-                                            convert-shadow-index-probe convert-shadow-index))
+
+(def convert-shadow-index-test
+  (shader-test (fn [program bias] (uniform-float program "shadow_bias" bias))
+               convert-shadow-index-probe convert-shadow-index))
+
 
 (tabular "Move shadow index out of clamping region"
          (fact (convert-shadow-index-test [?bias] [?x ?y ?z]) => (roughly-vector (ediv (vec3 ?r ?g ?b) (vec3 6 4 1)) 1e-6))
          ?x  ?y  ?z  ?bias ?r   ?g   ?b
-          0   0   0  0.0   0.5  0.5  0.0
-          1   0   0  0.0   5.5  0.5  0.0
-          0   1   0  0.0   0.5  3.5  0.0
-          0   0   1  0.0   0.5  0.5  1.0
-          0   0  -1  0.0   0.5  0.5  0.0
-          0   0  -1  0.1   0.5  0.5  0.2)
+         0   0   0  0.0   0.5  0.5  0.0
+         1   0   0  0.0   5.5  0.5  0.0
+         0   1   0  0.0   0.5  3.5  0.0
+         0   0   1  0.0   0.5  0.5  1.0
+         0   0  -1  0.0   0.5  0.5  0.0
+         0   0  -1  0.1   0.5  0.5  0.2)
+
 
 (def shrink-shadow-index-probe
-  (template/fn [x y z] "#version 410 core
+  (template/fn [x y z]
+    "#version 410 core
 out vec3 fragColor;
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
@@ -159,18 +188,22 @@ void main()
   fragColor = shrink_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 2, 4).rgb;
 }"))
 
+
 (def shrink-shadow-index-test (shader-test (fn [program]) shrink-shadow-index-probe shrink-shadow-index))
+
 
 (tabular "Shrink sampling index to cover full NDC space"
          (fact (shrink-shadow-index-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
-          ?x ?y ?z ?r    ?g   ?b
-          -1 -1  0 -0.75 -0.5  0
-           1 -1  0  0.75 -0.5  0
-          -1  1  0 -0.75  0.5  0
-          -1 -1  1 -0.75 -0.5  1)
+         ?x ?y ?z ?r    ?g   ?b
+         -1 -1  0 -0.75 -0.5  0
+         +1 -1  0  0.75 -0.5  0
+         -1  1  0 -0.75  0.5  0
+         -1 -1  1 -0.75 -0.5  1)
+
 
 (def grow-shadow-index-probe
-  (template/fn [x y z] "#version 410 core
+  (template/fn [x y z]
+    "#version 410 core
 out vec3 fragColor;
 vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
@@ -178,19 +211,22 @@ void main()
   fragColor = grow_shadow_index(vec4(<%= x %>, <%= y %>, <%= z %>, 1), 2, 4).rgb;
 }"))
 
+
 (def grow-shadow-index-test (shader-test (fn [program]) grow-shadow-index-probe grow-shadow-index))
+
 
 (tabular "grow sampling index to cover full NDC space"
          (fact (grow-shadow-index-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?r ?g ?b) 1e-6))
-          ?x    ?y  ?z ?r ?g ?b
+         ?x    ?y  ?z ?r ?g ?b
          -0.75 -0.5  0 -1 -1  0
-          0.75 -0.5  0  1 -1  0
+         +0.75 -0.5  0  1 -1  0
          -0.75  0.5  0 -1  1  0
          -0.75 -0.5  1 -1 -1  1)
 
+
 (def shadow-lookup-probe
   (template/fn [lookup-depth]
-"#version 410 core
+    "#version 410 core
 uniform sampler2DShadow shadows;
 out vec3 fragColor;
 float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
@@ -201,7 +237,9 @@ void main()
   fragColor = vec3(shade, shade, shade);
 }"))
 
-(defn shadow-lookup-test [shadow-depth lookup-depth bias]
+
+(defn shadow-lookup-test
+  [shadow-depth lookup-depth bias]
   (with-invisible-window
     (let [indices   [0 1 3 2]
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -226,6 +264,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Shrink sampling index to cover full NDC space"
          (fact ((shadow-lookup-test ?depth ?z ?bias) 0) => (roughly ?result 1e-6))
          ?depth ?z  ?bias ?result
@@ -233,8 +272,9 @@ void main()
          0.5    0.0 0.0    0.0
          0.5    0.6 0.2    0.0)
 
+
 (def shadow-lookup-mock
-"#version 410 core
+  "#version 410 core
 uniform int selector;
 float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos)
 {
@@ -244,9 +284,10 @@ float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos)
     return shadow_pos.x;
 }")
 
+
 (def shadow-cascade-lookup-probe
   (template/fn [z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float shadow_cascade_lookup(vec4 point);
 void main()
@@ -256,7 +297,9 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn shadow-cascade-lookup-test [n z shift-z shadows selector]
+
+(defn shadow-cascade-lookup-test
+  [n z shift-z shadows selector]
   (with-invisible-window
     (let [indices         [0 1 3 2]
           vertices        [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -273,13 +316,13 @@ void main()
                                                 (uniform-matrix4 program "world_to_camera" world-to-camera)
                                                 (uniform-int program "selector" selector)
                                                 (doseq [idx (range n)]
-                                                       (uniform-sampler program (str "shadow_map" idx) idx)
-                                                       (uniform-matrix4 program (str "world_to_shadow_map" idx)
-                                                                        (transformation-matrix (eye 3)
-                                                                                               (vec3 (inc idx) 0 0))))
+                                                  (uniform-sampler program (str "shadow_map" idx) idx)
+                                                  (uniform-matrix4 program (str "world_to_shadow_map" idx)
+                                                                   (transformation-matrix (eye 3)
+                                                                                          (vec3 (inc idx) 0 0))))
                                                 (doseq [idx (range (inc n))]
-                                                       (uniform-float program (str "split" idx)
-                                                                      (+ 10.0 (/ (* 30.0 idx) n))))
+                                                  (uniform-float program (str "split" idx)
+                                                                 (+ 10.0 (/ (* 30.0 idx) n))))
                                                 (use-textures (zipmap (range) shadow-texs))
                                                 (render-quads vao))
           img             (rgb-texture->vectors3 tex)]
@@ -288,6 +331,7 @@ void main()
       (destroy-vertex-array-object vao)
       (destroy-program program)
       (get-vector3 img 0 0))))
+
 
 (tabular "Perform shadow lookup in cascade of shadow maps"
          (fact ((shadow-cascade-lookup-test ?n ?z ?shift-z ?shadows ?selector) 0) => (roughly ?result 1e-6))
@@ -305,9 +349,10 @@ void main()
          2 -35   0       [1.0 0.0] 0          1.0
          2 -35   0       [1.0 1.0] 0          0.0)
 
+
 (def percentage-closer-filtering-probe
   (template/fn [x]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float f(float scale, vec4 point)
 {
@@ -321,11 +366,13 @@ void main()
   fragColor = vec3(result, result, result);
 }"))
 
+
 (def percentage-closer-filtering-test
   (shader-test
     (fn [program shadow-size]
-        (uniform-int program "shadow_size" shadow-size))
+      (uniform-int program "shadow_size" shadow-size))
     percentage-closer-filtering-probe (percentage-closer-filtering "averaged" "f" "shadow_size" [["float" "scale"]])))
+
 
 (tabular "Local averaging of shadow to reduce aliasing"
          (fact ((percentage-closer-filtering-test [?size] [?x]) 0) => (roughly ?result 1e-6))
@@ -334,8 +381,10 @@ void main()
          3     0.0 0.5
          2     1.0 3.0)
 
+
 (def make-2d-index-from-4d-probe
-  (template/fn [x y z w selector] "#version 410 core
+  (template/fn [x y z w selector]
+    "#version 410 core
 out vec3 fragColor;
 vec4 make_2d_index_from_4d(vec4 idx, int size_w, int size_z, int size_y, int size_x);
 void main()
@@ -345,7 +394,9 @@ void main()
   fragColor.b = 0;
 }"))
 
+
 (def make-2d-index-from-4d-test (shader-test (fn [program]) make-2d-index-from-4d-probe make-2d-index-from-4d))
+
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
          (fact (make-2d-index-from-4d-test [] [?x ?y ?z ?w ?selector])
@@ -360,8 +411,10 @@ void main()
          0  0   0.123  1.123  7  3   "pq"      (+ 0.5 7)        (+ 0.5 (* 2 7))
          0  0   0.123  2.123  7  3   "pq"      (+ 0.5 (* 2 7))  (+ 0.5 (* 2 7)))
 
+
 (def interpolate-2d-probe
-  (template/fn [x y] "#version 410 core
+  (template/fn [x y]
+    "#version 410 core
 out vec3 fragColor;
 uniform sampler2D table;
 vec3 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
@@ -370,7 +423,9 @@ void main()
   fragColor = interpolate_2d(table, 3, 2, vec2(<%= x %>, <%= y %>));
 }"))
 
-(defn interpolate-2d-test [x y]
+
+(defn interpolate-2d-test
+  [x y]
   (with-invisible-window
     (let [indices   [0 1 3 2]
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -394,6 +449,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform 2d interpolation"
          (fact ((interpolate-2d-test ?x ?y) 0) => ?result)
          ?x   ?y ?result
@@ -402,8 +458,10 @@ void main()
          0    1  5.0
          1    1  6.0)
 
+
 (def interpolate-3d-probe
-  (template/fn [x y z] "#version 410 core
+  (template/fn [x y z]
+    "#version 410 core
 out vec3 fragColor;
 uniform sampler3D table;
 float interpolate_3d(sampler3D table, int size_z, int size_y, int size_x, vec3 idx);
@@ -413,7 +471,9 @@ void main()
   fragColor = vec3(result, result, result);
 }"))
 
-(defn interpolate-3d-test [x y z]
+
+(defn interpolate-3d-test
+  [x y z]
   (with-invisible-window
     (let [indices   [0 1 3 2]
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -436,6 +496,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform 3d interpolation"
          (fact ((interpolate-3d-test ?x ?y ?z) 0) => ?result)
          ?x   ?y ?z ?result
@@ -446,9 +507,10 @@ void main()
          0    0  1  12.0
          3    2  1  23.0)
 
+
 (def interpolate-cubemap-probe
   (template/fn [method selector x y z]
-"#version 410 core
+    "#version 410 core
 uniform samplerCube cube;
 out vec3 fragColor;
 float interpolate_float_cubemap(samplerCube cube, int size, vec3 idx);
@@ -459,7 +521,9 @@ void main()
   fragColor.<%= selector %> = interpolate_<%= method %>_cubemap(cube, 2, vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
-(defn interpolate-cubemap-test [method selector x y z]
+
+(defn interpolate-cubemap-test
+  [method selector x y z]
   (with-invisible-window
     (let [indices     [0 1 3 2]
           vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -483,6 +547,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform interpolation on cubemap avoiding seams"
          (fact ((interpolate-cubemap-test ?method ?selector ?x ?y ?z) 0) => ?result)
          ?method  ?selector ?x   ?y ?z  ?result
@@ -493,8 +558,10 @@ void main()
          "vector" "xyz"     1    0  -1   1.0
          "vector" "xyz"     1    0   0.5 0.25)
 
+
 (def interpolate-4d-probe
-  (template/fn [x y z w] "#version 410 core
+  (template/fn [x y z w]
+    "#version 410 core
 out vec3 fragColor;
 uniform sampler2D table;
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
@@ -503,7 +570,9 @@ void main()
   fragColor = interpolate_4d(table, 2, 2, 2, 2, vec4(<%= x %>, <%= y %>, <%= z %>, <%= w %>)).rgb;
 }"))
 
-(defn interpolate-4d-test [x y z w]
+
+(defn interpolate-4d-test
+  [x y z w]
   (with-invisible-window
     (let [indices   [0 1 3 2]
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -526,6 +595,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform 4D interpolation"
          (fact ((interpolate-4d-test ?x ?y ?z ?w) 0) => ?result)
          ?x   ?y ?z  ?w  ?result
@@ -536,9 +606,10 @@ void main()
          0    0  0   0.5 5.0
          0    0  0.5 0.5 7.0)
 
+
 (def ray-box-probe
   (template/fn [ax ay az bx by bz ox oy oz dx dy dz]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
@@ -548,7 +619,9 @@ void main()
   fragColor = vec3(result, 0);
 }"))
 
+
 (def ray-box-test (shader-test (fn [program]) ray-box-probe ray-box))
+
 
 (tabular "Shader for intersection of ray with axis-aligned box"
          (fact (ray-box-test [] [?ax ?ay ?az ?bx ?by ?bz ?ox ?oy ?oz ?dx ?dy ?dz]) => (vec3 ?ix ?iy 0))
@@ -562,9 +635,10 @@ void main()
          0   0   0   1   1   1   1.5  0.5  0.5  1  0   0   0   0
          0   0   0   1   1   1   0.5  1.5  0.5  1  0   0   0   0)
 
+
 (def lookup-3d-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float lookup_3d(vec3 point);
 void main()
@@ -573,7 +647,9 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn lookup-3d-test [x y z]
+
+(defn lookup-3d-test
+  [x y z]
   (with-invisible-window
     (let [indices   [0 1 3 2]
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -597,6 +673,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform 3d texture lookup"
          (fact ((lookup-3d-test ?x ?y ?z) 0) => ?result)
          ?x    ?y   ?z   ?result
@@ -605,9 +682,10 @@ void main()
          0.25  0.75 0.25 3.0
          0.25  0.25 0.75 5.0)
 
+
 (def lookup-3d-lod-probe
   (template/fn [x y z lod]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float lookup_3d_lod(vec3 point, float lod);
 void main()
@@ -616,7 +694,9 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn lookup-3d-lod-test [x y z lod]
+
+(defn lookup-3d-lod-test
+  [x y z lod]
   (with-invisible-window
     (let [indices   [0 1 3 2]
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
@@ -642,6 +722,7 @@ void main()
       (destroy-program program)
       (get-vector3 img 0 0))))
 
+
 (tabular "Perform 3d texture lookup with level-of-detail"
          (fact ((lookup-3d-lod-test ?x ?y ?z ?lod) 0) => ?result)
          ?x    ?y   ?z   ?lod ?result
@@ -651,9 +732,10 @@ void main()
          0.25  0.25 0.75 0.0  5.0
          0.25  0.25 0.25 1.0  4.5)
 
+
 (def ray-shell-probe
   (template/fn [cx cy cz radius1 radius2 ox oy oz dx dy dz selector]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 void main()
@@ -666,7 +748,9 @@ void main()
   fragColor.b = 0;
 }"))
 
+
 (def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell))
+
 
 (tabular "Shader for computing intersections of ray with a shell"
          (fact (ray-shell-test [] [?cx ?cy ?cz ?radius1 ?radius2 ?ox ?oy ?oz ?dx ?dy ?dz ?selector])
@@ -681,9 +765,10 @@ void main()
          0   0   0   2        3          0 0   0   1   0   0   "st"       2   1
          0   0   0   2        3          0 0   0   1   0   0   "pq"       0   0)
 
+
 (def clip-shell-intersections-probe
   (template/fn [a b c d limit selector]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec4 clip_shell_intersections(vec4 intersections, float limit);
 void main()
@@ -693,7 +778,9 @@ void main()
   fragColor.z = 0;
 }"))
 
+
 (def clip-shell-intersections-test (shader-test (fn [program]) clip-shell-intersections-probe clip-shell-intersections))
+
 
 (tabular "Clip the intersection information of ray and shell using given limit"
          (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?limit ?selector])
@@ -707,9 +794,10 @@ void main()
          2  3  6  2  3      "xy"      2   1
          2  3  6  2  1      "xy"      0   0)
 
+
 (def height-to-index-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float height_to_index(vec3 point);
 void main()
@@ -718,12 +806,14 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def height-to-index-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height))
+      (uniform-float program "radius" radius)
+      (uniform-float program "max_height" max-height))
     height-to-index-probe height-to-index))
+
 
 (tabular "Shader for converting height to index"
          (fact ((height-to-index-test [?radius ?max-height] [?x ?y ?z]) 0) => (roughly ?result 1e-6))
@@ -733,9 +823,10 @@ void main()
          4.0     1.0         4.5   0  0   0.687184
          4.0     1.0         3.999 0  0   0.0)
 
+
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float sun_elevation_to_index(vec3 point, vec3 light_direction);
 void main()
@@ -746,10 +837,12 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def sun-elevation-to-index-test
   (shader-test
     (fn [program])
     sun-elevation-to-index-probe sun-elevation-to-index))
+
 
 (tabular "Shader for converting sun elevation to index"
          (fact ((sun-elevation-to-index-test [] [?x ?y ?z ?dx ?dy ?dz]) 0) => (roughly ?result 1e-6))
@@ -759,9 +852,10 @@ void main()
          4  0  0 -0.2 0.979796 0   0.0
          4  0  0 -1   0        0   0.0)
 
+
 (def sun-angle-to-index-probe
   (template/fn [dx dy dz lx ly lz]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float sun_angle_to_index(vec3 direction, vec3 light_direction);
 void main()
@@ -772,10 +866,12 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def sun-angle-to-index-test
   (shader-test
     (fn [program])
     sun-angle-to-index-probe sun-angle-to-index))
+
 
 (tabular "Shader for converting sun angle to index"
          (fact ((sun-angle-to-index-test [] [?dx ?dy ?dz ?lx ?ly ?lz]) 0) => (roughly ?result 1e-6))
@@ -784,9 +880,10 @@ void main()
          0   1   0   0  -1   0   0.0
          0   1   0   0   0   1   0.5)
 
+
 (def elevation-to-index-probe
   (template/fn [x y z dx dy dz above-horizon]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
 void main()
@@ -797,12 +894,14 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def elevation-to-index-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height))
+      (uniform-float program "radius" radius)
+      (uniform-float program "max_height" max-height))
     elevation-to-index-probe elevation-to-index))
+
 
 (tabular "Shader for converting view direction elevation to index"
          (fact ((elevation-to-index-test [?radius ?max-height] [?x ?y ?z ?dx ?dy ?dz ?above-horizon]) 0)
@@ -819,9 +918,10 @@ void main()
          4.0     1.0         5  0  0  -1              0          0              true           1.0
          4.0     1.0         4  0  0   1              0          0              false          0.5)
 
+
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz above]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
 void main()
@@ -832,12 +932,14 @@ void main()
   fragColor.b = 0;
 }"))
 
+
 (def transmittance-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height))
+      (uniform-float program "radius" radius)
+      (uniform-float program "max_height" max-height))
     transmittance-forward-probe transmittance-forward))
+
 
 (tabular "Convert point and direction to 2D lookup index in transmittance table"
          (fact (transmittance-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?above])
@@ -847,9 +949,10 @@ void main()
          6478000 0  0   0   1   0   true   0.5 1
          6378000 0  0  -1   0   0   false  0.5 0)
 
+
 (def surface-radiance-forward-probe
   (template/fn [x y z lx ly lz]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec2 surface_radiance_forward(vec3 point, vec3 light_direction);
 void main()
@@ -860,12 +963,14 @@ void main()
   fragColor.b = 0;
 }"))
 
+
 (def surface-radiance-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height))
+      (uniform-float program "radius" radius)
+      (uniform-float program "max_height" max-height))
     surface-radiance-forward-probe surface-radiance-forward))
+
 
 (tabular "Convert point and direction to 2D lookup index in surface radiance table"
          (fact (surface-radiance-forward-test [6378000.0 100000.0] [?x ?y ?z ?lx ?ly ?lz])
@@ -877,9 +982,10 @@ void main()
          6378000 0  0  -0.2 0.980 0   0     0
          6378000 0  0   0   1     0   0.464 0)
 
+
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz above selector]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 void main()
@@ -893,12 +999,14 @@ void main()
   fragColor.b = 0;
 }"))
 
+
 (def ray-scatter-forward-test
   (shader-test
     (fn [program radius max-height]
-        (uniform-float program "radius" radius)
-        (uniform-float program "max_height" max-height))
+      (uniform-float program "radius" radius)
+      (uniform-float program "max_height" max-height))
     ray-scatter-forward-probe ray-scatter-forward))
+
 
 (tabular "Get 4D lookup index for ray scattering"
          (fact ((ray-scatter-forward-test [6378000.0 100000.0] [?x ?y ?z ?dx ?dy ?dz ?lx ?ly ?lz ?above ?selector]) 0)
@@ -914,9 +1022,10 @@ void main()
          6378000 0  0  0   1   0   0   1   0   true   "x"       1.0
          6378000 0  0  0   1   0   0  -1   0   true   "x"       0.0)
 
+
 (def noise-octaves-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float octaves(vec3 idx);
 float noise(vec3 idx)
@@ -929,8 +1038,11 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn noise-octaves-test [octaves x y z]
+
+(defn noise-octaves-test
+  [octaves x y z]
   ((shader-test (fn [program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
+
 
 (tabular "Shader function to sum octaves of noise"
          (fact ((noise-octaves-test ?octaves ?x ?y ?z) 0) => ?result)
@@ -941,9 +1053,10 @@ void main()
          0.5 0.0 0.0 [0.0 1.0] 1.0
          1.0 0.0 0.0 [1.0 0.0] 1.0)
 
+
 (def noise-octaves-lod-probe
   (template/fn [x y z lod]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float octaves(vec3 idx, float lod);
 float noise(vec3 idx, float lod)
@@ -959,8 +1072,11 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(defn noise-octaves-lod-test [octaves x y z lod]
+
+(defn noise-octaves-lod-test
+  [octaves x y z lod]
   ((shader-test (fn [program]) noise-octaves-lod-probe (noise-octaves-lod "octaves" "noise" octaves)) [] [x y z lod]))
+
 
 (tabular "Shader function to sum octaves of noise with level-of-detail"
          (fact ((noise-octaves-lod-test ?octaves ?x ?y ?z ?lod) 0) => ?result)
@@ -974,8 +1090,9 @@ void main()
          0.0 1.0 0.0 1.0  [1.0]     1.0
          0.0 1.0 0.0 1.0  [0.0 1.0] 2.0)
 
+
 (def fragment-cubemap-vectors
-"#version 410 core
+  "#version 410 core
 layout (location = 0) out vec3 output1;
 layout (location = 1) out vec3 output2;
 layout (location = 2) out vec3 output3;
@@ -999,9 +1116,10 @@ void main()
   output6 = face6_vector(x);
 }")
 
+
 (def face-vector-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 uniform samplerCube cubemap;
 out vec3 fragColor;
 vec3 convert_cubemap_index(vec3 idx, int size);
@@ -1010,6 +1128,7 @@ void main()
   vec3 idx = convert_cubemap_index(vec3(<%= x %>, <%= y %>, <%= z %>), 32);
   fragColor = texture(cubemap, idx).rgb;
 }"))
+
 
 (tabular "Convert cubemap face coordinate to 3D vector"
          (fact
@@ -1040,22 +1159,23 @@ void main()
                  (destroy-texture cubemap)
                  (get-vector3 img 0 0)))) => (roughly-vector (vec3 ?x ?y ?z) 1e-6))
          ?x    ?y    ?z
-         1.0   0.0   0.0
-         1.0   0.25  0.5
-        -1.0   0.0   0.0
-        -1.0   0.25  0.5
-         0.0   1.0   0.0
-         0.25  1.0   0.5
-         0.0  -1.0   0.0
-         0.25 -1.0   0.5
-         0.0   0.0   1.0
-         0.25  0.5   1.0
-         0.0   0.0  -1.0
-         0.25  0.5  -1.0)
+         +1.0   0.0   0.0
+         +1.0   0.25  0.5
+         -1.0   0.0   0.0
+         -1.0   0.25  0.5
+         +0.0   1.0   0.0
+         +0.25  1.0   0.5
+         +0.0  -1.0   0.0
+         +0.25 -1.0   0.5
+         +0.0   0.0   1.0
+         +0.25  0.5   1.0
+         +0.0   0.0  -1.0
+         +0.25  0.5  -1.0)
+
 
 (def gradient-3d-probe
   (template/fn [x y z c dx dy dz]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float f(vec3 point)
 {
@@ -1067,12 +1187,14 @@ void main()
   fragColor = gradient(vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
+
 (def gradient-3d-test
   (shader-test
     (fn [program epsilon]
-        (uniform-float program "epsilon" epsilon))
+      (uniform-float program "epsilon" epsilon))
     gradient-3d-probe
     (gradient-3d "gradient" "f" "epsilon")))
+
 
 (tabular "Shader template for 3D gradients"
          (fact (gradient-3d-test [0.1] [?x ?y ?z ?c ?dx ?dy ?dz]) => (roughly-vector (vec3 ?gx ?gy ?gz) 1e-6))
@@ -1081,9 +1203,10 @@ void main()
          0  0  0  0  1   2   3   1   2   3
          3  3  3  2  1   2   3   0   0   0)
 
+
 (def orthogonal-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec3 orthogonal_vector(vec3 n);
 void main()
@@ -1091,7 +1214,9 @@ void main()
   fragColor = orthogonal_vector(vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
+
 (def orthogonal-test (shader-test (fn [program]) orthogonal-probe orthogonal-vector))
+
 
 (facts "Shader for generating an orthogonal vector"
        (dot (orthogonal-test [] [1 0 0]) (vec3 1 0 0)) => 0.0
@@ -1104,9 +1229,10 @@ void main()
        (mag (orthogonal-test [] [0 0 1])) => 1.0
        (mag (orthogonal-test [] [0 0 2])) => 1.0)
 
+
 (def oriented-matrix-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 mat3 oriented_matrix(vec3 n);
 void main()
@@ -1114,7 +1240,9 @@ void main()
   fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
 }"))
 
+
 (def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix))
+
 
 (facts "Shader for creating isometry with given normal vector as first row"
        (let [n  (vec3 0.36 0.48 0.8)
@@ -1124,9 +1252,10 @@ void main()
          (oriented-matrix-test [] (vec o1)) => (roughly-vector (vec3 0 1 0) 1e-6)
          (oriented-matrix-test [] (vec o2)) => (roughly-vector (vec3 0 0 1) 1e-6)))
 
+
 (def project-vector-probe
   (template/fn [nx ny nz x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec3 project_vector(vec3 n, vec3 v);
 void main()
@@ -1134,7 +1263,9 @@ void main()
   fragColor = project_vector(vec3(<%= nx %>, <%= ny %>, <%= nz %>), vec3(<%= x %>, <%= y %>, <%= z %>));
 }"))
 
+
 (def project-vector-test (shader-test (fn [program]) project-vector-probe project-vector))
+
 
 (tabular "Shader to project vector x onto vector n"
          (fact (project-vector-test [] [?nx ?ny ?nz ?x ?y ?z]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
@@ -1144,9 +1275,10 @@ void main()
          1   0   0   2  0  0  2   0   0
          1   0   0   1  2  3  1   0   0)
 
+
 (def rotate-vector-probe
   (template/fn [ax ay az x y z angle]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec3 rotate_vector(vec3 axis, vec3 v, float cos_angle, float sin_angle);
 void main()
@@ -1159,7 +1291,9 @@ void main()
   fragColor = rotate_vector(axis, v, cos_angle, sin_angle);
 }"))
 
+
 (def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector))
+
 
 (tabular "Shader for rotating vector around specified axis"
          (fact (rotate-vector-test [] [?ax ?ay ?az ?x ?y ?z ?angle]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
@@ -1170,9 +1304,10 @@ void main()
          0   0   1   1  2  3  (/ PI 2) -2   1   3
          0   0   1   1  0  0  (/ PI 2)  0   1   0)
 
+
 (def scale-noise-probe
   (template/fn [x y z]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float noise(vec3 point)
 {
@@ -1185,10 +1320,12 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def scale-noise-test
   (shader-test
     (fn [program factor] (uniform-float program "factor" factor))
     scale-noise-probe (scale-noise "scale" "factor" "noise")))
+
 
 (tabular "Shader for calling a noise function with a scaled vector"
          (fact ((scale-noise-test [?scale] [?x ?y ?z]) 0) => ?result)
@@ -1196,9 +1333,10 @@ void main()
          1.0    2  3  5  2.0
          3.0    2  3  5  6.0)
 
+
 (def remap-probe
   (template/fn [value original-min original-max new-min new-max]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
 void main()
@@ -1207,7 +1345,9 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def remap-test (shader-test (fn [program]) remap-probe remap))
+
 
 (tabular "Shader for mapping linear range to a new linear range"
          (fact ((remap-test [] [?val ?orig-min ?orig-max ?new-min ?new-max]) 0) => (roughly ?result 1e-5))
@@ -1219,9 +1359,10 @@ void main()
          0.5  0.0       1.0       0.0      0.4      0.2
          0.5  0.0       1.0       0.2      0.4      0.3)
 
+
 (def phong-probe
   (template/fn [ambient light color reflectivity]
-"#version 410 core
+    "#version 410 core
 out vec3 fragColor;
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 void main()
@@ -1235,29 +1376,32 @@ void main()
   fragColor = phong(ambient, light, point, normal, color, reflectivity);
 }"))
 
+
 (def phong-test
   (shader-test
     (fn [program albedo specular origin light-direction amplification]
-        (uniform-float program "albedo" albedo)
-        (uniform-float program "specular" specular)
-        (uniform-vector3 program "origin" origin)
-        (uniform-vector3 program "light_direction" light-direction)
-        (uniform-float program "amplification" amplification))
+      (uniform-float program "albedo" albedo)
+      (uniform-float program "specular" specular)
+      (uniform-vector3 program "origin" origin)
+      (uniform-vector3 program "light_direction" light-direction)
+      (uniform-float program "amplification" amplification))
     phong-probe phong))
+
 
 (tabular "Shader for phong shading (ambient, diffuse, and specular lighting)"
          (fact ((phong-test [?albedo ?specular ?origin ?light-dir ?amplification] [?ambient ?light ?color ?reflect]) 0)
                => (roughly ?result 1e-6))
-         ?albedo ?specular ?origin      ?light-dir      ?amplification ?ambient ?light ?color   ?reflect ?result
-         0.0      1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 0.0            0.0      0.0    0.0      0.0      0.0
-         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 2.0            0.5      0.0    0.75     0.0      0.75
-         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 1.0            0.0      1.0    0.75     0.0      0.75
-         PI       1.0      (vec3 0  0   1  ) (vec3 1 0   0  ) 1.0            0.0      1.0    0.75     0.0      0.0
-         PI       1.0      (vec3 0  0   1  ) (vec3 0 0  -1  ) 1.0            0.0      1.0    0.75     0.0      0.0
-         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 1.0            0.0      1.0    0.0      0.25     0.25
-         PI       1.0      (vec3 0  0   1  ) (vec3 0 0   1  ) 1.0            0.0      0.0    0.0      0.25     0.0
-         PI       1.0      (vec3 0  0   1  ) (vec3 0 0.6 0.8) 1.0            0.0      1.0    0.0      0.25     0.2
-         PI      10.0      (vec3 0  0   1  ) (vec3 0 0.6 0.8) 1.0            0.0      1.0    0.0      0.25     0.026844
-         PI      10.0      (vec3 0 -0.6 0.8) (vec3 0 0.6 0.8) 1.0            0.0      1.0    0.0      0.25     0.25)
+         ?albedo ?specular ?origin      ?light-dir           ?amplification ?ambient ?light ?color   ?reflect ?result
+         0.0      1.0      (vec3 0  0   1) (vec3 0 0   1)     0.0           0.0      0.0    0.0      0.0      0.0
+         PI       1.0      (vec3 0  0   1) (vec3 0 0   1)     2.0           0.5      0.0    0.75     0.0      0.75
+         PI       1.0      (vec3 0  0   1) (vec3 0 0   1)     1.0           0.0      1.0    0.75     0.0      0.75
+         PI       1.0      (vec3 0  0   1) (vec3 1 0   0)     1.0           0.0      1.0    0.75     0.0      0.0
+         PI       1.0      (vec3 0  0   1) (vec3 0 0  -1)     1.0           0.0      1.0    0.75     0.0      0.0
+         PI       1.0      (vec3 0  0   1) (vec3 0 0   1)     1.0           0.0      1.0    0.0      0.25     0.25
+         PI       1.0      (vec3 0  0   1) (vec3 0 0   1)     1.0           0.0      0.0    0.0      0.25     0.0
+         PI       1.0      (vec3 0  0   1) (vec3 0 0.6 0.8)   1.0           0.0      1.0    0.0      0.25     0.2
+         PI      10.0      (vec3 0  0   1) (vec3 0 0.6 0.8)   1.0           0.0      1.0    0.0      0.25     0.026844
+         PI      10.0      (vec3 0 -0.6 0.8) (vec3 0 0.6 0.8) 1.0           0.0      1.0    0.0      0.25     0.25)
+
 
 (GLFW/glfwTerminate)

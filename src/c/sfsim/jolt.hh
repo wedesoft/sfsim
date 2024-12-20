@@ -26,15 +26,22 @@ extern "C" {
   int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity);
   int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity);
   int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangles, float mass, Vec3 center, Quaternion rotation);
+  int make_convex_hull(float *vertices, int num_vertices, float convex_radius, float density, Vec3 center, Quaternion rotation);
   void set_friction(int id, float friction);
   void set_restitution(int id, float restitution);
+  void add_force(int id, Vec3 force);
+  void add_torque(int id, Vec3 torque);
+  void activate_body(int id);
   void remove_and_destroy_body(int id);
-
   Vec3 get_translation(int id);
+  void set_translation(int id, Vec3 translation);
   Mat3x3 get_rotation(int id);
   Quaternion get_orientation(int id);
+  void set_orientation(int id, Quaternion orientation);
   Vec3 get_linear_velocity(int id);
+  void set_linear_velocity(int id, Vec3 velocity);
   Vec3 get_angular_velocity(int id);
+  void set_angular_velocity(int id, Vec3 velocity);
 #ifdef __cplusplus
 }
 #endif

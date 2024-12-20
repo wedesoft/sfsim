@@ -32,7 +32,7 @@ Requires OpenGL 4.5.
 
 ```Shell
 cd Build
-./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF
+./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
 cd Linux_Release
 make -j `nproc`
 sudo make install
@@ -43,7 +43,7 @@ cd ../..
 
 ```Shell
 cd Build
-./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF
+./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
 cmake --build MinGW_Release -j `nproc`
 cmake --install MinGW_Release --prefix /usr/local
 cd ..
@@ -123,5 +123,12 @@ cd ..
   * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
+* Clojure
+  * [cljstyle](https://github.com/greglook/cljstyle) (style checking)
+  * [clj-kondo](https://github.com/clj-kondo/clj-kondo) (static code analysis)
+  * [clj-async-profiler](https://github.com/clojure-goes-fast/clj-async-profiler) (flame graph profiler)
+  * [antq](https://github.com/liquidz/antq) (detect available updates for dependencies)
+  * [nREPL](https://nrepl.org/) server and [REPL-y](https://github.com/trptcolin/reply) client
+  * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 
   [1]: https://github.com/wedesoft/sfsim

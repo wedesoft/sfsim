@@ -1,11 +1,13 @@
 (ns sfsim.bluenoise
-    "Functions and main program for generating blue noise"
-    (:require [clojure.math :refer (exp)]
-              [com.climate.claypoole :refer (pfor ncpus)]
-              [malli.core :as m]
-              [sfsim.util :refer (N0 N)]))
+  "Functions and main program for generating blue noise"
+  (:require
+    [clojure.math :refer (exp)]
+    [com.climate.claypoole :refer (pfor ncpus)]
+    [malli.core :as m]
+    [sfsim.util :refer (N0 N)]))
 
-; http://cv.ulichney.com/papers/1993-void-cluster.pdf
+
+;; http://cv.ulichney.com/papers/1993-void-cluster.pdf
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
@@ -14,10 +16,13 @@
 
 (def indices (m/schema [:vector N0]))
 
+
 (defn indices-2d
   "Create range of indices with M x M elements"
   {:malli/schema [:=> [:cat N] indices]}
-  [m] (vec (range (* m m))))
+  [m]
+  (vec (range (* m m))))
+
 
 (defn pick-n
   "Randomly pick N different values from ARR"
@@ -25,7 +30,9 @@
   ([arr n] (pick-n arr n shuffle))
   ([arr n order] (vec (take n (order arr)))))
 
+
 (def mask (m/schema [:vector :boolean]))
+
 
 (defn scatter-mask
   "Create mask of size M x M filled with specified indices set to true"
@@ -33,7 +40,9 @@
   [arr m]
   (reduce #(assoc %1 %2 true) (vec (repeat (* m m) false)) arr))
 
+
 (def F (m/schema [:=> [:cat :int :int] :double]))
+
 
 (defn density-function
   "Return 2D Gauss bell function for given SIGMA"
@@ -41,17 +50,20 @@
   [sigma]
   (fn density-function [dx dy] (exp (- (/ (+ (* dx dx) (* dy dy)) (* 2 sigma sigma))))))
 
+
 (defn argmax-with-mask
   "Return index of largest element in ARR with corresponding MASK value being true"
   {:malli/schema [:=> [:cat [:sequential number?] [:sequential :boolean]] N0]}
   [arr mask]
   (first (apply max-key second (filter (fn mask-lookup [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
 
+
 (defn argmin-with-mask
   "Return index of smallest element in ARR with corresponding MASK value being false"
   {:malli/schema [:=> [:cat [:sequential number?] [:sequential :boolean]] N0]}
   [arr mask]
   (first (apply min-key second (remove (fn mask-lookup [[idx _value]] (nth mask idx)) (map-indexed vector arr)))))
+
 
 (defn wrap
   "Wrap index X to be within -M/2 and +M/2"
@@ -60,22 +72,25 @@
   (let [offset (quot m 2)]
     (- (mod (+ x offset) m) offset)))
 
+
 (defn density-sample
   "Compute sample of convolution of MASK with F"
   {:malli/schema [:=> [:cat mask N F :int :int] :double]}
   [mask m f cx cy]
   (reduce +
-    (for [y (range m) x (range m)]
-       (let [index (+ (* y m) x)]
-         (if (nth mask index)
-           (f (wrap (- x cx) m) (wrap (- y cy) m))
-           0.0)))))
+          (for [y (range m) x (range m)]
+            (let [index (+ (* y m) x)]
+              (if (nth mask index)
+                (f (wrap (- x cx) m) (wrap (- y cy) m))
+                0.0)))))
+
 
 (defn density-array
   "Convolve MASK of size M x M with F"
   {:malli/schema [:=> [:cat mask N F] [:vector :double]]}
   [mask m f]
   (vec (pfor (+ 2 (ncpus)) [cy (range m) cx (range m)] (density-sample mask m f cx cy))))
+
 
 (defn density-change
   "Compute array with changes to density"
@@ -87,6 +102,7 @@
       (pfor (+ 2 (ncpus)) [y (range m) x (range m)]
             (let [index (+ (* y m) x)]
               (op (nth density index) (f (wrap (- x cx) m) (wrap (- y cy) m))))))))
+
 
 (defn seed-pattern
   "Create initial seed pattern by distributing the values in MASK evenly"
@@ -101,6 +117,7 @@
      (if (== cluster void)
        mask
        (recur mask m f (density-change density m + f void))))))
+
 
 (defn dither-phase1
   "First phase of blue noise dithering removing true values from MASK"
@@ -118,6 +135,7 @@
            mask    (assoc mask cluster false)]
        (recur mask m (dec n) f density (assoc dither cluster (dec n)))))))
 
+
 (defn dither-phase2
   "Second phase of blue noise dithering filling MASK until it is 50% set to true"
   {:malli/schema [:=> [:cat mask N N0 indices F [:? [:vector :double]]] [:vector [:vector :some]]]}
@@ -129,6 +147,7 @@
            density (density-change density m + f void)
            mask    (assoc mask void true)]
        (recur mask m (inc n) (assoc dither void n) f density)))))
+
 
 (defn dither-phase3
   "Third phase of blue noise dithering negating MASK and then removing true values"
@@ -144,6 +163,7 @@
            mask-not (assoc mask-not cluster false)]
        (recur mask-not m (inc n) (assoc dither cluster n) f density)))))
 
+
 (defn blue-noise
   "Greate blue noise dithering array of size M x M starting with seed pattern of N samples"
   {:malli/schema [:=> [:cat N N0 :double] indices]}
@@ -157,9 +177,11 @@
         dither        (dither-phase3 half m (quot (* m m) 2) dither f)]
     dither))
 
+
 (def sampling-offset
   "Shader for sampling blue noise texture"
   (slurp "resources/shaders/bluenoise/sampling-offset.glsl"))
+
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
