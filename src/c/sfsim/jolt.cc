@@ -203,7 +203,7 @@ void body_default_settings(JPH::BodyCreationSettings &body_settings)
   body_settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
 }
 
-int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
+int make_sphere(float radius, float density, Vec3 center, Quaternion rotation)
 {
   JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
   sphere_shape->SetDensity(density);
@@ -212,14 +212,10 @@ int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, V
   JPH::BodyCreationSettings sphere_settings(sphere_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
   body_default_settings(sphere_settings);
   JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
-  JPH::Vec3 linear_speed(linear_velocity.x, linear_velocity.y, linear_velocity.z);
-  body_interface->SetLinearVelocity(sphere_id, linear_speed);
-  JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
-  body_interface->SetAngularVelocity(sphere_id, angular_speed);
   return sphere_id.GetIndexAndSequenceNumber();
 }
 
-int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
+int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation)
 {
   JPH::Vec3 half_extent_box(half_extent.x, half_extent.y, half_extent.z);
   JPH::BoxShapeSettings box_shape_settings(half_extent_box);
@@ -233,10 +229,6 @@ int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, 
   JPH::BodyCreationSettings box_settings(box_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
   body_default_settings(box_settings);
   JPH::BodyID box_id = body_interface->CreateAndAddBody(box_settings, JPH::EActivation::Activate);
-  JPH::Vec3 linear_speed(linear_velocity.x, linear_velocity.y, linear_velocity.z);
-  body_interface->SetLinearVelocity(box_id, linear_speed);
-  JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
-  body_interface->SetAngularVelocity(box_id, angular_speed);
   return box_id.GetIndexAndSequenceNumber();
 }
 
