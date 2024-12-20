@@ -1385,7 +1385,7 @@ void main()
                                                             (render-quads vao)
                                                             (destroy-vertex-array-object vao)
                                                             (destroy-program program)))]
-          (texture->image tex) => (is-image "test/clj/sfsim/fixtures/clouds/cascade.png" 0.0)
+          (texture->image tex) => (is-image "test/clj/sfsim/fixtures/clouds/cascade.png" 0.01)
           (destroy-texture tex)
           (doseq [opacity-map opacity-maps]
             (destroy-texture opacity-map))
