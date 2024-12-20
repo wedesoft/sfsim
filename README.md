@@ -28,6 +28,8 @@ Requires OpenGL 4.5.
 
 ## Install JoltPhysics
 
+Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) and build it as follows.
+
 ### GCC/Linux
 
 ```Shell
@@ -51,6 +53,7 @@ cd ..
 
 # Build
 
+* Build Jolt wrapper library: `make`
 * Build Worley noise: `clj -T:build worley`
 * Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`
