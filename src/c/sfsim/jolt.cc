@@ -203,44 +203,55 @@ void body_default_settings(JPH::BodyCreationSettings &body_settings)
   body_settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
 }
 
-int make_sphere(float radius, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
+int create_and_add_body(JPH::ShapeSettings *shape_settings, Vec3 center, Quaternion rotation, JPH::EMotionType motion_type,
+                        unsigned short int motion_group)
 {
-  JPH::SphereShape *sphere_shape = new JPH::SphereShape(radius);
-  sphere_shape->SetDensity(density);
+  shape_settings->SetEmbedded();
+  JPH::ShapeSettings::ShapeResult shape_result = shape_settings->Create();
+  JPH::ShapeRefC shape = shape_result.Get();
   JPH::RVec3 position(center.x, center.y, center.z);
   JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
-  JPH::BodyCreationSettings sphere_settings(sphere_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
-  body_default_settings(sphere_settings);
-  JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
-  JPH::Vec3 linear_speed(linear_velocity.x, linear_velocity.y, linear_velocity.z);
-  body_interface->SetLinearVelocity(sphere_id, linear_speed);
-  JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
-  body_interface->SetAngularVelocity(sphere_id, angular_speed);
-  return sphere_id.GetIndexAndSequenceNumber();
+  JPH::BodyCreationSettings body_settings(shape, position, orientation, motion_type, motion_group);
+  body_default_settings(body_settings);
+  JPH::BodyID body_id = body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
+  delete shape_settings;
+  return body_id.GetIndexAndSequenceNumber();
 }
 
-int make_box(Vec3 half_extent, float density, Vec3 center, Quaternion rotation, Vec3 linear_velocity, Vec3 angular_velocity)
+void remove_and_destroy_body(int id)
+{
+  JPH::BodyID body_id(id);
+  body_interface->RemoveBody(body_id);
+  body_interface->DestroyBody(body_id);
+}
+
+int create_and_add_dynamic_body(void *shape_settings, Vec3 center, Quaternion rotation)
+{
+  return create_and_add_body((JPH::ShapeSettings *)shape_settings, center, rotation, JPH::EMotionType::Dynamic, MOVING);
+}
+
+int create_and_add_static_body(void *shape_settings, Vec3 center, Quaternion rotation)
+{
+  return create_and_add_body((JPH::ShapeSettings *)shape_settings, center, rotation, JPH::EMotionType::Static, NON_MOVING);
+}
+
+void *sphere_settings(float radius, float density)
+{
+  JPH::SphereShapeSettings *sphere_shape_settings = new JPH::SphereShapeSettings(radius);
+  sphere_shape_settings->SetDensity(density);
+  return sphere_shape_settings;
+}
+
+void *box_settings(Vec3 half_extent, float density)
 {
   JPH::Vec3 half_extent_box(half_extent.x, half_extent.y, half_extent.z);
-  JPH::BoxShapeSettings box_shape_settings(half_extent_box);
-  box_shape_settings.mConvexRadius = 0.01f;
-  box_shape_settings.SetDensity(density);
-  box_shape_settings.SetEmbedded();
-  JPH::ShapeSettings::ShapeResult shape_result = box_shape_settings.Create();
-  JPH::ShapeRefC box_shape = shape_result.Get();
-  JPH::RVec3 position(center.x, center.y, center.z);
-  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
-  JPH::BodyCreationSettings box_settings(box_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
-  body_default_settings(box_settings);
-  JPH::BodyID box_id = body_interface->CreateAndAddBody(box_settings, JPH::EActivation::Activate);
-  JPH::Vec3 linear_speed(linear_velocity.x, linear_velocity.y, linear_velocity.z);
-  body_interface->SetLinearVelocity(box_id, linear_speed);
-  JPH::Vec3 angular_speed(angular_velocity.x, angular_velocity.y, angular_velocity.z);
-  body_interface->SetAngularVelocity(box_id, angular_speed);
-  return box_id.GetIndexAndSequenceNumber();
+  JPH::BoxShapeSettings *box_shape_settings = new JPH::BoxShapeSettings(half_extent_box);
+  box_shape_settings->mConvexRadius = 0.01f;
+  box_shape_settings->SetDensity(density);
+  return box_shape_settings;
 }
 
-int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangles, float mass, Vec3 center, Quaternion rotation)
+void *mesh_settings(float *vertices, int num_vertices, int *triangles, int num_triangles, float mass)
 {
   JPH::VertexList vertex_list(num_vertices);
   for (int i=0; i<num_vertices; i++) {
@@ -253,35 +264,20 @@ int make_mesh(float *vertices, int num_vertices, int *triangles, int num_triangl
     triangles += 3;
   };
   JPH::PhysicsMaterialList materials { JPH::PhysicsMaterial::sDefault };
-  JPH::MeshShapeSettings mesh_shape_settings(vertex_list, triangle_list, materials);
-  mesh_shape_settings.SetEmbedded();
-  JPH::ShapeSettings::ShapeResult shape_result = mesh_shape_settings.Create();
-  JPH::ShapeRefC mesh_shape = shape_result.Get();
-  JPH::RVec3 position(center.x, center.y, center.z);
-  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
-  JPH::BodyCreationSettings mesh_settings(mesh_shape, position, orientation, JPH::EMotionType::Static, NON_MOVING);
-  JPH::BodyID mesh_id = body_interface->CreateAndAddBody(mesh_settings, JPH::EActivation::Activate);
-  return mesh_id.GetIndexAndSequenceNumber();
+  JPH::MeshShapeSettings *mesh_shape_settings = new JPH::MeshShapeSettings(vertex_list, triangle_list, materials);
+  return mesh_shape_settings;
 }
 
-int make_convex_hull(float *vertices, int num_vertices, float convex_radius, float density, Vec3 center, Quaternion rotation)
+void *convex_hull_settings(float *vertices, int num_vertices, float convex_radius, float density)
 {
   JPH::Array<JPH::Vec3> vertex_list(num_vertices);
   for (int i=0; i<num_vertices; i++) {
     vertex_list[i] = JPH::Vec3(vertices[0], vertices[1], vertices[2]);
     vertices += 3;
   }
-  JPH::ConvexHullShapeSettings convex_hull_shape_settings(vertex_list, convex_radius);
-  convex_hull_shape_settings.SetDensity(density);
-  convex_hull_shape_settings.SetEmbedded();
-  JPH::ShapeSettings::ShapeResult shape_result = convex_hull_shape_settings.Create();
-  JPH::ShapeRefC convex_hull_shape = shape_result.Get();
-  JPH::RVec3 position(center.x, center.y, center.z);
-  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
-  JPH::BodyCreationSettings convex_hull_settings(convex_hull_shape, position, orientation, JPH::EMotionType::Dynamic, MOVING);
-  body_default_settings(convex_hull_settings);
-  JPH::BodyID convex_hull_id = body_interface->CreateAndAddBody(convex_hull_settings, JPH::EActivation::Activate);
-  return convex_hull_id.GetIndexAndSequenceNumber();
+  JPH::ConvexHullShapeSettings *convex_hull_shape_settings = new JPH::ConvexHullShapeSettings(vertex_list, convex_radius);
+  convex_hull_shape_settings->SetDensity(density);
+  return convex_hull_shape_settings;
 }
 
 void set_friction(int id, float friction)
@@ -314,13 +310,6 @@ void activate_body(int id)
 {
   JPH::BodyID body_id(id);
   body_interface->ActivateBody(body_id);
-}
-
-void remove_and_destroy_body(int id)
-{
-  JPH::BodyID body_id(id);
-  body_interface->RemoveBody(body_id);
-  body_interface->DestroyBody(body_id);
 }
 
 Vec3 get_translation(int id)

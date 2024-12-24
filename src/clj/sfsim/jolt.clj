@@ -149,44 +149,54 @@
   update_system [::mem/double ::mem/int] ::mem/void)
 
 
-(defcfn make-sphere
-  "Create sphere body"
-  make_sphere [::mem/float ::mem/float ::vec3 ::quaternion ::vec3 ::vec3] ::mem/int)
+(defcfn create-and-add-dynamic-body
+  "Create and add moving body to physics system"
+  create_and_add_dynamic_body [::mem/pointer ::vec3 ::quaternion] ::mem/int)
 
 
-(defcfn make-box
-  "Create box body"
-  make_box [::vec3 ::mem/float ::vec3 ::quaternion ::vec3 ::vec3] ::mem/int)
+(defcfn create-and-add-static-body
+  "Create and add stationary body to physics system"
+  create_and_add_static_body [::mem/pointer ::vec3 ::quaternion] ::mem/int)
 
 
-(defcfn make-mesh_
-  "Create a mesh object (private function)"
-  make_mesh [::mem/pointer ::mem/int ::mem/pointer ::mem/int ::mem/float ::vec3 ::quaternion] ::mem/int)
+(defcfn sphere-settings
+  "Create sphere settings object"
+  sphere_settings [::mem/float ::mem/float] ::mem/pointer)
 
 
-(defn make-mesh
-  "Create a static mesh object"
-  [{:sfsim.quadtree/keys [vertices triangles]} mass center rotation]
+(defcfn box-settings
+  "Create box settings object"
+  box_settings [::vec3 ::mem/float] ::mem/pointer)
+
+
+(defcfn mesh-settings-
+  "Create a mesh settings object (private function)"
+  mesh_settings [::mem/pointer ::mem/int ::mem/pointer ::mem/int ::mem/float] ::mem/pointer)
+
+
+(defn mesh-settings
+  "Create mesh settings object"
+  [{:sfsim.quadtree/keys [vertices triangles]} mass]
   (let [arena (mem/auto-arena)
         num-vertices (count vertices)
         num-triangles (count triangles)]
-    (make-mesh_ (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
-                (mem/serialize (apply concat triangles) [::mem/array ::mem/int (* 3 num-triangles)] arena) num-triangles
-                mass center rotation)))
+    (mesh-settings- (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
+                    (mem/serialize (apply concat triangles) [::mem/array ::mem/int (* 3 num-triangles)] arena) num-triangles
+                    mass)))
 
 
-(defcfn make-convex-hull_
-  "Create a convex hull object (private function)"
-  make_convex_hull [::mem/pointer ::mem/int ::mem/float ::mem/float ::vec3 ::quaternion] ::mem/int)
+(defcfn convex-hull-settings-
+  "Create a convex hull settings object (private function)"
+  convex_hull_settings [::mem/pointer ::mem/int ::mem/float ::mem/float] ::mem/pointer)
 
 
-(defn make-convex-hull
-  "Create a convex hull"
-  [vertices convex-radius density center rotation]
+(defn convex-hull-settings
+  "Create convex hull settings object"
+  [vertices convex-radius density]
   (let [arena        (mem/auto-arena)
         num-vertices (count vertices)]
-    (make-convex-hull_ (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
-                       convex-radius density center rotation)))
+    (convex-hull-settings- (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
+                           convex-radius density)))
 
 
 (defcfn set-friction
