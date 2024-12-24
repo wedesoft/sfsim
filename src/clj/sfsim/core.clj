@@ -258,7 +258,8 @@
 (def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
 (def dist (atom 200.0))
 
-(def box (jolt/make-box (vec3 1 1 1) 1000.0 (:position @pose) (:orientation @pose) (vec3 0 0 0) (vec3 (/ PI 2) 0 0)))
+(def box (jolt/create-and-add-dynamic-body (jolt/box-settings (vec3 1 1 1) 1000.0) (:position @pose) (:orientation @pose)))
+(jolt/set-angular-velocity box (vec3 (/ PI 2) 0 0))
 (jolt/set-friction box 0.5)
 (jolt/set-restitution box 0.4)
 
@@ -292,7 +293,7 @@
                                                (:sfsim.planet/radius config/planet-config) center)]
         (when @mesh (jolt/remove-and-destroy-body @mesh))
         (reset! coords c)
-        (reset! mesh (jolt/make-mesh m 5.9742e+24 center (q/->Quaternion 1 0 0 0)))
+        (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
         (jolt/set-friction @mesh 0.5)
         (jolt/set-restitution @mesh 0.4)
         (jolt/optimize-broad-phase)))))
