@@ -198,6 +198,25 @@
                            convex-radius density)))
 
 
+(defcfn static-compound-settings-
+  "Create a static compound settings object (private function)"
+  static_compound_settings [] ::mem/pointer)
+
+
+(defcfn static-compound-add-shape-
+  "Add sub shape to compound shape (private method)"
+  static_compound_add_shape [::mem/pointer ::vec3 ::quaternion ::mem/pointer] ::mem/void)
+
+
+(defn static-compound-settings
+  "Create static compound settings object"
+  [body-settings]
+  (let [result (static-compound-settings-)]
+    (doseq [{::keys [shape position rotation]} body-settings]
+           (static-compound-add-shape- result position rotation shape))
+    result))
+
+
 (defcfn set-friction
   "Set friction constant of body surface"
   set_friction [::mem/int ::mem/float] ::mem/void)
