@@ -1,4 +1,6 @@
 # TODO
+* use https://github.com/levand/immuconf
+* use components and core.async for physics and loading of data
 * add convex hull shape Jolt wrapper
 * add static compound shape Jolt wrapper
 * add wheeled vehicle Jolt wrapper
