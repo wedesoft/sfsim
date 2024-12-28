@@ -1,5 +1,7 @@
 {:deps {org.clojure/clojure {:mvn/version "1.12.0"}
         metosin/malli {:mvn/version "0.17.0"}
+        com.fzakaria/slf4j-timbre {:mvn/version "0.2"}
+        levand/immuconf {:mvn/version "0.1.0"}
         org.clojure/core.memoize {:mvn/version "1.1.266"}
         comb/comb {:mvn/version "0.1.1"}
         progrock/progrock {:mvn/version "0.1.2"}

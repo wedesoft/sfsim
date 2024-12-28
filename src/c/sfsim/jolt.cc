@@ -12,6 +12,7 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
+#include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "sfsim/jolt.hh"
 
@@ -278,6 +279,24 @@ void *convex_hull_settings(float *vertices, int num_vertices, float convex_radiu
   JPH::ConvexHullShapeSettings *convex_hull_shape_settings = new JPH::ConvexHullShapeSettings(vertex_list, convex_radius);
   convex_hull_shape_settings->SetDensity(density);
   return convex_hull_shape_settings;
+}
+
+void *static_compound_settings(void)
+{
+  JPH::StaticCompoundShapeSettings *static_compound_shape_settings = new JPH::StaticCompoundShapeSettings();
+  return static_compound_shape_settings;
+}
+
+void static_compound_add_shape(void *static_compound_settings, Vec3 position, Quaternion rotation, void *shape_settings)
+{
+  JPH::StaticCompoundShapeSettings *static_compound_shape_settings = (JPH::StaticCompoundShapeSettings *)static_compound_settings;
+  JPH::ShapeSettings *sub_shape_settings = (JPH::ShapeSettings *)shape_settings;
+  sub_shape_settings->SetEmbedded();
+  JPH::RefConst<JPH::Shape> shape = sub_shape_settings->Create().Get();
+  JPH::Vec3 offset(position.x, position.y, position.z);
+  JPH::Quat orientation(rotation.imag, rotation.jmag, rotation.kmag, rotation.real);
+  static_compound_shape_settings->AddShape(offset, orientation, shape);
+  delete sub_shape_settings;
 }
 
 void set_friction(int id, float friction)

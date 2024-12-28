@@ -150,4 +150,29 @@
         (remove-and-destroy-body hull)))
 
 
+(fact "Static compound shape collision with sphere"
+      (let [compound (create-and-add-dynamic-body
+                       (static-compound-settings [{:sfsim.jolt/shape (box-settings (vec3 0.5 0.5 0.5) 1000.0)
+                                                   :sfsim.jolt/position (vec3 -2.0 0.0 0.0)
+                                                   :sfsim.jolt/rotation (q/->Quaternion 1 0 0 0)}
+                                                  {:sfsim.jolt/shape (box-settings (vec3 0.5 0.5 0.5) 1000.0)
+                                                   :sfsim.jolt/position (vec3 +2.0 0.0 0.0)
+                                                   :sfsim.jolt/rotation (q/->Quaternion 1 0 0 0)}])
+                       (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
+            box      (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.5) 1000.0)
+                                                  (vec3 -4.0 0.0 0.0) (q/->Quaternion 1 0 0 0))]
+        (set-gravity (vec3 0 0 0))
+        (set-friction compound 0.5)
+        (set-restitution compound 1.0)
+        (set-friction box 0.5)
+        (set-restitution box 1.0)
+        (optimize-broad-phase)
+        (set-linear-velocity box (vec3 1 0 0))
+        (dotimes [i 20] (update-system 0.1 1))
+        (get-linear-velocity box) => (roughly-vector (vec3 -0.333 0 0) 1e-3)
+        (get-linear-velocity compound) => (roughly-vector (vec3 0.666 0 0) 1e-3)
+        (remove-and-destroy-body box)
+        (remove-and-destroy-body compound)))
+
+
 (jolt-destroy)

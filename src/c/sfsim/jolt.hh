@@ -30,6 +30,8 @@ extern "C" {
   void *box_settings(Vec3 half_extent, float density);
   void *mesh_settings(float *vertices, int num_vertices, int *triangles, int num_triangles, float mass);
   void *convex_hull_settings(float *vertices, int num_vertices, float convex_radius, float density);
+  void *static_compound_settings(void);
+  void static_compound_add_shape(void *static_compound_settings, Vec3 position, Quaternion rotation, void *shape_settings);
   void set_friction(int id, float friction);
   void set_restitution(int id, float restitution);
   void add_force(int id, Vec3 force);
