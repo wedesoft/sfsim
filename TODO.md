@@ -1,10 +1,11 @@
 # TODO
-* use components and core.async for physics and loading of data, rendering main thread as component?
-* add convex hull shape Jolt wrapper
-* add static compound shape Jolt wrapper
 * add wheeled vehicle Jolt wrapper
+* texturize Blender model
 * Define points for spaceship convex hulls in Blender
+* define wheel positions in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
+* animate wheel rotation and suspension
+* use components and core.async for physics and loading of data, rendering main thread as component?
 * implement two-step Runge-Kutta wrapper alignment
 * Check out poliastro and hapsira
 * space flight physics with resting coordinate system
