@@ -3,8 +3,10 @@
 * add convex hull shape Jolt wrapper
 * add static compound shape Jolt wrapper
 * add wheeled vehicle Jolt wrapper
+* Define points for spaceship convex hulls in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
 * implement two-step Runge-Kutta wrapper alignment
+* Check out poliastro and hapsira
 * space flight physics with resting coordinate system
 * bake gear animation and name actions the same
 * animate gears and wheels
@@ -16,16 +18,17 @@
 * shift and update opacity and planet shadow maps for improved performance
 * visualise prototype vehicle and wheels
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
-  deferred decals for rendering runway
+  deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
 * introduce variation to cloud height
 * [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
 * .jpg -> .day.jpg
+* GLL parsing https://pure.uva.nl/ws/files/36086100/Thesis.pdf
 * cloud shadow flickering at large distance?
 * animate flaps
-* space station model
+* space station model, station lights
 * docking physics
 * moon landing physics
-* launch complex
+* launch complex, station lights
 * compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map, microtextures, bump maps
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
@@ -122,7 +125,7 @@
   * https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
-* how to render water, waves
+* how to render water, waves, https://www.shadertoy.com/view/Ms2SD1
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5
@@ -143,7 +146,7 @@
 * organize fixtures using subdirectories
 * is all planet rendering represented as a quad-tree?
 * normal maps
-* text rendering using bitmap fonts
+* You need to ensure that the ByteBuffer passed to stbtt\_InitFont is not garbage collected
 * use data-centric APIs
 * use glTexSubImage2D?
 * use ZGC (short pause garbage collector for Java)

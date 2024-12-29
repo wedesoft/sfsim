@@ -102,7 +102,9 @@ cd ..
   * [Skybolt Engine](https://github.com/Piraxus/Skybolt/) ([article](https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/))
   * [Oreon Engine](https://github.com/fynnfluegge/oreon-engine)
   * [Emulating double precision in Godot](https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds)
+  * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)
+  * [Open Space Program](https://github.com/TheOpenSpaceProgram/osp-magnum)
 * LWJGL
   * [LWJGL](https://www.lwjgl.org/)
   * [LWJGL Wiki](https://github.com/LWJGL/lwjgl3-wiki/wiki)
