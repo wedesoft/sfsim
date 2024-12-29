@@ -4,16 +4,17 @@
 * Define points for spaceship convex hulls in Blender
 * define wheel positions in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
-* animate wheel rotation and suspension
-* use components and core.async for physics and loading of data, rendering main thread as component?
-* implement two-step Runge-Kutta wrapper alignment
-* Check out poliastro and hapsira
-* space flight physics with resting coordinate system
-* bake gear animation and name actions the same
-* animate gears and wheels
+* animate wheel rotation and suspension, bake gear animation and name actions the same
 * good position of wheels for takeoff (with low fuel) and landing
-* rotating Earth coordinate system (centrifugal and coriolis force),
-  atmospheric flight with stationary atmosphere in rotating coordinate system
+* takeoff physics
+  * atmospheric flight with stationary atmosphere in rotating coordinate system
+  * rotating Earth coordinate system (centrifugal and coriolis force),
+  * space flight physics with resting coordinate system
+  * implement two-step Runge-Kutta wrapper alignment
+  * docking physics
+  * moon landing physics
+* Check out poliastro and hapsira
+* use components and core.async for physics and loading of data, rendering main thread as component?
 * fix problem with resolution of neighbouring tiles in planetary cubemap
 * hover thruster locations
 * shift and update opacity and planet shadow maps for improved performance
@@ -27,8 +28,6 @@
 * cloud shadow flickering at large distance?
 * animate flaps
 * space station model, station lights
-* docking physics
-* moon landing physics
 * launch complex, station lights
 * compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map, microtextures, bump maps
@@ -159,18 +158,6 @@
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
-* determine contact points
-* Euler integration
-* multiple contacts
-* collision of blocks
-* contact constraints of blocks
-* joint constraints
-* convex hull extraction or definition
-* collision of gear
-* estimate friction impulse
-* display body with gears
-* quaternion, state vectors
-* compute forces of zero-mass spring damper gears
 * cockpit: frontal and side view of moon lander
 * XBox controller
 * 3D moon rendering
@@ -199,7 +186,6 @@
 * point sprites for stars, atmospheric flicker using sprite arrays
 * point light sources
 * view matrix, model matrix stack, light position
-* multiple rigid or flexible objects
 * thrusters
 * proper lift/drag ratio for high Reynolds numbers
 * threads for rendering, simulation, and loading of data
