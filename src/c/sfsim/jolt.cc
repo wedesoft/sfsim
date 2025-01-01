@@ -14,6 +14,7 @@
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Vehicle/WheeledVehicleController.h>
 #include "sfsim/jolt.hh"
 
 
@@ -411,4 +412,21 @@ void set_angular_velocity(int id, Vec3 velocity)
   JPH::BodyID body_id(id);
   JPH::Vec3 angular_velocity(velocity.x, velocity.y, velocity.z);
   body_interface->SetAngularVelocity(body_id, angular_velocity);
+}
+
+void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, float suspension_min_length, float suspension_max_length)
+{
+  JPH::WheelSettingsWV *result = new JPH::WheelSettingsWV;
+  result->mPosition = JPH::Vec3(position.x, position.y, position.z);
+  result->mWidth = width;
+  result->mRadius = radius;
+  result->mInertia = inertia;
+  result->mSuspensionMinLength = suspension_min_length;
+  result->mSuspensionMaxLength = suspension_max_length;
+  return result;
+}
+
+void destroy_wheel_settings(void *wheel_settings)
+{
+  delete (JPH::WheelSettingsWV *)wheel_settings;
 }

@@ -175,4 +175,14 @@
         (remove-and-destroy-body compound)))
 
 
+(fact "Wheeled vehicle"
+      (let [w1 (make-wheel-settings {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
+                                     :sfsim.jolt/width 0.02
+                                     :sfsim.jolt/radius 0.03
+                                     :sfsim.jolt/inertia 0.1
+                                     :sfsim.jolt/suspension-min-length 0.03
+                                     :sfsim.jolt/suspension-max-length 0.06})]
+        (destroy-wheel-settings w1)))
+
+
 (jolt-destroy)

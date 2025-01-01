@@ -288,3 +288,19 @@
 (defcfn set-angular-velocity
   "Set angular velocity of a body"
   set_angular_velocity [::mem/int ::vec3] ::mem/void)
+
+
+(defcfn make-wheel-settings-
+  "Create wheel settings object for wheeled vehicle (private)"
+  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::mem/float ::mem/float] ::mem/pointer)
+
+
+(defn make-wheel-settings
+  "Create wheel settings object for wheeled vehicle"
+  [{::keys [position width radius inertia suspension-min-length suspension-max-length]}]
+  (make-wheel-settings- position width radius inertia suspension-min-length suspension-max-length))
+
+
+(defcfn destroy-wheel-settings
+  "Destroy wheel settings object"
+  destroy_wheel_settings [::mem/pointer] ::mem/void)
