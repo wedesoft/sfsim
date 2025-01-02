@@ -304,3 +304,27 @@
 (defcfn destroy-wheel-settings
   "Destroy wheel settings object"
   destroy_wheel_settings [::mem/pointer] ::mem/void)
+
+
+(defcfn create-and-add-vehicle-constraint-
+  "Create and add vehicle constraint (private method)"
+  create_and_add_vehicle_constraint [::mem/int] ::mem/pointer)
+
+
+(defcfn vehicle-constraint-add-wheel
+  "Add wheel to vehicle constraint"
+  vehicle_constraint_add_wheel [::mem/pointer ::mem/pointer] ::mem/void)
+
+
+(defn create-and-add-vehicle-constraint
+  "Create and add vehicle constraint"
+  [body wheels]
+  (let [wheel-settings (map make-wheel-settings wheels)
+        result         (create-and-add-vehicle-constraint- body)]
+    (doseq [w wheel-settings] (vehicle-constraint-add-wheel result w))
+    result))
+
+
+(defcfn remove-and-destroy-constraint
+  "Remove and destroy vehicle constraint"
+  remove_and_destroy_constraint [::mem/pointer] ::mem/void)

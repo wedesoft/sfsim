@@ -175,14 +175,20 @@
         (remove-and-destroy-body compound)))
 
 
-(fact "Wheeled vehicle"
-      (let [w1 (make-wheel-settings {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
-                                     :sfsim.jolt/width 0.02
-                                     :sfsim.jolt/radius 0.03
-                                     :sfsim.jolt/inertia 0.1
-                                     :sfsim.jolt/suspension-min-length 0.03
-                                     :sfsim.jolt/suspension-max-length 0.06})]
-        (destroy-wheel-settings w1)))
+(def w1 {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
+         :sfsim.jolt/width 0.02
+         :sfsim.jolt/radius 0.03
+         :sfsim.jolt/inertia 0.1
+         :sfsim.jolt/suspension-min-length 0.03
+         :sfsim.jolt/suspension-max-length 0.06})
+
+
+(fact "Create and add vehicle constraint"
+      (let [box     (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.5) 1000.0)
+                                                 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
+            vehicle (create-and-add-vehicle-constraint box [w1])]
+        (remove-and-destroy-constraint vehicle)
+        (remove-and-destroy-body box)))
 
 
 (jolt-destroy)
