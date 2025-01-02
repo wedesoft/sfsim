@@ -418,6 +418,10 @@ void *make_wheel_settings(Vec3 position, float width, float radius, float inerti
 {
   JPH::WheelSettingsWV *result = new JPH::WheelSettingsWV;
   result->mPosition = JPH::Vec3(position.x, position.y, position.z);
+  result->mSuspensionDirection = JPH::Vec3(0.0f, 0.0f, -1.0f);
+  result->mSteeringAxis = JPH::Vec3(0.0f, 0.0f, +1.0f);
+  result->mWheelUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
+  result->mWheelForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
   result->mWidth = width;
   result->mRadius = radius;
   result->mInertia = inertia;
