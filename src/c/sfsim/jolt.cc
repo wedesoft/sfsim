@@ -427,6 +427,9 @@ void *make_wheel_settings(Vec3 position, float width, float radius, float inerti
   result->mInertia = inertia;
   result->mSuspensionMinLength = suspension_min_length;
   result->mSuspensionMaxLength = suspension_max_length;
+  result->mAngularDamping = 0.0f;
+  result->mMaxSteerAngle = 0.0f;
+  result->mMaxHandBrakeTorque = 0.0f;
   return result;
 }
 
