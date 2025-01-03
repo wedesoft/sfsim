@@ -14,6 +14,7 @@
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Vehicle/WheeledVehicleController.h>
 #include "sfsim/jolt.hh"
 
 
@@ -411,4 +412,52 @@ void set_angular_velocity(int id, Vec3 velocity)
   JPH::BodyID body_id(id);
   JPH::Vec3 angular_velocity(velocity.x, velocity.y, velocity.z);
   body_interface->SetAngularVelocity(body_id, angular_velocity);
+}
+
+void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, float suspension_min_length, float suspension_max_length)
+{
+  JPH::WheelSettingsWV *result = new JPH::WheelSettingsWV;
+  result->mPosition = JPH::Vec3(position.x, position.y, position.z);
+  result->mSuspensionDirection = JPH::Vec3(0.0f, 0.0f, -1.0f);
+  result->mSteeringAxis = JPH::Vec3(0.0f, 0.0f, +1.0f);
+  result->mWheelUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
+  result->mWheelForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
+  result->mWidth = width;
+  result->mRadius = radius;
+  result->mInertia = inertia;
+  result->mSuspensionMinLength = suspension_min_length;
+  result->mSuspensionMaxLength = suspension_max_length;
+  return result;
+}
+
+void destroy_wheel_settings(void *wheel_settings)
+{
+  delete (JPH::WheelSettingsWV *)wheel_settings;
+}
+
+void *create_and_add_vehicle_constraint(int body_id)
+{
+  JPH::BodyLockWrite lock(physics_system->GetBodyLockInterface(), JPH::BodyID(body_id));
+  if (lock.Succeeded()) {
+    // JPH::Body &body = lock.GetBody();
+    JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
+    JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
+    vehicle_constraint_settings->mController = vehicle_controller_settings;
+    // JPH::VehicleConstraint *constraint = new JPH::VehicleConstraint(body, *vehicle_constraint_settings);
+    return vehicle_constraint_settings;
+  } else
+    return NULL;
+}
+
+void vehicle_constraint_add_wheel(void *constraint, void *wheel_settings)
+{
+  JPH::VehicleConstraintSettings *vehicle_constraint_settings = (JPH::VehicleConstraintSettings *)constraint;
+  JPH::WheelSettingsWV *wheel_settings_wv = (JPH::WheelSettingsWV *)wheel_settings;
+  vehicle_constraint_settings->mWheels.push_back(wheel_settings_wv);
+}
+
+void remove_and_destroy_constraint(void *constraint)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  delete vehicle_constraint;
 }

@@ -289,3 +289,43 @@
 (defcfn set-angular-velocity
   "Set angular velocity of a body"
   set_angular_velocity [::mem/int ::vec3] ::mem/void)
+
+
+(defcfn make-wheel-settings-
+  "Create wheel settings object for wheeled vehicle (private)"
+  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::mem/float ::mem/float] ::mem/pointer)
+
+
+(defn make-wheel-settings
+  "Create wheel settings object for wheeled vehicle"
+  [{::keys [position width radius inertia suspension-min-length suspension-max-length]}]
+  (make-wheel-settings- position width radius inertia suspension-min-length suspension-max-length))
+
+
+(defcfn destroy-wheel-settings
+  "Destroy wheel settings object"
+  destroy_wheel_settings [::mem/pointer] ::mem/void)
+
+
+(defcfn create-and-add-vehicle-constraint-
+  "Create and add vehicle constraint (private method)"
+  create_and_add_vehicle_constraint [::mem/int] ::mem/pointer)
+
+
+(defcfn vehicle-constraint-add-wheel
+  "Add wheel to vehicle constraint"
+  vehicle_constraint_add_wheel [::mem/pointer ::mem/pointer] ::mem/void)
+
+
+(defn create-and-add-vehicle-constraint
+  "Create and add vehicle constraint"
+  [body wheels]
+  (let [wheel-settings (map make-wheel-settings wheels)
+        result         (create-and-add-vehicle-constraint- body)]
+    (doseq [w wheel-settings] (vehicle-constraint-add-wheel result w))
+    result))
+
+
+(defcfn remove-and-destroy-constraint
+  "Remove and destroy vehicle constraint"
+  remove_and_destroy_constraint [::mem/pointer] ::mem/void)

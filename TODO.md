@@ -1,31 +1,34 @@
 # TODO
-* use components and core.async for physics and loading of data, rendering main thread as component?
-* add convex hull shape Jolt wrapper
-* add static compound shape Jolt wrapper
 * add wheeled vehicle Jolt wrapper
+* texturize Blender model
+* Define points for spaceship convex hulls in Blender
+* define wheel positions in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
-* implement two-step Runge-Kutta wrapper alignment
-* space flight physics with resting coordinate system
-* bake gear animation and name actions the same
-* animate gears and wheels
+* animate wheel rotation and suspension, bake gear animation and name actions the same
 * good position of wheels for takeoff (with low fuel) and landing
-* rotating Earth coordinate system (centrifugal and coriolis force),
-  atmospheric flight with stationary atmosphere in rotating coordinate system
+* takeoff physics
+  * atmospheric flight with stationary atmosphere in rotating coordinate system
+  * rotating Earth coordinate system (centrifugal and coriolis force),
+  * space flight physics with resting coordinate system
+  * implement two-step Runge-Kutta wrapper alignment
+  * docking physics
+  * moon landing physics
+* Check out poliastro and hapsira
+* use components and core.async for physics and loading of data, rendering main thread as component?
 * fix problem with resolution of neighbouring tiles in planetary cubemap
 * hover thruster locations
 * shift and update opacity and planet shadow maps for improved performance
 * visualise prototype vehicle and wheels
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
-  deferred decals for rendering runway
+  deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
 * introduce variation to cloud height
 * [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
 * .jpg -> .day.jpg
+* GLL parsing https://pure.uva.nl/ws/files/36086100/Thesis.pdf
 * cloud shadow flickering at large distance?
 * animate flaps
-* space station model
-* docking physics
-* moon landing physics
-* launch complex
+* space station model, station lights
+* launch complex, station lights
 * compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map, microtextures, bump maps
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
@@ -122,7 +125,7 @@
   * https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
-* how to render water, waves
+* how to render water, waves, https://www.shadertoy.com/view/Ms2SD1
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5
@@ -143,7 +146,7 @@
 * organize fixtures using subdirectories
 * is all planet rendering represented as a quad-tree?
 * normal maps
-* text rendering using bitmap fonts
+* You need to ensure that the ByteBuffer passed to stbtt\_InitFont is not garbage collected
 * use data-centric APIs
 * use glTexSubImage2D?
 * use ZGC (short pause garbage collector for Java)
@@ -155,18 +158,6 @@
 * EF2000 like gear suspension
 * planet, moon position (check Orbiter 2016 code)
 * blinking beacon/position lights
-* determine contact points
-* Euler integration
-* multiple contacts
-* collision of blocks
-* contact constraints of blocks
-* joint constraints
-* convex hull extraction or definition
-* collision of gear
-* estimate friction impulse
-* display body with gears
-* quaternion, state vectors
-* compute forces of zero-mass spring damper gears
 * cockpit: frontal and side view of moon lander
 * XBox controller
 * 3D moon rendering
@@ -195,7 +186,6 @@
 * point sprites for stars, atmospheric flicker using sprite arrays
 * point light sources
 * view matrix, model matrix stack, light position
-* multiple rigid or flexible objects
 * thrusters
 * proper lift/drag ratio for high Reynolds numbers
 * threads for rendering, simulation, and loading of data
