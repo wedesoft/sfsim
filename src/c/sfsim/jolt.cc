@@ -443,6 +443,8 @@ void *make_vehicle_constraint_settings(void)
   JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
   JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
   vehicle_constraint_settings->mController = vehicle_controller_settings;
+  vehicle_constraint_settings->mUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
+  vehicle_constraint_settings->mForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
   return vehicle_constraint_settings;
 }
 
@@ -460,7 +462,7 @@ void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_se
     JPH::Body &body = lock.GetBody();
     JPH::VehicleConstraintSettings *vehicle_constraint_settings_ = (JPH::VehicleConstraintSettings *)vehicle_constraint_settings;
     JPH::VehicleConstraint *constraint = new JPH::VehicleConstraint(body, *vehicle_constraint_settings_);
-    JPH::VehicleCollisionTester *tester = new JPH::VehicleCollisionTesterRay(MOVING);
+    JPH::VehicleCollisionTester *tester = new JPH::VehicleCollisionTesterRay(NON_MOVING, JPH::Vec3(0.0f, 0.0f, 1.0f));
     constraint->SetVehicleCollisionTester(tester);
     physics_system->AddConstraint(constraint);
     physics_system->AddStepListener(constraint);

@@ -324,9 +324,8 @@
 (defn create-and-add-vehicle-constraint
   "Create and add vehicle constraint"
   [body wheels]
-  (let [wheel-settings      (map make-wheel-settings wheels)
-        constraint-settings (make-vehicle-constraint-settings)]
-    (doseq [w wheel-settings] (vehicle-constraint-settings-add-wheel constraint-settings w))
+  (let [constraint-settings (make-vehicle-constraint-settings)]
+    (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel)))
     (create-and-add-vehicle-constraint- body constraint-settings)))
 
 
