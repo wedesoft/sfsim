@@ -435,29 +435,40 @@ void destroy_wheel_settings(void *wheel_settings)
   delete (JPH::WheelSettingsWV *)wheel_settings;
 }
 
-void *create_and_add_vehicle_constraint(int body_id)
+void *make_vehicle_constraint_settings(void)
 {
-  JPH::BodyLockWrite lock(physics_system->GetBodyLockInterface(), JPH::BodyID(body_id));
-  if (lock.Succeeded()) {
-    // JPH::Body &body = lock.GetBody();
-    JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
-    JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
-    vehicle_constraint_settings->mController = vehicle_controller_settings;
-    // JPH::VehicleConstraint *constraint = new JPH::VehicleConstraint(body, *vehicle_constraint_settings);
-    return vehicle_constraint_settings;
-  } else
-    return NULL;
+  JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
+  JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
+  vehicle_constraint_settings->mController = vehicle_controller_settings;
+  return vehicle_constraint_settings;
 }
 
-void vehicle_constraint_add_wheel(void *constraint, void *wheel_settings)
+void vehicle_constraint_settings_add_wheel(void *constraint, void *wheel_settings)
 {
   JPH::VehicleConstraintSettings *vehicle_constraint_settings = (JPH::VehicleConstraintSettings *)constraint;
   JPH::WheelSettingsWV *wheel_settings_wv = (JPH::WheelSettingsWV *)wheel_settings;
   vehicle_constraint_settings->mWheels.push_back(wheel_settings_wv);
 }
 
+void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_settings)
+{
+  JPH::BodyLockWrite lock(physics_system->GetBodyLockInterface(), JPH::BodyID(body_id));
+  if (lock.Succeeded()) {
+    JPH::Body &body = lock.GetBody();
+    JPH::VehicleConstraintSettings *vehicle_constraint_settings_ = (JPH::VehicleConstraintSettings *)vehicle_constraint_settings;
+    JPH::VehicleConstraint *constraint = new JPH::VehicleConstraint(body, *vehicle_constraint_settings_);
+    JPH::VehicleCollisionTester *tester = new JPH::VehicleCollisionTesterRay(MOVING);
+    constraint->SetVehicleCollisionTester(tester);
+    physics_system->AddConstraint(constraint);
+    physics_system->AddStepListener(constraint);
+    return constraint;
+  } else
+    return NULL;
+}
+
 void remove_and_destroy_constraint(void *constraint)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
-  delete vehicle_constraint;
+  physics_system->RemoveStepListener(vehicle_constraint);
+  physics_system->RemoveConstraint(vehicle_constraint);
 }
