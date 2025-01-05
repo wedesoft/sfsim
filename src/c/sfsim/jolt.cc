@@ -138,7 +138,7 @@ void jolt_init(void)
 {
   JPH::RegisterDefaultAllocator();
   JPH::Trace = TraceImpl;
-  JPH_IF_ENABLE_ASSERTS(AssertFailed = AssertFailedImpl;)
+  JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
   JPH::Factory::sInstance = new JPH::Factory();
   JPH::RegisterTypes();
 
@@ -467,6 +467,8 @@ void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_se
     constraint->SetVehicleCollisionTester(tester);
     physics_system->AddConstraint(constraint);
     physics_system->AddStepListener(constraint);
+    JPH::WheeledVehicleController *vehicle_controller = static_cast<JPH::WheeledVehicleController *>(constraint->GetController());
+    vehicle_controller->SetDriverInput(0.0f, 0.0f, 0.0f, 0.0f);
     return constraint;
   } else
     return NULL;
