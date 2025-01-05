@@ -183,22 +183,22 @@
                  :sfsim.jolt/suspension-max-length 0.3})
 (def wheel1 (assoc wheel-base :sfsim.jolt/position (vec3 -0.5 -0.5 -0.5)))
 (def wheel2 (assoc wheel-base :sfsim.jolt/position (vec3 +0.5 -0.5 -0.5)))
-(def wheel3 (assoc wheel-base :sfsim.jolt/position (vec3 -0.5 -0.5 +0.5)))
-(def wheel4 (assoc wheel-base :sfsim.jolt/position (vec3 +0.5 -0.5 +0.5)))
+(def wheel3 (assoc wheel-base :sfsim.jolt/position (vec3 -0.5 +0.5 -0.5)))
+(def wheel4 (assoc wheel-base :sfsim.jolt/position (vec3 +0.5 +0.5 -0.5)))
 
 
 (fact "Create and add vehicle constraint"
-      (let [floor   (create-and-add-static-body (box-settings (vec3 100.0 0.5 100.0) 1000000.0)
-                                                (vec3 0.0 -2.0 0.0) (q/->Quaternion 1 0 0 0))
-            body    (create-and-add-dynamic-body (box-settings (vec3 0.5 0.3 0.5) 1000.0)
+      (let [floor   (create-and-add-static-body (box-settings (vec3 100.0 100.0 0.5) 1000000.0)
+                                                (vec3 0.0 0.0 -2.0) (q/->Quaternion 1 0 0 0))
+            body    (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.3) 1000.0)
                                                  (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
             vehicle (create-and-add-vehicle-constraint body [wheel1 wheel2 wheel3 wheel4])]
-        (set-gravity (vec3 0 -1 0))
+        (set-gravity (vec3 0 0 -1))
         (set-friction floor 0.3)
         (set-restitution floor 0.2)
         (optimize-broad-phase)
         (dotimes [i 50] (update-system 0.1 1))
-        (get-translation body) => (roughly-vector (vec3 0 -0.613 0) 1e-3)
+        (get-translation body) => (roughly-vector (vec3 0 0 -0.613) 1e-3)
         (remove-and-destroy-constraint vehicle)
         (remove-and-destroy-body body)))
 
