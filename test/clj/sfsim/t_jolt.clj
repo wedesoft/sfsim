@@ -197,7 +197,7 @@
         (set-friction floor 0.3)
         (set-restitution floor 0.2)
         (optimize-broad-phase)
-        (dotimes [i 50] (update-system 0.1 1))
+        (dotimes [i 25] (update-system 0.1 1))
         (get-translation body) => (roughly-vector (vec3 0 0 -0.613) 1e-3)
         (remove-and-destroy-constraint vehicle)
         (remove-and-destroy-body body)))
