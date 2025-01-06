@@ -1,5 +1,4 @@
 # TODO
-* add wheeled vehicle Jolt wrapper
 * texturize Blender model
 * Define points for spaceship convex hulls in Blender
 * define wheel positions in Blender
