@@ -138,7 +138,7 @@ void jolt_init(void)
 {
   JPH::RegisterDefaultAllocator();
   JPH::Trace = TraceImpl;
-  JPH_IF_ENABLE_ASSERTS(AssertFailed = AssertFailedImpl;)
+  JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
   JPH::Factory::sInstance = new JPH::Factory();
   JPH::RegisterTypes();
 
@@ -427,6 +427,9 @@ void *make_wheel_settings(Vec3 position, float width, float radius, float inerti
   result->mInertia = inertia;
   result->mSuspensionMinLength = suspension_min_length;
   result->mSuspensionMaxLength = suspension_max_length;
+  result->mAngularDamping = 0.0f;
+  result->mMaxSteerAngle = 0.0f;
+  result->mMaxHandBrakeTorque = 0.0f;
   return result;
 }
 
@@ -435,29 +438,44 @@ void destroy_wheel_settings(void *wheel_settings)
   delete (JPH::WheelSettingsWV *)wheel_settings;
 }
 
-void *create_and_add_vehicle_constraint(int body_id)
+void *make_vehicle_constraint_settings(void)
 {
-  JPH::BodyLockWrite lock(physics_system->GetBodyLockInterface(), JPH::BodyID(body_id));
-  if (lock.Succeeded()) {
-    // JPH::Body &body = lock.GetBody();
-    JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
-    JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
-    vehicle_constraint_settings->mController = vehicle_controller_settings;
-    // JPH::VehicleConstraint *constraint = new JPH::VehicleConstraint(body, *vehicle_constraint_settings);
-    return vehicle_constraint_settings;
-  } else
-    return NULL;
+  JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
+  JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
+  vehicle_constraint_settings->mController = vehicle_controller_settings;
+  vehicle_constraint_settings->mUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
+  vehicle_constraint_settings->mForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
+  return vehicle_constraint_settings;
 }
 
-void vehicle_constraint_add_wheel(void *constraint, void *wheel_settings)
+void vehicle_constraint_settings_add_wheel(void *constraint, void *wheel_settings)
 {
   JPH::VehicleConstraintSettings *vehicle_constraint_settings = (JPH::VehicleConstraintSettings *)constraint;
   JPH::WheelSettingsWV *wheel_settings_wv = (JPH::WheelSettingsWV *)wheel_settings;
   vehicle_constraint_settings->mWheels.push_back(wheel_settings_wv);
 }
 
+void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_settings)
+{
+  JPH::BodyLockWrite lock(physics_system->GetBodyLockInterface(), JPH::BodyID(body_id));
+  if (lock.Succeeded()) {
+    JPH::Body &body = lock.GetBody();
+    JPH::VehicleConstraintSettings *vehicle_constraint_settings_ = (JPH::VehicleConstraintSettings *)vehicle_constraint_settings;
+    JPH::VehicleConstraint *constraint = new JPH::VehicleConstraint(body, *vehicle_constraint_settings_);
+    JPH::VehicleCollisionTester *tester = new JPH::VehicleCollisionTesterRay(MOVING, JPH::Vec3(0.0f, 0.0f, 1.0f));
+    constraint->SetVehicleCollisionTester(tester);
+    physics_system->AddConstraint(constraint);
+    physics_system->AddStepListener(constraint);
+    JPH::WheeledVehicleController *vehicle_controller = static_cast<JPH::WheeledVehicleController *>(constraint->GetController());
+    vehicle_controller->SetDriverInput(0.0f, 0.0f, 0.0f, 0.0f);
+    return constraint;
+  } else
+    return NULL;
+}
+
 void remove_and_destroy_constraint(void *constraint)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
-  delete vehicle_constraint;
+  physics_system->RemoveStepListener(vehicle_constraint);
+  physics_system->RemoveConstraint(vehicle_constraint);
 }
