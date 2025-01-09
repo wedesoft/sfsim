@@ -660,7 +660,7 @@
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
         camera-to-world    (:sfsim.render/camera-to-world render-vars)
         texture-offset     (::texture-offset scene-renderer)
-        num-scene-shadows (count scene-shadows)
+        num-scene-shadows  (count scene-shadows)
         world-to-camera    (inverse camera-to-world)]
     (doseq [program (vals (::programs scene-renderer))]
       (use-program program)
@@ -680,7 +680,7 @@
     (use-textures (zipmap (drop (+ 8 num-scene-shadows) (range))
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
-      (render-scene (comp (::programs scene-renderer) material-and-shadow-type) texture-offset render-vars
+      (render-scene (comp (::programs scene-renderer) material-and-shadow-type) (+ texture-offset num-scene-shadows) render-vars
                     (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows) scene render-mesh))))
 
 

@@ -1,4 +1,5 @@
 # TODO
+* texture-offset -> texture-offset plus num-scene-shadows
 * texturize Blender model
 * Define points for spaceship convex hulls in Blender
 * define wheel positions in Blender
