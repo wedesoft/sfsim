@@ -313,7 +313,7 @@
 (defn download-spaceship
   "Download Spaceship model"
   [_]
-  (let [filename "venturestar.gltf"
+  (let [filename "venturestar.glb"
         url      (str "https://www.wedesoft.de/downloads/" filename)]
     (.println *err* (str "Downloading " url " ..."))
     (io/copy

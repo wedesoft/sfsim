@@ -1,11 +1,11 @@
 # TODO
-* add wheeled vehicle Jolt wrapper
+* texture-offset -> texture-offset plus num-scene-shadows
 * texturize Blender model
 * Define points for spaceship convex hulls in Blender
 * define wheel positions in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
-* animate wheel rotation and suspension, bake gear animation and name actions the same
 * good position of wheels for takeoff (with low fuel) and landing
+* animate wheel rotation and suspension, bake gear animation and name actions the same
 * takeoff physics
   * atmospheric flight with stationary atmosphere in rotating coordinate system
   * rotating Earth coordinate system (centrifugal and coriolis force),
