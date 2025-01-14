@@ -1,6 +1,4 @@
 # TODO
-* complete texture and normal mapping of spacecraft
-* texture-offset -> texture-offset plus num-scene-shadows
 * use surface normal to check whether normal map is in shadow
 * Define points for spaceship convex hulls in Blender
 * define wheel positions in Blender
