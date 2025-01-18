@@ -58,6 +58,7 @@ cd ..
 * Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`
 * Build cloud cover: `clj -T:build cloud-cover`
+* Download space ship model: `clj -T:build download-spaceship`
 * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
 * Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
 * Download NOAA elevation data: `clj -T:build download-elevation`
