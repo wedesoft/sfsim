@@ -19,7 +19,7 @@
                                                    uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
                                                    setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
-    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d)]
+    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
     [sfsim.util :refer (N0 N third)])
   (:import
     (org.lwjgl.assimp
@@ -319,7 +319,9 @@
   {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node] [::textures [:vector texture-2d]]]]}
   [scene]
   (update scene ::textures
-          (fn load-textures-into-opengl [textures] (mapv #(make-rgba-texture :sfsim.texture/linear :sfsim.texture/repeat %) textures))))
+          (fn load-textures-into-opengl [textures]
+              (mapv (fn  [image] (generate-mipmap (make-rgba-texture :sfsim.texture/linear :sfsim.texture/repeat image)))
+                    textures))))
 
 
 (defn- propagate-texture

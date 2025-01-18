@@ -72,12 +72,13 @@
 
 (defn generate-mipmap
   "Generate mipmap for texture and set texture min filter to linear mipmap mode"
-  {:malli/schema [:=> [:cat texture] :nil]}
+  {:malli/schema [:=> [:cat texture] texture]}
   [texture]
   (let [target (::target texture)]
     (with-texture target (::texture texture)
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
-      (GL30/glGenerateMipmap target))))
+      (GL30/glGenerateMipmap target))
+    texture))
 
 
 (def interpolation (m/schema [:enum ::nearest ::linear]))
