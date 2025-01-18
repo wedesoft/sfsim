@@ -533,7 +533,7 @@
     (do
       (uniform-sampler program "colors" (+ texture-offset num-scene-shadows))
       (when bump (uniform-sampler program "normals" (+ texture-offset num-scene-shadows 1))))
-    (when bump (uniform-sampler program "normals" texture-offset))))
+    (when bump (uniform-sampler program "normals" (+ texture-offset num-scene-shadows)))))
 
 
 (defn setup-scene-static-uniforms
