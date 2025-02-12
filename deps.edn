@@ -1,10 +1,10 @@
 {:deps {org.clojure/clojure {:mvn/version "1.12.0"}
         metosin/malli {:mvn/version "0.17.0"}
-        com.fzakaria/slf4j-timbre {:mvn/version "0.2"}
+        com.fzakaria/slf4j-timbre {:mvn/version "0.4.1"}
         levand/immuconf {:mvn/version "0.1.0"}
         org.clojure/core.memoize {:mvn/version "1.1.266"}
         comb/comb {:mvn/version "0.1.1"}
-        progrock/progrock {:mvn/version "0.1.2"}
+        progrock/progrock {:mvn/version "1.0.0"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
         instaparse/instaparse {:mvn/version "1.5.0"}
@@ -37,5 +37,5 @@
                   :extra-paths ["test/clj"]
                   :main-opts ["-m" "midje-runner.runner"]
                   :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
-           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.5.1"}}
+           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.6.0"}}
                      :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"]}}}
