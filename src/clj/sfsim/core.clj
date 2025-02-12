@@ -116,7 +116,6 @@
 
 (def scene (model/load-scene scene-renderer "venturestar.glb"))
 
-
 ;; (def scene (model/load-scene scene-renderer "cube.gltf"))
 
 (def tile-tree (planet/make-tile-tree))

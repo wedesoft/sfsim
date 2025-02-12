@@ -598,11 +598,28 @@
      :sfsim.atmosphere/luts  atmosphere-luts}))
 
 
+(defn- remove-empty-children
+  "Recursively remove empty children"
+  {:malli/schema [:=> [:cat node] node]}
+  [node]
+  (let [children (vec (remove nil? (map remove-empty-children (::children node))))]
+    (if (and (empty? children) (empty? (::mesh-indices node)))
+      nil
+      (assoc node ::children children))))
+
+
+(defn remove-empty-meshes
+  "Remove empty meshes from scene"
+  {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node]]]}
+  [scene]
+  (update scene ::root remove-empty-children))
+
+
 (defn load-scene
   "Load glTF scene and load it into OpenGL"
   {:malli/schema [:=> [:cat scene-renderer :string] [:map [::root node]]]}
   [scene-renderer filename]
-  (let [gltf-object   (read-gltf filename)
+  (let [gltf-object   (remove-empty-meshes (read-gltf filename))
         opengl-object (load-scene-into-opengl (comp (::programs scene-renderer) material-and-shadow-type) gltf-object)]
     opengl-object))
 

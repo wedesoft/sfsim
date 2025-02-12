@@ -5,6 +5,7 @@
 * use surface normal to check whether normal map is in shadow
 * good position of wheels for takeoff (with low fuel) and landing
 * animate wheel rotation and suspension, bake gear animation and name actions the same
+* sound effects
 * takeoff physics
   * atmospheric flight with stationary atmosphere in rotating coordinate system
   * rotating Earth coordinate system (centrifugal and coriolis force),
