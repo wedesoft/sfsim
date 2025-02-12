@@ -925,4 +925,12 @@ vec4 cloud_point(vec3 point)
          cubes  6.0   0.1      -1.0     "cubes-integration.png")
 
 
+(def cube-with-hull (read-gltf "test/clj/sfsim/fixtures/model/cube-with-hull.glb"))
+
+
+(fact "Filter out empty children"
+      (:sfsim.model/name (:sfsim.model/root (remove-empty-meshes cube))) => "Cube"
+      (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root (remove-empty-meshes cube-with-hull)))) => ["Cube"])
+
+
 (GLFW/glfwTerminate)
