@@ -1,10 +1,7 @@
 (ns sfsim.config
   "Configuration values for software"
   (:require
-    [immuconf.config :as immuconf]
-    [clojure.math :refer (to-radians)]
-    [fastmath.vector :refer (vec3)]
-    [sfsim.util :refer (octaves)]))
+    [immuconf.config :as immuconf]))
 
 
 (set! *unchecked-math* true)
