@@ -933,4 +933,11 @@ vec4 cloud_point(vec3 point)
       (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root (remove-empty-meshes cube-with-hull)))) => ["Cube"])
 
 
+(fact "Convert empty meshes to points of for convex hulls"
+      (map :sfsim.model/name (:sfsim.model/children (empty-meshes-to-points cube-with-hull))) => ["Hull"]
+      (:sfsim.model/children (first (:sfsim.model/children (empty-meshes-to-points cube-with-hull))))
+      => [(vec3 1 1 -1) (vec3 -1 1 -1) (vec3 -1 1 1) (vec3 1 1 1)
+          (vec3 1 -1 -1) (vec3 -1 -1 -1) (vec3 -1 -1 1) (vec3 1 -1 1) (vec3 0 0 0)])
+
+
 (GLFW/glfwTerminate)

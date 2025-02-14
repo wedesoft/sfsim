@@ -4,7 +4,7 @@
     [clojure.math :refer (floor)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 mult add)]
+    [fastmath.vector :refer (vec3 vec4 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
     [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
@@ -39,6 +39,8 @@
       AIVector3D$Buffer
       AIVectorKey
       Assimp)
+    (fastmath.vector
+      Vec4)
     (org.lwjgl.stb
       STBImage)))
 
@@ -613,6 +615,24 @@
   {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node]]]}
   [scene]
   (update scene ::root remove-empty-children))
+
+
+(defn- extract-points
+  "Recursively convert empty meshes to points"
+  [node]
+  (let [children (vec (remove nil? (map extract-points (::children node))))]
+    (if (empty? children)
+      (if (empty? (::mesh-indices node))
+        (let [v (mulv (::transform node) (vec4 0 0 0 1))]
+          (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v)))
+        nil)
+      (assoc (select-keys node [::transform ::name]) ::children children))))
+
+
+(defn empty-meshes-to-points
+  "Convert empty meshes to points of for convex hulls"
+  [scene]
+  (extract-points (::root scene)))
 
 
 (defn load-scene
