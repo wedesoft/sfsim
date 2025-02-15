@@ -120,7 +120,8 @@
                      planet-renderer           (planet/make-planet-renderer data)
                      atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
                      scene-renderer            (model/make-scene-renderer data)
-                     object                    (assoc-in (model/load-scene scene-renderer (str "test/clj/sfsim/fixtures/model/" ?model))
+                     model                     (model/read-gltf (str "test/clj/sfsim/fixtures/model/" ?model))
+                     object                    (assoc-in (model/load-scene scene-renderer model)
                                                          [:sfsim.model/root :sfsim.model/transform] object-to-world)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
@@ -188,7 +189,8 @@
                 scene-renderer            (model/make-scene-renderer data)
                 scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
                                                                             object-radius)
-                object                    (assoc-in (model/load-scene scene-renderer "test/clj/sfsim/fixtures/model/torus.gltf")
+                model                     (model/read-gltf "test/clj/sfsim/fixtures/model/torus.gltf")
+                object                    (assoc-in (model/load-scene scene-renderer model)
                                                     [:sfsim.model/root :sfsim.model/transform] object-to-world)
                 tree                      (load-tile-tree planet-renderer {} width position level)
                 render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config

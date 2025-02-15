@@ -114,7 +114,8 @@
                                     config/object-radius))
 
 
-(def scene (model/load-scene scene-renderer "venturestar.glb"))
+(def model (model/read-gltf "venturestar.glb"))
+(def scene (model/load-scene scene-renderer model))
 
 ;; (def scene (model/load-scene scene-renderer "cube.gltf"))
 

@@ -637,9 +637,9 @@
 
 (defn load-scene
   "Load glTF scene and load it into OpenGL"
-  {:malli/schema [:=> [:cat scene-renderer :string] [:map [::root node]]]}
-  [scene-renderer filename]
-  (let [gltf-object   (remove-empty-meshes (read-gltf filename))
+  {:malli/schema [:=> [:cat scene-renderer [:map [::root node]]] [:map [::root node]]]}
+  [scene-renderer model]
+  (let [gltf-object   (remove-empty-meshes model)
         opengl-object (load-scene-into-opengl (comp (::programs scene-renderer) material-and-shadow-type) gltf-object)]
     opengl-object))
 

@@ -928,6 +928,9 @@ vec4 cloud_point(vec3 point)
 (def cube-with-hull (read-gltf "test/clj/sfsim/fixtures/model/cube-with-hull.glb"))
 
 
+(def hull-with-offset (read-gltf "test/clj/sfsim/fixtures/model/hull-with-offset.glb"))
+
+
 (fact "Filter out empty children"
       (:sfsim.model/name (:sfsim.model/root (remove-empty-meshes cube))) => "Cube"
       (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root (remove-empty-meshes cube-with-hull)))) => ["Cube"])
@@ -937,7 +940,11 @@ vec4 cloud_point(vec3 point)
       (map :sfsim.model/name (:sfsim.model/children (empty-meshes-to-points cube-with-hull))) => ["Hull"]
       (:sfsim.model/children (first (:sfsim.model/children (empty-meshes-to-points cube-with-hull))))
       => [(vec3 1 1 -1) (vec3 -1 1 -1) (vec3 -1 1 1) (vec3 1 1 1)
-          (vec3 1 -1 -1) (vec3 -1 -1 -1) (vec3 -1 -1 1) (vec3 1 -1 1) (vec3 0 0 0)])
+          (vec3 1 -1 -1) (vec3 -1 -1 -1) (vec3 -1 -1 1) (vec3 1 -1 1) (vec3 0 0 0)]
+      (:sfsim.model/transform (first (:sfsim.model/children (empty-meshes-to-points hull-with-offset))))
+      => (mat4x4 1 0 0 1, 0 1 0 0, 0 0 1 0, 0 0 0 1)
+      (:sfsim.model/children (first (:sfsim.model/children (empty-meshes-to-points hull-with-offset))))
+      => [(vec3 1 0 0) (vec3 0 0 0)])
 
 
 (GLFW/glfwTerminate)
