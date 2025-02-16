@@ -52,7 +52,7 @@
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 1000.0)
+(def height 800.0)
 
 
 ;; (def height 30.0)
@@ -257,18 +257,11 @@
 (def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
 (def dist (atom 200.0))
 
-(def hull-settings
-  (mapv
-    (fn [node] (println "hull: " (:sfsim.model/name node))
-               {:sfsim.jolt/shape (jolt/convex-hull-settings (:sfsim.model/children node) 0.01 1000.0)
-                :sfsim.jolt/position (vec3 0 0 0)
-                :sfsim.jolt/rotation (q/->Quaternion 1 0 0 0)})
-    (:sfsim.model/children convex-hulls)))
-(def static-compound (jolt/static-compound-settings hull-settings))
-(def body (jolt/create-and-add-dynamic-body static-compound (:position @pose) (:orientation @pose)))
+(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 1000.0 0.1))
+(def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
 (jolt/set-angular-velocity body (vec3 0 0 (/ PI 2)))
 (jolt/set-friction body 0.5)
-(jolt/set-restitution body 0.4)
+(jolt/set-restitution body 0.2)
 
 (jolt/optimize-broad-phase)
 
