@@ -1,5 +1,4 @@
 # TODO
-* Define points for spaceship convex hulls in Blender
 * define wheel positions in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
 * use surface normal to check whether normal map is in shadow
