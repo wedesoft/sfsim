@@ -13,10 +13,9 @@ uniform sampler2D normals;
 in VS_OUT
 {
   vec3 world_point;
+  vec3 normal;
 <% (if bump %>
   mat3 surface;
-<% %>
-  vec3 normal;
 <% ) %>
 <% (if (or textured bump) %>
   vec2 texcoord;
@@ -39,12 +38,15 @@ void main()
   vec3 light = overall_shading(fs_in.world_point<%= (apply str (map #(str ", fs_in.object_shadow_pos_" (inc %)) (range num-scene-shadows))) %>);
   vec3 ambient_light = surface_radiance_function(fs_in.world_point, light_direction);
 <% (if bump %>
-  vec3 normal = fs_in.surface * (2.0 * texture(normals, fs_in.texcoord).xyz - 1.0);
+  float cos_incidence_coarse = dot(light_direction, fs_in.normal);
+  vec3 normal = cos_incidence_coarse > 0.0 ? fs_in.surface * (2.0 * texture(normals, fs_in.texcoord).xyz - 1.0) : fs_in.normal;
+<% %>
+  vec3 normal = fs_in.normal;
 <% ) %>
 <% (if textured %>
   vec3 diffuse_color = texture(colors, fs_in.texcoord).rgb;
 <% ) %>
-  vec3 incoming = phong(ambient_light, light, fs_in.world_point, <% (if (not bump) %>fs_in.<% ) %>normal, diffuse_color, 0.0);
+  vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color, 0.0);
   incoming = attenuation_point(fs_in.world_point, incoming);
   vec4 cloud_scatter = cloud_point(fs_in.world_point);
   fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;

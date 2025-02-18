@@ -1,7 +1,6 @@
 # TODO
 * define wheel positions in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
-* use surface normal to check whether normal map is in shadow
 * good position of wheels for takeoff (with low fuel) and landing
 * animate wheel rotation and suspension, bake gear animation and name actions the same
 * sound effects
