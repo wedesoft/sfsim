@@ -4,8 +4,9 @@
     [clojure.spec.alpha :as s]
     [coffi.ffi :refer (defcfn) :as ffi]
     [coffi.mem :as mem]
-    [fastmath.matrix :refer (mat3x3)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv)]
     [fastmath.vector :refer (vec3)]
+    [sfsim.matrix :refer (vec3->vec4 vec4->vec3)]
     [sfsim.quaternion :as q]))
 
 
@@ -216,6 +217,22 @@
     (doseq [{::keys [shape position rotation]} body-settings]
            (static-compound-add-shape- result position rotation shape))
     result))
+
+
+(defn compound-of-convex-hulls-settings
+  "Convert extracted points from model to compound of convex hulls settings"
+  ([model-points convex-radius density]
+   (compound-of-convex-hulls-settings (:sfsim.model/children model-points) convex-radius density
+                                      (:sfsim.model/transform model-points)))
+  ([child-list convex-radius density transform]
+   (if (vector? (first child-list))
+     (convex-hull-settings (mapv #(vec4->vec3 (mulv transform (vec3->vec4 % 1.0))) child-list) convex-radius density)
+     (static-compound-settings
+       (mapv (fn [shape] {::shape (compound-of-convex-hulls-settings (:sfsim.model/children shape) convex-radius density
+                                                                     (mulm transform (:sfsim.model/transform shape)))
+                          ::position (vec3 0 0 0)
+                          ::rotation (q/->Quaternion 1 0 0 0)})
+             child-list)))))
 
 
 (defcfn set-friction

@@ -52,7 +52,7 @@
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 49660.0)
+(def height 800.0)
 
 
 ;; (def height 30.0)
@@ -114,9 +114,9 @@
                                     config/object-radius))
 
 
-(def scene (model/load-scene scene-renderer "venturestar.glb"))
-
-;; (def scene (model/load-scene scene-renderer "cube.gltf"))
+(def model (model/read-gltf "venturestar.glb"))
+(def scene (model/load-scene scene-renderer model))
+(def convex-hulls (model/empty-meshes-to-points model))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -257,10 +257,11 @@
 (def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
 (def dist (atom 200.0))
 
-(def box (jolt/create-and-add-dynamic-body (jolt/box-settings (vec3 1 1 1) 1000.0) (:position @pose) (:orientation @pose)))
-(jolt/set-angular-velocity box (vec3 (/ PI 2) 0 0))
-(jolt/set-friction box 0.5)
-(jolt/set-restitution box 0.4)
+(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 1000.0 0.1))
+(def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
+(jolt/set-angular-velocity body (vec3 0 0 (/ PI 2)))
+(jolt/set-friction body 0.5)
+(jolt/set-restitution body 0.2)
 
 (jolt/optimize-broad-phase)
 
@@ -445,10 +446,10 @@
             d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
         (when mn (reset! menu main-dialog))
-        ;; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-        ;; (update-mesh! (:position @pose))
-        ;; (jolt/update-system (* dt @unpause 0.001) 10)
-        ;; (reset! pose {:position (jolt/get-translation box) :orientation (jolt/get-orientation box)})
+        (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+        (update-mesh! (:position @pose))
+        (jolt/update-system (* dt @unpause 0.001) 10)
+        (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
         (swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
         (swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
         (swap! pose update :orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))

@@ -2,7 +2,7 @@
   (:require
     [clojure.math :refer (PI)]
     [coffi.mem :as mem]
-    [fastmath.matrix :refer (mat3x3)]
+    [fastmath.matrix :refer (mat3x3 mat4x4)]
     [fastmath.vector :refer (vec3)]
     [midje.sweet :refer :all]
     [sfsim.conftest :refer (roughly-matrix roughly-vector)]
@@ -148,6 +148,29 @@
         (get-linear-velocity hull) => (roughly-vector (vec3 0 -1.222 0) 1e-3)
         (remove-and-destroy-body sphere)
         (remove-and-destroy-body hull)))
+
+
+(fact "Convert model point groups to compound of convex hulls"
+      (let [translate-y (mat4x4 1 0 0 0, 0 1 0 -1, 0 0 1 0, 0 0 0 1)
+            points      [(vec3 -1 2 -1) (vec3 1 2 -1) (vec3 1 2 1) (vec3 -1 2 1) (vec3 0 4 0)]
+            model       {:sfsim.model/transform translate-y
+                         :sfsim.model/children [{:sfsim.model/transform translate-y
+                                                 :sfsim.model/children points}]}
+            floor       (create-and-add-static-body (box-settings (vec3 100.0 0.5 100.0) 1000000.0)
+                                                    (vec3 0.0 -0.5 0.0) (q/->Quaternion 1 0 0 0))
+            hulls       (create-and-add-dynamic-body (compound-of-convex-hulls-settings model 0.01 1000.0)
+                                                     (vec3 0.0 1.0 0.0) (q/->Quaternion 1 0 0 0))]
+        (set-gravity (vec3 0 -1 0))
+        (set-friction hulls 0.5)
+        (set-restitution hulls 0.1)
+        (set-friction floor 0.5)
+        (set-restitution floor 0.1)
+        (optimize-broad-phase)
+        (dotimes [i 50] (update-system 0.1 1))
+        (get-linear-velocity hulls) => (roughly-vector (vec3 0 0 0) 1e-3)
+        (get-translation hulls) => (roughly-vector (vec3 0 0 0) 5e-2)
+        (remove-and-destroy-body hulls)
+        (remove-and-destroy-body floor)))
 
 
 (fact "Static compound shape collision with sphere"
