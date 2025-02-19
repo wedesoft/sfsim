@@ -7,6 +7,7 @@ world.*.png
 BlackMarble_2016_*.jpg
 blackmarble.*.png
 elevation.*.raw
+venturestar.glb
 .cache
 .clj-kondo/metosin
 .cpcache
