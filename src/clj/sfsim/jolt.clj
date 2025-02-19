@@ -195,6 +195,8 @@
   [vertices convex-radius density]
   (let [arena        (mem/auto-arena)
         num-vertices (count vertices)]
+    (if (< num-vertices 4)
+      (throw (RuntimeException. "Convex hull must have at least 4 vertices")))
     (convex-hull-settings- (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
                            convex-radius density)))
 
