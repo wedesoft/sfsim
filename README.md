@@ -131,6 +131,7 @@ cd ..
   * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)
+  * [Bake normal maps](https://www.youtube.com/watch?v=dPbrhqqrZck)
 * Clojure
   * [cljstyle](https://github.com/greglook/cljstyle) (style checking)
   * [clj-kondo](https://github.com/clj-kondo/clj-kondo) (static code analysis)
