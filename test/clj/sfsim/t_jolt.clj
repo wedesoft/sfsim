@@ -202,6 +202,10 @@
         (remove-and-destroy-body compound)))
 
 
+(fact "Static compound requires at least one child"
+      (static-compound-settings []) => (throws RuntimeException))
+
+
 (def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
                  :sfsim.jolt/width 0.1
                  :sfsim.jolt/radius 0.1

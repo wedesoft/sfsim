@@ -1,5 +1,4 @@
 # TODO
-* raise exception on empty static compound
 * define wheel positions in Blender
 * gear/terrain physics with stationary Earth (ground collisions)
 * good position of wheels for takeoff (with low fuel) and landing

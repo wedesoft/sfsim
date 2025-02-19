@@ -215,6 +215,8 @@
   "Create static compound settings object"
   [body-settings]
   (let [result (static-compound-settings-)]
+    (if (empty? body-settings)
+      (throw (RuntimeException. "Static compound must have at least one sub shape")))
     (doseq [{::keys [shape position rotation]} body-settings]
            (static-compound-add-shape- result position rotation shape))
     result))
