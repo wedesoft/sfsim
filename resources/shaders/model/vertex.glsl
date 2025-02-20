@@ -20,10 +20,9 @@ in vec2 texcoord;
 out VS_OUT
 {
   vec3 world_point;
+  vec3 normal;
 <% (if bump %>
   mat3 surface;
-<% %>
-  vec3 normal;
 <% ) %>
 <% (if (or textured bump) %>
   vec2 texcoord;
@@ -36,10 +35,9 @@ out VS_OUT
 void main()
 {
   vs_out.world_point = (object_to_world * vec4(vertex, 1)).xyz;
+  vs_out.normal = mat3(object_to_world) * normal;
 <% (if bump %>
   vs_out.surface = mat3(object_to_world) * mat3(tangent, bitangent, normal);
-<% %>
-  vs_out.normal = mat3(object_to_world) * normal;
 <% ) %>
 <% (if (or textured bump) %>
   vs_out.texcoord = texcoord;

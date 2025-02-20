@@ -196,6 +196,8 @@
   [vertices convex-radius density]
   (let [arena        (mem/auto-arena)
         num-vertices (count vertices)]
+    (if (< num-vertices 4)
+      (throw (RuntimeException. "Convex hull must have at least 4 vertices")))
     (convex-hull-settings- (mem/serialize (apply concat vertices) [::mem/array ::mem/float (* 3 num-vertices)] arena) num-vertices
                            convex-radius density)))
 
@@ -214,6 +216,8 @@
   "Create static compound settings object"
   [body-settings]
   (let [result (static-compound-settings-)]
+    (if (empty? body-settings)
+      (throw (RuntimeException. "Static compound must have at least one sub shape")))
     (doseq [{::keys [shape position rotation]} body-settings]
            (static-compound-add-shape- result position rotation shape))
     result))

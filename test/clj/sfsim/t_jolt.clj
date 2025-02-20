@@ -150,6 +150,10 @@
         (remove-and-destroy-body hull)))
 
 
+(fact "Convex hull throws exception when too few points"
+      (convex-hull-settings [(vec3 0 0 0)] 0.01 1000.0) => (throws RuntimeException))
+
+
 (fact "Convert model point groups to compound of convex hulls"
       (let [translate-y (mat4x4 1 0 0 0, 0 1 0 -1, 0 0 1 0, 0 0 0 1)
             points      [(vec3 -1 2 -1) (vec3 1 2 -1) (vec3 1 2 1) (vec3 -1 2 1) (vec3 0 4 0)]
@@ -196,6 +200,10 @@
         (get-linear-velocity compound) => (roughly-vector (vec3 0.666 0 0) 1e-3)
         (remove-and-destroy-body box)
         (remove-and-destroy-body compound)))
+
+
+(fact "Static compound requires at least one child"
+      (static-compound-settings []) => (throws RuntimeException))
 
 
 (def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
