@@ -253,6 +253,16 @@
   get_mass [::mem/int] ::mem/float)
 
 
+(defcfn get-inertia
+  "Get inertia matrix of body"
+  get_inertia [::mem/int] ::mat3x3)
+
+
+(defcfn get-center-of-mass
+  "Get center of mass of body"
+  get_center_of_mass [::mem/int] ::vec3)
+
+
 (defcfn add-force
   "Apply a force in the next physics update"
   add_force [::mem/int ::vec3] ::mem/void)

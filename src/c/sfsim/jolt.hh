@@ -35,6 +35,8 @@ extern "C" {
   void set_friction(int id, float friction);
   void set_restitution(int id, float restitution);
   float get_mass(int id);
+  Mat3x3 get_inertia(int id);
+  Vec3 get_center_of_mass(int id);
   void add_force(int id, Vec3 force);
   void add_torque(int id, Vec3 torque);
   void activate_body(int id);
