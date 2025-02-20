@@ -92,6 +92,12 @@
          (remove-and-destroy-body box)))
 
 
+(facts "Get mass of body"
+       (let [box (create-and-add-dynamic-body (box-settings (vec3 0.25 0.25 0.25) 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0))]
+         (get-mass box) => 125.0
+         (remove-and-destroy-body box)))
+
+
 (fact "Test restitution of sphere"
       (let [sphere1 (create-and-add-dynamic-body (sphere-settings 1.0 1000.0) (vec3 0.0  2.0 0.0) (q/->Quaternion 1 0 0 0))
             sphere2 (create-and-add-dynamic-body (sphere-settings 1.0 1000.0) (vec3 0.0 -2.0 0.0) (q/->Quaternion 1 0 0 0))]

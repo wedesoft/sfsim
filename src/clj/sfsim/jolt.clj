@@ -248,6 +248,11 @@
   set_restitution [::mem/int ::mem/float] ::mem/void)
 
 
+(defcfn get-mass
+  "Get mass of body"
+  get_mass [::mem/int] ::mem/float)
+
+
 (defcfn add-force
   "Apply a force in the next physics update"
   add_force [::mem/int ::vec3] ::mem/void)

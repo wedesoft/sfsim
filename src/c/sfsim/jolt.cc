@@ -312,6 +312,13 @@ void set_restitution(int id, float restitution)
   body_interface->SetRestitution(body_id, restitution);
 }
 
+float get_mass(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::RefConst<JPH::Shape> shape = body_interface->GetShape(body_id);
+  return shape->GetMassProperties().mMass;
+}
+
 void add_force(int id, Vec3 force)
 {
   JPH::BodyID body_id(id);

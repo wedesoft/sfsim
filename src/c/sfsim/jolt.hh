@@ -34,6 +34,7 @@ extern "C" {
   void static_compound_add_shape(void *static_compound_settings, Vec3 position, Quaternion rotation, void *shape_settings);
   void set_friction(int id, float friction);
   void set_restitution(int id, float restitution);
+  float get_mass(int id);
   void add_force(int id, Vec3 force);
   void add_torque(int id, Vec3 torque);
   void activate_body(int id);
